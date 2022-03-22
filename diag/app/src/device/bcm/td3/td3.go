@@ -13,6 +13,7 @@ import (
     "os/exec"
     //"cardinfo"
     "common/cli"
+    "common/dcli"
     "common/errType"
     "device/fpga/taorfpga"
 )
@@ -27,7 +28,7 @@ const bcm_shell_execute_cmd =
 "import os\n"+
 "import socket\n"+
 "\n"+
-"timeout = 1\n"+
+"timeout = 2\n"+
 "netns.setns('swns')\n"+
 "\n"+
 "# create a script-wide timeout event\n"+
@@ -78,9 +79,71 @@ const bcm_shell_execute_cmd =
 "os.system(\"cat /tmp/bcm_cmd_output\")\n"+
 "\n"
 
-
+const bcm_shell_execute_cmd_w_exit = 
+"#!/usr/bin/env python\n\n"+
+"from pyroute2 import netns\n"+
+"from telnetlib import Telnet\n"+
+"import signal\n"+
+"import datetime\n"+
+"import sys\n"+
+"import os\n"+
+"import socket\n"+
+"\n"+
+"timeout = 5\n"+
+"netns.setns('swns')\n"+
+"\n"+
+"# create a script-wide timeout event\n"+
+"\n"+
+"\n"+
+"def script_timeout_event(signum, frame):\n"+
+"    raise Exception('Script exceeded timeout.')\n"+
+"\n"+
+"\n"+
+"signal.signal(signal.SIGALRM, script_timeout_event)\n"+
+"signal.alarm(timeout)\n"+
+"\n"+
+"# create the telnet connection\n"+
+"tn = Telnet('127.0.0.1', '1943', timeout)\n"+
+"\n"+
+"# Add commands in the list.\n"+
+"# Format : 'command  \n\n"+
+"commandList = []\n"+
+"\n"+
+"# For taking command line arguments\n"+
+"# Format : sudo python collect_bcm_l1_port_info.py command\n"+
+"sys.argv = [i+' \\n' for i in sys.argv]\n"+
+"if len(sys.argv) > 1:\n"+
+"    commandList = commandList + sys.argv[1:]\n"+
+"commandList.append('exit \\n')\n"+
+"\n"+
+"# Output File Location\n"+
+"f = open('/tmp/bcm_cmd_output', 'w')\n"+
+"\n"+
+"data = tn.read_until('BCM.0>')\n"+
+"if data:\n"+
+"    f.write(data)\n"+
+"    # Loop over the commandList\n"+
+"    # Collecting data till the next BCM.0 prompt\n"+
+"    for i in commandList:\n"+
+"        tn.write(i)\n"+
+"        data = tn.read_until('BCM.0>')\n"+
+"        f.write(data)\n"+
+"#else:\n"+
+"#    tn.close()\n"+
+"#\n"+
+"#tn.write('exit \\n')\n"+
+"#tn.get_socket().shutdown(socket.SHUT_WR)\n"+
+"#tn.close\n"+
+"timestamp = 'Timestamp: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())\n"+
+"f.write('\\n')\n"+
+"f.write(timestamp)\n"+
+"f.close()\n"+
+"os.system(\"cat /tmp/bcm_cmd_output\")\n"+
+"\n"
 
 const BCM_SCRIPT_FILE_NAME  =  "/bcm_shell_execute_cmd.py"
+const BCM_SCRIPT_FILE_NAME_W_EXIT  =  "/bcm_shell_execute_cmd_w_exit.py"
+
 
 const TD3_MAX_TEMP = 100
 
@@ -314,38 +377,94 @@ var TaorPortMap = []PortMap {
 
 func ExecBCMshellCMD(commands string) (command_output string, err int) {
     var cmdString string
+    var retry int = 2
+    var bcm_cmd_cnt uint64 = 0
+    var bcm_w_exit_limit uint64 = 890
+    var path string
+   
     err = errType.SUCCESS
-    path, errE := os.Getwd()
+    original_path, errE := os.Getwd()
     if errE != nil {
         fmt.Println(errE)
         err = errType.FAIL
         return
     }
-    path = path + BCM_SCRIPT_FILE_NAME//"/bcm_shell_execute_cmd.py"
 
-    f, errEE := os.Open(path)
-    if errEE != nil {
-        fmt.Printf(" %s does not exist.. creating file\n", path)
-        f, errEEE := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
-        if errEEE != nil {
-            fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", path, errEEE)
-            err = errType.FAIL
+    exists, _ := taorfpga.Path_exists("/tmp/bcm_cnt.txt")
+    //TRY TO STORE THE BAR VALUES IN A FILE.  WE DONT WANT TO SCAN THE PCI AND GET THE BARS EVERYTIME WE USE ONE OF THE DIAG UTILITIES THAT CALLS THIS INIT
+    if exists == true {
+        file, errGo := os.Open("/tmp/bcm_cnt.txt")
+        if errGo != nil {
+            cli.Println("e", "ERROR: Failed to Open /tmp/bcm_cnt.txt.   GO ERROR=%v", errGo)
             return
         }
-        f.WriteString(string(bcm_shell_execute_cmd[:]))
-        f.Close()
-        os.Chmod(path, 0777)
-    } else {
-        f.Close()
+        scanner := bufio.NewScanner(file)
+        for scanner.Scan() {
+            bcm_cmd_cnt, _ = strconv.ParseUint(strings.TrimSuffix(scanner.Text(), "\n"), 0, 64)
+        }
+        file.Close()
     }
-    cmdString = path + " " + "\"" + commands + "\""           //" \"show temp\""
-    output, errGo := exec.Command("bash", "-c", cmdString).Output()
+
+    file, errGo := os.OpenFile("/tmp/bcm_cnt.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if errGo != nil {
-        cli.Println("e", "Failed to exec command:",cmdString," GoERR=",errGo)
-        err = errType.FAIL
+        cli.Println("e", "ERROR: Failed to Open /tmp/bcm_cnt.txt.   GO ERROR=%v", errGo)
         return
     }
-    command_output = string(output)
+    bcm_cmd_cnt = bcm_cmd_cnt+1
+    datawriter := bufio.NewWriter(file)
+    _, _ = datawriter.WriteString(fmt.Sprintf("0x%x\n", bcm_cmd_cnt))
+    datawriter.Flush()
+    file.Close()
+    
+    for i:=0; i<retry; i++ {
+        
+        if bcm_cmd_cnt < bcm_w_exit_limit {
+            path = original_path + BCM_SCRIPT_FILE_NAME_W_EXIT
+        } else if bcm_cmd_cnt == bcm_w_exit_limit {
+            dcli.Printf("i","[INFO/WARN] SWITCHING BCM SCRIPT\n")
+            path = original_path + BCM_SCRIPT_FILE_NAME//"/bcm_shell_execute_cmd.py"
+        } else {
+            path = original_path + BCM_SCRIPT_FILE_NAME//"/bcm_shell_execute_cmd.py"
+        }
+        f, errEE := os.Open(path)
+        if errEE != nil {
+            cli.Printf("i"," %s does not exist.. creating file\n", path)
+            f, errEEE := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
+            if errEEE != nil {
+                cli.Printf("e", " Failed to open filename=%s.   ERR=%s\n", path, errEEE)
+                err = errType.FAIL
+                return
+            }
+            if bcm_cmd_cnt < bcm_w_exit_limit {
+                f.WriteString(string(bcm_shell_execute_cmd_w_exit[:]))
+            } else {
+                f.WriteString(string(bcm_shell_execute_cmd[:]))
+            }
+            f.Close()
+            os.Chmod(path, 0777)
+        } else {
+            f.Close()
+        }
+        
+        cmdString = path + " " + "\"" + commands + "\""           //" \"show temp\""
+        output, errGo := exec.Command("bash", "-c", cmdString).Output()
+        if errGo != nil {
+            if i == 0 {
+                cli.Println("i", "[WARN] Failed to exec bcm shell command:",cmdString," GoERR=",errGo)
+                cli.Printf("i", "[WARN] Script output returned =%s\n",string(output))
+                cli.Printf("i", "[WARN] RETRYING COMMAND\n")
+                time.Sleep(time.Duration(3) * time.Second)
+            } else {
+                cli.Println("e", "Failed to exec bcm shell command:",cmdString," GoERR=",errGo)
+                cli.Printf("e", "Script output returned =%s\n",string(output))
+                err = errType.FAIL
+                return
+            }
+        } else {
+            command_output = string(output)
+            return
+        }
+    }
     return
 }
 
@@ -435,11 +554,13 @@ func ReadReg(devName string, regName string) (data32 uint32, err int) {
             data64, errGo := strconv.ParseUint(match[1], 0, 32)
             if errGo != nil {
                 cli.Println("e", "TD3 Readreg failed.")
+                cli.Printf("e", "OUTPUT ='%s'", string(output))
                 err = errType.FAIL
             }
             data32 = uint32(data64)
     } else {
-            cli.Println("e", "TD3 Readreg failed.")
+            cli.Println("e", "TD3 Readreg failed.  Output Length is too small.  Output length=%d", len(match))
+            cli.Printf("e", "OUTPUT ='%s'", string(output))
             err = errType.FAIL
     }
     return
@@ -452,6 +573,8 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
 
     output, err = ExecBCMshellCMD(command)
     if err != errType.SUCCESS {
+        cli.Println("e", "BCM shell 'show temp' failed to execute properly")
+        cli.Printf("e", "OUTPUT ='%s'", string(output))
         return
     }
 
@@ -472,9 +595,9 @@ func ReadTemp(devName string) (currTemp []float64, peakTemp []float64, err int) 
     return
 }
 
-func CheckTemperatures(devName string, maxTemp int) (err int) {
-    currTemp := []float64{}
-    peakTemp := []float64{}
+func CheckTemperatures(devName string, maxTemp int) (currTemp []float64, peakTemp []float64, err int) {
+    //currTemp := []float64{}
+    //peakTemp := []float64{}
 
     currTemp, peakTemp, err = ReadTemp(devName)
     if err != errType.SUCCESS {
@@ -482,13 +605,13 @@ func CheckTemperatures(devName string, maxTemp int) (err int) {
     }
     for i:=0; i<len(currTemp); i++ {
         if int(currTemp[i]) > maxTemp {
-            cli.Printf("e", "BCM TD3:  Temperature sensor-%d.  Current Reading %d is exceeding threshold of %d\n", int(currTemp[i]), maxTemp)
+            cli.Printf("e", "BCM TD3:  Temperature sensor-%d.  Current Reading %d is exceeding threshold of %d\n", i, int(currTemp[i]), maxTemp)
             err = errType.FAIL
         }
     }
     for i:=0; i<len(peakTemp); i++ {
         if int(peakTemp[i]) > maxTemp {
-            cli.Printf("e", "BCM TD3:  Temperature sensor-%d.  Peak Reading %d is exceeding threshold of %d\n", int(currTemp[i]), maxTemp)
+            cli.Printf("e", "BCM TD3:  Temperature sensor-%d.  Peak Reading %d is exceeding threshold of %d\n", i, int(peakTemp[i]), maxTemp)
             err = errType.FAIL
         }
     }
@@ -793,6 +916,29 @@ func Prbs(sleep int, prbs string) (err int) {
         } 
     }
 
+    cli.Printf("i", "Disabling Ports in VTYSH\n")
+    cmdString := "echo \"conf\nint 1/1/1-1/1/54\nshutdown\nend\n\" | vtysh"
+    output1, errGo1 := exec.Command("bash", "-c", cmdString).Output()
+    if errGo1 != nil {
+        cli.Println("e", "Failed to exec command:",cmdString," GoERR=",errGo1)
+        cli.Printf("e", "OUTPUT='%s'\n", output1)
+        err = errType.FAIL
+        return
+    }
+    time.Sleep(time.Duration(2) * time.Second)
+    
+    err = Set_Pre_Main_Post_25G_EXT(1)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on TD3 25G Ports\n")
+        return
+    }
+
+    err = RetimerSetSI(1)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        return
+    }
+
     /* Enable SFP's */
     cli.Printf("i", "Enabling SFP's\n")
     addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
@@ -832,10 +978,6 @@ func Prbs(sleep int, prbs string) (err int) {
         port100G_s = port100G_s + tmp_s
     }
     
-    err = Set_Pre_Main_Post()
-    if err != errType.SUCCESS {
-        return
-    }
 
     //No return output to check on this command
     cli.Printf("i", "Enabling all 25G Ports\n")
@@ -853,33 +995,42 @@ func Prbs(sleep int, prbs string) (err int) {
         return
     }
 
-
     //Check Link
-    cli.Printf("i", "Checking Link\n")
-    time.Sleep(time.Duration(1) * time.Second)
-    ps_output, err := ExecBCMshellCMD("ps")
-    if err != errType.SUCCESS {
-        return
-    }
-    for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
-        link_rc := LinkCheck(TaorPortMap[i].Name, ps_output) 
-        if link_rc == errType.LINK_UP {
-            cli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, TaorPortMap[i].Name)
-        } else if link_rc == errType.LINK_DOWN {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, TaorPortMap[i].Name)
-            rc = -1
-        } else if link_rc == errType.LINK_DISABLED {
-            cli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, TaorPortMap[i].Name)
-            rc = -1
-        } else {
-            cli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, TaorPortMap[i].Name)
-            rc = -1
+    {
+        var link_rc, link_retry int
+        var ps_output string
+prbslinkcheckretry:
+        cli.Printf("i", "Checking Link\n")
+        time.Sleep(time.Duration(2) * time.Second)
+        ps_output, err = ExecBCMshellCMD("ps")
+        if err != errType.SUCCESS {
+            return
         }
-    }
-    fmt.Printf("\n")
-    if rc != 0 {
-        err = errType.FAIL
-        return
+        for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+            link_rc = LinkCheck(TaorPortMap[i].Name, ps_output) 
+            if link_rc == errType.LINK_UP {
+                dcli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, TaorPortMap[i].Name)
+            } else if link_rc == errType.LINK_DOWN {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, TaorPortMap[i].Name)
+                rc = -1
+            } else if link_rc == errType.LINK_DISABLED {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, TaorPortMap[i].Name)
+                rc = -1
+            } else {
+                dcli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, TaorPortMap[i].Name)
+                rc = -1
+            }
+        }
+        fmt.Printf("\n")
+        if rc != 0 {
+            if link_retry < 2 {
+                link_retry = link_retry + 1
+                rc = 0
+                goto prbslinkcheckretry
+            }
+            err = errType.FAIL
+            return
+        }
     }
 
     //No return output to check on this command
@@ -907,6 +1058,8 @@ func Prbs(sleep int, prbs string) (err int) {
     if err != errType.SUCCESS {
         return
     }
+    time.Sleep(time.Duration(2) * (time.Second))
+    
 
     //First time you read status it will show an error, have to read it again later after sleep
     cli.Printf("i", "Read Status to clear errors\n")
@@ -920,13 +1073,91 @@ func Prbs(sleep int, prbs string) (err int) {
     if err != errType.SUCCESS {
         return
     }
+    time.Sleep(time.Duration(1) * (time.Second))
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    //sleep
-    time.Sleep(time.Duration(sleep) * (time.Second/2))
-    if err = CheckTemperatures("TD3", TD3_MAX_TEMP); err != errType.SUCCESS {
+
+    //cli.Printf("i", "Check 25G Ports Status\n")
+    command = "phy diag " + port25G_s +" prbs get unit=0"
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    for i:=0; i<TAOR_EXTERNAL_25G_PORTS; i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    //cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+    if err == errType.FAIL {
         rc = -1
     }
-    time.Sleep(time.Duration(sleep) * (time.Second/2))
+
+    //cli.Printf("i", "Check 100G Ports Status\n")
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    for i:=TAOR_EXTERNAL_25G_PORTS; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    //cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+
+    //sleep
+    cli.Printf("i", "Sleeping for %d seconds to let the test run\n", sleep)
+    time.Sleep(time.Duration(sleep/2) * (time.Second))
+    _, _, err = CheckTemperatures("TD3", TD3_MAX_TEMP)
+    if err != errType.SUCCESS {
+        rc = -1
+    }
+    time.Sleep(time.Duration(sleep/2) * (time.Second))
+
+    /*
+    t1 := time.Now()
+    for
+    {
+        t2 := time.Now()
+        diff := t2.Sub(t1)
+        data32, rc = ReadReg("TD3", "TOP_AVS_SEL_REG")
+        //fmt.Printf("AVS REG=%x\n", data32)
+        if rc != errType.SUCCESS {
+            cli.Printf("e", "ERROR FAILED TO READ TOP_AVS_SEL_REG")
+            break
+        }
+        //fmt.Println(" Elapsed Time=",diff," Duration=",duration," High Temp=", TD3highTemp )
+        if uint32(diff.Seconds()) > uint32(sleep) {
+            break
+        }
+    } 
+    */ 
+
 
     //Check output
     //xe6 (21):  PRBS OK!
@@ -945,9 +1176,9 @@ func Prbs(sleep int, prbs string) (err int) {
             }
             if strings.Contains(scanner.Text(), TaorPortMap[i].Name)==true {
                 if strings.Contains(scanner.Text(), "PRBS OK!")==true {
-                    cli.Printf("i", "Port-%d PRBS Passed\n", i)
+                    cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
                 } else {
-                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i, scanner.Text())
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
                     err = errType.FAIL
                 }
             }
@@ -970,10 +1201,12 @@ func Prbs(sleep int, prbs string) (err int) {
                 continue
             }
             if strings.Contains(scanner.Text(), TaorPortMap[i].Name)==true {
-                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
-                    cli.Printf("i", "Port-%d PRBS Passed\n", i)
+                if strings.Contains(scanner.Text(), "PRBS has -2 errors!")==true {
+                    cli.Printf("i", "[WARN] Port-%d seeing 2 errors\n", i+1)
+                } else if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
                 } else {
-                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i, scanner.Text())
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
                     err = errType.FAIL
                 }
             }
@@ -983,13 +1216,14 @@ func Prbs(sleep int, prbs string) (err int) {
         rc = -1
     }
 
-
     cli.Printf("i", "Disable 25G PRBS\n")
     command = "phy diag " + port25G_s +" prbs clear"
     output, err = ExecBCMshellCMD(command)
     if err != errType.SUCCESS {
         return
     }
+
+    time.Sleep(time.Duration(2) * (time.Second))
     cli.Printf("i", "Disable 100G PRBS\n")
     command = "phy diag " + port100G_s +" prbs clear"
     output, err = ExecBCMshellCMD(command)
@@ -997,6 +1231,8 @@ func Prbs(sleep int, prbs string) (err int) {
         return
     }
 
+
+    time.Sleep(time.Duration(3) * (time.Second))
     //No return output to check on this command
     cli.Printf("i", "Enabling BCM LinkScan\n")
     command = "LINKscan on"
@@ -1012,6 +1248,182 @@ func Prbs(sleep int, prbs string) (err int) {
 }
 
 
+func LinkFlap() (err int) {
+    var rc int
+    var errGo error
+    var data32 uint32
+    var addr uint64
+    var port25G_s string
+    var port100G_s string
+    var tmp_s string
+    var prbsType string
+    var command string
+
+    prbsType = "6"
+
+    cli.Printf("i", "Disabling Ports in VTYSH\n")
+    cmdString := "echo \"conf\nint 1/1/1-1/1/54\nshutdown\nend\n\" | vtysh"
+    output1, errGo1 := exec.Command("bash", "-c", cmdString).Output()
+    if errGo1 != nil {
+        cli.Println("e", "Failed to exec command:",cmdString," GoERR=",errGo1)
+        cli.Printf("e", "OUTPUT='%s'\n", output1)
+        err = errType.FAIL
+        return
+    }
+    time.Sleep(time.Duration(2) * time.Second)
+    
+    err = Set_Pre_Main_Post_25G_EXT(0)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on TD3 25G Ports\n")
+        return
+    }
+
+    err = RetimerSetSI(0)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        return
+    }
+
+    /* Enable SFP's */
+    cli.Printf("i", "Enabling SFP's\n")
+    addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    for i:=0;i<taorfpga.MAXSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        errGo = taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, 0x06060606)
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+    }
+
+    /* Enable QSFP's */
+    cli.Printf("i", "Enabling QSFP's\n")
+    addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+    for i:=0;i<taorfpga.MAXQSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+        taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
+    }
+
+    for i:=0; i<TAOR_EXTERNAL_25G_PORTS; i++ {
+        if i == (TAOR_EXTERNAL_25G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", TaorPortMap[i].Name)
+        }
+        port25G_s = port25G_s + tmp_s
+    }
+    for i:=TAOR_EXTERNAL_25G_PORTS; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
+        if i == (TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", TaorPortMap[i].Name)
+        }
+        port100G_s = port100G_s + tmp_s
+    }
+    
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 25G Ports\n")
+    command = "port " + port25G_s +" enable=true"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 100G Ports\n")
+    command = "port " + port100G_s +" enable=true"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //Check Link
+    time.Sleep(time.Duration(2) * time.Second)
+    time.Sleep(time.Duration(2) * time.Second)
+
+    //No return output to check on this command
+    cli.Printf("i", "Disabling BCM LinkScan\n")
+    command = "LINKscan off"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+
+
+    //No return output to check on this command
+    cli.Printf("i", "Starting PRBS on all 25G Ports\n")
+    command = "phy diag " + port25G_s +" prbs set unit=0 p="+prbsType
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Starting PRBS on all 100G Ports\n")
+    command = "phy diag " + port100G_s +" prbs set unit=0 p="+prbsType
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    time.Sleep(time.Duration(2) * (time.Second))
+    
+
+    //First time you read status it will show an error, have to read it again later after sleep
+    cli.Printf("i", "Read Status to clear errors\n")
+    command = "phy diag " + port25G_s +" prbs get unit=0"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+
+
+    //sleep
+    time.Sleep(time.Duration(5) * (time.Second))
+
+
+    cli.Printf("i", "Disable 25G PRBS\n")
+    command = "phy diag " + port25G_s +" prbs clear"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    time.Sleep(time.Duration(2) * (time.Second))
+    cli.Printf("i", "Disable 100G PRBS\n")
+    command = "phy diag " + port100G_s +" prbs clear"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+
+    time.Sleep(time.Duration(3) * (time.Second))
+    //No return output to check on this command
+    cli.Printf("i", "Enabling BCM LinkScan\n")
+    command = "LINKscan on"
+    _, err = ExecBCMshellCMD(command)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if rc != 0 {
+        err = errType.FAIL
+    }
+    return
+}
+
+
+
 /* Only set the external ports.   Production software will set the internal ports,
    but don't know what to set for the sfp and qsfp loopbacks.
    FOR QSFP Loopbacks we need to set it on the RETIMER.  NEED CODE FOR THAT
@@ -1019,7 +1431,7 @@ func Prbs(sleep int, prbs string) (err int) {
    --> POST1=0x17(23), MAIN=0x3d(61), PRE=0x10(16) 
    phy control xe11 Preemphasis=0x173D10
 */
-func Set_Pre_Main_Post() (err int) {
+func Set_Pre_Main_Post_25G_EXT(PrintOutput int) (err int) {
 
     var command string
 
@@ -1028,17 +1440,16 @@ func Set_Pre_Main_Post() (err int) {
         //pvlan set xe8 10
         preemphasis:= TaorPortMap[i].Pre | (TaorPortMap[i].Main << 8) | (TaorPortMap[i].Post << 16)
         command = fmt.Sprintf("phy control %s Preemphasis=0x%x", TaorPortMap[i].Name, preemphasis)
-        cli.Printf("i", command)
         _ , err = ExecBCMshellCMD(command)
         if err != errType.SUCCESS {
             return
         }
-        cli.Printf("i", "%s\n", command)
+        if PrintOutput > 0 {
+            cli.Printf("i", "%s\n", command)
+        }
     }
     return
 }
-
-
 
 
 /*********************************************************************************************************** 
@@ -1063,6 +1474,7 @@ func Set_Pre_Main_Post() (err int) {
 *  
 *  
 ***********************************************************************************************************/ 
+/*
 func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64) (err int) {
     var rc int = errType.SUCCESS
     var errGo error
@@ -1097,7 +1509,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
         cli.Printf("i", "Phy Loopback Selected\n")
     } else {
         cli.Printf("i", "External Loopback Selected\n")
-        /* Check SFP's are present */
+        // Check SFP's are present 
         cli.Printf("i", "Checking for SFP Presence\n")
         addr = taorfpga.D0_FP_SFP_STAT_3_0_REG;
         for SFPnumber=0;SFPnumber<taorfpga.MAXSFP;SFPnumber++ {
@@ -1118,7 +1530,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
         }
 
 
-        /* Check QSFP's are present */
+        // Check QSFP's are present 
         cli.Printf("i", "Checking for QSFP Presence\n")
         addr = taorfpga.D0_FP_QSFP_STAT_51_48_REG;
         for QSFPnumber=0;QSFPnumber<taorfpga.MAXSFP;QSFPnumber++ {
@@ -1138,7 +1550,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
             } 
         }
 
-        /* Enable SFP's */
+        // Enable SFP's 
         cli.Printf("i", "Enabling SFP's\n")
         addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
         for i:=0;i<taorfpga.MAXSFP;i++ {
@@ -1150,7 +1562,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
             }
         }
 
-        /* Enable QSFP's */
+        // Enable QSFP's 
         cli.Printf("i", "Enabling QSFP's\n")
         addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
         for i:=0;i<taorfpga.MAXQSFP;i++ {
@@ -1242,20 +1654,19 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
         cli.Printf("i", "%s\n", command)
     }
 
-    /*
-      VLAN SETUP
-      FORWARDING TEST:
-        set vlans 10-63 for the elba front panel ports
-        vlan 10-36 will go to lag521 (Elba0)
-        vlan 37-63 will go to lag522 (Elba1)
-        All front panel ingress packets get forwarded to an Elba
-      LINE_RATE_TEST:
-        vlan 10-25 will go to lag521 (Elba0)  FP Port 0-15
-        vlan 37-52 will go to lag522 (Elba1)  FP port 16 - 31
-        vlan 64-79 to front panel ports 32-47 (ones based, bypasses ELBA)
-        vlan 80-85 to 100G ports 48-53 (bypasses ELBA)
-      
-    */
+    //
+    //  VLAN SETUP
+    //  FORWARDING TEST:
+    //    set vlans 10-63 for the elba front panel ports
+    //    vlan 10-36 will go to lag521 (Elba0)
+    //    vlan 37-63 will go to lag522 (Elba1)
+    //    All front panel ingress packets get forwarded to an Elba
+    //  LINE_RATE_TEST:
+    //    vlan 10-25 will go to lag521 (Elba0)  FP Port 0-15
+    //    vlan 37-52 will go to lag522 (Elba1)  FP port 16 - 31
+    //    vlan 64-79 to front panel ports 32-47 (ones based, bypasses ELBA)
+    //   vlan 80-85 to 100G ports 48-53 (bypasses ELBA)
+    //  
     for i:=0; i<(TAOR_EXTERNAL_25G_PORTS+TAOR_EXTERNAL_100G_PORTS); i++ {
 
         if test_type == SNAKE_TEST_NEXT_PORT_FORWARDING  {
@@ -1304,7 +1715,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
     }
 
 
-    err = Set_Pre_Main_Post()
+    err = Set_Pre_Main_Post_25G_EXT()
     if err != errType.SUCCESS {
         return
     }
@@ -1730,7 +2141,7 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
     DumpRxTxCounters()
     fmt.Printf("\n")
 
-    /* For compile error that var is not used */
+    // For compile error that var is not used 
     if TaorPortMap[0].ElbaNumber > 100000 {
             fmt.Printf("%s\n", output)
     }
@@ -1742,10 +2153,8 @@ func Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopba
     }
 
     return
-
-
 }
-
+*/
 
 
 func CheckForRevA_Gearbox() (err int) {
@@ -1859,6 +2268,265 @@ func RetimerGetTemperatures() (temperature []float64, err int) {
             tFloat := float64(data64)
             tFloat = 434.10000 - 0.53504 * tFloat
             temperature = append(temperature, tFloat)
+        }
+    }
+    return
+}
+
+/********************************************************************************
+* Set Pre/Post/Main 
+* 
+ 
+How to Read/Set TX FIR on Retimer (BCM81381) of Taormina:
+================================================================
+
+1) Configuration:
+  Each Retimer has two ports. The system and line side lane mapping for every port are as below:
+    System side:
+      port #1 - 0x0f
+      port #2 - 0xf0
+    Line side:
+      port #1 - 0x0f
+      port #2 - 0xf0
+  There are 3 retimers connected to TD3. The phy address for each retimer on P1 and later cards is as below:
+    Retimer #1: 0x100
+    Retimer #2: 0x102
+    Retimer #3: 0x104
+
+2) Retimer TX FIR Reg addresses:
+  0x1d133: pre
+  0x1d134: main
+  0x1d135: post
+  0x1d136: pre2
+  0x1d137: post2
+  0x1d138: post3
+
+  0x1800: lane reg
+    Value for line side: 0x90__ (__ represents the lane)
+    Value for system side: 0xa0__ (__ represents the lane)
+
+3) Set TX FIR (pre/main/post):
+  The following is the example to set pre/main/post for both line and system side of port #1 on retimer #1.
+  For different retimer and/or port, please replace the phy address and lane mapping respectively.
+    pre = 10 (0xa)
+    main = 65 (0x41)
+    post = 20 (0x14)
+
+  Setting sequence for line side, all 4 lanes of port 1 (lane 0x10/20/40/80)
+  Lane 0x10:
+    phy raw c45 0x100 0x1 0x8000 0x9010
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41   <-- MAIN
+    phy raw c45 0x100 0x1 0xd135 0x14   <-- POST
+    phy raw c45 0x100 0x1 0xd133 0xa    <-- PRE
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x20:
+    phy raw c45 0x100 0x1 0x8000 0x9020
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x40:
+    phy raw c45 0x100 0x1 0x8000 0x9040
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x80:
+    phy raw c45 0x100 0x1 0x8000 0x9080
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+
+  Setting sequence for system side, all 4 lanes of port 1 (lane 0x10/20/40/80)
+  Lane 0x10:
+    phy raw c45 0x100 0x1 0x8000 0xa010
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x20:
+    phy raw c45 0x100 0x1 0x8000 0xa020
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x40:
+    phy raw c45 0x100 0x1 0x8000 0xa040
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+  Lane 0x80:
+    phy raw c45 0x100 0x1 0x8000 0xa080
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd134 0x41
+    phy raw c45 0x100 0x1 0xd135 0x14
+    phy raw c45 0x100 0x1 0xd133 0xa
+    phy raw c45 0x100 0x1 0xd133 0x80a
+
+4) Read TX FIR settings:
+  The following is the example to read pre/main/post settings for line/system side of port #1 on retimer #1.
+  For different retimer and/or port, please replace the phy address and lane mapping respectively.
+
+  Reading sequence for line side, all 4 lanes of port 1 (lane 0x10/20/40/80)
+  Lane 0x10:
+    phy raw c45 0x100 0x1 0x8000 0x9010
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x20:
+    phy raw c45 0x100 0x1 0x8000 0x9020
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x40:
+    phy raw c45 0x100 0x1 0x8000 0x9040
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x80:
+    phy raw c45 0x100 0x1 0x8000 0x9080
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+
+  Reading sequence for system side, all 4 lanes of port 1 (lane 0x10/20/40/80)
+  Lane 0x10:
+    phy raw c45 0x100 0x1 0x8000 0xa010
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x20:
+    phy raw c45 0x100 0x1 0x8000 0xa020
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x40:
+    phy raw c45 0x100 0x1 0x8000 0xa040
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+  Lane 0x80:
+    phy raw c45 0x100 0x1 0x8000 0xa080
+    phy raw c45 0x100 0x1 0x8001 0x0
+    phy raw c45 0x100 0x1 0xd133
+    phy raw c45 0x100 0x1 0xd134
+    phy raw c45 0x100 0x1 0xd135
+    phy raw c45 0x100 0x1 0xd136
+    phy raw c45 0x100 0x1 0xd137
+    phy raw c45 0x100 0x1 0xd138
+ 
+ 
+    -6 is 0xfa
+ 
+Pre (decimal): -6   (0xFA)
+Main (decimal): 73  (0x49)
+Post (decimal): 0 
+ 
+********************************************************************************/ 
+func RetimerSetSI(PrintOutput int) (err int) {
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+    var retimer_address uint32 = 0
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    for i:=0; i<3; i++ {
+
+
+        if strapping == 0 {
+            retimer_address = mdio_phy_addr_rev0[RETIMER_START + i]
+        } else {
+            retimer_address = mdio_phy_addr_rev1[RETIMER_START + i]
+        }
+        for lane:=0; lane<8; lane++ {
+            command = fmt.Sprintf("phy raw c45 0x%x 0x1 0x8000 0x90%.02x; phy raw c45 0x%x 0x1 0x8001 0x0;", retimer_address, (1<<uint32(lane)), retimer_address)
+            command1 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd134 0x49; phy raw c45 0x%x 0x1 0xd135 0x00;", retimer_address, retimer_address)
+            command2 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd133 0xFA; phy raw c45 0x%x 0x1 0xd133 0x8FA;", retimer_address, retimer_address)
+            command = command + command1 + command2
+            if PrintOutput > 0 {
+                fmt.Printf("Setting QSFP SI --> %s\n", command)
+            }
+            output, err = ExecBCMshellCMD(command)
+            if err != errType.SUCCESS {
+                cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
+                err = errType.FAIL
+                return
+            }
+        }
+    }
+    return
+}
+
+func RetimerDumpSI() (err int) {
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+    var retimer_address uint32 = 0
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    for i:=0; i<3; i++ {
+
+
+        if strapping == 0 {
+            retimer_address = mdio_phy_addr_rev0[RETIMER_START + i]
+        } else {
+            retimer_address = mdio_phy_addr_rev1[RETIMER_START + i]
+        }
+        for lane:=0; lane<8; lane++ {
+            command = fmt.Sprintf("phy raw c45 0x%x 0x1 0x8000 0x90%.02x; phy raw c45 0x%x 0x1 0x8001 0x0;", retimer_address, (1<<uint32(lane)), retimer_address)
+            command1 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd133; phy raw c45 0x%x 0x1 0xd134;", retimer_address, retimer_address)
+            command2 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd135; phy raw c45 0x%x 0x1 0xd136;", retimer_address, retimer_address)
+            command3 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd137; phy raw c45 0x%x 0x1 0xd138;", retimer_address, retimer_address)
+            
+            command = command + command1 + command2 + command3
+            
+            fmt.Printf("Setting QSFP SI --> %s\n", command)
+            output, err = ExecBCMshellCMD(command)
+            if err != errType.SUCCESS {
+                cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
+                err = errType.FAIL
+                return
+            }
+            cli.Printf("i", "'%s'\n", output)
         }
     }
     return

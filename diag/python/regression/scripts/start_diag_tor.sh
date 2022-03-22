@@ -81,10 +81,6 @@ cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
 
 echo "Preparing diag environment -- Done"
 
-echo "Setting up fan controllers"
-/fs/nos/home_diag/diag/util/devmgr -dev=fan_1 -faninit
-/fs/nos/home_diag/diag/util/devmgr -dev=fan_2 -faninit
-
 echo "Setting tmp451 to extended mode"
 /fs/nos/home_diag/diag/util/fpgautil i2c 2 1 0x4c w 0x09 0x4
 
@@ -109,4 +105,42 @@ done
 echo "-------------------"
 echo "Set up diag $arch -- Done"
 echo "===================================="
+
+echo "Setting up fan controllers *"
+/fs/nos/home_diag/diag/util/fpgautil i2c 0 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 1 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 2 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 3 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 4 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 5 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 6 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 7 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 8 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 9 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 10 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 11 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 12 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 13 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 14 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 15 reset
+/fs/nos/home_diag/diag/util/fpgautil i2c 16 reset
+
+/fs/nos/home_diag/diag/util/devmgr -dev=fan_1 -faninit
+/fs/nos/home_diag/diag/util/devmgr -dev=fan_2 -faninit
+
+/fs/nos/home_diag/diag/util/fanutil 0 pwm 55 all
+/fs/nos/home_diag/diag/util/fanutil 1 pwm 55 all
+sleep 1
+/fs/nos/home_diag/diag/util/fanutil 0 pwm 60 all
+/fs/nos/home_diag/diag/util/fanutil 1 pwm 60 all
+sleep 1
+/fs/nos/home_diag/diag/util/fanutil 0 pwm 65 all
+/fs/nos/home_diag/diag/util/fanutil 1 pwm 65 all
+sleep 1
+/fs/nos/home_diag/diag/util/fanutil 0 pwm 70 all
+/fs/nos/home_diag/diag/util/fanutil 1 pwm 70 all
+sleep 1
+/fs/nos/home_diag/diag/util/fanutil 0 pwm 75 all
+/fs/nos/home_diag/diag/util/fanutil 1 pwm 75 all
+
 

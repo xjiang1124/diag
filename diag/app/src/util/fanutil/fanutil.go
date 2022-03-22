@@ -7,6 +7,7 @@ import (
     "strconv"
     "common/cli"
     "common/errType"
+    "hardware/i2cinfo"
     "hardware/hwinfo"
     "hardware/hwdev"
 )
@@ -18,7 +19,7 @@ const errhelp = "\nfanutil:\n" +
         "fanutil <fanctrl#> r addr>\n" +
         "fanutil <fanctrl#> w <addr> <data>\n" +
         "fanutil <fanctrl#> setup\n" +
-        "fanutil <fanctrl#> pwn <percent> <fan# / all>\n" +
+        "fanutil <fanctrl#> pwm <percent> <fan# / all>\n" +
         "fanutil <fanctrl#> speed <fan# / all>\n"        
         
 
@@ -92,7 +93,11 @@ func main() {
         if argc < 5  { fmt.Printf(" ERROR Not enough args\n"); return }
         pct, _ := strconv.ParseUint(os.Args[3], 0, 32)
         if os.Args[4] == "all" {
-            mask = 0xFF
+            if i2cinfo.CardType == "TAORMINA" {
+                mask = 0x7
+            } else {
+                mask = 0xFF
+            }
         } else {
             shift, _ := strconv.ParseUint(os.Args[4], 0, 32)
             mask = (1<<shift)

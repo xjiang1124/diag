@@ -132,7 +132,7 @@ func i2cLoadDataSet(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrDat
 
     if bus >= I2C_NUMBER_CHANNELS {
         errStr := fmt.Sprintf("ERROR: BUS ENTERED IS TO HIGH:  MAX BUS=%d    PASSED BUS=%d\n", I2C_NUMBER_CHANNELS, bus)
-        fmt.Printf(errStr)
+        dcli.Printf("e"," %v\n", err)
         err = errors.New(errStr)
         return
     }
@@ -204,16 +204,48 @@ func i2cMuxSet(mux uint32) (err error) {
     return
 }
 
-func i2cResetController() (err error) { 
+func I2cResetController2(bus int) (err error) { 
+    wrData := []byte{}
+    var retries int = 25
+
+    if err = i2cLoadDataSet(uint32(bus), 0x00, 0x00, 0x00, wrData, 0x00); err != nil {  //Setup I2C Struct.  Return if this fails.. Catastrophic Failure
+        dcli.Printf("e"," Error: I2C Load Data Set Failed\n")
+        return
+    }
     TaorWriteU32(3, I2Creg.RST_REG, 0x0D)
-    time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 10ms
-    TaorWriteU32(3, I2Creg.RST_REG, 0x00)
-    time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 10ms
+    for i:=0; i<retries;i++ {
+        data32, _ := TaorReadU32(3, I2Creg.RST_REG)
+        if (data32 == 0x00) {
+            oci2c_enable(I2C_CLOCK_PRESCALE_100KHZ, 0x00)   //Enable
+            break
+        }
+        time.Sleep(time.Duration(1) * time.Millisecond)
+        if i == (retries - 1) {
+            err = fmt.Errorf("ERROR I2C BUS %d RESET NOT CLEARING = %x\n", bus) 
+            dcli.Printf("e"," %v\n", err)
+        }
+    }
+    return
+}
+
+func i2cResetController() (err error) { 
+    var retries int = 25
+    TaorWriteU32(3, I2Creg.RST_REG, 0x0D)
+    for i:=0; i<retries;i++ {
+        data32, _ := TaorReadU32(3, I2Creg.CTRL_REG)
+        if (data32 == 0x00) {
+            break
+        }
+        time.Sleep(time.Duration(1) * time.Millisecond)
+        if i == (retries - 1) {
+            err = fmt.Errorf("ERROR I2C BUS %d RESET NOT CLEARING = %x\n", I2Creg.Bus) 
+            dcli.Printf("e"," %v\n", err)
+        }
+    }
     return
 }
 
 // Check if an I2C controller is enabled
-
 func oci2c_is_enabled() (enabled bool, err error) {
     enabled = false
     data32, _ := TaorReadU32(3, I2Creg.CTRL_REG)

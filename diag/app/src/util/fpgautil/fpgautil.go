@@ -52,6 +52,9 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil i2c bus mux scan\n" +
         "fpgautil i2c debug enable/disable\n" +
         " \n" +
+        "fpgautil <sfp/qsfp> present\n" +
+        "fpgautil <sfp/qsfp> dump <#>                 -- sfp# is 1-48  qsfp# is 1-6\n" +
+        " \n" +
         "fpgautil inventory\n" +
         "\n" +
         "fpgautil flash devid\n" +
@@ -107,12 +110,12 @@ func main() {
                 os.Exit(0)
             }
         } else {
-           fmt.Printf(" %s \n", errhelp); return;
+           fmt.Printf(" %s \n", errhelp); os.Exit(-1);
         }
     }
 
     if argc < 3 {
-        fmt.Printf(" %s \n", errhelp); return;
+        fmt.Printf(" %s \n", errhelp); os.Exit(-1);
     }
 
     if os.Args[2] == "bitswapimage" && argc == 5 {
@@ -145,21 +148,21 @@ func main() {
             cli.Printf("e", "Failed to find FPGA DevID 0x%x memory bar", pcidevid)
         }
         cli.Printf("i", "memory bar = 0x%x", bar)
-        return
+        os.Exit(0)
     } else if os.Args[1] == "td3" {  
         if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
-            return
+            os.Exit(-1)
         }
         if os.Args[2] == "prbs" {
-            if argc < 3 { fmt.Printf(" Not enough args... prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>"); return; }
+            if argc < 3 { fmt.Printf(" Not enough args... prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>"); os.Exit(-1) }
             time, _ := strconv.ParseUint(os.Args[3], 0, 32)
             td3.Prbs(int(time), os.Args[4])
         }
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], 0, 0, 0)
+            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], 0, 0, 0, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90)
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()
@@ -175,22 +178,24 @@ func main() {
         if os.Args[2] == "present" {
             for i:=0;i<taorfpga.MAXSFP;i++ {
                 present, errs := taorfpga.SFP_present(uint32(i))
-                if errs != nil { fmt.Printf(" Error getting sfp present status"); return; }
+                if errs != nil { fmt.Printf(" Error getting sfp present status"); os.Exit(0); }
                 if present == true {
-                    fmt.Printf(" SFP-%.02d: Present\n", i)
+                    fmt.Printf(" SFP_%d: Present\n", i)
                 } else {
-                    fmt.Printf(" SFP-%.02d: Not Present\n", i)
+                    fmt.Printf(" SFP_%d: Not Present\n", i)
                 }
             }
-
         } else if os.Args[2] == "dump" {
-            if argc < 3 { fmt.Printf(" %s \n", errhelp); return; }
-            id, _ := sfp.ReadId(os.Args[3])
-            fmt.Printf("\n ID=%x\n", id)
+            var sfpDev string
+            if argc < 4 { fmt.Printf(" %s \n", errhelp); os.Exit(-1); }
+            sfpnum, _ := strconv.Atoi(os.Args[3])
+            if sfpnum < 10 {
+                sfpDev = "SFP_"+os.Args[3]
+            } else {
+                sfpDev = "SFP_"+os.Args[3]
+            }
             {
-                //var erri int
-                //rdData1 := make([]byte, 128)
-                rdData1, erri := sfp.ReadEepromAll(os.Args[3]) 
+                rdData1, erri := sfp.ReadEepromAll(sfpDev) 
                 if erri != errType.SUCCESS {
                     fmt.Printf(" ERROR: Read SFP Threw an error\n")
                 }
@@ -199,84 +204,105 @@ func main() {
                     fmt.Printf(" %.02x", rdData1[i])
                 }
                 fmt.Printf("\n")
-                sfp.VerifyCheckSums(os.Args[3])
-                sfp.PrintSFPvendorData(os.Args[3])
+                err := sfp.VerifyCheckSums(sfpDev)
+                _, _, _, _, err1 := sfp.PrintSFPvendorData(sfpDev)
+                err = err | err1 | erri
+                if err != errType.SUCCESS { 
+                    os.Exit(-1)
+                } 
             }
+        } else {
+            fmt.Printf(" Ivalid Args[2] = '%s'\n", os.Args[2]);
+            os.Exit(-1)
         }
+        os.Exit(0)
     } else if os.Args[1] == "qsfp" {  
         if argc < 3 { fmt.Printf(" %s \n", errhelp); return; }
         if os.Args[2] == "present" {
             for i:=0;i<taorfpga.MAXQSFP;i++ {
                 present, errs := taorfpga.QSFP_present(uint32(i))
-                if errs != nil { fmt.Printf(" Error getting qsfp present status"); return; }
+                if errs != nil { fmt.Printf(" Error getting qsfp present status"); os.Exit(-1); }
                 if present == true {
-                    fmt.Printf(" QSFP-%.02d: Present\n", i)
+                    fmt.Printf(" QSFP_%d: Present\n", i)
                 } else {
-                    fmt.Printf(" QSFP-%.02d: Not Present\n", i)
+                    fmt.Printf(" QSFP_%d: Not Present\n", i)
                 }
             }
-
         } else if os.Args[2] == "dump" {
-            if argc < 4 { fmt.Printf(" %s \n", errhelp); return; }
-            id, _ := sfp.ReadId(os.Args[3])
-            fmt.Printf("\n ID=%x\n", id)
+            var qsfpDev string
+            if argc < 4 { fmt.Printf(" %s \n", errhelp); os.Exit(-1); }
+            qsfpnum, _ := strconv.Atoi(os.Args[3])
+            if qsfpnum < 10 {
+                qsfpDev = "QSFP_"+os.Args[3]
+            } else {
+                qsfpDev = "QSFP_"+os.Args[3]
+            }
             {
-                //var erri int
-                //rdData1 := make([]byte, 128)
-                rdData1, erri := qsfp.ReadEepromAll(os.Args[3]) 
+                rdData1, erri := qsfp.ReadEepromAll(qsfpDev) 
                 if erri != errType.SUCCESS {
-                    fmt.Printf(" ERROR: Read SFP Threw an error\n")
+                    fmt.Printf(" ERROR: Read QSFP Threw an error\n")
                 }
                 for i:=0; i<len(rdData1); i++ {
                     if i % 16 == 0 { fmt.Printf("\n %.02x:", i) }
                     fmt.Printf(" %.02x", rdData1[i])
                 }
                 fmt.Printf("\n")
-                qsfp.VerifyCheckSums(os.Args[3])
-                qsfp.PrintQSFPvendorData(os.Args[3])
+                err := qsfp.VerifyCheckSums(qsfpDev)
+                _, _, _, _, err1 := qsfp.PrintQSFPvendorData(qsfpDev)
+                err = err | err1 | erri
+                if err != errType.SUCCESS { 
+                    os.Exit(-1)
+                } 
             }
+        } else {
+            fmt.Printf(" Ivalid Args[2] = '%s'\n", os.Args[2]);
+            os.Exit(-1)
         }
-
+        os.Exit(0)
     } else if os.Args[1] == "regdump" {
         fpga_region, err := strconv.ParseUint(os.Args[2], 0, 32)
         if err != nil {
             fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
         }
         taorfpga.FpgaDumpRegionRegisters(uint32(fpga_region))
-        return
+        os.Exit(0)
     } else if os.Args[1] == "r32" || os.Args[1] == "w32" {
         if (os.Args[1] == "r32") && argc < 4  {
             if argc < 4 {
-                fmt.Printf(" ERROR r32:  Not enough args\n"); return
+                fmt.Printf(" ERROR r32:  Not enough args\n")
+                os.Exit(-1)
             }
         }
         if (os.Args[2] == "w32") && argc < 5  {
             if argc < 4 {
-                fmt.Printf(" ERROR w32:  Not enough args\n"); return
+                fmt.Printf(" ERROR w32:  Not enough args\n") 
+                os.Exit(-1)
             }
         }
         fpga_region, err := strconv.ParseUint(os.Args[2], 0, 32)
         if err != nil {
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
         }
         addr, err = strconv.ParseUint(os.Args[3], 0, 32)
         if err != nil {
-            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
         }
 
         if (os.Args[1] == "r32") {
             data32, err = taorfpga.TaorReadU32(uint32(fpga_region) , uint64(bar + addr))
             if err != nil {
                 cli.Printf("e", "TaorReadU32 Failed")
+                os.Exit(-1)
             }
-
             fmt.Printf("RD [0x%.04x] = 0x%.08x\n", bar + addr, data32)
         } else {
             data64, err = strconv.ParseUint(os.Args[4], 0, 32)
             err = taorfpga.TaorWriteU32(uint32(fpga_region), uint64(bar + addr), uint32(data64))
             fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
         }
-
+        os.Exit(0)
     } else if os.Args[1] == "mem" {
         //Check the arg count
         if (os.Args[2] == "r32" || os.Args[2] == "r64") && argc < 4  {
@@ -563,7 +589,14 @@ func main() {
         var rdSize uint32 = 0
 
         if argc == 4 {
-            if os.Args[3][0] == 'd' {
+            if os.Args[3] == "reset" {
+                bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                fmt.Printf(" Resetting Bus %d\n", int(bus))
+                taorfpga.I2cResetController2(int(bus)) 
+            } else if os.Args[3][0] == 'd' {
                 taorfpga.TaorWriteU32(1, taorfpga.D1_SCRTCH_3_REG, 0x00)
             } else if os.Args[3][0] == 'e' {
                 taorfpga.TaorWriteU32(1, taorfpga.D1_SCRTCH_3_REG, 0xDEBDEB99)

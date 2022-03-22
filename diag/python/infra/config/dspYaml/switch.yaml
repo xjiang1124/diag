@@ -79,8 +79,13 @@ DSP:
         PARAM:
             tollerance:
                 VALUE:
-                    ALL: 15
+                    ALL: 25
                 INFO: rpm tollerance
+            timeout:
+                VALUE:
+                    ALL: 180
+                INFO: Test timeout setting
+                
 
     TEST#SNAKE:
         INFO: Snake test for TD3 and ELBA
@@ -90,7 +95,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE: 
-                    ALL: 420
+                    ALL: 500
                 INFO: Test timeout setting
             mask:
                 VALUE:
@@ -112,7 +117,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 360
+                    ALL: 370
                 INFO: Test timeout setting
             testtime:
                 VALUE:
@@ -122,7 +127,11 @@ DSP:
                 VALUE:
                     ALL: 0x3
                 INFO: Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas
-
+            percent:
+                VALUE:
+                    ALL: 60
+                INFO: Percent of memory to test
+                
     TEST#ELBA_RTC:
         INFO: Elba Real Time Clock Test
         PLATFORM:
@@ -158,7 +167,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 30
+                    ALL: 60
                 INFO: Test timeout setting
 
 ...
