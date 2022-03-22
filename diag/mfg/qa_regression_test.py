@@ -475,6 +475,8 @@ def main():
 
     test_result = 0
     print("Results")
+    if len(results.keys()) == 0:
+        test_result = 1
     for run_id in results.keys():
         print("Run-ID: {0}: Result: {1}".format(run_id, results[run_id]))
         if results[run_id] == False:
