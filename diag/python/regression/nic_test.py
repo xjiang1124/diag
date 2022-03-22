@@ -753,6 +753,39 @@ class nic_test:
         else:
             print "=== ena_dis_uboot_pcie passed ==="
 
+    def ena_dis_esec_wp(self, nic_list=[], enable=True):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_list_remain = nic_list[:]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for retry in range(1):
+            print "Trying break into uboot {}".format(retry)
+            for slot in nic_list_remain:
+                self.nic_con.power_cycle_multi(self.baud_rate, int(slot), 0)
+            print "Wait for 60 seconds before entering uboot"
+            sleep(60)
+            for slot in nic_list_remain:
+                ret = self.nic_con.ena_dis_esec_wp(int(slot), enable)
+                ret_list[int(slot)-1] = ret
+
+            for slot in nic_list_remain:
+                if ret_list[int(slot)-1] == 0:
+                    nic_list.remove(slot)
+
+            print "remaining slots: ", ",".join(nic_list)
+            nic_list_remain = nic_list[:]
+
+            if len(nic_list) == 0:
+                break
+
+        if len(nic_list) != 0:
+            print "=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== ena_dis_esec_wp passed ==="
+
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1202,6 +1235,14 @@ if __name__ == "__main__":
                        "--dis_uboot_pcie", 
                        help="Disable uboot PCIe for mutiple cards", 
                        action='store_true')
+    group.add_argument("-ena_esec_wp",
+                       "--ena_esec_wp",
+                       help="Enable QSPI WP for mutiple cards",
+                       action='store_true')
+    group.add_argument("-dis_esec_wp",
+                       "--dis_esec_wp",
+                       help="Disable QSPI WP for mutiple cards",
+                       action='store_true')
     group.add_argument("-setup_uboot_env", 
                        "--setup_uboot_env", 
                        help="Setup uboot evn variable for mutiple cards", 
@@ -1308,6 +1349,16 @@ if __name__ == "__main__":
         else:
             ena_dis = False
         test.ena_dis_uboot_pcie(slot_list, ena_dis)
+        sys.exit()
+
+    if args.ena_esec_wp == True or args.dis_esec_wp == True:
+        slot_list = args.slot_list.split(',')
+
+        if args.ena_esec_wp == True:
+            ena_dis = True
+        else:
+            ena_dis = False
+        test.ena_dis_esec_wp(slot_list, ena_dis)
         sys.exit()
 
     if args.config_ddr == True:
