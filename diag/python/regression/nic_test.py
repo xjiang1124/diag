@@ -81,6 +81,15 @@ class nic_test:
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+
+                #self.nic_con.uart_session_cmd(session, "cd /data")
+                #self.nic_con.uart_session_cmd(session, "cat read_iemode_cmds | capview | grep data")
+                #self.nic_con.uart_session_cmd(session, "python ./ie_mode.py")
+                #self.nic_con.uart_session_cmd(session, "cat read_iemode_cmds | capview | grep data")
+                #self.nic_con.uart_session_cmd(session, "cat read_ddl.txt | capview | grep data")
+                #self.nic_con.uart_session_cmd(session, "cat write_ddl.txt | capview")
+                #self.nic_con.uart_session_cmd(session, "cat read_ddl.txt | capview | grep data")
+
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
                 self.nic_con.uart_session_cmd(session, "source /etc/profile", 10)
                 #if cpldID[0] == "0x43" or \
@@ -491,15 +500,33 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def pwr_cycle_test_multi(self, nic_list=[], iteration=1):
+    def pwr_cycle_test_multi(self, nic_list=[], iteration=1, pc_mode="board"):
         ret = 0
+
+        if pc_mode != "board":
+            nic_list_str = ",".join(nic_list)
+            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
 
         for i in range(iteration):
             print "=== Ite {} ===".format(i)
-            ret, _ = self.setup_env_multi(nic_list, False, 60)
+            if pc_mode == "board":
+                ret, _ = self.setup_env_multi(nic_list, False, 60)
+            else:
+                ret, _ = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
+
             if ret != 0:
                 print "=== Power cycle test failed at ite {} ===".format(i)
                 break
+
+            if pc_mode != "board":
+                print("=== sysreset ===")
+                session = common.session_start()
+                self.nic_con.uart_session_start(session)
+                self.nic_con.uart_session_cmd(session, "ls -l")
+                self.nic_con.uart_session_cmd(session, "sysreset.sh", ending=["Restarting system", "Boot0"])
+                self.nic_con.uart_session_stop(session)
+                session = common.session_stop(session)
+                time.sleep(10)
 
         if ret == 0:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
@@ -1236,6 +1263,7 @@ if __name__ == "__main__":
     parser.add_argument("-disp_si", "--disp_si", help="Display ECC info", action='store_true')
     parser.add_argument("-hardcode", "--hardcode", help="DDR hardcode setting", action='store_true')
     parser.add_argument("-ddr_speed", "--ddr_speed", help="DDR speed", type=int, default=3200)
+    parser.add_argument("-pc_mode", "--pc_mode", help="Power cycle mode; board: whole board PC; gpio3: GPIO3 PC", type=str, default="board")
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1295,7 +1323,7 @@ if __name__ == "__main__":
 
     if args.pwr_cycle_test_multi == True:
         slot_list = args.slot_list.split(',')
-        test.pwr_cycle_test_multi(slot_list, args.iteration)
+        test.pwr_cycle_test_multi(slot_list, args.iteration, args.pc_mode)
         sys.exit()
 
     if args.ena_uboot_pcie == True or args.dis_uboot_pcie == True:
