@@ -331,7 +331,7 @@ class nic_test:
         for slot_ret in ret_list:
             ret = ret + slot_ret
 
-        if ret != 1:
+        if ret != 0:
             print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
         else:
             print "===  setup_env_multi Passed ==="
