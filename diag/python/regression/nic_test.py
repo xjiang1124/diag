@@ -620,6 +620,7 @@ class nic_test:
             session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
 
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
+        self.nic_con.uart_session_cmd(session, "sync", 15)
         self.nic_con.uart_session_stop(session)
 
         common.session_stop(session)
