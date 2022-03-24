@@ -337,44 +337,77 @@ class nic_con:
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(1)
-        for retry in range(3):
+
+        asic_type = self.get_asic_type(slot)
+        for retry in range(numRetry):
             print "Trying enter uboot {}".format(retry)
+            if (asic_type == "ELBA_FPGA"):
+                cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x21".format(slot)
+                common.session_cmd(session, cmd)
+                match = re.search(r'data=(0x[a-fA-F0-9]+)', session.before)
+                if match:
+                    cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data={}".format(slot, hex(int(match.group(1), 16) | 0x10))
+                    common.session_cmd(session, cmd)
+                else:
+                    print "Failed to read CPLD addr=0x21"
+                    continue
 
-            cmd = "turn_on_slot.sh off {}".format(slot)
-            common.session_cmd(session, cmd)
-            cmd = "turn_on_hub.sh {}".format(slot)
-            common.session_cmd(session, cmd)
-            cmd = "turn_on_slot_3v3.sh on {}".format(slot)
-            common.session_cmd(session, cmd)
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
-            common.session_cmd(session, cmd)
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
-            common.session_cmd(session, cmd)
+                cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x20".format(slot)
+                common.session_cmd(session, cmd)
+                match = re.search(r'data=(0x[a-fA-F0-9]+)', session.before)
+                if match:
+                    cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data={}".format(slot, hex(int(match.group(1), 16) | 0x6))
+                    common.session_cmd(session, cmd)
+                else:
+                    print "Failed to read CPLD addr=0x21"
+                    continue
 
-            cmd = "turn_on_slot.sh on {}".format(slot)
-            common.session_cmd(session, cmd) 
+                cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x51".format(slot)
+                common.session_cmd(session, cmd)
+                match = re.search(r'data=(0x[a-fA-F0-9]+)', session.before)
+                if match:
+                    data = int(match.group(1), 16)
+                    cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x51 -data={}".format(slot, data | 0x10)
+                    common.session_cmd(session, cmd)
+                    cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x51 -data={}".format(slot, data & (~0x10))
+                    common.session_cmd(session, cmd)
+                else:
+                    print "Failed to read CPLD addr=0x21"
+                    continue
+            else:
+                cmd = "turn_on_slot.sh off {}".format(slot)
+                common.session_cmd(session, cmd)
+                cmd = "turn_on_hub.sh {}".format(slot)
+                common.session_cmd(session, cmd)
+                cmd = "turn_on_slot_3v3.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
+                cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
+                common.session_cmd(session, cmd)
+                cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
+                common.session_cmd(session, cmd)
+
+                cmd = "turn_on_slot.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
 
             print "Wait for 60 seconds before entering uboot"
             sleep(60)
 
-            uartsession = common.session_start()
-            uartsession.timeout = timeout
-            self.uart_session_start(uartsession, rate)
+            self.uart_session_start(session, rate)
             cmd = "sysreset.sh\r"
-            uartsession.sendline(cmd)
+            session.sendline(cmd)
             time.sleep(1)
             for i in range(60):
-                uartsession.timeout = 0.5
+                session.timeout = 0.5
                 try:
                     print "C+C", i
-                    uartsession.send(chr(3))
-                    uartsession.expect(expstr)
+                    session.send(chr(3))
+                    session.expect(expstr)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
                     print "timeout:", i
                     ret = -1
-            self.uart_session_stop(uartsession)
+            self.uart_session_stop(session)
             if ret == 0:
                 break
 

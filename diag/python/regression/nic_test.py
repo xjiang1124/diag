@@ -340,7 +340,7 @@ class nic_test:
         for slot_ret in ret_list:
             ret = ret + slot_ret
 
-        if ret != 1:
+        if ret != 0:
             print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
         else:
             print "===  setup_env_multi Passed ==="
@@ -780,6 +780,8 @@ class nic_test:
             print "=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list)
         else:
             print "=== ena_dis_uboot_pcie passed ==="
+        print "=== ena_dis_uboot_pcie done #", retry, "==="
+
 
     def ena_dis_esec_wp(self, nic_list=[], enable=True):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -789,7 +791,7 @@ class nic_test:
             print "No nic specified -- Exit"
             sys.exit(0)
 
-        for retry in range(1):
+        for retry in range(self.num_retry):
             print "Trying break into uboot {}".format(retry)
             for slot in nic_list_remain:
                 self.nic_con.power_cycle_multi(self.baud_rate, int(slot), 0)
@@ -813,6 +815,7 @@ class nic_test:
             print "=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list)
         else:
             print "=== ena_dis_esec_wp passed ==="
+        print "=== ena_dis_esec_wp done #", retry, "==="
 
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
