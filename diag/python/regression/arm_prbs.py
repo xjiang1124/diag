@@ -65,6 +65,7 @@ class arm_prbs:
             common.session_stop(session)
             return -1
  
+        ret = self.nic_con.uart_session_cmd(session, "sync")
         if mode == "PCIE":
             cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_PRBS_PCIE.log"
             ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["PCIE PRBS PASSED", "FAILED"], False)

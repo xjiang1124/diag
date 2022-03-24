@@ -66,6 +66,7 @@ class arm_l1:
             common.session_stop(session)
             return -1
  
+        ret = self.nic_con.uart_session_cmd(session, "sync")
         cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_arm_l1_test.log"
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["ARM L1 TESTS PASSED", "FAILED"], False)
         if ret == 0:
