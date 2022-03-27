@@ -601,7 +601,7 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     # init nic diag env.
-    rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
+    rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, emmc_check=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
@@ -820,6 +820,9 @@ def main():
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=False):
+        mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
