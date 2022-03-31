@@ -20,10 +20,10 @@ echo "testing channel "$chan $vmarg $bist_parm
 cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh
 if [[ $chan -eq 0 ]];then
     echo "testing channel 0"
-    ./diag.exe ../elba/elb_ddr_bist.tcl $bist_parm 0 1 1
+    ./diag.exe ../elba/elb_arm_ddr_bist.tcl $bist_parm 0 1 1
 elif [[ $chan -eq 1 ]]; then
     echo "testing channel 1"
-    ./diag.exe ../elba/elb_ddr_bist.tcl $bist_parm 0 0 0
+    ./diag.exe ../elba/elb_arm_ddr_bist.tcl $bist_parm 0 0 0
 else
     echo "invalid channel number"
 fi
