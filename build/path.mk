@@ -36,7 +36,8 @@ AMD64_SRC_DIR=			\
 	util/mtptest		\
 	util/swmadaputil	\
 	util/switch			\
-	util/pcieswutil
+	util/pcieswutil     \
+	util/bcmutil
 
 AMD64_C_SRC_DIR=		\
 	lib/cpld			\
