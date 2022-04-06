@@ -2117,7 +2117,7 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
-            filename = "{:s}_num_4_snake_elba.log".format(sn)
+            filename = "{:s}_snake_elba.log".format(sn)
         elif test == "ETH_PRBS":
             filename = "{:s}_elba_PRBS_MX.log".format(sn)
         elif test == "ARM_L1":
