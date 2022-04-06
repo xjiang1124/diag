@@ -120,6 +120,8 @@ do
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/emmcutil      $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/asicutil      $NIC_UTIL_DIR
         cp $TOP_DIR/diag/python/regression/update_mac.py        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/python/regression/scripts/run_ddrbist.sh     $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/python/regression/scripts/run_ddrbist_arm.sh $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/clear_nic_config.sh            $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/fix_o2_vrm.sh                  $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_acc.sh                     $NIC_UTIL_DIR
