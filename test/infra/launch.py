@@ -91,10 +91,10 @@ class LaunchApp(object):
             'TS_PORT': "",
             'TS_USERID': "admin",
             'TS_PASSWORD': "N0isystem$",
-            'APC1': mtp_resource.get('ApcIP', ""),
-            'APC1_PORT': mtp_resource.get('ApcPort', ""),
-            'APC1_USERID': mtp_resource.get('ApcUsername', ""),
-            'APC1_PASSWORD': mtp_resource.get('ApcPassword', ""),
+            'APC1': "",
+            'APC1_PORT': "",
+            'APC1_USERID': "",
+            'APC1_PASSWORD': "",
             'APC2': "",
             'APC2_PORT': "",
             'APC2_USERID': "",
@@ -106,6 +106,19 @@ class LaunchApp(object):
             'SLOTS': 10,
             'CAPABILITY': "0x3",
         }
+
+        pdu_info = mtp_instance.get("PDUPort", None)
+        if pdu_info:
+            for idx, pdu_port in enumerate(pdu_info.get("Ports", [])):
+                data[f"APC{idx+1}"] = pdu_port.get("SwitchIP", "")
+                data[f"APC{idx+1}_PORT"] = pdu_port.get("SwitchPort", "")
+                data[f'APC{idx+1}_USERID'] =  pdu_port.get('SwitchUsername', "")
+                data[f'APC{idx+1}_PASSWORD'] =  pdu_port.get('SwitchPassword', "")
+        else:
+            data['APC1'] = mtp_resource.get('ApcIP', ""),
+            data['APC1_PORT'] = mtp_resource.get('ApcPort', ""),
+            data['APC1_USERID'] =  mtp_resource.get('ApcUsername', ""),
+            data['APC1_PASSWORD'] =  mtp_resource.get('ApcPassword', ""),
 
         testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
         mtp_yaml_data = {
@@ -197,30 +210,6 @@ class LaunchApp(object):
             ret = defs.Result.INFRA_FAILURE
 
         return ret
-
-    #def __download_assets(version, tmp_folder):
-    #    ret = defs.Result.SUCCESS
-    #
-    #    out_file = f"{os.path.join(tmp_folder, 'asset.tgz')}"
-    #    try:
-    #        download_cmd = f"/usr/bin/asset-pull --bucket hw-repository  released-diag-sw {version} {out_file}"
-    #        process = subprocess.Popen(download_cmd.split(), stdout=subprocess.PIPE)
-    #        output, error = process.communicate()
-    #        Logger.info(output)
-    #    except Exception as e:
-    #        Logger.error(e)
-    #        ret = defs.Result.INFRA_FAILURE
-    #
-    #    try:
-    #        extract_cmd = f"tar --directory {tmp_folder} -zxf {out_file}"
-    #        process = subprocess.Popen(extract_cmd.split(), stdout=subprocess.PIPE)
-    #        output, error = process.communicate()
-    #        Logger.info(output)
-    #    except Exception as e:
-    #        Logger.error(e)
-    #        ret = defs.Result.INFRA_FAILURE
-    #
-    #    return ret
 
     def Main(self):
         ret = defs.Result.SUCCESS

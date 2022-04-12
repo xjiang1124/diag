@@ -329,7 +329,7 @@ class mtp_ctrl():
         elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
-                handle.send("olOff " + port + "\r")
+                handle.send("olOff " + str(port) + "\r")
                 handle.expect_exact(">")
             handle.close()
             time.sleep(1)
@@ -369,7 +369,7 @@ class mtp_ctrl():
         elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
-                handle.send("olOn " + port + "\r")
+                handle.send("olOn " + str(port) + "\r")
                 handle.expect_exact(">")
             handle.close()
             return True
@@ -403,11 +403,11 @@ class mtp_ctrl():
         elif idx == 1 or idx == 2:
             handle.expect_exact(">")
             for port in port_list:
-                handle.send("olOff " + port + "\r")
+                handle.send("olOff " + str(port) + "\r")
                 handle.expect_exact(">")
             time.sleep(1)
             for port in port_list:
-                handle.send("olOn " + port + "\r")
+                handle.send("olOn " + str(port) + "\r")
                 handle.expect_exact(">")
             handle.close()
             return True

@@ -13,6 +13,13 @@ sudo apt-get install -y telnet
 
 sudo pip3 install -r ${PSDIAG_ROOT}/test/infra/requirements.txt
 
+if [[ -f /warmd.json ]] ;
+then
+    cat /warmd.json
+    mkdir -p ${PSDIAG_ROOT}/log
+    cp /warmd.json ${PSDIAG_ROOT}/log
+fi
+
 echo "Generating MTP-CFGYML file and test-arguments..."
 python3 ${PSDIAG_ROOT}/test/infra/launch.py \
     --cfg-folder ${PSDIAG_ROOT}/diag/mfg/config \
@@ -21,10 +28,11 @@ python3 ${PSDIAG_ROOT}/test/infra/launch.py \
     --asic-images ${PSDIAG_ROOT}/releases $@
 ret=$?
 
-cp /warmd.json ${PSDIAG_ROOT}/log
 if [[ "$ret" != "0" ]];
 then
     echo "Launch script failed - ABORT"
+    cd ${PSDIAG_ROOT}
+    tar -zcvf diag_detailed_log.tgz log
     exit 249
 fi
 
@@ -35,6 +43,8 @@ then
     source ${PSDIAG_ROOT}/env.sh
 else
     echo "Missing ${PSDIAG_ROOT}/env.sh - ABORT"
+    cd ${PSDIAG_ROOT}
+    tar -zcvf diag_detailed_log.tgz log
     exit 249
 fi
 
@@ -43,6 +53,8 @@ then
     cat ${MTP_CFG_YML}
 else
     echo "Missing ${MTP_CFG_YML} - ABORT"
+    cd ${PSDIAG_ROOT}
+    tar -zcvf diag_detailed_log.tgz log
     exit 249
 fi
 
