@@ -63,7 +63,14 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 def mtp_setup(mtp_mgmt_ctrl, mtp_capability, setup_rslt_list):
     setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability)
 
-def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
+def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, skip_test):
+    fail_nic_list = dict()
+    for mtp_id in mtpid_list:
+        fail_nic_list[mtp_id] = list()
+
+    if "SANITY_CHECK" in skip_test:
+        return fail_nic_list
+
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         
         # find any slots to skip
@@ -94,6 +101,10 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic()
+
     fail_nic_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not setup_rslt_list[mtp_id]:
@@ -104,8 +115,10 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
         else:
             fail_nic_list[mtp_id] = list()
 
-    fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-    fail_nic_list = libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
+    if "QSFP" not in skip_test:
+        fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
+    if "RJ45" not in skip_test:
+        fail_nic_list = libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
 
     # if all slots in an MTP fail, assert stop on failure here
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -218,7 +231,7 @@ def main():
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
 
     # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
@@ -297,7 +310,7 @@ def main():
 
     # Sanity check
     try:
-        fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list)
+        fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, args.skip_test)
     except Exception as e:
         err_msg = traceback.format_exc()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):

@@ -1640,8 +1640,23 @@ class nic_ctrl():
 
         return True
 
-    def nic_init_emmc(self, init = False):
+    def nic_init_emmc(self, init=False, emmc_check=False):
         nic_cmd_list = list()
+        if emmc_check:
+            nic_cmd = MFG_DIAG_CMDS.NIC_CHECK_EMMC_FMT
+            emmc_check_sig = MFG_DIAG_SIG.NIC_EMMC_CHECK_OK_SIG
+            emmc_check_buf = self.nic_get_info(nic_cmd)
+            if emmc_check_buf:
+                if emmc_check_sig in emmc_check_buf:
+                    pass
+                else:
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    self.nic_set_cmd_buf(emmc_check_buf)
+                    return False
+            else:
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False  
+
         if init:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
             nic_cmd_list.append(nic_cmd)

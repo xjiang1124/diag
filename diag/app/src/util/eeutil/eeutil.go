@@ -29,6 +29,7 @@ const NAPLES25OCP_HPE_E   string  = "P37689-001"
 const NAPLES25OCP_HPE_C   string  = "P41857-001"
 const NAPLES25OCP_PEN     string  = "68-0010-01 01"
 const NAPLES25OCP_DELL    string  = "68-0010"  
+const MTPOCPADAPTER       string  = "73-0024-03"
 
 const NAPLES100_HPE_E     string  = "P37692-001"      //Enterprise
 const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
@@ -55,6 +56,16 @@ func dispInfo() {
 }
 
 func eepromTlbInit(uut string, pn string, update bool) (err int) {
+
+    if pn == MTPOCPADAPTER || eeprom.CustType == "MTPOCPADAPTER" {
+        // OCP Adapter, CARD_TYPE not supported in env!
+        eeprom.CustType = "MTPOCPADAPTER"
+        eeprom.CardType = "MTPOCPADAPTER"
+        eeprom.EepromTbl = eeprom.MtpOcpAdapTbl
+        fmt.Printf(" OCP Adapter\n");
+        return 0
+    }
+
     var cardType string
     var mtpType string
 
@@ -527,6 +538,12 @@ func main() {
     }
 
     hwdev.SelSmbFromAdaptor(uut, *hpeAlomPtr)
+
+    if pn == MTPOCPADAPTER || custType == "MTPOCPADAPTER" || devName == "FRU_ADAP" {
+        devName = "FRU_ADAP"
+        pn = MTPOCPADAPTER
+        custType = "MTPOCPADAPTER"
+    }
     iInfo, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain I2C info of", devName)
@@ -546,10 +563,12 @@ func main() {
 
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
-        err = eepromDispTableFix(uut, devName, iInfo.Bus, iInfo.DevAddr) 
-        if err != errType.SUCCESS {
-            cli.Println("e", "Failed to read P/N to load the correct FRU table")
-            return
+        if pn != MTPOCPADAPTER && custType != "MTPOCPADAPTER" && devName != "FRU_ADAP" {
+            err = eepromDispTableFix(uut, devName, iInfo.Bus, iInfo.DevAddr) 
+            if err != errType.SUCCESS {
+                cli.Println("e", "Failed to read P/N to load the correct FRU table")
+                return
+            }
         }
         hwdev.EepromDisp(devName, iInfo.Bus, iInfo.DevAddr, field)
         return
@@ -577,7 +596,7 @@ func main() {
         }
 
         if eeprom.Erase == true {
-            cli.Printf("i", "Erasing Addr 0 -  0x%x\n",numBytes)
+            cli.Printf("i", "Erasing %s Addr 0 -  0x%x\n", devName, numBytes)
             hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
         } 
 

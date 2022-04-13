@@ -150,6 +150,7 @@ class MTP_Const:
     NIC_FW_SET_DELAY = 90
     NIC_FPGA_PROG_DELAY = 5 * 60
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
+    NIC_ESEC_WRITE_PROT_DELAY = 9 * 60
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -393,6 +394,7 @@ class MFG_DIAG_CMDS:
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
     NIC_UBOOT_PROG_FMT = "/{:s} diaguboot /{:s}"
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
+    NIC_CHECK_EMMC_FMT = "mmc extcsd read /dev/mmcblk0"
     NIC_EMMC_PERF_MODE = "touch /sysconfig/config0/.perf_mode"
     NIC_EMMC_PERF_MODE_CHECK = "[[ -f /sysconfig/config0/.perf_mode ]] ; echo $?"
     NIC_EMMC_PROG_FMT_NAPLES100 = "fwupdate -p /data/{:s} -i 'uboot mainfwa mainfwb'"
@@ -472,7 +474,6 @@ class MFG_DIAG_CMDS:
     MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on {:s}"
     MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off {:s}"
 
-
     MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_WR_ALOM_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_SMB_CMD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD"
@@ -485,6 +486,9 @@ class MFG_DIAG_CMDS:
     NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
     NIC_PRESENT_DISP_FMT = "inventory -present"
     NIC_AVS_POST_FMT = "inventory -sts -slot {:d}"
+
+    NIC_ENA_ESEC_WRITE_PROT_FMT = "nic_test.py -ena_esec_wp -slot_list='{:s}'"
+    NIC_DIS_ESEC_WRITE_PROT_FMT = "nic_test.py -dis_esec_wp -slot_list='{:s}'"
 
     NIC_CON_INIT_FMT = "nic_con.py -br -slot {:d}"
     NIC_CON_ATTACH_FMT = "con_connect.sh {:d}"
@@ -504,6 +508,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod_550"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod"
+    MTP_PARA_ARM_L1_ELBA_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
@@ -615,6 +620,9 @@ class MFG_DIAG_SIG:
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
     NIC_PARA_ASIC_L1_OK_SIG = "L1 TEST PASSED"
     NIC_L1_ESEC_PROG_OK_SIG = "L1 ESEC PROG PASSED"
+    NIC_EMMC_CHECK_OK_SIG = "Partitioning Setting [PARTITION_SETTING_COMPLETED]: 0x01"
+    NIC_ESEC_WRITE_PROT_SIG = "=== ena_dis_esec_wp done"
+    NIC_ESEC_WRITE_PROT_OK_SIG = "=== ena_dis_esec_wp passed ==="
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

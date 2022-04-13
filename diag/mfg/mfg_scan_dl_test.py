@@ -163,9 +163,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG"]
 
     if nic_type == NIC_Type.ORTANO2:
-        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
+        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
-        test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
+        test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_GOLD_PROG"]
     dsp = FF_Stage.FF_DL
@@ -601,7 +601,7 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     # init nic diag env.
-    rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=nic_fru_cfg)
+    rc = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, emmc_check=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
@@ -821,6 +821,9 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+    if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=False):
+        mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
+
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init():
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
@@ -861,7 +864,7 @@ def main():
         if nic_type == NIC_Type.ORTANO:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         if nic_type == NIC_Type.ORTANO2:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "L1_ESEC_PROG", "BOARD_CONFIG", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type == NIC_Type.ORTANO2ADI:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "QSPI_VERIFY"] 
         if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:

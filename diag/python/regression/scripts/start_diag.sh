@@ -61,6 +61,9 @@ ASIC_DIR_TOP=$DIAG_DIR/asic_all
 ftdicnt=$(awk '{for (I=1;I<NF;I++) if ($I == "FTDI_DEVICE_COUNT") print$(I+1)}' temp_profile)
 #echo "ftdicnt: $ftdicnt"
 
+MEM_SIZE=$(awk 'NR==1 {if (length($2) == 7) print ($2 ~ /^[78]/) ? "8G" : "4G" }' /proc/meminfo)
+echo "export MEM_SIZE="$MEM_SIZE >> temp_profile
+
 if [ $mtp_id == "0x42" ]
 then
     if [[ $ftdicnt -eq 1 ]]; then

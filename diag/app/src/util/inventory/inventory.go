@@ -88,12 +88,25 @@ func uutPresent(uutName string) (data byte, present bool) {
 
 func present() (err int) {
     var presentStr string
+    var out []byte
+    var outStr string
+    var errGo error
+    var uutFieldStr string
+    var PN string
+    var SN string
+    var submatchall [][]string
 
     maxUut := 10
     prsntNoneStr := "UUT_NONE"
+    regexPN := regexp.MustCompile(`.*Part Number\s+([\d\-]+).*`)
+    regexAN := regexp.MustCompile(`.*Assembly Number\s+([\d\-]+).*`)
+    regexSN := regexp.MustCompile(`.*Serial Number\s+([\dA-Za-z]+).*`)
+
     for i := 1; i <= maxUut; i++ {
         uutName := "UUT_"+strconv.Itoa(i)
         data, present := uutPresent(uutName)
+        PN = "N/A"
+        SN = "N/A"
 
         if present == true {
             switch data {
@@ -154,7 +167,51 @@ func present() (err int) {
             presentStr = prsntNoneStr
         }
 
-        cli.Printf("i", "UUT_%-15d     %s\n", i, presentStr)
+        // prepare PN and SN from fru eeprom
+        if  presentStr != prsntNoneStr {
+            if os.Getenv(uutName) != presentStr {
+                os.Setenv(uutName, presentStr)
+            }
+            uutFieldStr = "-uut=" + uutName
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=PN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil PN reading -", outStr)
+            if regexPN.MatchString(outStr) {
+                submatchall = regexPN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
+            } else if regexAN.MatchString(outStr) { // using Assembly Number
+                submatchall = regexAN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    PN  = element[1]
+                }
+            } else {
+                PN = "NotProgrammed"
+            }
+
+            out, errGo = exec.Command("/home/diag/diag/util/eeutil", "-field=SN", "-disp", uutFieldStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                err = errType.FAIL
+            }
+            outStr = string(out)
+            //cli.Println("i", "Debugging: output of eeutil SN reading -", outStr)
+            if regexSN.MatchString(outStr) {
+                submatchall = regexSN.FindAllStringSubmatch(outStr, -1)
+                for _, element := range submatchall {
+                    SN  = element[1]
+                }
+            } else {
+                SN = "NotProgrammed"   // not programmed, empty slot show "N/A"
+            }
+        }
+
+        cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s\n", i, presentStr, PN, SN)
     }
     return
 }

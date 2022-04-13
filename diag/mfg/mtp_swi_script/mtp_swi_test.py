@@ -699,6 +699,9 @@ def main():
         # # power cycle all nic
         # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=False):
+            mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
+
         # Ensure nic_util and nic_arm as needed for elba's efuse script
         if "EFUSE_PROG" not in args.skip_test:
             if not mtp_mgmt_ctrl.mtp_nic_diag_init():
@@ -871,6 +874,10 @@ def main():
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=True):
+            mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
+
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
