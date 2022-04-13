@@ -150,6 +150,132 @@ class ddr_test:
                 common.session_stop(j2c_session)
                 common.session_stop(con_session)
 
+    def two_step_snake(self, nic_list=[], num_ite=1, tcl_path="/home/diag/diag/asic/", script_path="/home/diag/diag/scripts/asic/", start_tcl="start.tcl", stop_tcl="stop.tcl", pc_mode="board"):
+        print "=== NIC DDR Test ==="
+        print("tcl_path:", tcl_path)
+        print("script_path:", script_path)
+        print("start_tcl:", start_tcl)
+        print("stop_tcl:", stop_tcl)
+        print("pc_mode:", pc_mode)
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            for slot in nic_list:
+                try:
+                    con_session = common.session_start()
+
+                    common.session_cmd(con_session, "killall picocom", 20)
+
+                    if pc_mode == "board":
+                        self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+                    #ret = self.nic_con.uart_session_start(con_session)
+                    con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
+
+                    #self.nic_con.uart_session_stop(con_session)
+
+                    #if ret != 0:
+                    #    print("Fail to connect uboot")
+                    #    return
+
+                    j2c_session = common.session_start()
+
+                    # Helen's procedure
+                    print("=== TCL ENV setup ===")
+                    common.session_cmd(j2c_session, "export ASIC_LIB_BUNDLE="+tcl_path)
+                    common.session_cmd(j2c_session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+                    common.session_cmd(j2c_session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+                    common.session_cmd(j2c_session, "export ASIC_GEN=$ASIC_SRC")
+                    common.session_cmd(j2c_session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/tool/lib64:$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$ASIC_LIB_BUNDLE/asic_lib:$ASIC_LIB_BUNDLE/depend_libs/usr/local/lib")
+                    common.session_cmd(j2c_session, "env | grep -e ASIC -e LD")
+
+                    common.session_cmd(j2c_session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+                    common.session_cmd(j2c_session, "source source_env_path")
+                    common.session_cmd(j2c_session, "mkdir -p $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    common.session_cmd(j2c_session, "ln -sf $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+                    #common.session_cmd(j2c_session, "")
+
+                    common.session_cmd(j2c_session, "cd $ASIC_SRC/ip/cosim/tclsh")
+
+                    # TCL command
+                    ret = common.session_cmd(j2c_session, "tclsh", 40, False, ending=["%", "tclsh]"])
+                    if ret == 1:
+                        common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
+
+                    common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
+                    common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
+
+                    if pc_mode == "gpio3":
+                        common.session_cmd(j2c_session, "elb_power_cycle_thro_gpio3 $port $slot1", 30, False, "tclsh]")
+
+                    ret = common.session_cmd(j2c_session, "source "+script_path+"/"+start_tcl, 240, False, ["tclsh]", "j2c : read req error", "j2c : write req error"])
+                    if ret != 1:
+                        common.session_cmd(j2c_session, chr(3))
+                        common.session_cmd(j2c_session, "inventory -sts -slot "+str(slot), 30)
+                        common.session_stop(j2c_session)
+
+                        self.nic_con.uart_session_stop(con_session)
+                        common.session_stop(con_session)
+                        print("=== J2C failure happened! EXITING ===")
+                        continue
+
+                except pexpect.TIMEOUT:
+                    print(slot, "DDR test failed")
+                    common.session_stop(j2c_session)
+                    return
+
+                ret = self.nic_con.uart_session_cmd(con_session, "g", 10, ending=["Loading Environment from Flash", "Resetting CPU"])
+
+                print("ret:", ret)
+                if ret != 0:
+                    print("=== Booting to alt FW!!! EXIT ===")
+                    self.nic_con.uart_session_stop(con_session)
+                    common.session_stop(con_session)
+
+                    common.session_cmd(j2c_session, "exit", 10)
+                    common.session_stop(j2c_session)
+                    continue
+                time.sleep(1)
+                self.nic_con.uart_session_stop(con_session)
+
+                print("Sleep 60 sec")
+                time.sleep(60)
+                ret = self.nic_con.uart_session_start(con_session)
+                if ret != 0:
+                    print("Connecting to console failed!")
+                else:
+                    self.nic_con.uart_session_cmd(con_session, "mount /dev/mmcblk0p10 /data/", 30)
+                    self.nic_con.uart_session_cmd(con_session, "source /data/nic_arm/nic_setup_env.sh", 30)
+                    self.nic_con.uart_session_cmd(con_session, "source /etc/profile", 30)
+                    self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
+
+                    ret = self.nic_con.uart_session_cmd_sig(con_session, "/data/nic_util/asicutil -snake -mode hod -dura 3 -verbose -int_lpbk -snake_num 6", 300, "\#", ["SNAKE TEST PASSED", "SNAKE TEST FAILED"])
+
+                    self.nic_con.uart_session_cmd(con_session, "/data/nic_util/devmgr -status", 20)
+
+                self.nic_con.uart_session_stop(con_session)
+
+                common.session_cmd(j2c_session, "source "+script_path+"/"+stop_tcl, 10, False, "tclsh]")
+                common.session_cmd(j2c_session, "exit", 10)
+
+                common.session_stop(j2c_session)
+                common.session_stop(con_session)
+
     def edma(self, nic_list=[], num_ite=1, num_edma=20):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -191,6 +317,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-two_step_edma", "--two_step_edma", help="Two step EDMA test", action='store_true')
+    group.add_argument("-two_step_snake", "--two_step_snake", help="Two step Snake test", action='store_true')
     group.add_argument("-edma", "--edma", help="EDMA test", action='store_true')
 
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -214,6 +341,11 @@ if __name__ == "__main__":
     if args.two_step_edma == True:
         slot_list = args.slot_list.split(',')
         test.two_step_edma(slot_list, args.num_ite, args.tcl_dir, args.script_dir, args.start_tcl, args.stop_tcl, args.pc_mode)
+        sys.exit()
+
+    if args.two_step_snake == True:
+        slot_list = args.slot_list.split(',')
+        test.two_step_snake(slot_list, args.num_ite, args.tcl_dir, args.script_dir, args.start_tcl, args.stop_tcl, args.pc_mode)
         sys.exit()
 
     if args.edma == True:
