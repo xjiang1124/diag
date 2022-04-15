@@ -1,30 +1,26 @@
 {
-	"NAME": "ORTANO2",
+	"NAME": "Ortano_V1_42_production",
 	"TYPE": "NIC",
-	"FLEXFLOW": "192.168.3.11",
+	"SNLIST": "1_41_SN.xlsx",
+	"STARTDATE": "2022-03-07",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_03",
-		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2",
+		"TEMPDIR": "/tmp/tmp_unzip_Ortano_V1_42_production_ORTANO2",
+		"TEMPDATABASE": "/samba/public/tmp_database/Ortano_V1_42_production",
 		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/ORTANO2/",
-		"historypath":"/samba/public/HISTORY/ORTANO2"
+		"reportpath":"/samba/public/REPORT/Ortano_V1_42_production/",
+		"historypath":"/samba/public/HISTORY/Ortano_V1_42_production"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json",
-		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
-		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/Ortano_V1_42_production_DB_TEST31.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
 	},
 	"IMAGESUB" : {
 		"CPLD1 image" : "CPLD image1",
-		"CPLD2 image" : "CPLD image2",
-		"Main image" : "MainFW image",
-		"Gold image" : "GoldFW image"
+		"CPLD2 image" : "CPLD image2"
 	},
 	"MTP_STATUS" : [
 					"01",

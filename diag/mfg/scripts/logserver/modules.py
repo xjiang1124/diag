@@ -14,6 +14,11 @@ import json
 import mpu.io
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment, Font
+from openpyxl.cell import Cell
+from openpyxl.styles import numbers
+from openpyxl.chart import BarChart, Reference, Series, LineChart
+from openpyxl.chart.label import DataLabelList
 import timeit
 from datetime import datetime
 import dateutil.relativedelta
@@ -63,21 +68,26 @@ class modules(object):
 		#self.debug_print("where_is_my_chamber")
 		floorlist = list()
 		floordict = dict()
-		for MTP in self.chamber_config[chamberName]:
-			floorname = self.which_floor_is_for_my_mtp(MTP)
-			if not floorname in floorlist:
-				floorlist.append(floorname)
-				floorlist.sort(reverse=True)
-			if not floorname in floordict:
-				floordict[floorname] = list()
-			if not MTP in floordict[floorname]:
-				floordict[floorname].append(MTP)
+		if chamberName in self.chamber_config:
+			for MTP in self.chamber_config[chamberName]:
+				floorname = self.which_floor_is_for_my_mtp(MTP)
+				if not floorname in floorlist:
+					floorlist.append(floorname)
+					floorlist.sort(reverse=True)
+				if not floorname in floordict:
+					floordict[floorname] = list()
+				if not MTP in floordict[floorname]:
+					floordict[floorname].append(MTP)
 
-		returndict = dict()
-		returndict['LIST'] = floorlist
-		returndict['DATA'] = floordict
-		#self.print_anyinformation(returndict)
-		#sys.exit()
+			returndict = dict()
+			returndict['LIST'] = floorlist
+			returndict['DATA'] = floordict
+			#self.print_anyinformation(returndict)
+			#sys.exit()
+		else:
+			returndict = dict()
+			returndict['LIST'] = floorlist
+			returndict['DATA'] = floordict			
 		return returndict
 
 	def where_is_my_chamber(self,MTP):
@@ -87,7 +97,11 @@ class modules(object):
 				continue
 			if MTP in self.chamber_config[chamberName]:
 				return chamberName
-
+		if not "NoChamberinfo" in self.chamber_config:
+			self.chamber_config["NoChamberinfo"] = list()
+		if not MTP in self.chamber_config["NoChamberinfo"]:
+			self.chamber_config["NoChamberinfo"].append(MTP)
+		
 		return None
 
 	def which_floor_is_for_my_mtp(self,MTP):
@@ -590,11 +604,11 @@ class modules(object):
 
 	    return yeilddisplay
 
-	def calculeFail_rate(self,totalnumber,passnumber):
+	def calculeFail_rate(self,totalnumber,failnumber):
 
 	    calcule_yeild = 0
 	    if totalnumber:
-	        calcule_yeild = passnumber / totalnumber
+	        calcule_yeild = failnumber / totalnumber
 
 	    yeilddisplay = "{:.2f}%".format(calcule_yeild * 100)  
 
@@ -680,6 +694,11 @@ class modules(object):
 					SNvsPCBA[SN] = PCBA_SN		
 
 		return None
+
+	def wraptest(self,ws):
+	    for row in ws.iter_rows():
+	        for cell in row:
+	            cell.alignment = Alignment(wrap_text=True,vertical='top') 
 
 	def findposition(self,sheet,keyword):
 

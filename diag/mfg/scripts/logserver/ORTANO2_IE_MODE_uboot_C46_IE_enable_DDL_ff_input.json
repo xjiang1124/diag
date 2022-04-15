@@ -1,30 +1,26 @@
 {
-	"NAME": "ORTANO2",
+	"NAME": "ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff",
 	"TYPE": "NIC",
-	"FLEXFLOW": "192.168.3.11",
+	"SNLIST": "SNJAN2022.xlsx",
+	"STARTDATE": "2022-02-14",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_03",
-		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2",
-		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/ORTANO2/",
-		"historypath":"/samba/public/HISTORY/ORTANO2"
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff",
+		"reportpath":"/samba/public/REPORT/ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff/",
+		"historypath":"/samba/public/HISTORY/ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json",
-		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
-		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_IE_MODE_uboot_C46_IE_enable_DDL_ff_DB_TEST28.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"
 	},
 	"IMAGESUB" : {
 		"CPLD1 image" : "CPLD image1",
-		"CPLD2 image" : "CPLD image2",
-		"Main image" : "MainFW image",
-		"Gold image" : "GoldFW image"
+		"CPLD2 image" : "CPLD image2"
 	},
 	"MTP_STATUS" : [
 					"01",
@@ -58,18 +54,14 @@
 				"4C-H (HV)"
 				],
 	"TESTLIST" :[
-					"DL",
-					"P2C",
 					"4C-L",
-					"4C-H",
-					"SWI",
-					"FST"
-					
+					"4C-H"					
 					],
 	"TESTFOLDER":[
 					"DL",
 					"P2C",
 					"4C/4C-L",
+					"4C/4C-N",
 					"4C/4C-H",
 					"SWI",
 					"FST"

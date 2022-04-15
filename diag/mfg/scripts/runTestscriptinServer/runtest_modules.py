@@ -27,7 +27,6 @@ from datetime import datetime
 
 MTPslot = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
 
-#screenlogDir = "/home/winson/winson/tmp/screenLog"
 
 class Logger(object):
     def __init__(self,logfile):
@@ -61,7 +60,6 @@ class db_modules(object):
 		difftime = datetime.now()-start
 
 		self.wirtetoscript('db_modulesDone Time: {}'.format(difftime))
-		#sys.exit()
 
 	def wirtetoscript(self,message):
 		message = str(message)
@@ -97,16 +95,23 @@ class db_modules(object):
 			status_info = self.get_data_on_table_from_mfg_database('test_info',returntype='list')
 			self.test_info1 = self.convert_list_to_dict(status_info,['test_type','exec_script'])
 			self.test_info2 = self.convert_list_to_dict(status_info,['name_dis','exec_script'])
+			self.test_info_col = self.convert_list_to_dict(status_info,['test_type','info_col'])
 			self.test_info_dict = self.get_data_on_table_from_mfg_database('test_info')
 
 		return None
 
-	def Get_test_exec_script(self,number):
+	def Get_test_exec_script(self,number,familynumber):
 		self.wirtetoscript("Get_test_exec_script: {}".format(number))
 		print(self.test_info1)
+		test_exec_script_cmd = None
 		if number in self.test_info1:
-			return self.test_info1[number]
-		return None
+
+			test_exec_script_cmd = self.test_info1[number]
+			if self.product_dict[familynumber][self.test_info_col[number]]:
+				if len(self.product_dict[familynumber][self.test_info_col[number]]):
+					test_exec_script_cmd = "{} {}".format(test_exec_script_cmd,self.product_dict[familynumber][self.test_info_col[number]])
+
+		return test_exec_script_cmd
 
 	def perpare_product_info_table(self):
 
@@ -194,7 +199,7 @@ class db_modules(object):
 			return None
 
 	def update_one_nic_status_on_mtp_status(self,mtp,nic_slot,keyword):
-		self.wirtetoscript("update_one_nic_status_on_mtp_status<{}>: {}".format(keyword,mtp))
+		self.wirtetoscript("update_one_nic_status_on_mtp_status <{}>: {} SLOT: {}".format(keyword,mtp,nic_slot))
 		updatedict = dict()
 		updatedict['nic_status'] = self.Get_status_in_number(keyword)
 		referdict = dict()
@@ -252,6 +257,17 @@ class db_modules(object):
 
 		return None
 
+	def update_MTP_start_time(self,mtp):
+		self.wirtetoscript("update_MTP_start_time<{}>".format(mtp))
+		date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+		updatedict = dict()
+		updatedict['start_time'] = date
+		referdict = dict()
+		referdict['mtp_id'] = mtp
+		self.update_data_to_mfg_database(updatedict,'mtp_status',referdict)
+
+		return None
+
 	def update_MTP_log_file(self,mtp,logfile):
 		self.wirtetoscript("update_MTP_log_file<{}>: {}".format(mtp,logfile))
 		updatedict = dict()
@@ -281,6 +297,16 @@ class db_modules(object):
 		else:
 			self.wirtetoscript("update_MTP_status_to_<{}> up to date: {}".format(keyword,mtp))
 			return True
+
+	def check_MTPSTOP_status(self,mtp,keyword='MTPSTOP'):
+		self.wirtetoscript("check_MTPSTOP_status <{}>: {}".format(keyword,mtp))
+		if self.cheeck_mtp_status_by_keyword(mtp,keyword):
+			self.wirtetoscript("check_MTPSTOP_status <{}> get it: {}".format(keyword,mtp))
+			return True
+		else:
+			self.wirtetoscript("check_MTPSTOP_status <{}> don't have it: {}".format(keyword,mtp))
+			return False
+
 
 	def cheeck_mtp_status_by_keyword(self,mtp,keyword):
 		checknumber = self.Get_status_in_number(keyword)
@@ -491,6 +517,7 @@ class modules(object):
 		self.status = status
 		self.family = family
 		self.markfalse = False
+		self.mtpstop = False
 		self.logfile = screenlog
 		self.baselogfile = basescreenlog
 		self.pexpectlog = pexpectlog
@@ -520,8 +547,7 @@ class modules(object):
 		start=datetime.now()
 		if self.status["MTP"]["status"]:
 			pr['db'].update_MTP_status(Testuut,self.status["MTP"]["status"])
-	    # pr['db'].update_one_nic_status_on_mtp_status(Testuut,'3',"PASS")
-	    # pr['db'].update_one_nic_sn_on_mtp_status(Testuut,'3',"FPN99999999")		
+	
 		for eachslot in self.status["NIC"]:
 			if self.status["NIC"][eachslot]["SN"]:
 				pr['db'].update_one_nic_sn_on_mtp_status(Testuut,eachslot,self.status["NIC"][eachslot]["SN"])
@@ -544,7 +570,7 @@ class modules(object):
 			self.status["NIC"][eachslot]["TYPE"] = None
 			self.status["NIC"][eachslot]["result"] = None
 			self.status["NIC"][eachslot]["status"] = None
-	#{'IDLE': 0, 'STARTTEST': 1, 'TESTING': 2, 'PASS': 3, 'FAIL': 4, 'MTPDONE': 5}
+		#{'IDLE': 0, 'STARTTEST': 1, 'TESTING': 2, 'PASS': 3, 'FAIL': 4, 'MTPDONE': 5}
 
 	def update_testing_in_MTP(self):
 		self.status["MTP"]["name"] = self.testuut
@@ -557,6 +583,27 @@ class modules(object):
 	def update_complete_in_MTP(self):
 		self.status["MTP"]["result"] = "MTPDONE"
 		self.status["MTP"]["status"] = "MTPDONE"
+
+	def update_STOP_in_MTP(self):
+		self.status["MTP"]["result"] = "MTPSTOP"
+		self.status["MTP"]["status"] = "MTPSTOP"
+		self.mtpstop = True
+
+	def update_STOPDONE_in_MTP(self):
+		self.status["MTP"]["result"] = "MTPSTOPDONE"
+		self.status["MTP"]["status"] = "MTPSTOPDONE"
+		self.mtpstop = True
+
+	def update_STOP_in_AllNic(self):
+		for eachslot in MTPslot:
+			if self.status["NIC"][eachslot]["SN"]:
+				self.status["NIC"][eachslot]["status"] = "MTPSTOP"
+
+	def check_all_NIC_STATUS_is_not_TESTING_in_AllNic(self):
+		for eachslot in MTPslot:
+			if self.status["NIC"][eachslot]["SN"]:
+				if self.status["NIC"][eachslot]["status"] == "TESTING":
+					self.status["NIC"][eachslot]["status"] = "MTPSTOP"
 
 	def check_screenlog(self):
 		return self.baselogfile
@@ -648,24 +695,57 @@ class modules(object):
 
 	def ShowspecialMessageinconsoleOutput(self):
 		for eachmessage in self.specialMessage:
-			self.send_command_wait_for_output(eachmessage)
+			self.child.logfile.write(eachmessage)
 		return None
 
 	def startRunchannel(self):
-	    self.child = pexpect.spawn ('bash', encoding='utf-8')
+
+		return self.startRunchannel_bash()
+
+		#return self.startRunchannel_sshtoMFlex()
+
+	def startRunchannel_sshtoMFlex(self):
+	    self.child = pexpect.spawn ('ssh mfg@192.168.1.112', encoding='utf-8')
 	    self.child.logfile = log_modules.Logger(self.pexpectlog)
-	    # self.child.sendline("global tcl_prompt1 tcl_prompt2")
-	    # time.sleep(1)
-	    # self.child.sendline('set tcl_prompt1 {puts -nonewline "' + self.tclshexp + ' "}')
-	    # time.sleep(1)
-	    # self.child.sendline('set tcl_prompt2 {}')
+	    time.sleep(1)
+	    self.child.sendline('export TERM=xterm-256color')
+	    time.sleep(1)
+	    self.child.sendline('source ~/.profile')
 	    time.sleep(1)
 	    self.child.sendline('export PS1="' + self.tclshexp + ' "')
 	    time.sleep(1)
 
-	def startRunchannel2(self):
+	def startRunchannel3_sshtoLocalhost(self):
+	    self.child = pexpect.spawn ('ssh mfg@localhost', encoding='utf-8')
+	    self.child.logfile = log_modules.Logger(self.pexpectlog)
+	    time.sleep(1)
+	    self.child.sendline('export TERM=xterm-256color')
+	    time.sleep(1)
+	    self.child.sendline('source ~/.profile')
+	    time.sleep(1)
+	    self.child.sendline('export PS1="' + self.tclshexp + ' "')
+	    time.sleep(1)
+
+	def startRunchannel_bash(self):
+	    self.child = pexpect.spawn ('bash', encoding='utf-8')
+	    self.child.logfile = log_modules.Logger(self.pexpectlog)
+	    time.sleep(1)
+	    self.child.sendline('export TERM=xterm-256color')
+	    time.sleep(1)
+	    self.child.sendline('source ~/.profile')
+	    time.sleep(1)
+	    self.child.sendline('export PS1="' + self.tclshexp + ' "')
+	    time.sleep(1)
+
+
+	def startRunchannel_tclsh(self):
 	    self.child = pexpect.spawn ('tclsh', encoding='utf-8')
 	    self.child.logfile = log_modules.Logger(self.pexpectlog)
+	    time.sleep(1)
+	    self.child.sendline('export TERM=xterm-256color')
+	    time.sleep(1)
+	    self.child.sendline('source ~/.profile')
+	    time.sleep(1)
 	    self.child.sendline("global tcl_prompt1 tcl_prompt2")
 	    time.sleep(1)
 	    self.child.sendline('set tcl_prompt1 {puts -nonewline "' + self.tclshexp + ' "}')
@@ -675,21 +755,34 @@ class modules(object):
 
 	def SetupTestEnv(self):
 
+		output1 = self.send_command_wait_for_output('printenv')
+		output1 = self.send_command_wait_for_output('whoami')
 		output1 = self.send_command_wait_for_output('pwd')
 		output1 = self.send_command_wait_for_output("cd {}".format(self.testdir))
 		self.writelineinscriptlog(output1)
 		output1 = self.send_command_wait_for_output('pwd')
 		self.writelineinscriptlog(output1)
-		#output1 = self.send_command_wait_for_output('ls')
-		#self.writelineinscriptlog(output1)
+		if not self.testdir in output1:
+			message = "\n\[1;91mERR: {} is not exist\[0m\n".format(self.testdir)
+
+			self.writelineinscriptlog(message)
+			self.addspecialMessage(message)
+			self.child.logfile.write(message)
+			self.markfalse = True
+
+			return False
+		self.send_command_wait_for_output('sync')
+
 		output1 = self.send_command_wait_for_output(self.runtestCmd,exp_list=["Scan the MTP ID Bar Code","Confirm to continue?"])
-		#output1 += self.send_command_wait_for_output('Y',exp_list=["Scan the MTP ID Bar Code","Confirm to continue?"])
+
 		self.writelineinscriptlog(output1)
 		if not self.testuut in output1:
-			message = "\"\[{}\] is not in Test config\"".format(self.testuut)
-			cmd = "echo {}".format(message)
-			self.addspecialMessage(cmd)
+			message = "\n\[1;91mERR: {} is not in Test config\[0m\n".format(self.testuut)
+			#cmd = "echo {}".format(message)
+			self.addspecialMessage(message)
 			self.markfalse = True
+			self.child.logfile.write(message)
+			self.child.send(chr(3))
 			return False
 
 		output1 = self.send_command_wait_for_output(self.testuut,exp_list=["Selected"])
@@ -697,9 +790,21 @@ class modules(object):
 
 		return True
 
+	def STOPTest(self):
+		self.child.send(chr(3))
+		Timeoutcount = 10
+		for x in range(5):
+			self.index = self.runtest_expect([self.tclshexp], timeout=Timeoutcount)
+			if self.index == 0:
+				break
+			self.child.send(chr(3))
+		return None
+
 	def StartTest(self):
 		self.clear_buffer()
 		self.child.sendline('STOP')
+
+
 
 	def MonitorTest(self):
 		Timeoutcount = 5
@@ -737,19 +842,17 @@ class modules(object):
 		if self.index == 0:
 			return False
 
-		#print(self.output)
-		#print(index)
-		#print('TEST END')
-
 		return True	
 
-	def checkoutputstatus(self):
+	def checkoutputstatus(self,theend=False):
 		start=datetime.now()
 		resultindict = dict()
 		for keystatus in RUN_KEY.checkstatus:
+			if not theend:
+				if keystatus == "FIND_MTP_FAIL":
+					continue
 			sub_match = re.findall(RUN_KEY.checkstatus[keystatus].format(self.testuut), self.output)
 			if sub_match:
-				#print(x)
 				print("keystatus: {}".format(keystatus))
 				print(sub_match)
 				resultindict[keystatus] = sub_match
@@ -761,7 +864,6 @@ class modules(object):
 
 	def send_command_wait_for_output(self, command, exp_list=None, timeout=None):
 		self.clear_buffer()
-		print(exp_list)
 		_exp_list = list()
 		_exp_list.append(self.tclshexp)
 		if exp_list:
@@ -774,7 +876,6 @@ class modules(object):
 		if index >= 0:
 			return_output = str(self.child.before) + str(self.child.after) + str(self.child.buffer)
 
-		#print(self.child)
 		return return_output
 
 
@@ -796,9 +897,7 @@ class modules(object):
 		buff = None
 		try:
 			buff = self.child.read_nonblocking(16384, timeout = 1)
-			#print("clear_buffer(): read_nonblocking: ***{}***".format(buff))
 		except pexpect.exceptions.TIMEOUT as toe:
-			#print("clear_buffer(): TIMEOUT, buff: ***{}***".format(buff))
 			pass
 		except pexpect.exceptions.EOF:
 			pass

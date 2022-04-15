@@ -9,7 +9,7 @@ now=$(date +"%b%d-%Y-%H%M%S")
 _mydir="/home/mfg/logserver"
 echo "My Currently Dir ($DATE): $_mydir"
 
-SCRIPTLOG=$_mydir/LOG/log_$now.log
+SCRIPTLOG=$_mydir/LOG/SPEClog_$now.log
 exec > >(tee -i $SCRIPTLOG)
 exec 2>&1
 
@@ -127,10 +127,28 @@ echo Script: runReport_special.sh
 #ORTANO2_EDMA_3200_periodictraining_0C-trained
 
 cd $_mydir
-python3 $_mydir/process_log.py Ortano_Script_verify2_input.json snlist=1 skiplock=1
+python3 $_mydir/process_log.py ORTANO2_UBOOT_CADENCE_LONGEVITY_input.json specreport4=1 skiplock=1
 
 cd $_mydir
-python3 $_mydir/process_log.py Ortano_Script_verify_input.json snlist=1 skiplock=1
+python3 $_mydir/process_log.py ORTANO2_UBOOT_CADENCE0317_TDFI_2_input.json specreport4=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_1_43_in_Milpitas_input.json specreport4=1 skiplock=1
+
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_1_43_Bonepile_input.json snlist=1 skiplock=1
+
+#cd $_mydir
+#python3 $_mydir/process_log.py ORTANO2_uboot_g4178825_input.json skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py Ortano_Script_verify2_input.json snlist=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py Ortano_Script_verify_input.json snlist=1 skiplock=1
+
+# cd $_mydir
+# python3 $_mydir/process_log.py ORTANO2_IE_MODE_input.json snlist=1 skiplock=1
 
 # cd $_mydir
 # python3 $_mydir/process_log.py ORTANO2_EDMA_3200_periodictraining_0C-trained_input.json specreport3=1 skiplock=1

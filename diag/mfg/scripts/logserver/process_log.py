@@ -148,6 +148,15 @@ def main():
             if "historypath" in inputconfig["DIR"]:
                 movereporttohistorydir(inputconfig)
             createspecialsnakereport3(pr,DATA,inputconfig,startdate=None)
+    elif "specreport4" in ARGV:
+        if DATA['NEWFILECOUNT']:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
+            createspecialsnakereport4(pr,DATA,inputconfig,startdate=None)
+        elif "report" in ARGV:
+            if "historypath" in inputconfig["DIR"]:
+                movereporttohistorydir(inputconfig)
+            createspecialsnakereport4(pr,DATA,inputconfig,startdate=None)
     else:
         if DATA['NEWFILECOUNT']:
             processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate)
@@ -208,11 +217,13 @@ def processFailureSNFlexFlowCheck(DATA,inputconfig,pr):
 def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
 
     if "historypath" in inputconfig["DIR"]:
+        print(inputconfig["DIR"]["historypath"])
         movereporttohistorydir(inputconfig)
 
     if "MTP_STATUS" in inputconfig:
         generateMTPreport(pr,DATA,inputconfig,startdate=None)
         generateMTPreport(pr,DATA,inputconfig,startdate=getbeforedayinformation(checkday=31))
+        generateMTPreport(pr,DATA,inputconfig,startdate=getbeforedayinformation(checkday=7))
 
     if "DIE_ID" in inputconfig:
         wb2 = Workbook()
@@ -236,13 +247,14 @@ def processtocreatedailyreport(pr,DATA,inputconfig,date_time,startdate):
     startdate = getbeforedayinformation(checkday=15)
     createteststatusreport(pr,DATA,inputconfig,startdate=startdate)
 
-    # if "NAME" in inputconfig:
-    #     if "ORTANO2" == inputconfig["NAME"].upper():
-    #         workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
-    #         SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
-    #         for PN in SNbyPN:
-    #             #,listofsn=[],specpn=None
-    #             createteststatusreport(pr,DATA,inputconfig,startdate=None, listofsn=SNbyPN[PN], specpn=PN)
+
+    startdate = getbeforedayinformation(checkday=60)
+    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=startdate)
+    if "DL" in DATA["teststep"]:
+        SNbyPN = GetSNlistbyPNfromDLtest(workingonSNlist,DATA["teststep"]['DL'],teststep='DL')
+        for PN in SNbyPN:
+            #,listofsn=[],specpn=None
+            createteststatusreport(pr,DATA,inputconfig,startdate=startdate, listofsn=SNbyPN[PN], specpn=PN)
 
     return None
 
@@ -253,7 +265,8 @@ def generateMTPreport(pr,DATA,inputconfig,startdate=None):
         dest_filename3 = "{}MTP_STATUS_{}_DATA_StartWith_{}.xlsx".format(inputconfig['DIR']["reportpath"],date_time,startdate)
     print(dest_filename3)
 
-    byTestdata = generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig,startdate)
+    #byTestdata = generateexeclmtpstatussummaryreport(DATA,wb3,inputconfig,startdate)
+    byTestdata = generateexeclmtpstatussummaryreport2(pr,DATA["MTPCHASSIS"],inputconfig,wb3,startdate)
 
     for mtp in DATA["MTPCHASSIS"]:
         generateexeclmtpstatusbyeachmtpreport(DATA,wb3,inputconfig,mtp,startdate)
@@ -316,7 +329,7 @@ def createfailureteststatusreport(pr,DATA,inputconfig,startdate=None):
     generateexeclfailurereport(DATA,wb,inputconfig,workingonSNlist,pr,start=startdate)
 
     generateexeclsnfailurestatusalldata(DATA,pr, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
     for eachteststep in DATA['SN']['TEST']:
         generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
@@ -368,9 +381,9 @@ def createspecialsnakereport2(pr,DATA,inputconfig,startdate=None,listofsn=[],spe
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
     generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-    #generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
     generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
 
@@ -397,6 +410,77 @@ def createspecialsnakereport2(pr,DATA,inputconfig,startdate=None,listofsn=[],spe
     print("OUTPUT FILE: {}".format(dest_filename))
 
     return None 
+
+def createspecialsnakereport4(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
+    
+    #workingonSNlist = DATA['SN']['LIST']
+    
+    print("START DATE: {}".format(startdate))
+    workingonSNlist = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    if len(listofsn):
+        workingonSNlist = listofsn
+    workingonSNlist.sort(reverse=True)
+    print("COUNT SN: {}".format(len(workingonSNlist)))
+    #sys.exit()    
+    wb = Workbook()
+    
+    reportdir = inputconfig['DIR']["reportpath"]
+
+    dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
+    if "NAME" in inputconfig:
+        dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
+        filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
+    if startdate:
+        dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
+
+    dest_chartfilename = dest_filename.replace('DATA','CHART')
+    print('OUTPUT FILE NAME: ' + dest_filename)
+    print('OUTPUT CHART FILE NAME: ' + dest_chartfilename)
+    
+    #sys.exit()
+    chartdata = dict()
+
+    generateexeclreport(DATA,wb,inputconfig,workingonSNlist,chartdata,pr,start=startdate)
+
+    #sys.exit()
+    TempHVLVdata = dict()
+
+    generateexeclsnstatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+    generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+
+    generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
+
+    workingonSNlist2 = getsnlistafteestartdate(DATA,inputconfig,startdate=None)
+    workingonSNlist2.sort(reverse=True)
+
+    generatevdd_edmaReport(workingonSNlist,wb,DATA,pr,inputconfig)
+
+    for eachteststep in DATA['SN']['TEST']:
+        generateexecltest(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexecltestbytesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        # if "4C" in eachteststep:
+        #     generateexecltestby4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        # else:
+        #     generateexecltestbyNon4Ctesttime(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA,pr)
+        generateexeclerrdata(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        #L1 Sub Test only passed
+        generateexeclerrdata2(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+        generateexeclerrdata3(workingonSNlist,DATA["teststep"][eachteststep],eachteststep,wb,DATA)
+
+    wb.save(filename = dest_filename)
+
+    #copyalllogfolder(pr,DATA,workingonSNlist,inputconfig)
+    
+    print("OUTPUT FILE: {}".format(dest_filename))
+
+    return None 
+
 
 def createspecialsnakereport3(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn=None):
     
@@ -437,9 +521,9 @@ def createspecialsnakereport3(pr,DATA,inputconfig,startdate=None,listofsn=[],spe
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
     generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-    #generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
     generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
 
@@ -528,9 +612,9 @@ def createspecialsnakereport(pr,DATA,inputconfig,startdate=None,listofsn=[],spec
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
     #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
     generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
-    generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-    #generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'FIRST',wb,inputconfig)
+    generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig)
+    #generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
     generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
 
@@ -577,15 +661,20 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
     wb = Workbook()
     
     reportdir = inputconfig['DIR']["reportpath"]
-    if specpn:
-        reportdir = reportdir + specpn + '/'
-        pr['modules'].createdirinserver(reportdir)
+    # if specpn:
+    #     reportdir = reportdir + specpn + '/'
+    #     pr['modules'].createdirinserver(reportdir)
 
     dest_filename = "{}EXECL_{}_DATA.xlsx".format(reportdir,date_time)
+    if specpn:
+        dest_filename = "{}{}EXECL_{}_DATA.xlsx".format(reportdir,specpn.replace(" ","_"),date_time)
     filenameheader = "{}EXECL_{}_DATA".format(reportdir,date_time)
     if "NAME" in inputconfig:
         dest_filename = "{}{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],date_time)
         filenameheader = "{}{}_{}_DATA".format(reportdir,inputconfig["NAME"],date_time)
+        if specpn:
+            dest_filename = "{}{}_{}_{}_DATA.xlsx".format(reportdir,inputconfig["NAME"],specpn.replace(" ","_"),date_time)
+            filenameheader = "{}{}_{}_{}_DATA".format(reportdir,inputconfig["NAME"],specpn.replace(" ","_"),date_time)
     if startdate:
         dest_filename = "{}_withStartDate_{}.xlsx".format(filenameheader,startdate)
 
@@ -696,9 +785,9 @@ def createteststatusreport(pr,DATA,inputconfig,startdate=None,listofsn=[],specpn
         #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
         #generateexeclsnstatus(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
         generateexeclsnstatusalldata(DATA, workingonSNlist,'LAST',wb,inputconfig,Withallerror=True)
-        generateexeclsnTopFailurestatus(DATA, workingonSNlist,'FIRST',wb,inputconfig)
-        generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig)
-        generateexeclsnTopFailurestatus(DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
+        generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'FIRST',wb,inputconfig)
+        generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig)
+        generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,'LAST',wb,inputconfig,byweek=False)
 
         generateexeclby4CChambertemp(workingonSNlist,wb,DATA,pr,start=startdate)
 
@@ -781,7 +870,11 @@ def movereporttohistorydir(inputconfig):
                 #print(smallitemslist)
                 movetopath = "{}/{}".format(inputconfig["DIR"]["historypath"],smallitemslist[-1])
                 #print(movetopath)
-                dest = shutil.move(eachworkitem, movetopath, copy_function = shutil.copytree)
+                if os.path.isdir(movetopath):
+                    dest = shutil.copytree(eachworkitem, movetopath, dirs_exist_ok=True)
+                    shutil.rmtree(eachworkitem)
+                else:
+                    dest = shutil.move(eachworkitem, movetopath, copy_function = shutil.copytree)
                 #print(dest)
             else:
                 smallitemslist = eachworkitem.split('/')
@@ -791,7 +884,7 @@ def movereporttohistorydir(inputconfig):
                 dest = shutil.move(eachworkitem, movetopath)
                 #print(dest)    
     except:
-        print("Something else went wrong")        
+        print("movereporttohistorydir Something else went wrong")        
     #sys.exit()
     return None
 
@@ -815,6 +908,9 @@ def connectImageNameinOne(DATA,inputconfig):
                                 if "Main image" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]:
                                     #a_dict[new_key] = a_dict.pop(old_key)
                                     DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"]["MainFW image"] = DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["IMAGE"].pop("Main image")
+
+                        if not "SLOT" in DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]:
+                            DATA['teststep'][test]['SN'][SN][chassis][testdate][testtime]["SLOT"] = "NO SLOT"
     difftime = datetime.now()-start
     print("connectImageNameinOne: RUNNING TIME: {} seconds".format(difftime))
     return None
@@ -1142,6 +1238,10 @@ def workingoneachtest(pr,inputconfig,DATA,testlogpath,testfolder,redo=False):
                 workingonSNlist = pr['modules'].get_snlist_from_xlsx(inputconfig["SNLIST"])
             if "STARTDATE" in inputconfig:
                 checkstarttestdata = inputconfig["STARTDATE"]
+    elif "withday" in pr['ARGV']:
+        if "STARTDATE" in inputconfig:
+            checkstarttestdata = inputconfig["STARTDATE"]
+
     takecareteststepDICT(inputconfig,DATA)
     #print(json.dumps(DATA, indent = 4))
     #inputconfig['DIR']['testlogpath']
@@ -1751,7 +1851,52 @@ def workingoneachtest(pr,inputconfig,DATA,testlogpath,testfolder,redo=False):
                                             #print(json.dumps(DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME], indent = 4))
                                             #sys.exit()
                                         f.close()
-                                    
+
+                                    eachfilebasename = os.path.basename(eachniccardlog)
+                                    if cardslot in eachfilebasename:
+                                        #print("LOG Name: {}".format(eachniccardlog))
+                                        #print("LOG baseName: {}".format(eachfilebasename))
+                                        vdd_edma_dict = dict()
+                                        vdd_edma_count = 1
+                                        vdd_check = False
+                                        edma_check = False
+                                        f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
+                                        for x in f:
+                                            if not str(vdd_edma_count) in vdd_edma_dict:
+                                                vdd_edma_dict[str(vdd_edma_count)] = dict()
+                                                vdd_edma_dict[str(vdd_edma_count)]['KEY'] = None
+                                                vdd_edma_dict[str(vdd_edma_count)]['RESULT'] = list()
+                                            # if "VDD_DDR" in x:
+                                            #     print(x)
+                                            # if "EDMA TEST" in x:
+                                            #     print(x)
+
+                                            sub_match = re.findall(KEY_WORD.VDD_DDR_CHECK1, x)
+                                            if sub_match:
+                                                #print(sub_match)
+                                                vdd_check = True
+                                                
+                                                if edma_check:
+                                                    vdd_edma_count += 1
+                                                    vdd_check = False
+                                                    edma_check = False
+                                                if not str(vdd_edma_count) in vdd_edma_dict:
+                                                    vdd_edma_dict[str(vdd_edma_count)] = dict()
+                                                    vdd_edma_dict[str(vdd_edma_count)]['KEY'] = None
+                                                    vdd_edma_dict[str(vdd_edma_count)]['RESULT'] = list()
+                                                vdd_edma_dict[str(vdd_edma_count)]['KEY'] = sub_match[0]
+
+                                            sub_match = re.findall(KEY_WORD.EDMA_TEST_RESULT, x)
+                                            if sub_match:
+                                                #print(sub_match)
+                                                vdd_edma_dict[str(vdd_edma_count)]['RESULT'].append(sub_match[0])
+                                                edma_check = True
+
+                                        f.close()
+                                        #print(vdd_edma_dict)
+                                        #sys.exit()
+                                        DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['VDD_EDMA'] = vdd_edma_dict
+
                                     if sn in eachniccardlog:
                                         #print(eachniccardlog)
                                         f = open(eachniccardlog, 'r', encoding="ISO-8859-1")
@@ -1799,6 +1944,8 @@ def workingoneachtest(pr,inputconfig,DATA,testlogpath,testfolder,redo=False):
 
                                 DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['ALLERROR'] = allerrormessage
 
+
+                        #sys.exit()
 
                         DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG'] = dict()
                         DATA['teststep'][teststep]['SN'][sn][TESTCHASSIS][TESTDATE][TESTFINISHTIME]['TEMPFROMMFGLOG']['LIST'] = list()
@@ -2620,7 +2767,7 @@ def generateexeclsn4CFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,W
     
     return 0
 
-def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,Withallerror=False,byweek=True):
+def generateexeclsnTopFailurestatus(pr,DATA, workingonSNlist,status,wb,inputconfig,Withallerror=False,byweek=True):
 
     # DATA['SN']['LIST'] = list()
     # DATA['SN']['TEST'] = list()
@@ -2783,9 +2930,12 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
             eachweektotoaldetail = dict()
             for test in topfailuredata['TEST']:
                 writetestinformation = "{} <0>".format(test)
+                writetestinformation2 = "{} FailRate".format(test)
                 if test in topfailuredata['TESTSNLIST'][testweek]:
                     writetestinformation = "{} <{}>".format(test,len(topfailuredata['TESTSNLIST'][testweek][test]))
+
                 wirtedata.append(writetestinformation)
+                wirtedata.append(writetestinformation2)
                 eachweektotallist.append(test)
                 eachweektotoaldetail[test] = 0
             wirtedata.append("TOTAL")
@@ -2803,12 +2953,16 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
                         if test in topfailuredata['DATA'][testweek]:
                             if failuretype in topfailuredata['DATA'][testweek][test]:
                                 wirtedata.append(topfailuredata['DATA'][testweek][test][failuretype]["count"])
+                                wirtedata.append(pr["modules"].calculeFail_rate(len(topfailuredata['TESTSNLIST'][testweek][test]),topfailuredata['DATA'][testweek][test][failuretype]["count"]))
                                 eachweektotoaldetail[test] += topfailuredata['DATA'][testweek][test][failuretype]["count"]
                             else:
                                 wirtedata.append("")
+                                wirtedata.append("")
                         else:
                             wirtedata.append("")
+                            wirtedata.append("")
                     else:
+                        wirtedata.append("")
                         wirtedata.append("")
                 wirtedata.append(number)
                 eachweektotoaldetail["TOTAL"] += number
@@ -2818,6 +2972,11 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
             wirtedata.append("TOTAL")
             for test in eachweektotallist:
                 wirtedata.append(eachweektotoaldetail[test])
+                if not test == "TOTAL":
+                    if test in topfailuredata['TESTSNLIST'][testweek]:
+                        wirtedata.append(pr["modules"].calculeFail_rate(len(topfailuredata['TESTSNLIST'][testweek][test]),eachweektotoaldetail[test]))
+                    else:
+                        wirtedata.append(pr["modules"].calculeFail_rate(0,eachweektotoaldetail[test]))
             ws2.append(wirtedata)
 
             wirtedata = list()
@@ -2923,6 +3082,7 @@ def generateexeclsnTopFailurestatus(DATA, workingonSNlist,status,wb,inputconfig,
     #highlightingreen(ws2,'PASS')
     #highlightinOrange(ws2,'INCOMPLETE')
     wraptest(ws2)
+    pr['modules'].converttoPERCENTAGEnumberbyFailurerange(ws2)
     #freezePosition(ws2,'C2')
     
     return 0
@@ -3303,6 +3463,7 @@ def generateexeclsnstatusalldata(DATA, workingonSNlist,status,wb,inputconfig,Wit
     #wirtedata.append('')
     for test in DATA['SN']['TEST']:
          wirtedata.append(test)
+    wirtedata.append("LAST_TEST")
     ws2.append(wirtedata)
 
     for sn in workingonSNlist:
@@ -3424,6 +3585,7 @@ def generateexeclsnstatusalldata(DATA, workingonSNlist,status,wb,inputconfig,Wit
             else:
                 wirtedata.append('NO TEST DATA')
             #time.sleep(2)
+        wirtedata.append(overall['LAST']['test'])
         ws2.append(wirtedata)
         
     
@@ -3524,12 +3686,15 @@ def generatedailydataintxtfile(DATA,teststep):
                 for testetime in DATA["SN"][sn][chassis][testdate]:
                     
                     wirteline = "## [{}_{}] ".format(testdate, testetime)
-                    if 'PASS' in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                    teststatus = "NONE"
+                    if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                        teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                    if 'PASS' in teststatus:
                         wirteline += "LOG: "
                     else:
                         wirteline += "ERR: "
-                    wirteline += "[{}]: NIC-{} {} {} NIC_DIAG_REGRESSION_TEST_{}".format(chassis,DATA["SN"][sn][chassis][testdate][testetime]['SLOT'],DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'],sn,DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
-                    if 'FAIL' in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                    wirteline += "[{}]: NIC-{} {} {} NIC_DIAG_REGRESSION_TEST_{}".format(chassis,DATA["SN"][sn][chassis][testdate][testetime]['SLOT'],DATA["SN"][sn][chassis][testdate][testetime]['CARDTYPE'],sn,teststatus)
+                    if 'FAIL' in teststatus:
                         wirteline += " ("
                         for eachdeatilteststep in DATA["DETAILTESTSTEP"]:
                             if eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
@@ -3581,6 +3746,8 @@ def GetTestTimedictbyweek(workingonSNlist,DATA,teststep,FULLDATA,TimeData,pr):
         if sn in DATA["SN"]:
             for chassis in DATA["SN"][sn]:
                 chambername = pr['modules'].where_is_my_chamber(chassis)
+                if not chambername:
+                    chambername = "NoChamberinfo"                
                 if chambername:
                     if not chambername in TimeData["CHAMBER"]:
                         TimeData["CHAMBER"][chambername] = dict()
@@ -3745,6 +3912,8 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                         for testdate in DATA["SN"][sn][chassis]:
                             for testetime in DATA["SN"][sn][chassis][testdate]:
                                 chambername = pr['modules'].where_is_my_chamber(chassis)
+                                if not chambername:
+                                    chambername = "NoChamberinfo"
                                 if chambername:
                                     if not chambername in Chamberref:
                                         Chamberref[chambername] = dict()
@@ -3754,7 +3923,9 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                                     endtestime = "{}_{}".format(testdate,testetime)
                                     MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
                                     chamberstarttime,chamberendtime = findmaxtestchambertimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
-                                    teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                                    teststatus = "NONE"
+                                    if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                        teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
 
                                     if not chamberendtime in Chamberref[chambername]['LIST']:
                                         Chamberref[chambername]['LIST'].append(chamberendtime)
@@ -3812,6 +3983,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     wirtedata.append('CHAMBER')
     wirtedata.append('FLOOR')
     wirtedata.append('TEST')
+    wirtedata.append('MTP#')
     wirtedata.append('START_DATE')
     wirtedata.append('START_TIME')
     wirtedata.append('END_DATE')
@@ -3845,6 +4017,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                         wirtedata.append(chambername)
                         wirtedata.append(pr['modules'].which_floor_is_for_my_mtp(chassis))
                         wirtedata.append(Chamberref[chambername]['DICT'][chamberendtime]['TEST'])
+                        wirtedata.append(chassis)
                         chamberstarttimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['START']
                         chamberendtimefromrecord = Chamberref[chambername]['DICT'][chamberendtime]['END']
                         if totimezone:
@@ -3918,7 +4091,7 @@ def generateexeclby4CChambertemp(workingonSNlist,wb,FULLDATA,pr,start=None,totim
     #highlightinred(ws2, 'FAILED')
     highlightinAqua(ws2,'NULL')
     highlightinyellow(ws2,'---')
-    freezePosition(ws2,'E2')
+    freezePosition(ws2,'F2')
     converttoPERCENTAGEnumber(ws2)
     return 0
 
@@ -4019,7 +4192,9 @@ def generateexeclby4CChambertime(workingonSNlist,wb,FULLDATA,pr,start=None,totim
                                     endtestime = "{}_{}".format(testdate,testetime)
                                     MaxTestTime = findmaxtesttimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
                                     chamberstarttime,chamberendtime = findmaxtestchambertimeinChamber(endtestime,TimeData["CHAMBER"][chambername])
-                                    teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                                    teststatus = "NONE"
+                                    if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                        teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
 
                                     if not chamberendtime in Chamberref[chambername]['LIST']:
                                         Chamberref[chambername]['LIST'].append(chamberendtime)
@@ -4226,7 +4401,10 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
                             wirtedata.append(chamberendtime.split('_')[0])
                             wirtedata.append(chamberendtime.split('_')[1].replace('-',':'))
                             wirtedata.append(converttoHourtoHour(MaxTestTime))
-                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                            teststatus = "NONE"
+                            if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                            wirtedata.append(teststatus)
                             #sys.exit()
                             timestamp = "{}_{}".format(testdate,testetime)
                             wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
@@ -4248,7 +4426,10 @@ def generateexecltestby4Ctesttime(workingonSNlist,DATA,teststep,wb,FULLDATA,pr):
                             wirtedata.append('NO CHAMBER FIND')
                             wirtedata.append('NO CHAMBER FIND')
                             wirtedata.append(converttoHourtoHour(MaxTestTime))
-                            wirtedata.append(DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT'])
+                            teststatus = "NONE"
+                            if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                                teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                            wirtedata.append(teststatus)
                             #sys.exit()
                             timestamp = "{}_{}".format(testdate,testetime)
                             wirtedata.append(findhowmanycardinthistestbymtp(FULLDATA,chassis,teststep,timestamp))
@@ -4380,8 +4561,10 @@ def GetSNlistbyPNfromDLtest(workingonSNlist,DATA,teststep='DL'):
                             PN = str(DATA["SN"][sn][chassis][testdate][testetime]['PN'])
                         else:
                             PN = 'NULL'
-                        
-                        teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        teststatus = "NONE"
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        #teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
                         if PN:
                             if len(PN) > 5:
                                 if not PN in SNbyPN:
@@ -4413,7 +4596,10 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
             for chassis in DATA["SN"][sn]:
                 for testdate in DATA["SN"][sn][chassis]:
                     for testetime in DATA["SN"][sn][chassis][testdate]:
-                        if "PASS" in DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']:
+                        teststatus = "NONE"
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        if "PASS" in teststatus:
                             if not testdate in HLteststeplist:
                                 HLteststeplist[testdate] = list()
                                 for eachdeatilteststep in DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]:
@@ -4445,7 +4631,10 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         if not timestamp in HVLVData[sn]["LIST"]:
                             HVLVData[sn]["LIST"].append(timestamp)
                             HVLVData[sn]["LIST"].sort()
-                        TestStatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        TestStatus = "NONE"
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            TestStatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        #TestStatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
                         HVstatus = "PASS"
                         HVtestcount = 0
                         HVtestcountinSN = 0
@@ -4491,7 +4680,10 @@ def generateHVLVdata(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
                         HVLVData[sn]["DATA"][timestamp]["HVstatus"] = HVstatus
                         HVLVData[sn]["DATA"][timestamp]["LVstatus"] = LVstatus
-                        HVLVData[sn]["DATA"][timestamp]["RESULT"] = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        teststatus = "NONE"
+                        if 'FINALRESULT' in DATA["SN"][sn][chassis][testdate][testetime]:
+                            teststatus = DATA["SN"][sn][chassis][testdate][testetime]['FINALRESULT']
+                        HVLVData[sn]["DATA"][timestamp]["RESULT"] = teststatus
                         HVLVData[sn]["DATA"][timestamp]["DETAILTESTSTEP"] = DATA["SN"][sn][chassis][testdate][testetime]["DETAILTESTSTEP"]
                         HVLVData[sn]["DATA"][timestamp]["TESTSTEPLIST"] = DATA["SN"][sn][chassis][testdate][testetime]["TESTSTEPLIST"]
                         #if HVstatus == "PASS" and LVstatus == "FAIL":
@@ -4699,6 +4891,52 @@ def generateexeclHVLVdata(workingonSNlist,DATA,wb,FULLDATA,TempHVLVdata,failureo
     print("generateexeclHVLVdata: {} use {} seconds".format(teststep,difftime.total_seconds()))
     return 0
 
+def checkkeywork(keyword):
+    if len(keyword) == 0:
+        return False
+    if "read done" in keyword:
+        return False
+    if "data" in keyword:
+        return False 
+    if "23" == keyword:
+        return False 
+    if "R" == keyword:
+        return False
+    if "RROR" == keyword:
+        return False 
+    if "Reg" in keyword:
+        return False 
+    if "alue" == keyword:
+        return False
+    if "cmd" in keyword:
+        return False
+    if "nit" == keyword:
+        return False
+    if "nt" == keyword:
+        return False
+    if "pi_reg_1 count" == keyword:
+        return False
+    if "unt" == keyword:
+        return False
+    if "Device" in keyword:
+        return False
+    if "x25" == keyword:
+        return False
+    if "packet" in keyword:
+        return False
+    if "term" in keyword:
+        return False
+    if "2" == keyword:
+        return False
+    if "Expect" in keyword:
+        return False
+    if "ddr" == keyword:
+        return False
+    if "ta" == keyword:
+        return False
+
+    return True
+
 def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
     ws2 = wb.create_sheet(title=teststep)
@@ -4733,18 +4971,24 @@ def generateexecltest(workingonSNlist,DATA,teststep,wb,FULLDATA):
                         if "MTPINFO" in DATA["SN"][sn][chassis][testdate][testetime]:
                             if type(DATA["SN"][sn][chassis][testdate][testetime]["MTPINFO"]) is dict:
                                 for chassiskey in DATA["SN"][sn][chassis][testdate][testetime]["MTPINFO"]:
+                                    if not checkkeywork(chassiskey):
+                                         continue
                                     if not chassiskey in chassisinfo:
                                         chassisinfo.append(chassiskey)
                                         chassisinfo.sort()
                         if "IMAGE" in DATA["SN"][sn][chassis][testdate][testetime]:
                             if type(DATA["SN"][sn][chassis][testdate][testetime]["IMAGE"]) is dict:
                                 for imagekey in DATA["SN"][sn][chassis][testdate][testetime]["IMAGE"]:
+                                    if not checkkeywork(imagekey):
+                                         continue
                                     if not imagekey in imageinfo:
                                         imageinfo.append(imagekey)
                                         imageinfo.sort()
                         if "NICINFO" in DATA["SN"][sn][chassis][testdate][testetime]:
                             if type(DATA["SN"][sn][chassis][testdate][testetime]["NICINFO"]) is dict:
                                 for nickey in DATA["SN"][sn][chassis][testdate][testetime]["NICINFO"]:
+                                    if not checkkeywork(nickey):
+                                         continue
                                     if not nickey in nicinfo:
                                         nicinfo.append(nickey)
                                         nicinfo.sort()
@@ -5890,6 +6134,108 @@ def generateexespecialsummaryforexperiment2(workingonSNlist,DATA,teststep,wb,FUL
     converttoPERCENTAGEnumber2(ws3)
     wraptest(ws3)
 
+def generatevdd_edmaReport(workingonSNlist,wb,DATA,pr,inputconfig):
+
+    teststeperrortitle = "{}".format('VDD_EDMA')
+    print("{}: {}".format("generatevdd_edmaReport", teststeperrortitle))
+    ws2 = wb.create_sheet(title=teststeperrortitle)
+    toprow = dict()
+    toprow['list'] = list()
+    toprow['data'] = dict()
+    convertword = dict()
+    convertword["4C-L"] = '0C'
+    convertword["4C-H"] = '50C'
+    convertword["-3.75%"] = 'Train at 818mv'
+    convertword["0.00%"] = 'Train at 850mv'
+    storgdataforuse = dict()
+    for sn in workingonSNlist:
+        if not sn in storgdataforuse:
+            storgdataforuse[sn] = dict()
+        for eachteststep in inputconfig["TESTLIST"]:
+            if not eachteststep in DATA["teststep"]:
+                continue
+            if not sn in DATA["teststep"][eachteststep]["SN"]:
+                continue
+            for chassis in DATA["teststep"][eachteststep]["SN"][sn]:
+                for testdate in DATA["teststep"][eachteststep]["SN"][sn][chassis]:
+                    for testetime in DATA["teststep"][eachteststep]["SN"][sn][chassis][testdate]:
+                        workingdata = DATA["teststep"][eachteststep]["SN"][sn][chassis][testdate][testetime]
+                        if "VDD_EDMA" in workingdata:
+                            if not len(workingdata["VDD_EDMA"]) > 2:
+                                continue
+                            #print(json.dumps(workingdata, indent = 4))
+                            for eachnumber in workingdata["VDD_EDMA"]:
+                                keystring = "_".join(workingdata["VDD_EDMA"][eachnumber]["KEY"])
+                                #print(keystring)
+                                keystringwithteststep = "{}_{}".format(eachteststep,keystring)
+                                #print(keystringwithteststep)
+                                if not keystringwithteststep in toprow['list']:
+                                    toprow['list'].append(keystringwithteststep)
+                                if not keystringwithteststep in toprow['data']:
+                                    toprow['data'][keystringwithteststep] = dict()
+                                toprow['data'][keystringwithteststep]['KEY'] = workingdata["VDD_EDMA"][eachnumber]["KEY"]
+                                topstring = "Train at {}".format(convertword[eachteststep])
+                                topstring = "{}\r10 iterations\r1MHz\r{}".format(topstring,convertword[workingdata["VDD_EDMA"][eachnumber]["KEY"][1]])
+                                topstring = "{}\rTest at {}mv".format(topstring,workingdata["VDD_EDMA"][eachnumber]["KEY"][4])
+                                toprow['data'][keystringwithteststep]['STRING'] = topstring
+                                if not keystringwithteststep in storgdataforuse[sn]:
+                                    storgdataforuse[sn][keystringwithteststep] = list()
+                                for eachresult in workingdata["VDD_EDMA"][eachnumber]["RESULT"]:
+                                    storgdataforuse[sn][keystringwithteststep].append(eachresult)
+    #print(json.dumps(toprow, indent = 4))
+    #sys.exit()             
+
+    wirtedata = list()
+    wirtedata.append('SN')
+    wirtedata.append('OVERALL')
+    for eachkey in toprow['list']:
+        wirtedata.append(toprow['data'][eachkey]['STRING'] )
+    ws2.append(wirtedata)
+
+    for sn in workingonSNlist:
+        wirtedata = list()
+        wirtedata.append(sn)
+        edmaresultlist = list()
+        edmachecklist = list()
+        if not sn in storgdataforuse:
+            ws2.append(wirtedata)
+            continue
+        for eachkey in toprow['list']:
+            resultstring = ""
+            if not eachkey in storgdataforuse[sn]:
+                edmaresultlist.append("NO DATA")
+                continue
+
+            if "FAILED" in storgdataforuse[sn][eachkey]:
+                resultstring = "FAILED <{}/{}>".format(int(storgdataforuse[sn][eachkey].count("FAILED")/2),int(len(storgdataforuse[sn][eachkey])/2))
+                edmachecklist.append('FAILED')
+            else:
+                resultstring = "PASSED <{}/{}>".format(int(storgdataforuse[sn][eachkey].count("PASSED")/2),int(len(storgdataforuse[sn][eachkey])/2))
+                edmachecklist.append('PASSED')
+            edmaresultlist.append(resultstring)
+        if "FAILED" in edmachecklist:
+            wirtedata.append("FAILED")
+        else:
+            if edmachecklist.count("PASSED") == len(toprow['list']):
+                wirtedata.append("PASSED")
+            else:
+                wirtedata.append("INCOMPLETE")
+        for eachresult in edmaresultlist:
+            wirtedata.append(eachresult)
+        ws2.append(wirtedata)
+    ##WINSON
+    fixcolumnssize3(ws2)
+    highlightinyellow(ws2,'TIMEOUT')
+    highlightinyellow(ws2,'NO TEST DATA')
+    highlightinyellow(ws2,'INCOMPLETE')
+    highlightinyellow(ws2,'NO DATA')
+    highlightingreen(ws2,'PASS')
+    highlightinred(ws2, 'FAIL')
+    highlightinred(ws2, 'FAILED')
+    wraptest(ws2)
+
+    return None 
+
 def generateexeclerrdata3(workingonSNlist,DATA,teststep,wb,FULLDATA):
 
     teststeperrortitle = "{}_ERROR_3".format(teststep)
@@ -5974,6 +6320,19 @@ def fixcolumnssize(ws,enablefilter=True):
     for col, value in dims.items():
         if value > 30:
             value = 30
+        ws.column_dimensions[col].width = value + 2
+    if enablefilter:
+        ws.auto_filter.ref = ws.dimensions
+
+def fixcolumnssize3(ws,enablefilter=True):
+    dims = {}
+    for row in ws.rows:
+        for cell in row:
+            if cell.value:
+                dims[cell.column_letter] = max((dims.get(cell.column_letter, 0), len(str(cell.value))))  
+    for col, value in dims.items():
+        if value > 20:
+            value = 20
         ws.column_dimensions[col].width = value + 2
     if enablefilter:
         ws.auto_filter.ref = ws.dimensions
@@ -6241,6 +6600,9 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None
     wirtedata.append("FAILURE_TYPE")
     for slot in inputconfig["MTP_STATUS"]:
         wirtedata.append(slot)
+    wirtedata.append("SN")
+    for slot in inputconfig["MTP_STATUS"]:
+        wirtedata.append(slot)
     ws2.append(wirtedata)
 
     timelinelist = list()
@@ -6303,7 +6665,16 @@ def generateexeclmtpstatusbyeachmtpreport(DATA,wb,inputconfig,mtp,startdate=None
                 wirtedata.append("|||")
                 for eachdata in wirtedataFailure:
                     wirtedata.append(eachdata)
+                wirtedata.append("|||")
+                for slot in inputconfig["MTP_STATUS"]:
 
+                    if slot in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"]:
+                        if "SN" in DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]:
+                            wirtedata.append(DATA["MTPCHASSIS"][mtp][test][datetime]["NICRESULT"][slot]["SN"])
+                        else:
+                            wirtedata.append("None")
+                    else:
+                        wirtedata.append("None")
                 ws2.append(wirtedata)
 
     highlightinred(ws2, 'FAIL')
@@ -6409,6 +6780,403 @@ def generateexeclmtpstatussummaryreport(DATA,wb,inputconfig,startdate=None):
     freezePosition(ws1,'D2')
 
     return bytestmtpchassisusecountbyslot
+
+def generateexeclmtpstatussummaryreport2(pr,MTPDATA,inputconfig,wb,startdate=None):
+    ws1 = wb.active
+    ws1.title = "SUMMARY"
+    
+    MTPslot = inputconfig["MTP_STATUS"]
+
+    mtpchassisusecountbyslot = dict()
+    mtpchassisusecountbytest = dict()
+    mtpchassisusecountbytest['TESTLIST'] = list()
+    mtpchassisusecountbytest['STATUS'] = dict()
+    mtpchassisusecountbyteststep = dict()
+    mtpchassisusecountbyteststep['TESTSTEPLIST'] = list()
+    mtpchassisusecountbyteststep['STATUS'] = dict()
+
+    DATA=dict()
+    if "NAME" in inputconfig:
+        DATA[inputconfig["NAME"]] = MTPDATA
+    else:
+        DATA["NONE"] = MTPDATA
+    for family in DATA:
+        for MTP in DATA[family]:
+            if not "MTP" in MTP:
+                continue
+            for test in DATA[family][MTP]:
+                for datetime in DATA[family][MTP][test]:
+                    if startdate:
+                        datelist = datetime.split("_")
+                        if datelist[0] < startdate:
+                            continue
+                    for eachslot in DATA[family][MTP][test][datetime]["NICRESULT"]:
+                        if "FAILURESTEP" in DATA[family][MTP][test][datetime]:
+                            if eachslot in DATA[family][MTP][test][datetime]["FAILURESTEP"]:
+                                if 'CANNOT FIND' in DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]:
+                                    continue
+                                if 'PASS' in DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]:
+                                    continue
+                                if not DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot] in mtpchassisusecountbyteststep['TESTSTEPLIST']:
+                                    mtpchassisusecountbyteststep['TESTSTEPLIST'].append(DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot])
+                                    mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]] = dict()
+                                if not MTP in mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]]:
+                                    mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP] = dict()
+                                    mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["TEST"] = list()
+                                    mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["FAMILY"] = list()
+                                    mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["datetimelist"] = list()
+                                    for slot in MTPslot:
+                                        mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][slot] = dict()
+                                        mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][slot]["TOTAL"] = 0
+                                        mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][slot]["PASS"] = 0
+                                        mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][slot]["FAIL"] = 0
+    #pr['modules'].print_anyinformation(mtpchassisusecountbyteststep)    
+
+    #sys.exit()
+
+    for family in DATA:
+        print(family)
+        #print(DATA[family])
+        if len(DATA[family]) == 0:
+            continue
+
+        for MTP in DATA[family]:
+            print(MTP)
+            if not "MTP" in MTP:
+                continue
+            if not MTP in mtpchassisusecountbyslot:
+                mtpchassisusecountbyslot[MTP] = dict()
+                mtpchassisusecountbyslot[MTP]["TEST"] = list()
+                mtpchassisusecountbyslot[MTP]["FAMILY"] = list()
+                mtpchassisusecountbyslot[MTP]["datetimelist"] = list()
+                for slot in MTPslot:
+                    mtpchassisusecountbyslot[MTP][slot] = dict()
+                    mtpchassisusecountbyslot[MTP][slot]["TOTAL"] = 0
+                    mtpchassisusecountbyslot[MTP][slot]["PASS"] = 0
+                    mtpchassisusecountbyslot[MTP][slot]["FAIL"] = 0
+            for test in DATA[family][MTP]:
+                #print(test)
+                if not test in mtpchassisusecountbytest['TESTLIST']:
+                    mtpchassisusecountbytest['TESTLIST'].append(test)
+                if not test in mtpchassisusecountbytest['STATUS']:
+                    mtpchassisusecountbytest['STATUS'][test] = dict()
+                if not MTP in mtpchassisusecountbytest['STATUS'][test]:
+                    mtpchassisusecountbytest['STATUS'][test][MTP] = dict()
+                    mtpchassisusecountbytest['STATUS'][test][MTP]["TEST"] = list()
+                    mtpchassisusecountbytest['STATUS'][test][MTP]["FAMILY"] = list()
+                    mtpchassisusecountbytest['STATUS'][test][MTP]["datetimelist"] = list()
+                    for slot in MTPslot:
+                        mtpchassisusecountbytest['STATUS'][test][MTP][slot] = dict()
+                        mtpchassisusecountbytest['STATUS'][test][MTP][slot]["TOTAL"] = 0
+                        mtpchassisusecountbytest['STATUS'][test][MTP][slot]["PASS"] = 0
+                        mtpchassisusecountbytest['STATUS'][test][MTP][slot]["FAIL"] = 0
+                for datetime in DATA[family][MTP][test]:
+                    #print(datetime)
+                    #print(json.dumps(DATA["MTPCHASSIS"][MTP][test][datetime], indent = 4))
+                    if startdate:
+                        datelist = datetime.split("_")
+                        if datelist[0] < startdate:
+                            continue
+                    if not test in mtpchassisusecountbyslot[MTP]["TEST"]:
+                        mtpchassisusecountbyslot[MTP]["TEST"].append(test)
+                        mtpchassisusecountbyslot[MTP]["TEST"].sort()
+                    if not family in mtpchassisusecountbyslot[MTP]["FAMILY"]:
+                        mtpchassisusecountbyslot[MTP]["FAMILY"].append(family)
+                        mtpchassisusecountbyslot[MTP]["FAMILY"].sort()
+                    if not datetime in mtpchassisusecountbyslot[MTP]["datetimelist"]:
+                        mtpchassisusecountbyslot[MTP]["datetimelist"].append(datetime)
+                        mtpchassisusecountbyslot[MTP]["datetimelist"].sort(reverse=True)
+                    if not test in mtpchassisusecountbytest['STATUS'][test][MTP]["TEST"]:
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["TEST"].append(test)
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["TEST"].sort()
+                    if not family in mtpchassisusecountbytest['STATUS'][test][MTP]["FAMILY"]:
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["FAMILY"].append(family)
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["FAMILY"].sort()
+                    if not datetime in mtpchassisusecountbytest['STATUS'][test][MTP]["datetimelist"]:
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["datetimelist"].append(datetime)
+                        mtpchassisusecountbytest['STATUS'][test][MTP]["datetimelist"].sort(reverse=True)
+                    for eachslot in DATA[family][MTP][test][datetime]["NICRESULT"]:
+                        if "PASS" in DATA[family][MTP][test][datetime]["NICRESULT"][eachslot]["RESULT"]:
+                            mtpchassisusecountbyslot[MTP][eachslot]["TOTAL"] += 1
+                            mtpchassisusecountbyslot[MTP][eachslot]["PASS"] += 1
+                        else:
+                            mtpchassisusecountbyslot[MTP][eachslot]["TOTAL"] += 1
+                            mtpchassisusecountbyslot[MTP][eachslot]["FAIL"] += 1
+                        if "PASS" in DATA[family][MTP][test][datetime]["NICRESULT"][eachslot]["RESULT"]:
+                            mtpchassisusecountbytest['STATUS'][test][MTP][eachslot]["TOTAL"] += 1
+                            mtpchassisusecountbytest['STATUS'][test][MTP][eachslot]["PASS"] += 1
+                        else:
+                            mtpchassisusecountbytest['STATUS'][test][MTP][eachslot]["TOTAL"] += 1
+                            mtpchassisusecountbytest['STATUS'][test][MTP][eachslot]["FAIL"] += 1
+                        if "FAILURESTEP" in DATA[family][MTP][test][datetime]:
+                            if eachslot in DATA[family][MTP][test][datetime]["FAILURESTEP"]:
+                                if 'CANNOT FIND' in DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]:
+                                    continue
+                                if 'PASS' in DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]:
+                                    continue
+                            if not test in mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["TEST"]:
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["TEST"].append(test)
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["TEST"].sort()
+                            if not family in mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["FAMILY"]:
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["FAMILY"].append(family)
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["FAMILY"].sort()
+                            if not datetime in mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["datetimelist"]:
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["datetimelist"].append(datetime)
+                                mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP]["datetimelist"].sort(reverse=True)
+                            mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][eachslot]["TOTAL"] = mtpchassisusecountbyslot[MTP][eachslot]["TOTAL"]
+                            mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][eachslot]["PASS"] = mtpchassisusecountbyslot[MTP][eachslot]["PASS"]
+                            mtpchassisusecountbyteststep['STATUS'][DATA[family][MTP][test][datetime]["FAILURESTEP"][eachslot]][MTP][eachslot]["FAIL"] += 1                                
+
+            #print(json.dumps(mtpchassisusecountbyslot, indent = 4))
+            #sys.exit()
+        #break
+    findzeroMTP = list()
+
+    for mtp in sorted(mtpchassisusecountbyslot):
+        listoftotal = list()
+        for slot in MTPslot:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+        if sum(listoftotal) == 0:
+            findzeroMTP.append(mtp)
+    
+    for mtp in findzeroMTP:
+        del mtpchassisusecountbyslot[mtp]
+    #print(json.dumps(mtpchassisusecountbyslot, indent = 4))
+    #sys.exit()
+    wirtedata = list()
+    wirtedata.append('MTP')
+    wirtedata.append('TEST')
+    wirtedata.append('STATUS')
+    wirtedata.append('TOTAL')
+    for slot in MTPslot:
+        wirtedata.append(slot)
+    wirtedata.append('FAMILY')
+    ws1.append(wirtedata)
+    for mtp in sorted(mtpchassisusecountbyslot):
+        wirtedatatotal = list()
+        wirtedatapass = list()
+        wirtedatafail = list()
+        wirtedatapassrate = list()
+        wirtedatatotal.append(mtp)
+        wirtedatapass.append(mtp)
+        wirtedatafail.append(mtp)
+        wirtedatapassrate.append(mtp)
+        teststep = mtpchassisusecountbyslot[mtp]["TEST"][0]
+        if len(mtpchassisusecountbyslot[mtp]["TEST"]) > 1:
+            for eachtest in mtpchassisusecountbyslot[mtp]["TEST"][1:]:
+                teststep = "{},{}".format(teststep,eachtest)
+        allfamily = mtpchassisusecountbyslot[mtp]["FAMILY"][0]
+        if len(mtpchassisusecountbyslot[mtp]["FAMILY"]) > 1:
+            for eachfamily in mtpchassisusecountbyslot[mtp]["FAMILY"][1:]:
+                allfamily = "{}, {}".format(allfamily,eachfamily)
+        wirtedatatotal.append(teststep)
+        wirtedatapass.append(teststep)
+        wirtedatafail.append(teststep)
+        wirtedatapassrate.append(teststep)
+        listoftotal = list()
+        listofpass = list()
+        listoffail = list()
+        for slot in MTPslot:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            listofpass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            listoffail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])  
+        wirtedatatotal.append("TOTAL")
+        wirtedatapass.append("PASS")
+        wirtedatafail.append("FAIL")
+        wirtedatapassrate.append("PASS_RATE")
+        wirtedatatotal.append(sum(listoftotal))
+        wirtedatapass.append(sum(listofpass))
+        wirtedatafail.append(sum(listoffail))
+        wirtedatapassrate.append(pr['modules'].calculePass_rate(sum(listoftotal),sum(listofpass)))           
+        for slot in MTPslot:
+            wirtedatatotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            wirtedatapass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            wirtedatafail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])
+            wirtedatapassrate.append(pr['modules'].calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"]))
+        wirtedatatotal.append(allfamily)
+        wirtedatapass.append(allfamily)
+        wirtedatafail.append(allfamily)
+        wirtedatapassrate.append(allfamily)
+        ws1.append(wirtedatatotal)
+        ws1.append(wirtedatapass)
+        ws1.append(wirtedatafail)
+        ws1.append(wirtedatapassrate)          
+    pr['modules'].fixcolumnssize3(ws1)
+    pr['modules'].highlightinlightredrow(ws1,'FAIL')
+    pr['modules'].converttoPERCENTAGEnumber(ws1)
+    pr['modules'].freezePosition(ws1,'D2')
+
+    summaryMTPdata=dict()
+    if "TESTLIST" in inputconfig:
+        #for teststep in mtpchassisusecountbytest['TESTLIST']:
+        for teststep in inputconfig['TESTLIST']:
+            if teststep in mtpchassisusecountbytest['TESTLIST']:
+                summaryMTPdata[teststep] = generateexeclallmtpstatussummaryreportbytest(pr,DATA,inputconfig,wb,teststep,mtpchassisusecountbytest['STATUS'][teststep],startdate)
+
+    #createMTPteststepfailurereport(pr,DATA,mtpchassisusecountbyteststep,startdate)
+    #pr['modules'].print_anyinformation(summaryMTPdata)
+    generateexeclmtpusestatussummaryreport(pr,summaryMTPdata,inputconfig,wb)
+    #sys.exit()
+    return mtpchassisusecountbyslot
+
+def generateexeclmtpusestatussummaryreport(pr,summaryMTPdata,inputconfig,wb):
+    print("generateexeclmtpusestatussummaryreport")
+
+    ws1 = wb.create_sheet(title='MTP_USED_STATUS')
+
+    wirtedata = list()
+    wirtedata.append('TEST')
+    wirtedata.append('# of MTP')
+    wirtedata.append('# of MTP Slot Have')
+    wirtedata.append('# of MTP Slot Used')
+    ws1.append(wirtedata)
+    if "TESTLIST" in inputconfig:
+        for teststep in inputconfig['TESTLIST']:
+            if teststep in summaryMTPdata:
+                wirtedata = list()
+                wirtedata.append(teststep)
+                wirtedata.append(len(summaryMTPdata[teststep]["list"]))
+                if not teststep == 'FST':
+                    wirtedata.append(len(summaryMTPdata[teststep]["list"]) * 10)
+                else:
+                    wirtedata.append(len(summaryMTPdata[teststep]["list"]) * 5)
+                countMTPused = 0
+                for mtp in summaryMTPdata[teststep]["list"]:
+                    for eachslot in summaryMTPdata[teststep]["mtp"][mtp]:
+                        if summaryMTPdata[teststep]["mtp"][mtp][eachslot]["TOTAL"]:
+                            countMTPused += 1
+                wirtedata.append(countMTPused)
+                ws1.append(wirtedata)
+
+
+    wirtedata = list()
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    ws1.append(wirtedata)
+    wirtedata.append('TEST')
+    wirtedata.append('EachMTP')
+    ws1.append(wirtedata)
+    if "TESTLIST" in inputconfig:
+        for teststep in inputconfig['TESTLIST']:
+            if teststep in summaryMTPdata:
+                Totalslot = 10
+                if teststep == 'FST':
+                    Totalslot = 5
+                wirtedata = list()
+                wirtedata.append(teststep)
+                for mtp in summaryMTPdata[teststep]["list"]:
+                    countMTPused = 0
+                    for eachslot in summaryMTPdata[teststep]["mtp"][mtp]:
+                        if summaryMTPdata[teststep]["mtp"][mtp][eachslot]["TOTAL"]:
+                            countMTPused += 1
+                    messagetoshow = "{} <{} of {}>".format(mtp,countMTPused,Totalslot)
+                    wirtedata.append(messagetoshow)
+                ws1.append(wirtedata)
+
+    pr['modules'].fixcolumnssize3(ws1)
+
+    return None
+
+def generateexeclallmtpstatussummaryreportbytest(pr,DATA,inputconfig,wb,teststep,mtpchassisusecountbyslot,startdate=None):
+    print("generateexeclallmtpstatussummaryreport: {}".format(teststep))
+
+
+    titlename = teststep
+    ws1 = wb.create_sheet(title=titlename)
+    findzeroMTP = list()
+
+    MTPslot = inputconfig["MTP_STATUS"]
+
+    summaryMTPreturn = dict()
+    summaryMTPreturn['list'] = list()
+    summaryMTPreturn['mtp'] = dict()
+
+    for mtp in sorted(mtpchassisusecountbyslot):
+        listoftotal = list()
+        for slot in MTPslot:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+        if sum(listoftotal) == 0:
+            findzeroMTP.append(mtp)
+    
+    for mtp in findzeroMTP:
+        del mtpchassisusecountbyslot[mtp]
+    #print(json.dumps(mtpchassisusecountbyslot, indent = 4))
+    #sys.exit()
+    wirtedata = list()
+    wirtedata.append('MTP')
+    wirtedata.append('TEST')
+    wirtedata.append('STATUS')
+    wirtedata.append('TOTAL')
+    for slot in MTPslot:
+        wirtedata.append(slot)
+    wirtedata.append('FAMILY')
+    ws1.append(wirtedata)
+    for mtp in sorted(mtpchassisusecountbyslot):
+        if not mtp in summaryMTPreturn['list']:
+            summaryMTPreturn['list'].append(mtp)
+            summaryMTPreturn['mtp'][mtp] = dict()
+            for eachslot in MTPslot:
+                summaryMTPreturn['mtp'][mtp][eachslot] = dict()
+
+        wirtedatatotal = list()
+        wirtedatapass = list()
+        wirtedatafail = list()
+        wirtedatapassrate = list()
+        wirtedatatotal.append(mtp)
+        wirtedatapass.append(mtp)
+        wirtedatafail.append(mtp)
+        wirtedatapassrate.append(mtp)
+        teststep = mtpchassisusecountbyslot[mtp]["TEST"][0]
+        if len(mtpchassisusecountbyslot[mtp]["TEST"]) > 1:
+            for eachtest in mtpchassisusecountbyslot[mtp]["TEST"][1:]:
+                teststep = "{},{}".format(teststep,eachtest)
+        allfamily = mtpchassisusecountbyslot[mtp]["FAMILY"][0]
+        if len(mtpchassisusecountbyslot[mtp]["FAMILY"]) > 1:
+            for eachfamily in mtpchassisusecountbyslot[mtp]["FAMILY"][1:]:
+                allfamily = "{}, {}".format(allfamily,eachfamily)
+        wirtedatatotal.append(teststep)
+        wirtedatapass.append(teststep)
+        wirtedatafail.append(teststep)
+        wirtedatapassrate.append(teststep)
+        listoftotal = list()
+        listofpass = list()
+        listoffail = list()
+        for slot in MTPslot:
+            listoftotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            listofpass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            listoffail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])  
+        wirtedatatotal.append("TOTAL")
+        wirtedatapass.append("PASS")
+        wirtedatafail.append("FAIL")
+        wirtedatapassrate.append("PASS_RATE")
+        wirtedatatotal.append(sum(listoftotal))
+        wirtedatapass.append(sum(listofpass))
+        wirtedatafail.append(sum(listoffail))
+        wirtedatapassrate.append(pr['modules'].calculePass_rate(sum(listoftotal),sum(listofpass)))           
+        for slot in MTPslot:
+            wirtedatatotal.append(mtpchassisusecountbyslot[mtp][slot]["TOTAL"])
+            summaryMTPreturn['mtp'][mtp][slot]["TOTAL"] = mtpchassisusecountbyslot[mtp][slot]["TOTAL"]
+            wirtedatapass.append(mtpchassisusecountbyslot[mtp][slot]["PASS"])
+            wirtedatafail.append(mtpchassisusecountbyslot[mtp][slot]["FAIL"])
+            wirtedatapassrate.append(pr['modules'].calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"]))
+            summaryMTPreturn['mtp'][mtp][slot]["PASS_RATE"] = pr['modules'].calculePass_rate(mtpchassisusecountbyslot[mtp][slot]["TOTAL"],mtpchassisusecountbyslot[mtp][slot]["PASS"])
+        wirtedatatotal.append(allfamily)
+        wirtedatapass.append(allfamily)
+        wirtedatafail.append(allfamily)
+        wirtedatapassrate.append(allfamily)
+        ws1.append(wirtedatatotal)
+        ws1.append(wirtedatapass)
+        ws1.append(wirtedatafail)
+        ws1.append(wirtedatapassrate)          
+    pr['modules'].fixcolumnssize3(ws1)
+    pr['modules'].converttoPERCENTAGEnumber(ws1)
+    pr['modules'].highlightinlightredrow(ws1,'FAIL')
+    pr['modules'].freezePosition(ws1,'D2')
+
+    return summaryMTPreturn
 
 def calculePass_rate(totalnumber,passnumber):
 

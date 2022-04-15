@@ -17,10 +17,12 @@ from logdef import RUN_KEY
 
 now = datetime.now() # current date and time
 date_time = now.strftime("%Y%m%d_%H%M%S")
+from datetime import date
+today = date.today()
+todayday = today.strftime("%Y-%m-%d")
 print("date and time:",date_time)
 
-
-
+print(os.environ)
 
 def main():
 
@@ -50,12 +52,13 @@ def main():
 
     prefix = scriptname.replace('.py', '')
     if 'scriptLog' in pr['loginfo']:
-        ldir = pr['loginfo']['scriptLog'] + '/' + prefix
+        ldir = pr['loginfo']['scriptLog'] + '/' + prefix + '/' + todayday
         logDir = pr['loginfo']['scriptLog']
-        screenlogDir = pr['loginfo']['log']
+        screenlogDir = pr['loginfo']['log'] 
     else:
-        ldir = logDir + '/' + prefix
+        ldir = logDir + '/' + prefix + '/' + todayday
 
+    pr['ldir'] = ldir
     log = script_logging.Script_logging(
         log_dir=ldir, log_prefix=prefix, log_suffix='.log')
     if log.Open():
@@ -68,17 +71,12 @@ def main():
     pr['log'] = log
     pr['status'] = dict()
     pr['db'] = runtest_modules.db_modules(logmodule=log)
-
-    # tablelist = pr['db'].check_table_to_mfg_database('mtp_status')
-
-    # showtablelist = pr['db'].show_table_to_mfg_database()
-
-    # for eachtable in showtablelist:
-    #     eachtablelist = pr['db'].check_table_to_mfg_database(eachtable)
-
+    pr['mtp_info'] = pr['db'].get_data_on_table_from_mfg_database('mtp_info')
+    #pr['modules'].print_anyinformation(pr['mtp_info'])
 
     TestUUTlist = pr['db'].get_mtp_startTestlist_from_mfg_database()
-
+    if len(TestUUTlist) > 10:
+        TestUUTlist = TestUUTlist[:10]
     thread_list = list()
     loginfo_dict = dict()
     for TestUUT in TestUUTlist:
@@ -88,7 +86,7 @@ def main():
         pr['modules'].print_anyinformation(UUTinfo)
         scriptbasepath = pr['loginfo']['scriptPath']
         product_scriptpath = pr['db'].Get_test_exec_script_path(UUTinfo['product_id'])
-        runtestCmd = pr['db'].Get_test_exec_script(UUTinfo['test_type'])
+        runtestCmd = pr['db'].Get_test_exec_script(UUTinfo['test_type'],UUTinfo['product_id'])
         eachtestprogramDir = scriptbasepath + product_scriptpath
         log.WriteLine("eachtestprogramDir: {}".format(eachtestprogramDir))
         log.WriteLine("runtestCmd: {}".format(runtestCmd))
@@ -110,7 +108,7 @@ def main():
         thread_list.append(thread)
         time.sleep(2)
 
-        break
+        #break
 
     # monitor all the thread
     while True:
@@ -128,13 +126,35 @@ def main():
     pr['log'].WriteLine("How many seconds use?: {} seconds".format(difftime.total_seconds()))       
     return None
 
-def runningtest(pr,TestUUT,testprogramDir,screenlogDir,runtestCmd,returnlog):
-    wirtelogbyeachUUT(pr,TestUUT,"Start runningtest")
-    UUTinfo = pr['db'].get_one_mtp_status_from_mfg_database(TestUUT)
+def runningtest(mainpr,TestUUT,testprogramDir,screenlogDir,runtestCmd,returnlog):
+    wirtelogbyeachUUT(mainpr,TestUUT,"Start runningtest")
+    UUTinfo = mainpr['db'].get_one_mtp_status_from_mfg_database(TestUUT)
     mtp_info = dict()
     mtp_info['mtp_id'] = TestUUT
 
-    runtest = runtest_modules.modules(pr['status'][TestUUT],screenlogDir,TestUUT,testprogramDir,runtestCmd)
+    pr = dict()
+    scriptname = os.path.basename(__file__)
+    prefix = scriptname.replace('.py', '')
+    if 'scriptLog' in mainpr['loginfo']:
+        ldir = mainpr['loginfo']['scriptLog'] + '/' + prefix + '/' + todayday + '/' + TestUUT
+        logDir = mainpr['loginfo']['scriptLog']
+        screenlogDir = mainpr['loginfo']['log'] 
+    else:
+        ldir = logDir + '/' + prefix + '/' + todayday
+    log = script_logging.Script_logging(
+        log_dir=ldir, log_prefix=prefix, log_suffix='.log')
+    if log.Open():
+        print("Error: log failed to open, {0}".format(log.fullname))
+        return -1
+    
+    pr['modules'] = modules.modules(logmodule=log)
+    
+    pr['script'] = prefix
+    pr['log'] = log
+    pr['status'] = dict()
+    pr['db'] = runtest_modules.db_modules(logmodule=log)
+
+    runtest = runtest_modules.modules(mainpr['status'][TestUUT],screenlogDir,TestUUT,testprogramDir,runtestCmd)
     pr['db'].update_MTP_log_file(TestUUT,runtest.check_screenlog())
     runtest.updatescriptlogmodule(pr['log'])
     wirtelogbyeachUUT(pr,TestUUT,runtest.check_screenlog())
@@ -146,20 +166,28 @@ def runningtest(pr,TestUUT,testprogramDir,screenlogDir,runtestCmd,returnlog):
         wirtelogbyeachUUT(pr,TestUUT,"Test program [{}]".format(runtestCmd))
         runtest.update_failure_in_MTP()
         runtest.update_status_in_database(pr,TestUUT)
-
-        
-    runtest.StartTest()
-    time.sleep(2)
-    runtest.update_testing_in_MTP()
-    runtest.update_status_in_database(pr,TestUUT)
-    while runtest.MonitorTest2():
-        runtest.TakecardLastlinetoprovideresponce()
-        checkresult = runtest.checkoutputstatus()
-        runtest.updateresultstatusbycheckpointdata(checkresult)
+    else:      
+        runtest.StartTest()
+        time.sleep(2)
+        runtest.update_testing_in_MTP()
         runtest.update_status_in_database(pr,TestUUT)
+        while runtest.MonitorTest2():
+            if pr['db'].check_MTPSTOP_status(TestUUT):
+                runtest.update_STOP_in_MTP()
+                runtest.update_STOP_in_AllNic()
+                runtest.STOPTest()
+                break
+            runtest.TakecardLastlinetoprovideresponce()
+            checkresult = runtest.checkoutputstatus()
+            runtest.updateresultstatusbycheckpointdata(checkresult)
+            runtest.update_status_in_database(pr,TestUUT)
 
-    checkresult = runtest.checkoutputstatus()
-    runtest.updateresultstatusbycheckpointdata(checkresult,TESTEND=True)
+    if not runtest.mtpstop:
+        checkresult = runtest.checkoutputstatus(theend=True)
+        runtest.updateresultstatusbycheckpointdata(checkresult,TESTEND=True)
+        runtest.check_all_NIC_STATUS_is_not_TESTING_in_AllNic()
+    else:
+        runtest.update_STOPDONE_in_MTP()
     if runtest.markfalse:
         runtest.update_failure_in_MTP()
     runtest.update_status_in_database(pr,TestUUT)

@@ -1,0 +1,5 @@
+PENSANDO-HW-MFTG-DATA:
+    IP: "hw-mftg-data"
+    USERID: "mfg"
+    PASSWORD: "pensando"
+    LOGPATH: "/mfg_log/"

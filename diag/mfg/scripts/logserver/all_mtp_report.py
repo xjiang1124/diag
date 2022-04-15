@@ -65,6 +65,8 @@ def main():
 
     generateMTPallreport(pr,MTPDATA,startdate=None)
     generateMTPallreport(pr,MTPDATA,startdate=pr['modules'].getbeforedayinformation(checkday=31))
+    generateMTPallreport(pr,MTPDATA,startdate=pr['modules'].getbeforedayinformation(checkday=7))
+    generateMTPallreport2(pr,MTPDATA,startdate=None)
 
     difftime = datetime.now()-start
     print('Done Time: ', difftime)       
@@ -88,6 +90,23 @@ def generateMTPallreport(pr,MTPDATA,startdate=None):
 
     return None
 
+def generateMTPallreport2(pr,MTPDATA,startdate=None):
+    wb3 = Workbook()
+    dest_filename3 = "{}MTP_STATUS_{}_DATA2.xlsx".format(reportpath,date_time)
+    if startdate:
+        dest_filename3 = "{}MTP_STATUS_{}_DATA2_StartWith_{}.xlsx".format(reportpath,date_time,startdate)
+    print(dest_filename3)
+
+    mtpchassisusecountbyslot = generateexeclallmtpstatussummaryreport(pr,MTPDATA,wb3,startdate)
+
+    for mtp in sorted(mtpchassisusecountbyslot):
+        generateexeclallmtpstatusbyeachmtpreport2(pr,mtpchassisusecountbyslot,MTPDATA,wb3,mtp,startdate)
+
+    print(dest_filename3)
+    wb3.save(filename = dest_filename3) 
+
+    return None
+
 def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb,mtp,startdate=None):
     print("generateexeclallmtpstatusbyeachmtpreport: {}".format(mtp))
     titlename = mtp
@@ -101,6 +120,9 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
     wirtedata.append("FAILURE_TYPE")
     for slot in MTPslot:
         wirtedata.append(slot)
+    wirtedata.append("SN")
+    for slot in MTPslot:
+        wirtedata.append(slot)
     ws2.append(wirtedata)
 
     for datetime in mtpchassisusecountbyslot[mtp]["datetimelist"]:
@@ -112,6 +134,8 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
                         wirtedata.append(family)
                         wirtedata.append(test)
                         wirtedata.append(datetime)
+                        #pr['modules'].print_anyinformation(DATA[family][mtp][test][datetime])
+                        #sys.exit()
                         for slot in MTPslot:
 
                             if slot in DATA[family][mtp][test][datetime]["NICRESULT"]:
@@ -130,6 +154,16 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
                                 wirtedata.append(DATA[family][mtp][test][datetime]["FAILURESTEP"][slot])
                             else:
                                 wirtedata.append("None")
+                        wirtedata.append("||||||||||")
+                        for slot in MTPslot:
+
+                            if slot in DATA[family][mtp][test][datetime]["NICRESULT"]:
+                                if "SN" in DATA[family][mtp][test][datetime]["NICRESULT"][slot]:
+                                    wirtedata.append(DATA[family][mtp][test][datetime]["NICRESULT"][slot]["SN"])
+                                else:
+                                    wirtedata.append("None")
+                            else:
+                                wirtedata.append("None")
                         ws2.append(wirtedata)
 
     pr['modules'].highlightinred(ws2, 'FAIL')
@@ -139,6 +173,71 @@ def generateexeclallmtpstatusbyeachmtpreport(pr,mtpchassisusecountbyslot,DATA,wb
     pr['modules'].freezePosition(ws2,'D2')
 
     return True
+
+
+def generateexeclallmtpstatusbyeachmtpreport2(pr,mtpchassisusecountbyslot,DATA,wb,mtp,startdate=None):
+    print("generateexeclallmtpstatusbyeachmtpreport2: {}".format(mtp))
+    titlename = mtp
+    ws2 = wb.create_sheet(title=titlename)
+    wirtedata = list()
+    wirtedata.append("FAMILY")
+    wirtedata.append("TEST")
+    wirtedata.append("DATE_TIME")
+    for slot in MTPslot:
+        wirtedata.append(slot)
+        wirtedata.append(slot)
+        wirtedata.append(slot)
+        wirtedata.append("|||")
+
+    ws2.append(wirtedata)
+
+    for datetime in mtpchassisusecountbyslot[mtp]["datetimelist"]:
+        for family in DATA:
+            if mtp in DATA[family]:
+                for test in DATA[family][mtp]:
+                    if datetime in DATA[family][mtp][test]:
+                        wirtedata = list()
+                        wirtedata.append(family)
+                        wirtedata.append(test)
+                        wirtedata.append(datetime)
+                        #pr['modules'].print_anyinformation(DATA[family][mtp][test][datetime])
+                        #sys.exit()
+                        for slot in MTPslot:
+
+                            if slot in DATA[family][mtp][test][datetime]["NICRESULT"]:
+                                wirtedata.append(DATA[family][mtp][test][datetime]["NICRESULT"][slot]["RESULT"])
+                            else:
+                                wirtedata.append("None")
+
+                            if not "FAILURESTEP" in DATA[family][mtp][test][datetime]:
+                                wirtedata.append("No Data")
+                                continue
+                                
+                            if slot in DATA[family][mtp][test][datetime]["FAILURESTEP"]:
+                                wirtedata.append(DATA[family][mtp][test][datetime]["FAILURESTEP"][slot])
+                            else:
+                                wirtedata.append("None")
+
+                            if slot in DATA[family][mtp][test][datetime]["NICRESULT"]:
+                                if "SN" in DATA[family][mtp][test][datetime]["NICRESULT"][slot]:
+                                    wirtedata.append(DATA[family][mtp][test][datetime]["NICRESULT"][slot]["SN"])
+                                else:
+                                    wirtedata.append("None")
+                            else:
+                                wirtedata.append("None")
+
+                            wirtedata.append("|||")
+
+                        ws2.append(wirtedata)
+
+    pr['modules'].highlightinred(ws2, 'FAIL')
+    pr['modules'].highlightinred(ws2, 'FAILED')
+    pr['modules'].highlightingreen(ws2,'PASS')      
+    pr['modules'].fixcolumnssize(ws2)
+    pr['modules'].freezePosition(ws2,'D2')
+
+    return True
+
 
 def generateexeclallmtpstatussummaryreport(pr,DATA,wb,startdate=None):
     ws1 = wb.active

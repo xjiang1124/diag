@@ -1,21 +1,20 @@
 {
-	"NAME": "ORTANO2",
+	"NAME": "ORTANO2_1_43_Bonepile",
 	"TYPE": "NIC",
 	"FLEXFLOW": "192.168.3.11",
+	"SNLIST": "Bonepile.xlsx",
+	"STARTDATE": "2022-04-06",
 	"DIR": {
 		"rootdir": "/home/mfg/logserver",
 		"logdir": "/home/mfg/recordlogs",
-		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_03",
-		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2",
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_1_43_Bonepile_03",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_1_43_Bonepile",
 		"testlogpath": "/mnt/hw-mftg-data/ORTANO2",
-		"reportpath":"/samba/public/REPORT/ORTANO2/",
-		"historypath":"/samba/public/HISTORY/ORTANO2"
+		"reportpath":"/samba/public/REPORT/ORTANO2_1_43_Bonepile/",
+		"historypath":"/samba/public/HISTORY/ORTANO2_1_43_Bonepile"
 	},
 	"FILE": {
-		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_DB_TEST18.json",
-		"mtpdatabasejsonfile" : "/samba/public/tmp_database/MTP_DB_01.json",
-		"snandmacjsonfile" : "/samba/public/tmp_database/SN_MAC_DB_01.json",
-		"softwarejsonfile" : "/samba/public/tmp_database/SW_DB_01.json"
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_1_43_Bonepile_DB_TEST18.json"
 	},
 	"TESTSUB" : {
 		"NT" : "P2C"

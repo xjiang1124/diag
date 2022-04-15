@@ -174,12 +174,6 @@ class mysql_db(object):
 
     def update_data(self,cmd):
 
-        # Examples parameters:
-        # cmd = ("INSERT INTO hpn_certs "
-        #       "(sn,pn) " 
-        #       "VALUES (%s, %s)")
-        # values = ( 'sn000888','JX999A' )
-
         cursor = self.cnx.cursor()
         try:
             cursor.execute(cmd)        
@@ -209,23 +203,14 @@ class mysql_db(object):
 
     def select_list(self,query,values,container):
 
-        # Examples parameters:
-        # query = ("SELECT sn FROM hpn_certs WHERE date_code=%s AND pid=%s")
-        # values = (date_code,pid). Tuple.
-
         cursor = self.cnx.cursor()
         try:
             cursor.execute(query,values)        
             rows = cursor.fetchall()
             for row in rows:
-                #print("row - {0}".format(row)) 
                 for item in row:
-                    #print("    item {0}".format(col))
                     container.append(item) 
-                #data = rows[row]
-            #for sn in cursor:
-            #    container.append(sn) 
-            #self.cnx.commit()
+
             cursor.close()    
         except mysql.connector.Error as err:
             print("Error: {0}".format(err))
@@ -238,10 +223,6 @@ class mysql_db(object):
 
 
     def select_ret_dict(self,query,values,fields,container):
-
-        # Examples parameters:
-        # query = ("SELECT sn FROM hpn_certs WHERE date_code=%s AND pid=%s")
-        # values = (date_code,pid). Tuple.
 
         cursor = self.cnx.cursor()
         try:
@@ -328,10 +309,6 @@ class mysql_db(object):
 
     def select_ret_list(self,query,values,fields,container):
 
-        # Examples parameters:
-        # query = ("SELECT sn FROM hpn_certs WHERE date_code=%s AND pid=%s")
-        # values = (date_code,pid). Tuple.
-
         cursor = self.cnx.cursor()
         try:
             cursor.execute(query,values)        
@@ -342,7 +319,6 @@ class mysql_db(object):
                 #print("row - {0}".format(row)) 
                 eachdict = dict()
                 for field,item in zip(fields,row):
-                    #print(" query field: {0}, item: {1}".format(field,item))
                     if type(item) is datetime.date:
                         item = item.strftime("%Y/%m/%d")
 
