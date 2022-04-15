@@ -81,7 +81,7 @@ then
     echo ""
 
     set -x
-    python ${PSDIAG_ROOT}/diag/mfg/qa_regression_test.py --pwr-cycle ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python ${PSDIAG_ROOT}/diag/mfg/qa_regression_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
