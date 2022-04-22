@@ -131,7 +131,21 @@ DSP:
                 VALUE:
                     ALL: 60
                 INFO: Percent of memory to test
-                
+
+    TEST#ELBA_EDMA_TEST:
+        INFO: edma memory interface stress test from linux
+        PLATFORM:
+            TOR: ALL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 120
+                INFO: Test timeout setting
+            mask:
+                VALUE:
+                    ALL: 0x3
+                INFO: Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas
+
     TEST#ELBA_RTC:
         INFO: Elba Real Time Clock Test
         PLATFORM:

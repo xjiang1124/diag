@@ -28,6 +28,7 @@ AMD64_SRC_DIR=			\
 	dsp/switch 			\
 	dsp/qsfp 			\
 	dsp/bcm 			\
+	util/bcmutil        \
 	util/cpldutil		\
 	util/mctputil		\
 	util/fanutil        \

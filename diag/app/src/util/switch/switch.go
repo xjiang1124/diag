@@ -32,6 +32,7 @@ const errhelp = "\nswitch:\n" +
         "switch td3 vrmfix\n" +
         "\n" + 
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
+        "switch elba edmatest <elba mask 0x1/0x2/0x3> \n" +
         "switch elba rtctest <elba mask 0x1/0x2/0x3>\n" +
         "switch elba checkecc/checkpcilink <elba#>\n" +
         "\n" +
@@ -80,7 +81,12 @@ func main() {
             return
         }
         strapping, _ := strconv.ParseUint(os.Args[2], 0, 32)
-        taormina.FPGA_Strapping_Test(int(strapping))
+        rc := taormina.FPGA_Strapping_Test(int(strapping))
+        if rc != errType.SUCCESS {
+            os.Exit(-1) 
+        } else {
+            os.Exit(0)
+        }
         return
     } else if os.Args[1] == "td3" {  
         if argc < 3 {
@@ -117,6 +123,14 @@ func main() {
             temps, _ := td3.RetimerGetTemperatures()
             for i:=0;i<len(temps);i++ {
                 fmt.Printf("Retimer-%d  Temp=%fC\n", i, temps[i])
+            }
+        } else if os.Args[2] == "dis_unreliablelos" {
+            fmt.Printf("IN RETIMER TEMP\n")
+            rc := td3.TD3_Lane_Config_Disable_UNRELIABLELOS_and_LPDFE(1)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
             }
         } else if os.Args[2] == "retimer_si" {
             fmt.Printf("IN RETIMER TEMP\n")
@@ -231,7 +245,12 @@ func main() {
                 os.Exit(0)
             }
         } else if os.Args[2] == "checkgb" {
-            td3.CheckForRevA_Gearbox()
+            rc := td3.CheckForRevA_Gearbox()
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
         } else if os.Args[2] == "printvlan" {
             td3.PrintBCMShellVLANcmd()
         }
@@ -277,8 +296,28 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-
-            taormina.ElbaMemoryTest(uint32(mask), uint32(time), uint32(88), 1) 
+            rc := taormina.ElbaMemoryTest(uint32(mask), uint32(time), uint32(85), 1) 
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+            return
+        } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //edmatest
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rc := taormina.ElbaEDMA_Test(uint32(mask), 1) 
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
             return
         } else if os.Args[2][0] == 'r' || os.Args[2][0] == 'R' {  //rtctest
             if argc < 4 {
@@ -309,8 +348,8 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            err1 := taormina.USBtest(int(mb), int(itterations)) 
-            if err1 != errType.SUCCESS {
+            rc := taormina.USBtest(int(mb), int(itterations)) 
+            if rc != errType.SUCCESS {
                 os.Exit(-1)
             } else { 
                 os.Exit(0)
@@ -335,15 +374,15 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            err1 := taormina.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
-            if err1 != errType.SUCCESS {
+            rc := taormina.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
+            if rc != errType.SUCCESS {
                 os.Exit(-1)
             } else { 
                 os.Exit(0)
             }
         } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //ecctest
-            err1 := taormina.X86_DDR_Check_ECC(1)
-            if err1 != errType.SUCCESS {
+            rc := taormina.X86_DDR_Check_ECC(1)
+            if rc != errType.SUCCESS {
                 fmt.Printf(" Errors Detected\n")
                 os.Exit(-1)
             } else { 
@@ -355,11 +394,8 @@ func main() {
             if contains(os.Args, "-noelba") {
                 skipelba = 1
             }
-
-
-            err1 := taormina.Pci_scan(skipelba)
-
-            if err1 != errType.SUCCESS {
+            rc := taormina.Pci_scan(skipelba)
+            if rc != errType.SUCCESS {
                 fmt.Printf(" PCI Scan Failed\n")
                 os.Exit(-1)
             } else { 

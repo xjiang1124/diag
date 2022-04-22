@@ -81,6 +81,10 @@ cp $DIAG_DIR/dsp/asic $DIAG_DIR/dsp/asic5
 
 echo "Preparing diag environment -- Done"
 
+echo "Setting CXOS to no reboot and disble CXOS holding Elba consoles"
+ovs-appctl -t hpe-cardd park_chassis 1
+systemctl stop dsm-uart-log
+
 echo "Setting tmp451 to extended mode"
 /fs/nos/home_diag/diag/util/fpgautil i2c 2 1 0x4c w 0x09 0x4
 
@@ -101,6 +105,10 @@ do
    fi
 done
 
+echo "Stopping X86 and Elba Watchdog Timers"
+/fs/nos/home_diag/diag/util/fpgautil w32 1 0x500 0xD100FFFF
+/fs/nos/home_diag/diag/util/fpgautil w32 1 0x508 0xD100FFFF
+/fs/nos/home_diag/diag/util/fpgautil w32 1 0x510 0xD100FFFF
 
 echo "-------------------"
 echo "Set up diag $arch -- Done"
