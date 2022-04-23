@@ -1,0 +1,172 @@
+# global init command beore diag run
+INIT:
+    - "Initialize command 1"
+
+SKIP:
+    # skip whole dsp
+    # - "DSP1#ALL"
+    # skip single test of a dsp
+    - "DSP2#TEST1"
+    # skip multiple tests of a dsp, seperate with '#'
+    # - "DSP3#TEST1#TEST2"
+
+PARAMS:
+    P2C:
+        - "TOR1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "TOR1#ASIC#L1#offload=1"
+        - "TOR1#SWITCH#FPGA_STRAPPING#expectedvalue=3" #1=P2, 2=PP, 3=A0
+    2C:
+        - "TOR1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "TOR1#ASIC#L1#offload=1"
+        - "TOR1#SWITCH#FPGA_STRAPPING#expectedvalue=3" #1=P2, 2=PP, 3=A0
+    4C:
+        - "TOR1#ASIC#L1#timeout=5000"
+#        - "MTP1#ASIC#L1#zmq_en=1"
+        - "TOR1#ASIC#L1#offload=1"
+        - "TOR1#SWITCH#FPGA_STRAPPING#expectedvalue=3" #1=P2, 2=PP, 3=A0
+
+MTP_PRE:
+    TOR_CPLD: True
+    TOR_OS: True
+    TOR_BIOS: False
+
+MTP_PARA:
+    SNAKE_TOR: True
+    PRBS_TOR: True
+    LED_TEST: False
+
+TOR_DSP:
+    I2C:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    SFP:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        LASER:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    QSFP:
+        I2C:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    SWITCH:
+        VRM_FIX:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        FPGA_STRAPPING:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        FANRPM:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        INVENTORY:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        PRESENT:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        ELBA_ARM_MEMORY:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        # ELBA_RTC:
+        #     INIT: ""
+        #     POST: ""
+        #     OPTS:
+        #         NIC_NAME: No
+        #         SN: No
+        #         SLOT: No
+    # BCM:
+    #     PRBSEXT:
+    #         INIT: ""
+    #         POST: ""
+    #         OPTS:
+    #             NIC_NAME: No
+    #             SN: No
+    #             SLOT: No
+    CPU:
+        # USB:
+        #     INIT: ""
+        #     POST: ""
+        #     OPTS:
+        #         NIC_NAME: No
+        #         SN: No
+        #         SLOT: No
+        DRAMSIZE:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        # PCISCAN:
+        #     INIT: ""
+        #     POST: ""
+        #     OPTS:
+        #         NIC_NAME: No
+        #         SN: No
+        #         SLOT: No
+        MEMORY:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    ASIC:
+        L1:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: Yes
+                SLOT: No
+                VMARG: Yes
+                MODE: No
+
+MTP_POST:
+    NIC_MEM:  False
+
