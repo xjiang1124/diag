@@ -1,4 +1,12 @@
 #!/bin/bash
+declare -A ortano_high=([elb0_arm]=2 [elb0_core]=2 [vdd_ddr]=2 [vddq_ddr]=2)
+declare -A ortano_low=([elb0_arm]=-2 [elb0_core]=-2 [vdd_ddr]=-2 [vddq_ddr]=-2)
+declare -A ortano_normal=([elb0_arm]=0 [elb0_core]=0 [vdd_ddr]=0 [vddq_ddr]=0)
+ortano_vmarg=(ortano_normal ortano_low ortano_high)
+declare -A ortanoA_high=([elb0_arm]=2 [elb0_core]=2)
+declare -A ortanoA_low=([elb0_arm]=-2 [elb0_core]=-2)
+declare -A ortanoA_normal=([elb0_arm]=0 [elb0_core]=0)
+ortanoA_vmarg=(ortanoA_normal ortanoA_low ortanoA_high)
 
 set_vmarg_lacona()
 {
@@ -27,81 +35,69 @@ set_vmarg()
     echo $CARD_TYPE
     if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" ]]
     then
-        if [[ "$1" -lt 5 && "$1" -ge -2 ]] 
+        if [[ "$1" == "high" ]]
         then
-            if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
-            then
-                /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=$1
-            fi
-        else
-            echo "Skipping $1% on VDD_DDR"
-        fi
-        if [[ "$1" -lt 3 && "$1" -ge -2 ]] 
+            index=2
+        elif [[ "$1" == "low" ]]
         then
-            /data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
-            /data/nic_util/devmgr -dev=ELB0_CORE -margin -pct=$1
-            if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" ]]
-            then
-                /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-            fi
-        else
-            echo "Skipping $1% ELB0_ARM, ELB0_CORE, VDDQ_DDR"
+            index=1
+        elif [[ "$1" == "normal" ]]
+        then
+            index=0
         fi
-        return
+        if [[ $CARD_TYPE == "ORTANO2A" ]]
+        then
+            tmp=(${ortanoA_vmarg[$index]})
+        else
+            tmp=(${ortano_vmarg[$index]})
+        fi
+        declare -n tgt_vmarg="$tmp"
+        for i in "${!tgt_vmarg[@]}"
+        do
+            /data/nic_util/devmgr -dev=$i -margin -pct=${tgt_vmarg[$i]}
+        done
     elif [[ $CARD_TYPE == "LACONA32"        || \
             $CARD_TYPE == "LACONA32DELL"    || \
             $CARD_TYPE == "POMONTE"         || \
             $CARD_TYPE == "POMONTEDELL"     ]]
     then
-        if [[ "$1" -eq 0 ]]
+        if [[ "$1" -eq "normal" ]]
         then
             echo "Do nothing"
             return
-        elif [[ "$1" -lt 3 && "$1" -ge -2 ]] 
+        elif [[ "$1" == "low" ]]
         then
             #/data/nic_util/devmgr -dev=ELB0_ARM -margin -pct=$1
-            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=$1
-            set_vmarg_lacona arm $1
-            set_vmarg_lacona core $1
+            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=-2
+            set_vmarg_lacona arm -2 
+            set_vmarg_lacona core -2
             return
+        elif [[ "$1" == "high" ]]
+        then
+            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=2
+            set_vmarg_lacona arm 2 
+            set_vmarg_lacona core 2
         fi
-        echo "Skipping $1%"
     else
+        if [[ "$1" -eq "normal" ]]
+        then
+            vmarg = 0
+        elif [[ "$1" -eq "low" ]]
+        then
+            vmarg = -5
+        elif [[ "$1" -eq "high" ]]
+        then
+            vmarg =  5
+        fi
         for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
         do
-            /data/nic_util/devmgr -dev=$dev -margin -pct=$1
+            /data/nic_util/devmgr -dev=$dev -margin -pct=$vmarg
         done
     fi
     return
 }
 
-if [ "$1" == "normal" ]
-then
-    percent=0
-    set_vmarg $percent
-elif [ "$1"  == "low" ]
-then
-    declare -a pct_list=(-1 -2 -3 -4 -5)
-    if [[ $ASIC_TYPE == "ELBA" ]]
-    then
-        declare -a pct_list=(-1 -2)
-    fi
-elif [ "$1" == "high" ]
-then
-    declare -a pct_list=(1 2 3 4 5)
-    if [[ $ASIC_TYPE == "ELBA" ]]
-    then
-        declare -a pct_list=(1 2)
-    fi
-else
-    echo "Invalid parameter"
-    exit 0
-fi
-
-for percent in ${pct_list[@]}
-do
-    echo "=== Setting Vmarg to $percent% ==="
-    set_vmarg $percent
-    echo "=== Vmarg is at $percent% ==="
-done
+echo "=== Setting Vmarg to $1 ==="
+set_vmarg $1
+echo "=== Vmarg is at $1 ==="
 
