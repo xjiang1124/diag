@@ -164,5 +164,5 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.arm_l1 == True:
-        test.arm_l1(slot_list, args.wait_time, args.vmarg, args.sn, args.mod, args.no_pwr_cycle)
+        test.arm_l1(slot_list, args.wait_time, args.vmarg, args.sn, args.mode, args.no_pwr_cycle)
         sys.exit()
