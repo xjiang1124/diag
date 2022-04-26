@@ -28,7 +28,6 @@ sleep 1
 
 configNames=(
 ORTANO2ADI_input.json
-ORTANO2_RESTORE_input.json
 TAA_NAPLES25SWM_input.json
 NAPLES100DELL_input.json
 POMONTE_test_input.json
@@ -41,8 +40,7 @@ NAPLES100_input.json
 NAPLES100HPE_input.json
 NAPLES100IBM_input.json
 NAPLES25OCP_input.json
-TAORMINA_PP_input.json
-FLEX_LACONA32DELL_P1B_input.json
+TAORMINA_Production_input.json
 LACONA32DELL_input.json
 LACONA32_input.json
 POMONTEDELL_test_input.json
@@ -65,6 +63,9 @@ START=$(date +%s);
 
 echo Script: runReport.sh
 
+cd $_mydir
+python3 $_mydir/process_log.py ORTANO2_1_43_input.json withday=1
+
 for name in "${configNames[@]}";
 do 
         runReportModule $name $_mydir
@@ -75,6 +76,9 @@ python3 $_mydir/all_sw_report.py
 
 cd $_mydir
 python3 $_mydir/all_mtp_report.py
+
+cd $_mydir
+python3 $_mydir/all_sn_mac_report.py
 
 cd $_mydir
 python3 $_mydir/zip_old_json_file.py

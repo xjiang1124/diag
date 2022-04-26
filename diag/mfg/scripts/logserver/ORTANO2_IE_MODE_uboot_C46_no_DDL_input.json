@@ -1,0 +1,70 @@
+{
+	"NAME": "ORTANO2_IE_MODE_uboot_C46_no_DDL",
+	"TYPE": "NIC",
+	"SNLIST": "SNJAN2022.xlsx",
+	"STARTDATE": "2022-02-14",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_ORTANO2_IE_MODE_uboot_C46_no_DDL",
+		"TEMPDATABASE": "/samba/public/tmp_database/ORTANO2_IE_MODE_uboot_C46_no_DDL",
+		"testlogpath": "/mnt/hw-mftg-data/ORTANO2_IE_MODE_uboot_C46_no_DDL",
+		"reportpath":"/samba/public/REPORT/ORTANO2_IE_MODE_uboot_C46_no_DDL/",
+		"historypath":"/samba/public/HISTORY/ORTANO2_IE_MODE_uboot_C46_no_DDL"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/ORTANO2_IE_MODE_uboot_C46_no_DDL_DB_TEST28.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"IMAGESUB" : {
+		"CPLD1 image" : "CPLD image1",
+		"CPLD2 image" : "CPLD image2"
+	},
+	"MTP_STATUS" : [
+					"01",
+					"02",
+					"03",
+					"04",
+					"05",
+					"06",
+					"07",
+					"08",
+					"09",
+					"10"
+	],
+	"DISPLAYINDO" : [
+		"CPLD image1",
+		"QSPI image",
+		"MTP Diag Version"
+	],
+	"CHECKKEYS" : [
+		"IMAGE",
+		"MTPINFO",
+		"NICINFO"
+	],
+	"DIE_ID" : 1,
+	"SKIPPrefix" : "FLM",
+	"STARTCountSN" : "FPN21200001",
+	"4CFLOW" : [
+				"4C-L (HV)",
+				"4C-L (LV)",
+				"4C-H (LV)",
+				"4C-H (HV)"
+				],
+	"TESTLIST" :[
+					"4C-L",
+					"4C-H"					
+					],
+	"TESTFOLDER":[
+					"DL",
+					"P2C",
+					"4C/4C-L",
+					"4C/4C-N",
+					"4C/4C-H",
+					"SWI",
+					"FST"
+				]
+	
+}

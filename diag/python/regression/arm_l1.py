@@ -147,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("-no_pc", "--no_pwr_cycle", help="Test with Power Cycle", action='store_false')
 
     parser.add_argument("-sn", "--sn", help="Serian Number", type=str, default="SN00000000")
-    parser.add_argument("-mod", "--mod", help="L1 mode", type=str, default="hod")
+    parser.add_argument("-mode", "--mode", help="L1 mode", type=str, default="hod")
 
     args = parser.parse_args()
 
@@ -164,5 +164,5 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.arm_l1 == True:
-        test.arm_l1(slot_list, args.wait_time, args.vmarg, args.sn, args.mod, args.no_pwr_cycle)
+        test.arm_l1(slot_list, args.wait_time, args.vmarg, args.sn, args.mode, args.no_pwr_cycle)
         sys.exit()

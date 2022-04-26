@@ -1,0 +1,34 @@
+{
+	"NAME": "TAORMINA_Production",
+	"DIR": {
+		"rootdir": "/home/mfg/logserver",
+		"logdir": "/home/mfg/recordlogs",
+		"TEMPDIR": "/tmp/tmp_unzip_TAORMINA_Production",
+		"TEMPDATABASE": "/home/mfg/tmp_database",
+		"testlogpath": "/mnt/hw-mftg-data/TAORMINA",
+		"reportpath":"/samba/public/REPORT/TAORMINA_Production/",
+		"historypath":"/samba/public/HISTORY/TAORMINA_Production"
+	},
+	"FILE": {
+		"datebasesjsonfile" : "/samba/public/tmp_database/TAORMINA_Production_DB_TEST_PP_1.json"
+	},
+	"TESTSUB" : {
+		"NT" : "P2C"
+	},
+	"KEY": "UUT",
+	"SKIPPrefix" : "FSJ",
+	"TESTLIST" :[
+					"DL1",
+					"DL2",
+					"LED",
+					"2C-LV",
+					"2C-HV",
+					"SWI"
+					],
+	"TESTFOLDER":[
+					"DL",
+					"2C",
+					"SWI"
+				]
+	
+}

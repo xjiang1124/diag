@@ -11,9 +11,12 @@ config:
 test_types:
   precheckin:
     skip:
+    slots: 5
 
   sanity:
     skip:
+    slots: 5
 
   regression:
     skip:
+    slots: 5

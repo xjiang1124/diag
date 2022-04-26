@@ -132,6 +132,31 @@ func SwitchElba_Arm_MemoryHdl(argList []string) {
 }
 
 
+func SwitchElba_Edma_TestHdl(argList []string) {
+    var err int = 0
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    maskPtr := fs.Int("mask", 3, "Elba test Mask   0x1 elba0    0x2 elba1   0x3 Both Elbas")
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "mask", *maskPtr)
+    mask:=*maskPtr
+
+    err = taormina.ElbaEDMA_Test(uint32(mask), 0)
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+
+
 func SwitchElba_RtcHdl(argList []string) {
     var err int = 0
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -212,12 +237,10 @@ func main() {
     diagEngine.FuncMap["FANRPM"] = SwitchFanrpmHdl
     diagEngine.FuncMap["SNAKE"] = SwitchSnakeHdl
     diagEngine.FuncMap["ELBA_ARM_MEMORY"] = SwitchElba_Arm_MemoryHdl
+    diagEngine.FuncMap["ELBA_EDMA_TEST"] = SwitchElba_Edma_TestHdl
     diagEngine.FuncMap["ELBA_RTC"] = SwitchElba_RtcHdl
     diagEngine.FuncMap["FPGA_STRAPPING"] = SwitchFgpa_StrappingHdl
     diagEngine.FuncMap["VRM_FIX"] = SwitchVrm_FixHdl
-
-
-    
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)

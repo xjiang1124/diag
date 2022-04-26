@@ -205,10 +205,10 @@ const D1_MISC_PWR_CTRL_REG         uint64 = 0x428
 const D1_MISC_PWR_STAT_REG         uint64 = 0x42c
 const D1_CPU_CTRL_REG              uint64 = 0x480
 const D1_CPU_STAT_REG              uint64 = 0x484
-const D1_ELBA_0_CTRL_REG           uint64 = 0x488
-const D1_ELBA_0_STAT_REG           uint64 = 0x48c
-const D1_ELBA_1_CTRL_REG           uint64 = 0x490
-const D1_ELBA_1_STAT_REG           uint64 = 0x494
+const D1_ELBA0_CTRL_REG            uint64 = 0x488
+const D1_ELBA0_STAT_REG            uint64 = 0x48c
+const D1_ELBA1_CTRL_REG            uint64 = 0x490
+const D1_ELBA1_STAT_REG            uint64 = 0x494
 const D1_TD_CTRL_REG               uint64 = 0x498
 const D1_TD_STAT_REG               uint64 = 0x49c
 const D1_MISC_CTRL_REG             uint64 = 0x4a0
@@ -675,10 +675,10 @@ var TAOR_DEV1_REGISTERS = []TAOR_FPGA_REGISTERS {
     TAOR_FPGA_REGISTERS{"D1_MISC_PWR_STAT_REG     ",             D1_MISC_PWR_STAT_REG},
     TAOR_FPGA_REGISTERS{"D1_CPU_CTRL_REG          ",             D1_CPU_CTRL_REG},
     TAOR_FPGA_REGISTERS{"D1_CPU_STAT_REG          ",             D1_CPU_STAT_REG},
-    TAOR_FPGA_REGISTERS{"D1_ELBA_0_CTRL_REG       ",             D1_ELBA_0_CTRL_REG},
-    TAOR_FPGA_REGISTERS{"D1_ELBA_0_STAT_REG       ",             D1_ELBA_0_STAT_REG},
-    TAOR_FPGA_REGISTERS{"D1_ELBA_1_CTRL_REG       ",             D1_ELBA_1_CTRL_REG},
-    TAOR_FPGA_REGISTERS{"D1_ELBA_1_STAT_REG       ",             D1_ELBA_1_STAT_REG},
+    TAOR_FPGA_REGISTERS{"D1_ELBA0_CTRL_REG        ",             D1_ELBA0_CTRL_REG},
+    TAOR_FPGA_REGISTERS{"D1_ELBA0_STAT_REG        ",             D1_ELBA0_STAT_REG},
+    TAOR_FPGA_REGISTERS{"D1_ELBA1_CTRL_REG        ",             D1_ELBA1_CTRL_REG},
+    TAOR_FPGA_REGISTERS{"D1_ELBA1_STAT_REG        ",             D1_ELBA1_STAT_REG},
     TAOR_FPGA_REGISTERS{"D1_TD_CTRL_REG           ",             D1_TD_CTRL_REG},
     TAOR_FPGA_REGISTERS{"D1_TD_STAT_REG           ",             D1_TD_STAT_REG},
     TAOR_FPGA_REGISTERS{"D1_MISC_CTRL_REG         ",             D1_MISC_CTRL_REG},

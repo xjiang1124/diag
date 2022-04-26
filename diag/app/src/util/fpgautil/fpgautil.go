@@ -69,6 +69,8 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil cpld <cpu/gpio0/gpio1/gpio2> generateimage/verifyimage/program <filename>\n" +
         " \n" +
         "fpgautil power <cycle/on/off> <all/td3/e0/e1> [nopciscan]\n" +
+        "fpgautil system pcycle\n" +
+        "fpgautil rescan pci\n" +
         " \n" +
         "fpgautil elba <elba#> flash devid/flagstatus/status\n" +
         "fpgautil elba <elba#> flash read <addr> <length>\n" +
@@ -419,6 +421,16 @@ func main() {
         }
         taorfpga.Asic_PowerCycle(device, state, nopciscan) 
         return
+    } else if os.Args[1] == "system" {   //power cycle is the only option
+        if argc < 2 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        taorfpga.SystemPowerCycle()
+        return
+    } else if os.Args[1] == "rescan" {   //rescan pci
+        fmt.Printf(" Executing Linux PCI Rescan\n")
+        taorfpga.LinuxPCIscan()
     } else if os.Args[1] == "flash" {
 
         if os.Args[2] == "devid" {

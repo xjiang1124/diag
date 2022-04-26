@@ -37,6 +37,7 @@ const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
 const NAPLES200_ORT_V2    string  = "68-0015-02 01"   //ORTANO Oracle
 const NAPLES200_ORT_V2A   string  = "68-0026-01 01"   //ORTANO ADI Oracle
 const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
+const NAPLES200_IBM       string  = "68-0028-01 01"   //ORTANO IBM
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
 const NAPLES200_TAOR2     string  = "73-0040-03 A2"   //TAORMINA ORTANO Pensando (newer part number)
 
@@ -204,6 +205,9 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 } else if pn[0:7] == NAPLES200_PEN[0:7] {      
                     eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
                     eeprom.CustType = "PENORTANO"
+                } else if pn[0:7] == NAPLES200_IBM[0:7] {      
+                    eeprom.EepromTbl = eeprom.OrtanoIBMTbl
+                    eeprom.CustType = "PENORTANO"
                 } else if pn[0:7] == NAPLES200_TAOR[0:7] || pn[0:7] == NAPLES200_TAOR2[0:7]{      
                     eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
                     eeprom.CustType = "PENORTANO"
@@ -213,7 +217,7 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 }
             }
         }
-        if (cardType == "ORTANO2A") {
+        if (cardType == "ORTANO2A") {   //Ortano2 with analog devices VRM's (ADI)
             if update == true {
                 if pn == "" {
                     cli.Println("e", "For Programming ORTANO2, you must enter a part number")
@@ -225,8 +229,8 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 } else if pn[0:7] == NAPLES200_PEN[0:7] {      
                     eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
                     eeprom.CustType = "PENORTANO"
-                } else if pn[0:7] == NAPLES200_TAOR[0:7] || pn[0:7] == NAPLES200_TAOR2[0:7] {      
-                    eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+                } else if pn[0:7] == NAPLES200_IBM[0:7] {      
+                    eeprom.EepromTbl = eeprom.OrtanoIBMTbl
                     eeprom.CustType = "PENORTANO"
                 } else {
                     cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming an Ortano Card")
@@ -403,25 +407,31 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         } 
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
         if rc == errType.SUCCESS {
-            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_IBM[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoIBMTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
         if rc == errType.SUCCESS {
-            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
         if rc == errType.SUCCESS {
-            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
         cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
         return -1;
-    } else if (cardType == "ORTANO2A") {
+    } else if (cardType == "ORTANO2A") {   //Ortano2 with analog devices VRM's (ADI)
         rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_ORT_V2A[0:7])
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.OrtanoATbl_V2
@@ -430,23 +440,17 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         } 
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
         if rc == errType.SUCCESS {
-            eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
-            eeprom.CustType = "PENORTANO"
-            return(0)
-        }
-        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR[0:7])  //Taormina with Elba's
-        if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
-        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_IBM[0:7])
         if rc == errType.SUCCESS {
-            eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
+            eeprom.EepromTbl = eeprom.OrtanoIBMTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
-        cli.Println("e", "Unable to determine Ortano fru type.  Please program it with a valid part number")
+        cli.Println("e", "Unable to determine Ortano ADI fru type.  Please program it with a valid part number")
         return -1;
     } else if (cardType == "UUT_NONE") {
         cli.Println("e", "Empty slot!")
