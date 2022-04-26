@@ -41,6 +41,7 @@ fi
 
 rm /data/ddrbist_config.txt
 rm /data/ddrbist_vmarg.txt
+rm /data/pensando_pre_init.sh
 fwenv -n gold -E
 fwenv -n gold
 echo "DDR BIST FINISHED"
