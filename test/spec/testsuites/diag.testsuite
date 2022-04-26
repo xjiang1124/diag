@@ -15,12 +15,15 @@ test_types:
       - EDMA 
       - SNAKE 
       - PCIE_PRBS
+    slots: 2
 
   sanity:
     iteration: 1
     skip:
+    slots: 10
 
   regression:
-    iteration: 4
+    iteration: 2
     skip:
+    slots: 10
 

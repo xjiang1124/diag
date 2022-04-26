@@ -567,7 +567,7 @@ func GetResistorStrapping() (value uint32, err error) {
 func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) {
     var args string
     var data32 uint32
-    var ctrl_reg, stat_reg uint64 = D1_ELBA0_PWR_CTRL_REG, D1_ELBA0_PWR_STAT_REG
+    var ctrl_pwr_reg, stat_reg, ctrl_reg uint64 = D1_ELBA0_PWR_CTRL_REG, D1_ELBA0_PWR_STAT_REG, D1_ELBA0_CTRL_REG
     var dev, dev_start, dev_end int
 
     if device > ALL {
@@ -591,11 +591,16 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
     if state == POWER_STATE_OFF || state == POWER_STATE_CYCLE {
         for dev=dev_start;dev<dev_end;dev++ {
             switch(dev){
-                case ELBA0: ctrl_reg = D1_ELBA0_PWR_CTRL_REG; stat_reg = D1_ELBA0_PWR_STAT_REG
+                case ELBA0: ctrl_pwr_reg = D1_ELBA0_PWR_CTRL_REG
+                            stat_reg = D1_ELBA0_PWR_STAT_REG
+                            ctrl_reg = D1_ELBA0_CTRL_REG
                             fmt.Printf(" Removing Elba0 from Linux PCI Enumeration and Powering Off\n")
-                case ELBA1: ctrl_reg = D1_ELBA1_PWR_CTRL_REG; stat_reg = D1_ELBA1_PWR_STAT_REG
+                case ELBA1: ctrl_pwr_reg = D1_ELBA1_PWR_CTRL_REG 
+                            stat_reg = D1_ELBA1_PWR_STAT_REG
+                            ctrl_reg = D1_ELBA1_CTRL_REG
                             fmt.Printf(" Removing Elba1 from Linux PCI Enumeration and Powering Off\n")
-                case TD3:   ctrl_reg = D1_TD3_PWR_CTRL_REG; stat_reg = D1_TD3_PWR_STAT_REG
+                case TD3:   ctrl_pwr_reg = D1_TD3_PWR_CTRL_REG 
+                            stat_reg = D1_TD3_PWR_STAT_REG
                             fmt.Printf(" Removing TD3 from Linux PCI Enumeration and Powering Off\n")
             }
             switch(dev){
@@ -607,7 +612,17 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
             time.Sleep(time.Duration(1) * time.Second) 
 
             if dev == ELBA0 || dev == ELBA1 {
-                TaorWriteU32(DEVREGION1, ctrl_reg, 0x53) 
+                TaorWriteU32(DEVREGION1, ctrl_pwr_reg, 0x53) 
+                TaorWriteU32(DEVREGION1, ctrl_reg, 0x3) 
+                if dev == ELBA0 {
+                    TaorWriteU32(DEVREGION2, D2_SPI4_MUXSEL_REG, 0x0) 
+                    TaorWriteU32(DEVREGION2, D2_SPI1_MUXSEL_REG, 0x0) 
+                    TaorWriteU32(DEVREGION2, D2_SPI6_MUXSEL_REG, 0x0)
+                } else {
+                    TaorWriteU32(DEVREGION2, D2_SPI5_MUXSEL_REG, 0x0) 
+                    TaorWriteU32(DEVREGION2, D2_SPI2_MUXSEL_REG, 0x0) 
+                    TaorWriteU32(DEVREGION2, D2_SPI7_MUXSEL_REG, 0x0)
+                }
             }
             if dev == TD3 {
                 TaorWriteU32(DEVREGION1, D1_TD_CTRL_REG, 0x1ff) 
@@ -621,17 +636,32 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
     if state == POWER_STATE_ON || state == POWER_STATE_CYCLE {
         for dev=dev_start;dev<dev_end;dev++ {
             switch(dev){
-                case ELBA0: ctrl_reg = D1_ELBA0_PWR_CTRL_REG; stat_reg = D1_ELBA0_PWR_STAT_REG
-                case ELBA1: ctrl_reg = D1_ELBA1_PWR_CTRL_REG; stat_reg = D1_ELBA1_PWR_STAT_REG
-                case TD3:   ctrl_reg = D1_TD3_PWR_CTRL_REG; stat_reg = D1_TD3_PWR_STAT_REG
+                case ELBA0: ctrl_pwr_reg = D1_ELBA0_PWR_CTRL_REG
+                            stat_reg = D1_ELBA0_PWR_STAT_REG
+                            ctrl_reg = D1_ELBA0_CTRL_REG
+                            TaorWriteU32(DEVREGION2, D2_SPI4_MUXSEL_REG, 0x1) 
+                            TaorWriteU32(DEVREGION2, D2_SPI1_MUXSEL_REG, 0x1) 
+                            TaorWriteU32(DEVREGION2, D2_SPI6_MUXSEL_REG, 0x1)
+                case ELBA1: ctrl_pwr_reg = D1_ELBA1_PWR_CTRL_REG
+                            stat_reg = D1_ELBA1_PWR_STAT_REG
+                            ctrl_reg = D1_ELBA1_CTRL_REG
+                            TaorWriteU32(DEVREGION2, D2_SPI5_MUXSEL_REG, 0x1) 
+                            TaorWriteU32(DEVREGION2, D2_SPI2_MUXSEL_REG, 0x1) 
+                            TaorWriteU32(DEVREGION2, D2_SPI7_MUXSEL_REG, 0x1)
+                case TD3:   ctrl_pwr_reg = D1_TD3_PWR_CTRL_REG
+                            stat_reg = D1_TD3_PWR_STAT_REG
             }
             if dev == ELBA0 || dev == ELBA1 {
                 if nopciscan == 1 {
-                    fmt.Printf(" Powering up Elba\n")
+                    fmt.Printf(" Powering up Elba-%d\n", dev)
                 } else {
                     fmt.Printf(" Powering up Elba and Waiting 15 seconds for Elba to boot and enumerate\n")
                 }
-                TaorWriteU32(DEVREGION1, ctrl_reg, 0xD1) 
+                TaorWriteU32(DEVREGION1, ctrl_reg, 0x1) 
+                TaorWriteU32(DEVREGION1, ctrl_pwr_reg, 0xD1) 
+                time.Sleep(time.Duration(300) * time.Millisecond)
+                TaorWriteU32(DEVREGION1, ctrl_reg, 0x0)
+                time.Sleep(time.Duration(1000) * time.Millisecond) 
             }
             if dev == TD3 {
                 if nopciscan == 1 {
@@ -683,15 +713,37 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
         }
         //Have Linux rescan the PCI bus to enumerate the devices
         if nopciscan == 0 {
-            args = "echo 1 > /sys/bus/pci/rescan"
-            _, errGo := exec.Command("bash", "-c", args).Output()
-            if errGo != nil {
-                cli.Println("e", errGo)
-                return errGo
-            }
+            err = LinuxPCIscan()
         }
     }
 
+    return
+}
+
+
+
+/***********************************************************************************
+*
+*   Scan the PCI Bus for elba or td3 power cycle
+*
+***********************************************************************************/
+func LinuxPCIscan() (err error) {
+    args := "echo 1 > /sys/bus/pci/rescan"
+    _, err = exec.Command("bash", "-c", args).Output()
+    if err != nil {
+        cli.Println("e", "Linux PCI Scan Failed.. Err = -->",  err)
+    }
+    return
+}
+
+/***********************************************************************************
+*
+*   Hard power cycle the system by disabling the PSU's
+*
+***********************************************************************************/
+func SystemPowerCycle() {
+
+    TaorWriteU32(DEVREGION1, D1_PSU_CTRL_REG, 0xD1) 
     return
 }
 
@@ -838,10 +890,10 @@ func QSFP_present(QSFPnumber uint32) (present bool, err error) {
 
 func AsicCoreTemp(devName string) (err int) {
     var data32 uint32
-    var addr uint64 = D1_ELBA_0_STAT_REG
+    var addr uint64 = D1_ELBA0_STAT_REG
 
     if strings.Contains(devName, "1") == true {
-        addr = D1_ELBA_1_STAT_REG
+        addr = D1_ELBA1_STAT_REG
     }
     data32, _ = TaorReadU32(DEVREGION1, addr)
 
@@ -852,10 +904,10 @@ func AsicCoreTemp(devName string) (err int) {
 
 func GetTemperature(devName string) (temperatures []float64, err int) {
     var data32 uint32
-    var addr uint64 = D1_ELBA_0_STAT_REG
+    var addr uint64 = D1_ELBA0_STAT_REG
 
     if strings.Contains(devName, "1") == true {
-        addr = D1_ELBA_1_STAT_REG
+        addr = D1_ELBA1_STAT_REG
     }
     data32, _ = TaorReadU32(DEVREGION1, addr)
 

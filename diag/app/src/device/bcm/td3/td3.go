@@ -2273,7 +2273,48 @@ func RetimerGetTemperatures() (temperature []float64, err int) {
     return
 }
 
-/********************************************************************************
+
+/********************************************************************************************************* 
+   phy raw c45 0x100 0x1 0x8000 (0x9000 | (1<<lane))
+   phy raw c45 0x100 0x1 0x8001 0x0
+   phy raw c45 0x100 0x1 0xd1ad
+   phy raw c45 0x100 0x1 0xd1ad 0x8004
+ 
+***********************************************************************************************************/ 
+func TD3_Lane_Config_Disable_UNRELIABLELOS_and_LPDFE(PrintOutput int) (err int) {
+    var output, command string
+    var strapping uint32
+    err = errType.SUCCESS
+    var retimer_address uint32 = 0
+
+    strapping, _ = taorfpga.GetResistorStrapping() 
+
+    for i:=0; i<3; i++ {
+        if strapping == 0 {
+            retimer_address = mdio_phy_addr_rev0[RETIMER_START + i]
+        } else {
+            retimer_address = mdio_phy_addr_rev1[RETIMER_START + i]
+        }
+        for lane:=0; lane<8; lane++ {
+            command = fmt.Sprintf("phy raw c45 0x%x 0x1 0x8000 0x90%.02x; phy raw c45 0x%x 0x1 0x8001 0x0;phy raw c45 0x%x 0x1 0xd1ad 0x8004;phy raw c45 0x%x 0x1 0xd1ad", retimer_address, (1<<uint32(lane)), retimer_address,retimer_address, retimer_address)
+            if PrintOutput > 0 {
+                fmt.Printf("Setting QSFP LANE CONFIG --> %s\n", command)
+            }
+            output, err = ExecBCMshellCMD(command)
+            if err != errType.SUCCESS {
+                cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
+                err = errType.FAIL
+                return
+            }
+            fmt.Printf("%s\n", string(output))
+        }
+    }
+    return
+}
+
+
+
+/******************************************************************************** 
 * Set Pre/Post/Main 
 * 
  
@@ -2459,6 +2500,74 @@ Pre (decimal): -6   (0xFA)
 Main (decimal): 73  (0x49)
 Post (decimal): 0 
  
+ 
+Enter Command Code (0=Help): 21
+Set TX FIR on Line/Sys side ? (0:Line, 1:Sys, 9=Exit)0
+if_side = 0
+Pre: -12~0, Main: 0~100, Post: -34~0
+Set [Pre] [Main] [Post]: -6 83 0
+tx_fir.pre = -6
+tx_fir.main = 83
+tx_fir.post = 0
+Lane: 0x1, setting Pre/Main/Post=-6/83/0
+READ  [0x18500] ==> [0x1381] @ MDIO_Addr [0x10] 
+READ  [0x18501] ==> [0x80a1] @ MDIO_Addr [0x10] 
+READ  [0x18596] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x18594] ==> [0xffff] @ MDIO_Addr [0x10] 
+WRITE [0x18000] <== [0x9001] @ MDIO_Addr [0x10] 
+READ  [0x18001] ==> [0x0] @ MDIO_Addr [0x10] 
+WRITE [0x18001] <== [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x3000] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x3400] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x3400] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x35fa] @ MDIO_Addr [0x10] 
+READ  [0x1d134] ==> [0x0] @ MDIO_Addr [0x10] 
+WRITE [0x1d134] <== [0x53] @ MDIO_Addr [0x10] 
+READ  [0x1d135] ==> [0xa8] @ MDIO_Addr [0x10] 
+WRITE [0x1d135] <== [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d136] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d137] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d138] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d139] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13a] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13b] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13c] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13d] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13e] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x35fa] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x5fa] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x5fa] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0xdfa] @ MDIO_Addr [0x10] 
+Lane: 0x2, setting Pre/Main/Post=-6/83/0
+READ  [0x18500] ==> [0x1381] @ MDIO_Addr [0x10] 
+READ  [0x18501] ==> [0x80a1] @ MDIO_Addr [0x10] 
+READ  [0x18596] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x18594] ==> [0xffff] @ MDIO_Addr [0x10] 
+WRITE [0x18000] <== [0x9002] @ MDIO_Addr [0x10] 
+READ  [0x18001] ==> [0x0] @ MDIO_Addr [0x10] 
+WRITE [0x18001] <== [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x3000] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x3400] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x3400] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x35fa] @ MDIO_Addr [0x10] 
+READ  [0x1d134] ==> [0x0] @ MDIO_Addr [0x10] 
+WRITE [0x1d134] <== [0x53] @ MDIO_Addr [0x10] 
+READ  [0x1d135] ==> [0xa8] @ MDIO_Addr [0x10] 
+WRITE [0x1d135] <== [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d136] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d137] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d138] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d139] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13a] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13b] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13c] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13d] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d13e] ==> [0x0] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x35fa] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0x5fa] @ MDIO_Addr [0x10] 
+READ  [0x1d133] ==> [0x5fa] @ MDIO_Addr [0x10] 
+WRITE [0x1d133] <== [0xdfa] @ MDIO_Addr [0x10]  
+ 
 ********************************************************************************/ 
 func RetimerSetSI(PrintOutput int) (err int) {
     var output, command string
@@ -2469,8 +2578,6 @@ func RetimerSetSI(PrintOutput int) (err int) {
     strapping, _ = taorfpga.GetResistorStrapping() 
 
     for i:=0; i<3; i++ {
-
-
         if strapping == 0 {
             retimer_address = mdio_phy_addr_rev0[RETIMER_START + i]
         } else {
@@ -2478,9 +2585,11 @@ func RetimerSetSI(PrintOutput int) (err int) {
         }
         for lane:=0; lane<8; lane++ {
             command = fmt.Sprintf("phy raw c45 0x%x 0x1 0x8000 0x90%.02x; phy raw c45 0x%x 0x1 0x8001 0x0;", retimer_address, (1<<uint32(lane)), retimer_address)
-            command1 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd134 0x49; phy raw c45 0x%x 0x1 0xd135 0x00;", retimer_address, retimer_address)
-            command2 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd133 0xFA; phy raw c45 0x%x 0x1 0xd133 0x8FA;", retimer_address, retimer_address)
-            command = command + command1 + command2
+            command1 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd133 0x3400; phy raw c45 0x%x 0x1 0xd133 0x35FA;", retimer_address, retimer_address)
+            command2 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd134 0x49; phy raw c45 0x%x 0x1 0xd135 0x00;", retimer_address, retimer_address)
+            command3 := fmt.Sprintf("phy raw c45 0x%x 0x1 0xd133 0x5FA; phy raw c45 0x%x 0x1 0xd133 0xDFA;", retimer_address, retimer_address)
+            
+            command = command + command1 + command2 + command3
             if PrintOutput > 0 {
                 fmt.Printf("Setting QSFP SI --> %s\n", command)
             }

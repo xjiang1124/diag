@@ -104,9 +104,11 @@ class LaunchApp(object):
             'PASSWORD': "lab123",
             'ALIAS': f"{self.__testsuite.config.testbed.lower()}{testbed_id}",
             'SLOTS': 10,
+            'SKIP_SLOTS': "",
             'CAPABILITY': "0x3",
         }
 
+        # add in APC info
         pdu_info = mtp_instance.get("PDUPort", None)
         if pdu_info:
             for idx, pdu_port in enumerate(pdu_info.get("Ports", [])):
@@ -119,6 +121,11 @@ class LaunchApp(object):
             data['APC1_PORT'] = mtp_resource.get('ApcPort', ""),
             data['APC1_USERID'] =  mtp_resource.get('ApcUsername', ""),
             data['APC1_PASSWORD'] =  mtp_resource.get('ApcPassword', ""),
+
+        # change SKIP_SLOTS to skip none or use outermost 2 slots
+        test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
+        if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
+            data['SKIP_SLOTS'] = "2-9"
 
         testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
         mtp_yaml_data = {
@@ -216,7 +223,7 @@ class LaunchApp(object):
 
         ret = self.__lookup_testsuite(GlobalOptions.testsuite)
         if ret != defs.Result.SUCCESS:
-            Logger.error(f"Failed to extract mtp-inventory from {GlobalOptions.testbed_json} - ABORT")
+            Logger.error(f"Failed to lookup testsuite from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
         ret = self.__gen_mtp_inventory(GlobalOptions.testbed_json)

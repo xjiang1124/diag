@@ -329,7 +329,6 @@ def main():
     stop_on_err = False
     apc = False
     email_to = None
-    pwr_cycle = False
     corner = Env_Cond.MFG_QA
     swmtestmode = Swm_Test_Mode.SW_DETECT 
 
@@ -343,8 +342,6 @@ def main():
     if args.email:
         email_to = args.email
     iteration = args.iteration
-    if args.pwr_cycle:
-        pwr_cycle = True
     if args.corner:
         corner = args.corner
     if args.swm:
@@ -373,13 +370,17 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    # power on the mtp chassis, if --apc is set
-    if apc:
-        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+    # power on the mtp chassis
+    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+
+    # CI/CD: store the images to env for use by the runner
     mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
     nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
     mtp_asic_image = os.getenv("ASIC_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.ASIC_AMD64_IMAGE)
     nic_asic_image = os.getenv("ASIC_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.ASIC_ARM64_IMAGE)
+
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_mgmt_connect():
@@ -406,19 +407,6 @@ def main():
             mtpid_fail_list.append(mtp_id)
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP ASIC Image is updated", level=0)
-
-    if pwr_cycle:
-        libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
-        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
-
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-                mtpid_list.remove(mtp_id)
-                mtpid_fail_list.append(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()
 

@@ -692,7 +692,7 @@ func BIOS_Display_Version(useCLI int) (err int) {
 }
 
 
-func HALON_OS_Display_Version(useCLI int) (err int) {
+func CXOS_Display_Version(useCLI int) (err int) {
     var show string = "show version"
     out, errGo := exec.Command("vtysh", "-c", show).Output()
     if errGo != nil {
@@ -710,6 +710,29 @@ func HALON_OS_Display_Version(useCLI int) (err int) {
     }
     return
 }
+
+func CXOS_Get_Build_Date() (year int, month int, err int) {
+    var cmdStr string
+    year = 0
+    month = 0
+    cmdStr = "vtysh -c \"show version\" | grep -i \"Build Date\""
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+        err = errType.FAIL
+        return
+    }
+    s := strings.Split(string(output), "\n")
+    for _, temp := range s {
+        year64, _ := strconv.ParseUint(string(temp[15:19]), 0, 64)
+        year = int(year64)
+        month64, _ := strconv.ParseUint(string(temp[20:22]), 0, 64)
+        month = int(month64)
+        break
+    }
+    return
+}
+
 
 func Process_Is_Running(process string) (running bool, err int) {
     out, errGo := exec.Command("ps", "-A").Output()
@@ -1075,6 +1098,272 @@ func ElbaPing(elba uint32) (err int) {
     return
 }
 
+/********************************************************************************* 
+*
+* 
+* 
+*********************************************************************************/ 
+func ElbaEDMA_Test(elbaMask uint32, calledFromCLI int) (err int) {
+    var cmdStr string
+    var elbafailmask, i uint32
+    err = errType.FAIL
+    var forStart, forEnd uint32
+    var time uint32 = 90
+    var testStarted uint32 = 0
+    
+    if elbaMask == 1 {
+        forStart = 0
+        forEnd = 1
+    } else if elbaMask == 2 {
+        forStart = 1
+        forEnd = 2
+    } else if elbaMask == 3 {
+        forStart = 0
+        forEnd = 2
+    } else {
+        cli.Printf("e", "Elba Mask must be 0x1, 0x2, 0x3 for both elbas.  You entered 0x%x\n", elbaMask)
+        err = errType.FAIL
+        return
+    }
+
+    dcli.Printf("i", " Starting Elba EMDA Test:  Mask=0x%x\n", elbaMask)
+
+
+    {
+        year, month, _ := CXOS_Get_Build_Date()
+        dcli.Printf("i","CXOS Build Date %d-%d\n", year, month)
+        if (year < 2022) && (month < 3) {
+            cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%d\n", year, month)
+            err = errType.FAIL
+            return
+        }
+    }
+
+
+    //Ping Elba to make sure the network is up
+    for i=forStart; i < forEnd; i++ {
+        dcli.Printf("i","Elba-%d Ping Test\n", i)
+        err = ElbaPing(i) 
+        if err != errType.SUCCESS {
+            dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed\n", i)
+            elbafailmask |= (1<<i)
+        } else {
+            rc := ElbaCheckECC(i, 1, 0, 0) 
+            if rc != errType.SUCCESS {
+                elbafailmask |= (1<<i)
+            }
+        }
+    }
+
+
+
+    //Check that we can find the run_edma.sh script in case someone tries to run this without the diag package installed
+    fileExists, _ := taorfpga.Path_exists("/fs/nos/home_diag/diag/scripts/taormina/run_edma.sh")
+    if fileExists == false {
+        cli.Printf("e", "Unable to locate run_edma.sh script.  Looking under path /fs/nos/home_diag/diag/scripts/taormina/run_edma.sh.   Check that the diag package is installed\n")
+        err = errType.FAIL
+        return
+    }
+
+    //Copy over stressarpptest and delete any old logs
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Copying over run_edma.sh\n", i)
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/diag/scripts/taormina/run_edma.sh root@169.254.13.1:/data/nic_util"
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no /fs/nos/home_diag/diag/scripts/taormina/run_edma.sh root@169.254.7.1:/data/nic_util"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 \"/bin/rm /data/nic_util/ddr_test.log;/bin/rm /data/nic_util/run_edma.log\""
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 \"/bin/rm /data/nic_util/ddr_test.log;/bin/rm /data/nic_util/run_edma.log\""
+        } 
+        _ , errGo = exec.Command("sh", "-c", cmdStr).Output()
+    }
+
+    dcli.Printf("i","Creating cmd files\n")
+    cmdStr = fmt.Sprintf("pwd\ncd /data/nic_util;./run_edma.sh | tee run_edma.log\n")
+    errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    cmdStr = fmt.Sprintf("pwd\ncd /data/nic_util;./run_edma.sh | tee run_edma.log\n")
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    //Start Test
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Starting Test\n", i)
+        testStarted=1
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+
+    //Sleep.. give it a few extra seconds to finsih as the program needs time to setup/malloc memory
+    if (testStarted > 0) {
+        for i=0;i<(time);i++ {
+            misc.SleepInSec(1)
+            if calledFromCLI > 0 { fmt.Printf(".") 
+            } else { dcli.Printf("i", ".") }
+        }
+        if calledFromCLI > 0 { fmt.Printf("\n") }
+    }
+
+    //Get Results
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+
+        dcli.Printf("i", "Elba-%d Get Results\n", i)
+        dcli.Printf("i", "Elba-%d Copying back the log file\n", i)
+
+        cmdStr = "rm run_edma.log; rm ddr_test.log"
+        output , errGo  := exec.Command("sh", "-c", cmdStr).Output()
+        
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1:/data/nic_util/run_edma.log ."
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1:/data/nic_util/run_edma.log ."
+        } 
+        _ , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        if  i == ELBA0 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1:/data/nic_util/ddr_test.log ."
+        } else if i == ELBA1 {
+            cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 10 scp -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1:/data/nic_util/ddr_test.log ."
+        } 
+        _ , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        cmdStr = "ls -l run_edma.log"
+        output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", "%s\n", string(output))
+
+
+        cmdStr = "cat run_edma.log"
+        output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", "%s\n", string(output))
+
+        cmdStr = "grep -o PASS run_edma.log | wc -l"
+        output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        numbPass, _ := strconv.ParseUint(strings.TrimSpace(string(output)), 0, 64)
+        if (numbPass != 12) {
+            dcli.Printf("e","[ERROR] ELBA-%d FAILED EDMA TEST\n", i)
+            elbafailmask |= (1<<i)
+        }
+
+         
+        cmdStr = "grep -o ERROR ddr_test.log | wc -l"
+        output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        numbError, _ := strconv.ParseUint(strings.TrimSpace(string(output)), 0, 64)
+        if (numbError != 4) {
+            dcli.Printf("e","[ERROR] ELBA-%d FAILED EDMA TEST.  OTHER ERROR's IN THE LOG\n", i)
+            elbafailmask |= (1<<i)
+
+            cmdStr = "cat ddr_test.log"
+            output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            dcli.Printf("i", "%s\n", string(output))
+        }
+
+
+
+        if ( (elbafailmask & (1<<i)) == (1<<i) ) {
+            if  i == ELBA0 {
+                cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 dmesg | tail -n 75"
+            } else if i == ELBA1 {
+                cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 dmesg | tail -n 75"
+            } 
+            output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            dcli.Printf("i", "%s\n", string(output))
+            elbafailmask |= (1<<i)
+        }
+        
+        rc := ElbaCheckECC(i, 1, 0, 0) 
+        if rc != errType.SUCCESS {
+            elbafailmask |= (1<<i)
+        }
+
+    }
+
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            err = errType.FAIL
+            dcli.Printf("i", "Elba-%d FAILED edma test\n", i)
+        } else {
+            dcli.Printf("i", "Elba-%d PASSED edma test\n", i)
+        }
+    }
+
+    return
+}
+
 
 /********************************************************************************* 
 *
@@ -1258,20 +1547,6 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, percent uint32, calledFromCLI 
             return
         }
         dcli.Printf("i", "%s\n", string(output))
-
-
-        //if  i == ELBA0 {
-        //    cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /bin/cat /data/stressapptest_arm.log"
-        //} else if i == ELBA1 {
-        //    cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 45 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /bin/cat /data/stressapptest_arm.log"
-        //}  
-        //output , errGo := exec.Command("sh", "-c", cmdStr).Output()
-        //if errGo != nil {
-        //    dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
-        //    err = errType.FAIL
-        //    return
-        //}
-        //dcli.Printf("i", "%s\n", string(output))
         
         if strings.Contains(string(output), "Status: PASS")==false {
             dcli.Printf("e", "[ERROR] Elba-%d did not pass stressapptest\n", i)
@@ -2542,7 +2817,7 @@ func ShowInventory(useCLI int) (err int) {
     fmt.Printf("\n")
     err = BIOS_Display_Version(useCLI)
     if err != errType.SUCCESS { rc = -1 }
-    err = HALON_OS_Display_Version(useCLI)
+    err = CXOS_Display_Version(useCLI)
     if err != errType.SUCCESS { rc = -1 }
     fmt.Printf("\n")
     err = Elba_Check_Pci_Link(taorfpga.ELBA0, 1, useCLI)
@@ -3051,8 +3326,8 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
     }
     os.Chdir(currDir)
     time.Sleep(time.Duration(5) * time.Second)
-
     {
+        /*
         //FLAP ELBA LINKS ONE TIME
         cli.Printf("i", "Flapping the Elba Links enable=false\n")
         command = "port ce1-ce4,ce9,ce10,ce12,ce13 enable=false"
@@ -3103,9 +3378,9 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
             return
         }
         time.Sleep(time.Duration(4) * time.Second)
-
+        */
     }
-    
+
     //set pvlan
     for i:=0; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
         //pvlan set xe8 10
@@ -3230,9 +3505,25 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         return
     }
 
-    err = td3.RetimerSetSI(1)
+    //err = td3.RetimerSetSI(1)
+    //if err != errType.SUCCESS {
+    //    cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+    //    return
+    //}
+    fmt.Printf("DEBUG DEBUG DEBUG: Setting serdes tuning using ovs-appctl\n")
+    fmt.Printf("DEBUG DEBUG DEBUG: Setting serdes tuning using ovs-appctl\n")
+    fmt.Printf("DEBUG DEBUG DEBUG: Setting serdes tuning using ovs-appctl\n")
+    fmt.Printf("DEBUG DEBUG DEBUG: Setting serdes tuning using ovs-appctl\n")
+    fmt.Printf("DEBUG DEBUG DEBUG: Setting serdes tuning using ovs-appctl\n")
+    {
+        exec.Command("sh", "-c", "ovs-appctl l1/phy_tuning 4 0xf0 0 -6 73 0;ovs-appctl l1/phy_tuning 4 0x0f 0 -6 73 0;ovs-appctl l1/phy_tuning 5 0xf0 0 -6 73 0;ovs-appctl l1/phy_tuning 5 0x0f 0 -6 73 0;ovs-appctl l1/phy_tuning 6 0xf0 0 -6 73 0;ovs-appctl l1/phy_tuning 6 0x0f 0 -6 73 0").Output()
+    }
+
+
+
+    err = td3.TD3_Lane_Config_Disable_UNRELIABLELOS_and_LPDFE(1)
     if err != errType.SUCCESS {
-        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        cli.Printf("e", "ERROR, Failed to Disable Unreliable LOS and LP DFE on the retimers\n")
         return
     }
 
@@ -3438,7 +3729,7 @@ snakelinkcheckretry:
     //CHECK STATS & TEMPERATURE
     {
         t1 := time.Now()
-        var ElbaPortminBandwidth uint64 = 11250000000//12000000000
+        var ElbaPortminBandwidth uint64 = 11250000000  //bandwidth calculation using 1000 byte packets
         var Elba0bw, Elba1bw uint64
         var Lag521ExtPortminBandWidth uint64 = 0
         var Lag522ExtPortminBandWidth uint64 = 0
@@ -3446,6 +3737,12 @@ snakelinkcheckretry:
         var printRxBandwidth = 1
         var bwERROR, bwERRORtotal int = 0, 0
         printRxBwTime := time.Now()
+
+        if (int(pkt_size) > 0) && (int(pkt_pattern) > 0) {
+            if (int(pkt_size) < 1000) {
+                ElbaPortminBandwidth = uint64((float64(pkt_size)/float64(1000)) * float64(ElbaPortminBandwidth)) 
+            }
+        }
         
 
         if test_type == td3.SNAKE_TEST_ENVIRONMENT {
