@@ -1641,19 +1641,19 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
             nic_mac_pc_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE.format(sn)
             matchsnformacpn = re.findall(nic_mac_pc_reg_exp, buf)
             if matchsnformacpn:
-                mac=matchsnformacpn[0][0]
-                pn=matchsnformacpn[0][1]
+                mac=matchsnformacpn[-1][0]
+                pn=matchsnformacpn[-1][1]
 
             if FindDellSN(sn):
                 nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
                 matchsn = re.findall(nic_pn_reg_exp, buf)
                 if matchsn:
-                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
+                    sn = sn[:2] + matchsn[-1][:6] + sn[2:] + matchsn[-1][6:]
                 else:
                     nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
-                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
+                        sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
             block_retest = False
             for test in test_list:
