@@ -27,6 +27,7 @@ class arm_ddrbist:
         print "=== Starting setup env on slot {} ===".format(slot)
 
         try:
+            self.nic_con.switch_console(int(slot)
             session = common.session_start()
             session.timeout = timeout
             cmd = "turn_on_hub.sh {}".format(slot)
@@ -35,7 +36,6 @@ class arm_ddrbist:
 
             ret = self.nic_con.uart_session_start(session, self.baud_rate)
             if ret == 0:
-                self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
                 self.nic_con.uart_session_cmd(session, "source /etc/profile", 10)
                 self.nic_con.uart_session_cmd(session, "echo \'{} {} {} {} {}\' > /data/ddrbist_config.txt".format(ddr_freq, addrspace, dualrank, ddr5, ctrl_pi_bitmask))
@@ -81,10 +81,19 @@ class arm_ddrbist:
         print "=== Starting ddr bist on slot {} ===".format(slot)
         ret = 0
 
+        self.nic_con.switch_console(int(slot))
         session = common.session_start()
+        session.timeout = 400
+        cmd = "turn_on_hub.sh {}".format(slot)
+        common.session_cmd_no_rc(session, cmd)
+
         try:
-            session.timeout = 30
-            self.nic_con.uart_session_start(session, self.baud_rate)
+            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            if ret != 0:
+                print "==failed to start uart session=="
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+                return -1
             self.nic_con.uart_session_cmd(session, "echo \'{}\' > /data/ddrbist_vmarg.txt".format(vmarg))
             self.nic_con.uart_session_cmd(session, "touch /data/ddrbist_run_valid")
             self.nic_con.uart_session_cmd(session, "echo \'0\' > /data/current_chan")
