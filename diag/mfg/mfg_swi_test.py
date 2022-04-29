@@ -114,6 +114,8 @@ def main():
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
+    nic_sn_list = dict()
+    invalid_nic_list = dict()
 
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
@@ -126,6 +128,8 @@ def main():
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
         fail_nic_list[mtp_id] = list()
+        nic_sn_list[mtp_id] = list()
+        invalid_nic_list[mtp_id] = list()
 
     # logfiles
     open_file_track_mtp_list = dict()
@@ -282,6 +286,23 @@ def main():
             mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP SW Install Test script complete", level=0)
+
+    if GLB_CFG_MFG_TEST_MODE:
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+                mtp_mgmt_ctrl.cli_log_inf("Fail", level=0)
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("START GET SN INFO", level=0)
+                for slot in range(MTP_Const.MTP_SLOT_NUM):
+                    sn = mtp_mgmt_ctrl.mtp_get_nic_sn_start(slot=slot)
+                    if len(sn) > 0:
+                        mtp_mgmt_ctrl.cli_log_inf("[SLOT-{:s}] SN:{:s}".format(("0" + str(slot + 1))[-2:], sn), level=0)
+                        if False:
+                            if not libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_DL):
+                                invalid_nic_list[mtp_id].append(slot)
+                    else:
+                        mtp_mgmt_ctrl.cli_log_inf("[SLOT-{:s}] SN: ".format(("0" + str(slot + 1))[-2:]), level=0)
+                    nic_sn_list[mtp_id].append(sn)
 
     mtp_thread_list = list()
     mfg_swi_summary = dict()

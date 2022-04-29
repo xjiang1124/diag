@@ -26,6 +26,7 @@ elif [[ $chan -eq 1 ]]; then
     ./diag.exe ../elba/elb_arm_ddr_bist.tcl $bist_parm 0 0 0
 else
     echo "invalid channel number"
+    exit 0
 fi
 
 if [[ -f /data/next_chan ]]; then
@@ -41,6 +42,7 @@ fi
 
 rm /data/ddrbist_config.txt
 rm /data/ddrbist_vmarg.txt
+rm /data/pensando_pre_init.sh
 fwenv -n gold -E
 fwenv -n gold
 echo "DDR BIST FINISHED"

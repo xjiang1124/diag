@@ -1201,6 +1201,45 @@ class mtp_ctrl():
         return rc
 
 
+    def mtp_diag_pre_init_start(self):
+        if not self.mtp_mgmt_connect():
+            self.cli_log_err("Unable to connect MTP chassis", level=0)
+            return False
+        self.cli_log_inf("MTP chassis connected\n", level=0)
+
+        # start the mtp diag
+        self.cli_log_inf("Pre Short Diag SW Environment Init", level=0)
+
+        cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
+        sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+
+        cmd = "source ~/.bash_profile"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
+            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+
+        return True
+
+    def mtp_get_nic_sn_start(self, slot=0):
+        rc = ""
+        cmd = "eeutil -uut=UUT_{:s} -disp -field=sn".format(str(slot + 1))
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+            self.cli_log_err("MTP get Serial Number Failed.")
+            return rc
+
+        #[INFO]    [2022-04-22-14:36:41.01 ] Serial Number                                FPN21370231
+        match = re.search(r"Serial\sNumber\s+([A-Za-z0-9]{8,})", self.mtp_get_cmd_buf())
+        if match:
+            # validate the readings
+            sn = match.group(1)
+            rc = sn
+
+        return rc
+
     def mtp_diag_pre_init(self):
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
