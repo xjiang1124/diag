@@ -496,7 +496,7 @@ def main():
         #     # power cycle all nic
         #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_util=True):
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, nic_util=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
         if "SCAN_VERIFY" not in args.skip_test:
@@ -704,7 +704,7 @@ def main():
 
         # Ensure nic_util and nic_arm as needed for elba's efuse script
         if "EFUSE_PROG" not in args.skip_test:
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
                 mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
 
@@ -785,7 +785,7 @@ def main():
         # if "EFUSE_PROG" not in args.skip_test and "SEC_KEY_PROG" not in args.skip_test:
         #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
 
@@ -879,7 +879,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
 
 
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init():
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
 

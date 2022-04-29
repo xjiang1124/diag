@@ -4,11 +4,17 @@ import httplib
 import sys
 import datetime
 import re
-import oyaml as yaml
 import os
 import time
 import pexpect
 import glob
+
+# mfg servers
+try:
+    import oyaml as yaml
+# lab servers
+except ImportError:
+    import yaml
 
 from libdefs import MTP_Const
 from libdefs import FF_Stage
@@ -273,6 +279,17 @@ def part_number_validate(tmp):
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))
 
+def flatten_list_of_lists(list_of_lists):
+    from itertools import chain
+    return list(chain(*list_of_lists))
+
+def list_subtract(a, b):
+    """ set(A) - set(B) but keep the ordering """
+    return list(x for x in a if x not in b)
+
+def list_intersection(a, b):
+    """ set(A).intersection(set(B)) but keep the ordering """
+    return list(x for x in a if x in b)
 
 def get_password(srv_id, srv_ip, userid):
     while True:
@@ -1794,9 +1811,16 @@ def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctr
     """
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        print("-------------------------------------------------")
-        print("| {:s}                                       |".format(mtp_id))
-        print("|                                               |")
+
+        width = 49
+        horizontal_border = "-{:s}-".format("-"*47)
+        vertical_border = "| {:s} |".format(" "*45)
+        mtp_name_top = "| {:<45s} |".format(mtp_id)
+        mtp_name_bot = "| {:>45s} |".format(mtp_id)
+
+        print(horizontal_border)
+        print(mtp_name_top)
+        print(vertical_border)
 
         # Port 1 row
         pre="|     "
@@ -1822,7 +1846,7 @@ def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctr
         pre += "  |"
         print(pre)
 
-        print("|                                               |")
+        print(vertical_border)
 
         pre="|    "
         for slot in range(len(nic_prsnt_list)):
@@ -1830,9 +1854,9 @@ def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctr
         pre += "   |"
         print(pre)
 
-        print("|                                               |")
-        print("|                                       {:s} |".format(mtp_id))
-        print("-------------------------------------------------")
+        print(vertical_border)
+        print(mtp_name_bot)
+        print(horizontal_border)
 
 
 
@@ -1859,9 +1883,9 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
     |                                       MTP-XXX |
     -------------------------------------------------
 
-    [MTP-XXX]: [NIC-07]: QSFP port 1
-    [MTP-XXX]: [NIC-07]: QSFP port 2
-    [MTP-XXX]: [NIC-10]: QSFP port 2
+    [MTP-XXX]: [NIC-07]: RJ45 port 1
+    [MTP-XXX]: [NIC-07]: RJ45 port 2
+    [MTP-XXX]: [NIC-10]: RJ45 port 2
 
     'o' = loopback present
     'X' = loopback missing
@@ -1870,11 +1894,18 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
     """
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        print("-------------------------------------------------")
-        print("| {:s}                                       |".format(mtp_id))
-        print("|                                               |")
 
-        # Ports row
+        width = 49
+        horizontal_border = "-{:s}-".format("-"*47)
+        vertical_border = "| {:s} |".format(" "*45)
+        mtp_name_top = "| {:<45s} |".format(mtp_id)
+        mtp_name_bot = "| {:>45s} |".format(mtp_id)
+
+        print(horizontal_border)
+        print(mtp_name_top)
+        print(vertical_border)
+
+        # Port 1 row
         pre="|     "
         for slot in range(len(nic_prsnt_list)):
             if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
@@ -1886,7 +1917,19 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
         pre += "  |"
         print(pre)
 
-        print("|                                               |")
+        # Port 2 row, for Capri only
+        pre="|     "
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id] or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
+                pre += "    "
+            elif loopback_fail_list[mtp_id][slot] > 0:
+                pre += "X   "
+            else:
+                pre += "o   "
+        pre += "  |"
+        print(pre)
+
+        print(vertical_border)
 
         # Slots row
         pre="|    "
@@ -1895,9 +1938,9 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
         pre += "   |"
         print(pre)
 
-        print("|                                               |")
-        print("|                                       {:s} |".format(mtp_id))
-        print("-------------------------------------------------")
+        print(vertical_border)
+        print(mtp_name_bot)
+        print(horizontal_border)
 
 
 
@@ -2026,8 +2069,9 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         fail_rslt_list = list()
         for slot in fail_nic_list[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", "SANITY_CHECK", "QSFP", "FAILED", duration))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "QSFP", "FAILED", duration))
         cli_log_rslt("{:s} Eth Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list
@@ -2052,18 +2096,16 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
             for slot in range(len(nic_prsnt_list)):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
-                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in ELBA_NIC_TYPE_LIST:
-                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
-                        if ret != "SUCCESS":
-                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
-                                continue
-                            else:
-                                cur_fail_list[mtp_id][slot] = 1
-                                loopback_fail_list[mtp_id][slot] += 1
-                                failure_detected = True
+                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                    if ret != "SUCCESS":
+                        if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                            if slot not in fail_nic_list[mtp_id]:
+                                fail_nic_list[mtp_id].append(slot)
+                            continue
+                        else:
+                            cur_fail_list[mtp_id][slot] = 1
+                            loopback_fail_list[mtp_id][slot] += 1
+                            failure_detected = True
 
         display_rj45_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list)
 
@@ -2082,8 +2124,9 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         fail_rslt_list = list()
         for slot in fail_nic_list[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", "SANITY_CHECK", "RJ45", "FAILED", duration))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "RJ45", "FAILED", duration))
         cli_log_rslt("{:s} RJ45 Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list

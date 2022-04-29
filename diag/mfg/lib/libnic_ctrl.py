@@ -344,6 +344,7 @@ class nic_ctrl():
                 continue
             else:
                 self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
 
@@ -3622,8 +3623,9 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        if not self.nic_check_emmc_mounted():
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_ACC_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
@@ -3659,8 +3661,9 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        if not self.nic_check_emmc_mounted():
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if loopback:
             external_loopback = "1"
@@ -3690,9 +3693,6 @@ class nic_ctrl():
             return False
 
     def nic_mvl_link_test(self):
-        if self._nic_type not in ELBA_NIC_TYPE_LIST or self._nic_type in FPGA_TYPE_LIST:
-            return False
-
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -3700,8 +3700,9 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        if not self.nic_check_emmc_mounted():
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
@@ -3737,8 +3738,9 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        if not self.nic_check_emmc_mounted():
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
 
         for nic_cmd in nic_cmd_list:
@@ -3780,8 +3782,9 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        if not self.nic_check_emmc_mounted():
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         nic_cmd_list.append("tar xf edma_test.tar.gz")
 
@@ -3814,6 +3817,24 @@ class nic_ctrl():
         else:
             self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+    def nic_check_emmc_mounted(self):
+        # check if emmc is mounted. For use with console already attached.
+        nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_DISP_FMT
+        mount_sig = MFG_DIAG_SIG.NIC_MOUNT_OK_SIG
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+        if mount_sig in cmd_buf:
+            return True
+        else:
             return False
 
     def nic_check_rebooted(self):

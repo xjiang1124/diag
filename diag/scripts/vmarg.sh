@@ -81,13 +81,13 @@ set_vmarg()
     else
         if [[ "$1" -eq "normal" ]]
         then
-            vmarg = 0
+            vmarg=0
         elif [[ "$1" -eq "low" ]]
         then
-            vmarg = -5
+            vmarg=-5
         elif [[ "$1" -eq "high" ]]
         then
-            vmarg =  5
+            vmarg=5
         fi
         for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
         do

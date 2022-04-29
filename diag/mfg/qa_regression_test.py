@@ -28,9 +28,9 @@ parser = argparse.ArgumentParser(description="Diagnostics P2C Regression Test", 
 parser.add_argument("--stop-on-error", help="Leave the MTP in error state if error happens", action='store_true')
 parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=True)
 parser.add_argument("--email", help="Send report to email address")
-parser.add_argument("--apc", help="MTP Chassis is powered down, need to power on APC", action='store_true')
 parser.add_argument("--pwr-cycle", help="Power cycle MTP before test", action='store_true')
-parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
+parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
 parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
 parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond))
 parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
@@ -246,12 +246,6 @@ def load_mtp_cfg(cfg_yaml = None):
     return mtp_cfg_db
 
 
-def get_mtpid_list(mtp_cfg_db):
-    mtpid_list = list(mtp_cfg_db.get_mtpid_list())
-    sub_mtpid_list = libmfg_utils.multiple_select_menu("Select MTP Chassis", mtpid_list)
-    return sub_mtpid_list
-
-
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
@@ -335,8 +329,6 @@ def main():
     if args.stop_on_error:
         libmfg_utils.cli_inf("Test will stop if any test error out")
         stop_on_err = True
-    if args.apc:
-        apc = True
     if args.verbosity:
         verbosity = True
     if args.email:
@@ -350,12 +342,15 @@ def main():
     mtpcfg_file = None
     if args.mtpcfg:
         mtpcfg_file = os.path.relpath(args.mtpcfg)
-    mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     if args.mtpid:
         mtpid_list = []
         mtpid_list.extend(args.mtpid)
     else:
         mtpid_list = get_mtpid_list(mtp_cfg_db)
+    #mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 

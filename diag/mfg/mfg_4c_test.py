@@ -57,47 +57,78 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[]):
+def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, iteration, skip_test=[], only_test=[]):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
         skipped_testlist = ""
+    if only_test:
+        only_testlist = " --only-test {:s}".format('"'+'" "'.join(only_test).strip()+'"')
+    else:
+        only_testlist = ""
     if fail_nic_list:
         fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
     else:
         fail_slots = ""
-    # go to mtp_regression and Start the regression
-    cmd = "cd {:s}".format(mtp_script_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if stage == FF_Stage.FF_4C_H:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
-    else:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
-    if skip_test:
-        cmd += skipped_testlist
-    if fail_slots:
-        cmd += fail_slots
-    if l1_sequence:
-        cmd += " --l1-seq "
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+    for loop in range(1, iteration+1):
+        if iteration > 1:
+            mtp_mgmt_ctrl.cli_log_inf("4C Test Iteration-{:03d} start".format(loop), level=0)
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
-        return
-    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+        mfg_4c_start_ts = libmfg_utils.timestamp_snapshot()
+
+        # go to mtp_regression and Start the regression
+        cmd = "cd {:s}".format(mtp_script_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+        mtp_start_ts = libmfg_utils.timestamp_snapshot()
+        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+        if stage == FF_Stage.FF_4C_H:
+            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
+        else:
+            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
+        if skip_test:
+            cmd += skipped_testlist
+        if only_test:
+            cmd += only_testlist
+        if fail_slots:
+            cmd += fail_slots
+        if l1_sequence:
+            cmd += " --l1-seq "
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
+        mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+
+        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
+        if not test_log_file:
+            mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
+            return
+        libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
+        if GLB_CFG_MFG_TEST_MODE:
+            libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
+        cmd = "rm -rf {:s}".format(test_log_file)
+        os.system(cmd)
+
+        mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, mfg_4c_stop_ts - mfg_4c_start_ts))
+
+        libmfg_utils.mfg_summary_disp(stage, {mtp_id: mtp_test_summary}, [])
+
+        mtp_mgmt_ctrl.mtp_chassis_shutdown()
+
+        if loop != iteration:
+            mtp_mgmt_ctrl.mtp_apc_pwr_on()
+            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+            libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+                return
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
     return
 
 
@@ -107,9 +138,11 @@ def main():
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
 
     verbosity = False
     l1_sequence = False
@@ -170,8 +203,6 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
-    mfg_4c_start_ts = libmfg_utils.timestamp_snapshot()
-
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
     # power on the mtp chassis
@@ -186,6 +217,17 @@ def main():
             mtpid_fail_list.append(mtp_id)
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+    # Sync timestamp to server
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         # Check if image updated is needed
@@ -241,17 +283,6 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
-    # Sync timestamp to server
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
     # close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
@@ -300,6 +331,7 @@ def main():
                                                                            mfg_4c_summary[mtp_id],
                                                                            swmtestmode,
                                                                            l1_sequence,
+                                                                           args.iteration,
                                                                            args.skip_test))
         mtp_thread.daemon = True
         mtp_thread.start()
@@ -315,15 +347,6 @@ def main():
                 mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
-
-    mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, mfg_4c_stop_ts - mfg_4c_start_ts))
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
-
-    # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
 
 if __name__ == "__main__":
     main()

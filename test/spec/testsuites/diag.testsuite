@@ -13,8 +13,10 @@ test_types:
     skip:
       - L1 
       - EDMA 
-      - SNAKE 
-      - PCIE_PRBS
+      - SNAKE_ELBA
+      - SNAKE_PCIE
+      - SNAKE_HBM
+      - ARM_PRBS
     slots: 2
 
   sanity:

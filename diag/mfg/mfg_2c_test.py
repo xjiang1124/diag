@@ -127,6 +127,8 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, sk
 
     if "QSFP" not in skip_test:
         fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
+    if "RJ45" not in skip_test:
+        fail_nic_list = libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
 
     # if all slots in an MTP fail, assert stop on failure here
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -142,11 +144,15 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, sk
 
     return fail_nic_list
 
-def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[]):
+def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[], only_test=[]):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
         skipped_testlist = ""
+    if only_test:
+        only_testlist = " --only-test {:s}".format('"'+'" "'.join(only_test).strip()+'"')
+    else:
+        only_testlist = ""
     if fail_nic_list:
         fail_slots = " --fail-slots "
         fail_slots += ' '.join(map(str,fail_nic_list))
@@ -165,6 +171,8 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
         cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
     if skip_test:
         cmd += skipped_testlist
+    if only_test:
+        cmd += only_testlist
     if fail_slots:
         cmd += fail_slots
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
@@ -190,7 +198,8 @@ def main():
     parser.add_argument("--low-temp", help="low temperature environment", action='store_true')
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 
     verbosity = False
@@ -325,6 +334,20 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
+    # load SNs
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+            mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+
     # Sanity check
     try:
         fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, args.skip_test)
@@ -380,7 +403,8 @@ def main():
                                                                            fail_nic_list[mtp_id],
                                                                            mfg_2c_summary[mtp_id],
                                                                            swmtestmode,
-                                                                           args.skip_test))
+                                                                           args.skip_test,
+                                                                           args.only_test))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
