@@ -102,6 +102,8 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--sw-pn", "-swpn", "--swpn", "-sw-pn", help="pre-select SW PN", default="")
+
 
     args = parser.parse_args()
     if args.verbosity:
@@ -138,7 +140,10 @@ def main():
         logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_SWI)
 
     # get sw image name based on the sw pn
-    sw_pn = libmfg_utils.sw_pn_scan()
+    if not args.sw_pn:
+        sw_pn = libmfg_utils.sw_pn_scan()
+    else:
+        sw_pn = args.sw_pn
     nic_sw_link_file = "release/{:s}".format(sw_pn)
     if not libmfg_utils.file_exist(nic_sw_link_file):
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

@@ -27,7 +27,7 @@ class arm_ddrbist:
         print "=== Starting setup env on slot {} ===".format(slot)
 
         try:
-            self.nic_con.switch_console(int(slot)
+            self.nic_con.switch_console(int(slot))
             session = common.session_start()
             session.timeout = timeout
             cmd = "turn_on_hub.sh {}".format(slot)
