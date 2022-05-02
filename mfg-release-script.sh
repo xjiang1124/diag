@@ -2,19 +2,27 @@ top_dir=$PWD
 release_name=$(echo $branch_or_tag | awk -F'/' '{print $NF}')
 asic_type=$(echo $asic_type)
 jenkins_dir=/vol/hw/diag/mfg_release/jenkins
-mfg_script_dir=${jenkins_dir}/${release_name}/mfg
+mfg_folder="mfg"
+if [[ ${asic_type} == "taormina" ]]; then
+	asic_type="elba"
+	mfg_folder="mfg_taormina"
+fi
+mfg_script_dir=${jenkins_dir}/${release_name}/${mfg_folder}
 
-## CLEAN UP JENKINS BUILDS
-#rm -rf $jenkins_dir/*
-#sync
 ## CLEAN UP PREVIOUS BUILD OF THIS RELEASE
 mkdir -p $mfg_script_dir
 sync
 rm -rf $mfg_script_dir/*
+rm -f ${jenkins_dir}/${release_name}/*.tar.gz
 sync
-cp -r $top_dir/diag/mfg/* $mfg_script_dir/
+cp -r $top_dir/diag/${mfg_folder}/* $mfg_script_dir/
 sync
+mkdir $mfg_script_dir/release/
 chmod 777 $mfg_script_dir/release/
+if [[ ${mfg_folder} == "mfg_taormina" ]]; then
+	mkdir $mfg_script_dir/tftpboot/
+	chmod 777 $mfg_script_dir/tftpboot/
+fi
 sync
 
 ## COPY DIAG IMAGES
@@ -26,8 +34,13 @@ else
     cp $(ls ${alternate_diag_image}/image_arm64_${asic_type}*.tar) $mfg_script_dir/release/image_arm64_${asic_type}_${release_name}.tar
 fi
 
-sed -i "s/MTP_ARM64_IMAGE = \".*\.tar\"/MTP_ARM64_IMAGE = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
-sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+if [[ ${mfg_folder} == "mfg_taormina" ]]; then
+    sed -i "s/AMD64_IMG\[\"ELBA\"\] = \".*\.tar\"/AMD64_IMG\[\"ELBA\"\] = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+    sed -i "s/ARM64_IMG\[\"ELBA\"\] = \".*\.tar\"/ARM64_IMG\[\"ELBA\"\] = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+else
+    sed -i "s/MTP_ARM64_IMAGE = \".*\.tar\"/MTP_ARM64_IMAGE = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+    sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+fi
 
 ## PRUNING
 rm -rf $mfg_script_dir/scripts
@@ -41,7 +54,11 @@ mv ${release_name}.tar.gz ${release_name}/
 ## COPY NIC IMAGES
 image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
 for f in $image_files; do
-    cp --preserve=timestamps /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
+    if [[ ${mfg_folder} == "mfg_taormina" ]]; then    
+        cp --preserve=timestamps /tftpboot/nabeel/$f $mfg_script_dir/tftpboot/
+    else
+        cp --preserve=timestamps /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
+    fi
 done
 
 ## CREATE SW PN LINKS

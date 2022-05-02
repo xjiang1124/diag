@@ -125,10 +125,6 @@ class NIC_IP_Address:
         0: "169.1.13.2",
         1: "169.1.07.2"
         }
-    MEMTUN_RETEST_IP = {
-        0: "169.254.13.2",
-        1: "169.254.07.2"
-        }
     MEMTUN_PCI_BUS = {
         0: "0c:00.0",
         1: "06:00.0"
@@ -136,10 +132,6 @@ class NIC_IP_Address:
     MGMT_IP = {
         0: "169.1.13.3",
         1: "169.1.07.3"
-        }
-    MGMT_RETEST_IP = {
-        0: "169.254.13.3",
-        1: "169.254.07.3"
         }
     MGMT_PCI_BUS = {
         0: "0d:00.0",
@@ -467,7 +459,7 @@ class MFG_DIAG_CMDS:
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
-    NIC_DISP_VOLT_FMT = "devmgr -status"
+    NIC_DISP_VOLT_FMT = "export CARD_TYPE=ORTANO2 && devmgr -status"
     TOR_VMARG_SET_FMT = "{:s}diag/scripts/taormina/vmarg_taormina.sh {:s}"
     TOR_NIC_VMARG_SET_FMT = "export CARD_TYPE=ORTANO2 && /home/diag/diag/scripts/taormina/vmarg_elba.sh {:s}"
 
