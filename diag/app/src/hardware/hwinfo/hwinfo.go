@@ -509,8 +509,8 @@ func init() {
     dispMap["LACONA"]       = laconaDispStaList
     dispMap["LACONA32DELL"]  = laconaDispStaList
     dispMap["LACONA32"]     = laconaDispStaList
-    dispMap["POMONTEDELL"]  = laconaDispStaList
-    dispMap["POMONTE"]      = laconaDispStaList
+    dispMap["POMONTEDELL"]  = ortanoDispStaList
+    dispMap["POMONTE"]      = ortanoDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
