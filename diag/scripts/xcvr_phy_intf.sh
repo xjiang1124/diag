@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [[ $# -ne 1 ]]; then
+    exit 1
+fi
+if [[ $1 != "LINKUP" && $1 != "PRBS" ]]; then
+    exit 1
+fi
 PRBS_GEN_START=1
 PRBS_GEN_STOP=2
 PRBS_CHECKER_START=3
@@ -68,6 +74,11 @@ if [[ $(( p1 & STATUS_VECTOR_MASK )) -ne $(( 0x388B << 5 )) ]]; then
     echo "transceiver status vector: $(( p1 & STATUS_VECTOR_MASK )), expected: $(( 0x388B << 5 ))"
     echo "TRANSCEIVER PHY INTERFACE TEST FAILED -- auto-negotiation failed"
     exit 1
+fi
+
+echo "TRANSCEIVER RJ45 port link is up"
+if [[ $1 != "PRBS" ]]; then
+    exit 0
 fi
 
 # first do pkt test on PHY external loopback
