@@ -3523,6 +3523,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_set_nic_status_fail(slot)
             return False

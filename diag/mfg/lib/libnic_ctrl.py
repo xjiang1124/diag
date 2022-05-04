@@ -1292,20 +1292,22 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
+        signatures = ["No such file", "Exiting with failure"]
         self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("NIC hung while copying")
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
-        elif idx == 1:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_cmd_buf(self._nic_handle.before)
+        if idx == 0 or idx == 1:
+            self.nic_set_err_msg("Missing file {:s}".format(img_name))
+            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
             return False
 
         mtp_cmd = "md5sum {:s}".format(img_name)
         self._nic_handle.sendline(mtp_cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1359,25 +1361,35 @@ class nic_ctrl():
         Same function as nic_copy_image but uses ssh connection to transfer characters, 
         while doing tar & untar before & after. Tar on MTP and untar on NIC.
         """
-
+        signatures = ["No such file", "Exiting with failure"]
         cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, libmfg_utils.get_nic_ip_addr(self._slot), libmfg_utils.get_ssh_option(), dst_directory)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
         if idx < 0:
             libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("Couldn't get password prompt")
             self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        if idx == 0 or idx == 1:
+            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
+            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
             return False
 
         self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("NIC hung while copying")
             self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        if idx == 0 or idx == 1:
+            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
+            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
             return False
 
         # send a sync on NIC
-        self.nic_exec_cmds(list())
+        self.nic_exec_cmds(["ls -l {:s}/{:s}".format(dst_directory, src_img)])
 
         return True
 
