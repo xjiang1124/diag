@@ -147,43 +147,47 @@ def single_uut_fw_program(stage,
     fea_cpld_img_file = NIC_IMAGES.fea_cpld_img[card_type]
 
     try:
-        if not mtp_mgmt_ctrl.tor_boot_select(0):
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect UUT Chassis", level=0)
-            exit_fail(mtp_mgmt_ctrl, log_filep_list)
-            if not fru_cfg["SN"]:
-                fru_cfg["SN"] = "UNKNOWN"
-            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, "SVOS_BOOT", "FAILED", "0:00:00"), level=0)
-            fail_uut_list.append(uut_id)
-            mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-            mtp_mgmt_ctrl.mtp_apc_pwr_off()
-            libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-            return
+        if not fru_cfg["SN"]:
+            fru_cfg["SN"] = "UNKNOWN"
 
-        if not libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl):
-            exit_fail(mtp_mgmt_ctrl, log_filep_list)
+        for test in ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]:
+            start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-        if not mtp_mgmt_ctrl.mtp_console_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect UUT Chassis", level=0)
-            exit_fail(mtp_mgmt_ctrl, log_filep_list)
-            if uut_id not in fail_uut_list:
-                fail_uut_list.append(uut_id)
-            if uut_id in pass_uut_list:
-                pass_uut_list.remove(uut_id)
-            return
+            if test == "SVOS_BOOT":
+                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+            elif test == "CONSOLE_CLEAR":
+                ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
+            elif test == "CONSOLE_CONNECT":
+                ret = mtp_mgmt_ctrl.mtp_console_connect()
+
+            duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_err("Unable to connect UUT Chassis", level=0)
+                mtp_mgmt_ctrl.tor_sys_failure_dump()
+                exit_fail(mtp_mgmt_ctrl, log_filep_list)
+                if uut_id not in fail_uut_list:
+                    fail_uut_list.append(uut_id)
+                if uut_id in pass_uut_list:
+                    pass_uut_list.remove(uut_id)
+
+                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                return
+
         mtp_mgmt_ctrl.cli_log_inf("UUT Chassis is connected", level=0)
 
-        # Sync timestamp to server
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-            mtp_mgmt_ctrl.cli_log_err("UUT Chassis timestamp sync failed", level=0)
-            exit_fail(mtp_mgmt_ctrl, log_filep_list)
-            if uut_id not in fail_uut_list:
-                fail_uut_list.append(uut_id)
-            if uut_id in pass_uut_list:
-                pass_uut_list.remove(uut_id)
-            return
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("UUT Chassis timestamp sync'd", level=0)
+        # # Sync timestamp to server
+        # timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        # if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+        #     mtp_mgmt_ctrl.cli_log_err("UUT Chassis timestamp sync failed", level=0)
+        #     exit_fail(mtp_mgmt_ctrl, log_filep_list)
+        #     if uut_id not in fail_uut_list:
+        #         fail_uut_list.append(uut_id)
+        #     if uut_id in pass_uut_list:
+        #         pass_uut_list.remove(uut_id)
+        #     return
+        # else:
+        #     mtp_mgmt_ctrl.cli_log_inf("UUT Chassis timestamp sync'd", level=0)
 
         # read FRU
         mtp_mgmt_ctrl.tor_fru_init()
@@ -299,6 +303,9 @@ def single_uut_fw_program(stage,
             duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                mtp_mgmt_ctrl.tor_sys_failure_dump()
+                mtp_mgmt_ctrl.tor_nic_failure_dump(0)
+                mtp_mgmt_ctrl.tor_nic_failure_dump(1)
                 if uut_id not in fail_uut_list:
                     fail_uut_list.append(uut_id)
                 if uut_id in pass_uut_list:
@@ -377,6 +384,7 @@ def single_uut_fw_program(stage,
                 duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                    mtp_mgmt_ctrl.tor_sys_failure_dump()
                     if uut_id not in fail_uut_list:
                         fail_uut_list.append(uut_id)
                     if uut_id in pass_uut_list:
@@ -449,6 +457,7 @@ def single_uut_fw_program(stage,
                 duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+                    mtp_mgmt_ctrl.tor_sys_failure_dump()
                     if uut_id not in fail_uut_list:
                         fail_uut_list.append(uut_id)
                     if uut_id in pass_uut_list:

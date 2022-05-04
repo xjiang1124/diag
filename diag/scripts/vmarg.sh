@@ -56,12 +56,31 @@ set_vmarg()
         do
             /data/nic_util/devmgr -dev=$i -margin -pct=${tgt_vmarg[$i]}
         done
-    elif [[ $CARD_TYPE == "LACONA32"        || \
-            $CARD_TYPE == "LACONA32DELL"    || \
-            $CARD_TYPE == "POMONTE"         || \
-            $CARD_TYPE == "POMONTEDELL"     ]]
+    elif [[ $CARD_TYPE == "POMONTE"        || \
+            $CARD_TYPE == "POMONTEDELL"    ]]
     then
-        if [[ "$1" -eq "normal" ]]
+        if [[ "$1" == "normal" ]]
+        then
+            echo "Do nothing"
+            return
+        elif [[ "$1" == "low" ]]
+        then
+            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=-2
+            /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=-2
+            set_vmarg_lacona arm -2
+            set_vmarg_lacona core -2
+            return
+        elif [[ "$1" == "high" ]]
+        then
+            /data/nic_util/devmgr -dev=VDDQ_DDR -margin -pct=2
+            /data/nic_util/devmgr -dev=VDD_DDR -margin -pct=2
+            set_vmarg_lacona arm 2
+            set_vmarg_lacona core 2
+        fi
+    elif [[ $CARD_TYPE == "LACONA32"        || \
+            $CARD_TYPE == "LACONA32DELL"    ]]
+    then
+        if [[ "$1" == "normal" ]]
         then
             echo "Do nothing"
             return
@@ -79,15 +98,15 @@ set_vmarg()
             set_vmarg_lacona core 2
         fi
     else
-        if [[ "$1" -eq "normal" ]]
+        if [[ "$1" == "normal" ]]
         then
-            vmarg = 0
-        elif [[ "$1" -eq "low" ]]
+            vmarg=0
+        elif [[ "$1" == "low" ]]
         then
-            vmarg = -5
-        elif [[ "$1" -eq "high" ]]
+            vmarg=-5
+        elif [[ "$1" == "high" ]]
         then
-            vmarg =  5
+            vmarg=5
         fi
         for dev in CAP0_ARM CAP0_CORE_DVDD CAP0_HBM CAP0_CORE_AVDD
         do

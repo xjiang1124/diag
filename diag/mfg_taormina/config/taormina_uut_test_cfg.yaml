@@ -112,13 +112,21 @@ TOR_DSP:
                 NIC_NAME: No
                 SN: No
                 SLOT: No
-        # ELBA_RTC:
-        #     INIT: ""
-        #     POST: ""
-        #     OPTS:
-        #         NIC_NAME: No
-        #         SN: No
-        #         SLOT: No
+        ELBA_RTC:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+        ELBA_EDMA_TEST:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    # Moved to console as "PRBS_TOR"
     # BCM:
     #     PRBSEXT:
     #         INIT: ""
@@ -128,13 +136,13 @@ TOR_DSP:
     #             SN: No
     #             SLOT: No
     CPU:
-        # USB:
-        #     INIT: ""
-        #     POST: ""
-        #     OPTS:
-        #         NIC_NAME: No
-        #         SN: No
-        #         SLOT: No
+        USB:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
         DRAMSIZE:
             INIT: ""
             POST: ""
@@ -142,6 +150,7 @@ TOR_DSP:
                 NIC_NAME: No
                 SN: No
                 SLOT: No
+        # Moved to SWI as "PCIE_SCAN"
         # PCISCAN:
         #     INIT: ""
         #     POST: ""

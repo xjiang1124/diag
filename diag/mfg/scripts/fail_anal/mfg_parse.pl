@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib "/home/mfg/mfg_diag_fa/scripts/Archive-Zip-1.68/lib";
-use lib "/home/mfg/mfg_diag_fa/scripts/Excel-Writer-XLSX-1.09/lib";
+use lib "../../Archive-Zip-1.68/lib";
+use lib "../../Excel-Writer-XLSX-1.09/lib";
 use Time::Local;
 use Cwd;
 use File::Find;
@@ -10,7 +10,7 @@ use Excel::Writer::XLSX;
 
 my $fa_opt = shift;
 my $result_file = shift;
-my $failure_txt_path = shift;
+#my $failure_txt_path = shift;
 my $test_name_opt = shift;
 my $mfg_err_code_opt = shift;
 
@@ -24,9 +24,9 @@ if (defined $mfg_err_code_opt) {
 } else {
     $mfg_err_code_opt = "";
 }
-my $file_logs_all = $failure_txt_path."/testresult.txt";
-my $failure_logs = $failure_txt_path."/logs_fail.txt";
-my $pass_logs = $failure_txt_path."/logs_pass.txt";
+my $file_logs_all = "./testresult.txt";
+my $failure_logs = "./logs_fail.txt";
+my $pass_logs = "./logs_pass.txt";
 my $log_path = cwd();
 
 my $curr_sn = "";
@@ -61,15 +61,15 @@ sub count_num_of_failures {
     open(TR2, '>', $failure_logs) or die $!;
     while(my $line = <TR>)
     {
-        if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_MTP-([0-9]+)_(.*)\/mtp_test.log(.*)(\]:\s)(NIC-\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
+        if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP|MTPS)\-([0-9]+)_(.*)\/(mtp_test|test_fst).log(.*)(\]:\s)(NIC-\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
         {
             my $toppath=$1;
             my $sn=$2;
             my $stage=$3;
-            my $mtp=$4;
-            my $ts=$5;
-            my $slot=$8;
-            my $sn2=$10;
+            my $mtp=$5;
+            my $ts=$6;
+            my $slot=$10;
+            my $sn2=$12;
 
             if ($debug_msgs) {
                 print "toppath:  $toppath\n";
@@ -77,6 +77,7 @@ sub count_num_of_failures {
                 print "card  sn2:  $sn2\n";
                 print "stage:      $stage\n";
                 print "ts:         $ts\n";
+                print "slot:       $slot\n";
             }
 
             if ($sn eq $sn2)
@@ -130,7 +131,7 @@ sub count_num_of_failures {
         print TR2 $lastline;
         $num_failures++;
     } else {
-	foreach my $ts (sort keys %failures_one_sn) {
+        foreach my $ts (sort keys %failures_one_sn) {
             print TR2 $failures_one_sn{$ts};
         }
     }
@@ -249,21 +250,24 @@ my $all_test_msg = "";
 my $all_l1_fails = "";
 while(my $line = <TR2>)
 {
-    if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP-[0-9]+)_(.*)\/mtp_test.log(.*)(\]:\s)NIC-(\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
+    if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP|MTPS)\-([0-9]+)_(.*)\/(mtp_test|test_fst).log(.*)(\]:\s)NIC-(\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
     {
         my $toppath=$1;
         my $sn=$2;
         my $stage=$3;
-        my $mtp=$4;
-        my $ts=$5;
-        my $slot=$8;
-        my $sn2=$10;
+        my $mtp=$4."-".$5;
+        my $ts=$6;
+        my $slot=$10;
+        my $sn2=$12;
 
         if ($debug_msgs) { print "\nThe SN we are looking at: $sn2, line: $line\n" };
-        my $fulllogpath=$log_path."/".$toppath."/".$sn2."/".$3."_".$mtp."_".$5;
-        my $summaryfile=$toppath."/".$sn2."/".$3."_".$mtp."_".$5."/"."mtp_test.log";
-        my $slotlogfile=$toppath."/".$sn2."/".$3."_".$mtp."_".$5."/"."mtp_NIC-".$slot."_diag.log";
-
+        my $fulllogpath=$log_path."/".$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts;
+        my $summaryfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."mtp_test.log";
+        my $slotlogfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."mtp_NIC-".$slot."_diag.log";
+        if ($toppath eq "FST") {
+            $summaryfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."test_fst.log";
+            $slotlogfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."diag_NIC-".$slot."_fst.log";
+        }
 
         if ($debug_msgs) { print "summaryfile: $summaryfile\n" };
         if ($debug_msgs) { print "slotlogfile: $slotlogfile\n" };
@@ -468,6 +472,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
         return;
     }
+    if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "SNAKE_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"};
+        return;
+    }
     if (exists $diag_fa_code{"L1_LOG_INCOMPLETE"}) {
         $top_diag_fa_code = "L1_LOG_INCOMPLETE";
         delete $diag_fa_code{"L1_LOG_INCOMPLETE"};
@@ -486,6 +495,26 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"Bad_J2C"}) {
         $top_diag_fa_code = "Bad_J2C";
         delete $diag_fa_code{"Bad_J2C"};
+        return;
+    }
+    if (exists $diag_fa_code{"BOOT_GOLDFW"}) {
+        $top_diag_fa_code = "BOOT_GOLDFW";
+        delete $diag_fa_code{"BOOT_GOLDFW"};
+        return;
+    }
+    if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
+        $top_diag_fa_code = "MISSING_ENV_VAR";
+        delete $diag_fa_code{"MISSING_ENV_VAR"};
+        return;
+    }
+    if (exists $diag_fa_code{"INCORRECT_PN"}) {
+        $top_diag_fa_code = "INCORRECT_PN";
+        delete $diag_fa_code{"INCORRECT_PN"};
+        return;
+    }
+    if (exists $diag_fa_code{"INCORRECT_SN"}) {
+        $top_diag_fa_code = "INCORRECT_SN";
+        delete $diag_fa_code{"INCORRECT_SN"};
         return;
     }
     if (%diag_fa_code) {
@@ -725,8 +754,10 @@ sub find_failure_code {
     my $all_failure_codes = "";
     my $asic_l1_failed = 0;
     my @tests_and_failure_codes;
-
     my $logfile=$fulllogpath."/"."mtp_test.log";
+    if ($stage eq "FST") {
+        $logfile=$fulllogpath."/"."test_fst.log";
+    }
 
     if (!open(TR3, '<', $logfile)) {
         print "Cannot open file $logfile\n";
@@ -734,7 +765,7 @@ sub find_failure_code {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/(.*)(ERR:\s\[)([\w-]+)(\]:\s\[NIC-)(\d+)(]:\s)(\w+)(\sDIAG\sTEST\s)(\w+)(\s)(\w+)(\s)(FAIL|FAILED|FAILURE|TIMEOUT)/)
+        if($line =~ m/(.*)(ERR:\s\[)([\w-]+)(\]:\s\[NIC-)(\d+)(]:\s)(\w+)(\sDIAG\sTEST\s)(\w+)(\s)(\w+)(\s)(FAIL|FAILED|FAILURE|TIMEOUT|SMB_READ_FAIL)/)
         {
             if ($debug_msgs) { print "line: $line"};
             $failuresn=$7;
@@ -799,7 +830,7 @@ sub find_failure_code {
             if (index($test_name, "NIC") == -1) {
                 $asic_l1_failed = 1;
                 my $l1_path = $log_path."/".$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir;
-                my @l1_log_files = glob("${l1_path}elb_l1_screen_board_${sn}_*");
+                my @l1_log_files = glob("${l1_path}l1_screen_board_${sn}_*");
                 if (@l1_log_files) {
                     my $l1_log_file= $l1_log_files[0];
                     print "#### l1_log_file: $l1_log_file\n";
@@ -830,11 +861,15 @@ sub find_failure_code {
             parse_eth_prbs_log($eth_prbs_log_file, $sn, $test_and_failure_code);
         } elsif ($failure_code =~ "EDMA") {
             $diag_fa_code{"${failure_code}_FAILURE"} = 1;
-        } else {
-            if ($failure_code =~ "NIC_STATUS" || $failure_code =~ "CONSOLE_BOOT" || $failure_code =~ "NIC_MGMT_INIT" || $failure_code =~ "NIC_CPLD" || $failure_code =~ "NIC_DIAG_BOOT") {
-                parse_mtp_and_slot_log($fulllogpath, $slot, $test_and_failure_code);
-            }
+        } elsif ($failure_code =~ "PCIE_LINK") {
+            parse_fst_pcie_link($fulllogpath, $slot, $test_and_failure_code);
+        } elsif ($failure_code =~ "ROT") {
+            parse_fst_rot($fulllogpath, $slot, $test_and_failure_code);
         }
+            #if ($failure_code =~ "NIC_STATUS" || $failure_code =~ "CONSOLE_BOOT" || $failure_code =~ "NIC_MGMT_INIT" || $failure_code =~ "NIC_CPLD" || $failure_code =~ "NIC_DIAG_BOOT") {
+                parse_mtp_and_slot_log($fulllogpath, $slot, $stage, $test_and_failure_code);
+            #}
+
         if ($all_test_msg eq "") {
             $all_test_msg = "log path: ".$fulllogpath."\n";
         }
@@ -845,10 +880,64 @@ sub find_failure_code {
     return $asic_l1_failed;
 }
 
-sub parse_mtp_and_slot_log {
+sub parse_fst_pcie_link {
     my ($fulllogpath, $slot, $test_and_failure_code) = @_;
-    my $slotlogfile=$fulllogpath."/"."mtp_NIC-".$slot."_diag.log";
+    my $logfile=$fulllogpath."/"."test_fst.log";
     my $test_err_msg = "";
+    if (!open(TR3, '<', $logfile)) {
+        print "Cannot open file $logfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        if($line =~ m/\[NIC-(\d+)\]:\s+PCIE link (speed|width) fails/) {
+            if ($1 eq $slot) {
+	            if ($debug_msgs) { print "line: $line"};
+	            $test_err_msg .= $line;
+                $diag_fa_code{"PCIE_LINK_SPEED_WIDTH"} = 1;
+            }
+        }
+    }
+    if ($test_err_msg ne "") {
+        $all_test_msg .= "log path: ".$fulllogpath."\n";
+        $all_test_msg .= $test_err_msg;
+    }
+    close(TR3);
+}
+
+sub parse_fst_rot {
+    my ($fulllogpath, $slot, $test_and_failure_code) = @_;
+    my $logfile=$fulllogpath."/"."test_fst.log";
+    my $test_err_msg = "";
+    if (!open(TR3, '<', $logfile)) {
+        print "Cannot open file $logfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        # TBD
+    }
+}
+
+sub parse_mtp_and_slot_log {
+    my ($fulllogpath, $slot, $stage, $test_and_failure_code) = @_;
+    my $mtpfile=$fulllogpath."/"."mtp_test.log";
+    my $mtpdiagfile=$fulllogpath."/"."mtp_diag.log";
+    my $slotlogfile=$fulllogpath."/"."mtp_NIC-".$slot."_diag.log";
+    my $slot_err_msg = "";
+    my $mtp_diag_msg = "";
+    my $mtp_test_msg = "";
+    my $test_err_msg = "";
+    my $failure_code = substr($test_and_failure_code, index($test_and_failure_code, ' ') + 1);
+    my $jtag_log = 0;
+    my $err_msg_dump = 0;
+    my $nic_status_dump = 0;
+    my $halctl_slot_info = 0;
+    my $eth1_3_down = 0;
+    my $setting_vmarg_start = 0;
+    my $mtp_failed_slots = 0x0;
+    my $mtp_loaded_slots = 0x0;
+    my $slotnum = 0 + $slot;
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
@@ -856,17 +945,179 @@ sub parse_mtp_and_slot_log {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/ERROR/ && $line !~ m/Unsupported device: CPLD_ADAP/) {
-	        #if ($debug_msgs) { print "line: $line"};
-	        # $test_err_msg .= $line;
-	        # last;
+        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at 80/) {
+	        if ($debug_msgs) { print "line: $line"};
+	        $slot_err_msg .= $line;
+	        #last;
+        }
+        if ($line =~ m/elba\-gold login/) {
+            $diag_fa_code{"BOOT_GOLDFW"} = 1;
+	        $slot_err_msg .= $line;
+        }
+        if ($failure_code =~ "NIC_JTAG") {
+            if ($line =~ m/NIC_JTAG Started/) {
+                $jtag_log = 1;
+            }
+            if ($line =~ m/NIC_JTAG Stopped/) {
+                $jtag_log = 0;
+            }
+            if ($jtag_log != 0) {
+	            $slot_err_msg .= $line;
+            }
+        }
+        if ($line =~ m/Setting Vmarg to/) {
+            $setting_vmarg_start = 1;
+        }
+        if ($line =~ m/Vmarg is at/) {
+            $setting_vmarg_start = 0;
+        }
+        if ($setting_vmarg_start && $line =~ m/Timeout, server .* not responding/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"NIC_UNRESPONSIVE_IN_VMARG"} = 1;
+        }
+        if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
+            if ($line =~ m/env \| grep -v PS1/) {
+                my $line2 = <TR3>;
+                if ($line2 !~ m/ASIC_LIB=/) {
+                    $diag_fa_code{"MISSING_ENV_VAR"} = 1;
+                }
+            }
+        }
+        if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
+            $err_msg_dump = 1;
+        }
+        if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
+            $err_msg_dump = 0;
+        }
+        if ($err_msg_dump != 0) {
+            $slot_err_msg .= $line;
         }
     }
-    if ($test_err_msg ne "") {
-        $all_test_msg .= "############### $test_and_failure_code ###############\n"."slot log: ".$log_path."/".$slotlogfile."\n\n";
-        $all_test_msg .= $test_err_msg;
+    if ($slot_err_msg ne "") {
+        $test_err_msg .= "\n--------slot log--------: ".$slotlogfile."\n";
+        $test_err_msg .= $slot_err_msg;
     }
     close(TR3);
+
+    if (!open(TR3, '<', $mtpfile)) {
+        print "Cannot open file $mtpfile\n";
+        return;
+    }
+
+    while(my $line = <TR3>)
+    {
+        if ($line =~ m/NIC\-([0-9]+).*NIC_DIAG_REGRESSION_TEST_(PASS|FAIL)/) {
+            my $slot_num = $1;
+            $slot_num += 0;
+            if ($2 eq "FAIL") {
+                $mtp_failed_slots |= 0x1 << ($slot_num - 1);
+                #printf("mtp_failed_slots: 0x%x\n", $mtp_failed_slots);
+            }
+            $mtp_loaded_slots |= 0x1 << ($slot_num - 1);
+        }
+        if ($failure_code =~ "SCAN_VERIFY") {
+            if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
+                $mtp_test_msg .= $line;
+                $diag_fa_code{"INCORRECT_$1"} = 1;
+            }
+        }
+        if ($failure_code =~ "VDD_DDR_VERIFY") {
+            if ($line =~ m/\[NIC-$slot\].*VDD_DDR_VERIFY.*STARTED/) {
+                $err_msg_dump = 1;
+            }
+            if ($line =~ m/\[NIC-$slot\].*VDD_DDR_VERIFY FAILED/) {
+                $err_msg_dump = 0;
+            }
+            # if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
+            #     $err_msg_dump = 1;
+            # }
+            # if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
+            #     $err_msg_dump = 0;
+            # }
+            if ($err_msg_dump != 0) {
+                $mtp_test_msg .= $line;
+            }
+        }
+        if ($failure_code =~ "NIC_STATUS") {
+            if ($line =~ m/\[NIC-$slot\].*PRE_CHECK NIC_STATUS FAIL/) {
+                $nic_status_dump = 1;
+            }
+            if ($line =~ m/DIAG TEST.*STARTED/) {
+                $nic_status_dump = 0;
+            }
+            if ($nic_status_dump != 0) {
+                $mtp_test_msg .= $line;
+            }
+        }
+        if ($failure_code =~ "NIC_BOOT_INIT") {
+            if ($line =~ m/\[NIC-$slot\].*DIAG_INIT NIC_BOOT_INIT FAILED/) {
+                $nic_status_dump = 1;
+            }
+            if ($line =~ m/DIAG TEST.*STARTED/) {
+                $nic_status_dump = 0;
+            }
+            if ($nic_status_dump != 0) {
+                $mtp_test_msg .= $line;
+            }
+        }
+
+        if ($line =~ m/\[NIC-$slot\].*MVL (ACC|STUB|LINK) FAIL/) {
+            $nic_status_dump = 1;
+        }
+        if ($line =~ m/DIAG TEST.*STARTED/) {
+            $nic_status_dump = 0;
+        }
+        if ($nic_status_dump != 0) {
+            $mtp_test_msg .= $line;
+        }
+    }
+    if ($mtp_test_msg ne "") {
+        $test_err_msg .= "\n--------mtp_test log--------: ".$mtpfile."\n";
+        $test_err_msg .= $mtp_test_msg;
+    }
+    close(TR3);
+
+    if (($mtp_failed_slots & $mtp_loaded_slots) == $mtp_loaded_slots) {
+        $diag_fa_code{"ALL_SLOTS_FAIL"} = 1;
+    } elsif (($mtp_failed_slots & ($mtp_loaded_slots & 0x3e0)) == ($mtp_loaded_slots & 0x3e0)) {
+        $diag_fa_code{"SLOTS_10_6_FAIL"} = 1;
+    } elsif (($mtp_failed_slots & ($mtp_loaded_slots & 0x1f)) == ($mtp_loaded_slots & 0x1f)) {
+        $diag_fa_code{"SLOTS_5_1_FAIL"} = 1;
+    }
+
+    if ($failure_code =~ "NIC_PARA_MGMT_INIT") {
+        if (!open(TR3, '<', $mtpdiagfile)) {
+            print "Cannot open file $mtpdiagfile\n";
+            return;
+        }
+        while(my $line = <TR3>)
+        {
+            if ($line =~ m/cpldutil \-cpld\-wr \-addr=0x18 \-data=$slotnum/) {
+                $halctl_slot_info = 1;
+            }
+            if ($halctl_slot_info && $line =~ m/Eth1\/3/ && $line !~ m/Eth1\/3    UP          UP        -/) {
+                $mtp_diag_msg .= $line;
+                $eth1_3_down = 1;
+                $diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
+            }
+            if ($eth1_3_down != 0 && $line =~ m/exit/) {
+                $eth1_3_down = 0;
+            }
+            if ($eth1_3_down != 0 && $line =~ m/-smird 0 0x3/) {
+                $mtp_diag_msg .= $line;
+                my $line2 = <TR3>;
+                $mtp_diag_msg .= $line2;
+            }
+        }
+        if ($mtp_diag_msg ne "") {
+            $test_err_msg .= "\n--------mtp_diag log--------: ".$mtpdiagfile."\n";
+            $test_err_msg .= $mtp_diag_msg;
+        }
+        close(TR3);
+    }
+    if ($test_err_msg ne "") {
+        $all_test_msg .= "############### $test_and_failure_code ###############\n".$test_err_msg;
+    }
 }
 
 sub parse_fpga_and_ecc {
@@ -887,25 +1138,6 @@ sub parse_fpga_and_ecc {
     my $num_ecc_sts_errors = 0;
     my $smbus_err = 0;
 
-    # open the log file once to handle the SMBus problem
-    if (!open(TR3, '<', $logfile)) {
-        print "Cannot open file $logfile\n";
-        return;
-    }
-    while(my $line1 = <TR3>)
-    {
-        if($line1 =~ m/(.*)(Addr: 0x21; Value:)\s(\w+)/) {
-            my $line2 = <TR3>;
-            if ($line2 =~ m/smbus\.go/) {
-                $diag_fa_code{"SMBUS_ERR"} = 1;
-                $smbus_err = 1;
-                last;
-            }
-        }
-    }
-    close(TR3);
-
-    # open the log file again to handle the SMBus problem
     if (!open(TR3, '<', $logfile)) {
         print "Cannot open file $logfile\n";
         return;
@@ -914,11 +1146,16 @@ sub parse_fpga_and_ecc {
     {
         if ($sts_dump_exist == 0) {
             if($line =~ m/(.*)(Addr: 0x21; Value:)\s(\w+)/) {
-
-                if ($smbus_err == 0 && $3 ne "0x2d") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x21, expected: 0x2d, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"CON_REDIR_FAILURE(0x21)"} = 1;
+                my $line2 = <TR3>;
+                if ($line2 =~ m/smbus\.go/) {
+                    $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"} = 1;
+                    $smbus_err = 1;
+                } else {
+                    if ($3 ne "0x2d") {
+                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x21, expected: 0x2d, actual: $3\n";
+                        $num_cpld_sts_errors++;
+                        $diag_fa_code{"CON_REDIR_FAILURE(0x21)"} = 1;
+                    }
                 }
             }
             if($line =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
@@ -1014,7 +1251,7 @@ sub parse_fpga_and_ecc {
                 }
                 $sts_dump_exist = 1;
             }
-            if($line =~ m/ERROR/) {
+            if($line =~ m/ERROR/ && $line !~ m/smbus\.go/) {
                 $test_err_msg .= $line;
             }
         }

@@ -561,22 +561,17 @@ PRIVEK <ek.sk>"""
         else:
             print "=== OTP PROG validated #{} ===".format(retry-1)
 
-        # Skip test for cards with FPGA
-        is_fpga = self.check_fpga_card(card_type)
-        if is_fpga == True:
-            print("Skip ESEC uboot check for FPGA cards")
-        else:
-            print ("slot:", slot)
-            [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
-            if ret != 0:
-                print "=== Failed to check ESEC in uboot ==="
-                print "=== ESEC PROG FAILED ==="
-                return ret
+        print ("slot:", slot)
+        [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
+        if ret != 0:
+            print "=== Failed to check ESEC in uboot ==="
+            print "=== ESEC PROG FAILED ==="
+            return ret
 
-            if crc32_ek != crc32_ek_uboot:
-                print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot 
-                print "=== ESEC PROG FAILED ==="
-                return -1
+        if crc32_ek != crc32_ek_uboot:
+            print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot
+            print "=== ESEC PROG FAILED ==="
+            return -1
 
         asic_type = self.get_asic_type(card_type)
         if asic_type == "ELBA":

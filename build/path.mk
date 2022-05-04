@@ -56,7 +56,8 @@ ARM64_SRC_DIR=			\
 	dsp/qsfp    		\
 	dsp/rtc				\
 	dsp/sfp				\
-	dsp/mem
+	dsp/mem				\
+	dsp/sys
 
 ARM64_C_SRC_DIR=		\
 	lib/spi_userspace	\
