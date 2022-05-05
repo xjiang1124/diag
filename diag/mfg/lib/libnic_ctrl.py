@@ -1417,6 +1417,46 @@ class nic_ctrl():
 
         return True
 
+    def nic_copy_file_from_nic(self, src_file, dst_file):
+        if not src_file or not dst_file:
+            self.nic_set_err_msg("No file specified to copy!")
+            return False
+
+        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, src_file, dst_file)
+
+        fail_signatures = ["No such file", "Exiting with failure"]
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        if idx < 0:
+            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("Couldn't get password prompt")
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx < len(fail_signatures):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg("Missing file {:s}".format(src_file))
+            self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("NIC hung while copying")
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx < len(fail_signatures):
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg("Missing file {:s}".format(src_file))
+            self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
+            return False
+
+        self.nic_exec_cmds(["ls -l {:s}".format(os.path.dirname(dst_file))])
+
+        return True
+
     def nic_sw_profile(self, profile):
         if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
             return False
@@ -1981,35 +2021,15 @@ class nic_ctrl():
             self.nic_set_err_msg("No SN saved for this NIC")
             return False
 
-        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
+        ret = True
+
         for logfile in logfile_list:
             log = os.path.basename(logfile)
             dst_logfile = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR + self._sn + "_" + log
-            cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr, logfile, dst_logfile)
-            self._nic_handle.sendline(cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
-            if idx < 0:
-                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
+            if not self.nic_copy_file_from_nic(logfile, dst_logfile):
+                ret &= False
 
-            self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-            if idx < 0:
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
-                
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
-        nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-        nic_cmd_list.append(nic_cmd)
-        for cmd in nic_cmd_list:
-            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
-                return False
-        return True
+        return ret
 
 
     def nic_save_diag_logfile(self, aapl):
