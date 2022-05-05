@@ -17,7 +17,7 @@ rm -f ${jenkins_dir}/${release_name}/*.tar.gz
 sync
 cp -r $top_dir/diag/${mfg_folder}/* $mfg_script_dir/
 sync
-mkdir $mfg_script_dir/release/
+mkdir -p $mfg_script_dir/release/
 chmod 777 $mfg_script_dir/release/
 if [[ ${mfg_folder} == "mfg_taormina" ]]; then
 	mkdir $mfg_script_dir/tftpboot/
@@ -57,7 +57,7 @@ for f in $image_files; do
     if [[ ${mfg_folder} == "mfg_taormina" ]]; then    
         cp --preserve=timestamps /tftpboot/nabeel/$f $mfg_script_dir/tftpboot/
     else
-        cp --preserve=timestamps /home/nabeel/ws/psdiag/diag/mfg/release/$f $mfg_script_dir/release
+        cp --preserve=timestamps /vol/hw/diag/mfg_release/prog/$f $mfg_script_dir/release
     fi
 done
 
@@ -65,7 +65,7 @@ done
 cd $mfg_script_dir/release
 rm -f 90-*
 for swpn in $(grep -o "90-....-[0-9A-Za-z]*" ../lib/libmtp_ctrl.py); do 
-    img_src="/home/nabeel/ws/psdiag/diag/mfg/release"
+    img_src="/vol/hw/diag/mfg_release/prog"
     if [ -e $img_src/$swpn ]; then 
         fn=$(ls -l $img_src/$swpn | awk '{print $NF}'); 
         if [ ! -e $swpn ]; then
