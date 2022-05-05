@@ -127,6 +127,9 @@ do
         cp $TOP_DIR/diag/scripts/mvl_acc.sh                     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_stub.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_link.sh                    $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_acc_capri.sh               $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_stub_capri.sh              $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/scripts/mvl_link_capri.sh              $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/mvl_chk_link.sh                $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/run_edma.sh                    $NIC_UTIL_DIR
         cp $TOP_DIR/diag/scripts/xcvr_phy_intf.sh               $NIC_UTIL_DIR
