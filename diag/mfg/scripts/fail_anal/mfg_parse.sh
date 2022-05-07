@@ -193,7 +193,7 @@ while read -r sn; do
         echo "any log for SN $sn does not exist"
         echo $sn >> $missing_log_file
     else
-	echo $sn >> $existing_log_file
+        echo $sn >> $existing_log_file
     fi
 done < "${cwd}/${sn_file}"
 
@@ -202,79 +202,87 @@ if [ ! -f $existing_log_file ]; then
 fi
 
 function run_parse {
-    stage=$1
-    txt_path=$2
-    parse_result="${cwd}/parse_result_${stage}_${timestamp}_${log_dir}.xlsx"
-    echo "runnning the parse script for stage $stage, output is $parse_result"
+    #stage=$1
+    #txt_path=$2
+    parse_result="${cwd}/parse_result_${timestamp}_${log_dir}.xlsx"
+    echo "runnning the parse script, output is $parse_result"
+    #if [ "$stage" == "FST" ]; then
+    #    cp $to_loc_top/mfg_parse_fst.pl $to_loc/$card_type/mfg_parse.pl
+    #else
+    #    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
+    #fi
     cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
     cd $to_loc/$card_type
-    ./mfg_parse.pl $fa_opt $parse_result $txt_path $test_name $mfg_err_code
+    ./mfg_parse.pl $fa_opt $parse_result $test_name $mfg_err_code
 
     # grep each SN in logs_fail.txt
     while read -r sn; do
         echo "SN is $sn"
-        if grep -q $sn $to_loc/$card_type/$stage/logs_fail.txt; then
-            echo "failure log for SN $sn exists in stage $stage"
-        else
-            echo "failure log for SN $sn does not exist in stage $stage"
-            echo $sn >> $missing_log_file
-        fi
+        for stage in "${stages[@]}"
+        do
+            if grep -q "${stage}\/$sn" $to_loc/$card_type/logs_fail.txt; then
+                echo "failure log for SN $sn exists in stage $stage"
+            else
+                echo "failure log for SN $sn does not exist in stage $stage"
+                echo $sn >> $missing_log_file
+            fi
+        done
     done < "${existing_log_file}"
 }
 
 echo "untar the log files"
 # untar
 cd $to_loc/$card_type
-find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
+#rm ./testresult.txt
+find ./ -name '*.tar.gz' -exec sh -c 'echo $0; dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
 cd $to_loc/$card_type
-for stage in "${stages[@]}"
-do
-    echo "stage=$stage"
-    case $stage in
-        "DL")
-        if [ -d ./$stage ]; then
-            #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
-            find ./$stage -name "mtp_test.log" | xargs grep -anH "NIC_DIAG_REGRESSION_TEST_FAIL" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        "SWI")
-        if [ -d ./$stage ]; then
-            #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
-            find ./$stage -name "mtp_test.log" | xargs grep -anH "NIC_DIAG_REGRESSION_TEST_FAIL" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        "FST")
-        if [ -d ./$stage ]; then
-            find ./$stage -name "test_fst.log" | xargs grep -anH "NIC_DIAG_REGRESSION_TEST_FAIL" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        "P2C")
-        if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        "4C-L")
-        if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        "4C-H")
-        if [ -d ./$stage ]; then
-            find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Diag Regression Test Complete" > ./$stage/testresult.txt
-            run_parse $stage $to_loc/$card_type/$stage
-        fi
-        ;;
-        *)
-        echo "Invalid stage $stage"
-        exit
-        ;;
-    esac
-done
+while read -r sn; do
+    #echo "SN is $sn"
+    for stage in "${stages[@]}"
+    do
+        #echo "stage=$stage"
+        case $stage in
+            "DL")
+            if [ -d ./$stage ]; then
+                #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
+                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+            fi
+            ;;
+            "SWI")
+            if [ -d ./$stage ]; then
+                #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
+                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+            fi
+            ;;
+            "FST")
+            if [ -d ./$stage ]; then
+                find ./$stage -name "test_fst.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+            fi
+            ;;
+            "P2C")
+            if [ -d ./$stage ]; then
+                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+            fi
+            ;;
+            "4C-L")
+            if [ -d ./$stage ]; then
+                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+            fi
+            ;;
+            "4C-H")
+            if [ -d ./$stage ]; then
+                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
+
+            fi
+            ;;
+            *)
+            echo "Invalid stage $stage"
+            exit
+            ;;
+        esac
+    done
+done < "../../../${sn_file}"
+run_parse
 
 #cp $parse_result $to_loc_top/../
 rm -f ${existing_log_file}

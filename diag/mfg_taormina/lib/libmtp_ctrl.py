@@ -27,6 +27,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import NIC_IP_Address
 
 from libnic_ctrl import nic_ctrl
+from libtest_db import *
 
 class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
@@ -264,6 +265,13 @@ class mtp_ctrl():
             self.cli_log_err("Unable to retrieve TOR ASIC Version")
             return False
         self.cli_log_report_inf("TOR ASIC Version: {:s}".format(self._asic_ver))
+
+        script_ver_match = re.search("image_amd64_.....?_(.*)\.tar", MTP_IMAGES.AMD64_IMG["ELBA"])
+        if script_ver_match:
+            script_ver = script_ver_match.group(1)
+        else:
+            script_ver = ""
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
 
         self.cli_log_inf("TOR System Info Dump End\n", level=0)
         return True
@@ -812,7 +820,7 @@ class mtp_ctrl():
         if self._uut_type == UUT_Type.TOR:
             cmd = "hwclock --set --date {:s}".format(timestamp_str)
             if not self.mtp_mgmt_exec_cmd(cmd):
-                self.cli_log_err("Unable to set UUT_Type date")
+                self.cli_log_err("Unable to set UUT date")
                 return False
 
             cmd = "hwclock -s"
@@ -827,6 +835,7 @@ class mtp_ctrl():
             self.cli_log_err("Unable to set MTP date")
             return False
 
+        mtp_mgmt_ctrl.cli_log_inf("UUT Chassis timestamp sync'd", level=0)
         return True
 
     def mtp_console_enter_shell(self, shell="sh"):
@@ -866,9 +875,8 @@ class mtp_ctrl():
         retries = 0
         #max_retries = self._mgmt_timeout / delay
         max_retries = 10
-        prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "#", ">"]
-
         prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "$", "#", ">"]
+
         while True:
             self.clear_buffer()
             self._mgmt_handle.sendline()
@@ -2128,8 +2136,6 @@ class mtp_ctrl():
 
         return max(temp_readings["TSENSOR-1"], temp_readings["TSENSOR-2"], temp_readings["TSENSOR-3"])
 
-        return
-
     def mtp_get_fanspd(self):
         """
          Returns the fanspeed (in percent) that had been set by the script.
@@ -2251,7 +2257,7 @@ class mtp_ctrl():
 
         return True
 
-
+    @single_slot_test("DL", "NIC_GOLDFW_VERIFY")
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
         if not self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC gold boot info failed")
@@ -2688,125 +2694,11 @@ class mtp_ctrl():
         if ((software_pn == "90-0004-0001") or (software_pn == "90-0006-0001") or (software_pn == "90-0006-0002") or (software_pn == "90-0011-0001")):
             return True
         return False
-            
-    #Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image, 
-    #and etnerprise card get an enterprise image
-    def check_swi_software_image(self, slot, software_pn):
-        naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
-        if not naples_pn:
-            self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
-            return False
-        self.cli_log_slot_inf_lock(slot, "==> Check SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))   
-        if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
-            if software_pn != "90-0002-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:9] == "111-04635": #NAPLES 100 NETAPP
-            if software_pn != "90-0001-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0013":   #NAPLES100 IBM
-            if software_pn != "90-0004-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:6] == "P37692":    #NAPLES100 HPE 
-            if software_pn != "90-0002-0008":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False    
-        elif naples_pn[0:6] == "P41854":    #NAPLES100 HPE CLOUD
-            if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False    
-        elif naples_pn[0:7] == "68-0005":    #NAPLES25 PENSANDO
-            if software_pn != "90-0002-0005":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False 
-        elif naples_pn[0:6] == "P18669":     #NAPLES25 HPE
-            if software_pn != "90-0006-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False 
-        elif naples_pn[0:7] == "68-0008":    #NAPLES25 EQUINIX
-            if software_pn != "90-0006-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False 
-        elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0008":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False 
-        elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
-            if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):     #NAPLES25 SWM PENSANDO
-            if software_pn != "90-0002-0005":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
-            if software_pn != "90-0007-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
-            if software_pn != "90-0002-0007":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP PENSANDO
-            if software_pn != "90-0002-0007":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0002-0008":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
-            if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0023":     #NAPLES25 OCP DELL
-            if software_pn != "90-0002-0007":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
-            if software_pn != "90-0003-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0009-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
-            if software_pn != "90-0011-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
-                return False
-        else:
-            self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
-            return False             
-        '''
-        *** AS OF 11/30/2020.. 
-        90-0001-0001   netapp  PNSO-1.0.0-E-7-netapp-09162019-1911.tar
-        90-0002-0001   goldman  PNSO-1.1.1-E-15-goldman-10042019-1722.tar ??
-        90-0002-0002    PNSO-1.3.2-E-3-basicdsc-ga-022420202-1611
-        90-0002-0003   naples_fw_1.8.0-E-48_B-_0608.tar
-        90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
-        90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
-        90-0002-0007   //RelB++ (SWM833, OCP). Updated 03/02/2021
-        90-0002-0008   //1.14.5 (All HPE Ent: SWM, 100, OCP). Updated 05/28/2021
-        90-0003-0001   //Oracle Capri cards.. dont care
-        90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
-        90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
-        90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
-        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.16.2-C-10_2021.04.08.tar
-        90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
-        90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
-        90-0009-0002   //Ortano2-oracle dsc_fw_athena_elba_1.15.8-C-9_2021.05.22.tar
-        90-0010-0001   //1.14.5 (OCP). Updated 04/26/2021
-        '''
-        return True
 
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
 
     def mtp_setting_partition(self, slot):
-        start_ts = self.log_slot_test_start(slot, "SET_PSLC")
         # copy script to detect the emmc part size
         if not self._nic_ctrl_list[slot].nic_copy_image("{:s}diag/scripts/emmc_format.sh".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)):
             self.cli_log_slot_err_lock(slot, "Could not copy emmc_format.sh")
@@ -2819,7 +2711,6 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Partition table was not updated")
             return False
         self.cli_log_slot_inf_lock(slot, "Partition table updated")
-        duration = self.log_slot_test_stop(slot, "SET_PSLC", start_ts)
         return True
 
     def mtp_nic_partition_check(self, slot):
@@ -2828,6 +2719,10 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
         return True
+
+    @single_slot_test("DL", "NIC_EMMC_FORMAT")
+    def tor_nic_emmc_format(self, slot):
+        return self.mtp_setting_partition(slot)
 
     def mtp_program_nic_cpld(self, slot, cpld_img):
         # check the current cpld version
@@ -3611,49 +3506,49 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_nic_connection_init(self):
-        successsetupconnection = False
-        for x in range(3):
-            ret = self.mtp_nic_connection_init_run()
-            if ret:
-                successsetupconnection = True
-                break
-            if x == 2:
-                break
-            if not self.tor_boot_select(1):
-                return False
-            if not self.tor_mgmt_init(False):
-                return False
-            if not self.tor_diag_init(FF_Stage.FF_DL, fpo=False):
-                return False
+    # def mtp_nic_connection_init(self):
+    #     successsetupconnection = False
+    #     for x in range(3):
+    #         ret = self.mtp_nic_connection_init_run()
+    #         if ret:
+    #             successsetupconnection = True
+    #             break
+    #         if x == 2:
+    #             break
+    #         if not self.tor_boot_select(1):
+    #             return False
+    #         if not self.tor_mgmt_init(False):
+    #             return False
+    #         if not self.tor_diag_init(FF_Stage.FF_DL, fpo=False):
+    #             return False
 
-        return successsetupconnection
+    #     return successsetupconnection
 
-    def mtp_nic_connection_init_run(self):
+    # def mtp_nic_connection_init_run(self):
 
-        if not self.tor_nic_gold_boot():
-            self.cli_log_err("Failed to set NIC goldfw", level=0)
-            return False
+    #     if not self.tor_nic_gold_boot():
+    #         self.cli_log_err("Failed to set NIC goldfw", level=0)
+    #         return False
 
-        # Powercycle including rescan
-        if not self.mtp_power_cycle_nic():
-            return False
+    #     # Powercycle including rescan
+    #     if not self.mtp_power_cycle_nic():
+    #         return False
 
-        # Validate previous step
-        for slot in range(self._slots):
-            if not self.mtp_mgmt_verify_nic_gold_boot(slot):
-                self.cli_log_slot_err(slot, "Failed to boot into goldfw")
-                return False
+    #     # Validate previous step
+    #     for slot in range(self._slots):
+    #         if not self.mtp_mgmt_verify_nic_gold_boot(slot):
+    #             self.cli_log_slot_err(slot, "Failed to boot into goldfw")
+    #             return False
 
-        if self._uut_type == UUT_Type.TOR:
-            if not self.tor_nic_memtun_init():
-                self.cli_log_err("memtun init failed", level=0)
-                return False
+    #     if self._uut_type == UUT_Type.TOR:
+    #         if not self.tor_nic_memtun_init():
+    #             self.cli_log_err("memtun init failed", level=0)
+    #             return False
 
-            for slot in range(self._slots):
-                self.mtp_nic_boot_info_init(slot)
+    #         for slot in range(self._slots):
+    #             self.mtp_nic_boot_info_init(slot)
 
-        return True
+    #     return True
 
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False):
         # emmc_format will be true only for the first time boot up
@@ -3669,10 +3564,10 @@ class mtp_ctrl():
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
         if self._uut_type == UUT_Type.TOR:
-            if not self._nic_ctrl_list[0]._in_mainfw:
-                if not self.tor_nic_memtun_init():
-                    self.cli_log_err("memtun init failed", level=0)
-                    return False
+            # if not self._nic_ctrl_list[0]._in_mainfw:
+            #     if not self.tor_nic_memtun_init():
+            #         self.cli_log_err("memtun init failed", level=0)
+            #         return False
 
             # Removing validate... pexpect keeps missing the mark
             # if not self.tor_nic_memtun_validate():
@@ -3694,15 +3589,9 @@ class mtp_ctrl():
             # for QA only not DL: do mgmt para init but do emmc format. 
             emmc_format = True
 
-        ## MEMTUN WORKAROUND:
-        # if self._uut_type == UUT_Type.TOR:
-        #     for slot in range(self._slots):
-        #         ## Memtun init needed before every connect for now:
-        #         # if not self._nic_ctrl_list[slot].nic_memtun_init():
-        #         #     self.nic_set_err_msg("Failed to connect to NIC")
-        #         #     return False
-        #         self.mtp_single_nic_diag_init(slot, emmc_format, fru_valid, vmargin, aapl)
-        # else:
+        for slot in range(self._slots):
+            start_ts = self.log_slot_test_start(slot, "NIC_DIAG_INIT")
+
         nic_thread_list = list()
         for slot in range(self._slots):
             if not self._nic_prsnt_list[slot]:
@@ -3725,6 +3614,9 @@ class mtp_ctrl():
                     nic_thread.join()
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
+
+        for slot in range(self._slots):
+            duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
@@ -4340,27 +4232,15 @@ class mtp_ctrl():
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
-        if test == "PRBS_ETH":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_HBM":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_ELBA":
-            if self.mtp_is_nic_ortano_oracle(nic_list[0]):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
-            else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
-        elif test == "SNAKE_TOR":
-
-            # mgmt:
+        if test == "SNAKE_TOR":
             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
             snake_port_mask = "0xff"
             snake_duration = "150"
             snake_loopback = "ext"
             cmd = "./switch td3 snake {:s} {:s} {:s}".format(snake_port_mask, snake_duration, snake_loopback)
-            sig_list = ["Snake Test "]
-            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.TOR_SNAKE_TEST_INIT_DELAY+int(snake_duration)):
+            sig_list = ["SWITCH SNAKE TEST "]
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=test_timeout+int(snake_duration)):
                 self.cli_log_err("{:s} failed".format(cmd))
                 return nic_list[:]
             if "PASSED" not in self.mtp_get_cmd_buf():
@@ -4373,7 +4253,8 @@ class mtp_ctrl():
              prbs_type = "prbs58"
              prbs_duration = "60"
              cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
-             if not self.mtp_mgmt_exec_cmd(cmd, timeout=int(120)+int(prbs_duration)):
+             test_timeout = self.get_test_timeout(cmd, test)
+             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
                  self.cli_log_err("{:s} failed".format(cmd))
                  return nic_list[:]
              cmd_buf = self.mtp_get_cmd_buf()
@@ -4386,21 +4267,10 @@ class mtp_ctrl():
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
 
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_DELAY):
-            self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return nic_list[:]
-
-        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
-        for _slot, rslt in match:
-            slot = int(_slot) - 1
-            if rslt != "PASS" and slot not in nic_fail_list:
-                nic_fail_list.append(slot)
-
-        return nic_fail_list
-
 
     def mtp_mgmt_get_test_result(self, cmd, test):
         if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Unable to execute cmd {:s}".format(cmd))
             return MTP_DIAG_Error.NIC_DIAG_TIMEOUT
 
         # Test    Error code, SUCCESS means pass
@@ -4482,10 +4352,6 @@ class mtp_ctrl():
         # else:
         #     ret = "TIMEOUT"
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
-        if test == "L1" and ret == "TIMEOUT":
-            self.mtp_run_diag_test_para_lock()
-            self.mtp_mgmt_jtag_rst()
-            self.mtp_run_diag_test_para_unlock()
 
         return [ret, err_msg_list]
 
@@ -4531,10 +4397,6 @@ class mtp_ctrl():
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result(rslt_cmd, test)
-        if test == "L1" and ret == "TIMEOUT":
-            self.mtp_run_diag_test_para_lock()
-            self.mtp_mgmt_jtag_rst()
-            self.mtp_run_diag_test_para_unlock()
 
         return [ret, err_msg_list]
 
@@ -4590,7 +4452,7 @@ class mtp_ctrl():
         # find any error
         avs_passed_flag = re.findall(r"SET AVS PASSED", buf)
         if not avs_passed_flag:
-            self.cli_log_slot_inf(slot, buf, level=0)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         # find the die id
@@ -5187,9 +5049,11 @@ class mtp_ctrl():
         start=datetime.now()
         starttosendselection = True
         waittimetopowercycleretry = MTP_Const.TOR_POWER_ON_DELAY
-        if secure_login:
-            waittimetopowercycleretry = 1800
-            self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
+        # if secure_login:
+        #     waittimetopowercycleretry = 1800
+        #     self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
+        waittimetopowercycleretry = 1800
+        self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
         while True:
             if starttosendselection:
                 self._mgmt_handle.send(str(selection))
@@ -5239,14 +5103,17 @@ class mtp_ctrl():
             elba0_ready, elba1_ready = False, False
             while not elba0_ready or not elba1_ready:
                 self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
-                if self._secure_login:
-                    self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
-                    sig = "ready"
-                else:
-                    self.mtp_mgmt_exec_cmd("vtysh -c \"show module\"", sig_list=["#"], timeout=10)
-                    sig = "Ready"
+                # if self._secure_login:
+                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
+                #     sig = "ready"
+                # else:
+                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show module\"", sig_list=["#"], timeout=10)
+                #     sig = "Ready"
+                self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
+                sig1 = "ready"
+                sig2 = "down"
                 for line in self.mtp_get_cmd_buf().splitlines():
-                    if "DSS-4825-6100" in line and sig in line:
+                    if "DSS-4825-6100" in line and (sig1 in line or sig2 in line):
                         if "1/1" in line:
                             elba0_ready = True
                         if "1/2" in line:
@@ -5982,12 +5849,6 @@ class mtp_ctrl():
 
         # self.mtp_mgmt_exec_cmd("exit")
         return True
-    
-    def tor_verify_nic_gold_boot(self):
-        for slot in range(0,2):
-            if not self.mtp_mgmt_verify_nic_gold_boot(slot):
-                return False
-        return True
 
     def tor_util_prog(self, util_img, download=True, powercycle_after_prog=False):
         uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH
@@ -6127,6 +5988,7 @@ class mtp_ctrl():
             if eachdata["SN"] == sn:
                 pcbasn = eachdata["PCBA_SN"]
                 break
+        self.cli_log_inf("Retrieved PCBA SN: {}".format(pcbasn), level=0)
         return pcbasn
 
     def tor_fru_prog_tpm_pcbasn(self, pcbasn):
@@ -6320,6 +6182,13 @@ class mtp_ctrl():
             self.cli_log_err("Unable to read PCBA SN", level=0)
             return False
 
+        return True
+
+    def tor_nic_fru_verify(self, slot, sn, mac, pn, prog_date):
+        if not self.mtp_nic_fru_init(slot, init_date=True, nic_type=self.mtp_get_nic_type(slot)):
+            return False
+        if not self.mtp_verify_nic_fru(slot, sn, mac, pn, prog_date):
+            return False
         return True
 
     def tor_info_disp(self, fru_valid=True):
@@ -6518,66 +6387,71 @@ class mtp_ctrl():
             return False
         return True
 
-    def tor_nic_memtun_init(self):
-        successsetupconnection = False
+    @single_slot_test("DL", "NIC_MEMTUN_INIT")
+    def tor_nic_memtun_init(self, slot):
+        ret = False
         for x in range(2):
-            ret = self.tor_nic_memtun_init_run()
+            self.cli_log_slot_inf(slot, "Opening memtun")
+            ret = self._nic_ctrl_list[slot].nic_memtun_init()
             if ret:
-                successsetupconnection = True
                 break
             else:
+                self.cli_log_slot_err(slot, "Failed to init memtun")
                 cmd = "ps -A | grep memtun"
-                if not self.mtp_mgmt_exec_cmd(cmd):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                if not self.self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                    self.cli_log_slot_err(slot, "{:s} failed".format(cmd))
 
-        return successsetupconnection
+        return ret
 
-    def tor_nic_memtun_init_run(self):
-        cmd = "ps -A | grep memtun"
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
+    # def tor_nic_memtun_init_run(self):
+    #     cmd = "ps -A | grep memtun"
+    #     if not self.mtp_mgmt_exec_cmd(cmd):
+    #         self.cli_log_err("{:s} failed".format(cmd))
+    #         return False
 
-        cmd = "killall memtun"
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
+    #     cmd = "killall memtun"
+    #     if not self.mtp_mgmt_exec_cmd(cmd):
+    #         self.cli_log_err("{:s} failed".format(cmd))
+    #         return False
 
-        """
-         NZ: Move into libnic later
-        """
-        time.sleep(5)
+    #     """
+    #      NZ: Move into libnic later
+    #     """
+    #     time.sleep(5)
 
-        for slot in range(self._slots):
-            self.cli_log_slot_inf(slot, "Init memtun")
+    #     for slot in range(self._slots):
+    #         start_ts = self.log_slot_test_start(slot, "NIC_GOLDFW_VERIFY")
+    #         self.cli_log_slot_inf(slot, "Init memtun")
         
-            memtun_ip = NIC_IP_Address.MEMTUN_IP[slot]
-            mgmt_ip   = NIC_IP_Address.MGMT_IP[slot]
-            pci_bus = NIC_IP_Address.MEMTUN_PCI_BUS[slot]
+    #         memtun_ip = NIC_IP_Address.MEMTUN_IP[slot]
+    #         mgmt_ip   = NIC_IP_Address.MGMT_IP[slot]
+    #         pci_bus = NIC_IP_Address.MEMTUN_PCI_BUS[slot]
 
-            cmd = "{:s}memtun -s {:s} {:s} &".format("/fs/nos/home_diag/diag/tools/", pci_bus, memtun_ip)
-            # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "]):
-            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=60):
-                self.cli_log_err("{:s} failed".format(cmd))
-                return False
-            time.sleep(2)
+    #         cmd = "{:s}memtun -s {:s} {:s} &".format("/fs/nos/home_diag/diag/tools/", pci_bus, memtun_ip)
+    #         # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "]):
+    #         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=60):
+    #             self.cli_log_err("{:s} failed".format(cmd))
+    #             duration = self.log_slot_test_stop(slot, "NIC_GOLDFW_VERIFY", start_ts)
+    #             return False
+    #         time.sleep(2)
 
-            cmd = "ping -c 1 {:s}".format(mgmt_ip)
-            # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "]):
-            pingsuccess = False
-            for x in range(2):
-                if self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, sig_list=["1 received"], timeout=30):
-                    pingsuccess = True
-                else:
-                    self.cli_log_err("NIC-0{} : {:s} failed, try again".format(slot+1, cmd))
-                    #return False
-                if pingsuccess:
-                    break
-            if not pingsuccess:
-                self.cli_log_err("NIC-0{} : {:s} failed,".format(slot+1, cmd))
-                return False
-        return True
+    #         cmd = "ping -c 1 {:s}".format(mgmt_ip)
+    #         # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "]):
+    #         pingsuccess = False
+    #         for x in range(2):
+    #             if self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, sig_list=["1 received"], timeout=30):
+    #                 pingsuccess = True
+    #             else:
+    #                 self.cli_log_err("NIC-0{} : {:s} failed, try again".format(slot+1, cmd))
+    #                 #return False
+    #             if pingsuccess:
+    #                 break
+    #         if not pingsuccess:
+    #             self.cli_log_err("NIC-0{} : {:s} failed,".format(slot+1, cmd))
+    #             duration = self.log_slot_test_stop(slot, "NIC_GOLDFW_VERIFY", start_ts)
+    #             return False
+    #         duration = self.log_slot_test_stop(slot, "NIC_GOLDFW_VERIFY", start_ts)
+    #     return True
 
     def tor_nic_memtun_validate(self):
         for slot in range(self._slots):
@@ -6910,70 +6784,13 @@ class mtp_ctrl():
             return False
         return True
 
-    def tor_nic_gold_boot(self):
-        ret = True
-        if not self.mtp_mgmt_exec_cmd("killall picocom"):
-            self.cli_log_err("killall picocom failed", level=0)
+    @single_slot_test("DL", "NIC_GOLDFW_BOOT")
+    def tor_nic_gold_boot(self, slot):
+        self.cli_log_slot_inf(slot, "Set goldfw boot")
+        if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
+            self.cli_log_slot_err(slot, "Failed to set goldfw")
             return False
-
-        for slot in range(self._slots):
-            self.cli_log_slot_inf(slot, "Set goldfw boot")
-
-            """
-            # cmd = "cd /fs/nos/eeupdate/"
-            # if not self.mtp_mgmt_exec_cmd(cmd):
-            #     self.cli_log_err("{:s} failed".format(cmd), level=0)
-            #     return False
-
-            # if not self.mtp_console_enter_shell("./econ.bash {:d}".format(slot)):
-            #     self.cli_log_err("failed to enter NIC console", level=0)
-            #     return False
-
-            # cmd = "boot -s goldfw"
-            # # self.mtp_mgmt_exec_cmd(cmd, sig_list=["Startup image set to goldfw"])
-            # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "], timeout=MTP_Const.NIC_FW_SET_DELAY):
-            #     self.cli_log_err("{:s} failed".format(cmd), level=0)
-            #     self.mtp_mgmt_exec_cmd.sendline()
-            #     # dont catch error as failure
-
-            # cmd = "fwupdate -s goldfw"
-            # if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["# "], timeout=MTP_Const.NIC_FW_SET_DELAY):
-            #     self.cli_log_err("{:s} failed".format(cmd), level=0)
-            #     # dont catch error as failure
-
-            # self._mgmt_handle.sendcontrol("a")  # or send(\\x01)
-            # self._mgmt_handle.sendcontrol("x")  # or send(\\x18)
-            # self._mgmt_handle.sendline()
-            # idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
-            # if idx < 0:
-            #     ret = False
-
-            # if not self.mtp_mgmt_set_nic_goldfw_boot(slot):
-            #     if not self._nic_ctrl_list[slot].nic_console_attach():
-            #         self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            #         ret = False
-            #         continue
-
-            """
-
-            if not self._nic_ctrl_list[slot].nic_console_attach():
-                self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                ret = False
-                continue
-
-            # set default to goldfw boot
-            self._nic_ctrl_list[slot]._nic_handle.sendline("boot -s goldfw")
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.NIC_FW_SET_DELAY)
-            
-            self._nic_ctrl_list[slot]._nic_handle.sendline("fwupdate -s goldfw")
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.NIC_FW_SET_DELAY)
-
-            if not self._nic_ctrl_list[slot].nic_console_detach():
-                self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                ret = False
-                continue
-
-        return ret
+        return True
 
     def tor_nic_Setup_Elba_uboot_env(self, svos_boot=True, initemmc=True):
         successsetupenv = False
@@ -7171,94 +6988,26 @@ class mtp_ctrl():
 
         return ret
 
-    def tor_nic_Setup_device_config(self, svos_boot=True, initemmc=True):
-        ret = True
-        if not self.tor_nic_init():
-            self.cli_log_err("Initialize NIC type, present failed", level=0)
+    @single_slot_test("DL", "NIC_PROFILE_CONFIG")
+    def tor_nic_Setup_device_config(self, slot):
+        # removing this since not running this function before diag_init anymore
+        # if not self.tor_nic_init():
+        #     self.cli_log_err("Initialize NIC type, present failed", level=0)
+        #     return False
+
+        self.cli_log_slot_inf(slot, "Writing device.conf to NIC")
+        if not self._nic_ctrl_list[slot].nic_setup_device_config():
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.cli_log_slot_err(slot, "Failed to save device.conf")
             return False
 
-        if not self.mtp_mgmt_exec_cmd("killall picocom"):
-            self.cli_log_err("killall picocom failed", level=0)
-            return False
+        # # Uboot env step removed for OS newer than Nov1 2021
+        # if not self._nic_ctrl_list[slot].nic_console_uboot_env():
+        #     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+        #     self.cli_log_slot_err(slot, "Failed to write env to uboot")
+        #     return False
 
-        for slot in range(self._slots):
-            start_ts = self.log_slot_test_start(slot, "SETUP_ELBA_DEVICE_CONFIG")
-            self.cli_log_slot_inf(slot, "Setup Elba device config")
-
-            if not self._nic_ctrl_list[slot].nic_console_attach():
-                self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                duration = self.log_slot_test_stop(slot, "SETUP_ELBA_DEVICE_CONFIG", start_ts)
-                ret = False
-                continue
-            self._nic_ctrl_list[slot]._nic_handle.sendline("\n")
-            self._nic_ctrl_list[slot]._nic_handle.sendline("\n")
-            self._nic_ctrl_list[slot]._nic_handle.sendline("\n")
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline("\n")
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
-            #self._nic_ctrl_list[slot]._nic_handle.sendline('mount -t ext4 /dev/mmcblk0p6 /sysconfig/config0')
-            #idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
-            time.sleep(1)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('mount -t ext4 /dev/mmcblk0p6 /sysconfig/config0')
-            time.sleep(1)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('rm /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["exists", "# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
-            time.sleep(1)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo { >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo \\"device-profile\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo \\"memory-profile\\": \\"default\\", >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo \\"oper-mode\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo \\"port-admin-state\\": \\"PORT_ADMIN_STATE_ENABLE\\", >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo \\"delay-host-bringup\\": \\"false\\" >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('echo } >> /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            time.sleep(1)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('sync')
-            time.sleep(1)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('cat /sysconfig/config0/device.conf')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["delay-host-bringup"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            if idx < 0:
-                self.cli_log_err("setup device.conf failed", level=0)
-                ret = False
-            time.sleep(2)
-
-            self._nic_ctrl_list[slot]._nic_handle.sendline('sysreset.sh')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["Autoboot"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-
-            #Send Ctrl-C by '\x03'
-            self._nic_ctrl_list[slot]._nic_handle.sendline('\x03')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)          
-
-            self._nic_ctrl_list[slot]._nic_handle.sendline('setenv memdp_tot_size 12G')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('setenv mem_bypass_size 0')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('setenv core_clock_freq 1100000000')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('setenv bootargs isolcpus=2,3,6,7,10,11,14,15 nohz_full=2,3,6,7,10,11,14,15 rcu_nocbs=2,3,6,7,10,11,14,15 rcu_nocb_poll irqaffinity=0-1 console=ttyS0,115200n8')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('saveenv')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('env print')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-            self._nic_ctrl_list[slot]._nic_handle.sendline('reset')
-            idx = libmfg_utils.mfg_expect(self._nic_ctrl_list[slot]._nic_handle, ["Press enter"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
-
-            if not self._nic_ctrl_list[slot].nic_console_detach():
-                self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                duration = self.log_slot_test_stop(slot, "SETUP_ELBA_DEVICE_CONFIG", start_ts)
-                ret = False
-                continue
-
-            duration = self.log_slot_test_stop(slot, "SETUP_ELBA_DEVICE_CONFIG", start_ts)            
-
-        return ret
+        return True
 
     def mtp_mgmt_set_nic_goldfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
@@ -7966,7 +7715,6 @@ class mtp_ctrl():
         handle.expect("$")
         handle.sendline("ls {:s}".format(dest_folder))
         handle.expect("$")
-        print(handle.before)
         handle.close()
 
         return True
@@ -7985,8 +7733,14 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_connect():
             self.cli_log_err("Unable to ssh to UUT chassis")
+            return False
 
-        self.tor_copy_sys_log(dest_folder)
+        if not self.mtp_mgmt_exec_cmd("uptime"):
+            return False
+
+        if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
+            return False
+
 
         return True
 
@@ -8007,5 +7761,6 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START failure dump"))
         self._nic_ctrl_list[slot].mtp_exec_cmd("killall tclsh")
         self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_NIC_STS_FMT.format(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH, int(slot)-1))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("killall tclsh")
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END failure dump"))
 

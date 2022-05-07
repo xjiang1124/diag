@@ -307,6 +307,7 @@ class nic_ctrl():
 
     def nic_console_attach(self):
         if self._nic_type == NIC_Type.TAORMINA:
+            self.mtp_exec_cmd("systemctl stop dsm-uart-log")
             self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
             con_cmd = "./econ.bash {:d}".format(self._slot)
         else:
@@ -440,6 +441,8 @@ class nic_ctrl():
 
         return True
     def nic_set_goldfw_boot(self):
+        self.mtp_exec_cmd("killall picocom")
+
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -3108,31 +3111,198 @@ class nic_ctrl():
 
         return True
 
-    def nic_memtun_init(self):
-        slot = self._slot
-        memtun_ip = NIC_IP_Address.MEMTUN_IP[slot]
-        mgmt_ip   = NIC_IP_Address.MGMT_IP[slot]
-        pci_bus = NIC_IP_Address.MEMTUN_PCI_BUS[slot]
+    def nic_console_uboot_env(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
 
-        cmd = "killall memtun"
-        if not self.mtp_exec_cmd(cmd, sig_list=["# "]):
-            self.nic_set_err_msg("{:s} failed".format(cmd))
+        self._nic_handle.sendline('sysreset.sh')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Autoboot"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+
+        #Send Ctrl-C by '\x03'
+        self._nic_handle.sendline('\x03')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["DSC# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg("Unable to reach uboot prompt in time")
             return False
-        cmd = "{:s}memtun -s {:s} {:s} &".format("/home/diag/diag/tools/", pci_bus, memtun_ip)
-        if not self.mtp_exec_cmd(cmd, sig_list=["# "]):
-            self.nic_set_err_msg("{:s} failed".format(cmd))
+
+        nic_cmd_list = list()
+        nic_cmd_list.append('setenv memdp_tot_size 12G')
+        nic_cmd_list.append('setenv mem_bypass_size 0')
+        nic_cmd_list.append('setenv core_clock_freq 1100000000')
+        nic_cmd_list.append('setenv bootargs isolcpus=2,3,6,7,10,11,14,15 nohz_full=2,3,6,7,10,11,14,15 rcu_nocbs=2,3,6,7,10,11,14,15 rcu_nocb_poll irqaffinity=0-1 console=ttyS0,115200n8')
+        nic_cmd_list.append('saveenv')
+        nic_cmd_list.append('env print')
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, ["DSC#"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        self._nic_handle.sendline('reset')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Press enter"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg("Unable to reach elba linux shell")
             return False
-        memtun_cmd_buf = self.nic_get_cmd_buf()
-        cmd = "ping -c 1 {:s}".format(mgmt_ip)
-        if not self.mtp_exec_cmd(cmd, sig_list=["# "]):
-            self.nic_set_err_msg("{:s} failed".format(cmd))
+
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
-        cmd_buf = self.nic_get_cmd_buf()
-        if "100% packet loss" in cmd_buf:
-            self.nic_set_err_msg(memtun_cmd_buf)
+
+        return True
+
+    def nic_setup_device_config(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
-        time.sleep(1)
+
+        nic_cmd_list = list()
+        # nic_cmd_list.append("\n")
+        # nic_cmd_list.append("\n")
+        # nic_cmd_list.append("\n")
+        # nic_cmd_list.append("\n")
+        nic_cmd_list.append("mount -t ext4 /dev/mmcblk0p6 /sysconfig/config0")
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("rm /sysconfig/config0/device.conf")
+        nic_cmd_list.append('echo { >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo \\"device-profile\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo \\"memory-profile\\": \\"default\\", >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo \\"oper-mode\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo \\"port-admin-state\\": \\"PORT_ADMIN_STATE_ENABLE\\", >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo \\"delay-host-bringup\\": \\"false\\" >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append('echo } >> /sysconfig/config0/device.conf')
+        nic_cmd_list.append("sync")
+
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("cat /sysconfig/config0/device.conf")
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Output empty for command {:s}".format(nic_cmd_list[-1]))
+            self.nic_console_detach()
+            return False
+        if "delay-host-bringup" not in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Setup of device.conf failed")
+            return False
+
+
         
+
+
+        """
+        self._nic_handle.sendline("\n")
+        self._nic_handle.sendline("\n")
+        self._nic_handle.sendline("\n")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline("\n")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+        #self._nic_handle.sendline('mount -t ext4 /dev/mmcblk0p6 /sysconfig/config0')
+        #idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+        time.sleep(1)
+        self._nic_handle.sendline('mount -t ext4 /dev/mmcblk0p6 /sysconfig/config0')
+        time.sleep(1)
+        self._nic_handle.sendline('rm /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["exists", "# "], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+        time.sleep(1)
+        self._nic_handle.sendline('echo { >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo \\"device-profile\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo \\"memory-profile\\": \\"default\\", >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo \\"oper-mode\\": \\"bitw-smart-service\\", >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo \\"port-admin-state\\": \\"PORT_ADMIN_STATE_ENABLE\\", >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo \\"delay-host-bringup\\": \\"false\\" >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        self._nic_handle.sendline('echo } >> /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["# "], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        time.sleep(1)
+        self._nic_handle.sendline('sync')
+        time.sleep(1)
+        self._nic_handle.sendline('cat /sysconfig/config0/device.conf')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["delay-host-bringup"], timeout=MTP_Const.TOR_ELBA_UBOOT_DELAY)
+        if idx < 0:
+            self.cli_log_err("setup device.conf failed", level=0)
+            ret = False
+        time.sleep(2)
+
+        """
+
+
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_memtun_init(self):
+        cmd = "ps -A | grep memtun"
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("{:s} failed".format(cmd))
+            return False
+
+        if self._slot == 0: #assuming slot 0 is always already configured first
+            cmd = "killall memtun"
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_err_msg("{:s} failed".format(cmd))
+                return False
+
+        time.sleep(5)
+    
+        memtun_ip = NIC_IP_Address.MEMTUN_IP[self._slot]
+        mgmt_ip   = NIC_IP_Address.MGMT_IP[self._slot]
+        pci_bus = NIC_IP_Address.MEMTUN_PCI_BUS[self._slot]
+
+        cmd = "{:s}memtun -s {:s} {:s} &".format("/fs/nos/home_diag/diag/tools/", pci_bus, memtun_ip)
+        if not self.mtp_exec_cmd(cmd, timeout=60):
+            self.nic_set_err_msg("{:s} failed".format(cmd))
+            return False
+        time.sleep(2)
+
+        cmd = "ping -c 1 {:s}".format(mgmt_ip)
+        pingsuccess = False
+        for x in range(2):
+            if self.mtp_exec_cmd(cmd, sig_list=["1 received"], timeout=30):
+                pingsuccess = True
+            # else:
+            #     self.nic_set_err_msg("NIC-0{} : {:s} failed, try again".format(slot+1, cmd))
+            if pingsuccess:
+                break
+        if not pingsuccess:
+            self.nic_set_err_msg("NIC-0{} : {:s} failed,".format(slot+1, cmd))
+            return False
+
         return True
 
     def nic_memtun_validate(self):

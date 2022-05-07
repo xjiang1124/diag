@@ -33,9 +33,6 @@ from libdiag_db import diag_db
 def load_mtp_cfg():
     # DL/P2C MTP Chassis
     mtp_chassis_cfg_file_list = list()
-    # if not GLB_CFG_MFG_TEST_MODE:
-    #     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    # mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_tor_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
@@ -86,9 +83,6 @@ def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage="NT"):
         os.system("rm -rf {:s}".format(_file))
 
 def mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, stage=FF_Stage.FF_P2C):
-    mtp_mgmt_ctrl.cli_log_inf("Power off APC", level=0)
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
     save_logfile(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, stage)
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=False):
@@ -112,6 +106,49 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
     return mtp_mgmt_ctrl
 
+def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test, logfile_dir_list, open_file_track_mtp_list):
+    # sn = NIC_Type.UNKNOWN
+    sn = mtp_mgmt_ctrl._sn
+
+
+    for test in ["OS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT", "FRU_INIT", "MGMT_INIT_OS"]:
+        start_ts = mtp_mgmt_ctrl.log_test_start(test)
+
+        # boot test OS
+        if test == "OS_BOOT":
+            ret = mtp_mgmt_ctrl.tor_boot_select(1)
+        elif test == "CONSOLE_CLEAR":
+            ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
+        elif test == "CONSOLE_CONNECT":
+            ret = mtp_mgmt_ctrl.mtp_console_connect()
+        # read FRU the first time
+        elif test == "FRU_INIT":
+            ret = mtp_mgmt_ctrl.tor_fru_init()
+        elif test == "MGMT_INIT_OS":
+            ret = mtp_mgmt_ctrl.tor_mgmt_init(False)
+
+        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            return False
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="P2C-SSH"):
+        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+
+    mtp_2c_script_dir = "mtp_regression/"
+    mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+    mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP P2C Test script", level=0)
+    if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
+        mtp_mgmt_ctrl.cli_log_err("Deploy MTP P2C Test script failed", level=0)
+        return False
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
+
+    return True
+
 def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[]):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
@@ -130,7 +167,7 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s}".format(mtp_id, swm_test_mode)
+    cmd = "./mtp_diag_regression.py --mtpid {:s}".format(mtp_id)
     if skip_test:
         cmd += skipped_testlist
     if fail_slots:
@@ -149,8 +186,11 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     
-    # shut down system
-    mtp_mgmt_ctrl.uut_chassis_shutdown()
+    # shut down system if passed
+    for slot, sn, nic_type, rc in mtp_test_summary:
+        if rc:
+            mtp_mgmt_ctrl.uut_chassis_shutdown()
+            break
 
     return
 
@@ -203,58 +243,22 @@ def main():
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
     dsp = FF_Stage.FF_P2C
 
-    if not TAORMINA_TEST:
-        # power on the mtp chassis
-        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
-    else:
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
+        mtp_mgmt_ctrl._slots = 2
+
+        if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, args.skip_test, logfile_dir_list, open_file_track_mtp_list):
+            mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+
+        # close file handles
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
-            mtp_mgmt_ctrl._slots = 2
-
-            sn = NIC_Type.UNKNOWN
-
-            # boot test OS
-            test="OS_BOOT"
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            if not mtp_mgmt_ctrl.tor_boot_select(1):
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect UUT Chassis", level=0)
-                duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-            if not libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl):
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-            # read FRU
-            test="FRU_INIT"
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            if not mtp_mgmt_ctrl.tor_fru_init():
-                duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-            test = "MGMT_INIT_OS"
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            if not mtp_mgmt_ctrl.tor_mgmt_init(False):
-                duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
+            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+        for mtp_id in mtpid_fail_list:
+            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
@@ -268,43 +272,30 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
         sn = mtp_mgmt_ctrl._sn
 
-        if not TAORMINA_TEST:
-            onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-            mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-            nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-            if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
+        for test in ["DIAG_UPDATE", "PYPKG_UPDATE"]:
+            if mtp_id in mtpid_fail_list:
                 continue
-            mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-        else:
+
+            start_ts = mtp_mgmt_ctrl.log_test_start(test)
+
             # copy diag image
-            test="DIAG_UPDATE"
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            asic_type = MTP_ASIC_SUPPORT.ELBA
-            x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
-            arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
-            homedir = mtp_mgmt_ctrl.get_homedir()
-            onboard_images = mtp_mgmt_ctrl.mtp_diag_get_img_files(homedir)
-            if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, x86_image, arm_image, onboard_images, homedir=homedir):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update diag image", level=0)
-                duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-        if mtp_mgmt_ctrl._uut_type == UUT_Type.TOR:
-            test = "PYPKG_UPDATE"
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-            homedir = mtp_mgmt_ctrl.get_homedir()
-            python_lib_dir = homedir + "python_files/"
-            if not libmfg_utils.mtp_update_packages(mtp_mgmt_ctrl, "release/packages/", python_lib_dir):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update python packages", level=0)
-                duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+            if test == "DIAG_UPDATE":
+                asic_type = MTP_ASIC_SUPPORT.ELBA
+                x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
+                arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
+                homedir = mtp_mgmt_ctrl.get_homedir()
+                onboard_images = mtp_mgmt_ctrl.mtp_diag_get_img_files(homedir)
+                ret = libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, x86_image, arm_image, onboard_images, homedir=homedir)
+
+            # copy python packages
+            elif test == "PYPKG_UPDATE":
+                homedir = mtp_mgmt_ctrl.get_homedir()
+                python_lib_dir = homedir + "python_files/"
+                ret = libmfg_utils.mtp_update_packages(mtp_mgmt_ctrl, "release/packages/", python_lib_dir)
+
+            duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+
+            if not ret:
                 mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
                 mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
                 mtpid_list.remove(mtp_id)
@@ -352,7 +343,6 @@ def main():
                                                                             mtp_id,
                                                                             fail_nic_list[mtp_id],
                                                                             mfg_p2c_summary[mtp_id],
-                                                                            swmtestmode,
                                                                             args.skip_test))
         mtp_thread.daemon = True
         mtp_thread.start()
@@ -371,11 +361,6 @@ def main():
 
     mfg_p2c_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG P2C Test Duration:{:s}".format(mfg_p2c_stop_ts - mfg_p2c_start_ts))
-
-    # power off all the test mtp
-    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
-
-
 
     # dump the summary
     libmfg_utils.mfg_summary_disp(FF_Stage.FF_P2C, mfg_p2c_summary, mtpid_fail_list)
