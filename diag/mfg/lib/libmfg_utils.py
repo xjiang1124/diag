@@ -1224,6 +1224,22 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
 
     return True
 
+def flx_web_srv_precheck_uut_status(sn, stage=None):
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return False
+
+    xml = flx_soap_get_uut_info_xml(stage, sn)
+    if not xml:
+        return False
+
+    ret = soap_get_uut_info(xml, factory)
+    if int(ret) != 0:
+        return False
+        
+    return True
+
 def flx_web_srv_get_uut_info(sn, stage=None):
     factory = flx_sn_to_factory(sn)
     if not factory:
@@ -2093,19 +2109,38 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             
             nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+
+            pomontedell_slot = list()
+            for slot in range(len(nic_prsnt_list)):
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
+                    pomontedell_slot.append(slot)
+
+            if len(pomontedell_slot) > 0:
+                if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(pomontedell_slot, False, stop_on_err=False):
+                    for slot in pomontedell_slot:
+                        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                            fail_nic_list[mtp_id].append(slot)
+
             for slot in range(len(nic_prsnt_list)):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
-                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
-                    if ret != "SUCCESS":
-                        if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                            if slot not in fail_nic_list[mtp_id]:
-                                fail_nic_list[mtp_id].append(slot)
-                            continue
-                        else:
-                            cur_fail_list[mtp_id][slot] = 1
-                            loopback_fail_list[mtp_id][slot] += 1
-                            failure_detected = True
+                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
+                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
+                    elif nic_type in ELBA_NIC_TYPE_LIST:
+                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+
+                    if nic_type in ELBA_NIC_TYPE_LIST:
+                        if ret != "SUCCESS":
+                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot] = 1
+                                loopback_fail_list[mtp_id][slot] += 1
+                                failure_detected = True
 
         display_rj45_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list)
 

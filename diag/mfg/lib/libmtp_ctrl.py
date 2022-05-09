@@ -2187,19 +2187,45 @@ class mtp_ctrl():
 
         return err_msg_list
 
+    def mtp_nic_check_extdiag_boot(self, slot):
+        qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
+        if not qspi_info:
+            self.cli_log_slot_err_lock(slot, "Fail to retrieve NIC boot info")
+            return False
+
+        boot_image = qspi_info[0]
+        if boot_image != "extdiag":
+            self.cli_log_slot_err_lock(slot, "NIC is booted from {:s}".format(boot_image))
+            return False
+
+        return True
+
+    def mtp_verify_nic_extdiag_boot(self, slot):
+        if not self.mtp_nic_boot_info_init(slot, skip_check=True):
+            self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
+            return False
+
+        return self.mtp_nic_check_extdiag_boot(slot)
+
+    def mtp_verify_nic_extdiag_smode_boot(self, slot):
+        if not self.mtp_nic_boot_info_init(slot, smode=True):
+            self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
+            return False
+
+        return self.mtp_nic_check_extdiag_boot(slot)
 
 ########################################
 ######  NIC CTRL Routines ##############
 ########################################
 
 # 1. Routines that need console, can not be run in parallel
-    def mtp_nic_boot_info_init(self, slot):
-        if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None:
+    def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=False):
+        if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None and not skip_check:
             # no need to do this
             self.cli_log_slot_inf(slot, "NIC boot info already present")
             return True
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if not self._nic_ctrl_list[slot].nic_boot_info_init():
+        if not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_dump_nic_err_msg(slot)
 
@@ -2259,6 +2285,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
             if nic_type == NIC_Type.ORTANO2ADI and self.mtp_is_nic_ortanoadi_oracle(slot):
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0026"]
+            if nic_type == NIC_Type.POMONTEDELL:
+                expected_timestamp = NIC_IMAGES.goldfw_dat["90-0017"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
@@ -2863,19 +2891,19 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
-            if software_pn != "90-0012-0001":
+            if software_pn != "90-0017-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
-            if software_pn != "90-0012-0001":
+            if software_pn != "90-0017-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
-            if software_pn != "90-0012-0001":
+            if software_pn != "90-0017-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
-            if software_pn != "90-0009-0005":
+            if software_pn != "90-0009-0006":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -2900,6 +2928,7 @@ class mtp_ctrl():
         90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
         90-0009-0002   //Ortano2-oracle dsc_fw_athena_elba_1.15.8-C-9_2021.05.22.tar
         90-0010-0001   //1.14.5 (OCP). Updated 04/26/2021
+        90-0017-0001   naples_uefidiag_fw_elba_1.46.0-E-15_2022.04.27.tar (pomontedell & lacona32)
         '''
         return True
 
@@ -2977,7 +3006,7 @@ class mtp_ctrl():
             return True
 
         if nic_type in FPGA_TYPE_LIST:
-            partition = "main"
+            partition = ""
         elif nic_type in ELBA_NIC_TYPE_LIST:
             partition = "cfg0"
         else:
@@ -2992,6 +3021,9 @@ class mtp_ctrl():
             return False
 
         self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
+        if nic_type in FPGA_TYPE_LIST:
+            self._nic_ctrl_list[slot].nic_set_fpga_updated(val=True, gold=False)
+
         return True
 
     def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
@@ -3008,7 +3040,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
         if nic_type in FPGA_TYPE_LIST:
-            partition = "gold"
+            partition = "cfg1"
         elif nic_type in ELBA_NIC_TYPE_LIST:
             partition = "cfg1"
         else:
@@ -3020,6 +3052,23 @@ class mtp_ctrl():
                 dev = "CPLD"
             self.cli_log_slot_err_lock(slot, "Program NIC {:s} failed".format(dev))
             self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if nic_type in FPGA_TYPE_LIST:
+            self._nic_ctrl_list[slot].nic_set_fpga_updated(val=True, gold=True)
+
+        return True
+
+    def mtp_verify_nic_fpga(self, slot, cpld_img_file, gold=False):
+        if not self._nic_ctrl_list[slot].nic_get_fpga_updated(gold):
+            self.cli_log_slot_inf_lock(slot, "No FPGA verify needed")
+            return True
+
+        if not self._nic_ctrl_list[slot].nic_verify_fpga(cpld_img_file, gold):
+            if gold:
+                self.cli_log_slot_err_lock(slot, "NIC GOLD FPGA verify failed")
+            else:
+                self.cli_log_slot_err_lock(slot, "NIC FPGA verify failed")
             return False
 
         return True
@@ -4722,6 +4771,13 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_mgmt_set_nic_extdiag_boot(self, slot):
+        if not self._nic_ctrl_list[slot].nic_set_extdiag_boot():
+            self.cli_log_slot_err(slot, "Set NIC default boot with extdiag failed")
+            return False
+
+        self.cli_log_slot_inf(slot, "Set NIC default extdiag boot")
+        return True
 
     def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
         nic_fail_list = list()
@@ -4776,7 +4832,12 @@ class mtp_ctrl():
                 if vmarg != 0:
                     cmd += " -int_lpbk"
         elif test == "ARM_L1":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param)
+            slot = nic_list[0]
+            nic_type = self.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.POMONTEDELL:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param)
+            else:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param) 
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
@@ -5554,6 +5615,20 @@ class mtp_ctrl():
 
         return retval, err_msg_list
 
+    def mtp_nic_phy_xcvr_link_test(self, slot):
+        test = "PHY"
+
+        retval = ""
+        err_msg_list = list()
+        if self._nic_ctrl_list[slot].nic_phy_xcvr_link_test():
+            retval = "SUCCESS"
+        else:
+            retval = "FAIL"
+        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
+        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
+
+        return retval, err_msg_list
+
     def mtp_nic_phy_xcvr_test(self, slot):
         test = "PHY"
 
@@ -5952,23 +6027,26 @@ class mtp_ctrl():
             return True, err_msg_list
 
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
+        d3_val = "0xb7" #vdd_ddr switching frequency
+        d4_val = "0x10" #vdd_ddr margin
+        
         if console:
-            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check():
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix():
+            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check():
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False
         else:
-            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check():
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix():
+            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check():
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False
@@ -6000,7 +6078,7 @@ class mtp_ctrl():
         self.mtp_single_j2c_unlock()
         return True
 
-    def mtp_nic_esec_write_protect(self, pass_nic_list=[], enable=False):
+    def mtp_nic_esec_write_protect(self, pass_nic_list=[], fail_nic_list=[], enable=False):
         nic_list = list()
         for slot in pass_nic_list:
             nic_type = self.mtp_get_nic_type(slot)
@@ -6050,6 +6128,7 @@ class mtp_ctrl():
                 sn = self.mtp_get_nic_sn(int(slot))
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 self.mtp_set_nic_status_fail(slot)
+                fail_nic_list.append(slot)
             return False
         if "failed;" in self.mtp_get_cmd_buf():
             match = re.search("failed slots: *([0-9,]+)", self.mtp_get_cmd_buf())
@@ -6060,6 +6139,7 @@ class mtp_ctrl():
                     sn = self.mtp_get_nic_sn(int(slot))
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     self.mtp_set_nic_status_fail(slot)
+                    fail_nic_list.append(slot)
                     nic_list.remove(slot)
         if len(nic_list) > 0:
             duration = self.log_test_stop(test, start_ts)
