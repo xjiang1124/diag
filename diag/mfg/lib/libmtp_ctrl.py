@@ -2776,6 +2776,43 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Read {:s}".format(naples_pn))
             return False
 
+    def mtp_nic_program_ocp_adapter_fru(self, slot, date, sn, mac, pn):
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type != NIC_Type.NAPLES25OCP:
+            self.cli_log_err("This function cannot be used without an OCP card plugged in")
+            return False
+
+        self.cli_log_slot_inf_lock(slot, "Program OCP Adapter FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
+        if not self._nic_ctrl_list[slot].nic_program_ocp_adapter_fru(date, sn, mac, pn):
+            self.cli_log_slot_err_lock(slot, "Program OCP Adapter FRU failed")
+            self.cli_log_slot_err_lock(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
+            self.cli_log_slot_err_lock(slot, "Display OCP Adapter FRU failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_nic_verify_ocp_adapter_fru(self, slot, exp_date, exp_sn, exp_mac, exp_pn):
+        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
+            self.cli_log_slot_err_lock(slot, "Load OCP Adapter FRU failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        sn = self._riser_sn
+        date = self._riser_progdate
+
+        if sn != exp_sn:
+            self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(sn, exp_sn))
+            return False
+        if date != exp_date:
+            self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(date, exp_date))
+            return False
+        self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
+
+        return True
 
     #Check the SWI scanned in software part number to see if it's a cloud image or not.
     #Cloud images have slight deviation on how SWI runs
@@ -3718,6 +3755,40 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_ocp_adapter_fru_init(self, slot):
+        if self.mtp_get_nic_type(slot) != NIC_Type.NAPLES25OCP:
+            self.cli_log_slot_err(slot, "OCP Adapter FRU init function is not for type {:s}".format(self.mtp_get_nic_type(slot)))
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
+    def mtp_get_nic_ocp_adapter_sn(self, slot):
+        if self.mtp_get_nic_type(slot) != NIC_Type.NAPLES25OCP:
+            self.cli_log_slot_err(slot, "OCP Adapter FRU init function is not for type {:s}".format(self.mtp_get_nic_type(slot)))
+            return None
+
+        if self._nic_ctrl_list[slot]._riser_sn is None:
+            if not self.mtp_nic_ocp_adapter_fru_init(slot):
+                return None
+
+        return self._nic_ctrl_list[slot]._riser_sn
+
+    def mtp_get_nic_ocp_adapter_progdate(self, slot):
+        if self.mtp_get_nic_type(slot) != NIC_Type.NAPLES25OCP:
+            self.cli_log_slot_err(slot, "OCP Adapter FRU init function is not for type {:s}".format(self.mtp_get_nic_type(slot)))
+            return None
+
+        if self._nic_ctrl_list[slot]._riser_progdate is None:
+            if not self.mtp_nic_ocp_adapter_fru_init(slot):
+                return None
+
+        return self._nic_ctrl_list[slot]._riser_progdate
+
     def mtp_nic_sn_init(self, slot):
         if not self._nic_ctrl_list[slot]._sn:
             self._nic_ctrl_list[slot].nic_sn_init()
@@ -3785,13 +3856,25 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
                 if fru_valid:
                     fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+
+                    riser_sn = None
+                    riser_progdate = None
+                    if nic_type == NIC_Type.NAPLES25OCP:
+                        riser_sn = self.mtp_get_nic_ocp_adapter_sn(slot)
+                        riser_progdate = self.mtp_get_nic_ocp_adapter_progdate(slot)
+
                     if not fru_info_list:
                         self.cli_log_slot_err_lock(slot, "Retrieve NIC FRU failed")
+                        if nic_type == NIC_Type.NAPLES25OCP:
+                            if riser_sn is None or riser_progdate is None:
+                                self.cli_log_slot_err_lock(slot, "Retrieve OCP Adapter FRU failed")
                     else:
                         self.cli_log_slot_inf(slot, "==> Manufacture Vendor: {:s}".format(fru_info_list[4]))
                         self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0],fru_info_list[1],fru_info_list[2]))
                         if fru_info_list[3]:
                             self.cli_log_slot_inf(slot, "==> FRU Program Date: {:s}".format(fru_info_list[3]))
+                        if nic_type == NIC_Type.NAPLES25OCP:
+                            self.cli_log_slot_inf(slot, "==> OCP Adapter SN: {:s}, FRU Program Date: {:s}".format(riser_sn, riser_progdate))
                 boot_info_list = self._nic_ctrl_list[slot].nic_get_boot_info()
                 if not boot_info_list:
                     self.cli_log_slot_err(slot, "Retrieve NIC boot info failed")
@@ -4146,6 +4229,7 @@ class mtp_ctrl():
         test = "NIC_PARA_INIT"
         start_ts = libmfg_utils.timestamp_snapshot()
 
+        mtp_start_ts = self.log_test_start(test)
         for slot in nic_list:
             sn = self.mtp_get_nic_sn(int(slot))
             slot_start_ts = self.log_slot_test_start(slot, test)
@@ -4177,9 +4261,10 @@ class mtp_ctrl():
                     slot = slot-1
                     self.cli_log_slot_err_lock(slot, "Para Init NIC failed")
                     self.mtp_set_nic_status_fail(slot)
-                    
-        duration = self.log_slot_test_stop(slot, test, start_ts)
+
+        duration = self.log_test_stop(test, start_ts)
         for slot in nic_list:
+            self.log_slot_test_stop(slot, test, start_ts)
             sn = self.mtp_get_nic_sn(int(slot))
             if not self.mtp_check_nic_status(slot):
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))

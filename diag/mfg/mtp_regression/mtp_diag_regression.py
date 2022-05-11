@@ -1824,9 +1824,10 @@ def main():
                     ######################################################################
                     alom_fail_list = list()
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type == NIC_Type.NAPLES25SWM:
-                            if mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) not in (Swm_Test_Mode.SWMALOM, Swm_Test_Mode.ALOM):
-                                continue
+                        if nic_type != NIC_Type.NAPLES25SWM:
+                            continue
+                        if mtp_mgmt_ctrl.mtp_get_swmtestmode(slot) not in (Swm_Test_Mode.SWMALOM, Swm_Test_Mode.ALOM):
+                            continue
                         if nic_list:
                             for slot in nic_list:
                                 test = "SWM_LP_MODE"

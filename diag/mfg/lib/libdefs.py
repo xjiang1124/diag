@@ -326,6 +326,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
     MTP_HP_SWM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeSwm"
     MTP_HP_OCP_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeOcp"
+    MTP_OCP_ADAP_FRU_PROG_FMT = "eeutil -dev=FRU_ADAP -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=128"
     MTP_HP_ALOM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=1024 -hpeAlom"
     MTP_ORTANO_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=512"
     MTP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp"
@@ -336,6 +337,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
     MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
     MTP_NIC_FRU_DUMP_FMT = "eeutil -uut=UUT_{:d} -dump -numBytes=512"
+    MTP_OCP_ADAP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=FRU_ADAP"
     MTP_FRU_PROG_SN_MAJ_MAC_FMT = "eeutil -update  -sn='{:s}' -maj='{:s}' -mac='{:s}'"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
@@ -391,6 +393,7 @@ class MFG_DIAG_CMDS:
     NIC_EMMC_LS_FMT = "ls -al /data/"
     NIC_PARTITION_DISP_FMT = "fdisk -l"
     NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
+    NIC_BRINGUP_MGMT_FMT = "sysinit.sh classic hw diag"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
@@ -575,6 +578,7 @@ class MFG_DIAG_CMDS:
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
     NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh PRBS"
     NIC_FPGA_PHY_LINK_TEST_FMT = "{:s}xcvr_phy_intf.sh LINKUP"
+    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
 
 class MFG_DIAG_SIG:

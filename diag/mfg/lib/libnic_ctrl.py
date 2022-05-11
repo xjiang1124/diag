@@ -46,6 +46,8 @@ class nic_ctrl():
         self._assettagnumber = None
         self._kernel_timestamp = None
         self._fw_json = None
+        self._riser_sn = None
+        self._riser_progdate = None
         
         self._nic_type = None
         self._nic_handle = None
@@ -1250,6 +1252,35 @@ class nic_ctrl():
 
         return True
 
+    def nic_program_ocp_adapter_fru(self, date, sn, mac, pn):
+        """
+        sn  = scanned
+        mac = FF:FF:FF:FF:FF
+        pn  = 00-0000-00 00
+        date= generated
+        """
+
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+            self.nic_set_err_msg("This function is only for OCP")
+            return False
+
+        # PROGRAM
+        cmd = MFG_DIAG_CMDS.MTP_OCP_ADAP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+            self.nic_set_err_msg("OCP Adapter FRU checksum failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        # VERIFY
+        cmd_buf = self.nic_get_cmd_buf()
+        match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
+        if not match:
+            self.nic_set_err_msg("OCP Adapter FRU checksum failed")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
     def nic_copy_image(self, img_name, directory="/"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = "scp {:s} -r {:s} {:s}@{:s}:{:s}".format(libmfg_utils.get_ssh_option(), img_name, NIC_MGMT_USERNAME, ipaddr, directory)
@@ -1745,7 +1776,7 @@ class nic_ctrl():
 
     def nic_init_emmc(self, init=False, emmc_check=False):
         nic_cmd_list = list()
-        if emmc_check:
+        if emmc_check and self._nic_type in PSLC_MODE_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_CHECK_EMMC_FMT
             emmc_check_sig = MFG_DIAG_SIG.NIC_EMMC_CHECK_OK_SIG
             emmc_check_buf = self.nic_get_info(nic_cmd)
@@ -1754,6 +1785,7 @@ class nic_ctrl():
                     pass
                 else:
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    self.nic_set_err_msg("pSLC mode setting not found")
                     self.nic_set_cmd_buf(emmc_check_buf)
                     return False
             else:
@@ -1780,6 +1812,7 @@ class nic_ctrl():
                 pass
             else:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                self.nic_set_err_msg("eMMC not mounted")
                 self.nic_set_cmd_buf(mount_buf)
                 return False
         else:
@@ -2664,7 +2697,11 @@ class nic_ctrl():
                     self.nic_set_err_msg("ALOM PIA part number doesn't match any known formats:\n {}".format(fru_buf))
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
-            
+        
+        # OCP Adapter FRU, as well
+        if self._nic_type == NIC_Type.NAPLES25OCP:
+            if not self.nic_ocp_adapter_fru_init():
+                return False
                 
         return True
         
@@ -3800,13 +3837,18 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
         if not self.nic_check_emmc_mounted():
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BRINGUP_MGMT_FMT)
+        nic_cmd_list.append("sleep 5") # wait for hal to come up before killing it
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
-        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        if self._nic_type in CAPRI_NIC_TYPE_LIST:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+        else:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -4526,6 +4568,37 @@ class nic_ctrl():
         # check signature
         if MFG_DIAG_SIG.NIC_L1_ESEC_PROG_OK_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_ocp_adapter_fru_init(self):
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+            self.nic_set_err_msg("OCP Adapter FRU init function is not for type {:s}".format(self._nic_type))
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_OCP_ADAP_FRU_DISP_FMT.format(self._slot+1)
+        fru_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+        if not fru_buf:
+            self.nic_set_err_msg("Failed to read OCP Adapter FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
+        if match:
+            self._riser_sn = match[0]
+        else:
+            self.nic_set_err_msg("OCP Adapter serial number doesn't match any known formats:\n {}".format(fru_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        match = None
+        match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
+        if match:
+            self._riser_progdate = match[0].replace('/','')
+        else:
+            self.nic_set_err_msg("OCP Adapter date field doesn't match any known formats:\n {}".format(fru_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         return True

@@ -440,6 +440,10 @@ def main():
                    alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
                    alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
+            riser_sn = None
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+                riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
+
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
@@ -484,6 +488,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+                if nic_type == NIC_Type.NAPLES25OCP:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")

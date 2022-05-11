@@ -994,12 +994,13 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
 
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
-        mtp_mgmt_ctrl.mtp_single_j2c_lock()
-        mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot) # needed separately in case j2c is unavailable
-        mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
-        if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
-            mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1
-        mtp_mgmt_ctrl.mtp_single_j2c_unlock()
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
+            mtp_mgmt_ctrl.mtp_single_j2c_lock()
+            mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot) # needed separately in case j2c is unavailable
+            mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
+            if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
+                mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1
+            mtp_mgmt_ctrl.mtp_single_j2c_unlock()
     
 
     # in case nic hung up the bus:
@@ -1891,7 +1892,7 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
     -------------------------------------------------
     | MTP-XXX                                       |
     |                                               |
-    |     o       o       o       X   o       o     |
+    |                     o       X                 |
     |     o       o       o       X   o       X     |
     |                                               |
     |     1   2   3   4   5   6   7   8   9  10     |
@@ -1901,7 +1902,7 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
 
     [MTP-XXX]: [NIC-07]: RJ45 port 1
     [MTP-XXX]: [NIC-07]: RJ45 port 2
-    [MTP-XXX]: [NIC-10]: RJ45 port 2
+    [MTP-XXX]: [NIC-10]: RJ45 port 1
 
     'o' = loopback present
     'X' = loopback missing
@@ -1933,15 +1934,22 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
         pre += "  |"
         print(pre)
 
-        # Port 2 row, for Capri only
+        # Port 2 row, for naples100 only
         pre="|     "
         for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id] or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
+            if (
+                not nic_prsnt_list[slot]
+                or slot in fail_nic_list[mtp_id]
+                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST
+                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
+                ):
                 pre += "    "
-            elif loopback_fail_list[mtp_id][slot] > 0:
+            elif loopback_fail_list[mtp_id][slot] > 0 and mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
                 pre += "X   "
-            else:
+            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
                 pre += "o   "
+            else:
+                pre += "    "
         pre += "  |"
         print(pre)
 

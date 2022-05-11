@@ -629,6 +629,9 @@ def main():
         if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+        riser_sn = None
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+            riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
@@ -667,7 +670,9 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-            
+            if nic_type == NIC_Type.NAPLES25OCP:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
+
         if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
