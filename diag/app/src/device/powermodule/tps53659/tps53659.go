@@ -581,6 +581,43 @@ func SetVMargin(devName string, pct int) (err int) {
     return
 }
 
+func TriggerVrFault(devName string) (err int) {
+    var limit uint16
+    var data uint16
+    var integer uint64
+
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to write Page")
+        return
+    }
+
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    // read Input Current
+    integer, _, err = pmbus.ReadLnr11(devName, page, pmbus.READ_IIN)
+
+   // Update IIN_OC_FAULT_LIMIT
+    data, err = pmbus.ReadWord(devName, pmbus.IIN_OC_FAULT_LIMIT)
+    // IIN_OCF_EXP field is read-only, with the reset value being 11111b (2 ^-1 = 0.5A)
+    // just modify IIN_OC_MAN to be lower than the Input Current reading
+    limit = uint16((float64(integer) * 0.9) / 0.5)
+    limit = (data & 0xF800) | (limit & 0x7FF);
+    cli.Printf("i", "limit: 0x%04x\n", limit)
+    // sleep 1s to allow the above message to be printed
+    misc.SleepInSec(1)
+    err = pmbus.WriteWord(devName, pmbus.IIN_OC_FAULT_LIMIT, limit)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to set IIN OC fault limit")
+        return
+    }
+    return
+}
 
 func DispStatus(devName string) (err int) {
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}

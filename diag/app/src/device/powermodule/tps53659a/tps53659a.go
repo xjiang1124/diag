@@ -154,4 +154,8 @@ func Info(devName string) (err int) {
     return
 }
 
+func TriggerVrFault(devName string) (err int) {
 
+    err = tps53659.TriggerVrFault(devName)
+    return
+}

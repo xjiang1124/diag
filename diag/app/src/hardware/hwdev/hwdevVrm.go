@@ -470,3 +470,38 @@ func readIoutUut(devName string, uutName string) (ioutMa uint64, err int) {
     return
 }
 
+func TriggerVrFault(devName string, lockFlag bool) (err int){
+    var lockName string
+    var i2cif i2cinfo.I2cInfo
+    if lockFlag == true {
+        lockName, i2cif, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.UnlockDev(lockName)
+    } else {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if i2cif.Comp == "TPS53659" {
+        err = tps53659.TriggerVrFault(devName)
+    } else if i2cif.Comp == "TPS53659A" {
+        err = tps53659a.TriggerVrFault(devName)
+    } else if i2cif.Comp == "LTC3888" {
+        // To be added later
+        cli.Println("e", "Unsupported device: ", i2cif.Comp)
+        err = errType.INVALID_PARAM
+    } else {
+        cli.Println("e", "Unsupported device: ", i2cif.Comp)
+        err = errType.INVALID_PARAM
+    }
+    return
+}
