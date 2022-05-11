@@ -20,13 +20,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_IMAGES
-from libmfg_cfg import TOR_IMAGES
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
