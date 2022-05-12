@@ -7707,8 +7707,6 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Couldn't save system logfile safely", level=0)
                 continue
-
-        for filename in logfiles:
             filename = "/"+os.path.basename(filename)
             dest_name = dest_folder + filename
             if not dest_name.endswith(".log"):
