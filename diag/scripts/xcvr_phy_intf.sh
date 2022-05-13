@@ -47,7 +47,8 @@ PHY_PRBS_ERROR_COUNTER_LSB_REG=24
 PHY_PRBS_ERROR_COUNTER_MSB_REG=25
 
 XCVR_STA_OFFSET=0x44
-STATUS_VECTOR_MASK=0x1FFFE0
+XCVR_STATUS_TO_CHECK=$((0x1C83 << 5))
+STATUS_VECTOR_MASK=$((0x1FFFE0 & $XCVR_STATUS_TO_CHECK))
 PHY_SPECIFIC_STATUS_MASK=0xEC20
 
 ./artix7fpga -init
@@ -66,12 +67,12 @@ sleep 1
 p0=$(./artix7fpga -mdiord $PHY_SPECIFIC_STATUS_REG)
 p1=$(./artix7fpga -xcvrrd $XCVR_STA_OFFSET)
 if [[ $(( p0 & PHY_SPECIFIC_STATUS_MASK )) -ne 0xAC20 ]]; then
-    echo "PHY status register: $(( p0 & PHY_SPECIFIC_STATUS_MASK )), expected: 0xAC20"
+    printf "PHY status register: 0x%x, expected: 0xAC20\n" $(( p0 & PHY_SPECIFIC_STATUS_MASK ))
     echo "TRANSCEIVER PHY INTERFACE TEST FAILED -- auto-negotiation failed"
     exit 1
 fi
-if [[ $(( p1 & STATUS_VECTOR_MASK )) -ne $(( 0x388B << 5 )) ]]; then
-    echo "transceiver status vector: $(( p1 & STATUS_VECTOR_MASK )), expected: $(( 0x388B << 5 ))"
+if [[ $(( p1 & STATUS_VECTOR_MASK )) -ne $(( 0x1883 << 5 )) ]]; then
+    printf "transceiver status vector: 0x%x, expected: 0x%x\n" $(( p1 & STATUS_VECTOR_MASK )) $(( 0x1883 << 5 ))
     echo "TRANSCEIVER PHY INTERFACE TEST FAILED -- auto-negotiation failed"
     exit 1
 fi
