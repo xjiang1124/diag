@@ -256,19 +256,20 @@ class NIC_IMAGES:
     goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-46_2021.09.30.tar"
     goldfw_dat["68-0015"] = "09-30-2021"
 
-    cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_main_rev0_13_08262021.bin"
-    cpld_ver["POMONTEDELL"] = "0x0"
-    cpld_dat["POMONTEDELL"] = "0x13"
-    sec_cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_main_rev0_13_08262021.bin"
-    sec_cpld_ver["POMONTEDELL"] = "0x0"
-    sec_cpld_dat["POMONTEDELL"] = "0x13"
-    fail_cpld_img["POMONTEDELL"] = "naples200_pomonte_dell_gold_rev0_13_08262021.bin"
-    fail_cpld_ver["POMONTEDELL"] = "0x0"
-    fail_cpld_dat["POMONTEDELL"] = "0x13"
-    diagfw_img["POMONTEDELL"] = "elba_diagfw_1.32.0-E-13_2021.09.21.tar"
-    diagfw_dat["POMONTEDELL"] = "09-21-2021"
-    goldfw_img["POMONTEDELL"] = "elba_goldfw_1.38-E-7_2021.10.26.tar"
-    goldfw_dat["POMONTEDELL"] = "10-22-2021"
+    cpld_img["POMONTEDELL"] = "naples200_pom_dell_main_rev1_11_02252022.bin"
+    cpld_ver["POMONTEDELL"] = "0x1"
+    cpld_dat["POMONTEDELL"] = "0x11"
+    sec_cpld_img["POMONTEDELL"] = "naples200_pom_dell_main_rev1_11_02252022.bin"
+    sec_cpld_ver["POMONTEDELL"] = "0x1"
+    sec_cpld_dat["POMONTEDELL"] = "0x11"
+    fail_cpld_img["POMONTEDELL"] = "naples200_pom_dell_gold_rev1_11_02252022.bin"
+    fail_cpld_ver["POMONTEDELL"] = "0x1"
+    fail_cpld_dat["POMONTEDELL"] = "0x11"
+    diagfw_img["POMONTEDELL"] = "naples_diagfw_elba_1.46.0-E-15_2022.04.27.tar"
+    diagfw_dat["POMONTEDELL"] = "04-08-2022"
+    goldfw_img["POMONTEDELL"] = "naples_goldfw_elba_1.46.0-E-15_2022.04.27.tar"
+    goldfw_dat["POMONTEDELL"] = "04-08-2022"
+    goldfw_dat["90-0017"] = "04-07-2022"
 
     cpld_img["LACONA32DELL"] = "naples200_lac32_dell_main_rev0_13_09292021.bin"
     cpld_ver["LACONA32DELL"] = "0x0"
@@ -308,25 +309,25 @@ class NIC_IMAGES:
     sec_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev1_5_02112022.bin"
     sec_cpld_ver["ORTANO2ADI"] = "0x1"
     sec_cpld_dat["ORTANO2ADI"] = "0x05"
-    fail_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_failsafe_rev3_B_01192022.bin"
+    fail_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
     fail_cpld_ver["ORTANO2ADI"] = "0x3"
-    fail_cpld_dat["ORTANO2ADI"] = "0x11"
-    fea_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_fea_rev3_B_01192022.bin"
+    fail_cpld_dat["ORTANO2ADI"] = "0x12"
+    fea_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
     diagfw_img["ORTANO2ADI"] = "elba_diagfw_1.15.9-C-56_2022.01.08.tar"
     diagfw_dat["ORTANO2ADI"] = "01-08-2022"
-    goldfw_img["ORTANO2ADI"] = "naples_goldfw_elba_1.15.9-C-64-1-1_2022.02.11.tar"
-    goldfw_dat["ORTANO2ADI"] = "02-08-2022"
-    cpld_img["68-0026"] = "naples200_ortano2A_rev3_B_01192022.bin"
+    goldfw_img["ORTANO2ADI"] = "elba_goldfw_1.15.9-C-64-1-3_2022.04.08.tar"
+    goldfw_dat["ORTANO2ADI"] = "04-09-2022"
+    cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_03302022.bin"
     cpld_ver["68-0026"] = "0x3"
-    cpld_dat["68-0026"] = "0x11"
-    sec_cpld_img["68-0026"] = "naples200_ortano2A_rev3_B_01192022.bin"
+    cpld_dat["68-0026"] = "0x12"
+    sec_cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_03302022.bin"
     sec_cpld_ver["68-0026"] = "0x3"
-    sec_cpld_dat["68-0026"] = "0x11"
-    fail_cpld_img["68-0026"] = "naples200_ortano2A_failsafe_rev3_B_01192022.bin"
+    sec_cpld_dat["68-0026"] = "0x12"
+    fail_cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
     fail_cpld_ver["68-0026"] = "0x3"
-    fail_cpld_dat["68-0026"] = "0x11"
-    goldfw_img["68-0026"] = "naples_goldfw_elba_1.15.9-C-64-1-1_2022.02.11.tar"
-    goldfw_dat["68-0026"] = "02-08-2022"
+    fail_cpld_dat["68-0026"] = "0x12"
+    goldfw_img["68-0026"] = "elba_goldfw_1.15.9-C-64-1-3_2022.04.08.tar"
+    goldfw_dat["68-0026"] = "04-09-2022"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -454,7 +455,7 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 #DIAG_SSH_OPTIONS = " -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
-MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw"]
+MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw", "extdiag"]
 MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -467,6 +468,7 @@ ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32D
 
 PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI]
 FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
+TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
@@ -516,8 +518,10 @@ HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 OCP_DELL_DISP_PN_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-DELL_PPID_DISP_PN_FMT = r"Part Number {:s}".format(DELL_PPID_PN_FMT)
+DELL_PPID_DISP_PN_FMT = r"Part Number +({:s})".format(DELL_PPID_PN_FMT)
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
+OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
+OCP_ADAPTER_FIXED_PN  = "00-0000-00 00"
 
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"

@@ -43,6 +43,7 @@ func main() {
     programPtr  := flag.Bool  ("program", false, "VRM - Program with specified file")
     verifyPtr   := flag.Bool  ("verify",  false, "VRM - Verify NVM content with specified file")
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
+    vrFaultPtr  := flag.Bool  ("vrFault", false, "VRM - Trigger VR_FAULT")
     verbosePtr  := flag.Bool  ("verbose", false, "Verbose")
     speedPtr    := flag.Bool  ("speed",   false, "FAN - Set fan speed")
     faninitPtr  := flag.Bool  ("faninit", false, "FAN - Initialization")
@@ -80,6 +81,14 @@ func main() {
             cli.Println("e", "Voltage margin failed!")
         } else {
             hwdev.DispStatus(devName, uut)
+        }
+        return
+    }
+
+    if *vrFaultPtr == true {
+        err = hwdev.TriggerVrFault(devName, true)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Fault trigger failed!")
         }
         return
     }

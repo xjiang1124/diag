@@ -279,7 +279,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP DL Test script complete", level=0)
 
 
-    if GLB_CFG_MFG_TEST_MODE:
+    if GLB_CFG_MFG_TEST_MODE and False:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
                 mtp_mgmt_ctrl.cli_log_inf("Fail", level=0)

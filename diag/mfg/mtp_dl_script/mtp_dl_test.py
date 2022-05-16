@@ -168,7 +168,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO2ADI:
         testlist = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        testlist = ["FRU_PROG", "QSPI_PROG"]#, "FPGA_PROG", "GOLD_FPGA_PROG"]
+        testlist = ["VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "FPGA_GOLD_PROG", "FPGA_GOLD_PROG_VERIFY"]
     if nic_type == NIC_Type.NAPLES100DELL:
         testlist = ["FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
@@ -191,10 +191,15 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
         elif test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # verify program FPGA
+        elif test == "FPGA_PROG_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot, cpld_img_file, gold=False)
+        elif test == "FPGA_GOLD_PROG_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot, fail_cpld_img_file, gold=True) 
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
-        elif test == "GOLD_FPGA_PROG":
+        elif test == "FPGA_GOLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # program feature row
         elif test == "FEA_PROG":
@@ -435,6 +440,10 @@ def main():
                    alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
                    alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
+            riser_sn = None
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+                riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
+
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
@@ -479,6 +488,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+                if nic_type == NIC_Type.NAPLES25OCP:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
@@ -632,7 +643,7 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=False):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
         # init nic diag env.
