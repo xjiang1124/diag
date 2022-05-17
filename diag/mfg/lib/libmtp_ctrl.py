@@ -1131,7 +1131,7 @@ class mtp_ctrl():
         # vrm test
         cmd = MFG_DIAG_CMDS.MTP_VRM_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_VRM_OK_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("VRM test passed")
         else:
@@ -1145,7 +1145,7 @@ class mtp_ctrl():
         # Fan present test
         cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_FAN0_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN1_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN2_PRSNT_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("FAN present test passed")
         else:
@@ -1155,7 +1155,7 @@ class mtp_ctrl():
         # Fan speed test
         cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("FAN speed test passed")
         else:
@@ -1165,7 +1165,7 @@ class mtp_ctrl():
         # Fan speed set
         self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_spd))
         cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_spd)
-        rc = self.mtp_mgmt_exec_cmd(cmd)
+        rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if not rc:
             self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_spd))
 
@@ -1173,7 +1173,7 @@ class mtp_ctrl():
 
         # Fan status dump
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             rc = False
 
         # PSU test
@@ -1191,7 +1191,7 @@ class mtp_ctrl():
                 if apc2 != "":
                     pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
 
-                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
                 if rc:
                     self.cli_log_inf("PSU test passed")
                 else:
@@ -1329,7 +1329,7 @@ class mtp_ctrl():
     def mtp_inlet_temp_test(self, stage=None):
         rc = True
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("MTP get inlet temperature failed")
             return False
