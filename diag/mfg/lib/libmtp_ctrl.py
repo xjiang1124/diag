@@ -2916,7 +2916,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0009-0004":
+            if software_pn != "90-0009-0006":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
             if pn_check and not naples_pn.endswith("C1"):
@@ -3555,8 +3555,8 @@ class mtp_ctrl():
 
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
-        self.cli_log_slot_err(slot, "Performing post DSP fail steps")
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp fail debug"))
+        self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -3588,7 +3588,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -6113,8 +6113,14 @@ class mtp_ctrl():
 
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
         d3_val = "0xb7" #vdd_ddr switching frequency
-        d4_val = "0x10" #vdd_ddr margin
-        
+        d4_val = "0x0a" #vdd_ddr margin
+
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type == NIC_Type.ORTANO2ADI:
+            self.cli_log_slot_err(slot, "This function is not applicable for ADI card!")
+            return False
+
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
                 if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val):
