@@ -102,8 +102,12 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, sk
         time.sleep(5)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic()
+        nic_list = list()
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot]:
+                nic_list.append(slot)
+        mtp_mgmt_ctrl.mtp_nic_para_init(nic_list)
 
     fail_nic_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -360,7 +364,7 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
 
-    if GLB_CFG_MFG_TEST_MODE:
+    if GLB_CFG_MFG_TEST_MODE and False:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
                 mtp_mgmt_ctrl.cli_log_inf("Fail", level=0)

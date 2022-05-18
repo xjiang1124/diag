@@ -818,7 +818,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_set_date(self, timestamp_str):
         if self._uut_type == UUT_Type.TOR:
-            cmd = "hwclock --set --date {:s}".format(timestamp_str)
+            cmd = "hwclock --set --date '{:s}'".format(timestamp_str)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set UUT date")
                 return False
@@ -7447,7 +7447,7 @@ class mtp_ctrl():
 
     def tor_nic_avs_set(self, slot):
         cmd = "{:s}fpgautil i2c 2 {:d} 0x4a w 0x22 0xA0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot+2)
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list="WR:"):
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, sig_list="WR:"):
             return False
 
         if not self.mtp_mgmt_set_nic_avs(slot):
@@ -7691,11 +7691,15 @@ class mtp_ctrl():
         userid = mtp_mgmt_cfg[1]
         passwd = mtp_mgmt_cfg[2]
 
-        for filename in (
+        logfiles = (
             "/var/log/messages",
             "/var/log/critical.log",
-            "/var/log/event.log"
-            ):
+            "/var/log/event.log",
+            "/var/log/pensando/dsm0_uart.log",
+            "/var/log/pensando/dsm1_uart.log"
+            )
+
+        for filename in logfiles:
             if not self.tor_file_exists(filename):
                 continue
             # copy them so they stop changing
@@ -7703,6 +7707,8 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Couldn't save system logfile safely", level=0)
                 continue
+
+        for filename in logfiles:
             filename = "/"+os.path.basename(filename)
             dest_name = dest_folder + filename
             if not dest_name.endswith(".log"):

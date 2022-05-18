@@ -699,7 +699,7 @@ def main():
         # # power cycle all nic
         # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=False):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
         # Ensure nic_util and nic_arm as needed for elba's efuse script
@@ -875,7 +875,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list, enable=True):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True):
             mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
 
 
@@ -1089,7 +1089,7 @@ def main():
 
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
-                test_list = ["SET_DIAGFW", "SW_CLEANUP"]
+                test_list = ["SET_EXTDIAGFW", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -1103,6 +1103,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
                 elif test == "SW_CLEANUP":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
+                elif test == "SET_EXTDIAGFW":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extdiag_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
@@ -1185,7 +1187,7 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI and not mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
             if nic_type in FPGA_TYPE_LIST:
-                sw_test_list = ["DIAG_BOOT", "SW_SHUTDOWN"]
+                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_MGMT_INIT")
@@ -1201,6 +1203,10 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
                 elif test == "DIAG_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(slot)
+                elif test == "EXTDIAG_BOOT":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_boot(slot)
+                elif test == "EXTDIAG_BOOT_SMODE":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_smode_boot(slot)
                 elif test == "SW_MGMT_INIT" and nic_profile:
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(slot)
                 elif test == "SW_PROFILE" and nic_profile:

@@ -132,6 +132,7 @@ class MTP_Const:
     MTP_PARA_AAPL_INIT_DELAY = 2000
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
+    MTP_OS_CMD_DELAY = 30
     OS_CMD_DELAY = 600
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_DELAY = 60
@@ -326,6 +327,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_FRU_PROG_FMT = "eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -hpe"
     MTP_HP_SWM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeSwm"
     MTP_HP_OCP_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=256 -hpeOcp"
+    MTP_OCP_ADAP_FRU_PROG_FMT = "eeutil -dev=FRU_ADAP -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=128"
     MTP_HP_ALOM_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=1024 -hpeAlom"
     MTP_ORTANO_FRU_PROG_FMT = "eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -uut=UUT_{:d} -update -erase -numBytes=512"
     MTP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp"
@@ -336,6 +338,7 @@ class MFG_DIAG_CMDS:
     MTP_HP_SWM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeSwm"
     MTP_HP_ALOM_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=fru -hpeAlom"
     MTP_NIC_FRU_DUMP_FMT = "eeutil -uut=UUT_{:d} -dump -numBytes=512"
+    MTP_OCP_ADAP_FRU_DISP_FMT = "eeutil -uut=UUT_{:d} -disp -dev=FRU_ADAP"
     MTP_FRU_PROG_SN_MAJ_MAC_FMT = "eeutil -update  -sn='{:s}' -maj='{:s}' -mac='{:s}'"
     NIC_FRU_PROG_FMT = "{:s}eeutil -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update"
     NIC_HP_SWM_FRU_PROG_FMT = "{:s}eeutil -dev=fru -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}' -update -erase -numBytes=256 -hpeSwm"
@@ -367,8 +370,10 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
-    NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
-    NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
+    # NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
+    # NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
+    NIC_FPGA_PROG_FMT = "{:s}cpldapp -writeflash /{:s} {:s}"
+    NIC_FPGA_DUMP_FMT = "{:s}cpldapp -verifyflash /{:s} {:s}"
     NIC_SGMII_READ_FMT  = "{:s}cpld -smird 0x{:x} 0x{:x}"
     NIC_SGMII_WRITE_FMT = "{:s}cpld -smiwr 0x{:x} 0x{:x} 0x{:x}"
     NIC_SGMII_READ_ELBA_FMT  = "{:s}xo3dcpld -smird 0x{:x} 0x{:x}"
@@ -389,6 +394,7 @@ class MFG_DIAG_CMDS:
     NIC_EMMC_LS_FMT = "ls -al /data/"
     NIC_PARTITION_DISP_FMT = "fdisk -l"
     NIC_MOUNT_DISP_FMT = "mount | grep '/dev/mmcblk0p10'"
+    NIC_BRINGUP_MGMT_FMT = "sysinit.sh classic hw diag"
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
@@ -402,6 +408,7 @@ class MFG_DIAG_CMDS:
     NIC_EMMC_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i mainfwb"
     NIC_BOOT_DISP_FMT = "fwupdate -r"
+    NIC_BOOT_DISP_S_FMT = "fwupdate -S"
     NIC_IMG_DISP_FMT = "fwupdate -L"
     NIC_IMG_DISP1_FMT = "fwupdate -l"
     NIC_SET_SW_BOOT_FMT = "fwupdate -s mainfwa"
@@ -412,6 +419,7 @@ class MFG_DIAG_CMDS:
     NIC_DATE_SET_FMT = "date --set='{:s}'"
     NIC_SCP_COMPRESSED_FMT = "tar c -C {:s} {:s} | ssh {:s}@{:s} {:s} \"tar x -C {:s}\"" #format(srcdir,img,user,ip,sshoptions,dstdir)
     NIC_SYS_CLEAN_FMT = "{:s}scripts/sys_clean.sh"
+    NIC_SET_EXTDIAG_BOOT_FMT = "fwupdate -s extdiag"
 
     NIC_ESEC_ERR_CHECK_FMT        = "inventory -esec -slot {:d}"
     NIC_ESEC_PROG_PRE_FMT         = "./esec_ctrl.py -slot {:d} -img_prog"
@@ -509,6 +517,9 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod_550"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod"
     MTP_PARA_ARM_L1_ELBA_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30"
+    MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -mode=nod"
+    MTP_PARA_PCIE_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=60 -vmarg {:d} -dura=60 -poly={:s}"
+    MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX -slot_list='{:s}' -wtime=60 -vmarg {:d} -dura=60 -poly={:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
@@ -566,7 +577,9 @@ class MFG_DIAG_CMDS:
     NIC_MVL_ACC_FMT = "{:s}mvl_acc.sh"
     NIC_MVL_STUB_FMT = "{:s}mvl_stub.sh 0"
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
-    NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh"
+    NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh PRBS"
+    NIC_FPGA_PHY_LINK_TEST_FMT = "{:s}xcvr_phy_intf.sh LINKUP"
+    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
 
 class MFG_DIAG_SIG:
@@ -617,6 +630,7 @@ class MFG_DIAG_SIG:
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
+    NIC_FPGA_PHY_LINK_TEST_SIG = "TRANSCEIVER RJ45 port link is up"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
     NIC_PARA_ASIC_L1_OK_SIG = "L1 TEST PASSED"
     NIC_L1_ESEC_PROG_OK_SIG = "L1 ESEC PROG PASSED"

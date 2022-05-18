@@ -253,7 +253,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
         mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE      
         if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
@@ -292,7 +292,7 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP SW Install Test script complete", level=0)
 
-    if GLB_CFG_MFG_TEST_MODE:
+    if GLB_CFG_MFG_TEST_MODE and False:
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
                 mtp_mgmt_ctrl.cli_log_inf("Fail", level=0)

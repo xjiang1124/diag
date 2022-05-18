@@ -117,7 +117,7 @@ class nic_con:
             print "=== TIMEOUT:", cmd, "==="
             session.send(chr(3))
             time.sleep(0.05)
-            session.expect(ending)
+            #session.expect(ending)
             ret = -1
         session.timeout = temp
         return ret
@@ -961,11 +961,11 @@ class nic_con:
         try:
             if enable == True:
                 cmd = "cpldwr 0x12 0x4"
-                rd_value = "00"
+                rd_value = 0x0
                 str = "enable"
             else:
                 cmd = "cpldwr 0x12 0"
-                rd_value = "80"
+                rd_value = 0x80
                 str = "disable"
             session.sendline(cmd)
             session.expect(expstr)
@@ -973,7 +973,7 @@ class nic_con:
             session.sendline(cmd)
             session.expect(expstr)
 
-            if rd_value not in session.before:
+            if int(session.before.splitlines()[1], 16) & 0x80 != rd_value:
                 print "unexpected status after", str, "WP"
                 ret = -1
         except pexpect.TIMEOUT:
