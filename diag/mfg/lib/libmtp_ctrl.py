@@ -6247,3 +6247,8 @@ class mtp_ctrl():
             return True
         else:
             return False
+
+    def mtp_nic_i2c_bus_scan(self, slot):
+        self._nic_ctrl_list[slot].nic_i2c_bus_scan()
+
+        return True

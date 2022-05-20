@@ -721,6 +721,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
+        if test == "I2C":
+            mtp_mgmt_ctrl.mtp_nic_i2c_bus_scan(slot)
+
         # Collect NIC onboard logfiles
         asic_dir_logfile_list = []
         path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR

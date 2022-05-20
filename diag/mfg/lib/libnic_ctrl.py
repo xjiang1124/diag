@@ -2055,10 +2055,13 @@ class nic_ctrl():
             return False
 
     def nic_kill_hal(self):
-        hal_stopped, sysmgr_stopped = False, False
+        hal_stopped, sysmgr_stopped, sysmond_stopped = False, False, False
 
         if self._nic_type != NIC_Type.NAPLES25OCP:
-                sysmgr_stopped = True #no need to kill for other than OCP..for now
+            sysmgr_stopped = True #no need to kill for other than OCP..for now
+
+        if self._nic_type not in ELBA_NIC_TYPE_LIST:
+            sysmond_stopped = True
 
         for x in range(6):
             
@@ -2094,11 +2097,29 @@ class nic_ctrl():
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
                 
-                match = re.findall("/nic/bin/hal", cmd_buf)
+                match = re.findall("/sysmgr", cmd_buf)
                 if not match:
                     sysmgr_stopped = True
 
-            if hal_stopped and sysmgr_stopped:
+            if not sysmond_stopped:
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_SYSMOND_FMT
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
+
+                nic_cmd = MFG_DIAG_CMDS.NIC_SYSMOND_RUNNING_FMT
+                cmd_buf = self.nic_get_info(nic_cmd)
+                if not cmd_buf:
+                    self.nic_set_err_msg("Buffer empty")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
+                match = re.findall("/sysmond", cmd_buf)
+                if not match:
+                    sysmond_stopped = True
+
+            if hal_stopped and sysmgr_stopped and sysmond_stopped:
                 break
 
             time.sleep(5)
@@ -4599,6 +4620,20 @@ class nic_ctrl():
         else:
             self.nic_set_err_msg("OCP Adapter date field doesn't match any known formats:\n {}".format(fru_buf))
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_i2c_bus_scan(self):
+        bus_list = [0, 1, 2]
+
+        nic_cmd_list = list()
+
+        for i2c_bus in bus_list:
+            nic_cmd = MFG_DIAG_CMDS.NIC_I2C_DETECT_FMT.format(i2c_bus)
+            nic_cmd_list.append(nic_cmd)
+
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_I2C_DETECT_DELAY):
             return False
 
         return True
