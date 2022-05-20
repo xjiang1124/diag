@@ -833,8 +833,14 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_set_date(self, timestamp_str):
+    def mtp_mgmt_set_date(self, timestamp_str, fst=False):
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
+        if fst:
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Unable to set MTP date")
+                return False
+            return True
+        #else:
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Unable to set MTP date")
             return False
