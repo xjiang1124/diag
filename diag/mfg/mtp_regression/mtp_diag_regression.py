@@ -802,6 +802,9 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
             logfile_list.append(path+"elba_arm_l1_test.log")
         if "PCIE_PRBS" in mtp_para_test_list:
             logfile_list.append(path+"elba_PRBS_PCIE.log")
+        if "DDR_BIST" in mtp_para_test_list:
+            logfile_list.append(path+"arm_ddr_bist_0.log")
+            logfile_list.append(path+"arm_ddr_bist_1.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
@@ -882,6 +885,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             if nic_type in ELBA_NIC_TYPE_LIST:
                 number_of_l1_tests = 9
+                if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+                    number_of_l1_tests = 8
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
