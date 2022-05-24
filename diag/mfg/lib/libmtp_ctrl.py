@@ -3581,7 +3581,7 @@ class mtp_ctrl():
                 ret = False
 
         # check if card rebooted, but not valid for bash mvl tests
-        if "ACC" not in test and "STUB" not in test and "L1" not in test:
+        if "ACC" not in test and "STUB" not in test and test != "L1":
             self.mtp_nic_console_lock()
             if not self.mtp_check_nic_rebooted(slot):
                 ret = False
