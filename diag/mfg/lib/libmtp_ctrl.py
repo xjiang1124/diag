@@ -53,6 +53,7 @@ class mtp_ctrl():
         self._nic_sn_list = [None] * self._slots
         self._nic_scan_sn_list = [None] * self._slots
         self._nic_alom_sn_list = [None] * self._slots
+        self._nic_status_before_hide_list = [NIC_Status.NIC_STA_OK] * self._slots
 
         self._nic_thread_list = [None] * self._slots
         # lock for printing
@@ -3530,6 +3531,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
+        self.cli_log_slot_inf(slot, "Collecting NIC tclsh logfiles")
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
             self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
@@ -3540,6 +3542,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
+        self.cli_log_slot_inf(slot, "Collecting NIC diag logfiles")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
             self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
@@ -4766,6 +4769,17 @@ class mtp_ctrl():
 
     def mtp_check_nic_missed_fa(self, slot):
         return self._nic_ctrl_list[slot].nic_missed_fa()
+
+    def mtp_hide_nic_status(self, slot):
+        if not self.mtp_check_nic_status(slot):
+            self.cli_log_slot_inf(slot, "Masking NIC fail status")
+            self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
+        self.mtp_clear_nic_status(slot)
+
+    def mtp_unhide_nic_status(self, slot):
+        self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
+        self._nic_ctrl_list[slot].nic_set_status(self._nic_status_before_hide_list[slot])
+        self._nic_status_before_hide_list[slot] = NIC_Status.NIC_STA_OK
 
     # log the diag test history
     def mtp_mgmt_diag_history_disp(self):
