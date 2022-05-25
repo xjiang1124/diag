@@ -247,7 +247,9 @@ PRIVEK <ek.sk>"""
             if pn == "UNKNOWN":
                 return -1
 
-            if pn == "68-0015-02" or pn == "68-0026-01":
+            if pn == "68-0015-02" or \
+               pn == "68-0026-01" or \
+               pn == "68-0029-01":
                 output1 = list(output)
                 print("Adding Oracle signature")
                 output1[15] = 'O'
