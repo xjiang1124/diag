@@ -54,9 +54,11 @@ typedef struct {
 #define FLASH_READ_ID                   0x9F
 #define FLASH_ENTER_4_BYTE_MODE         0xB7
 
-#define FLASH_OFFSET_GOLD               0x0000000
-#define FLASH_OFFSET_MAIN               0x1000000
-#define FLASH_OFFSET_TEST               0x1FF0000
+#define FLASH_OFFSET_GOLD               0x00000000
+#define FLASH_OFFSET_TIMER1             0x002FFC00
+#define FLASH_OFFSET_MAIN               0x00300000
+#define FLASH_OFFSET_TIMER2             0x00600000
+#define FLASH_OFFSET_TEST               0x01FF0000
 
 #define FLASH_IMG_TYPE_MAIN             0
 #define FLASH_IMG_TYPE_GOLD             1
@@ -1460,6 +1462,14 @@ static int flash_erase(char* fn, char* imageType) {
         printf("test image; base: 0x%x\n", FLASH_OFFSET_TEST);
         flash_base_addr = FLASH_OFFSET_TEST;
     } 
+    else if (strcmp(imageType, "timer2") == 0) {
+        printf("timer2 image; base: 0x%x\n", FLASH_OFFSET_TIMER2);
+        flash_base_addr = FLASH_OFFSET_TIMER2;
+    }
+    else if (strcmp(imageType, "timer1") == 0) {
+        printf("timer1 image; base: 0x%x\n", FLASH_OFFSET_TIMER1);
+        flash_base_addr = FLASH_OFFSET_TIMER1;
+    }
     else {
         printf("Invalid image type: %s\n", imageType);
         return -1;
@@ -1497,7 +1507,7 @@ static int flash_erase(char* fn, char* imageType) {
     cur_addr = flash_base_addr;
     end_addr = flash_base_addr + bufSize;
     while(1) {
-        if (flash_base_addr != FLASH_OFFSET_TEST) {
+        if ((flash_base_addr == FLASH_OFFSET_GOLD) || (flash_base_addr == FLASH_OFFSET_MAIN)) {
             if ( (cur_addr % 0x100000) == 0 ) {
                 printf("Erasing 0x%x\n", cur_addr);
             }
@@ -1550,6 +1560,14 @@ static int flash_prog(char* fn, char* imageType) {
         printf("test image; base: 0x%x\n", FLASH_OFFSET_TEST);
         flash_base_addr = FLASH_OFFSET_TEST;
     } 
+    else if (strcmp(imageType, "timer2") == 0) {
+        printf("timer2 image; base: 0x%x\n", FLASH_OFFSET_TIMER2);
+        flash_base_addr = FLASH_OFFSET_TIMER2;
+    }
+    else if (strcmp(imageType, "timer1") == 0) {
+        printf("timer1 image; base: 0x%x\n", FLASH_OFFSET_TIMER1);
+        flash_base_addr = FLASH_OFFSET_TIMER1;
+    }
     else {
         printf("Invalid image type: %s\n", imageType);
         return -1;
@@ -1597,7 +1615,7 @@ static int flash_prog(char* fn, char* imageType) {
     cur_addr = flash_base_addr;
     end_addr = flash_base_addr + bufSize;
     while(1) {
-        if (flash_base_addr != FLASH_OFFSET_TEST) {
+        if ((flash_base_addr == FLASH_OFFSET_GOLD) || (flash_base_addr == FLASH_OFFSET_MAIN)) {
             if ( (cur_addr % 0x100000) == 0 ) {
                 printf("Erasing 0x%x\n", cur_addr);
             }
@@ -1621,7 +1639,7 @@ static int flash_prog(char* fn, char* imageType) {
     buf_index = 0;
 
     while(1) {
-        if (flash_base_addr != FLASH_OFFSET_TEST) {
+        if ((flash_base_addr == FLASH_OFFSET_GOLD) || (flash_base_addr == FLASH_OFFSET_MAIN)) {
             if ( (cur_addr % 0x100000) == 0 ) {
                 printf("Writing 0x%x\n", cur_addr);
             }
@@ -1679,6 +1697,16 @@ static int flash_read_to_file(char* fn, char* imageType) {
         flash_base_addr = FLASH_OFFSET_TEST;
         bufSize = 0x200;
     } 
+    else if (strcmp(imageType, "timer2") == 0) {
+        printf("timer2 image; base: 0x%x\n", FLASH_OFFSET_TIMER2);
+        flash_base_addr = FLASH_OFFSET_TIMER2;
+        bufSize = 0x1000;
+    }
+    else if (strcmp(imageType, "timer1") == 0) {
+        printf("timer1 image; base: 0x%x\n", FLASH_OFFSET_TIMER1);
+        flash_base_addr = FLASH_OFFSET_TIMER1;
+        bufSize = 0x1000;
+    }
     else {
         printf("Invalid image type: %s\n", imageType);
         return -1;
@@ -1698,7 +1726,7 @@ static int flash_read_to_file(char* fn, char* imageType) {
     buf_index = 0;
 
     while(1) {
-        if (flash_base_addr != FLASH_OFFSET_TEST) {
+        if ((flash_base_addr == FLASH_OFFSET_GOLD) || (flash_base_addr == FLASH_OFFSET_MAIN)) {
             if ( (cur_addr % 0x100000) == 0 ) {
                 printf("Reading 0x%x\n", cur_addr);
             }
@@ -1852,10 +1880,10 @@ static void usage(void)
         "       Read flash controller register\n"
         "   -w addr data\n"
         "       Write flash controler register\n"
-        "   -prog file_name main/gold\n"
-        "       Program FPGA image to main or gold partition\n"
-        "   -file file_name main/gold\n"
-        "       Read flash partition (main/gold) to file. Entire 16MB of each partition will be read out\n"
+        "   -prog file_name main/gold/timer1/timer2\n"
+        "       Program FPGA image to main or gold or timer1 or timer2 partition\n"
+        "   -file file_name main/gold/timer1/timer2\n"
+        "       Read flash partition (main/gold/timer1/timer2) to file. Entire 16MB of each partition will be read out\n"
         "";
     printf("%s", usage_ptr);
     exit(0);
@@ -1869,10 +1897,10 @@ static void usage_full (void) {
         "       Read flash controller register\n"
         "   -w addr data\n"
         "       Write flash contorller register\n"
-        "   -prog file_name main/gold\n"
-        "       Program FPGA image to main or gold partition\n"
-        "   -file file_name main/gold\n"
-        "       Read flash partition (main/gold) to file. Entire 16MB of each partition will be read out\n"
+        "   -prog file_name main/gold/timer1/timer2\n"
+        "       Program FPGA image to main or gold or timer1 or timer2 partition\n"
+        "   -file file_name main/gold/timer1/timer2\n"
+        "       Read flash partition (main/gold/timer1/timer2) to file. Entire 16MB of each partition will be read out\n"
         "   -reload\n"
         "       Reload FPGA"
         "------------------\n"
@@ -2121,8 +2149,7 @@ static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *
                 return;
             }
             mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
-            //clear counters
-            mdio_wr(PHY_CHECKER_CTRL_REG, 0x1 << CRC_COUNTER_RESET_SHIFT, 0x0);
+
 #if (DEBUG == ENABLE)
             mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
             printf("After clear, pkt counter: 0x%x, CRC error counter: 0x%x\n",
@@ -2130,7 +2157,13 @@ static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *
 #endif
             if (p_options->p_opt[0] == 1) {
                 printf("Enable PHY packet checker\n");
-                mdio_wr(PHY_CHECKER_CTRL_REG, CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
+                mdio_wr(PHY_CHECKER_CTRL_REG, (0x1 << CRC_COUNTER_RESET_SHIFT) | CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
+                //read counter
+                mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
+                printf("pkt counter: %d, CRC error counter: %d\n",
+                    (data >> PACKET_COUNTER_SHIFT) & PACKET_COUNTER_MASK, data & ERROR_COUNTER_MASK);
+                //clear counters
+                mdio_wr(PHY_CHECKER_CTRL_REG, (0x1 << CRC_COUNTER_RESET_SHIFT) | CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
             } else {
                 printf("Disable PHY packet checker\n");
                 mdio_wr(PHY_CHECKER_CTRL_REG, 0, 0x0);
