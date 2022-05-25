@@ -132,6 +132,7 @@ class MTP_Const:
     MTP_PARA_AAPL_INIT_DELAY = 2000
     OS_SYNC_DELAY = 300
     SSH_PASSWORD_DELAY = 30
+    MTP_OS_CMD_DELAY = 30
     OS_CMD_DELAY = 600
     NIC_CON_CMD_DELAY = 900
     NIC_CON_INIT_DELAY = 60
@@ -151,6 +152,7 @@ class MTP_Const:
     NIC_FPGA_PROG_DELAY = 5 * 60
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
     NIC_ESEC_WRITE_PROT_DELAY = 9 * 60
+    NIC_I2C_DETECT_DELAY = 60
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -386,6 +388,7 @@ class MFG_DIAG_CMDS:
     # NIC HAL process
     NIC_HAL_RUNNING_FMT = "ps | grep hal"
     NIC_SYSMGR_RUNNING_FMT = "ps | grep sysmgr"
+    NIC_SYSMOND_RUNNING_FMT = "ps | grep sysmond"
 
     NIC_MOUNT_EMMC_FMT = "mount /dev/mmcblk0p10 /data"
     NIC_FSCK_EMMC_FMT = "fsck -y /dev/mmcblk0p10"
@@ -533,6 +536,7 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_FINI_FMT = "rm -r /data/debug*"
     NIC_DIAG_CHECK_HAL_FMT = "ps -elf | grep hal"
     NIC_DIAG_STOP_SYSMGR_FMT = "killall sysmgr"
+    NIC_DIAG_STOP_SYSMOND_FMT = "killall sysmond"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
     NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"
@@ -580,6 +584,7 @@ class MFG_DIAG_CMDS:
     NIC_FPGA_PHY_LINK_TEST_FMT = "{:s}xcvr_phy_intf.sh LINKUP"
     NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
+    NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

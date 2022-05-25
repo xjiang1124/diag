@@ -53,6 +53,7 @@ class mtp_ctrl():
         self._nic_sn_list = [None] * self._slots
         self._nic_scan_sn_list = [None] * self._slots
         self._nic_alom_sn_list = [None] * self._slots
+        self._nic_status_before_hide_list = [NIC_Status.NIC_STA_OK] * self._slots
 
         self._nic_thread_list = [None] * self._slots
         # lock for printing
@@ -833,8 +834,14 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_set_date(self, timestamp_str):
+    def mtp_mgmt_set_date(self, timestamp_str, fst=False):
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
+        if fst:
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Unable to set MTP date")
+                return False
+            return True
+        #else:
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Unable to set MTP date")
             return False
@@ -1131,7 +1138,7 @@ class mtp_ctrl():
         # vrm test
         cmd = MFG_DIAG_CMDS.MTP_VRM_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_VRM_OK_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("VRM test passed")
         else:
@@ -1145,7 +1152,7 @@ class mtp_ctrl():
         # Fan present test
         cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_FAN0_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN1_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN2_PRSNT_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("FAN present test passed")
         else:
@@ -1155,7 +1162,7 @@ class mtp_ctrl():
         # Fan speed test
         cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
         pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if rc:
             self.cli_log_inf("FAN speed test passed")
         else:
@@ -1165,7 +1172,7 @@ class mtp_ctrl():
         # Fan speed set
         self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_spd))
         cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_spd)
-        rc = self.mtp_mgmt_exec_cmd(cmd)
+        rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if not rc:
             self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_spd))
 
@@ -1173,7 +1180,7 @@ class mtp_ctrl():
 
         # Fan status dump
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             rc = False
 
         # PSU test
@@ -1191,7 +1198,7 @@ class mtp_ctrl():
                 if apc2 != "":
                     pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
 
-                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list)
+                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
                 if rc:
                     self.cli_log_inf("PSU test passed")
                 else:
@@ -1329,7 +1336,7 @@ class mtp_ctrl():
     def mtp_inlet_temp_test(self, stage=None):
         rc = True
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
             self.cli_log_err("MTP get inlet temperature failed")
             return False
@@ -2916,7 +2923,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0009-0004":
+            if software_pn != "90-0009-0006":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
             if pn_check and not naples_pn.endswith("C1"):
@@ -3516,6 +3523,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_set_nic_status_fail(slot)
             return False
@@ -3524,6 +3532,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_logfile(self, slot, logfile_list):
+        self.cli_log_slot_inf(slot, "Collecting NIC tclsh logfiles")
         if not self._nic_ctrl_list[slot].nic_save_logfile(logfile_list):
             self.cli_log_slot_err_lock(slot, "Save NIC Logfile failed")
             self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
@@ -3534,6 +3543,7 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
+        self.cli_log_slot_inf(slot, "Collecting NIC diag logfiles")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
             self.cli_log_slot_err_lock(slot, "Save NIC Diag Logfile failed")
             self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
@@ -3555,8 +3565,8 @@ class mtp_ctrl():
 
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
-        self.cli_log_slot_err(slot, "Performing post DSP fail steps")
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp fail debug"))
+        self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -3572,7 +3582,7 @@ class mtp_ctrl():
                 ret = False
 
         # check if card rebooted, but not valid for bash mvl tests
-        if "ACC" not in test and "STUB" not in test and "L1" not in test:
+        if "ACC" not in test and "STUB" not in test and test != "L1":
             self.mtp_nic_console_lock()
             if not self.mtp_check_nic_rebooted(slot):
                 ret = False
@@ -3588,7 +3598,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp fail debug"))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -4760,6 +4770,17 @@ class mtp_ctrl():
 
     def mtp_check_nic_missed_fa(self, slot):
         return self._nic_ctrl_list[slot].nic_missed_fa()
+
+    def mtp_hide_nic_status(self, slot):
+        if not self.mtp_check_nic_status(slot):
+            self.cli_log_slot_inf(slot, "Masking NIC fail status")
+            self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
+        self.mtp_clear_nic_status(slot)
+
+    def mtp_unhide_nic_status(self, slot):
+        self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
+        self._nic_ctrl_list[slot].nic_set_status(self._nic_status_before_hide_list[slot])
+        self._nic_status_before_hide_list[slot] = NIC_Status.NIC_STA_OK
 
     # log the diag test history
     def mtp_mgmt_diag_history_disp(self):
@@ -6113,8 +6134,14 @@ class mtp_ctrl():
 
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
         d3_val = "0xb7" #vdd_ddr switching frequency
-        d4_val = "0x10" #vdd_ddr margin
-        
+        d4_val = "0x0a" #vdd_ddr margin
+
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type == NIC_Type.ORTANO2ADI:
+            self.cli_log_slot_err(slot, "This function is not applicable for ADI card!")
+            return False
+
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
                 if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val):
@@ -6235,3 +6262,8 @@ class mtp_ctrl():
             return True
         else:
             return False
+
+    def mtp_nic_i2c_bus_scan(self, slot):
+        self._nic_ctrl_list[slot].nic_i2c_bus_scan()
+
+        return True

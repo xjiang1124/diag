@@ -83,6 +83,10 @@ if [[ $1 != "PRBS" ]]; then
 fi
 
 # first do pkt test on PHY external loopback
+echo "enable pkt generator on PHY to generate non-error pkt before clearing counter"
+./artix7fpga -serdes $CONFIG_PHY_PKT_GENERATOR $ENABLE $NON_ERR_PKT_BURST $PKT_PAYLOAD $PKT_LEN $NON_ERR_PKT
+sleep 1
+
 echo "enable pkt checker on PHY"
 ./artix7fpga -serdes $CONFIG_PHY_PKT_CHECKER $ENABLE
 sleep 1
@@ -96,6 +100,8 @@ output=$(./artix7fpga -serdes $PHY_PKT_CHECKER_READ_COUNTER)
 echo $output
 if [[ $output != "pkt counter: $NON_ERR_PKT_BURST, CRC error counter: 0" ]]; then
     echo "TRANSCEIVER PHY INTERFACE TEST FAILED -- packet counter not expected, result: $output"
+    ./artix7fpga -serdes $CONFIG_PHY_PKT_GENERATOR $DISABLE
+    ./artix7fpga -serdes $CONFIG_PHY_PKT_CHECKER $DISABLE
     exit 1
 fi
 
@@ -108,6 +114,8 @@ output=$(./artix7fpga -serdes $PHY_PKT_CHECKER_READ_COUNTER)
 echo $output
 if [[ $output != "pkt counter: $((NON_ERR_PKT_BURST + ERR_PKT_BURST)), CRC error counter: $ERR_PKT_BURST" ]]; then
     echo "TRANSCEIVER PHY INTERFACE TEST FAILED -- packet counter not expected, result: $output"
+    ./artix7fpga -serdes $CONFIG_PHY_PKT_GENERATOR $DISABLE
+    ./artix7fpga -serdes $CONFIG_PHY_PKT_CHECKER $DISABLE
     exit 1
 fi
 

@@ -322,7 +322,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
 
     # Collect NIC onboard logfiles
-    mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
     for slot in nic_list:
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
@@ -721,6 +720,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
+        if test == "I2C":
+            mtp_mgmt_ctrl.mtp_nic_i2c_bus_scan(slot)
+
         # Collect NIC onboard logfiles
         asic_dir_logfile_list = []
         path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
@@ -779,7 +781,6 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             break
 
 def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err):
-    mtp_mgmt_ctrl.cli_log_inf("Collecting MTP parallel test logfiles....", level=0)
     for slot in nic_list:
         logfile_list = list()
         path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
@@ -1626,7 +1627,12 @@ def main():
 
                         # copy logfiles out
                         if nic_list and not stop_on_err:
-                            if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, nic_util=False, stop_on_err=stop_on_err):
+
+                            # include failed slots
+                            for slot in nic_list:
+                                mtp_mgmt_ctrl.mtp_hide_nic_status(slot)
+
+                            if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, vmargin=vmarg, nic_util=False, stop_on_err=stop_on_err):
                                 for nic_list in nic_test_full_list:
                                     for slot in nic_list:
                                         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -1640,6 +1646,9 @@ def main():
                                                 pass_nic_list.remove(slot)
                             naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_mtp_para_test_list, stop_on_err)
                             parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg)
+
+                            for slot in nic_list:
+                                mtp_mgmt_ctrl.mtp_unhide_nic_status(slot)
 
 
                 elif test_section == "ARM_PRBS":

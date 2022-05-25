@@ -351,14 +351,33 @@ func get_rt_init_state() (rt_init_flag bool) {
 }
 
 func main() {
-    initPtr      := flag.Bool(  "init", false, "Initialize all TD3/Gearbox/Retimer")
-    infoPtr      := flag.Bool(  "info", false, "Display Taormina brd rev and phy info")
-    statePtr     := flag.Bool( "state", false, "Display Gearbox and Retimer initialization state")
-    configPtr    := flag.Bool("config", false, "Display Gearbox and Retimer settings")
-    diagPtr      := flag.Bool(  "diag", false, "Display gearbox diagnostics (temperature and voltage)")
-    sanityPtr    := flag.Bool("sanity", false, "Execute BCM TD3 sanity tests")
-    prbsPtr      := flag.Bool(  "prbs", false, "Display PRBS settings, status, or run PRBS test")
+    infoPtr    := flag.Bool  (  "info", false, "Display Taormina brd rev and phy info")
+    initPtr    := flag.Bool  (  "init", false, "Initialize all TD3/Gearbox/Retimer")
+    dispPtr    := flag.Bool  (  "disp", false, "Display Gearbox and Retimer settings")
+    diagPtr    := flag.Bool  (  "diag", false, "Display gearbox diagnostics (temperature and voltage)")
+    prbsPtr    := flag.Bool  (  "prbs", false, "Display PRBS settings, status, or run PRBS test")
+    lanePtr    := flag.Bool  (  "lane", false, "Display gearbox diagnostics lane status")
+    sanityPtr  := flag.Bool  ("sanity", false, "Execute BCM TD3 sanity tests")
+
+    // input parameters
+    configPtr  := flag.Bool  ("config", false, "Display Gearbox and Retimer settings")
+    enablePtr  := flag.Bool  ( "enable", false, "Enable PRBS test on Gearbox or Retimer, sys/line side")
+    statusPtr  := flag.Bool  ( "status", false, "Display initialization status or PRBS test status")
+    clearPtr   := flag.Bool  (  "clear", false, "Clear PRBS status, and disable PRBS")
+    devNamePtr := flag.String(    "dev", "all", "Device name: gb (gearbox) or rt (retimer)")
+    devidxPtr  := flag.Int   (    "idx", 0,     "Device index: gb [0 ~ 3] or rt [0 ~ 2]")
+    sidePtr    := flag.String(   "side", "",    "if_side: [sys|line]")
+    polyPtr    := flag.String(   "poly", "",    "PRBS polynomial (e.g. poly58, poly31, etc.")
+    lanemapPtr := flag.Int   ("lanemap", 0,     "lane_map")
+    dbglvlPtr  := flag.Int   ( "dbglvl", 0,     "debug level [0 ~ 3]")
+
     flag.Parse()
+    dev     := strings.ToLower(*devNamePtr)
+    devidx  := *devidxPtr
+    side    := strings.ToLower(*sidePtr)
+    poly    := strings.ToLower(*polyPtr)
+    lanemap := *lanemapPtr
+    dbglvl  := *dbglvlPtr
 
     var output string
     var outbyte []byte
@@ -386,7 +405,37 @@ func main() {
         return
     }
 
-    if *initPtr == true {
+
+    if *infoPtr {
+        // good to run even gb/rt not yet init'd
+        output, err = ExecBCMshellCMD("gbrt_info")
+        if err != errType.SUCCESS {
+            cli.Println("e", "BCM shell failed to execute 'gbrt_info'")
+            cli.Println("e", "OUTPUT =", string(output))
+            return
+        } else {
+            cli.Println("i", string(output))
+        }
+        return
+    }
+
+
+    if *initPtr {
+        if *statusPtr {
+            // read and display gb/rt init status
+            if get_gb_init_state() {
+                cli.Println("i", "Gearbox Initialization State: True")
+            } else {
+                cli.Println("i", "Gearbox Initialization State: False")
+            }
+            if get_rt_init_state() {
+                cli.Println("i", "Retimer Initialization State: True")
+            } else {
+                cli.Println("i", "Retimer Initialization State: False")
+            }
+            return
+        }
+
         // check file FPGABARS not exist, run script to create it
         // if script not exist, create script
         // Note: BCM Shell cannot handle Linux shell script
@@ -425,53 +474,25 @@ func main() {
     }
 
 
-    if *infoPtr == true {
-        // good to run even gb/rt not yet init'd
-        output, err = ExecBCMshellCMD("gbrt_info")
-        if err != errType.SUCCESS {
-            cli.Println("e", "BCM shell failed to execute 'gbrt_info'")
-            cli.Println("e", "OUTPUT =", string(output))
-            return
-        } else {
-            cli.Println("i", string(output))
-        }
+    if dev != "all" && dev != "gb" && dev != "rt" {
+        cli.Println("e", "Unsupported device name:", dev)
         return
     }
 
-
-    if *statePtr == true {
-        // read and display gb/rt init state
-        gb_init_flag = get_gb_init_state()
-        if gb_init_flag {
-            cli.Println("i", "Gearbox Initialization State: True")
-        } else {
-            cli.Println("i", "Gearbox Initialization State: False")
-        }
-
-        rt_init_flag = get_rt_init_state()
-        if rt_init_flag {
-            cli.Println("i", "Retimer Initialization State: True")
-        } else {
-            cli.Println("i", "Retimer Initialization State: False")
-        }
-
+    gb_init_flag = get_gb_init_state()
+    rt_init_flag = get_rt_init_state()
+    if !gb_init_flag && !rt_init_flag {
+        cli.Println("e", "Gearboxes and restimers are not yet initialized!")
         return
+    } else if !gb_init_flag {
+        cli.Println("e", "Gearboxes are not initialized!")
+    } else if !rt_init_flag {
+        cli.Println("e", "Retimers are not initialized!")
     }
 
 
-    if *configPtr == true {
-        gb_init_flag = get_gb_init_state()
-        rt_init_flag = get_rt_init_state()
-        if !gb_init_flag && !rt_init_flag {
-            cli.Println("e", "Gearboxes and restimers are not yet initialized!")
-            return
-        } else if !gb_init_flag {
-            cli.Println("e", "Gearboxes are not initialized!")
-        } else if !rt_init_flag {
-            cli.Println("e", "Retimers are not initialized!")
-        }
-
-        if gb_init_flag {
+    if *dispPtr {
+        if gb_init_flag && (dev == "all" || dev == "gb") {
             output, err = ExecBCMshellCMD("gb_info")
             if err != errType.SUCCESS {
                 cli.Println("e", "BCM shell failed to execute 'gb_info'")
@@ -482,7 +503,7 @@ func main() {
             }
         }
 
-        if rt_init_flag {
+        if rt_init_flag && (dev == "all" || dev == "rt") {
             output, err = ExecBCMshellCMD("rt_info")
             if err != errType.SUCCESS {
                 cli.Println("e", "BCM shell failed to execute 'rt_info'")
@@ -497,13 +518,7 @@ func main() {
     }
 
 
-    if *diagPtr == true {
-        gb_init_flag = get_gb_init_state()
-        if !gb_init_flag {
-            cli.Println("e", "Gearboxes are not yet initialized!")
-            return
-        }
-
+    if *diagPtr {
         output, err = ExecBCMshellCMD("gb_diag all")
         if err != errType.SUCCESS {
             cli.Println("e", "BCM shell failed to execute 'gb_diag all'")
@@ -516,7 +531,7 @@ func main() {
     }
 
 
-    if *sanityPtr == true {
+    if *sanityPtr {
         // only sanity check on TD3, nothing for GB/RT
         cli.Println("i", "==== BCM TD3 sanity tests ====")
         path, errGo = os.Getwd()
@@ -547,19 +562,148 @@ func main() {
     }
 
 
-    if *prbsPtr == true {
-        gb_init_flag = get_gb_init_state()
-        rt_init_flag = get_rt_init_state()
-        if !gb_init_flag && !rt_init_flag {
-            cli.Println("e", "Gearboxes and restimers are not yet initialized!")
+    if *prbsPtr {
+        //bcmutil only work with Diag BCM shell
+        if dev != "gb" && dev != "rt" {
+            cli.Println("e", "device", dev, "not supported! Please use gb (gearbox) or rt (retimer)")
             return
-        } else if !gb_init_flag {
-            cli.Println("e", "Gearboxes are not initialized!")
-        } else if !rt_init_flag {
-            cli.Println("e", "Retimers are not initialized!")
         }
 
-        cli.Println("i", "to be implemented: execute PRBS test on Gearbox/Retimer system/line side")
+        if *configPtr {
+            // display PRBS configurations
+            cmdString = dev + "_prbs config"
+            output, err = ExecBCMshellCMD(cmdString)
+            if err != errType.SUCCESS {
+                cli.Println("e", "BCM shell failed to execute", cmdString)
+                cli.Println("e", "OUTPUT =", string(output))
+                return
+            } else {
+                cli.Println("i", string(output))
+            }
+
+            return
+        }
+
+        if side != "sys" && side != "line" {
+            cli.Println("e", "Invalid if_side", side, "please use -side=<sys|line>")
+            return
+        }
+
+        if *statusPtr {
+            cmdString = dev + "_prbs status " + side
+            output, err = ExecBCMshellCMD(cmdString)
+            if err != errType.SUCCESS {
+                cli.Println("e", "BCM shell failed to execute", cmdString)
+                cli.Println("e", "OUTPUT =", string(output))
+                return
+            } else {
+                cli.Println("i", string(output))
+            }
+
+            return
+        }
+
+        if *clearPtr {
+            // Clear PRBS status, and disable PRBS
+            cmdString = dev + "_prbs clear " + side
+            output, err = ExecBCMshellCMD(cmdString)
+            if err != errType.SUCCESS {
+                cli.Println("e", "BCM shell failed to execute", cmdString)
+                cli.Println("e", "OUTPUT =", string(output))
+                return
+            } else {
+                cli.Println("i", string(output))
+            }
+
+            return
+        }
+
+        if poly != "poly7" && poly != "poly9" && poly != "poly11" &&
+           poly != "poly15" && poly != "poly23" && poly != "poly31" &&
+           poly != "poly58" && poly != "poly49" && poly != "poly10" &&
+           poly != "poly20" && poly != "poly13" {
+            cli.Println("e", dev, side, "invalid poly string:", poly)
+            return
+        }
+
+        if *enablePtr {
+            // <dev>_prbs enable <side> gen <poly>
+            cmdString = dev + "_prbs enable " + side + " gen " + poly
+            output, err = ExecBCMshellCMD(cmdString)
+            if err != errType.SUCCESS {
+                cli.Println("e", "BCM shell failed to execute", cmdString)
+                cli.Println("e", "OUTPUT =", string(output))
+                return
+            } else {
+                cli.Println("i", string(output))
+            }
+
+            // <dev>_prbs enable <side> chk <poly>
+            cmdString = dev + "_prbs enable " + side + " chk " + poly
+            output, err = ExecBCMshellCMD(cmdString)
+            if err != errType.SUCCESS {
+                cli.Println("e", "BCM shell failed to execute", cmdString)
+                cli.Println("e", "OUTPUT =", string(output))
+                return
+            } else {
+                cli.Println("i", string(output))
+            }
+
+            return
+        }
+
+        cli.Println("i", "Usage: bcmutil -prbs -config|enable|status|clear -dev=gb|rt -side=sys|line -poly=poly")
+        return
+    }
+
+
+    if *lanePtr {
+        if dev != "gb" && dev != "rt" {
+            cli.Println("e", "device", dev, "not supported! Please use gb (gearbox) or rt (retimer)")
+            return
+        }
+
+        if dev == "gb" {
+            if devidx < 0 || devidx > 3 {
+               cli.Println("e", "Gearbox index is out of range [0 ~ 3]:", devidx)
+               return
+            }
+            if lanemap != 0xf && lanemap != 0xf0 {
+                cli.Println("e", "Invalid gearbox lane_map [0x0F | 0xF0]:", lanemap)
+               return
+            }
+        }
+
+        if dev == "rt" {
+            if devidx < 0 || devidx > 2 {
+               cli.Println("e", "Retimer index is out of range [0 ~ 2]:", devidx)
+               return
+            }
+            if lanemap <= 0x0 && lanemap > 0xff {
+                cli.Println("e", "Invalid retimer lane_map [0x01 ~ 0xFF]:", lanemap)
+               return
+            }
+        }
+
+        if dbglvl < 0 || dbglvl > 3 {
+            dbglvl = 0
+        }
+        if dbglvl == 3 {
+            cli.Println("i", "Be patient! Debug level 3 takes longer time to dump eye diagram...")
+        }
+
+        // gb_lane status <gb_idx> <lane_map [0x0f|0xf0]> [dbg_lvl [0-3]]
+        // rt_lane status <rt_idx> <lane_map [0x01~0xff]> [dbg_lvl [0-3]]
+        cmdString = fmt.Sprintf("%s_lane status %d lane_map %d dbglvl %d", dev, devidx, lanemap, dbglvl)
+        output, err = ExecBCMshellCMD(cmdString)
+        if err != errType.SUCCESS {
+            cli.Println("e", "BCM shell failed to execute", cmdString)
+            cli.Println("e", "OUTPUT =", string(output))
+            return
+        } else {
+            cli.Println("i", string(output))
+        }
+
         return
     }
 

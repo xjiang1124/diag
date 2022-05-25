@@ -2121,8 +2121,7 @@ static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *
                 return;
             }
             mdio_wr(PHY_PAGE_REG, PHY_PAGE_18, 0x0);
-            //clear counters
-            mdio_wr(PHY_CHECKER_CTRL_REG, 0x1 << CRC_COUNTER_RESET_SHIFT, 0x0);
+
 #if (DEBUG == ENABLE)
             mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
             printf("After clear, pkt counter: 0x%x, CRC error counter: 0x%x\n",
@@ -2130,7 +2129,13 @@ static void serdes_test_cmd(uint32_t fd, uint32_t command, SERDES_TEST_OPTIONS *
 #endif
             if (p_options->p_opt[0] == 1) {
                 printf("Enable PHY packet checker\n");
-                mdio_wr(PHY_CHECKER_CTRL_REG, CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
+                mdio_wr(PHY_CHECKER_CTRL_REG, (0x1 << CRC_COUNTER_RESET_SHIFT) | CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
+                //read counter
+                mdio_rd(PHY_CRC_COUNTERS_REG, &data, 0x0);
+                printf("pkt counter: %d, CRC error counter: %d\n",
+                    (data >> PACKET_COUNTER_SHIFT) & PACKET_COUNTER_MASK, data & ERROR_COUNTER_MASK);
+                //clear counters
+                mdio_wr(PHY_CHECKER_CTRL_REG, (0x1 << CRC_COUNTER_RESET_SHIFT) | CHECK_DATA_FROM_COPPER_INTERFACE, 0x0);
             } else {
                 printf("Disable PHY packet checker\n");
                 mdio_wr(PHY_CHECKER_CTRL_REG, 0, 0x0);
