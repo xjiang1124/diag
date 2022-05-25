@@ -78,6 +78,7 @@ if [[ $(( p1 & STATUS_VECTOR_MASK )) -ne $(( 0x1883 << 5 )) ]]; then
 fi
 
 echo "TRANSCEIVER RJ45 port link is up"
+echo "TRANSCEIVER RJ45 port link is up"
 if [[ $1 != "PRBS" ]]; then
     exit 0
 fi
@@ -166,5 +167,6 @@ if [[ $err_cnt > 3 ]]; then
     exit 1
 fi
 
+echo "TRANSCEIVER PHY INTERFACE TEST PASSED"
 echo "TRANSCEIVER PHY INTERFACE TEST PASSED"
 exit 0
