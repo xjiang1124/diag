@@ -318,6 +318,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"}) {
+        $top_diag_fa_code = "DDR_ECC_FAILURE_AFTER_C92_UPGRADED";
+        delete $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"};
+        return;
+    }
+
     if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
         $top_diag_fa_code = "RETEST_NEEDED";
         delete $diag_fa_code{"RETEST_NEEDED"};
@@ -413,9 +419,9 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_ECC_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_ECC_FAILURE";
-        delete $diag_fa_code{"SNAKE_ECC_FAILURE"};
+    if (exists $diag_fa_code{"SNAKE_RAM_FAILURE"}) {
+        $top_diag_fa_code = "SNAKE_RAM_FAILURE";
+        delete $diag_fa_code{"SNAKE_RAM_FAILURE"};
         return;
     }
 
@@ -502,6 +508,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"BOOT_GOLDFW"};
         return;
     }
+    if (exists $diag_fa_code{"BOOT_UBOOT"}) {
+        $top_diag_fa_code = "BOOT_UBOOT";
+        delete $diag_fa_code{"BOOT_UBOOT"};
+        return;
+    }
     if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
         $top_diag_fa_code = "MISSING_ENV_VAR";
         delete $diag_fa_code{"MISSING_ENV_VAR"};
@@ -515,6 +526,21 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"INCORRECT_SN"}) {
         $top_diag_fa_code = "INCORRECT_SN";
         delete $diag_fa_code{"INCORRECT_SN"};
+        return;
+    }
+    if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
+        $top_diag_fa_code = "ALL_SLOTS_FAIL";
+        delete $diag_fa_code{"ALL_SLOTS_FAIL"};
+        return;
+    }
+    if (exists $diag_fa_code{"SLOTS_5_1_FAIL"}) {
+        $top_diag_fa_code = "SLOTS_5_1_FAIL";
+        delete $diag_fa_code{"SLOTS_5_1_FAIL"};
+        return;
+    }
+    if (exists $diag_fa_code{"SLOTS_10_6_FAIL"}) {
+        $top_diag_fa_code = "SLOTS_10_6_FAIL";
+        delete $diag_fa_code{"SLOTS_10_6_FAIL"};
         return;
     }
     if (%diag_fa_code) {
@@ -547,7 +573,7 @@ sub parse_snake_log {
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_ECC_FAILURE"} = 1;
+            $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
@@ -869,7 +895,11 @@ sub find_failure_code {
             #if ($failure_code =~ "NIC_STATUS" || $failure_code =~ "CONSOLE_BOOT" || $failure_code =~ "NIC_MGMT_INIT" || $failure_code =~ "NIC_CPLD" || $failure_code =~ "NIC_DIAG_BOOT") {
                 parse_mtp_and_slot_log($fulllogpath, $slot, $stage, $test_and_failure_code);
             #}
-
+        if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
+            if (%diag_fa_code == 0) {
+                $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
+            }
+        }
         if ($all_test_msg eq "") {
             $all_test_msg = "log path: ".$fulllogpath."\n";
         }
@@ -950,9 +980,21 @@ sub parse_mtp_and_slot_log {
 	        $slot_err_msg .= $line;
 	        #last;
         }
+        if ($line =~ m/Autoboot in \d+ seconds/) {
+            $diag_fa_code{"CARD_RESET"} = 1;
+	        $slot_err_msg .= $line;
+        }
+        if ($line =~ m/ifconfig: SIOCSIFADDR: No such device/) {
+            $diag_fa_code{"OOB_MNIC_NOT_ENABLED"} = 1;
+	        $slot_err_msg .= $line;
+        }
         if ($line =~ m/elba\-gold login/) {
             $diag_fa_code{"BOOT_GOLDFW"} = 1;
 	        $slot_err_msg .= $line;
+        }
+        if ($line =~ m/DSC# fwupdate -s diagfw/) {
+            $diag_fa_code{"BOOT_UBOOT"} = 1;
+                $slot_err_msg .= $line;
         }
         if ($failure_code =~ "NIC_JTAG") {
             if ($line =~ m/NIC_JTAG Started/) {
@@ -1085,7 +1127,7 @@ sub parse_mtp_and_slot_log {
         $diag_fa_code{"SLOTS_5_1_FAIL"} = 1;
     }
 
-    if ($failure_code =~ "NIC_PARA_MGMT_INIT") {
+    if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
         if (!open(TR3, '<', $mtpdiagfile)) {
             print "Cannot open file $mtpdiagfile\n";
             return;
@@ -1137,6 +1179,10 @@ sub parse_fpga_and_ecc {
     my $ecc_sts = "";
     my $num_ecc_sts_errors = 0;
     my $smbus_err = 0;
+    my $j2c_error_linenum = 0;
+    my $ecc_reg_linenum = 0;
+    my $ecc_not_valid = 0;
+    my $c92_upgrade = 0;
 
     if (!open(TR3, '<', $logfile)) {
         print "Cannot open file $logfile\n";
@@ -1256,10 +1302,18 @@ sub parse_fpga_and_ecc {
             }
         }
         if ($old_ecc_dump_exist == 0) {
+            if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
+                $j2c_error_linenum = $.;
+                print "j2c_error_linenum: $j2c_error_linenum\n";
+            }
             if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
+                $ecc_reg_linenum = $.;
+                print "ecc_reg_linenum: $ecc_reg_linenum\n";
                 if ($3 ne "0x00000000") {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
                     $num_ecc_sts_errors++;
+                } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
+                    $ecc_not_valid = 1;
                 }
             }
             if($line =~ m/(.*)(Reg 0x30530454; value:)\s(\w+)/) {
@@ -1300,11 +1354,20 @@ sub parse_fpga_and_ecc {
                 $old_ecc_dump_exist = 1;
             }
         }
+
         if ($new_ecc_dump_exist == 0) {
+            if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
+                $j2c_error_linenum = $.;
+                print "j2c_error_linenum: $j2c_error_linenum\n";
+            }
             if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
+                $ecc_reg_linenum = $.;
+                print "ecc_reg_linenum: $ecc_reg_linenum\n";
                 if ($1 ne "0x00000000") {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
                     $num_ecc_sts_errors++;
+                } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
+                    $ecc_not_valid = 1;
                 }
             }
             if($line !~ m/P000/ && $line =~ m/Reg 0x30530454:\s+(\w+)/) {
@@ -1383,6 +1446,9 @@ sub parse_fpga_and_ecc {
             print "$line";
             $diag_fa_code{"Bad_I2C"} = 1;
         }
+        if($line =~ m/fwupdate -p/) {
+            $c92_upgrade = 1;
+        }
     }
     close(TR3);
 
@@ -1401,12 +1467,22 @@ sub parse_fpga_and_ecc {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
     } elsif ($num_ecc_sts_errors == 0) {
-        print "ECC status OK\n";
-        $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
+        if ($ecc_not_valid == 1) {
+            $diag_fa_code{"Bad_J2C"} = 1;
+            print "ECC not valid due to bad J2C\n";
+            $worksheet->write($curr_row, $ecc_sts_col, "ECC not valid due to bad J2C");
+        } else {
+            print "ECC status OK\n";
+            $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
+        }
     } else {
         chomp($ecc_sts);
         $worksheet->write($curr_row, $ecc_sts_col, $ecc_sts);
-        $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
+        if ($c92_upgrade == 1) {
+            $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"} = 1;
+        } else {
+            $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
+        }
     }
 
     if ($sts_dump_exist == 0) {
