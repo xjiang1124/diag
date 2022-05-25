@@ -86,6 +86,16 @@ func uutPresent(uutName string) (data byte, present bool) {
     return
 }
 
+func InterposerID(uutName string) (data byte, err int) {
+    devName := "CPLD"
+    addr := uint64(naples100Cpld.REG_INTERPOSER_ID)
+
+    cli.DisableVerbose()
+    data, err = hwdev.NaplesCpldRd(devName, addr, uutName)
+
+    return
+}
+
 func present() (err int) {
     var presentStr string
     var out []byte
@@ -140,6 +150,8 @@ func present() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_ORTANO2A:
                 presentStr = "ORTANO2A"
+            case nicCpldCommon.ID_ORTANO2I:
+                presentStr = "ORTANO2I"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
             case nicCpldCommon.ID_LACONA32_DELL:
@@ -165,6 +177,11 @@ func present() (err int) {
             }
         } else {
             presentStr = prsntNoneStr
+        }
+
+        interpoID, err := InterposerID(uutName)
+        if  err  != errType.SUCCESS {
+            interpoID = 0
         }
 
         // prepare PN and SN from fru eeprom
@@ -211,7 +228,11 @@ func present() (err int) {
             }
         }
 
-        cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s\n", i, presentStr, PN, SN)
+        if interpoID != 0 {
+            cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s  INTERPOSER=%d\n", i, presentStr, PN, SN, interpoID)
+        } else {
+            cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s\n", i, presentStr, PN, SN)
+        }
     }
     return
 }
@@ -354,6 +375,8 @@ func sysDetect() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_ORTANO2A:
                 presentStr = "ORTANO2A"
+            case nicCpldCommon.ID_ORTANO2I:
+                presentStr = "ORTANO2I"
             case nicCpldCommon.ID_NAPLES25SWM_DELL:
                 presentStr = "NAPLES25SWMDELL"
             case nicCpldCommon.ID_NAPLES25SWM_833:
@@ -391,7 +414,7 @@ func statusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
 
-    cpldRegList := []uint64{0, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1E, 0x20, 0x21, 0x26, 0x27, 0x28, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x30, 0x31, 0x32, 0x50, 0x80}
+    cpldRegList := []uint64{0, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1E, 0x20, 0x21, 0x26, 0x27, 0x28, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x30, 0x31, 0x32, 0x49, 0x50, 0x80}
 
     cli.Println("i", "Dumping CPLD registers for slot", slot)
     for _, cpldReg := range cpldRegList {
@@ -432,7 +455,7 @@ func powerStatusDump(slot int)  {
 
     if cardType == "NAPLES25SWM" {
         pwrStatName = powerStatNameSWM
-    } else if cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" {
+    } else if cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" {
         powerStatusDumpOrtano(uutName)
         return
     }

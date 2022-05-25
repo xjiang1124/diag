@@ -119,4 +119,3 @@ set_vmarg()
 echo "=== Setting Vmarg to $1 ==="
 set_vmarg $1
 echo "=== Vmarg is at $1 ==="
-

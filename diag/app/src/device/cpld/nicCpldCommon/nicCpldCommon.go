@@ -30,6 +30,7 @@ const (
     ID_LACONA32_DELL   = 0x49
     ID_LACONA32        = 0x4A
     ID_ORTANO2A        = 0x4B
+    ID_ORTANO2I        = 0x4C
     ID_TAORMINA_ELBA   = 0x80
 )
 
@@ -64,5 +65,6 @@ const (
     REG_POWER_STAT0        = 0x31
     REG_POWER_STAT1        = 0x32
     REG_ID                 = 0x80
+    REG_INTERPOSER         = 0x81
 )
 

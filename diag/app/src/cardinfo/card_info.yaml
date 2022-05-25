@@ -5,6 +5,8 @@ cardinfo:
         ASIC: ELBA
     ORTANO2A:
         ASIC: ELBA
+    ORTANO2I:
+        ASIC: ELBA
     LACONADELL:
         ASIC: ELBA
     LACONA:

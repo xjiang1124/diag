@@ -71,6 +71,8 @@ func Mvl_AccHdl(argList []string) {
         ExtendedRegTest = false;
     } else if (cardType == "ORTANO2A" && data < 0x02) {
         ExtendedRegTest = false;
+    } else if (cardType == "ORTANO2I" && data < 0x02) {
+        ExtendedRegTest = false;
     } else if (cardType == "NAPLES25" && data < 0x0C) {
         ExtendedRegTest = false;
     } else if (cardType == "NAPLES25OCP" && data < 0x0B) {

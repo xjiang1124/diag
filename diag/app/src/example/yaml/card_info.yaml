@@ -3,4 +3,6 @@ cardinfo:
         ASIC: ELBA
     ORTANO2:
         ASIC: ELBA
+    ORTANO2I:
+        ASIC: ELBA
 
