@@ -104,6 +104,7 @@ func present() (err int) {
     var PN string
     var SN string
     var submatchall [][]string
+    var interpoID byte
 
     maxUut := 10
     prsntNoneStr := "UUT_NONE"
@@ -174,7 +175,7 @@ func present() (err int) {
             default:
                 presentStr = "Unknown"
             }
-            interpoID, err := InterposerID(uutName)
+            interpoID, err = InterposerID(uutName)
             if  err  != errType.SUCCESS {
                 interpoID = 0
             }
