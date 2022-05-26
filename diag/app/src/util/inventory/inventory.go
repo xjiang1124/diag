@@ -90,7 +90,6 @@ func InterposerID(uutName string) (data byte, err int) {
     devName := "CPLD"
     addr := uint64(naples100Cpld.REG_INTERPOSER_ID)
 
-    cli.DisableVerbose()
     data, err = hwdev.NaplesCpldRd(devName, addr, uutName)
 
     return
@@ -175,13 +174,12 @@ func present() (err int) {
             default:
                 presentStr = "Unknown"
             }
+            interpoID, err := InterposerID(uutName)
+            if  err  != errType.SUCCESS {
+                interpoID = 0
+            }
         } else {
             presentStr = prsntNoneStr
-        }
-
-        interpoID, err := InterposerID(uutName)
-        if  err  != errType.SUCCESS {
-            interpoID = 0
         }
 
         // prepare PN and SN from fru eeprom
