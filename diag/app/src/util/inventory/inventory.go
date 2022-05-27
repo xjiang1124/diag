@@ -181,6 +181,7 @@ func present() (err int) {
             }
         } else {
             presentStr = prsntNoneStr
+            interpoID = 0
         }
 
         // prepare PN and SN from fru eeprom
