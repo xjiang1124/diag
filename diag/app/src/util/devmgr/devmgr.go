@@ -11,6 +11,7 @@ import (
     //"config"
     "hardware/i2cinfo"
     "hardware/hwdev"
+    "device/tempsensor/tmp451"
 )
 
 func init() {
@@ -26,6 +27,7 @@ func myUsage() {
 
 func main() {
     var err int
+    var i2cif i2cinfo.I2cInfo
     flag.Usage = myUsage
 
     devNamePtr  := flag.String("dev",     "ALL", "Device name")
@@ -44,6 +46,9 @@ func main() {
     verifyPtr   := flag.Bool  ("verify",  false, "VRM - Verify NVM content with specified file")
     filePtr     := flag.String("file",    "",    "VRM - /path/to/image.file")
     vrFaultPtr  := flag.Bool  ("vrFault", false, "VRM - Trigger VR_FAULT")
+    thermAlertPtr:= flag.Bool  ("thermAlert", false, "Temp Sensor - Trigger ALERT")
+    restorePtr  := flag.Bool  ("restoreLimit", false, "Temp Sensor - Restore ALERT limit")
+    thermTripPtr:= flag.Bool  ("thermTrip", false, "Temp Sensor - Trigger TRIP")
     verbosePtr  := flag.Bool  ("verbose", false, "Verbose")
     speedPtr    := flag.Bool  ("speed",   false, "FAN - Set fan speed")
     faninitPtr  := flag.Bool  ("faninit", false, "FAN - Initialization")
@@ -89,6 +94,57 @@ func main() {
         err = hwdev.TriggerVrFault(devName, true)
         if err != errType.SUCCESS {
             cli.Println("e", "Fault trigger failed!")
+        }
+        return
+    }
+
+    if *thermAlertPtr == true {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        if i2cif.Comp == "TMP451" {
+            err = tmp451.TriggerThermSignal(devName, "ALERT")
+            if err != errType.SUCCESS {
+                cli.Println("e", "Therm Alert trigger failed!")
+            }
+        } else {
+            cli.Println("e", "Unsupported device: ", i2cif.Comp)
+            err = errType.INVALID_PARAM
+        }
+        return
+    }
+
+    if *restorePtr == true {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        if i2cif.Comp == "TMP451" {
+            err = tmp451.RestoreLocalTempHighLimit(devName)
+            if err != errType.SUCCESS {
+                cli.Println("e", "Therm Alert limit restore failed!")
+            }
+        } else {
+            cli.Println("e", "Unsupported device: ", i2cif.Comp)
+            err = errType.INVALID_PARAM
+        }
+        return
+    }
+
+    if *thermTripPtr == true {
+        i2cif, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        if i2cif.Comp == "TMP451" {
+            err = tmp451.TriggerThermSignal(devName, "TRIP")
+            if err != errType.SUCCESS {
+                cli.Println("e", "Therm Trip trigger failed!")
+            }
+        } else {
+            cli.Println("e", "Unsupported device: ", i2cif.Comp)
+            err = errType.INVALID_PARAM
         }
         return
     }

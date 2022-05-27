@@ -856,6 +856,108 @@ class nic_test:
             print "=== vrd_fault_line passed ==="
         print "=== vrd_fault_line done ==="
 
+    def therm_alert_line(self, nic_list=[]):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        print "slot_list:", slot_list
+
+        for slot in nic_list:
+            intr_set = 0
+            intr_cleared = 0
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session)
+            if ret != 0:
+                print("Connecting to console failed!")
+            else:
+                # trigger the therm alert
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/devmgr -dev=TSENSOR -thermAlert")
+                # enable the temp warning interrupt
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 0x3 0x20")
+                # read the status of the temp warning interrupt to make sure it's set
+                for retry in range(10):
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 4")
+                    match = re.search(r'(0x[a-fA-F0-9]+)', session.before)
+                    if match:
+                        if int(match.group(1), 16) & 0x20 == 0x20:
+                            intr_set = 1
+                            break
+                    else:
+                        print "Failed to read CPLD addr=0x4 for slot {}".format(slot)
+                    time.sleep(1)
+                # restore the temp limit
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/devmgr -dev=TSENSOR -restoreLimit")
+                # enable the temp warning interrupt
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 0x3 0x20")
+                # read the status of the temp warning interrupt to make sure it's cleared
+                for retry in range(10):
+                    self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 4")
+                    match = re.search(r'(0x[a-fA-F0-9]+)', session.before)
+                    if match:
+                        if int(match.group(1), 16) & 0x20 == 0x0:
+                            intr_cleared = 1
+                            break
+                    else:
+                        print "Failed to read CPLD addr=0x4 for slot {}".format(slot)
+                    time.sleep(1)
+                # disable the temp waring interrupt
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 0x3 0x0")
+                self.nic_con.uart_session_stop(session)
+                if intr_set == 1 and intr_cleared == 1:
+                    ret_list[int(slot)-1] = 1
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 1:
+                nic_list.remove(slot)
+
+        if len(nic_list) != 0:
+            print "=== therm_alert_line failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== therm_alert_line passed ==="
+        print "=== therm_alert_line done ==="
+
+    def therm_trip_line(self, nic_list=[]):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        print "slot_list:", slot_list
+        self.setup_env_multi_top(slot_list, False, 30, False, True, False)
+
+        for slot in nic_list:
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session)
+            if ret != 0:
+                print("Connecting to console failed!")
+            else:
+                session.sendline("/data/nic_util/devmgr -dev=TSENSOR -thermTrip")
+                time.sleep(3)
+                self.nic_con.uart_session_stop(session)
+            # on MTP, smb read register 0x50 bit 3
+            cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x50".format(slot)
+            common.session_cmd(session, cmd)
+            match = re.search(r'data=(0x[a-fA-F0-9]+)', session.before)
+            if match:
+                if int(match.group(1), 16) & 0x8 == 0x8:
+                    ret_list[int(slot)-1] = 1
+            else:
+                print "Failed to read CPLD addr=0x50 for slot {}".format(slot)
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 1:
+                nic_list.remove(slot)
+
+        if len(nic_list) != 0:
+            print "=== therm_trip_line failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== therm_trip_line passed ==="
+        print "=== therm_trip_line done ==="
+
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1325,6 +1427,8 @@ if __name__ == "__main__":
     group.add_argument("-config_ddr", "--config_ddr", help="configure DDR", action='store_true')
     group.add_argument("-disp_ecc", "--disp_ecc", help="Display ECC syndrom", action='store_true')
     group.add_argument("-vrd_fault_line", "--vrd_fault_line", help="Test VRD_FAULT line", action='store_true')
+    group.add_argument("-therm_alert_line", "--therm_alert_line", help="Test Temp Sensor Alert line", action='store_true')
+    group.add_argument("-therm_trip_line", "--therm_trip_line", help="Test Temp Sensor Trip line", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -1446,6 +1550,16 @@ if __name__ == "__main__":
     if args.vrd_fault_line == True:
         slot_list = args.slot_list.split(',')
         test.vrd_fault_line(slot_list)
+        sys.exit()
+
+    if args.therm_alert_line == True:
+        slot_list = args.slot_list.split(',')
+        test.therm_alert_line(slot_list)
+        sys.exit()
+
+    if args.therm_trip_line == True:
+        slot_list = args.slot_list.split(',')
+        test.therm_trip_line(slot_list)
         sys.exit()
 
     if args.setup_uboot_env == True:
