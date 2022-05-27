@@ -37,3 +37,6 @@ then
     apply_fix
     display
 fi
+
+echo "FIX O2 VRM OC DONE"
+echo "FIX O2 VRM OC DONE"
