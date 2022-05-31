@@ -19,6 +19,7 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
@@ -495,6 +496,15 @@ def main():
             continue
         if not nic_prsnt_list[slot]:
             continue
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL and False:
+            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_DL) != 0:
+                fail_nic_list.append(slot)
+                continue
         if slot not in pass_nic_list:
             pass_nic_list.append(slot)
 
@@ -876,7 +886,7 @@ def main():
         if nic_type == NIC_Type.ORTANO2:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type == NIC_Type.ORTANO2ADI:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "QSPI_VERIFY"] 
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"] 
         if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         for skipped_test in args.skip_test:

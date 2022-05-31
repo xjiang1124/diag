@@ -691,7 +691,7 @@ def main():
             elif nic_type == NIC_Type.ORTANO2:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type == NIC_Type.ORTANO2ADI:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "QSPI_VERIFY"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
