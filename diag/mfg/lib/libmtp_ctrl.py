@@ -835,6 +835,12 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_nic_stop_test(self, slot):
+        cmd_buf = self._nic_ctrl_list[slot]._cmd_buf  #save failure buffer
+        self.mtp_nic_send_ctrl_c(slot)
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  #restore failure buffer
+
     def mtp_mgmt_set_date(self, timestamp_str, fst=False):
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
         if fst:
@@ -5336,6 +5342,12 @@ class mtp_ctrl():
         if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
             rs = True
 
+        # kill the process in case it's hung/timed out
+        # ctrl-c doesnt work
+        # needs to be killed from separate session
+        self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh") # notify in log
+        self.mtp_mgmt_exec_cmd("killall run_l1.sh") # use mtp session to kill it
+
         return rs
 
     def mtp_reset_hub(self, slot=None):
@@ -6184,8 +6196,9 @@ class mtp_ctrl():
     def mtp_nic_l1_health_check(self, slot):
         self.cli_log_slot_inf(slot, "Running L1 health check")
         sn = self.mtp_get_nic_sn(slot)
-        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1))
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1), timeout=MTP_Const.MTP_L1_HEALTH_CHECK_TIMEOUT)
         ## check for 3 tests with "PASS" result in elb_l1_screen*.log
+        self.mtp_nic_stop_test(slot)
 
     def mtp_nic_l1_esecure_prog(self, slot):
         self.mtp_single_j2c_lock()

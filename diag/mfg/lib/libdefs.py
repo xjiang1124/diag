@@ -170,6 +170,7 @@ class MTP_Const:
     MTP_PARA_TEST_TIMEOUT = 30*60
     # para/asic l1 test, 30 min
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
+    MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
     # more than 12 hours
     MFG_P2C_TEST_TIMEOUT = 48000

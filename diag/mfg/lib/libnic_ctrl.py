@@ -468,6 +468,12 @@ class nic_ctrl():
 
         return True
 
+    def nic_stop_test(self):
+        cmd_buf = self.nic_get_cmd_buf()    #save failure buffer
+        self.nic_send_ctrl_c()
+        self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
+
     def nic_mgmt_config(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -4158,7 +4164,9 @@ class nic_ctrl():
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
         if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
+            self.nic_stop_test()
             return False
+        self.nic_stop_test()
         return True
 
     def nic_port_counters(self):
