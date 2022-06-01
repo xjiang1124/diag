@@ -803,7 +803,8 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Unable to get expected prompt")
             self.nic_console_detach_fast()
             return False
@@ -811,7 +812,8 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_I2C_SET_FMT))
             self.nic_console_detach_fast()
             return False
@@ -819,7 +821,8 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT))
             self.nic_console_detach_fast()
             return False
@@ -827,7 +830,8 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT))
             self.nic_console_detach_fast()
             return False
@@ -835,7 +839,8 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT))
             self.nic_console_detach_fast()
             return False
@@ -843,7 +848,8 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
-            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT))
             self.nic_console_detach_fast()
             return False
@@ -3744,6 +3750,15 @@ class nic_ctrl():
     def nic_fix_vrm(self):
         cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT)
         if "Ortano2 VRM fix done" not in cmd_buf:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_fix_vrm_oc(self):
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT)
+        if "FIX O2 VRM OC DONE" not in cmd_buf:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False

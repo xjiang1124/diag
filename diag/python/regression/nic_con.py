@@ -562,6 +562,7 @@ class nic_con:
         if card_type == "ORTANO"  or \
            card_type == "ORTANO2" or \
            card_type == "ORTANO2A" or \
+           card_type == "ORTANO2I" or \
            card_type == "BIODONA":
             asic_type = "ELBA_CPLD"
         elif card_type == "LACONA"       or \

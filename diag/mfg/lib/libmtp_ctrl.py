@@ -2501,15 +2501,10 @@ class mtp_ctrl():
 
         self.mtp_nic_lock()
         if self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-            retry = 0
-            while retry < 4:
-                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                    if retry == 3:
-                        self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                else:
-                    self.cli_log_slot_inf(slot, "I2C value setting complete")
-                    break
-                retry += 1 
+            if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            else:
+                self.cli_log_slot_inf(slot, "I2C value setting complete")
         self.mtp_nic_unlock() 
 
         return True
@@ -4465,15 +4460,10 @@ class mtp_ctrl():
 
         for slot in nic_list:
             if self._nic_ctrl_list[slot] and self._nic_type_list[slot] == NIC_Type.ORTANO2ADI and not dl:
-                retry = 0
-                while retry < 4:
-                    if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
-                        if retry == 3:
-                            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-                    else:
-                        self.cli_log_slot_inf(slot, "I2C value setting complete")
-                        break
-                    retry += 1              
+                if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
+                    self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                else:
+                    self.cli_log_slot_inf(slot, "I2C value setting complete")             
         self.mtp_nic_unlock()
 
         return True
@@ -4590,6 +4580,26 @@ class mtp_ctrl():
             return False
         oracle_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT, slot_pn)
         if oracle_pn:
+            return True
+        else:
+            return False
+
+    def mtp_is_nic_ortano_microsoft(self, slot):
+        """
+         Differentiate ortano by PN
+         - 68-0015: Oracle version -> return False
+         - 68-0021: Pensando version -> return True
+         - any other -> return False with err msg
+        """
+        if self._nic_type_list[slot] != NIC_Type.ORTANO2:
+            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for Ortano")
+            return False
+        slot_pn = self.mtp_get_nic_pn(slot)
+        if not slot_pn:
+            self.cli_log_slot_err_lock(slot, "Unknown PN for Ortano")
+            return False
+        microsoft_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_PEN_PN_FMT, slot_pn)
+        if microsoft_pn:
             return True
         else:
             return False
@@ -4944,6 +4954,10 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param) 
+        elif test == "PCIE_PRBS":
+            slot = nic_list[0]
+            nic_type = self.mtp_get_nic_type(slot)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, vmarg, "PRBS31")
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
@@ -5070,7 +5084,8 @@ class mtp_ctrl():
                     preset_config = "5"
                 else:
                     preset_config = "8"
-
+            elif nic_type == NIC_Type.ORTANO2ADI:
+                preset_config = "5"
             elif nic_type == NIC_Type.POMONTEDELL:
                 preset_config = "1"
 
@@ -5229,10 +5244,16 @@ class mtp_ctrl():
     def mtp_nic_fix_vrm(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
-            if not self._nic_ctrl_list[slot].nic_fix_vrm():
-                self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
-                self.mtp_dump_nic_err_msg(slot)
-                return False
+            if self.mtp_is_nic_ortano_microsoft(slot):
+                if not self._nic_ctrl_list[slot].nic_fix_vrm_oc():
+                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+            else:
+                if not self._nic_ctrl_list[slot].nic_fix_vrm():
+                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
         return True
 
     def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):

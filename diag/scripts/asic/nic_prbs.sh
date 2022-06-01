@@ -7,6 +7,7 @@ then
 elif [[ $CARD_TYPE == "ORTANO"      || \
         $CARD_TYPE == "ORTANO2"     || \
         $CARD_TYPE == "ORTANO2A"    || \
+        $CARD_TYPE == "ORTANO2I"    || \
         $CARD_TYPE == "LACONA32"    || \
         $CARD_TYPE == "LACONA32DELL"|| \
         $CARD_TYPE == "POMONTE"     || \

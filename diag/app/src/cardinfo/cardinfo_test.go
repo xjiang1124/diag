@@ -25,8 +25,8 @@ func TestReadVout(t *testing.T) {
         fmt.Println(cardType, asicType)
     }
 
-    cardType = "ORTANO3"
-    err, asicType = GetAsicType(cardType)
+    cardType := "ORTANO2I"
+    err, asicType := GetAsicType(cardType)
     if err != errType.SUCCESS {
         fmt.Println("Failed!")
     } else {
@@ -34,6 +34,22 @@ func TestReadVout(t *testing.T) {
     }
 
     cardType = "ORTANO2"
+    err, asicType = GetCtrlType(cardType)
+    if err != errType.SUCCESS {
+        fmt.Println("Failed!")
+    } else {
+        fmt.Println(cardType, asicType)
+    }
+
+    cardType = "ORTANO2A"
+    err, asicType = GetCtrlType(cardType)
+    if err != errType.SUCCESS {
+        fmt.Println("Failed!")
+    } else {
+        fmt.Println(cardType, asicType)
+    }
+
+    cardType = "ORTANO2I"
     err, asicType = GetCtrlType(cardType)
     if err != errType.SUCCESS {
         fmt.Println("Failed!")

@@ -71,6 +71,7 @@ class arm_l1:
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["ARM L1 TESTS PASSED", "FAILED"], False)
         if ret == 0:
             print "ARM L1 TESTS PASSED"
+            print "ARM L1 TESTS PASSED"
         elif ret == 1:
             print "ARM L1 TESTS FAILED"
         else:

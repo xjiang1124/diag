@@ -51,4 +51,5 @@ if [[ $1 == "0" ]]; then
 fi
 
 echo "MVL STUB TEST PASSED"
+echo "MVL STUB TEST PASSED"
    

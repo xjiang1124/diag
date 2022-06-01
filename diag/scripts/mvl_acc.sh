@@ -58,3 +58,4 @@ do
 done
 
 echo "MVL ACC TEST PASSED"
+echo "MVL ACC TEST PASSED"

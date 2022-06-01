@@ -980,7 +980,7 @@ sub parse_mtp_and_slot_log {
 	        $slot_err_msg .= $line;
 	        #last;
         }
-        if ($line =~ m/Autoboot in \d+ seconds/) {
+        if ($line =~ m/Resetting CPU/) {
             $diag_fa_code{"CARD_RESET"} = 1;
 	        $slot_err_msg .= $line;
         }
@@ -1121,9 +1121,9 @@ sub parse_mtp_and_slot_log {
 
     if (($mtp_failed_slots & $mtp_loaded_slots) == $mtp_loaded_slots) {
         $diag_fa_code{"ALL_SLOTS_FAIL"} = 1;
-    } elsif (($mtp_failed_slots & ($mtp_loaded_slots & 0x3e0)) == ($mtp_loaded_slots & 0x3e0)) {
+    } elsif ((($mtp_loaded_slots & 0x3e0) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x3e0)) == ($mtp_loaded_slots & 0x3e0)) {
         $diag_fa_code{"SLOTS_10_6_FAIL"} = 1;
-    } elsif (($mtp_failed_slots & ($mtp_loaded_slots & 0x1f)) == ($mtp_loaded_slots & 0x1f)) {
+    } elsif ((($mtp_loaded_slots & 0x1f) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x1f)) == ($mtp_loaded_slots & 0x1f)) {
         $diag_fa_code{"SLOTS_5_1_FAIL"} = 1;
     }
 
@@ -1309,7 +1309,11 @@ sub parse_fpga_and_ecc {
             if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
                 $ecc_reg_linenum = $.;
                 print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                if ($3 ne "0x00000000") {
+                if ($3 eq "0xffffffff") {
+                    if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
+                        $ecc_not_valid = 1;
+                    }
+                } elsif ($3 ne "0x00000000") {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
                     $num_ecc_sts_errors++;
                 } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
@@ -1363,7 +1367,12 @@ sub parse_fpga_and_ecc {
             if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
                 $ecc_reg_linenum = $.;
                 print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                if ($1 ne "0x00000000") {
+                if ($1 eq "0xffffffff") {
+                    print "ffffffff\n";
+                    if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
+                        $ecc_not_valid = 1;
+                    }
+                } elsif ($1 ne "0x00000000") {
                     $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
                     $num_ecc_sts_errors++;
                 } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
@@ -1466,15 +1475,13 @@ sub parse_fpga_and_ecc {
             exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
+    } elsif ($ecc_not_valid == 1) {
+        $diag_fa_code{"Bad_J2C"} = 1;
+        print "ECC not valid due to bad J2C\n";
+        $worksheet->write($curr_row, $ecc_sts_col, "ECC not valid due to bad J2C");
     } elsif ($num_ecc_sts_errors == 0) {
-        if ($ecc_not_valid == 1) {
-            $diag_fa_code{"Bad_J2C"} = 1;
-            print "ECC not valid due to bad J2C\n";
-            $worksheet->write($curr_row, $ecc_sts_col, "ECC not valid due to bad J2C");
-        } else {
-            print "ECC status OK\n";
-            $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
-        }
+        print "ECC status OK\n";
+        $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
     } else {
         chomp($ecc_sts);
         $worksheet->write($curr_row, $ecc_sts_col, $ecc_sts);

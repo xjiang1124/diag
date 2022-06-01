@@ -101,6 +101,8 @@ class arm_ddrbist:
             self.nic_con.uart_session_cmd(session, "fwenv -n gold -E")
             self.nic_con.uart_session_cmd(session, "fwenv -n gold -s noc_llc_pin 0")
             self.nic_con.uart_session_cmd(session, "fwenv -n gold -s run_ddrbist_ok 1")
+            self.nic_con.uart_session_cmd(session, "fwenv -E")
+            self.nic_con.uart_session_cmd(session, "fwenv -s noc_llc_pin 0")
             self.nic_con.uart_session_cmd(session, "cp /data/nic_util/run_ddrbist.sh /data/pensando_pre_init.sh")
             self.nic_con.uart_session_cmd(session, "sysreset.sh")
             self.nic_con.uart_session_stop(session)
