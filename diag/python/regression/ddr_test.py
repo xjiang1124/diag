@@ -5,6 +5,7 @@ import datetime
 import math
 import pexpect
 import os
+import random
 import re
 import sys
 import time
@@ -313,12 +314,258 @@ class ddr_test:
                     return
 
 
+    def qspi_edma_corruption(self, nic_list=[], num_ite=1, num_edma=20):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            slot_list = ",".join(nic_list)
+            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 60)
+
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    session = common.session_start()
+                    common.session_cmd(session, "killall picocom", 20)
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        continue
+
+                    # Check if diagfw is active
+                    [ret, ot] = self.nic_con.uart_session_cmd_w_ot(session, "fwupdate -r")
+                    if "diagfw" not in ot:
+                        print "=== FAILURE happened: slot {} failed to boot into diagfw".format(slot)
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    self.nic_con.uart_session_stop(session)
+
+                    common.session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "diagfw checking failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+            print("{} passed diagfw checking".format(slot_list))
+
+            # start edma test
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    session = common.session_start()
+                    common.session_cmd(session, "killall picocom", 20)
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        print("Failed to connect UART of slot", slot)
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data/", 30)
+                    session.sendline("/data/run_edma_ite.sh 100")
+                    time.sleep(5)
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "Running EDMA failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+            sleep_in_sec = random.randrange(240, 300)
+            print("Sleep for", sleep_in_sec, "sec")
+            time.sleep(sleep_in_sec)
+
+    def qspi_snake_corruption(self, nic_list=[], num_ite=1):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            slot_list = ",".join(nic_list)
+            session = common.session_start()
+            common.session_cmd(session, "./nic_test.py -setup_multi -slot_list {}".format(slot_list), timeout=300, ending="Setup env top done")
+            common.session_stop(session)
+
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    session = common.session_start()
+                    common.session_cmd(session, "killall picocom", 20)
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        continue
+
+                    # Check if diagfw is active
+                    [ret, ot] = self.nic_con.uart_session_cmd_w_ot(session, "fwupdate -r")
+                    if "diagfw" not in ot:
+                        print "=== FAILURE happened: slot {} failed to boot into diagfw".format(slot)
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    self.nic_con.uart_session_stop(session)
+
+                    common.session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "diagfw checking failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+            print("{} passed diagfw checking".format(slot_list))
+
+            # start edma test
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    session = common.session_start()
+                    common.session_cmd(session, "killall picocom", 20)
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        print("Failed to connect UART of slot", slot)
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    session.sendline("/data/nic_util/asicutil -snake -mode hod -dura 3 -int_lpbk -snake_num 4")
+                    time.sleep(5)
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "Running EDMA failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+            sleep_in_sec = random.randrange(240, 540)
+            print("Sleep for", sleep_in_sec, "sec")
+            time.sleep(sleep_in_sec)
+
+    def stress_reset(self, nic_list=[], num_ite=1):
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for ite in range(num_ite):
+            print("=== Ite:", ite, "===")
+            slot_list = ",".join(nic_list)
+            print("slot_list:", slot_list)
+
+            slot_list = ",".join(nic_list)
+            session = common.session_start()
+            common.session_cmd(session, "cd ~/diag/python/regression/")
+            common.session_cmd(session, "nic_test.py -snake -slot_list={} -wtime=3600 -snake_num=6 -dura=3600 -mode=hod -int_lpbk".format(slot_list), 600, ending="before checking result")
+            print("=== Snake started: wait for 300 sec ===")
+            time.sleep(300)
+
+            session.sendline(chr(3))
+            # sysreset all slots
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    common.session_cmd(session, "killall picocom")
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        continue
+
+                    session.sendline("sysreset.sh")
+                    time.sleep(2)
+
+                    self.nic_con.uart_session_stop(session)
+
+                except pexpect.TIMEOUT:
+                    print(slot, "diagfw checking failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+            # Check if cards are alive
+            time.sleep(60)
+            for slot in nic_list:
+                try:
+                    self.nic_con.switch_console(int(slot))
+                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    if ret != 0:
+                        print("Failed to connect UART of slot", slot)
+                        self.nic_con.uart_session_stop(session)
+                        common.session_stop(session)
+                        return
+
+                    ret = self.nic_con.uart_session_cmd(session, "pwd")
+                    self.nic_con.uart_session_stop(session)
+                    if ret != 0:
+                        print("=== slot {} failed to boot! ===".format(slot))
+                        return
+                    print("slot {} booted successfully".format(slot))
+
+                except pexpect.TIMEOUT:
+                    print(slot, "Running EDMA failed!")
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    return
+
+    def chamber_temp_ctrl(self, low_temp, high_temp, interval, num_ite):
+        cur_temp_corner = "LOW"
+        chamber_ip = "192.168.70.216"
+        session = common.session_start()
+        common.session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
+        ret = common.session_cmd(session, "tclsh", 40, False, ending=["%", "tclsh]"])
+        if ret == 1:
+            common.session_cmd(session, "source .tclrc.diag.elb", 40, False, "tclsh]")
+        common.session_cmd(session, "source ../capri/chamber_utils.tcl", 40, False, "tclsh]")
+    
+        for ite in range(num_ite):
+            print("=== Ite: {} ===".format(ite))
+            print("Current corner:", cur_temp_corner)
+            for temp_loop in range(interval):
+                print("=== temp_loop: {} ===".format(temp_loop))
+                common.session_cmd(session, "set cur_temp [check_temp 192.168.70.216]", 40, False, ending="tclsh]")
+                common.session_cmd(session, "puts \"cur_temp: $cur_temp\"", 40, False, ending="tclsh]")
+                common.session_cmd(session, "exec devmgr -dev=fan -status", 40, False, ending="tclsh]")
+                time.sleep(60)
+            if cur_temp_corner == "LOW":
+                cmd = "set_temp {} {}".format(chamber_ip, high_temp)
+                ret = common.session_cmd(session, cmd, 40, False, ending="tclsh]")
+                cur_temp_corner = "HIGH"
+            else:
+                cmd = "set_temp {} {}".format(chamber_ip, low_temp)
+                ret = common.session_cmd(session, cmd, 40, False, ending="tclsh]")
+                cur_temp_corner = "LOW"
+        common.session_cmd(session, "exit")
+        common.session_stop(session)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-two_step_edma", "--two_step_edma", help="Two step EDMA test", action='store_true')
     group.add_argument("-two_step_snake", "--two_step_snake", help="Two step Snake test", action='store_true')
     group.add_argument("-edma", "--edma", help="EDMA test", action='store_true')
+    group.add_argument("-qspi_crpt", "--qspi_crpt", help="test", action='store_true')
+    group.add_argument("-qspi_s_crpt", "--qspi_s_crpt", help="test", action='store_true')
+    group.add_argument("-chamber_temp", "--chamber_temp", help="chamber_temp_control", action='store_true')
+    group.add_argument("-stress_reset", "--stress_reset", help="stress/sysreset test", action='store_true')
 
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser.add_argument("-num_ite", "--num_ite", help="Number of iterations", type=int, default=1)
@@ -329,6 +576,10 @@ if __name__ == "__main__":
     parser.add_argument("-script_dir", "--script_dir", help="script directory", type=str, default="/home/diag/diag/scripts/asic/")
     parser.add_argument("-start_tcl", "--start_tcl", help="Start tcl file", type=str, default="start.tcl")
     parser.add_argument("-stop_tcl", "--stop_tcl", help="Stop tcl file", type=str, default="stop.tcl")
+
+    parser.add_argument("-low_temp", "--low_temp", help="Chamber temp low", type=int, default=25)
+    parser.add_argument("-high_temp", "--high_temp", help="Chamber temp high", type=int, default=25)
+    parser.add_argument("-interval", "--interval", help="Chamber temp control interval in minutes", type=int, default=60)
 
     try:
         args = parser.parse_args()
@@ -351,6 +602,25 @@ if __name__ == "__main__":
     if args.edma == True:
         slot_list = args.slot_list.split(',')
         test.edma(slot_list, args.num_ite, args.num_edma)
+        sys.exit()
+
+    if args.qspi_crpt == True:
+        slot_list = args.slot_list.split(',')
+        test.qspi_edma_corruption(slot_list, args.num_ite, args.num_edma)
+        sys.exit()
+
+    if args.qspi_s_crpt == True:
+        slot_list = args.slot_list.split(',')
+        test.qspi_snake_corruption(slot_list, args.num_ite)
+        sys.exit()
+
+    if args.stress_reset == True:
+        slot_list = args.slot_list.split(',')
+        test.stress_reset(slot_list, args.num_ite)
+        sys.exit()
+
+    if args.chamber_temp == True:
+        test.chamber_temp_ctrl(args.low_temp, args.high_temp, args.interval, args.num_ite)
         sys.exit()
 
     parser.print_help()
