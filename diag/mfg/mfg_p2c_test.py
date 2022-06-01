@@ -21,6 +21,7 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
@@ -345,6 +346,20 @@ def main():
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
 
+    # Flex flow 2 Way communication
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL and False:
+                if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_P2C) != 0:
+                    fail_nic_list[mtp_id].append(slot)
+
+
     # close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
@@ -363,23 +378,6 @@ def main():
             mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
-
-    if GLB_CFG_MFG_TEST_MODE and False:
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
-                mtp_mgmt_ctrl.cli_log_inf("Fail", level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("START GET SN INFO", level=0)
-                for slot in range(MTP_Const.MTP_SLOT_NUM):
-                    sn = mtp_mgmt_ctrl.mtp_get_nic_sn_start(slot=slot)
-                    if len(sn) > 0:
-                        mtp_mgmt_ctrl.cli_log_inf("[SLOT-{:s}] SN:{:s}".format(("0" + str(slot + 1))[-2:], sn), level=0)
-                        if False:
-                            if not libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_DL):
-                                invalid_nic_list[mtp_id].append(slot)
-                    else:
-                        mtp_mgmt_ctrl.cli_log_inf("[SLOT-{:s}] SN: ".format(("0" + str(slot + 1))[-2:]), level=0)
-                    nic_sn_list[mtp_id].append(sn)
 
     mtp_thread_list = list()
     mfg_p2c_summary = dict()
