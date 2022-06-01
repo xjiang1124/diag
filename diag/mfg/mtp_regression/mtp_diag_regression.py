@@ -796,6 +796,8 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
             logfile_list.append(path+"elba_PRBS_MX.log")
         if "ARM_L1" in mtp_para_test_list:
             logfile_list.append(path+"elba_arm_l1_test.log")
+        if "PCIE_PRBS" in mtp_para_test_list:
+            logfile_list.append(path+"elba_PRBS_PCIE.log")
 
         if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
@@ -1357,6 +1359,8 @@ def main():
         pass_nic_list = list()
         fail_nic_list = list()
         skip_nic_list = list()
+        ortano_family_nic = list()
+        non_ortano_family_nic = list()
 
         nic_type_full_list = MFG_VALID_NIC_TYPE_LIST
         nic_test_full_list = list() # list of lists, NOT dict. order of insertion matters
@@ -1366,9 +1370,25 @@ def main():
             # make a list for all NICs of this type in MTP
             for slot in range(MTP_Const.MTP_SLOT_NUM):
                 if nic_prsnt_list[slot]:
-                    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
-                        nic_type_list.append(slot)
-                        pass_nic_list.append(slot)
+                    if args.fail_slots:
+                        if slot in args.fail_slots:
+                            fail_nic_list.append(slot)
+                        else:
+                            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
+                                nic_type_list.append(slot)
+                                pass_nic_list.append(slot)
+                            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
+                                ortano_family_nic.append(slot)
+                            else:
+                                non_ortano_family_nic.append(slot)                            
+                    else:
+                        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
+                            nic_type_list.append(slot)
+                            pass_nic_list.append(slot)
+                        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
+                            ortano_family_nic.append(slot)
+                        else:
+                            non_ortano_family_nic.append(slot)
             nic_test_full_list.append(nic_type_list)
 
         nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
@@ -1454,19 +1474,10 @@ def main():
                 #  One-time steps
                 #
                 ######################################################################
+
                 if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
-                    curr_list = list()
-                    for slot in range(MTP_Const.MTP_SLOT_NUM):
-                        if nic_prsnt_list[slot]:
-                            curr_list.append(slot)
-
                     mtp_mgmt_ctrl.mtp_power_off_nic()
-                    mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=curr_list, dl=False)
-
-                    # Add failed slots from sanity check
-                    if args.fail_slots:
-                        for slot in args.fail_slots:
-                            mtp_mgmt_ctrl.mtp_set_nic_status_fail(int(slot), skip_fa=True)
+                    mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
                     dsp = get_test_stage_name(mtp_mgmt_ctrl, corner)
 
@@ -1484,9 +1495,10 @@ def main():
                 # Disable PCIe polling
                 mtp_mgmt_ctrl.mtp_power_off_nic()
                 mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-                mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
-                libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
-                diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
+                if len(non_ortano_family_nic) > 0:
+                    mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
+                    libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
+                    diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
 
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
                     mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
@@ -1958,16 +1970,17 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
-            mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
-            libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
-            diag_post_fail_list = mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
-            # failed enable pcie poll, fail the card
-            for slot in diag_post_fail_list:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+            if len(non_ortano_family_nic) > 0:
+                mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
+                mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
+                libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
+                diag_post_fail_list = mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
+                # failed enable pcie poll, fail the card
+                for slot in diag_post_fail_list:
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 

@@ -1229,17 +1229,29 @@ def flx_web_srv_precheck_uut_status(sn, stage=None):
     factory = flx_sn_to_factory(sn)
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return False
+        return -3
 
     xml = flx_soap_get_uut_info_xml(stage, sn)
     if not xml:
-        return False
+        return -2
 
     ret = soap_get_uut_info(xml, factory)
-    if int(ret) != 0:
-        return False
-        
-    return True
+    return int(ret)
+
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac=None, pn=None):
+    factory = flx_sn_to_factory(sn)
+    if not factory:
+        print("Unable to locate flex factory based on sn: {:s}".format(sn))
+        return -3
+
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac, pn)
+    if not xml:
+        return -2
+
+    ret = soap_post_report(xml, factory)
+
+    return int(ret)
+
 
 def flx_web_srv_get_uut_info(sn, stage=None):
     factory = flx_sn_to_factory(sn)
@@ -1693,13 +1705,24 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
             for test in test_list:
                 block_retest |= is_retest_blocked(test, stage)
 
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
-            if not ret:
-                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+
+            if FLEX_SHOP_FLOOR_CONTROL:
+                rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                if rs == 0:
+                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                else:
+                    if rs in FLEX_ERR_CODE_MAP.err_code:
+                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                    else:
+                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(rs)))
             else:
-                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-                if block_retest:
-                    cli_inf(mtp_cli_id_str + "[{:s}] {:s}".format(sn, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                if not ret:
+                    cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+                else:
+                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                    if block_retest:
+                        cli_inf(mtp_cli_id_str + "[{:s}] {:s}".format(sn, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
 
 
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
@@ -1738,11 +1761,21 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
-            if not ret:
-                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+            if FLEX_SHOP_FLOOR_CONTROL:
+                rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                if rs == 0:
+                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                else:
+                    if rs in FLEX_ERR_CODE_MAP.err_code:
+                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                    else:
+                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(rs)))
             else:
-                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                if not ret:
+                    cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
+                else:
+                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
 
 
 def mfg_summary_disp(stage, summary_dict, mtp_fail_list):

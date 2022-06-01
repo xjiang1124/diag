@@ -478,6 +478,8 @@ class MFG_DIAG_CMDS:
     POMONTEDELL_AVS_SET_FMT  = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
     LACONA32DELL_AVS_SET_FMT = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
     LACONA32_AVS_SET_FMT     = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
+    #Ortano MSFT
+    ORTANO2_VRM_FIX_OC_FMT = "/data/nic_util/fix_o2_vrm_oc.sh apply"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
@@ -520,8 +522,8 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod"
     MTP_PARA_ARM_L1_ELBA_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30"
     MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -mode=nod"
-    MTP_PARA_PCIE_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=60 -vmarg {:d} -dura=60 -poly={:s}"
-    MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX -slot_list='{:s}' -wtime=60 -vmarg {:d} -dura=60 -poly={:s}"
+    MTP_PARA_PCIE_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=360 -vmarg {:d} -dura=60 -poly={:s}"
+    MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX -slot_list='{:s}' -wtime=360 -vmarg {:d} -dura=60 -poly={:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
