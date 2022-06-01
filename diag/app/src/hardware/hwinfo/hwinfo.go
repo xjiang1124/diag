@@ -375,7 +375,7 @@ func init() {
     ortanoDispStaList["ELB0_ARM"]  = tps53659.DispStatus
     ortanoDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
     ortanoDispStaList["VDD_DDR"]   = tps549a20.DispStatus
-    ortanoDispStaList["TSENSOR"]   = tmp42123.DispStatus
+    ortanoDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
 
     //Ortano ADI
     ortanoaDispStaList = make(map[string]DispStaFunc)
@@ -389,7 +389,7 @@ func init() {
     laconaDispStaList["ELB0_CORE"] = tps53659.DispStatus
     laconaDispStaList["ELB0_ARM"]  = tps53659.DispStatus
     laconaDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
-    laconaDispStaList["TSENSOR"]   = tmp42123.DispStatus
+    laconaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
 
 
     // Dummy I2C hub map
