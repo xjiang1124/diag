@@ -408,6 +408,7 @@ PRIVEK <ek.sk>"""
         asic_type = "CAPRI"
         if card_type == "ORTANO2"       or \
            card_type == "ORTANO2A"      or \
+           card_type == "ORTANO2I"      or \
            card_type == "LACONA32"      or \
            card_type == "LACONA32DELL"  or \
            card_type == "POMONTE"       or \

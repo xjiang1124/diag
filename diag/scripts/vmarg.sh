@@ -33,7 +33,7 @@ set_vmarg_lacona()
 set_vmarg()
 {
     echo $CARD_TYPE
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" || $CARD_TYPE == "ORTANO2I" ]]
     then
         if [[ "$1" == "high" ]]
         then
@@ -119,4 +119,3 @@ set_vmarg()
 echo "=== Setting Vmarg to $1 ==="
 set_vmarg $1
 echo "=== Vmarg is at $1 ==="
-

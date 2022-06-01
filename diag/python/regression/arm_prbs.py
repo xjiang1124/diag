@@ -78,6 +78,7 @@ class arm_prbs:
 
         if ret == 0:
             print "ARM {} PRBS TEST PASSED".format(mode)
+            print "ARM {} PRBS TEST PASSED".format(mode)
         elif ret == 1:
             print "ARM {} PRBS TEST FAILED".format(mode)
         else:
