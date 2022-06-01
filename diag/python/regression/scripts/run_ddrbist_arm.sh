@@ -35,6 +35,8 @@ if [[ -f /data/next_chan ]]; then
     touch /data/ddrbist_run_valid
     fwenv -n gold -s noc_llc_pin $chan
     fwenv -n gold
+    fwenv -s noc_llc_pin $chan
+    fwenv 
     sysreset.sh
     # in case sysreset not kicked in fast enough
     sleep 1
@@ -45,4 +47,6 @@ rm /data/ddrbist_vmarg.txt
 rm /data/pensando_pre_init.sh
 fwenv -n gold -E
 fwenv -n gold
+fwenv -E
+fwenv
 echo "DDR BIST FINISHED"
