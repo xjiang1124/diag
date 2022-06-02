@@ -958,7 +958,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
 
-            if nic_type in (NIC_Type.ORTANO2):
+            if nic_type in (NIC_Type.ORTANO2, NIC_Type.POMONTEDELL):
                 testlist.insert(0, "VDD_DDR_VERIFY")
 
             for skip_test in skip_testlist:
@@ -983,10 +983,6 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
                 # check diagfw version
                 elif test == "QSPI_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
-
-                    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
-                        # trigger qspi update
-                        ret = False
 
                     if not ret:
                         qspi_prog_list.append(slot)
@@ -1111,10 +1107,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        testlist = ["QSPI_PROG", "FPGA_PROG"]
-    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
-        # program the 32G uboot
-        testlist = ["QSPI_PROG", "UBOOT_PROG", "FPGA_PROG"]
+        testlist = ["QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -1124,6 +1117,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # verify program FPGA
+        elif test == "FPGA_PROG_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot, cpld_img_file, gold=False)
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)

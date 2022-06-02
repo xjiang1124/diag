@@ -61,6 +61,21 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
+    MEM:
+        DDR_STRESS:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
+        EDMA:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: Yes
+                SN: No
+                SLOT: No
     NIC_ASIC:
         PCIE_PRBS:
             INIT: ""
@@ -69,20 +84,11 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-        L1:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: Yes
-                SLOT: No
-                VMARG: Yes
-                MODE: Yes
-
 
 MTP_PARA:
     ETH_PRBS: True
     SNAKE_ELBA: True
+    ARM_L1: True
 
 MTP_SEQ:
     ASIC:

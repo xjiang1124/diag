@@ -1886,17 +1886,6 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
                         return False
 
-                if stage in (FF_Stage.FF_P2C, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            img = NIC_IMAGES.uboot_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
-                        pass
-
                 else:
                     # no images needed in this stage
                     continue
@@ -4994,6 +4983,8 @@ class mtp_ctrl():
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, vmarg)
+            elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, vmarg) 
         elif test == "PCIE_PRBS":
@@ -5130,6 +5121,12 @@ class mtp_ctrl():
                 preset_config = "5"
             elif nic_type == NIC_Type.POMONTEDELL:
                 preset_config = "1"
+            elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+                preset_config = "18"
+
+            else:
+                self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
+                return False
 
         else:
             self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
