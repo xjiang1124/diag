@@ -23,6 +23,7 @@ from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
 from libdefs import Swm_Test_Mode
+from libdefs import Voltage_Margin
 
 from libnic_ctrl import nic_ctrl
 
@@ -3666,16 +3667,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Vmargin for Proto NIC")
             return True
 
-        if vmarg > 0:
-            vmarg_param = "high"
-        elif vmarg == 0:
-            vmarg_param = "normal"
-        else:
-            vmarg_param = "low"
-        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg_param))
+        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg))
 
-        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg_param):
-            self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg_param))
+        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg):
+            self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg))
             self.mtp_set_nic_status_fail(slot)
             return False
 
@@ -4308,7 +4303,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False):
+    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False):
         if not nic_list:
             self.cli_log_err("No NICs passed")
             return False
@@ -4810,7 +4805,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=0):
+    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=Voltage_Margin.normal):
         if intf == "NIC_JTAG":
             if self.mtp_check_nic_jtag(slot):
                 return "SUCCESS"
@@ -4933,7 +4928,7 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
-            if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
+            if vmarg != Voltage_Margin.normal or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
@@ -4945,15 +4940,15 @@ class mtp_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
                 # 2C/4C = internal loopback
-                if vmarg != 0:
+                if vmarg != Voltage_Margin.normal:
                     cmd += " -int_lpbk"
         elif test == "ARM_L1":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param) 
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, vmarg) 
         elif test == "PCIE_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -5321,25 +5316,19 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=None):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
         """
         rs = False
 
-        vmarg_str = ""
-        if vmarg > 0:
-            vmarg_str = 'high'
-        elif vmarg < 0:
-            vmarg_str = 'low'
-        else:
-            vmarg_str = 'normal'
+        nic_type = self.mtp_get_nic_type(slot)
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg_str)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
         self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT)
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
@@ -6022,9 +6011,9 @@ class mtp_ctrl():
 
         # parallel init mgmt/aapl
         dsp = "FA"
-        if vmarg < 0:
+        if vmarg == Voltage_Margin.low:
             dsp = "LV_FA"
-        elif vmarg > 0:
+        elif vmarg == Voltage_Margin.high:
             dsp = "HV_FA"
         sn = ""
         test = "ECC_DISP"

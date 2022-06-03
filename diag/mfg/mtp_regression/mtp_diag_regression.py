@@ -24,6 +24,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
+from libdefs import Voltage_Margin
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -228,9 +229,9 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
     nic_test_list = nic_list[:]
     fail_list = list()
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_PRE_CHECK"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_PRE_CHECK"
     else:
         dsp = "PRE_CHECK"
@@ -340,7 +341,7 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
-    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == 0:
+    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == Voltage_Margin.normal:
         sub_test_list = [("PHY", "XCVR")]
     else:
         sub_test_list = [()]
@@ -370,9 +371,9 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 fail_list.append(slot)
             continue
         for dsp, test in sub_test_list:
-            if vmarg > 0:
+            if vmarg == Voltage_Margin.high:
                 dsp_disp = "HV_" + dsp
-            elif vmarg < 0:
+            elif vmarg == Voltage_Margin.low:
                 dsp_disp = "LV_" + dsp
             else:
                 dsp_disp = dsp
@@ -436,9 +437,9 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     nic_top_test_list = list()
     nic_bottom_test_list = list()
 
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_ASIC"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_ASIC"
     else:
         dsp = "ASIC"
@@ -665,9 +666,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
+        if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
+        elif vmarg == Voltage_Margin.low:
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
@@ -709,7 +710,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and (card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.ORTANO2ADI):
             # external loopback for P2C
-            if vmarg == 0:
+            if vmarg == Voltage_Margin.normal:
                 diag_cmd += " -p 'int_lpbk=0'"
             # internal loopback for 2C/4C
             else:
@@ -804,9 +805,9 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     return
 
 def parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg):
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_ASIC"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_ASIC"
     else:
         dsp = "ASIC"
@@ -839,9 +840,9 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
+        if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
+        elif vmarg == Voltage_Margin.low:
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
@@ -1183,13 +1184,13 @@ def main():
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
-        vmarg_list = [0]
+        vmarg_list = [Voltage_Margin.normal]
     # QA test, normal temperature, two voltage corner
     elif corner == Env_Cond.MFG_QA:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
     # Low temperature, two voltage corner
     # this is changed to single voltage corner after mtp setup step
     elif corner == Env_Cond.MFG_LT:
@@ -1200,7 +1201,7 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
             low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
         stage = FF_Stage.FF_2C_L
     # High temperature, two voltage corner
     # this is changed to single voltage corner after mtp setup step
@@ -1212,28 +1213,28 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
         stage = FF_Stage.FF_2C_H
     # RDT runs @high temperature, no voltage corner
     elif corner == Env_Cond.MFG_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [0]
+        vmarg_list = [Voltage_Margin.normal]
         stage = FF_Stage.FF_2C_H
     # EDVT, high temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_HT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
         stage = FF_Stage.FF_4C_H
     # EDVT, low temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_LT:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
@@ -1336,9 +1337,9 @@ def main():
         # elba  = LTHV, LTLV, HTLV, HTHV
         if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
             if corner == Env_Cond.MFG_LT:
-                vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
+                vmarg_list = [Voltage_Margin.high]
             elif corner == Env_Cond.MFG_HT:
-                vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
+                vmarg_list = [Voltage_Margin.low]
 
         # Wait the Chamber temperature, if HT or LT is set
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
@@ -1454,15 +1455,15 @@ def main():
             fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
             inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-            if vmarg > 0:
+            if vmarg == Voltage_Margin.high:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
-            elif vmarg < 0:
+            elif vmarg == Voltage_Margin.low:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
             else:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
-            mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
+            mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:s}".format(vmarg))
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
             if vmarg_idx > 0:
@@ -1738,7 +1739,7 @@ def main():
                                 nic_para_test_list.remove(("MEM", "EDMA"))
 
                             # Remove QSFP loopbacks in chamber
-                            if vmarg != 0 and corner != Env_Cond.MFG_QA and (nic_type in ELBA_NIC_TYPE_LIST):
+                            if vmarg != Voltage_Margin.normal and corner != Env_Cond.MFG_QA and (nic_type in ELBA_NIC_TYPE_LIST):
                                 if ("QSFP","I2C") in nic_para_test_list:
                                     nic_para_test_list.remove(("QSFP","I2C"))
 
@@ -1935,11 +1936,11 @@ def main():
             if not stop_on_err:
                 mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-            if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+            if vmarg == Voltage_Margin.low:
                 diag_sub_dir = "/lv_diag_logs/"
                 nic_sub_dir = "/lv_nic_logs/"
                 asic_sub_dir = "/lv_asic_logs/"
-            elif vmarg == MTP_Const.MFG_EDVT_HIGH_VOLT:
+            elif vmarg == Voltage_Margin.high:
                 diag_sub_dir = "/hv_diag_logs/"
                 nic_sub_dir = "/hv_nic_logs/"
                 asic_sub_dir = "/hv_asic_logs/"

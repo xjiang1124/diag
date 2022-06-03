@@ -1,6 +1,7 @@
 import libmfg_utils
 from libdefs import Env_Cond
 from libdefs import MFG_DIAG_CMDS
+from libdefs import Voltage_Margin
 
 class diag_db():
     def __init__(self, corner, diag_cfg_file):
@@ -141,7 +142,7 @@ class diag_db():
         return self._post_test_intf_list
 
 
-    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn, vmarg, mode=""):
+    def get_diag_seq_test_run_cmd(self, dsp, test, slot, opts, sn, vmarg=Voltage_Margin.normal, mode=""):
         if opts["NIC_NAME"]:
             card_name = "NIC{:d}".format(slot+1)
         else:
@@ -153,12 +154,7 @@ class diag_db():
         if "SLOT" in opts and opts["SLOT"]:
             param += ' slot={:d}'.format(slot+1)
         if "VMARG" in opts and opts["VMARG"]:
-            if vmarg > 0:
-                param += ' vmarg=high'
-            elif vmarg < 0:
-                param += ' vmarg=low'
-            else:
-                param += ' vmarg=normal'
+            param += ' vmarg={:s}'.format(vmarg)
         if "MODE" in opts and opts["MODE"]:
             param += ' mode={:s}'.format(mode)
         if "SIMPLIFIED" in opts and opts["SIMPLIFIED"]:
