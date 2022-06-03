@@ -573,7 +573,11 @@ sub parse_snake_log {
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
+            if ($line =~ m/ERROR :: elb(.*)pbm(.*)(_ecc|_mc)(.*)interrupt/) {
+                $diag_fa_code{"PBM_ECC_FAILURE"} = 1;
+            } else {
+                $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
+            }
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
@@ -1034,6 +1038,14 @@ sub parse_mtp_and_slot_log {
         if ($err_msg_dump != 0) {
             $slot_err_msg .= $line;
         }
+        if ($line =~ m/\/data\/nic_util\/mvl_acc\.sh/) {
+            my $line2 = <TR3>;
+            if ($line2 !~ m/MVL ACC TEST PASSED/) {
+                $slot_err_msg .= $line;
+                $slot_err_msg .= $line2;
+                $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
+            }
+        }
     }
     if ($slot_err_msg ne "") {
         $test_err_msg .= "\n--------slot log--------: ".$slotlogfile."\n";
@@ -1140,7 +1152,7 @@ sub parse_mtp_and_slot_log {
             if ($halctl_slot_info && $line =~ m/Eth1\/3/ && $line !~ m/Eth1\/3    UP          UP        -/) {
                 $mtp_diag_msg .= $line;
                 $eth1_3_down = 1;
-                $diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
+                #$diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
             }
             if ($eth1_3_down != 0 && $line =~ m/exit/) {
                 $eth1_3_down = 0;
@@ -1149,6 +1161,11 @@ sub parse_mtp_and_slot_log {
                 $mtp_diag_msg .= $line;
                 my $line2 = <TR3>;
                 $mtp_diag_msg .= $line2;
+                if ($line2 =~ m/0xffff/) {
+                    $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
+                } else {
+                    $diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
+                }
             }
         }
         if ($mtp_diag_msg ne "") {
