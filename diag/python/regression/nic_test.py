@@ -534,7 +534,7 @@ class nic_test:
             print "=== Power cycle test passed {} iterations ===".format(iteration)
         return ret
 
-    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg=0, pc="off", dura=120, in_lpbk=False, snake_num=6):
+    def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg="normal", pc="off", dura=120, in_lpbk=False, snake_num=6):
         print "=== Starting {} on slot {} ===".format(test_type, slot)
 
         ret = 0
@@ -567,12 +567,8 @@ class nic_test:
         try:
             session.timeout = timeout
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
-            if vmarg > 0:
-                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh high")
-            elif vmarg < 0:
-                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh low")
-            else:
-                pass
+            if vmarg != "normal":
+                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
 
             session.sendline(test_cmd)
             session.sendline("\r")
@@ -667,7 +663,7 @@ class nic_test:
             time.sleep(interval)
             
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0, duration=120, int_lpbk=False, snake_num=6, disp_si=False):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -986,7 +982,7 @@ class nic_test:
             if ret != 0:
                 print "=== Failed to setup uboot env at slot {} ===".format(slot)
 
-    def nic_test1(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin=0):
+    def nic_test1(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal"):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1435,7 +1431,7 @@ if __name__ == "__main__":
     parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=180)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
-    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
+    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default="normal")
     parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
     parser.add_argument("-dura", "--dura", help="Duration", type=int, default=120)
     parser.add_argument("-snake_num", "--snake_num", help="Snake number 4/6", type=int, default=6)
