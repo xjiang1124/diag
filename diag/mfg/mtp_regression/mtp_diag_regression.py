@@ -1007,15 +1007,15 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
 
     if cpld_prog_list or qspi_prog_list:
         mtp_mgmt_ctrl.cli_log_inf("Programmable updates needed... starting", level=0)
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, nic_util=True, stop_on_err=stop_on_err):
+        nic_list = libmfg_utils.list_union(cpld_prog_list, qspi_prog_list)
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, nic_util=True, stop_on_err=stop_on_err):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-            for nic_list in nic_test_full_list:
-                for slot in nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        fail_nic_list.append(slot)
-                        if stop_on_err:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                            return
+            for slot in nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    fail_nic_list.append(slot)
+                    if stop_on_err:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                        return
 
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
         for slot in nic_list:

@@ -291,6 +291,10 @@ def list_intersection(a, b):
     """ set(A).intersection(set(B)) but keep the ordering """
     return list(x for x in a if x in b)
 
+def list_union(a, b):
+    """ set(A).union(set(B)) but keep the ordering """
+    return list_intersection(a,b) + list_subtract(a,b) + list_subtract(b,a)
+
 def get_password(srv_id, srv_ip, userid):
     while True:
         while True:
