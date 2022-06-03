@@ -2151,18 +2151,6 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
             
             nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
-            pomontedell_slot = list()
-            for slot in range(len(nic_prsnt_list)):
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                    pomontedell_slot.append(slot)
-
-            if len(pomontedell_slot) > 0:
-                if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(pomontedell_slot, False, stop_on_err=False):
-                    for slot in pomontedell_slot:
-                        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                            fail_nic_list[mtp_id].append(slot)
-
             for slot in range(len(nic_prsnt_list)):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0

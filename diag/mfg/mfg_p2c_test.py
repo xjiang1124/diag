@@ -20,12 +20,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
+from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
@@ -103,14 +98,33 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, sk
         time.sleep(5)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_list = list()
+        nic_list = list()       # needs para_init
+        mgmt_nic_list = list()  # needs para_mgmt_init
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
-                nic_list.append(slot)
-        mtp_mgmt_ctrl.mtp_nic_para_init(nic_list)
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
+                    mgmt_nic_list.append(slot)
+                else:
+                    nic_list.append(slot)
 
-    fail_nic_list = dict()
+        # for all cards:
+        if nic_list:
+            if not mtp_mgmt_ctrl.mtp_nic_para_init(nic_list):
+                for slot in nic_list:
+                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                        if slot not in fail_nic_list[mtp_id]:
+                            fail_nic_list[mtp_id].append(slot)
+
+        # for lacona/pomonte:
+        if mgmt_nic_list:
+            if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False):
+                for slot in mgmt_nic_list:
+                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                        if slot not in fail_nic_list[mtp_id]:
+                            fail_nic_list[mtp_id].append(slot)
+
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         if not setup_rslt_list[mtp_id]:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
