@@ -346,9 +346,12 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     else:
         sub_test_list = [()]
 
-    for skipped_test in skip_testlist:
-        sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
-        sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
+    if len(sub_test_list) == 0 or sub_test_list == [()]:
+        pass
+    else:
+        for skipped_test in skip_testlist:
+            sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
+            sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
     
     fail_list = list()
 
