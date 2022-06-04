@@ -1360,8 +1360,6 @@ def main():
         pass_nic_list = list()
         fail_nic_list = list()
         skip_nic_list = list()
-        ortano_family_nic = list()
-        non_ortano_family_nic = list()
 
         # Add failed slots from toplevel
         if args.fail_slots:
@@ -1382,10 +1380,6 @@ def main():
                 if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
                     nic_type_list.append(slot)
                     pass_nic_list.append(slot)
-                    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
-                        ortano_family_nic.append(slot)
-                    else:
-                        non_ortano_family_nic.append(slot)
             nic_test_full_list.append(nic_type_list)
 
         nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
@@ -1494,7 +1488,7 @@ def main():
                 # Disable PCIe polling
                 mtp_mgmt_ctrl.mtp_power_off_nic()
                 mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-                if len(non_ortano_family_nic) > 0:
+                if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
                     mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                     libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
                     diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
@@ -1680,10 +1674,8 @@ def main():
                             # aapl tests
                             new_nic_para_test_list = list()
                             if nic_type in ELBA_NIC_TYPE_LIST:
-                                if ("NIC_ASIC","L1") in nic_para_test_list:
-                                    new_nic_para_test_list.append(("NIC_ASIC","L1"))
-                                if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
-                                    new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
+                                # no elba tests here
+                                pass
                             else:
                                 if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
                                     new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
@@ -1969,7 +1961,7 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            if len(non_ortano_family_nic) > 0:
+            if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)

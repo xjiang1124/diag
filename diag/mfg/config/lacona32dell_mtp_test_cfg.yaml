@@ -76,19 +76,12 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-    NIC_ASIC:
-        PCIE_PRBS:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
 
 MTP_PARA:
     ETH_PRBS: True
     SNAKE_ELBA: True
     ARM_L1: True
+    PCIE_PRBS: True
 
 MTP_SEQ:
     ASIC:
