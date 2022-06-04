@@ -269,6 +269,8 @@ def main():
         ALLOWED_FRU_ONLY_FLAG = False
         fru_mapping = dict()
 
+    stage = FF_Stage.FF_DL
+
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_id = mtpid_list[0]
@@ -307,6 +309,9 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
+    pass_nic_list = list()
+    fail_nic_list = list()
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     pass_rslt_list = list()
     fail_rslt_list = list()
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
@@ -442,6 +447,41 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
+    # init NIC types
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+        mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if not nic_prsnt_list[slot]:
+            continue
+        if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
+            continue
+        pn = nic_fru_cfg[mtp_id][key]["PN"]
+        mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
+
+    # type check
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+        if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
+            continue
+        dsp = stage
+        test = "NIC_TYPE"
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+
     # Check that firmware images are present
     mtp_dl_image_list = list()
     if (mtp_capability & 0x1):
@@ -490,7 +530,7 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -498,10 +538,7 @@ def main():
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
-    pass_nic_list = list()
-    fail_nic_list = list()
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-    dsp = FF_Stage.FF_DL
+    dsp = stage
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -514,7 +551,7 @@ def main():
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL and False:
-            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_DL) != 0:
+            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage) != 0:
                 fail_nic_list.append(slot)
                 continue
         if slot not in pass_nic_list:
@@ -724,7 +761,7 @@ def main():
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
             elif test == "NIC_TYPE":
-                ret = mtp_mgmt_ctrl.mtp_nic_type_valid(slot)
+                ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
             elif test == "NIC_PRSNT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
             elif test == "NIC_INIT":
@@ -820,7 +857,7 @@ def main():
         if str.upper(valid) != "YES":
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
-        dsp = FF_Stage.FF_DL
+        dsp = stage
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI: 
             testlist = ["CPLD_BOOT_CHECK"]
@@ -1042,7 +1079,7 @@ def main():
                 os.system(cmd)            
 
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, FF_Stage.FF_DL)
+        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])

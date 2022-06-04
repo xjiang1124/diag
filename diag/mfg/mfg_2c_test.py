@@ -221,6 +221,25 @@ def main():
                 continue
             mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
+    # type check
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            dsp = stage
+            test = "NIC_TYPE"
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+            ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if slot not in fail_nic_list[mtp_id]:
+                    fail_nic_list[mtp_id].append(slot)
+
     # Check that firmware images are present
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_dl_image_list = list()

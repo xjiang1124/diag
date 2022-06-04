@@ -585,7 +585,7 @@ def main():
                         ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
                 # nic type check
                 elif test == "NIC_TYPE":
-                    ret = mtp_mgmt_ctrl.mtp_nic_type_valid(slot)
+                    ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
                 # nic present check
                 elif test == "NIC_PRSNT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
