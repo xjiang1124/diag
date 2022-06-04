@@ -53,114 +53,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
-def mtp_setup(mtp_mgmt_ctrl, mtp_capability, setup_rslt_list):
-    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability)
-
-def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, skip_test):
-    fail_nic_list = dict()
-    for mtp_id in mtpid_list:
-        fail_nic_list[mtp_id] = list()
-
-    if "SANITY_CHECK" in skip_test:
-        return fail_nic_list
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        
-        # find any slots to skip
-        mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
-        mtp_mgmt_ctrl._slots_to_skip = mtp_slots_to_skip
-
-        # find the mtp capability
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-
-    libmfg_utils.cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
-
-    mtp_thread_list = list()
-    setup_rslt_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, mtp_capability, setup_rslt_list))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
-        time.sleep(2)
-
-    # monitor all the thread
-    while True:
-        if len(mtp_thread_list) == 0:
-            break
-        for mtp_thread in mtp_thread_list[:]:
-            if not mtp_thread.is_alive():
-                mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
-        time.sleep(5)
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_list = list()       # needs para_init
-        mgmt_nic_list = list()  # needs para_mgmt_init
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                    mgmt_nic_list.append(slot)
-                else:
-                    nic_list.append(slot)
-
-        # for all cards:
-        if nic_list:
-            if not mtp_mgmt_ctrl.mtp_nic_para_init(nic_list):
-                for slot in nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        if slot not in fail_nic_list[mtp_id]:
-                            fail_nic_list[mtp_id].append(slot)
-
-        # for lacona/pomonte:
-        if mgmt_nic_list:
-            if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False):
-                for slot in mgmt_nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        if slot not in fail_nic_list[mtp_id]:
-                            fail_nic_list[mtp_id].append(slot)
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if not setup_rslt_list[mtp_id]:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            fail_nic_list[mtp_id] = list()            
-
-    # No sanity check for elba cards in chamber
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):   
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(len(nic_prsnt_list)):
-            if nic_prsnt_list[slot]:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
-                    mtp_mgmt_ctrl.cli_log_inf("Skipping sanity check")
-                    # close NIC ssh sessions
-                    mtp_mgmt_ctrl.mtp_nic_para_session_end()
-                    return fail_nic_list
-
-    if "QSFP" not in skip_test:
-        fail_nic_list = libmfg_utils.loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-    if "RJ45" not in skip_test:
-        fail_nic_list = libmfg_utils.rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-
-    # if all slots in an MTP fail, assert stop on failure here
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if len(fail_nic_list[mtp_id]) == mtp_mgmt_ctrl._slots:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP completely failed Sanity Check. Test abort..")
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-
-    # close NIC ssh sessions
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_mgmt_ctrl.mtp_nic_para_session_end()
-
-    return fail_nic_list
-
 def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, skip_test=[], only_test=[]):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
@@ -367,7 +259,7 @@ def main():
 
     # Sanity check
     try:
-        fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, args.skip_test)
+        sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
     except Exception as e:
         err_msg = traceback.format_exc()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
