@@ -1423,7 +1423,6 @@ class nic_ctrl():
                     self.nic_set_err_msg(" GOLD FPGA VERIFY FAILED\n")
                 else:
                     self.nic_set_err_msg(" FPGA VERIFY FAILED\n")
-                self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -1465,7 +1464,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False
 
-        self.nic_exec_cmds(["ls -l {:s}".format(os.path.dirname(dst_file))])
+        self.mtp_exec_cmd("ls -l {:s}".format(os.path.dirname(dst_file)))
 
         return True
 
@@ -2214,6 +2213,8 @@ class nic_ctrl():
         else:
             self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
             return False
+
+        self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
 
         # get emmc nic utils version
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT

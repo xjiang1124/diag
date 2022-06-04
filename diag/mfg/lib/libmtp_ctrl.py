@@ -3116,6 +3116,8 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "NIC GOLD FPGA verify failed")
             else:
                 self.cli_log_slot_err_lock(slot, "NIC FPGA verify failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3856,9 +3858,13 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_info_disp(self, fru_valid=True):
+    def mtp_nic_info_disp(self, nic_list, fru_valid=True):
         self.cli_log_inf("MTP NIC Info Dump:")
-        for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
+
+        for slot in nic_list:
+            prsnt = self.mtp_nic_check_prsnt(slot)
+            nic_type = self.mtp_get_nic_type(slot)
+
             if prsnt:
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
                 if fru_valid:
@@ -4377,7 +4383,7 @@ class mtp_ctrl():
                 return False
 
         if not skip_info_dump:
-            self.mtp_nic_info_disp(fru_valid)
+            self.mtp_nic_info_disp(nic_list, fru_valid)
 
         self.mtp_mgmt_killall_tclsh_picocom()
 
@@ -4786,11 +4792,12 @@ class mtp_ctrl():
     def mtp_hide_nic_status(self, slot):
         if not self.mtp_check_nic_status(slot):
             self.cli_log_slot_inf(slot, "Masking NIC fail status")
-            self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
+        self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
         self.mtp_clear_nic_status(slot)
 
     def mtp_unhide_nic_status(self, slot):
-        self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
+        if self._nic_status_before_hide_list[slot] != NIC_Status.NIC_STA_OK:
+            self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
         self._nic_ctrl_list[slot].nic_set_status(self._nic_status_before_hide_list[slot])
         self._nic_status_before_hide_list[slot] = NIC_Status.NIC_STA_OK
 
@@ -5228,6 +5235,8 @@ class mtp_ctrl():
         self.mtp_nic_send_ctrl_c(slot) # kill any hung tclsh in this same session
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
+
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
         # clear reg 0x50 after reading
         reg_addr = 0x50
