@@ -419,9 +419,30 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        mtpid_list.remove(mtp_id)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-    # Check if image update is needed
+
+    # Sync timestamp to server
+    timestamp_str = str(libmfg_utils.timestamp_snapshot())
+    if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+        mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
+    # Check if diag image update is needed
+    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+
+    onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
+    # Check that firmware images are present
     mtp_dl_image_list = list()
     if (mtp_capability & 0x1):
         for nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -468,15 +489,6 @@ def main():
         mtpid_list.remove(mtp_id)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
-    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-
-    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-        mtpid_list.remove(mtp_id)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
