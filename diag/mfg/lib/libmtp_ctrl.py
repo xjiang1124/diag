@@ -2241,6 +2241,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
