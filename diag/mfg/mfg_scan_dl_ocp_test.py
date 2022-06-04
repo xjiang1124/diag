@@ -389,6 +389,16 @@ def main():
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if nic_prsnt_list[slot]:
             key = libmfg_utils.nic_key(slot)
+
+            valid = nic_fru_cfg[mtp_id][key]["VALID"]
+            if str.upper(valid) != "YES":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "NIC present but not scanned")
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                continue
+
             pn = nic_fru_cfg[mtp_id][key]["PN"]
             mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
             mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
@@ -565,7 +575,11 @@ def main():
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            sn = None
+        else:
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -584,7 +598,11 @@ def main():
     for slot in fail_nic_list + pass_nic_list:
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         key = libmfg_utils.nic_key(slot)
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            sn = None
+        else:
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not sn:
             continue
         if GLB_CFG_MFG_TEST_MODE:
