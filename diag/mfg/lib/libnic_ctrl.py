@@ -468,6 +468,12 @@ class nic_ctrl():
 
         return True
 
+    def nic_stop_test(self):
+        cmd_buf = self.nic_get_cmd_buf()    #save failure buffer
+        self.nic_send_ctrl_c()
+        self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
+
     def nic_mgmt_config(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1417,7 +1423,6 @@ class nic_ctrl():
                     self.nic_set_err_msg(" GOLD FPGA VERIFY FAILED\n")
                 else:
                     self.nic_set_err_msg(" FPGA VERIFY FAILED\n")
-                self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -1459,7 +1464,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False
 
-        self.nic_exec_cmds(["ls -l {:s}".format(os.path.dirname(dst_file))])
+        self.mtp_exec_cmd("ls -l {:s}".format(os.path.dirname(dst_file)))
 
         return True
 
@@ -2208,6 +2213,8 @@ class nic_ctrl():
         else:
             self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
             return False
+
+        self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
 
         # get emmc nic utils version
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT
@@ -4158,7 +4165,9 @@ class nic_ctrl():
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
         if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
+            self.nic_stop_test()
             return False
+        self.nic_stop_test()
         return True
 
     def nic_port_counters(self):

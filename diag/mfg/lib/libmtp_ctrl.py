@@ -23,6 +23,7 @@ from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
 from libdefs import Swm_Test_Mode
+from libdefs import Voltage_Margin
 
 from libnic_ctrl import nic_ctrl
 
@@ -833,6 +834,12 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Couldn't send C+C")
             return False
         return True
+
+    def mtp_nic_stop_test(self, slot):
+        cmd_buf = self._nic_ctrl_list[slot]._cmd_buf  #save failure buffer
+        self.mtp_nic_send_ctrl_c(slot)
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  #restore failure buffer
 
     def mtp_mgmt_set_date(self, timestamp_str, fst=False):
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
@@ -2234,6 +2241,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.mtp_dump_nic_err_msg(slot)
 
             cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
@@ -3108,6 +3116,8 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "NIC GOLD FPGA verify failed")
             else:
                 self.cli_log_slot_err_lock(slot, "NIC FPGA verify failed")
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3666,16 +3676,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Vmargin for Proto NIC")
             return True
 
-        if vmarg > 0:
-            vmarg_param = "high"
-        elif vmarg == 0:
-            vmarg_param = "normal"
-        else:
-            vmarg_param = "low"
-        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg_param))
+        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg))
 
-        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg_param):
-            self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg_param))
+        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg):
+            self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg))
             self.mtp_set_nic_status_fail(slot)
             return False
 
@@ -3854,9 +3858,13 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_info_disp(self, fru_valid=True):
+    def mtp_nic_info_disp(self, nic_list, fru_valid=True):
         self.cli_log_inf("MTP NIC Info Dump:")
-        for slot, prsnt, nic_type in zip(range(self._slots), self._nic_prsnt_list, self._nic_type_list):
+
+        for slot in nic_list:
+            prsnt = self.mtp_nic_check_prsnt(slot)
+            nic_type = self.mtp_get_nic_type(slot)
+
             if prsnt:
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
                 if fru_valid:
@@ -4308,7 +4316,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False):
+    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False):
         if not nic_list:
             self.cli_log_err("No NICs passed")
             return False
@@ -4375,7 +4383,7 @@ class mtp_ctrl():
                 return False
 
         if not skip_info_dump:
-            self.mtp_nic_info_disp(fru_valid)
+            self.mtp_nic_info_disp(nic_list, fru_valid)
 
         self.mtp_mgmt_killall_tclsh_picocom()
 
@@ -4784,11 +4792,12 @@ class mtp_ctrl():
     def mtp_hide_nic_status(self, slot):
         if not self.mtp_check_nic_status(slot):
             self.cli_log_slot_inf(slot, "Masking NIC fail status")
-            self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
+        self._nic_status_before_hide_list[slot] = self._nic_ctrl_list[slot]._nic_status
         self.mtp_clear_nic_status(slot)
 
     def mtp_unhide_nic_status(self, slot):
-        self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
+        if self._nic_status_before_hide_list[slot] != NIC_Status.NIC_STA_OK:
+            self.cli_log_slot_inf(slot, "Unmasking NIC fail status")
         self._nic_ctrl_list[slot].nic_set_status(self._nic_status_before_hide_list[slot])
         self._nic_status_before_hide_list[slot] = NIC_Status.NIC_STA_OK
 
@@ -4810,7 +4819,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=0):
+    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=Voltage_Margin.normal):
         if intf == "NIC_JTAG":
             if self.mtp_check_nic_jtag(slot):
                 return "SUCCESS"
@@ -4933,7 +4942,7 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
-            if vmarg != 0 or nic_type == NIC_Type.POMONTEDELL:
+            if vmarg != Voltage_Margin.normal or nic_type == NIC_Type.POMONTEDELL:
                 cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
@@ -4945,15 +4954,15 @@ class mtp_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
                 # 2C/4C = internal loopback
-                if vmarg != 0:
+                if vmarg != Voltage_Margin.normal:
                     cmd += " -int_lpbk"
         elif test == "ARM_L1":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param) 
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, vmarg) 
         elif test == "PCIE_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -5227,6 +5236,8 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.NIC_AVS_POST_FMT.format(slot+1)
         self._nic_ctrl_list[slot].mtp_exec_cmd(cmd)
 
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+
         # clear reg 0x50 after reading
         reg_addr = 0x50
         write_data = 0
@@ -5321,31 +5332,31 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=None):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
         """
         rs = False
 
-        vmarg_str = ""
-        if vmarg > 0:
-            vmarg_str = 'high'
-        elif vmarg < 0:
-            vmarg_str = 'low'
-        else:
-            vmarg_str = 'normal'
+        nic_type = self.mtp_get_nic_type(slot)
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         self.mtp_mgmt_exec_cmd_para(slot, cmd)
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg_str)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
         self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT)
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
         if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
             rs = True
+
+        # kill the process in case it's hung/timed out
+        # ctrl-c doesnt work
+        # needs to be killed from separate session
+        self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh") # notify in log
+        self.mtp_mgmt_exec_cmd("killall run_l1.sh") # use mtp session to kill it
 
         return rs
 
@@ -6022,9 +6033,9 @@ class mtp_ctrl():
 
         # parallel init mgmt/aapl
         dsp = "FA"
-        if vmarg < 0:
+        if vmarg == Voltage_Margin.low:
             dsp = "LV_FA"
-        elif vmarg > 0:
+        elif vmarg == Voltage_Margin.high:
             dsp = "HV_FA"
         sn = ""
         test = "ECC_DISP"
@@ -6195,8 +6206,9 @@ class mtp_ctrl():
     def mtp_nic_l1_health_check(self, slot):
         self.cli_log_slot_inf(slot, "Running L1 health check")
         sn = self.mtp_get_nic_sn(slot)
-        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1))
+        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_L1_HEALTH_CHECK.format(sn, slot+1), timeout=MTP_Const.MTP_L1_HEALTH_CHECK_TIMEOUT)
         ## check for 3 tests with "PASS" result in elb_l1_screen*.log
+        self.mtp_nic_stop_test(slot)
 
     def mtp_nic_l1_esecure_prog(self, slot):
         self.mtp_single_j2c_lock()

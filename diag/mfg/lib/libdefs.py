@@ -114,6 +114,10 @@ class NIC_Port_Mask:
                         NIC_PORT2_MASK | \
                         NIC_MGMT_MASK
 
+class Voltage_Margin:
+    normal = "normal"
+    high = "high"
+    low = "low"
 
 class MTP_Const:
     MTP_SLOT_NUM = 10
@@ -166,6 +170,7 @@ class MTP_Const:
     MTP_PARA_TEST_TIMEOUT = 30*60
     # para/asic l1 test, 30 min
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
+    MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
     # more than 12 hours
     MFG_P2C_TEST_TIMEOUT = 48000
@@ -185,8 +190,6 @@ class MTP_Const:
     MFG_EDVT_LOW_FAN_SPD = 60
     MFG_EDVT_HIGH_TEMP = 50
     MFG_EDVT_LOW_TEMP = 0
-    MFG_EDVT_HIGH_VOLT = 5
-    MFG_EDVT_LOW_VOLT = -5
     MFG_TEMP_WAIT_TIMEOUT = 180
     MFG_TEMP_SOAK_TIMEOUT = 180
     MFG_TEMP_CHECK_INTERVAL = 10
@@ -512,18 +515,18 @@ class MFG_DIAG_CMDS:
 
     MTP_PARA_MGMT_INIT_FMT = "nic_test.py -setup_multi -mgmt -slot_list {:s} -asic_type {:s}"
     MTP_PARA_MGMT_AAPL_FMT = "nic_test.py -setup_multi -mgmt -slot_list {:s} -asic_type {:s} -aapl"
-    MTP_PARA_PRBS_ETH_TEST_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=120 -vmarg {:d} -mode=eth"
-    MTP_PARA_PRBS_ETH_ELBA_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:d} -mode=eth -dura=60 -asic_type=elba"
-    MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d}"
-    MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:d} -snake_num=4 -dura=3 -mode=pcie"
-    MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=hod"
-    MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=hod_1100"
-    MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod_550"
-    MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:d} -snake_num=4 -dura=3 -mode=nod"
-    MTP_PARA_ARM_L1_ELBA_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30"
-    MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT    = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -mode=nod"
-    MTP_PARA_PCIE_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=360 -vmarg {:d} -dura=60 -poly={:s}"
-    MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX -slot_list='{:s}' -wtime=360 -vmarg {:d} -dura=60 -poly={:s}"
+    MTP_PARA_PRBS_ETH_TEST_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=120 -vmarg {:s} -mode=eth"
+    MTP_PARA_PRBS_ETH_ELBA_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=elba"
+    MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s}"
+    MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -snake_num=4 -dura=3 -mode=pcie"
+    MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod"
+    MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
+    MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=nod_525"
+    MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=nod"
+    MTP_PARA_ARM_L1_ELBA_FMT             = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s}"
+    MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod"
+    MTP_PARA_PCIE_PRBS_FMT    = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
+    MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX   -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
