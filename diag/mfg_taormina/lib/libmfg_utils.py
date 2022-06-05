@@ -1560,6 +1560,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, qa_log_pkg_file))
+            os.system("./aruba-log.sh {:s}".format(qa_log_pkg_file))
 
             # It is fine to do hard copy
             #log_hard_copy_flag = False

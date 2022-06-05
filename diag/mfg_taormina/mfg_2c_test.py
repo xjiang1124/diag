@@ -77,6 +77,7 @@ def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage="NT"):
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
     libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
     os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+    os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
 
     # cleanup the log dir
     for _file in [log_dir+log_sub_dir, log_dir+log_pkg_file]:
