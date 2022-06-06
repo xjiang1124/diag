@@ -1431,7 +1431,7 @@ if __name__ == "__main__":
     parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=180)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
-    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default="normal")
+    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
     parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
     parser.add_argument("-dura", "--dura", help="Duration", type=int, default=120)
     parser.add_argument("-snake_num", "--snake_num", help="Snake number 4/6", type=int, default=6)
@@ -1459,13 +1459,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     test = nic_test()
-    if args.vmarg == 'normal':
-        vmarg = 0
-    elif args.vmarg == "high":
-        vmarg = 1
-    elif args.vmarg == "low":
-        vmarg = -1
-
     if args.snake_start == True:
         test.test_start(args.slot, "snake", args.mode)
         sys.exit()
@@ -1476,12 +1469,12 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si)
         sys.exit()
 
     if args.prbs == True and args.asic_type == "elba":
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
+        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
         sys.exit()
 
     if args.prbs_start == True:
@@ -1494,7 +1487,7 @@ if __name__ == "__main__":
 
     if args.prbs == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=vmarg)
+        test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=args.vmarg)
         sys.exit()
 
     if args.setup == True:
