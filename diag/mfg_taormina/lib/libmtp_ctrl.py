@@ -6696,6 +6696,7 @@ class mtp_ctrl():
                 self.cli_log_err("Failed to get {:s}".format(img), level=0)
                 return False
 
+            self.cli_log_inf("Writing SVOS image")
             cmd = "hpe-isp update mod mc dev svos_primary file {:s} unsafe".format(img)
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Update successful"], timeout=MTP_Const.TOR_SVOS_PROG_DELAY):
                 self.cli_log_err("{:s} failed".format(cmd), level=0)
@@ -7707,8 +7708,6 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Couldn't save system logfile safely", level=0)
                 continue
-
-        for filename in logfiles:
             filename = "/"+os.path.basename(filename)
             dest_name = dest_folder + filename
             if not dest_name.endswith(".log"):
