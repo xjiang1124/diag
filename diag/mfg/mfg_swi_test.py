@@ -111,6 +111,7 @@ def main():
         verbosity = True
     else:
         verbosity = False
+    stage=FF_Stage.FF_SWI
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
@@ -138,7 +139,7 @@ def main():
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_SWI)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # get sw image name based on the sw pn
     if not args.sw_pn:
@@ -181,8 +182,70 @@ def main():
             mtpid_fail_list.append(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
+    # Sync timestamp to server
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        # Check if image updated is needed
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
+    # Check if diag image updated is needed
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
+    # load SNs
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+            mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
+
+    # type check
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            dsp = stage
+            test = "NIC_TYPE"
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+            ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if slot not in fail_nic_list[mtp_id]:
+                    fail_nic_list[mtp_id].append(slot)
+
+    # Check that firmware images are present
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_swi_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         mtp_swi_image_list.append(nic_sw_img_file)
@@ -253,27 +316,6 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE      
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-    # Sync timestamp to server
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
     # Close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
@@ -307,7 +349,7 @@ def main():
                     continue
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_SWI) != 0:
+                if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage) != 0:
                     fail_nic_list[mtp_id].append(slot)
 
     mtp_thread_list = list()
@@ -345,7 +387,7 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_SWI, mfg_swi_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(stage, mfg_swi_summary, mtpid_fail_list)
 
     return
 

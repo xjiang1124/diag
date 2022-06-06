@@ -101,7 +101,7 @@ var OrtanoITbl = []I2cInfo {
 var OrtanoTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
@@ -133,7 +133,7 @@ var Ortano2MtpTbl = []I2cInfo {
 var LaconaTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
@@ -150,7 +150,7 @@ var LaconaTbl = []I2cInfo {
 var PomonteTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},

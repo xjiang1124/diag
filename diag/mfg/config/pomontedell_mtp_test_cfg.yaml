@@ -21,6 +21,7 @@ PARAMS:
         - "MTP1#ASIC#L1#offload=1"
 
 MTP_PRE:
+    NIC_TYPE: True
     NIC_POWER: True
     NIC_JTAG: True
     NIC_STATUS: True
@@ -60,14 +61,6 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-    NIC_ASIC:
-        PCIE_PRBS:
-            INIT: ""
-            POST: ""
-            OPTS:
-                NIC_NAME: Yes
-                SN: No
-                SLOT: No
     MEM:
         DDR_STRESS:
             INIT: ""
@@ -83,21 +76,13 @@ NIC_PARA:
                 NIC_NAME: Yes
                 SN: No
                 SLOT: No
-        # L1:
-        #     INIT: ""
-        #     POST: ""
-        #     OPTS:
-        #         NIC_NAME: Yes
-        #         SN: Yes
-        #         SLOT: No
-        #         VMARG: Yes
-        #         MODE: Yes
 
 
 MTP_PARA:
     ETH_PRBS: True
     SNAKE_ELBA: True
     ARM_L1: True
+    PCIE_PRBS: True
 
 MTP_SEQ:
     ASIC:

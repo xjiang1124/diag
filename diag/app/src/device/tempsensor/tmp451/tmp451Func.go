@@ -6,6 +6,7 @@ import (
     "common/cli"
     "common/errType"
     "protocol/smbus"
+    "common/misc"
 )
 
 
@@ -159,3 +160,107 @@ func DispStatus(devName string) (err int) {
 }
 
 
+func DispStatusWithRemote(devName string) (err int) {
+    err = errType.SUCCESS
+
+    degSym := fmt.Sprintf("(%cC)",0xB0)
+    tempTitle := []string {"LOCAL", "REMOTE",}
+    var titleStr string
+    for _, title := range(tempTitle) {
+        tmpStr := fmt.Sprintf("%-20s", title+degSym)
+        titleStr = titleStr + tmpStr
+    }
+    cli.Println("i", titleStr)
+
+    var outStr string
+    for i:=0; i<2; i++ {
+        integer, dec, err := ReadTemp(devName, byte(i))
+        if err != errType.SUCCESS {
+            return err
+        }
+        tmpStr := fmt.Sprintf("%d.%04d", integer, dec)
+        tmpStr = fmt.Sprintf("%-20s", tmpStr)
+        outStr = outStr + tmpStr
+    }
+    cli.Println("i", outStr)
+
+    return
+}
+
+func RestoreLocalTempHighLimit(devName string) (err int) {
+    var data8 uint8
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    err = smbus.WriteByte(devName, LOCAL_HIGH_LIMIT_WR, 0x55)
+    if err != errType.SUCCESS {
+        cli.Println("e", " i2c Write Byte:  Write reg-0x%x failed", LOCAL_HIGH_LIMIT_WR)
+        return
+    }
+    misc.SleepInSec(1)
+    data8, err = smbus.ReadByte(devName, LOCAL_HIGH_LIMIT_RD)
+    if err != errType.SUCCESS {
+        cli.Printf("e", " i2c Read Byte:  Read reg-0x%x failed", LOCAL_HIGH_LIMIT_RD)
+        return
+    }
+    cli.Printf("i", "LOCAL_HIGH_LIMIT_RD: 0x%x\n", data8)
+    return
+}
+
+func TriggerThermSignal(devName string, sigName string) (err int) {
+    var data8 uint8
+    var regWr, regRd uint64
+    var config_reg, tempHighByte byte
+    var integer int64
+    var limit byte
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    config_reg, err = smbus.ReadByte(devName, CONFIG_RD)
+    if err != errType.SUCCESS {
+        return
+    }
+    tempHighByte, err = smbus.ReadByte(devName, LOCAL_TEMP_HIGH_RD)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if (config_reg & CONFIG_RANGE_BIT) == CONFIG_RANGE_BIT {
+        integer = int64(tempHighByte) - 64
+    } else {
+        integer = int64(tempHighByte)
+
+    }
+
+    // set new limit
+    limit = byte(integer / 2);
+
+    if sigName == "ALERT" {
+        regWr = LOCAL_HIGH_LIMIT_WR
+        regRd = LOCAL_HIGH_LIMIT_RD
+    } else {
+        regWr = LOCAL_TEMP_THERM_LIMIT_WR
+        regRd = LOCAL_TEMP_THERM_LIMIT_RD
+    }
+    err = smbus.WriteByte(devName, regWr, limit)
+    if err != errType.SUCCESS {
+        cli.Println("e", " i2c Write Byte:  Write reg-0x%x failed", regWr)
+        return
+    }
+    misc.SleepInSec(1)
+    data8, err = smbus.ReadByte(devName, regRd)
+    if err != errType.SUCCESS {
+        cli.Printf("e", " i2c Read Byte:  Read reg-0x%x failed", regRd)
+        return
+    }
+    cli.Printf("i", "limitRd: 0x%x\n", data8)
+
+    return
+}

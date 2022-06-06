@@ -24,6 +24,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
+from libdefs import Voltage_Margin
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -228,9 +229,9 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
     nic_test_list = nic_list[:]
     fail_list = list()
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_PRE_CHECK"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_PRE_CHECK"
     else:
         dsp = "PRE_CHECK"
@@ -340,14 +341,17 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
-    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == 0:
+    elif nic_type in (NIC_Type.POMONTEDELL, NIC_Type.LACONA32, NIC_Type.LACONA32DELL) and vmarg == Voltage_Margin.normal:
         sub_test_list = [("PHY", "XCVR")]
     else:
         sub_test_list = [()]
 
-    for skipped_test in skip_testlist:
-        sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
-        sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
+    if len(sub_test_list) == 0 or sub_test_list == [()]:
+        pass
+    else:
+        for skipped_test in skip_testlist:
+            sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
+            sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
     
     fail_list = list()
 
@@ -370,9 +374,9 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                 fail_list.append(slot)
             continue
         for dsp, test in sub_test_list:
-            if vmarg > 0:
+            if vmarg == Voltage_Margin.high:
                 dsp_disp = "HV_" + dsp
-            elif vmarg < 0:
+            elif vmarg == Voltage_Margin.low:
                 dsp_disp = "LV_" + dsp
             else:
                 dsp_disp = dsp
@@ -436,9 +440,9 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
     nic_top_test_list = list()
     nic_bottom_test_list = list()
 
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_ASIC"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_ASIC"
     else:
         dsp = "ASIC"
@@ -665,9 +669,9 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
+        if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
+        elif vmarg == Voltage_Margin.low:
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
@@ -709,7 +713,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and (card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.ORTANO2ADI):
             # external loopback for P2C
-            if vmarg == 0:
+            if vmarg == Voltage_Margin.normal:
                 diag_cmd += " -p 'int_lpbk=0'"
             # internal loopback for 2C/4C
             else:
@@ -804,9 +808,9 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     return
 
 def parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg):
-    if vmarg > 0:
+    if vmarg == Voltage_Margin.high:
         dsp = "HV_ASIC"
-    elif vmarg < 0:
+    elif vmarg == Voltage_Margin.low:
         dsp = "LV_ASIC"
     else:
         dsp = "ASIC"
@@ -839,9 +843,9 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
+        if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
+        elif vmarg == Voltage_Margin.low:
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
@@ -936,12 +940,10 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                     mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
 
 
-def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, dsp, stop_on_err):
+def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, skip_testlist, dsp, stop_on_err):
     nic_thread_list = list()
-    fail_nic_list = list()
     cpld_prog_list = list()
     qspi_prog_list = list()
-    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
 
     # hook to skip this portion
     if "PROG_UPDATE" in skip_testlist:
@@ -956,7 +958,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
 
-            if nic_type in (NIC_Type.ORTANO2):
+            if nic_type in (NIC_Type.ORTANO2, NIC_Type.POMONTEDELL):
                 testlist.insert(0, "VDD_DDR_VERIFY")
 
             for skip_test in skip_testlist:
@@ -982,10 +984,6 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 elif test == "QSPI_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
 
-                    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
-                        # trigger qspi update
-                        ret = False
-
                     if not ret:
                         qspi_prog_list.append(slot)
                         ret = True
@@ -998,24 +996,27 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    nic_test_rslt_list[slot] = False
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     if cpld_prog_list or qspi_prog_list:
         mtp_mgmt_ctrl.cli_log_inf("Programmable updates needed... starting", level=0)
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, nic_util=True, stop_on_err=stop_on_err):
+        nic_list = libmfg_utils.list_union(cpld_prog_list, qspi_prog_list)
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, nic_util=True, stop_on_err=stop_on_err):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-            for nic_list in nic_test_full_list:
-                for slot in nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            for slot in nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
                         fail_nic_list.append(slot)
-                        if stop_on_err:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                            return
+                    if stop_on_err:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                        return
 
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
         for slot in nic_list:
             if slot in fail_nic_list:
@@ -1045,11 +1046,16 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
-    # Ortano Boot check moved out of parallel tests to sequential test
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not nic_test_rslt_list[slot]:
-            continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+
+    # Ortano Boot check moved out of parallel tests to sequential test
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            continue
+        if slot in fail_nic_list:
             continue
         if slot not in cpld_prog_list and slot not in qspi_prog_list:
             continue
@@ -1058,7 +1064,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
-            testlist = ["CPLD_BOOT_CHECK", "NIC_PWRCYC"]
+            testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
         for skip_test in skip_testlist:
@@ -1072,12 +1078,6 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             if test == "CPLD_BOOT_CHECK":
                 ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
                 ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-            # extra powercycle to refresh CPLD
-            elif test == "NIC_PWRCYC":
-                ret = mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-                ret &= mtp_mgmt_ctrl.mtp_power_on_single_nic(slot)
-                #ret &= mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
-                # CPLD_VERIFY test is done later. Any quick way to verify that powercycle worked?
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -1085,8 +1085,9 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, sk
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
             if not ret:
                 mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                nic_test_rslt_list[slot] = False
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -1106,10 +1107,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        testlist = ["QSPI_PROG", "FPGA_PROG"]
-    if nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
-        # program the 32G uboot
-        testlist = ["QSPI_PROG", "UBOOT_PROG", "FPGA_PROG"]
+        testlist = ["QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -1119,6 +1117,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # program CPLD
         if test == "CPLD_PROG" or test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # verify program FPGA
+        elif test == "FPGA_PROG_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot, cpld_img_file, gold=False)
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
@@ -1183,13 +1184,13 @@ def main():
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
-        vmarg_list = [0]
+        vmarg_list = [Voltage_Margin.normal]
     # QA test, normal temperature, two voltage corner
     elif corner == Env_Cond.MFG_QA:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
         low_temp_threshold = None
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
     # Low temperature, two voltage corner
     # this is changed to single voltage corner after mtp setup step
     elif corner == Env_Cond.MFG_LT:
@@ -1200,7 +1201,7 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
             low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
         stage = FF_Stage.FF_2C_L
     # High temperature, two voltage corner
     # this is changed to single voltage corner after mtp setup step
@@ -1212,28 +1213,28 @@ def main():
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
             high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
         stage = FF_Stage.FF_2C_H
     # RDT runs @high temperature, no voltage corner
     elif corner == Env_Cond.MFG_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [0]
+        vmarg_list = [Voltage_Margin.normal]
         stage = FF_Stage.FF_2C_H
     # EDVT, high temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_HT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
         high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
         low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
+        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
         stage = FF_Stage.FF_4C_H
     # EDVT, low temperature, two voltage corner
     elif corner == Env_Cond.MFG_EDVT_LT:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
         low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
         high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
         stage = FF_Stage.FF_4C_L
     else:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
@@ -1336,9 +1337,9 @@ def main():
         # elba  = LTHV, LTLV, HTLV, HTHV
         if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
             if corner == Env_Cond.MFG_LT:
-                vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
+                vmarg_list = [Voltage_Margin.high]
             elif corner == Env_Cond.MFG_HT:
-                vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
+                vmarg_list = [Voltage_Margin.low]
 
         # Wait the Chamber temperature, if HT or LT is set
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check", level=0)
@@ -1359,8 +1360,11 @@ def main():
         pass_nic_list = list()
         fail_nic_list = list()
         skip_nic_list = list()
-        ortano_family_nic = list()
-        non_ortano_family_nic = list()
+
+        # Add failed slots from toplevel
+        if args.fail_slots:
+            for slot in args.fail_slots:
+                fail_nic_list.append(int(slot))
 
         nic_type_full_list = MFG_VALID_NIC_TYPE_LIST
         nic_test_full_list = list() # list of lists, NOT dict. order of insertion matters
@@ -1369,26 +1373,13 @@ def main():
             nic_type_list = list()
             # make a list for all NICs of this type in MTP
             for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if nic_prsnt_list[slot]:
-                    if args.fail_slots:
-                        if slot in args.fail_slots:
-                            fail_nic_list.append(slot)
-                        else:
-                            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
-                                nic_type_list.append(slot)
-                                pass_nic_list.append(slot)
-                            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
-                                ortano_family_nic.append(slot)
-                            else:
-                                non_ortano_family_nic.append(slot)                            
-                    else:
-                        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
-                            nic_type_list.append(slot)
-                            pass_nic_list.append(slot)
-                        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI):
-                            ortano_family_nic.append(slot)
-                        else:
-                            non_ortano_family_nic.append(slot)
+                if slot in fail_nic_list:
+                    continue
+                if not nic_prsnt_list[slot]:
+                    continue
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
+                    nic_type_list.append(slot)
+                    pass_nic_list.append(slot)
             nic_test_full_list.append(nic_type_list)
 
         nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
@@ -1442,6 +1433,8 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot]:
                 mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
 
         programmables_checked = False
@@ -1454,15 +1447,15 @@ def main():
             fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
             inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
-            if vmarg > 0:
+            if vmarg == Voltage_Margin.high:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
-            elif vmarg < 0:
+            elif vmarg == Voltage_Margin.low:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
             else:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
-            mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
+            mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:s}".format(vmarg))
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 
             if vmarg_idx > 0:
@@ -1482,7 +1475,7 @@ def main():
                     dsp = get_test_stage_name(mtp_mgmt_ctrl, corner)
 
                     # Update programmables if necessary
-                    dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, dsp, stop_on_err)
+                    dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, args.skip_test, dsp, stop_on_err)
                     programmables_checked = True
                     for slot in dl_check_fail_list:
                         if slot in nic_list:
@@ -1495,7 +1488,7 @@ def main():
                 # Disable PCIe polling
                 mtp_mgmt_ctrl.mtp_power_off_nic()
                 mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-                if len(non_ortano_family_nic) > 0:
+                if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
                     mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                     libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
                     diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
@@ -1681,10 +1674,8 @@ def main():
                             # aapl tests
                             new_nic_para_test_list = list()
                             if nic_type in ELBA_NIC_TYPE_LIST:
-                                if ("NIC_ASIC","L1") in nic_para_test_list:
-                                    new_nic_para_test_list.append(("NIC_ASIC","L1"))
-                                if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
-                                    new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
+                                # no elba tests here
+                                pass
                             else:
                                 if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
                                     new_nic_para_test_list.append(("NIC_ASIC","PCIE_PRBS"))
@@ -1738,7 +1729,7 @@ def main():
                                 nic_para_test_list.remove(("MEM", "EDMA"))
 
                             # Remove QSFP loopbacks in chamber
-                            if vmarg != 0 and corner != Env_Cond.MFG_QA and (nic_type in ELBA_NIC_TYPE_LIST):
+                            if vmarg != Voltage_Margin.normal and corner != Env_Cond.MFG_QA and (nic_type in ELBA_NIC_TYPE_LIST):
                                 if ("QSFP","I2C") in nic_para_test_list:
                                     nic_para_test_list.remove(("QSFP","I2C"))
 
@@ -1935,11 +1926,11 @@ def main():
             if not stop_on_err:
                 mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-            if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+            if vmarg == Voltage_Margin.low:
                 diag_sub_dir = "/lv_diag_logs/"
                 nic_sub_dir = "/lv_nic_logs/"
                 asic_sub_dir = "/lv_asic_logs/"
-            elif vmarg == MTP_Const.MFG_EDVT_HIGH_VOLT:
+            elif vmarg == Voltage_Margin.high:
                 diag_sub_dir = "/hv_diag_logs/"
                 nic_sub_dir = "/hv_nic_logs/"
                 asic_sub_dir = "/hv_asic_logs/"
@@ -1970,7 +1961,7 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            if len(non_ortano_family_nic) > 0:
+            if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
