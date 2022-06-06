@@ -17,6 +17,7 @@ PARAMS:
         - "MTP1#ASIC#L1#timeout=2400"
 
 MTP_PRE:
+    NIC_TYPE: True
     NIC_POWER: True
     NIC_JTAG: True
     NIC_STATUS: True

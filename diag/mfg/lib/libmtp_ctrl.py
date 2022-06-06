@@ -7,6 +7,7 @@ import re
 import threading
 from datetime import datetime
 from libmfg_cfg import *
+from libsku_cfg import *
 
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -40,6 +41,7 @@ class mtp_ctrl():
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
         self._valid_type_list = MFG_VALID_NIC_TYPE_LIST
         self._proto_type_list = MFG_PROTO_NIC_TYPE_LIST
+        self._valid_pn_list = MFG_VALID_NIC_PN_LIST
         self._slots = MTP_Const.MTP_SLOT_NUM
         self._slots_to_skip = slots_to_skip
         self._fans = 3
@@ -1883,17 +1885,6 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
                         return False
-
-                if stage in (FF_Stage.FF_P2C, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            img = NIC_IMAGES.uboot_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
-                        pass
 
                 else:
                     # no images needed in this stage
@@ -4712,8 +4703,34 @@ class mtp_ctrl():
             self._nic_ctrl_list[slot].nic_set_type(nic_type)
 
     def mtp_nic_type_valid(self, slot):
-        return self._nic_type_list[slot] in self._valid_type_list
+        nic_type = self._nic_type_list[slot]
+        if nic_type in self._valid_type_list:
+            return True
+        else:
+            self.cli_log_slot_err(slot, "'{:s}' Type not valid for this script folder".format(nic_type))
+            return False
 
+    def mtp_nic_pn_valid(self, slot):
+        if self._nic_ctrl_list[slot] is None:
+            self.cli_log_slot_err(slot, "NIC not initialized")
+            return False
+        else:
+            pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
+
+            # search for this PN in lib/libsku_cfg.py
+            for pn_regex in self._valid_pn_list:
+                pn_match = re.match(pn_regex, pn)
+                if pn_match:
+                    return True
+            # end of search
+
+            self.cli_log_slot_err(slot, "'{:s}' PN not valid for this script folder".format(pn))
+            return False
+
+    def mtp_nic_type_test(self, slot):
+        type_check = self.mtp_nic_type_valid(slot)
+        pn_check = self.mtp_nic_pn_valid(slot)
+        return type_check & pn_check
 
     def mtp_get_nic_sn(self, slot):
         return self._nic_sn_list[slot]
@@ -4876,6 +4893,11 @@ class mtp_ctrl():
                 return "SUCCESS"
             else:
                 return MTP_DIAG_Error.NIC_DIAG_FAIL
+        elif intf == "NIC_TYPE":
+            if self.mtp_nic_type_test(slot):
+                return "SUCCESS"
+            else:
+                return MTP_DIAG_Error.NIC_DIAG_FAIL
         else:
             self.cli_log_slot_err(slot, "Unknown pre diag check module")
             return MTP_DIAG_Error.NIC_DIAG_FAIL
@@ -4961,6 +4983,8 @@ class mtp_ctrl():
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, vmarg)
+            elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, vmarg) 
         elif test == "PCIE_PRBS":
@@ -5097,6 +5121,12 @@ class mtp_ctrl():
                 preset_config = "5"
             elif nic_type == NIC_Type.POMONTEDELL:
                 preset_config = "1"
+            elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+                preset_config = "18"
+
+            else:
+                self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
+                return False
 
         else:
             self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")

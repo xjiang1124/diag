@@ -21,6 +21,7 @@ PARAMS:
         - "MTP1#ASIC#L1#offload=1"
 
 MTP_PRE:
+    NIC_TYPE: True
     NIC_POWER: True
     NIC_JTAG: True
     NIC_STATUS: True

@@ -167,8 +167,11 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
         test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
-    if nic_type in FPGA_TYPE_LIST:
+    if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "FPGA_GOLD_PROG", "FPGA_GOLD_PROG_VERIFY"]
+    if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        testlist = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "FPGA_GOLD_PROG", "FPGA_GOLD_PROG_VERIFY"]
+
     dsp = FF_Stage.FF_DL
 
     for skipped_test in skip_testlist:
@@ -269,6 +272,8 @@ def main():
         ALLOWED_FRU_ONLY_FLAG = False
         fru_mapping = dict()
 
+    stage = FF_Stage.FF_DL
+
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_id = mtpid_list[0]
@@ -307,6 +312,9 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
+    pass_nic_list = list()
+    fail_nic_list = list()
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     pass_rslt_list = list()
     fail_rslt_list = list()
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
@@ -419,9 +427,65 @@ def main():
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+        mtpid_list.remove(mtp_id)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-    # Check if image update is needed
+
+    # Sync timestamp to server
+    timestamp_str = str(libmfg_utils.timestamp_snapshot())
+    if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+        mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
+    # Check if diag image update is needed
+    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+
+    onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
+        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
+
+    # init NIC types
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+        mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
+        mtpid_list.remove(mtp_id)
+        return
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if not nic_prsnt_list[slot]:
+            continue
+        if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
+            continue
+        pn = nic_fru_cfg[mtp_id][key]["PN"]
+        mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
+
+    # type check
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        key = libmfg_utils.nic_key(slot)
+        if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
+            continue
+        if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
+            continue
+        dsp = stage
+        test = "NIC_TYPE"
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+
+    # Check that firmware images are present
     mtp_dl_image_list = list()
     if (mtp_capability & 0x1):
         for nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -469,16 +533,7 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-
-    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-        mtpid_list.remove(mtp_id)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
@@ -486,10 +541,7 @@ def main():
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
-    pass_nic_list = list()
-    fail_nic_list = list()
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-    dsp = FF_Stage.FF_DL
+    dsp = stage
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -502,7 +554,7 @@ def main():
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL and False:
-            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=FF_Stage.FF_DL) != 0:
+            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage) != 0:
                 fail_nic_list.append(slot)
                 continue
         if slot not in pass_nic_list:
@@ -712,7 +764,7 @@ def main():
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
             elif test == "NIC_TYPE":
-                ret = mtp_mgmt_ctrl.mtp_nic_type_valid(slot)
+                ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
             elif test == "NIC_PRSNT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
             elif test == "NIC_INIT":
@@ -808,7 +860,7 @@ def main():
         if str.upper(valid) != "YES":
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
-        dsp = FF_Stage.FF_DL
+        dsp = stage
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI: 
             testlist = ["CPLD_BOOT_CHECK"]
@@ -1030,7 +1082,7 @@ def main():
                 os.system(cmd)            
 
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, FF_Stage.FF_DL)
+        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
