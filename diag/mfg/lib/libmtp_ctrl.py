@@ -5372,21 +5372,25 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-        self.mtp_mgmt_exec_cmd_para(slot, cmd)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Command {:s} failed")
+            rs = False
 
         cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
-        self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
+            rs = False
+            # kill the process in case it's hung/timed out
+            # ctrl-c doesnt work
+            # needs to be killed from separate session
+            if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"): # notify in log
+                pass
+            if not self.mtp_mgmt_exec_cmd("killall run_l1.sh"): # use mtp session to kill it
+                pass
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
         if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
             rs = True
-
-        # kill the process in case it's hung/timed out
-        # ctrl-c doesnt work
-        # needs to be killed from separate session
-        self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh") # notify in log
-        self.mtp_mgmt_exec_cmd("killall run_l1.sh") # use mtp session to kill it
 
         return rs
 
