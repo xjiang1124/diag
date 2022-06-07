@@ -1431,7 +1431,7 @@ if __name__ == "__main__":
     parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=180)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
-    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=int, default=0)
+    parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default="normal")
     parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
     parser.add_argument("-dura", "--dura", help="Duration", type=int, default=120)
     parser.add_argument("-snake_num", "--snake_num", help="Snake number 4/6", type=int, default=6)
