@@ -96,6 +96,7 @@ class mtp_ctrl():
         self._tpm_skip = False
         self.uut_type = "TAORMINA"
 
+        self._svos_boot = True # set to False once OS is installed
         self._secure_login = False  #set to True when using signed OS
 
     def cli_log_inf(self, msg, level = 1):
@@ -7736,9 +7737,10 @@ class mtp_ctrl():
         if not self.mtp_console_connect():
             self.cli_log_err("Unable to telnet to UUT chassis")
 
-        if not self.mtp_mgmt_connect():
-            self.cli_log_err("Unable to ssh to UUT chassis")
-            return False
+        if not self._svos_boot:
+            if not self.mtp_mgmt_connect():
+                self.cli_log_err("Unable to ssh to UUT chassis")
+                return False
 
         if not self.mtp_mgmt_exec_cmd("uptime"):
             return False

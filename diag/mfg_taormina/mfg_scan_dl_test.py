@@ -338,6 +338,8 @@ def single_uut_fw_program(stage,
                 ret = mtp_mgmt_ctrl.tor_mgmt_os_prog(os_ship_img_file)
             elif test == "OS_TEST_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_os_verify(os_test_exp_version)
+                if ret:
+                    mtp_mgmt_ctrl._svos_boot = False
             elif test == "OS_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_os_verify(os_ship_exp_version)
 
