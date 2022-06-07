@@ -960,35 +960,35 @@ def main():
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
 
-            # EDMA test
-            for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                if nic_type == NIC_Type.TAORMINA:
-                    nic_seq_test_list = taormina_seq_test_list[:]
-                    test_db = taormina_test_db
-                else:
-                    mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
-                    continue
+            # # EDMA test
+            # for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+            #     if nic_type == NIC_Type.TAORMINA:
+            #         nic_seq_test_list = taormina_seq_test_list[:]
+            #         test_db = taormina_test_db
+            #     else:
+            #         mtp_mgmt_ctrl.cli_log_err("Unknown NIC Type: {:s}".format(nic_type), level=0)
+            #         continue
 
-                if nic_list:
-                    new_nic_seq_test_list = list()
-                    if ("SWITCH", "ELBA_EDMA_TEST") in nic_seq_test_list:
-                        for loop in range(1,10+1):   # 10 iterations
-                            new_nic_seq_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
-                    nic_seq_test_list = new_nic_seq_test_list[:]
-                    diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
-                                                              nic_type,
-                                                              nic_list,
-                                                              test_db,
-                                                              nic_seq_test_list,
-                                                              vmarg,
-                                                              stop_on_err)
-                    for slot in diag_seq_fail_list:
-                        if slot in nic_list and stop_on_err:
-                            nic_list.remove(slot)
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        if slot in pass_nic_list:
-                            pass_nic_list.remove(slot)
+            #     if nic_list:
+            #         new_nic_seq_test_list = list()
+            #         if ("SWITCH", "ELBA_EDMA_TEST") in nic_seq_test_list:
+            #             for loop in range(1,10+1):   # 10 iterations
+            #                 new_nic_seq_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
+            #         nic_seq_test_list = new_nic_seq_test_list[:]
+            #         diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
+            #                                                   nic_type,
+            #                                                   nic_list,
+            #                                                   test_db,
+            #                                                   nic_seq_test_list,
+            #                                                   vmarg,
+            #                                                   stop_on_err)
+            #         for slot in diag_seq_fail_list:
+            #             if slot in nic_list and stop_on_err:
+            #                 nic_list.remove(slot)
+            #             if slot not in fail_nic_list:
+            #                 fail_nic_list.append(slot)
+            #             if slot in pass_nic_list:
+            #                 pass_nic_list.remove(slot)
 
             # L1 test
             for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):

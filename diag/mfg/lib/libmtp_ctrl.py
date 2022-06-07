@@ -2176,6 +2176,9 @@ class mtp_ctrl():
             filename = "{:s}_elba_PRBS_MX.log".format(sn)
         elif test == "ARM_L1":
             filename = "{:s}_elba_arm_l1_test.log".format(sn)
+        elif test == "DDR_BIST":
+            filename = "{:s}_arm_ddr_bist_0.log".format(sn)
+            filename = "{:s}_arm_ddr_bist_1.log".format(sn)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
@@ -3585,12 +3588,20 @@ class mtp_ctrl():
             self.mtp_nic_console_unlock()
 
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in ELBA_NIC_TYPE_LIST and "L1" not in test:
-            self.mtp_single_j2c_lock()
-            self.mtp_nic_console_lock()
-            ret, _ = self.mtp_nic_disp_ecc(slot)
-            self.mtp_nic_console_unlock()
-            self.mtp_single_j2c_unlock()
+        # check ECC for elba cards
+        # dont check ECC after L1 test
+        # or if ddr_bist is offloaded from L1, check ecc after L1 but dont check ecc after DDR_BIST
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type in CONSOLE_DDR_BIST_NIC_LIST and "DDR_BIST" in test:
+                pass
+            elif "L1" in test:
+                pass
+            else:
+                self.mtp_single_j2c_lock()
+                self.mtp_nic_console_lock()
+                ret, _ = self.mtp_nic_disp_ecc(slot)
+                self.mtp_nic_console_unlock()
+                self.mtp_single_j2c_unlock()
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
@@ -4991,6 +5002,8 @@ class mtp_ctrl():
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             cmd = MFG_DIAG_CMDS.MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, vmarg, "PRBS31")
+        elif test == "DDR_BIST":
+            cmd = MFG_DIAG_CMDS.MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
@@ -5371,22 +5384,31 @@ class mtp_ctrl():
 
         nic_type = self.mtp_get_nic_type(slot)
 
+        # 0 = skip l1_ddr_bist; 1 = default
+        skip_ddr_bist = "1"
+        if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+            skip_ddr_bist = "0"
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
-        self.mtp_mgmt_exec_cmd_para(slot, cmd)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Command {:s} failed")
+            rs = False
 
         cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
-        self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
+            rs = False
+            # kill the process in case it's hung/timed out
+            # ctrl-c doesnt work
+            # needs to be killed from separate session
+            if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"): # notify in log
+                pass
+            if not self.mtp_mgmt_exec_cmd("killall run_l1.sh"): # use mtp session to kill it
+                pass
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
         if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
             rs = True
-
-        # kill the process in case it's hung/timed out
-        # ctrl-c doesnt work
-        # needs to be killed from separate session
-        self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh") # notify in log
-        self.mtp_mgmt_exec_cmd("killall run_l1.sh") # use mtp session to kill it
 
         return rs
 
