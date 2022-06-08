@@ -5408,7 +5408,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
             # kill the process in case it's hung/timed out
@@ -6233,6 +6233,7 @@ class mtp_ctrl():
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
         d3_val = "0xb7" #vdd_ddr switching frequency
         d4_val = "0x0a" #vdd_ddr margin
+        vddq_prog = False #prog vddq with same values
 
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -6241,22 +6242,22 @@ class mtp_ctrl():
             return False
 
         if console:
-            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val):
+            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False
         else:
-            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val):
+            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False

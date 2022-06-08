@@ -4430,13 +4430,21 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
-    def nic_vdd_ddr_fix(self, d3_val, d4_val):
+    def nic_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
         nic_cmd_list = list()
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd4 {:s}".format(d4_val))
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd3 {:s}".format(d3_val))
         nic_cmd_list.append("i2cset -y 0 0x1c 0x11 c")
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
+
+        if vddq_prog:
+            nic_cmd_list = list()
+            nic_cmd_list.append("i2cset -y 0 0x1b 0xd4 {:s}".format(d4_val))
+            nic_cmd_list.append("i2cset -y 0 0x1b 0xd3 {:s}".format(d3_val))
+            nic_cmd_list.append("i2cset -y 0 0x1b 0x11 c")
+            if not self.nic_exec_cmds(nic_cmd_list):
+                return False
 
         nic_cmd_list = list()
         nic_cmd_list.append("fwenv -d ddr_use_hardcoded_training")
@@ -4464,7 +4472,7 @@ class nic_ctrl():
     
         return True
 
-    def nic_vdd_ddr_check(self, d3_val, d4_val):
+    def nic_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
         nic_cmd = "i2cget -y 0 0x1c 0xd3"
         cmd_buf = self.nic_get_info(nic_cmd)
 
@@ -4499,9 +4507,36 @@ class nic_ctrl():
         if any(x in cmd_buf for x in ["ddr_freq", "ddr_use_hardcoded_training", "ddr_vdd_margin", "ddr_ecc_writeback", "ddr_periodic_trg_en"]):
             self.nic_set_err_msg("DDR fwenv setting not cleared")
             return False
+
+
+        if vddq_prog:
+            nic_cmd = "i2cget -y 0 0x1b 0xd3"
+            cmd_buf = self.nic_get_info(nic_cmd)
+
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
+
+            if d3_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDDQ_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
+                return False
+
+
+
+            nic_cmd = "i2cget -y 0 0x1b 0xd4"
+            cmd_buf = self.nic_get_info(nic_cmd)
+
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
+
+            if d4_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDDQ_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
+                return False
+
         return True
 
-    def nic_console_vdd_ddr_fix(self, d3_val, d4_val):
+    def nic_console_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -4518,6 +4553,19 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach()
                 return False
+
+        if vddq_prog:
+            nic_cmd_list = list()
+            nic_cmd_list.append("i2cset -y 0 0x1b 0xd4 {:s}".format(d4_val))
+            nic_cmd_list.append("i2cset -y 0 0x1b 0xd3 {:s}".format(d3_val))
+            nic_cmd_list.append("i2cset -y 0 0x1b 0x11 c")
+            for nic_cmd in nic_cmd_list:
+                self._nic_handle.sendline(nic_cmd)
+                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                if idx < 0:
+                    self.nic_set_cmd_buf(self._nic_handle.before)
+                    self.nic_console_detach()
+                    return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         nic_cmd_list = list()
@@ -4542,7 +4590,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
-    def nic_console_vdd_ddr_check(self, d3_val, d4_val):
+    def nic_console_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -4617,6 +4665,50 @@ class nic_ctrl():
             return False
 
 
+        if vddq_prog:
+            ### check frequency set ###
+            nic_cmd_list = list()
+            nic_cmd_list.append("i2cget -y 0 0x1b 0xd3")
+            for nic_cmd in nic_cmd_list:
+                self._nic_handle.sendline(nic_cmd)
+                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                if idx < 0:
+                    self.nic_set_cmd_buf(self._nic_handle.before)
+                    self.nic_console_detach()
+                    return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                self.nic_console_detach()
+                return False
+            if d3_val not in cmd_buf:
+                self.nic_console_detach()
+                self.nic_set_cmd_buf(cmd_buf)
+                self.nic_set_err_msg("Incorrect VDDQ_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
+                return False
+
+
+
+            ### check margin set ###
+            nic_cmd_list = list()
+            nic_cmd_list.append("i2cget -y 0 0x1b 0xd4")
+            for nic_cmd in nic_cmd_list:
+                self._nic_handle.sendline(nic_cmd)
+                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                if idx < 0:
+                    self.nic_set_cmd_buf(self._nic_handle.before)
+                    self.nic_console_detach()
+                    return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                self.nic_console_detach()
+                return False
+            if d4_val not in cmd_buf:
+                self.nic_console_detach()
+                self.nic_set_cmd_buf(cmd_buf)
+                self.nic_set_err_msg("Incorrect VDDQ_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
+                return False
 
         self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
