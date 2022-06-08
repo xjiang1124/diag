@@ -2556,7 +2556,7 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.ORTANO2ADI:
+            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
@@ -2675,7 +2675,7 @@ class nic_ctrl():
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.ORTANO or self._nic_type == NIC_Type.ORTANO2 or self._nic_type == NIC_Type.ORTANO2ADI:
+                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
                     match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
