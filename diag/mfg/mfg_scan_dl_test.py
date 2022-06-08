@@ -20,6 +20,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
+from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
@@ -451,13 +452,18 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     # init NIC types
+
     if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
         mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
         mtpid_list.remove(mtp_id)
         return
+
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         if not nic_prsnt_list[slot]:
+            continue
+        if slot in fail_nic_list:
             continue
         if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
             continue
@@ -465,7 +471,6 @@ def main():
         mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
     # type check
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
         if not nic_prsnt_list[slot]:
@@ -551,12 +556,20 @@ def main():
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
+            fail_nic_list.append(slot)
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
-        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL and False:
-            if libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage) != 0:
+        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+            flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage)
+            if flex_rs != 0:
+                if flex_rs in FLEX_ERR_CODE_MAP.err_code:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]), level=0)
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)), level=0)
                 fail_nic_list.append(slot)
                 continue
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn), level=0)
         if slot not in pass_nic_list:
             pass_nic_list.append(slot)
 
@@ -566,6 +579,9 @@ def main():
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if nic_prsnt_list[slot]:
             key = libmfg_utils.nic_key(slot)
+            valid = nic_fru_cfg[mtp_id][key]["VALID"]
+            if str.upper(valid) != "YES":
+                continue
             pn = nic_fru_cfg[mtp_id][key]["PN"]
             mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
             mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
