@@ -2952,6 +2952,10 @@ class mtp_ctrl():
             if software_pn != "90-0009-0006":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
+        elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
+            if software_pn != "90-interposer":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False             
@@ -3735,7 +3739,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_check_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):     
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
             msg = "NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
@@ -6237,9 +6241,14 @@ class mtp_ctrl():
 
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.ORTANO2ADI:
-            self.cli_log_slot_err(slot, "This function is not applicable for ADI card!")
+        if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
+            self.cli_log_slot_err(slot, "This function is not applicable for this card type!")
             return False
+
+        if nic_type == NIC_Type.ORTANO2INTERP:
+            d3_val = "0xb7"
+            d4_val = "0x10"
+            vddq_prog = True
 
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
