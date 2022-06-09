@@ -108,8 +108,8 @@ func present() (err int) {
 
     maxUut := 10
     prsntNoneStr := "UUT_NONE"
-    regexPN := regexp.MustCompile(`.*Part Number\s+([\d\-]+).*`)
-    regexAN := regexp.MustCompile(`.*Assembly Number\s+([\d\-]+).*`)
+    regexPN := regexp.MustCompile(`.*Part Number\s+([\dA-Za-z\-]+).*`)
+    regexAN := regexp.MustCompile(`.*Assembly Number\s+([\dA-Za-z\-]+).*`)
     regexSN := regexp.MustCompile(`.*Serial Number\s+([\dA-Za-z]+).*`)
 
     for i := 1; i <= maxUut; i++ {
