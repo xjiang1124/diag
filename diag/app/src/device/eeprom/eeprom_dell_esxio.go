@@ -276,8 +276,8 @@ var Lacona32DELLTbl = []entry {
     entry{"Max Systained Power in S0",              INT8,       327,       2,    []byte{0x2D, 0x00}},
     entry{"Max Peak Power in S0",                   INT8,       329,       2,    []byte{0x33, 0x00}},
     entry{"Max Throttled Power in S0",              INT8,       331,       2,    []byte{0xFF, 0xFF}},
-    entry{"Max Sustained Power in S5",              INT8,       333,       2,    []byte{0x2D, 0x00}},
-    entry{"Max Peak Power in S5",                   INT8,       335,       2,    []byte{0x33, 0x00}},
+    entry{"Max Sustained Power in S5",              INT8,       333,       2,    []byte{0x00, 0x00}},
+    entry{"Max Peak Power in S5",                   INT8,       335,       2,    []byte{0x00, 0x00}},
     entry{"Power Brake",                            INT8,       337,       1,    []byte{0xFF}},
 
     entry{"Multi-Record Area",                      INT8,       338,       1,    []byte{0xE3}},
