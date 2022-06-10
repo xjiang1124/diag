@@ -5394,7 +5394,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
             # kill the process in case it's hung/timed out
