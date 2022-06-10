@@ -2717,6 +2717,9 @@ class mtp_ctrl():
         elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, naples_pn):
             nic_type = NIC_Type.ORTANO2ADI
 
+        elif re.match(PART_NUMBERS_MATCH.ORTANO2INTERP_FMT_ALL, naples_pn):
+            nic_type = NIC_Type.ORTANO2INTERP
+
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type for PN {:s}".format(naples_pn))
             return False
@@ -2768,6 +2771,8 @@ class mtp_ctrl():
             exp_pn = PART_NUMBERS_MATCH.LACONA32_PN_FMT
         elif nic_type == NIC_Type.ORTANO2ADI:
             exp_pn = PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL
+        elif nic_type == NIC_Type.ORTANO2INTERP:
+            exp_pn = PART_NUMBERS_MATCH.ORTANO2INTERP_FMT_ALL
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -2945,6 +2950,10 @@ class mtp_ctrl():
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
             if software_pn != "90-0009-0006":
+                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
+                return False
+        elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
+            if software_pn != "90-interposer":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -3718,7 +3727,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_set_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
             msg = "Set NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
@@ -3730,7 +3739,7 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_check_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:      
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
             msg = "NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
@@ -4539,7 +4548,8 @@ class mtp_ctrl():
                       NIC_Type.POMONTEDELL:     MFG_DIAG_RE.MFG_NIC_TYPE_POMONTEDELL,
                       NIC_Type.LACONA32DELL:    MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32DELL,
                       NIC_Type.LACONA32:        MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32,
-                      NIC_Type.ORTANO2ADI:      MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADI
+                      NIC_Type.ORTANO2ADI:      MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADI,
+                      NIC_Type.ORTANO2INTERP:   MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2INTERP
                       }
         
         for nic_type in regex_dict.keys():
@@ -4966,9 +4976,8 @@ class mtp_ctrl():
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
                 else:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
-            elif nic_type == NIC_Type.ORTANO2ADI:
-                if self.mtp_is_nic_ortanoadi_oracle(slot):
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+            elif nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2INTERP:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
             else:
@@ -5132,6 +5141,8 @@ class mtp_ctrl():
                     preset_config = "8"
             elif nic_type == NIC_Type.ORTANO2ADI:
                 preset_config = "5"
+            elif nic_type == NIC_Type.ORTANO2INTERP:
+                preset_config = "5"
             elif nic_type == NIC_Type.POMONTEDELL:
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
@@ -5237,6 +5248,8 @@ class mtp_ctrl():
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
             else:
                 vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2INTERP:
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.POMONTEDELL:
             vdd_avs_cmd = MFG_DIAG_CMDS.POMONTEDELL_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.LACONA32DELL:
@@ -5297,7 +5310,7 @@ class mtp_ctrl():
 
     def mtp_nic_fix_vrm(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type == NIC_Type.ORTANO2:
             if self.mtp_is_nic_ortano_microsoft(slot):
                 if not self._nic_ctrl_list[slot].nic_fix_vrm_oc():
                     self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
@@ -5308,6 +5321,11 @@ class mtp_ctrl():
                     self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
+        elif nic_type == NIC_Type.ORTANO2INTERP:
+            if not self._nic_ctrl_list[slot].nic_fix_vrm():
+                self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
+                self.mtp_dump_nic_err_msg(slot)
+                return False
         return True
 
     def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):
@@ -6219,30 +6237,36 @@ class mtp_ctrl():
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
         d3_val = "0xb7" #vdd_ddr switching frequency
         d4_val = "0x0a" #vdd_ddr margin
+        vddq_prog = False #prog vddq with same values
 
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type == NIC_Type.ORTANO2ADI:
-            self.cli_log_slot_err(slot, "This function is not applicable for ADI card!")
+        if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.LACONA32 or nic_type == NIC_Type.LACONA32DELL:
+            self.cli_log_slot_err(slot, "This function is not applicable for this card type!")
             return False
 
+        if nic_type == NIC_Type.ORTANO2INTERP:
+            d3_val = "0xb7"
+            d4_val = "0x10"
+            vddq_prog = True
+
         if console:
-            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val):
+            if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False
         else:
-            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val):
+            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val):
+                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                     return False
