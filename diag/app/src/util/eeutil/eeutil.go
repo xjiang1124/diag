@@ -36,7 +36,7 @@ const NAPLES100_HPE_C     string  = "P41854-001"      //Cloud
                                                       //
 const NAPLES200_ORT_V2    string  = "68-0015-02 01"   //ORTANO Oracle
 const NAPLES200_ORT_V2A   string  = "68-0026-01 01"   //ORTANO ADI Oracle
-const NAPLES200_ORT_V2I   string  = "68-0029-02 01"   //ORTANO Interposer Oracle
+const NAPLES200_ORT_V2I   string  = "68-0029-01 02"   //ORTANO Interposer Oracle
 const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
 const NAPLES200_IBM       string  = "68-0028-01 01"   //ORTANO IBM
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
