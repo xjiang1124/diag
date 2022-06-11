@@ -1654,7 +1654,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     return local_test_log_file
 
 
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
+def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary=[]):
     mtp_cli_id_str = id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
 
@@ -1775,6 +1775,15 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
                         cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
                     else:
                         cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(rs)))
+
+                #change from display PASS --> FAIL (it fail when post result to flex flow)
+                if rs != 0:
+                    for idx in range(len(mtp_test_summary)):
+                        # locate this SN's record
+                        if mtp_test_summary[idx][1] == sn:
+                            # force to set fail record
+                            mtp_test_summary[idx][3] = False
+
             else:
                 ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
                 if not ret:
