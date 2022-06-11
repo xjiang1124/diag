@@ -90,7 +90,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.POMONTEDELL:
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -140,7 +140,9 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
     return "169.254.{:d}.1".format(bus_int)
 
 def get_product_name_from_pn(pn):
-    if "DSC2-2Q200-32R32F64P-R" in pn:
+    if "DSC2-2Q200-32R32F64P-R3" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-R" in pn:
         product_name = NIC_Type.ORTANO2
     elif "DSC2-2Q200-32R32F64P" in pn:
         product_name = NIC_Type.ORTANO2
@@ -156,6 +158,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.LACONA32
     elif "68-0026-01" in pn:
         product_name = NIC_Type.ORTANO2ADI
+    elif "68-0029-01" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
     else:
         product_name = NIC_Type.UNKNOWN
         print("Unknown PN:", pn)
@@ -560,7 +564,7 @@ def main():
 
             # hack to remove ROT in-flight
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI) and test == "ROT":
+            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
