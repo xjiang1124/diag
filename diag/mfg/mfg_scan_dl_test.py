@@ -278,6 +278,7 @@ def main():
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
     mtp_id = mtpid_list[0]
+    mtpid_fail_list = list()
 
     # local log files
     log_file_list = list()
@@ -1023,6 +1024,8 @@ def main():
     mtp_mgmt_ctrl.mtp_chassis_shutdown()
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
+    mfg_dl_summary = list()
+    retest_block_default = False
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
@@ -1034,6 +1037,7 @@ def main():
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+        mfg_dl_summary.append([slot, sn, nic_type, True, retest_block_default])
         
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
@@ -1045,7 +1049,13 @@ def main():
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+        mfg_dl_summary.append([slot, sn, nic_type, False, retest_block_default])
     logfile_close(log_filep_list)
+
+
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot not in pass_nic_list and slot not in fail_nic_list:
+            mfg_dl_summary.append([slot, "SKIPPED", "SLOT", True, retest_block_default])
 
     # pkg the logfile
     log_pkg_file = MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
@@ -1098,10 +1108,13 @@ def main():
                 os.system(cmd)            
 
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage)
+        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage, mfg_dl_summary)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
+
+    # dump the summary
+    libmfg_utils.mfg_summary_disp(stage, mfg_dl_summary, mtpid_fail_list)
 
     return
 

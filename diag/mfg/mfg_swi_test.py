@@ -93,7 +93,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
         return
     libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage)
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     return
