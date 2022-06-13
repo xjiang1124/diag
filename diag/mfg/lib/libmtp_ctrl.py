@@ -6414,6 +6414,7 @@ class mtp_ctrl():
 
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                self.mtp_get_nic_err_msg(slot) # clear out the error message
                 if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
@@ -6424,6 +6425,7 @@ class mtp_ctrl():
                     return False
         else:
             if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                self.mtp_get_nic_err_msg(slot) # clear out the error message
                 if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
