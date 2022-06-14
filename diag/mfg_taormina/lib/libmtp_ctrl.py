@@ -2237,8 +2237,7 @@ class mtp_ctrl():
     def mtp_nic_boot_info_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
-            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
-            self.mtp_dump_err_msg(err_msg)
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             return False
 
@@ -2337,6 +2336,7 @@ class mtp_ctrl():
             time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
             self.cli_log_slot_inf(slot, "Reinit NIC MGMT port <{:d}> try".format(loop))
             if self._nic_ctrl_list[slot].nic_mgmt_config():
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
                 break
             time.sleep(10)
         if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
@@ -4065,6 +4065,7 @@ class mtp_ctrl():
         
     def mtp_mgmt_set_nic_mainfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_mainfw_boot():
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.cli_log_slot_err(slot, "Set NIC default boot with mainfw failed")
             return False
 
@@ -6790,6 +6791,7 @@ class mtp_ctrl():
     def tor_nic_gold_boot(self, slot):
         self.cli_log_slot_inf(slot, "Set goldfw boot")
         if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
             self.cli_log_slot_err(slot, "Failed to set goldfw")
             return False
         return True

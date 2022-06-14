@@ -338,6 +338,7 @@ class nic_ctrl():
                 continue
             else:
                 self.nic_set_err_msg(self._nic_handle.before)
+                self.nic_set_err_msg("Timeout connecting to NIC console")
                 self.nic_console_detach()
                 return False
 
