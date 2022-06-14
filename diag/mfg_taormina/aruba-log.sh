@@ -26,6 +26,12 @@ TEMP_FOLDER="/tmp"
 
 mkdir -p ${TEMP_FOLDER}
 tar xzf $1 -C ${TEMP_FOLDER}
+
+if [[ ! -f ${TEMP_FOLDER}/${PENSANDO_LOG_FOLDER}/mtp_test.log ]]; then
+	echo "ERROR empty log archive"
+	exit -1
+fi
+
 SN=$(grep "DIAG_REGRESSION_TEST_" ${TEMP_FOLDER}/${PENSANDO_LOG_FOLDER}/mtp_test.log | awk -F" " '{print $(NF-1)}')
 YYMMDD=$(echo $PENSANDO_LOG_FOLDER | cut -d "_" -f3)
 hhmmss=$(echo $PENSANDO_LOG_FOLDER | cut -d "_" -f4)
