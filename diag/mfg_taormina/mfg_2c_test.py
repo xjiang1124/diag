@@ -43,7 +43,7 @@ def mtp_test_cleanup(error_code, fp_list=None):
             fp.close()
     os.system("sync")
 
-def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage="NT"):
+def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage):
     # Package this UUT's logfile
     log_sub_dir = os.path.basename(os.path.dirname(log_dir)) # aka MFG_STAGE_LOG_DIR
 
@@ -58,22 +58,17 @@ def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage="NT"):
     # MFG_DL_LOG_PKG_FILE = "NT_{:s}_{:s}.tar.gz"
     # MFG_DL_LOG_DIR = "NT_{:s}_{:s}/"
     # MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
+    log_dir = "log/"
     log_pkg_file = MTP_DIAG_Logfile.MFG_STAGE_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
     # move the logs to the log root dir
     sn = mtp_mgmt_ctrl._sn
     nic_type = mtp_mgmt_ctrl._uut_type
-    if stage == FF_Stage.FF_SWI:
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SWI_LOG_DIR_FMT.format(nic_type, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SWI_LOG_DIR_FMT.format(nic_type, sn)
+    if GLB_CFG_MFG_TEST_MODE:
+        mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, sn)
     else:
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, sn)
+        mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, sn)
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
     libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
     os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
@@ -83,7 +78,13 @@ def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage="NT"):
     for _file in [log_dir+log_sub_dir, log_dir+log_pkg_file]:
         os.system("rm -rf {:s}".format(_file))
 
-def mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, stage=FF_Stage.FF_2C):
+def mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, mtp_test_summary, stage=FF_Stage.FF_2C):
+    sn = mtp_mgmt_ctrl._sn
+    slot = 0
+    key = libmfg_utils.nic_key(slot)
+    nic_type = NIC_Type.TAORMINA
+    mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+    mtp_test_summary.append((slot+1, sn, nic_type, False))
     save_logfile(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, stage)
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=False):
@@ -107,12 +108,11 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
     return mtp_mgmt_ctrl
 
-def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test, logfile_dir_list, open_file_track_mtp_list):
-    # sn = NIC_Type.UNKNOWN
-    sn = mtp_mgmt_ctrl._sn
-
-
+def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
     for test in ["OS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT", "FRU_INIT", "MGMT_INIT_OS", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT", "MGMT_INIT_OS"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+        if test in skip_test:
+            continue
+
         start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
         # boot test OS
@@ -141,6 +141,7 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test, logfile_dir_list, op
         duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
 
         if not ret:
+            sn = mtp_mgmt_ctrl._sn
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
             return False
 
@@ -149,28 +150,45 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test, logfile_dir_list, op
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
-    mtp_2c_script_dir = "mtp_regression/"
-    mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-    mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 2C Test script", level=0)
-    if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
-        mtp_mgmt_ctrl.cli_log_err("Deploy MTP 2C Test script failed", level=0)
-        return False
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 2C Test script complete", level=0)
+    return True
+
+def single_tor_diag_update(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
+    for test in ["TIME_SET", "DIAG_UPDATE", "PYPKG_UPDATE"]:
+        if test in skip_test:
+            continue
+
+        start_ts = mtp_mgmt_ctrl.log_test_start(test)
+
+        # Sync timestamp to server
+        if test == "TIME_SET":
+            timestamp_str = str(libmfg_utils.timestamp_snapshot())
+            ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str)
+
+        # copy diag image
+        elif test == "DIAG_UPDATE":
+            asic_type = MTP_ASIC_SUPPORT.ELBA
+            x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
+            arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
+            homedir = mtp_mgmt_ctrl.get_homedir()
+            onboard_images = mtp_mgmt_ctrl.mtp_diag_get_img_files(homedir)
+            ret = libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, x86_image, arm_image, onboard_images, homedir=homedir)
+
+        # copy python packages
+        elif test == "PYPKG_UPDATE":
+            homedir = mtp_mgmt_ctrl.get_homedir()
+            python_lib_dir = homedir + "python_files/"
+            ret = libmfg_utils.mtp_update_packages(mtp_mgmt_ctrl, "release/packages/", python_lib_dir)
+
+        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+
+        if not ret:
+            sn = mtp_mgmt_ctrl._sn
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+            return False
 
     return True
 
 def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, logfile_dir_list, open_file_track_mtp_list, skip_test=[]):
-    if skip_test:
-        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
-    else:
-        skipped_testlist = ""
-    if fail_nic_list:
-        fail_slots = " --fail-slots "
-        fail_slots += ' '.join(map(str,fail_nic_list))
-    else:
-        fail_slots = ""
-
     for idx, (corner, stage) in enumerate([(Env_Cond.MFG_2C_HV, FF_Stage.FF_2C_HV), (Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV)]):
         if corner in skip_test or stage in skip_test:
             continue
@@ -179,27 +197,53 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp
             # start new logfile
             logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
-            if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, stage, skip_test, logfile_dir_list, open_file_track_mtp_list):
+        if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, stage, skip_test):
+            mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id], mtp_test_summary, stage) # save logfile a different way (from log/)
+            return
+
+        if idx == 0:
+            if not single_tor_diag_update(mtp_mgmt_ctrl, mtp_id, stage, skip_test):
+                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id], mtp_test_summary, stage) # save logfile a different way (from log/)
                 return
 
-        # go to mtp_regression and start the test
-        cmd = "cd {:s}".format(mtp_script_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        # close file handles
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
 
-        mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Start", level=0)
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
-        if skip_test:
-            cmd += skipped_testlist
-        if fail_slots:
-            cmd += fail_slots
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_2C_TEST_TIMEOUT)
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-        mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Complete", level=0)
-        mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Duration: {:s}".format(stage, mtp_stop_ts - mtp_start_ts), level=0)
+        # Copy script, config files, setup log
+        mtp_2c_script_dir = "mtp_regression/"
+        mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 2C Test script", level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP 2C Test script failed", level=0)
 
+            # cannot use mtp_fail_process here, since logfile already moved to mtp/uut
+            sn = mtp_mgmt_ctrl._sn
+            slot = 0
+            key = libmfg_utils.nic_key(slot)
+            nic_type = NIC_Type.TAORMINA
+            mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+            mtp_test_summary.append((slot+1, sn, nic_type, False))
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 2C Test script complete", level=0)
+
+            # go to mtp_regression and start the test
+            cmd = "cd {:s}".format(mtp_script_dir)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+            mtp_start_ts = libmfg_utils.timestamp_snapshot()
+            mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Start", level=0)
+            mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
+            if skip_test:
+                skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
+                cmd += skipped_testlist
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_2C_TEST_TIMEOUT)
+            mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+            mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Complete", level=0)
+            mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+            mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Duration: {:s}".format(stage, mtp_stop_ts - mtp_start_ts), level=0)
+
+        # save logfile normally, scp from uut
         test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
         if not test_log_file:
             mtp_mgmt_ctrl.cli_log_err("MTP Collect 2C Test result failed", level=0)
@@ -235,7 +279,6 @@ def main():
 
     mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
-    mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
 
@@ -268,84 +311,7 @@ def main():
         mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
         mtp_mgmt_ctrl._slots = 2
 
-        if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, args.skip_test, logfile_dir_list, open_file_track_mtp_list):
-            mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
-        # close file handles
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-        for mtp_id in mtpid_fail_list:
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-
-    # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        sn = mtp_mgmt_ctrl._sn
-
-        for test in ["DIAG_UPDATE", "PYPKG_UPDATE"]:
-            if mtp_id in mtpid_fail_list:
-                continue
-
-            start_ts = mtp_mgmt_ctrl.log_test_start(test)
-
-            # copy diag image
-            if test == "DIAG_UPDATE":
-                asic_type = MTP_ASIC_SUPPORT.ELBA
-                x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
-                arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
-                homedir = mtp_mgmt_ctrl.get_homedir()
-                onboard_images = mtp_mgmt_ctrl.mtp_diag_get_img_files(homedir)
-                ret = libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, x86_image, arm_image, onboard_images, homedir=homedir)
-
-            # copy python packages
-            elif test == "PYPKG_UPDATE":
-                homedir = mtp_mgmt_ctrl.get_homedir()
-                python_lib_dir = homedir + "python_files/"
-                ret = libmfg_utils.mtp_update_packages(mtp_mgmt_ctrl, "release/packages/", python_lib_dir)
-
-            duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-    # Sync timestamp to server
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
-    # close file handles
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-    for mtp_id in mtpid_fail_list:
-        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-
-    # # Copy script, config file on to each MTP Chassis
     mtp_2c_script_dir = "mtp_regression/"
-    # for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-    #     mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-    #     mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 2C Test script", level=0)
-    #     if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
-    #         mtp_mgmt_ctrl.cli_log_err("Deploy MTP 2C Test script failed", level=0)
-    #         mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id])
-    #         mtpid_list.remove(mtp_id)
-    #         mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-    #         mtpid_fail_list.append(mtp_id)
-    #     else:
-    #         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 2C Test script complete", level=0)
 
     mtp_thread_list = list()
     mfg_2c_summary = dict()
@@ -377,8 +343,20 @@ def main():
     mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
 
+    # Fill in SN if missing from mfg_2c_summary
+    temp_summary = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        temp_summary[mtp_id] = list()
+        for slot, sn, nic_type, rc in mfg_2c_summary[mtp_id]:
+            if sn is None or sn == 'None':
+                real_sn = mtp_mgmt_ctrl._sn
+            else:
+                real_sn = sn
+            temp_summary[mtp_id].append((slot, real_sn, nic_type, rc))
+    mfg_2c_summary = temp_summary
+
     # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_2C, mfg_2c_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(FF_Stage.FF_2C, mfg_2c_summary, [])
 
 
 if __name__ == "__main__":
