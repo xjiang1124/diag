@@ -20,6 +20,8 @@
 #    -f, --faopt       FA option: first/last/all
 #    -l, --snfile      SN file
 #    -d, --logdir      Directory to store logs
+#    -r, --remote      Mfg logs are stored remotely
+#    -k, --keep        Keep extracted logs after running parser
 #    -t, --testname    Test name (optional parameter to only parse this particular test name)
 #    -m, --mfgerrcode  Mfg err code (optional parameter to only parse this particular MFG err code)
 #    -h, --help        Print this help
