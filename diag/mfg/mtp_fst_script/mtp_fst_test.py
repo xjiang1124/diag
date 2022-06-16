@@ -20,6 +20,8 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
+from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmtp_db import mtp_db
@@ -88,7 +90,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.POMONTEDELL:
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -138,7 +140,9 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
     return "169.254.{:d}.1".format(bus_int)
 
 def get_product_name_from_pn(pn):
-    if "DSC2-2Q200-32R32F64P-R" in pn:
+    if "DSC2-2Q200-32R32F64P-R3" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-R" in pn:
         product_name = NIC_Type.ORTANO2
     elif "DSC2-2Q200-32R32F64P" in pn:
         product_name = NIC_Type.ORTANO2
@@ -154,6 +158,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.LACONA32
     elif "68-0026-01" in pn:
         product_name = NIC_Type.ORTANO2ADI
+    elif "68-0029-01" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
     else:
         product_name = NIC_Type.UNKNOWN
         print("Unknown PN:", pn)
@@ -558,7 +564,7 @@ def main():
 
             # hack to remove ROT in-flight
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI) and test == "ROT":
+            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
@@ -650,6 +656,22 @@ def main():
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
+    for slot in pass_nic_list:
+        key = libmfg_utils.nic_key(slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+            flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, FF_Stage.FF_FST)
+            if flex_rs != 0:
+                if flex_rs in FLEX_ERR_CODE_MAP.err_code:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]))
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)))
+                
+                pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)

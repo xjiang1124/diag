@@ -158,6 +158,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod"
         else:
             mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2INTERP:
+        mode = "hod"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
     elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -1068,7 +1070,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
             continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -1286,6 +1288,7 @@ def main():
     test_cfg_file[NIC_Type.ORTANO] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADI] = "config/ortano_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"

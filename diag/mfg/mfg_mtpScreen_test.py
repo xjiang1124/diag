@@ -137,7 +137,7 @@ def single_mtp_screen_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list,
         mtp_mgmt_ctrl.cli_log_err("MTP Collect MTP Screen Test result failed", level=0)
         return
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SRN) 
+        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_SRN, mtp_test_summary) 
         sn_type = ""
         duration = mtp_stop_ts - mtp_start_ts
 

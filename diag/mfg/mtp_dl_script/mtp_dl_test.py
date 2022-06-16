@@ -167,6 +167,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
         testlist = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.ORTANO2INTERP:
+        testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
         testlist = ["VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "FPGA_GOLD_PROG", "FPGA_GOLD_PROG_VERIFY"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -610,7 +612,7 @@ def main():
             sn = nic_fru_cfg[mtp_id][key]["SN"]
             dsp = FF_Stage.FF_DL
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2INTERP:
                 testlist = ["CPLD_BOOT_CHECK"]
             else:
                 continue
@@ -690,7 +692,7 @@ def main():
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
             elif nic_type == NIC_Type.NAPLES25SWM:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
-            elif nic_type == NIC_Type.ORTANO2:
+            elif nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type == NIC_Type.ORTANO2ADI:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"]

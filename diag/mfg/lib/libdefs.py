@@ -21,6 +21,29 @@ class NIC_Type:
     ORTANO2ADI = "ORTANO2ADI"
     UNKNOWN = "Unknown"
 
+class NIC_Type:
+    NAPLES100 = "NAPLES100"
+    NAPLES100IBM = "NAPLES100IBM"
+    NAPLES100HPE = "NAPLES100HPE"
+    NAPLES100DELL = "NAPLES100DELL"
+    NAPLES25 = "NAPLES25"
+    FORIO = "FORIO"
+    VOMERO = "VOMERO"
+    VOMERO2 = "VOMERO2"
+    NAPLES25SWM = "NAPLES25SWM"
+    NAPLES25OCP = "NAPLES25OCP"
+    NAPLES25SWMDELL = "NAPLES25SWMDELL"
+    NAPLES25SWM833 = "NAPLES25SWM833"
+    ORTANO = "ORTANO"
+    ORTANO2 = "ORTANO2"
+    POMONTEDELL = "POMONTEDELL"
+    LACONA32DELL = "LACONA32DELL"
+    LACONA32 = "LACONA32"
+    ORTANO2ADI = "ORTANO2ADI"
+    ORTANO2INTERP = "ORTANO2INTERP"
+    UNKNOWN = "Unknown"
+
+
 class MTP_ASIC_SUPPORT:
     CAPRI = "CAPRI"
     TURBO_CAPRI = "TURBO_CAPRI"
@@ -517,8 +540,8 @@ class MFG_DIAG_CMDS:
     MTP_PARA_MGMT_AAPL_FMT = "nic_test.py -setup_multi -mgmt -slot_list {:s} -asic_type {:s} -aapl"
     MTP_PARA_PRBS_ETH_TEST_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=120 -vmarg {:s} -mode=eth"
     MTP_PARA_PRBS_ETH_ELBA_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=elba"
-    MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s}"
-    MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -snake_num=4 -dura=3 -mode=pcie"
+    MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri"
+    MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=6 -dura=3 -mode=nod_525"
@@ -668,4 +691,4 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_LACONA32DELL = r"\bUUT_(\d+) +LACONA32DELL\b"
     MFG_NIC_TYPE_LACONA32 = r"\bUUT_(\d+) +LACONA32\b"
     MFG_NIC_TYPE_ORTANO2ADI = r"\bUUT_(\d+) +ORTANO2A\b"
-
+    MFG_NIC_TYPE_ORTANO2INTERP = r"\bUUT_(\d+) +ORTANO2I\b"
