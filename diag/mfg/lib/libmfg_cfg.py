@@ -717,7 +717,7 @@ CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP] #temporary list to hold nic
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-FLX_PENANG_SN_FMT = "FP[N|A]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+FLX_PENANG_SN_FMT = "FP[N|A|B]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)

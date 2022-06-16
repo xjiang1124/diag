@@ -168,6 +168,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2ADI:
         test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.ORTANO2INTERP:
+        testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "FPGA_GOLD_PROG", "FPGA_GOLD_PROG_VERIFY"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -189,7 +191,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
-                #ret = False
         # read old FRU via hexdump
         elif test == "FRU_DUMP":
             ret = mtp_mgmt_ctrl.mtp_dump_nic_fru(slot, expect_mac=mac, expect_pn=pn)
@@ -788,7 +789,6 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
-                #ret = False
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -879,7 +879,7 @@ def main():
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         dsp = stage
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI: 
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2INTERP: 
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -952,8 +952,8 @@ def main():
                 test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
         if nic_type == NIC_Type.ORTANO:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
-        if nic_type == NIC_Type.ORTANO2:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP:
+            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type == NIC_Type.ORTANO2ADI:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"] 
         if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
@@ -1113,8 +1113,10 @@ def main():
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
 
+    mtp_dl_summary = dict()
+    mtp_dl_summary[mtp_id] = mfg_dl_summary
     # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mfg_dl_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(stage, mtp_dl_summary, mtpid_fail_list)
 
     return
 
