@@ -191,7 +191,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
                 alom_sn = fru_cfg["SN_ALOM"]
                 alom_pn = fru_cfg["PN_ALOM"] 
                 ret = mtp_mgmt_ctrl.mtp_program_nic_alom_fru(slot, prog_date, alom_sn, alom_pn)
-                #ret = False
         # read old FRU via hexdump
         elif test == "FRU_DUMP":
             ret = mtp_mgmt_ctrl.mtp_dump_nic_fru(slot, expect_mac=mac, expect_pn=pn)
@@ -790,7 +789,6 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
             elif test == "NIC_DIAG_BOOT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
-                #ret = False
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -1115,8 +1113,10 @@ def main():
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
 
+    mtp_dl_summary = dict()
+    mtp_dl_summary[mtp_id] = mfg_dl_summary
     # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mfg_dl_summary, mtpid_fail_list)
+    libmfg_utils.mfg_summary_disp(stage, mtp_dl_summary, mtpid_fail_list)
 
     return
 
