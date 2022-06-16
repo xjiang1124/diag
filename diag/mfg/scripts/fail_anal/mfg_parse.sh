@@ -10,6 +10,8 @@ Help()
    echo "-f, --faopt       FA option: first/last/all"
    echo "-l, --snfile      SN file"
    echo "-d, --logdir      Directory to store logs"
+   echo "-r, --remote      Mfg logs are stored remotely"
+   echo "-k, --keep        Keep extracted logs after running parser"
    echo "-t, --testname    Test name (optional parameter to only parse this particular test name)"
    echo "-m, --mfgerrcode  Mfg err code (optional parameter to only parse this particular MFG err code)"
    echo "-h, --help        Print this help"
@@ -59,6 +61,16 @@ case $key in
     log_dir="$2"
     shift # past argument
     shift # past value
+    ;;
+    #-------------
+    -r|--remote)
+    is_remote=1
+    shift # past argument
+    ;;
+    #-------------
+    -k|--keep)
+    keep_log=1
+    shift # past argument
     ;;
     #-------------
     -t|--testname)
@@ -116,12 +128,32 @@ if [ -z "$log_dir" ]; then
     echo "Option -d not specified, using default dir name mfg_log"
     log_dir="mfg_log"
 fi
+if [ -z "$is_remote" ]; then
+    echo "Option -r not specified, copying logs locally"
+fi
+if [ -z "$keep_log" ]; then
+    echo "Option -k not specified, delete log dir after running parser"
+fi
+
+# limit the number of SNs to parse
+num_sn=$(cat "$sn_file" | wc -l)
+echo "num_sn=$num_sn"
+if [ "$num_sn" -gt 100 ]; then
+    echo "Please only parse up to 100 SNs at a time"
+    exit
+fi
 
 card_type_orig=$card_type
 card_type=$(echo $card_type | awk '{print toupper($0)}')
 echo $card_type
-if [[ ! -d "/mfg_log/${card_type}" ]]; then
-    card_type=$card_type_orig
+if [ ! $is_remote ]; then
+    if [[ ! -d "/mfg_log/${card_type}" ]]; then
+        card_type=$card_type_orig
+    fi
+else
+    if sshpass -p 'pensando' ssh mfg@hw-mftg-data '[ ! -d "/mfg_log/${card_type}" ]'; then
+        card_type=$card_type_orig
+    fi
 fi
 stage=$(echo $stage | awk '{print toupper($0)}')
 echo $stage
@@ -179,13 +211,24 @@ while read -r sn; do
             exit
             ;;
         esac
-        if [ -d ${from_loc} ]; then
-            echo "$from_loc exists"
-            sn_path_exists=1
-            mkdir -p $to_loc/$card_type/$i
-            cp -r $from_loc $to_loc/$card_type/$i/
+        if [ ! $is_remote ]; then
+            if [ -d ${from_loc} ]; then
+                echo "$from_loc exists"
+                sn_path_exists=1
+                mkdir -p $to_loc/$card_type/$i
+                cp -r $from_loc $to_loc/$card_type/$i/
+            else
+                echo "$from_loc does not exist"
+            fi
         else
-            echo "$from_loc does not exist"
+            mkdir -p $to_loc/$card_type/$i
+            sshpass -p 'pensando' rsync -r mfg@hw-mftg-data:$from_loc $to_loc/$card_type/$i/
+            if [ $? -eq 0 ]; then
+                echo "$from_loc exists"
+                sn_path_exists=1
+            else
+                echo "$from_loc does not exist"
+            fi
         fi
     done
 
@@ -234,7 +277,7 @@ echo "untar the log files"
 # untar
 cd $to_loc/$card_type
 #rm ./testresult.txt
-find ./ -name '*.tar.gz' -exec sh -c 'echo $0; dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
+find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
 cd $to_loc/$card_type
 while read -r sn; do
     #echo "SN is $sn"
@@ -287,5 +330,8 @@ run_parse
 #cp $parse_result $to_loc_top/../
 rm -f ${existing_log_file}
 echo "The parsing result is $parse_result"
-echo the temporary dir: $to_loc_top$dir_name can be removed
-#rm -rf $to_loc_top/$dir_name
+if [ $keep_log ]; then
+    echo the temporary dir: $to_loc_top$dir_name can be removed
+else
+    rm -rf $to_loc_top/$dir_name
+fi

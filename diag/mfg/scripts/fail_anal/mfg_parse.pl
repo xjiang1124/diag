@@ -281,7 +281,7 @@ while(my $line = <TR2>)
         %diag_fa_code = ();
         $all_test_msg = "";
         my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts);
-        parse_fpga_and_ecc($slotlogfile, $sn2, $ts, $l1_failed);
+        parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
 
         my $diag_fa_code_str = "";
         foreach my $diag_fa_code (keys %diag_fa_code) {
@@ -416,6 +416,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
         $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
         delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"}) {
+        $top_diag_fa_code = "SNAKE_PBM_ECC_FAILURE";
+        delete $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"};
         return;
     }
 
@@ -574,7 +580,7 @@ sub parse_snake_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             if ($line =~ m/ERROR :: elb(.*)pbm(.*)(_ecc|_mc)(.*)interrupt/) {
-                $diag_fa_code{"PBM_ECC_FAILURE"} = 1;
+                $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"} = 1;
             } else {
                 $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
             }
@@ -904,9 +910,9 @@ sub find_failure_code {
                 $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
             }
         }
-        if ($all_test_msg eq "") {
-            $all_test_msg = "log path: ".$fulllogpath."\n";
-        }
+    }
+    if ($all_test_msg eq "") {
+        $all_test_msg = "log path: ".$fulllogpath."\n";
     }
     if ($all_l1_fails ne "L1_TST") {
         $diag_fa_code{$all_l1_fails} = 1;
@@ -968,9 +974,6 @@ sub parse_mtp_and_slot_log {
     my $nic_status_dump = 0;
     my $halctl_slot_info = 0;
     my $eth1_3_down = 0;
-    my $setting_vmarg_start = 0;
-    my $mtp_failed_slots = 0x0;
-    my $mtp_loaded_slots = 0x0;
     my $slotnum = 0 + $slot;
 
     if (!open(TR3, '<', $slotlogfile)) {
@@ -1011,15 +1014,9 @@ sub parse_mtp_and_slot_log {
 	            $slot_err_msg .= $line;
             }
         }
-        if ($line =~ m/Setting Vmarg to/) {
-            $setting_vmarg_start = 1;
-        }
-        if ($line =~ m/Vmarg is at/) {
-            $setting_vmarg_start = 0;
-        }
-        if ($setting_vmarg_start && $line =~ m/Timeout, server .* not responding/) {
+        if ($line =~ m/Timeout, server .* not responding/) {
             $slot_err_msg .= $line;
-            $diag_fa_code{"NIC_UNRESPONSIVE_IN_VMARG"} = 1;
+            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
         if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
             if ($line =~ m/env \| grep -v PS1/) {
@@ -1028,15 +1025,6 @@ sub parse_mtp_and_slot_log {
                     $diag_fa_code{"MISSING_ENV_VAR"} = 1;
                 }
             }
-        }
-        if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
-            $err_msg_dump = 1;
-        }
-        if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
-            $err_msg_dump = 0;
-        }
-        if ($err_msg_dump != 0) {
-            $slot_err_msg .= $line;
         }
         if ($line =~ m/\/data\/nic_util\/mvl_acc\.sh/) {
             my $line2 = <TR3>;
@@ -1060,15 +1048,6 @@ sub parse_mtp_and_slot_log {
 
     while(my $line = <TR3>)
     {
-        if ($line =~ m/NIC\-([0-9]+).*NIC_DIAG_REGRESSION_TEST_(PASS|FAIL)/) {
-            my $slot_num = $1;
-            $slot_num += 0;
-            if ($2 eq "FAIL") {
-                $mtp_failed_slots |= 0x1 << ($slot_num - 1);
-                #printf("mtp_failed_slots: 0x%x\n", $mtp_failed_slots);
-            }
-            $mtp_loaded_slots |= 0x1 << ($slot_num - 1);
-        }
         if ($failure_code =~ "SCAN_VERIFY") {
             if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
                 $mtp_test_msg .= $line;
@@ -1124,20 +1103,24 @@ sub parse_mtp_and_slot_log {
         if ($nic_status_dump != 0) {
             $mtp_test_msg .= $line;
         }
+        if ($line =~ m/\[NIC-$slot\].*Timeout connecting to UART console/) {
+            $mtp_test_msg .= $line;
+        }
+        if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
+            $err_msg_dump = 1;
+        }
+        if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
+            $err_msg_dump = 0;
+        }
+        if ($err_msg_dump != 0) {
+            $mtp_test_msg .= $line;
+        }
     }
     if ($mtp_test_msg ne "") {
         $test_err_msg .= "\n--------mtp_test log--------: ".$mtpfile."\n";
         $test_err_msg .= $mtp_test_msg;
     }
     close(TR3);
-
-    if (($mtp_failed_slots & $mtp_loaded_slots) == $mtp_loaded_slots) {
-        $diag_fa_code{"ALL_SLOTS_FAIL"} = 1;
-    } elsif ((($mtp_loaded_slots & 0x3e0) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x3e0)) == ($mtp_loaded_slots & 0x3e0)) {
-        $diag_fa_code{"SLOTS_10_6_FAIL"} = 1;
-    } elsif ((($mtp_loaded_slots & 0x1f) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x1f)) == ($mtp_loaded_slots & 0x1f)) {
-        $diag_fa_code{"SLOTS_5_1_FAIL"} = 1;
-    }
 
     if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
         if (!open(TR3, '<', $mtpdiagfile)) {
@@ -1180,7 +1163,7 @@ sub parse_mtp_and_slot_log {
 }
 
 sub parse_fpga_and_ecc {
-    my ($logfile, $sn, $ts, $l1_failed) = @_;
+    my ($mtpfile, $logfile, $sn, $ts, $l1_failed) = @_;
     my $test_err_msg = "";
     print "#### parse_fpga_and_ecc logfile: $logfile, l1_failed: $l1_failed\n";
 
@@ -1200,6 +1183,35 @@ sub parse_fpga_and_ecc {
     my $ecc_reg_linenum = 0;
     my $ecc_not_valid = 0;
     my $c92_upgrade = 0;
+    my $mtp_failed_slots = 0x0;
+    my $mtp_loaded_slots = 0x0;
+
+    if (!open(TR3, '<', $mtpfile)) {
+        print "Cannot open file $mtpfile\n";
+        return;
+    }
+
+    while(my $line = <TR3>)
+    {
+        if ($line =~ m/NIC\-([0-9]+).*NIC_DIAG_REGRESSION_TEST_(PASS|FAIL)/) {
+            my $slot_num = $1;
+            $slot_num += 0;
+            if ($2 eq "FAIL") {
+                $mtp_failed_slots |= 0x1 << ($slot_num - 1);
+                #printf("mtp_failed_slots: 0x%x\n", $mtp_failed_slots);
+            }
+            $mtp_loaded_slots |= 0x1 << ($slot_num - 1);
+        }
+    }
+    close(TR3);
+
+    if (($mtp_failed_slots & $mtp_loaded_slots) == $mtp_loaded_slots) {
+        $diag_fa_code{"ALL_SLOTS_FAIL"} = 1;
+    } elsif ((($mtp_loaded_slots & 0x3e0) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x3e0)) == ($mtp_loaded_slots & 0x3e0)) {
+        $diag_fa_code{"SLOTS_10_6_FAIL"} = 1;
+    } elsif ((($mtp_loaded_slots & 0x1f) != 0) && ($mtp_failed_slots & ($mtp_loaded_slots & 0x1f)) == ($mtp_loaded_slots & 0x1f)) {
+        $diag_fa_code{"SLOTS_5_1_FAIL"} = 1;
+    }
 
     if (!open(TR3, '<', $logfile)) {
         print "Cannot open file $logfile\n";
