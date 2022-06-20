@@ -2,6 +2,7 @@ package hwinfo
 
 import (
     "os"
+    "fmt"
 
     "device/boardinfo"
     "device/fanctrl/adt7462"
@@ -18,6 +19,7 @@ import (
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/tempsensor/tmp42123"
+    "device/tempsensor/adm1032"
     "device/tempsensor/tmpadicom"
     "device/tempsensor/lm75a"
     "device/tempsensor/tmp451"
@@ -67,6 +69,8 @@ type SfpInfo_t struct {
 
 var cardType string
 var uutName string
+var itpType string
+var itpIdx byte
 
 //===============================
 // Naples common 
@@ -132,6 +136,10 @@ var biodonaDispStaList map[string]DispStaFunc
 var ortanoDispStaList map[string]DispStaFunc
 var ortanoaDispStaList map[string]DispStaFunc
 var ortanoiDispStaList map[string]DispStaFunc
+var ortanoitmpDispStaList = [2]DispStaFunc {
+    tmp42123.DispStatus,
+    adm1032.DispStatus,
+}
 
 //===============================
 // Lacona
@@ -391,7 +399,12 @@ func init() {
     ortanoiDispStaList["ELB0_ARM"]  = tps53659.DispStatus
     ortanoiDispStaList["VDDQ_DDR"]  = tps549a20.DispStatus
     ortanoiDispStaList["VDD_DDR"]   = tps549a20.DispStatus
-    ortanoiDispStaList["TSENSOR"]   = tmp42123.DispStatus
+
+    itpType = os.Getenv("ITP_TYPE")
+    fmt.Sscanf(itpType, "0x%x", &itpIdx)
+    tmpIdx := (itpIdx & 0xc0 ) >>6
+    // podIdx := (itpIdx & 0x07 )
+    ortanoiDispStaList["TSENSOR"]   = ortanoitmpDispStaList[tmpIdx]
 
     //Lacona
     laconaDispStaList = make(map[string]DispStaFunc)

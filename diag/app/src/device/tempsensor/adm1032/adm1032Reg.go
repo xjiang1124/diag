@@ -1,0 +1,49 @@
+package adm1032
+
+const (
+    MFG_ID_V byte = 0x41
+)
+
+const (
+    LOCAL_TEMP = 0
+    REMOTE_TEMP = 1
+    MAX_CHANNEL = 2
+)
+
+const (
+    LIMIT_LOW = 0
+    LIMIT_HIGH = 125
+)
+
+
+const (
+    LOCAL_TEMP_REG uint64 = 0x00
+    REMOTE_TEMP_HIGH uint64 = 0x01
+    STATUS uint64 =0x02
+    CONFIG_RD uint64 = 0x03
+    CONV_RATE_RD uint64 = 0x04
+    LOCAL_TEMP_HIGH_LIMIT_RD uint64 = 0x05
+    LOCAL_TEMP_LOW_LIMIT_RD uint64 = 0x06
+    REMOTE_TEMP_HIGH_LIMIT_HIGH_RD uint64 = 0x07
+    REMOTE_TEMP_LOW_LIMIT_HIGH_RD uint64 = 0x08
+    CONFIG_WR uint64 = 0x09
+    CONV_RATE_WR uint64 = 0x0A
+    LOCAL_TEMP_HIGH_LIMIT_WR uint64 = 0xB
+    LOCAL_TEMP_LOW_LIMIT_WR uint64 = 0xC
+    REMOTE_TEMP_HIGH_LIMIT_HIGH_WR uint64 = 0xD
+    REMOTE_TEMP_LOW_LIMIT_HIGH_WR uint64 = 0xE
+    ONE_STOT_START uint64 = 0x0F
+    REMOTE_TEMP_LOW uint64 = 0x10
+    REMOTE_TEMP_OFFSET_HIGH uint64 = 0x11
+    REMOTE_TEMP_OFFSET_LOW uint64 = 0x12
+    REMOTE_TEMP_HIGH_LIMIT_LOW uint64 = 0x13
+    REMOTE_TEMP_LOW_LIMIT_LOW uint64 = 0x14
+    REMOTE_THERM_MILIT uint64 = 0x19
+    LOCAL_THERM_MILIT uint64 = 0x20
+    THERM_HYSTERESIS uint64 = 0x21
+    CONSEC_ALERT uint64 = 0x22
+    MFG_ID uint64 = 0xFE
+    DIE_ID uint64 = 0xFF
+)
+
+
