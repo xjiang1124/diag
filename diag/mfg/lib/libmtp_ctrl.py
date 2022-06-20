@@ -302,6 +302,151 @@ class mtp_ctrl():
     def get_mtp_slot_num(self):
         return self._slots
 
+    def _apc_model_check(self, handle):
+        """
+        Check that the model is a Digital Logger V222.
+        This model supports the uom commands we are using in the script.
+        """
+        retry = 0
+        while True:
+            handle.send("uom dump relay/model\r")
+            idx = handle.expect_exact(["V222", "#", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.expect_exact("#")
+                return True
+            elif idx == 1:
+                self.cli_log_err("This APC model not supported")
+                return False
+            elif idx > 1 and retry < 5:
+                retry += 1
+                continue
+            else:
+                self.cli_log_err("APC: Unable to check model")
+                return False
+
+    def _mtp_single_apc_pwr_off_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Set persistent state: uom set "relay/outlets/2/state" false
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom set relay/outlets/{:d}/state false\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
+    def _mtp_single_apc_pwr_on_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Set persistent state: uom set "relay/outlets/2/state" true
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom set relay/outlets/{:d}/state true\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
+    def _mtp_single_apc_pwr_get_state_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Get persistent state: uom get relay/outlets/0/state
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom get relay/outlets/{:d}/state\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
 
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
         retry = 0
@@ -309,14 +454,18 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx > 1 and retry < 5:
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                return self._mtp_single_apc_pwr_off_ssh(apc, userid, passwd, port_list)
+            elif idx > 2 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue
@@ -349,14 +498,18 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx > 1 and retry < 5:
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                return self._mtp_single_apc_pwr_on_ssh(apc, userid, passwd, port_list)
+            elif idx > 2 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue
@@ -387,13 +540,22 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                if not self._mtp_single_apc_pwr_off_ssh(apc, userid, passwd, port_list):
+                    return False
+                time.sleep(1)
+                if not self._mtp_single_apc_pwr_on_ssh(apc, userid, passwd, port_list):
+                    return False
+                return True
             else:
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
