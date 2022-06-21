@@ -10,6 +10,8 @@ import (
 
 var CardType string
 var uutType string
+var itpType string
+var itpIdx byte
 
 type I2cInfo struct {
     Name    string
@@ -80,22 +82,53 @@ var OrtanoADITbl = []I2cInfo {
     I2cInfo {"QSFP_2_DOM",     "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
 }
 
-var OrtanoITbl = []I2cInfo {
+var OrtanoIBASETbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"SPD",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_8BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
-    I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"VDDQ_DDR",       "TPS549A20", 0x0,   0x1B,    0x0,    "HUB_NONE",  0,    0},
 
     I2cInfo {"QSFP_1",         "QSFP",      0x1,   0x50,    0x0,    "HUB_CPLD",  0,    0},
     I2cInfo {"QSFP_1_DOM",     "QSFP",      0x1,   0x51,    0x0,    "HUB_CPLD",  0,    0},
 
     I2cInfo {"QSFP_2",         "QSFP",      0x2,   0x50,    0x0,    "HUB_CPLD",  0,    0},
     I2cInfo {"QSFP_2_DOM",     "QSFP",      0x2,   0x51,    0x0,    "HUB_CPLD",  0,    0},
+}
+
+var OrtanoIPODTbl0 = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "TPS549A20", 0x0,   0x1B,    0x0,    "HUB_NONE",  0,    0},
+}
+
+var OrtanoITMPTbl0 = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+}
+
+var OrtanoIPODTbl = [8][]I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    nil,
+   { I2cInfo {"ELB0_CORE",      "TPS53659A", 0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+     I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+     I2cInfo {"VDD_DDR",        "TPS549A20", 0x0,   0x1C,    0x0,    "HUB_NONE",  0,    0},
+     I2cInfo {"VDDQ_DDR",       "TPS549A20", 0x0,   0x1B,    0x0,    "HUB_NONE",  0,    0},},
+   nil,
+   nil,
+   nil,
+   nil,
+   nil,
+   nil,
+}
+
+var OrtanoITMPTbl = [4][]I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    { I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},},
+    { I2cInfo {"TSENSOR",        "ADM1032",   0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},},
+    nil,
+    nil,
 }
 
 var OrtanoTbl = []I2cInfo {
@@ -487,7 +520,15 @@ func init() {
     } else if CardType == "ORTANO2A" {
         I2cTbl = OrtanoADITbl
     } else if CardType == "ORTANO2I" {
-        I2cTbl = OrtanoITbl
+        itpType = os.Getenv("ITP_TYPE")
+
+        fmt.Sscanf(itpType, "0x%x", &itpIdx)
+        tmpIdx := (itpIdx & 0xc0 )  >> 6
+        podIdx := (itpIdx & 0x07 )
+
+        I2cTbl = OrtanoIBASETbl
+        I2cTbl = append(I2cTbl, OrtanoIPODTbl[podIdx]...)
+        I2cTbl = append(I2cTbl, OrtanoITMPTbl[tmpIdx]...)
     } else if CardType == "LACONADELL"      ||
               CardType == "LACONA"          ||
               CardType == "LACONA32DELL"    ||

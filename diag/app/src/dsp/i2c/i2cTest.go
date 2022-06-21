@@ -20,6 +20,7 @@ import (
     "device/powermodule/tps53681"
     "device/powermodule/sn1701022"
     "device/rtc/pcf85263a"
+    "device/tempsensor/adm1032"
     "device/tempsensor/tmp42123"
     "device/tempsensor/tmp451"
     "device/tempsensor/tmpadicom"
@@ -109,6 +110,19 @@ func testTmp422(devName string) (err int) {
     }
     if mfgId != tmp42123.MFG_ID_V {
         dcli.Println("F", devName, " Invalid MFG ID: expected", tmp42123.MFG_ID_V, "read", mfgId)
+        return errType.FAIL
+    }
+    return
+}
+
+func testTmpADM1032(devName string) (err int) {
+    mfgId, err := adm1032.ReadMfgId(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+        return
+    }
+    if mfgId != adm1032.MFG_ID_V {
+        dcli.Println("F", devName, " Invalid MFG ID: expected", adm1032.MFG_ID_V, "read", mfgId)
         return errType.FAIL
     }
     return
@@ -361,6 +375,11 @@ func I2cI2cHdl(argList []string) {
             }
         case "TMP422":
             err = testTmp422(devName)
+            if err != errType.SUCCESS {
+                ret = err
+            }
+        case "ADM1032":
+            err = testTmpADM1032(devName)
             if err != errType.SUCCESS {
                 ret = err
             }
