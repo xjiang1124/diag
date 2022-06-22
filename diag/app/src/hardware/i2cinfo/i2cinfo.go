@@ -125,7 +125,7 @@ var OrtanoIPODTbl = [8][]I2cInfo {
 
 var OrtanoITMPTbl = [4][]I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
-    { I2cInfo {"TSENSOR",        "TMP422",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},},
+    { I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},},
     { I2cInfo {"TSENSOR",        "ADM1032",   0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},},
     nil,
     nil,

@@ -136,9 +136,11 @@ var biodonaDispStaList map[string]DispStaFunc
 var ortanoDispStaList map[string]DispStaFunc
 var ortanoaDispStaList map[string]DispStaFunc
 var ortanoiDispStaList map[string]DispStaFunc
-var ortanoitmpDispStaList = [2]DispStaFunc {
-    tmp42123.DispStatus,
+var ortanoitmpDispStaList = [4]DispStaFunc {
+    tmp451.DispStatusWithRemote,
     adm1032.DispStatus,
+    nil,
+    nil,
 }
 
 //===============================
