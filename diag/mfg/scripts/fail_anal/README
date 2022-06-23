@@ -4,11 +4,13 @@
 #
 # The script to do failure analysis is mfg_parse.pl
 # The bash script mfg_parse.sh copies logs from /mfg_log/
-# on MFG server (192.168.3.2) and calls mfg_parse.pl
+# on MFG server (192.168.3.2) and calls mfg_parse.pl and convert.pl
+# The script convert.pl converts the yaml format output of mfg_parse.pl
+# to a spreadsheet
 # 
 # 1. Copy the latest mfg_parse.sh to /home/mfg/mfg_diag_fa/
 # directory on MFG server
-# 2. Copy the latest mfg_parse.pl to /home/mfg/mfg_diag_fa/scripts/
+# 2. Copy the latest mfg_parse.pl and convert.pl to /home/mfg/mfg_diag_fa/scripts/
 # directory on MFG server
 # 3. Then in /home/mfg/mfg_diag_fa/, put all the SNs that need
 # parsing into a file, one SN per line
@@ -17,7 +19,7 @@
 #    options:
 #    -c, --card        Card type
 #    -s, --stage       Stage(s), comma separated
-#    -f, --faopt       FA option: first/last/all
+#    -f, --faopt       FA option: first/last/all/first_run/last_run/all_run
 #    -l, --snfile      SN file
 #    -d, --logdir      Directory to store logs
 #    -r, --remote      Mfg logs are stored remotely

@@ -7,7 +7,7 @@ Help()
    echo "options:"
    echo "-c, --card        Card type"
    echo "-s, --stage       Stage(s), comma separated"
-   echo "-f, --faopt       FA option: first/last/all"
+   echo "-f, --faopt       FA option: first/last/all/first_run/last_run/all_run"
    echo "-l, --snfile      SN file"
    echo "-d, --logdir      Directory to store logs"
    echo "-r, --remote      Mfg logs are stored remotely"
@@ -138,10 +138,10 @@ fi
 # limit the number of SNs to parse
 num_sn=$(cat "$sn_file" | wc -l)
 echo "num_sn=$num_sn"
-if [ "$num_sn" -gt 100 ]; then
-    echo "Please only parse up to 100 SNs at a time"
-    exit
-fi
+#if [ "$num_sn" -gt 100 ]; then
+#    echo "Please only parse up to 100 SNs at a time"
+#    exit
+#fi
 
 card_type_orig=$card_type
 card_type=$(echo $card_type | awk '{print toupper($0)}')
@@ -171,6 +171,24 @@ missing_log_file="${cwd}/sn_list_missing_log${timestamp}.txt"
 existing_log_file="${cwd}/sn_list_existing_log${timestamp}.txt"
 rm -f $missing_log_file $existing_log_file
 
+function run_parse {
+    local sn=$1
+    echo "In run_parse"
+    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
+    cd $to_loc/$card_type
+    ./mfg_parse.pl $fa_opt $test_name $mfg_err_code
+}
+
+function run_convert {
+    #stage=$1
+    #txt_path=$2
+    parse_result="${cwd}/parse_result_${timestamp}_${log_dir}.xlsx"
+    echo "Done with runnning the parse script, output is $parse_result"
+    cp $to_loc_top/convert.pl $to_loc/$card_type
+    cd $to_loc/$card_type
+    ./convert.pl $fa_opt $parse_result
+}
+
 to_loc_top="${cwd}/scripts/"
 to_loc=$to_loc_top
 dir_name=$log_dir
@@ -180,6 +198,7 @@ to_loc+=$dir_name
 
 # generate a file to list SNs with no log
 # copy logs
+# run parser for each SN
 while read -r sn; do
     echo "SN is $sn"
     #declare -A sn_paths
@@ -238,100 +257,54 @@ while read -r sn; do
     else
         echo $sn >> $existing_log_file
     fi
-done < "${cwd}/${sn_file}"
 
-if [ ! -f $existing_log_file ]; then
-    exit
-fi
+    echo "untar the log files"
+    for stage in "${stages[@]}";
+    do
+        if [ $stage == "FST" ]; then
+            summary_file="test_fst.log"
+        else
+            summary_file="mtp_test.log"
+        fi
+        if [ -d $to_loc/$card_type/$stage/$sn ]; then
+            cd $to_loc/$card_type/$stage/$sn
+            find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
+            cd $to_loc/$card_type
+            if [[ "$fa_opt" == *"RUN"* ]]; then
+                find ./$stage -name $summary_file | xargs grep -anHE "$sn NIC_DIAG_REGRESSION_TEST_[FAIL|PASS]" >> $to_loc/$card_type/testresult.txt
+            else
+                find ./$stage -name $summary_file | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> $to_loc/$card_type/testresult.txt
+            fi
+        fi
+    done
+    #cat $to_loc/$card_type/testresult.txt
+    run_parse $sn
+    #cat $to_loc/$card_type/logs_fail.txt
 
-function run_parse {
-    #stage=$1
-    #txt_path=$2
-    parse_result="${cwd}/parse_result_${timestamp}_${log_dir}.xlsx"
-    echo "runnning the parse script, output is $parse_result"
-    #if [ "$stage" == "FST" ]; then
-    #    cp $to_loc_top/mfg_parse_fst.pl $to_loc/$card_type/mfg_parse.pl
-    #else
-    #    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
-    #fi
-    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
-    cd $to_loc/$card_type
-    ./mfg_parse.pl $fa_opt $parse_result $test_name $mfg_err_code
-
-    # grep each SN in logs_fail.txt
-    while read -r sn; do
-        echo "SN is $sn"
-        for stage in "${stages[@]}"
-        do
+    for stage in "${stages[@]}";
+    do
+        if [[ "$fa_opt" != *"RUN"* ]]; then
             if grep -q "${stage}\/$sn" $to_loc/$card_type/logs_fail.txt; then
                 echo "failure log for SN $sn exists in stage $stage"
             else
                 echo "failure log for SN $sn does not exist in stage $stage"
                 echo $sn >> $missing_log_file
             fi
-        done
-    done < "${existing_log_file}"
-}
-
-echo "untar the log files"
-# untar
-cd $to_loc/$card_type
-#rm ./testresult.txt
-find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
-cd $to_loc/$card_type
-while read -r sn; do
-    #echo "SN is $sn"
-    for stage in "${stages[@]}"
-    do
-        #echo "stage=$stage"
-        case $stage in
-            "DL")
-            if [ -d ./$stage ]; then
-                #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP DL Test Complete" > ./$stage/testresult.txt
-                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-            fi
-            ;;
-            "SWI")
-            if [ -d ./$stage ]; then
-                #find ./$stage -name "mtp_test.log" | xargs grep -anH -A11 "MTP Software Install Test Complete" > ./$stage/testresult.txt
-                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-            fi
-            ;;
-            "FST")
-            if [ -d ./$stage ]; then
-                find ./$stage -name "test_fst.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-            fi
-            ;;
-            "P2C")
-            if [ -d ./$stage ]; then
-                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-            fi
-            ;;
-            "4C-L")
-            if [ -d ./$stage ]; then
-                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-            fi
-            ;;
-            "4C-H")
-            if [ -d ./$stage ]; then
-                find ./$stage -name "mtp_test.log" | xargs grep -anH "$sn NIC_DIAG_REGRESSION_TEST_FAIL" >> ./testresult.txt
-
-            fi
-            ;;
-            *)
-            echo "Invalid stage $stage"
-            exit
-            ;;
-        esac
+        fi
+        if [ ! $keep_log ]; then
+            rm -rf $to_loc/$card_type/$stage/$sn
+        fi
     done
-done < "../../../${sn_file}"
-run_parse
+    rm $to_loc/$card_type/testresult.txt
+    rm $to_loc/$card_type/logs_fail.txt
+done < "${cwd}/${sn_file}"
+
+if [ ! -f $existing_log_file ]; then
+    exit
+fi
 
 #cp $parse_result $to_loc_top/../
+run_convert
 rm -f ${existing_log_file}
 echo "The parsing result is $parse_result"
-if [ $keep_log ]; then
-    echo the temporary dir: $to_loc_top$dir_name can be removed
-else
-    rm -rf $to_loc_top/$dir_name
-fi
+echo "the temporary dir: $to_loc_top$dir_name can be removed"
