@@ -4899,7 +4899,9 @@ class mtp_ctrl():
             return False
         else:
             pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
-
+            if pn is None:
+                self.cli_log_slot_err(slot, "No PN detected")
+                return False
             # search for this PN in lib/libsku_cfg.py
             for pn_regex in self._valid_pn_list:
                 pn_match = re.match(pn_regex, pn)
