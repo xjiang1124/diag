@@ -466,6 +466,7 @@ class FLEX_ERR_CODE_MAP:
     err_code = dict()
     err_code[-3] = "Unable to locate flex factory based on sn."
     err_code[-2] = "Fail to generate SOAP XML content."
+    err_code[9999] = "Connection Failed in Flex side, please contact Flex IT ASAP."
     err_code[120110005] = "NextStateID must be numeric."
     err_code[120110010] = "The serial numbers should not be matched to multiple UnitID ."
     err_code[120110050] = "Cannot take NULL field value for nonexistent unit."
