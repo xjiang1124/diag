@@ -93,6 +93,7 @@ do
         cp $TOP_DIR/tools/bin/arm64/stressapptest_arm           $TEMP_DIR/tools/
     else
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.arm64.sh $TEMP_DIR/..
+        cp $TOP_DIR/tools/bin/arm64/mmc.latest           $TEMP_DIR/tools/
     fi
     # Version
     git log --name-status HEAD^..HEAD > $TEMP_DIR/scripts/version.txt
@@ -143,6 +144,7 @@ do
         cp $TEMP_DIR/scripts/ltc3888_1.txt                      $NIC_UTIL_DIR
     
         cp $TOP_DIR/diag/scripts/sw/*                           $NIC_UTIL_DIR/sw/
+        cp $TOP_DIR/tools/bin/arm64/mmc.latest                  $NIC_UTIL_DIR/
     
         cd $NIC_UTIL_DIR
         tar czf $IMG_DIR/nic_util.tar -C $TEMP_DIR_TOP nic_util/

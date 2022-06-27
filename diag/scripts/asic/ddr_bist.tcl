@@ -85,14 +85,18 @@ elb_l1_ddr_bist $ddr_freq $dual_rank 0 1 $addr_space $ctrl_pi
 
 set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
 # Print twice for DSP to capture signature
+plog_msg "\n\n\n"
+plog_msg "============================="
 if {$err_cnt == 0} {
     plog_msg "DDR BIST PASSED"
     plog_msg "DDR BIST PASSED"
+    plog_msg "============================="
     plog_stop
     exit
 } else {
     plog_msg "DDR BIST FAILED"
     plog_msg "DDR BIST FAILED"
+    plog_msg "============================="
     plog_stop
 }
 
