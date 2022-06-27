@@ -132,6 +132,7 @@ then
     asic_type="ELBA"
 elif [[ $cpld_id == "0x4c" ]]
 then
+    itp_type="$(xo3dcpld -r 0x93)"
     type="ORTANO2I"
     asic_type="ELBA"
 else
@@ -141,9 +142,11 @@ fi
 
 echo "$type Detected!"
 echo "export CARD_TYPE=\"$type\"" >> /etc/profile
+echo "export ITP_TYPE=\"$itp_type\"" >> /etc/profile
 echo "export ASIC_TYPE=\"$asic_type\"" >> /etc/profile
 echo "export CARD_ENV=\"ARM\"" >> /etc/profile
 export CARD_TYPE=$type
+export ITP_TYPE=$itp_type
 export CARD_ENV="ARM"
 
 ASIC_LIB_BUNDLE="/data/nic_arm/nic"

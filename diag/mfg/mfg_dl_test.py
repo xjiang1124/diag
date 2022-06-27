@@ -58,7 +58,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
+    mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
 
 
@@ -290,6 +291,15 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
+            for card_type in FPGA_TYPE_LIST:
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.timer1_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
 
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])

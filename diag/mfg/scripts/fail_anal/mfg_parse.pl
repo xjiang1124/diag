@@ -1,18 +1,15 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib "../../Archive-Zip-1.68/lib";
-use lib "../../Excel-Writer-XLSX-1.09/lib";
+use lib "../../YAML-LibYAML-0.83/lib";
 use Time::Local;
 use Cwd;
-use File::Find;
-use Excel::Writer::XLSX;
+use YAML::XS;
 
 my $fa_opt = shift;
-my $result_file = shift;
-#my $failure_txt_path = shift;
 my $test_name_opt = shift;
 my $mfg_err_code_opt = shift;
+my $yaml_file = "./temp.yaml";
 
 if (defined $test_name_opt) {
     print "test name: $test_name_opt\n";
@@ -33,7 +30,6 @@ my $curr_sn = "";
 my $curr_unixts = 0;
 my $lastline = "";
 my $debug_msgs = 0;
-my $worksheet_name = "";
 
 #system("rm $failure_logs $pass_logs $result_file");
 
@@ -90,7 +86,7 @@ sub count_num_of_failures {
 
                 my $unixts = convert_ts($ts);
 
-                if ($fa_opt ne "ALL") {
+                if ($fa_opt !~ m/ALL/) {
                     if ($curr_sn ne $sn2)
                     {
                         print TR2 $lastline;
@@ -127,7 +123,93 @@ sub count_num_of_failures {
             }
         }
     }
-    if ($fa_opt ne "ALL") {
+    if ($fa_opt !~ m/ALL/) {
+        print TR2 $lastline;
+        $num_failures++;
+    } else {
+        foreach my $ts (sort keys %failures_one_sn) {
+            print TR2 $failures_one_sn{$ts};
+        }
+    }
+    close(TR);
+    close(TR2);
+}
+
+sub count_num_of_runs {
+    my ($fa_opt) = @_;
+    my %failures_one_sn = ();
+    $num_failures = 0;
+    open(TR, '<', $file_logs_all) or die $!;
+    open(TR2, '>', $failure_logs) or die $!;
+    while(my $line = <TR>)
+    {
+        if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP|MTPS)\-([0-9]+)_(.*)\/(mtp_test|test_fst).log(.*)(\]:\s)(NIC-\d+)\s\w+\s(\w+)\sNIC_DIAG_REGRESSION_TEST_(PASS|FAIL)/)
+        {
+            my $toppath=$1;
+            my $sn=$2;
+            my $stage=$3;
+            my $mtp=$5;
+            my $ts=$6;
+            my $slot=$10;
+            my $sn2=$11;
+
+            if ($debug_msgs) {
+                print "toppath:  $toppath\n";
+                print "folder sn:  $sn\n";
+                print "card  sn2:  $sn2\n";
+                print "stage:      $stage\n";
+                print "ts:         $ts\n";
+                print "slot:       $slot\n";
+            }
+
+            if ($sn eq $sn2)
+            {
+                if ($curr_sn eq "")
+                {
+                    $curr_sn = $sn2;
+                    if ($debug_msgs) { print "first new SN: $curr_sn\n"};
+                }
+
+                my $unixts = convert_ts($ts);
+
+                if ($fa_opt !~ m/ALL/) {
+                    if ($curr_sn ne $sn2)
+                    {
+                        print TR2 $lastline;
+                        $num_failures++;
+                        $curr_sn = $sn2;
+                        $curr_unixts = $unixts;
+                        if ($debug_msgs) { print "A new SN: $curr_sn, curr_unixts: $curr_unixts\n"};
+                        $lastline=$line;
+                        next;
+                    }
+
+                    if (($fa_opt eq "FIRST_RUN" && $unixts < $curr_unixts) ||
+                        ($fa_opt eq "LAST_RUN" && $unixts > $curr_unixts))
+                    {
+                        $curr_unixts = $unixts;
+                        if ($debug_msgs) { print "new curr_unixts: $curr_unixts\n"};
+                        $lastline=$line;
+                    }
+                } else {
+                    if ($curr_sn ne $sn2)
+                    {
+                        #sort on unixts
+                        foreach my $ts (sort keys %failures_one_sn) {
+                            if ($debug_msgs) { printf "%-8s %s\n", $ts, $failures_one_sn{$ts}};
+                            print TR2 $failures_one_sn{$ts};
+                        }
+                        %failures_one_sn = ();
+                        $curr_sn = $sn2;
+                        if ($debug_msgs) { print "A new SN: $curr_sn\n"};
+                    }
+                    $failures_one_sn{$unixts} = $line;
+                    $num_failures++;
+                }
+            }
+        }
+    }
+    if ($fa_opt !~ m/ALL/) {
         print TR2 $lastline;
         $num_failures++;
     } else {
@@ -140,117 +222,38 @@ sub count_num_of_failures {
 }
 
 if($fa_opt eq "LAST") {
-    $worksheet_name = "Last failures";
     $curr_unixts = 0;
     count_num_of_failures($fa_opt);
 } elsif($fa_opt eq "FIRST") {
-    $worksheet_name = "First failures";
     $curr_unixts = time();
     count_num_of_failures($fa_opt);
 } elsif($fa_opt eq "ALL") {
-    $worksheet_name = "All failures";
     count_num_of_failures($fa_opt);
+} elsif($fa_opt eq "LAST_RUN") {
+    $curr_unixts = 0;
+    count_num_of_runs($fa_opt);
+} elsif($fa_opt eq "FIRST_RUN") {
+    $curr_unixts = time();
+    count_num_of_runs($fa_opt);
+} elsif($fa_opt eq "ALL_RUN") {
+    count_num_of_runs($fa_opt);
 } else {
     print "unexpected fa_opt $fa_opt\n";
     exit(1);
 }
 
-my $workbook = Excel::Writer::XLSX->new($result_file);
-
-my $worksheet = $workbook->add_worksheet($worksheet_name);
-my $format = $workbook->add_format(text_wrap => 1);
-my @colDefs = (
-    {
-        header => 'SN',
-        header_format => $format,
-    },
-    {
-        header => 'Stage',
-        header_format => $format,
-    },
-    {
-        header => 'Date',
-        header_format => $format,
-    },
-    {
-        header => 'MTP',
-        header_format => $format,
-    },
-    {
-        header => 'Slot',
-        header_format => $format,
-    },
-    {
-        header => 'Test',
-        header_format => $format,
-    },
-    {
-        header => 'MFG Error Code',
-        header_format => $format,
-    },
-    {
-        header => 'Diag FA Code',
-        header_format => $format,
-    },
-    {
-        header => 'CPLD Reg',
-        header_format => $format,
-    },
-    {
-        header => 'ECC Reg',
-        header_format => $format,
-    },
-    {
-        header => 'Err Msg',
-        header_format => $format,
-    },
-    {
-        header => 'Detailed Diag FA Code',
-        header_format => $format,
-    },
-);
- 
-$worksheet->add_table(0, 0, $num_failures, 11, { columns     => \@colDefs,  } );
-
+my $curr_row = 0;
 open(TR2, '<', $failure_logs) or die $!;
-my $curr_row = 1;
-my $sn_col = 0;
-my $stage_col = 1;
-my $date_col = 2;
-my $mtp_col = 3;
-my $slot_col = 4;
-my $test_name_col = 5;
-my $failure_code_col = 6;
-my $top_diag_fa_col = 7;
-my $cpld_sts_col = 8;
-my $ecc_sts_col = 9;
-my $err_msg_col = 10;
-my $full_diag_fa_col = 11;
-
-my $default_fmt = $workbook->add_format();
-$default_fmt->set_align("top");
-$default_fmt->set_align("left");
-$default_fmt->set_text_wrap();
-$worksheet->set_column($sn_col, $sn_col, 14, $default_fmt);
-$worksheet->set_column($stage_col, $stage_col, undef, $default_fmt);
-$worksheet->set_column($date_col, $date_col, 20, $default_fmt);
-$worksheet->set_column($mtp_col, $mtp_col, undef, $default_fmt);
-$worksheet->set_column($slot_col, $slot_col, 6, $default_fmt);
-$worksheet->set_column($test_name_col, $test_name_col, 15, $default_fmt);
-$worksheet->set_column($failure_code_col, $failure_code_col, 22, $default_fmt);
-$worksheet->set_column($top_diag_fa_col, $top_diag_fa_col, 32, $default_fmt);
-$worksheet->set_column($cpld_sts_col, $cpld_sts_col, 55, $default_fmt);
-$worksheet->set_column($ecc_sts_col, $ecc_sts_col, 48, $default_fmt);
-$worksheet->set_column($err_msg_col, $err_msg_col, 60, $default_fmt);
-$worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 32, $default_fmt);
 
 my %diag_fa_code;
+my $fa_table;
+my @fa_row;
 my $top_diag_fa_code = "";
 my $all_test_msg = "";
 my $all_l1_fails = "";
 while(my $line = <TR2>)
 {
-    if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP|MTPS)\-([0-9]+)_(.*)\/(mtp_test|test_fst).log(.*)(\]:\s)NIC-(\d+)(\s\w+\s)(\w+)(\s)NIC_DIAG_REGRESSION_TEST_FAIL/)
+    if($line =~ m/\.\/([\w-]+)\/(\w+)\/([0-9A-Z-]+)_(MTP|MTPS)\-([0-9]+)_(.*)\/(mtp_test|test_fst).log(.*)(\]:\s)NIC-(\d+)\s\w+\s(\w+)\sNIC_DIAG_REGRESSION_TEST_(PASS|FAIL)/)
     {
         my $toppath=$1;
         my $sn=$2;
@@ -258,7 +261,8 @@ while(my $line = <TR2>)
         my $mtp=$4."-".$5;
         my $ts=$6;
         my $slot=$10;
-        my $sn2=$12;
+        my $sn2=$11;
+        my $result=$12;
 
         if ($debug_msgs) { print "\nThe SN we are looking at: $sn2, line: $line\n" };
         my $fulllogpath=$log_path."/".$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts;
@@ -273,28 +277,38 @@ while(my $line = <TR2>)
         if ($debug_msgs) { print "slotlogfile: $slotlogfile\n" };
         print "########################## $curr_row ###############################\n";
         printf "%-30s %-20s %-20s\n", "Failed sn: ".$sn2, "mtp: ".$mtp, "slot: ".$slot;
-        $worksheet->write($curr_row, $sn_col, $sn2);
-        $worksheet->write($curr_row, $stage_col, $toppath);
-        $worksheet->write($curr_row, $date_col, $ts);
-        $worksheet->write($curr_row, $mtp_col, $mtp);
-        $worksheet->write($curr_row, $slot_col, $slot);
+        @fa_row = ();
+        $fa_row[$curr_row]{"SN"} = $sn2;
+        $fa_row[$curr_row]{"Stage"} = $toppath;
+        $fa_row[$curr_row]{"Date"} = $ts;
+        $fa_row[$curr_row]{"MTP"} = $mtp;
+        $fa_row[$curr_row]{"Slot"} = $slot;
+
         %diag_fa_code = ();
         $all_test_msg = "";
-        my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts);
-        parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
+        if ($result eq "FAIL") {
+            my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts);
+            parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
 
-        my $diag_fa_code_str = "";
-        foreach my $diag_fa_code (keys %diag_fa_code) {
-            $diag_fa_code_str .= $diag_fa_code."\n";
-        }
-        if ($diag_fa_code_str ne "") {
-            chomp($diag_fa_code_str);
-            $worksheet->write($curr_row, $full_diag_fa_col, $diag_fa_code_str);
-        }
+            my $diag_fa_code_str = "";
+            foreach my $diag_fa_code (keys %diag_fa_code) {
+                $diag_fa_code_str .= $diag_fa_code."\n";
+            }
+            if ($diag_fa_code_str ne "") {
+                chomp($diag_fa_code_str);
+                $fa_row[$curr_row]{"Detailed Diag FA Code"} = $diag_fa_code_str;
+            }
 
-        pick_top_diag_fa();
-        $worksheet->write($curr_row, $top_diag_fa_col, $top_diag_fa_code);
-        $worksheet->write($curr_row, $err_msg_col, $all_test_msg);
+            pick_top_diag_fa();
+            $fa_row[$curr_row]{"Diag FA Code"} = $top_diag_fa_code;
+        } else { 
+            $fa_row[$curr_row]{"Diag FA Code"} = "PASS";
+            $fa_row[$curr_row]{"Detailed Diag FA Code"} = "";
+        }
+        $fa_row[$curr_row]{"Err Msg"} = $all_test_msg;
+        open(TR0, '>>', $yaml_file) or die $!;
+        print TR0 Dump($fa_row[$curr_row]);
+        close(TR0);        
         $curr_row++;
     }
 }
@@ -473,6 +487,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SNAKE_CRC_ERROR"}) {
+        $top_diag_fa_code = "SNAKE_CRC_ERROR";
+        delete $diag_fa_code{"SNAKE_CRC_ERROR"};
+        return;
+    }
+
     if (exists $diag_fa_code{"L1_CORE_DUMPED"}) {
         $top_diag_fa_code = "L1_CORE_DUMPED";
         delete $diag_fa_code{"L1_CORE_DUMPED"};
@@ -602,6 +622,12 @@ sub parse_snake_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_CNT_MISCOMPARE"} = 1;
+            $err_found = 1;
+        }
+        if ($err_found == 0 && $line =~ m/ERROR :: CRC ERROR HAPPENED!/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_CRC_ERROR"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
@@ -828,8 +854,8 @@ sub find_failure_code {
 
     chomp($all_test_names);
     chomp($all_failure_codes);
-    $worksheet->write($curr_row, $test_name_col, $all_test_names);
-    $worksheet->write($curr_row, $failure_code_col, $all_failure_codes);
+    $fa_row[$curr_row]{"Test"} = $all_test_names;
+    $fa_row[$curr_row]{"MFG Error Code"} = $all_failure_codes;
     close(TR3);
 
     # filter on the test_name/mfg_err_code
@@ -902,15 +928,14 @@ sub find_failure_code {
         } elsif ($failure_code =~ "ROT") {
             parse_fst_rot($fulllogpath, $slot, $test_and_failure_code);
         }
-            #if ($failure_code =~ "NIC_STATUS" || $failure_code =~ "CONSOLE_BOOT" || $failure_code =~ "NIC_MGMT_INIT" || $failure_code =~ "NIC_CPLD" || $failure_code =~ "NIC_DIAG_BOOT") {
-                parse_mtp_and_slot_log($fulllogpath, $slot, $stage, $test_and_failure_code);
-            #}
+
         if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
             }
         }
     }
+    parse_mtp_and_slot_log($fulllogpath, $slot, $stage, $all_failure_codes);
     if ($all_test_msg eq "") {
         $all_test_msg = "log path: ".$fulllogpath."\n";
     }
@@ -960,7 +985,7 @@ sub parse_fst_rot {
 }
 
 sub parse_mtp_and_slot_log {
-    my ($fulllogpath, $slot, $stage, $test_and_failure_code) = @_;
+    my ($fulllogpath, $slot, $stage, $failure_code_list) = @_;
     my $mtpfile=$fulllogpath."/"."mtp_test.log";
     my $mtpdiagfile=$fulllogpath."/"."mtp_diag.log";
     my $slotlogfile=$fulllogpath."/"."mtp_NIC-".$slot."_diag.log";
@@ -968,7 +993,6 @@ sub parse_mtp_and_slot_log {
     my $mtp_diag_msg = "";
     my $mtp_test_msg = "";
     my $test_err_msg = "";
-    my $failure_code = substr($test_and_failure_code, index($test_and_failure_code, ' ') + 1);
     my $jtag_log = 0;
     my $err_msg_dump = 0;
     my $nic_status_dump = 0;
@@ -1003,7 +1027,7 @@ sub parse_mtp_and_slot_log {
             $diag_fa_code{"BOOT_UBOOT"} = 1;
                 $slot_err_msg .= $line;
         }
-        if ($failure_code =~ "NIC_JTAG") {
+        if (index($failure_code_list, "NIC_JTAG") != -1) {
             if ($line =~ m/NIC_JTAG Started/) {
                 $jtag_log = 1;
             }
@@ -1048,13 +1072,13 @@ sub parse_mtp_and_slot_log {
 
     while(my $line = <TR3>)
     {
-        if ($failure_code =~ "SCAN_VERIFY") {
+        if (index($failure_code_list, "SCAN_VERIFY") != -1) {
             if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
                 $mtp_test_msg .= $line;
                 $diag_fa_code{"INCORRECT_$1"} = 1;
             }
         }
-        if ($failure_code =~ "VDD_DDR_VERIFY") {
+        if (index($failure_code_list, "VDD_DDR_VERIFY") != -1) {
             if ($line =~ m/\[NIC-$slot\].*VDD_DDR_VERIFY.*STARTED/) {
                 $err_msg_dump = 1;
             }
@@ -1071,7 +1095,7 @@ sub parse_mtp_and_slot_log {
                 $mtp_test_msg .= $line;
             }
         }
-        if ($failure_code =~ "NIC_STATUS") {
+        if (index($failure_code_list, "NIC_STATUS") != -1) {
             if ($line =~ m/\[NIC-$slot\].*PRE_CHECK NIC_STATUS FAIL/) {
                 $nic_status_dump = 1;
             }
@@ -1082,7 +1106,7 @@ sub parse_mtp_and_slot_log {
                 $mtp_test_msg .= $line;
             }
         }
-        if ($failure_code =~ "NIC_BOOT_INIT") {
+        if (index($failure_code_list, "NIC_BOOT_INIT") != -1) {
             if ($line =~ m/\[NIC-$slot\].*DIAG_INIT NIC_BOOT_INIT FAILED/) {
                 $nic_status_dump = 1;
             }
@@ -1106,15 +1130,15 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/\[NIC-$slot\].*Timeout connecting to UART console/) {
             $mtp_test_msg .= $line;
         }
-        if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
-            $err_msg_dump = 1;
-        }
-        if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
-            $err_msg_dump = 0;
-        }
-        if ($err_msg_dump != 0) {
-            $mtp_test_msg .= $line;
-        }
+        #if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
+        #    $err_msg_dump = 1;
+        #}
+        #if ($line =~ m/\[NIC-$slot\]: ==== Error Message End: ====/) {
+        #    $err_msg_dump = 0;
+        #}
+        #if ($err_msg_dump != 0) {
+        #    $mtp_test_msg .= $line;
+        #}
     }
     if ($mtp_test_msg ne "") {
         $test_err_msg .= "\n--------mtp_test log--------: ".$mtpfile."\n";
@@ -1122,7 +1146,7 @@ sub parse_mtp_and_slot_log {
     }
     close(TR3);
 
-    if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
+    if ((index($failure_code_list, "NIC_PARA_MGMT_INIT") != -1) || (index($failure_code_list, "NIC_MGMT_INIT") != -1)) {
         if (!open(TR3, '<', $mtpdiagfile)) {
             print "Cannot open file $mtpdiagfile\n";
             return;
@@ -1158,7 +1182,7 @@ sub parse_mtp_and_slot_log {
         close(TR3);
     }
     if ($test_err_msg ne "") {
-        $all_test_msg .= "############### $test_and_failure_code ###############\n".$test_err_msg;
+        $all_test_msg .= $test_err_msg;
     }
 }
 
@@ -1492,7 +1516,7 @@ sub parse_fpga_and_ecc {
 
     if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0)) {
         print "ECC not dumped\n";
-        $worksheet->write($curr_row, $ecc_sts_col, "ECC not dumped");
+        $fa_row[$curr_row]{"ECC Reg"} = "ECC not dumped";
         my $retest_ts = "2021-11-23_00-00-00";
         my $unixts = convert_ts($ts);
         my $unixts_retest = convert_ts($retest_ts);
@@ -1507,13 +1531,13 @@ sub parse_fpga_and_ecc {
     } elsif ($ecc_not_valid == 1) {
         $diag_fa_code{"Bad_J2C"} = 1;
         print "ECC not valid due to bad J2C\n";
-        $worksheet->write($curr_row, $ecc_sts_col, "ECC not valid due to bad J2C");
+        $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
     } elsif ($num_ecc_sts_errors == 0) {
         print "ECC status OK\n";
-        $worksheet->write($curr_row, $ecc_sts_col, "ECC status OK");
+        $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
     } else {
         chomp($ecc_sts);
-        $worksheet->write($curr_row, $ecc_sts_col, $ecc_sts);
+        $fa_row[$curr_row]{"ECC Reg"} = $ecc_sts;
         if ($c92_upgrade == 1) {
             $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"} = 1;
         } else {
@@ -1523,16 +1547,16 @@ sub parse_fpga_and_ecc {
 
     if ($sts_dump_exist == 0) {
         print "CPLD registers not dumped\n";
-        $worksheet->write($curr_row, $cpld_sts_col, "CPLD registers not dumped");
+        $fa_row[$curr_row]{"CPLD Reg"} = "CPLD registers not dumped";
     } elsif ($smbus_err == 0) {
         if ($num_cpld_sts_errors == 0) {
             print "CPLD registers status OK\n";
-            $worksheet->write($curr_row, $cpld_sts_col, "CPLD registers status OK");
+            $fa_row[$curr_row]{"CPLD Reg"} = "CPLD registers status OK";
         } else {
             chomp($cpld_sts);
-            $worksheet->write($curr_row, $cpld_sts_col, $cpld_sts);
+            $fa_row[$curr_row]{"CPLD Reg"} = $cpld_sts;
         }
     } else {
-        $worksheet->write($curr_row, $cpld_sts_col, "Failed to dump CPLD registers status");
+        $fa_row[$curr_row]{"CPLD Reg"} = "Failed to dump CPLD registers status";
     }
 }

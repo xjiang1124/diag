@@ -793,6 +793,7 @@ def main():
 
         for slot in range(mtp_mgmt_ctrl._slots):
             mtp_mgmt_ctrl._nic_ctrl_list[slot]._in_mainfw = True
+        mtp_mgmt_ctrl._svos_boot = False
 
         taormina_nic_list = list()
         pass_nic_list = list()

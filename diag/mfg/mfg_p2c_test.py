@@ -53,7 +53,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
+    mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
 
 def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file = None):
@@ -277,14 +278,6 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-    # Sanity check
-    try:
-        sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
-    except Exception as e:
-        err_msg = traceback.format_exc()
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
-
     # Flex flow 2 Way communication Pre-Post 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -305,6 +298,13 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
 
+    # Sanity check
+    try:
+        sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
+    except Exception as e:
+        err_msg = traceback.format_exc()
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+            mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
 
     # close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

@@ -295,19 +295,6 @@ class nic_ctrl():
 
         return info_buf
 
-
-    def nic_get_fpga_updated(self, gold=False):
-        if gold:
-            return self._gold_fpga_updated
-        else:
-            return self._fpga_updated
-
-    def nic_set_fpga_updated(self, val=False, gold=False):
-        if gold:
-            self._gold_fpga_updated = val
-        else:
-            self._fpga_updated = val
-
     def nic_get_err_msg(self):
         ret = self._err_msg
         self._err_msg = "" #clear it out
@@ -1405,25 +1392,17 @@ class nic_ctrl():
 
         return True
 
-    def nic_verify_fpga(self, cpld_img, gold=False):
+    def nic_verify_fpga(self, cpld_img, partition=""):
         # Elba-fpga-based:
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            if gold:
-                nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, "cfg1")
-            else:
-                nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, "")
+            nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition)
             if not self.nic_exec_cmd_get_rslt(nic_fgpa_cmd, timeout=180):
                 return False
 
             cmd_buf = self.nic_get_cmd_buf()
             match = re.findall(r"FPGA flash verified", cmd_buf)
             if not match:
-                if gold:
-                    self.nic_set_err_msg(" GOLD FPGA VERIFY FAILED\n")
-                else:
-                    self.nic_set_err_msg(" FPGA VERIFY FAILED\n")
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
         return True

@@ -1122,11 +1122,14 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
-        if test == "CPLD_PROG" or test == "FPGA_PROG":
+        if test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # program all FPGA partitions
+        elif test == "FPGA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
         # verify program FPGA
         elif test == "FPGA_PROG_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot, cpld_img_file, gold=False)
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)

@@ -302,6 +302,151 @@ class mtp_ctrl():
     def get_mtp_slot_num(self):
         return self._slots
 
+    def _apc_model_check(self, handle):
+        """
+        Check that the model is a Digital Logger V222.
+        This model supports the uom commands we are using in the script.
+        """
+        retry = 0
+        while True:
+            handle.send("uom dump relay/model\r")
+            idx = handle.expect_exact(["V222", "#", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.expect_exact("#")
+                return True
+            elif idx == 1:
+                self.cli_log_err("This APC model not supported")
+                return False
+            elif idx > 1 and retry < 5:
+                retry += 1
+                continue
+            else:
+                self.cli_log_err("APC: Unable to check model")
+                return False
+
+    def _mtp_single_apc_pwr_off_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Set persistent state: uom set "relay/outlets/2/state" false
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom set relay/outlets/{:d}/state false\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
+    def _mtp_single_apc_pwr_on_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Set persistent state: uom set "relay/outlets/2/state" true
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom set relay/outlets/{:d}/state true\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
+    def _mtp_single_apc_pwr_get_state_ssh(self, apc, userid, passwd, port_list):
+        """
+        Digital Logger V222: Get persistent state: uom get relay/outlets/0/state
+        """
+        retry = 0
+        handle = pexpect.spawn("ssh " + userid + "@" + apc)
+        if self._debug_mode:
+            handle.logfile_read = sys.stdout
+        while True:
+            idx = handle.expect(["assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            if idx == 0:
+                handle.send(passwd + "\r")
+                break
+            elif idx > 0 and retry < 5:
+                retry += 1
+                handle = pexpect.spawn("ssh " + userid + "@" + apc)
+                continue
+            else:
+                self.cli_log_err("Unable to ssh to APC: " + apc)
+                return False
+
+        idx = handle.expect_exact(["root@", pexpect.TIMEOUT], timeout=10)
+        if idx == 0:
+            handle.expect_exact("#")
+            if not self._apc_model_check(handle):
+                handle.close()
+                return False
+            for port in port_list:
+                handle.send("uom get relay/outlets/{:d}/state\r".format(int(port)-1))
+                idx = handle.expect_exact(["#", "not found", pexpect.TIMEOUT])
+                if idx != 0:
+                    self.cli_log_err("APC does not support uom command")
+                    handle.close()
+                    return False
+            handle.close()
+            time.sleep(1)
+            return True
+        else:
+            self.cli_log_err("Unknown APC: " + apc)
+            return False
+
 
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
         retry = 0
@@ -309,14 +454,18 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx > 1 and retry < 5:
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                return self._mtp_single_apc_pwr_off_ssh(apc, userid, passwd, port_list)
+            elif idx > 2 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue
@@ -349,14 +498,18 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.EOF, pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.EOF, pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
-            elif idx > 1 and retry < 5:
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                return self._mtp_single_apc_pwr_on_ssh(apc, userid, passwd, port_list)
+            elif idx > 2 and retry < 5:
                 retry += 1
                 handle = pexpect.spawn("telnet " + apc)
                 continue
@@ -387,13 +540,22 @@ class mtp_ctrl():
         if self._debug_mode:
             handle.logfile_read = sys.stdout
         while True:
-            idx = handle.expect(["ame *:", "assword *:", pexpect.TIMEOUT])
+            idx = handle.expect(["ame *:", "assword *:", "Connection refused", pexpect.TIMEOUT])
             if idx == 0:
                 handle.send(userid + "\r")
                 continue
             elif idx == 1:
                 handle.send(passwd + "\r")
                 break
+            elif idx == 2:
+                # no telnet, try as ssh
+                handle.close()
+                if not self._mtp_single_apc_pwr_off_ssh(apc, userid, passwd, port_list):
+                    return False
+                time.sleep(1)
+                if not self._mtp_single_apc_pwr_on_ssh(apc, userid, passwd, port_list):
+                    return False
+                return True
             else:
                 self.cli_log_err("Unable to connect APC: " + apc)
                 return False
@@ -1704,6 +1866,24 @@ class mtp_ctrl():
                     except KeyError:
                         self.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
                         pass
+                    try:
+                        if card_type in FPGA_TYPE_LIST:
+                            img = NIC_IMAGES.timer1_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                        pass
+                    try:
+                        if card_type in FPGA_TYPE_LIST:
+                            img = NIC_IMAGES.timer2_img[card_type]
+                            if img.strip() == "":
+                                raise KeyError
+                            img_list.append(img)
+                    except KeyError:
+                        self.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                        pass
 
                     # In addition to images, check the version & timestamp fields as well here
                     try:
@@ -2953,7 +3133,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
-            if software_pn != "90-interposer":
+            if software_pn != "90-0018-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -3009,13 +3189,14 @@ class mtp_ctrl():
     def mtp_program_nic_cpld(self, slot, cpld_img, dl_step=True):
         # check the current cpld version
         nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type in FPGA_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This cpld update function not meant for this card {:s}".format(nic_type))
+            return False
+
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
-            if nic_type in FPGA_TYPE_LIST:
-                dev = "FPGA"
-            else:
-                dev = "CPLD"
-            self.cli_log_slot_err_lock(slot, "Program NIC {:s} failed, can not retrieve {:s} info".format(dev))
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
             return False
         cur_ver = nic_cpld_info[0]
         cur_timestamp = nic_cpld_info[1]
@@ -3047,32 +3228,16 @@ class mtp_ctrl():
             return True
 
         if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            if nic_type in FPGA_TYPE_LIST:
-                dev = "FPGA"
-            else:
-                dev = "CPLD"
-            self.cli_log_slot_inf_lock(slot, "NIC {:s} is up-to-date".format(dev))
+            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
             self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
             return True
 
-        if nic_type in FPGA_TYPE_LIST:
-            partition = ""
-        elif nic_type in ELBA_NIC_TYPE_LIST:
-            partition = "cfg0"
-        else:
-            partition = ""
-        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, partition):
-            if nic_type in FPGA_TYPE_LIST:
-                dev = "FPGA"
-            else:
-                dev = "CPLD"
-            self.cli_log_slot_err_lock(slot, "Program NIC {:s} failed".format(dev))
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg0"):
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
 
         self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
-        if nic_type in FPGA_TYPE_LIST:
-            self._nic_ctrl_list[slot].nic_set_fpga_updated(val=True, gold=False)
 
         return True
 
@@ -3080,6 +3245,9 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         if not nic_type in ELBA_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no failsafe CPLD for {:s}".format(nic_type))
+            return False
+        if nic_type in FPGA_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This function not support for this NIC type!")
             return False
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
@@ -3089,39 +3257,104 @@ class mtp_ctrl():
             # can't check the version without loading backup partition into the running partition
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
-        if nic_type in FPGA_TYPE_LIST:
-            partition = "cfg1"
-        elif nic_type in ELBA_NIC_TYPE_LIST:
-            partition = "cfg1"
-        else:
-            partition = ""
-        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, partition):
-            if nic_type in FPGA_TYPE_LIST:
-                dev = "FPGA"
-            else:
-                dev = "CPLD"
-            self.cli_log_slot_err_lock(slot, "Program NIC {:s} failed".format(dev))
+        if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg1"):
+            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
-
-        if nic_type in FPGA_TYPE_LIST:
-            self._nic_ctrl_list[slot].nic_set_fpga_updated(val=True, gold=True)
 
         return True
 
-    def mtp_verify_nic_fpga(self, slot, cpld_img_file, gold=False):
-        if not self._nic_ctrl_list[slot].nic_get_fpga_updated(gold):
-            self.cli_log_slot_inf_lock(slot, "No FPGA verify needed")
+    def mtp_program_nic_fpga(self, slot, main_only=False):
+        """
+        This sequence has to be followed:
+        # cpldapp -writeflash ./lac2_dell_golden_2_3.bin cfg1
+        # cpldapp -writeflash ./timer1.bin cfg2
+        # cpldapp -writeflash ./lac2_dell_main_2_3.bin
+        # cpldapp -writeflash ./timer2.bin cfg3
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type not in FPGA_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This fpga program function not supported for this NIC type!")
+            return False
+
+        # check the current cpld version
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Program NIC FPGA failed, can not retrieve FPGA revision info")
+            return False
+        cur_ver = nic_cpld_info[0]
+        cur_timestamp = nic_cpld_info[1]
+        try:
+            expected_version = NIC_IMAGES.cpld_ver[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
+            return False
+        try:
+            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+        except KeyError:
+            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
+            return False
+
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
             return True
 
-        if not self._nic_ctrl_list[slot].nic_verify_fpga(cpld_img_file, gold):
-            if gold:
-                self.cli_log_slot_err_lock(slot, "NIC GOLD FPGA verify failed")
-            else:
-                self.cli_log_slot_err_lock(slot, "NIC FPGA verify failed")
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-            self.mtp_dump_nic_err_msg(slot)
+        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+            self.cli_log_slot_inf_lock(slot, "NIC FPGA is up-to-date")
+            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+            return True
+
+        partition_img_dict = {
+            "cfg0": NIC_IMAGES.cpld_img[nic_type],
+            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
+            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+        }
+        if not main_only:
+            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
+        else:
+            program_sequence = ["cfg0"]
+        for partition in program_sequence:
+            img = partition_img_dict[partition]
+            if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
+                self.cli_log_slot_err_lock(slot, "Program NIC FPGA to partition {:s} failed".format(partition))
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+
+        self._nic_ctrl_list[slot].nic_require_cpld_refresh(True)
+
+        return True
+
+    def mtp_verify_nic_fpga(self, slot, main_only=False):
+        """
+        Following the same partition sequence as writing:
+        # cpldapp -verifyflash ./lac2_dell_golden_2_3.bin cfg1
+        # cpldapp -verifyflash ./timer1.bin cfg2
+        # cpldapp -verifyflash ./lac2_dell_main_2_3.bin
+        # cpldapp -verifyflash ./timer2.bin cfg3
+        """
+        if nic_type not in FPGA_TYPE_LIST:
+            self.cli_log_slot_err(slot, "This fpga verify function not support for this NIC type!")
             return False
+
+        partition_img_dict = {
+            "cfg0": NIC_IMAGES.cpld_img[nic_type],
+            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
+            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+        }
+        if not main_only:
+            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
+        else:
+            program_sequence = ["cfg0"]
+        for partition in program_sequence:
+            img = partition_img_dict[partition]
+            if not self._nic_ctrl_list[slot].nic_verify_fpga(img, partition):
+                self.cli_log_slot_err_lock(slot, "Verify NIC FPGA from partition {:s} failed".format(partition))
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                self.mtp_dump_nic_err_msg(slot)
+                return False
 
         return True
 
@@ -4737,7 +4970,9 @@ class mtp_ctrl():
             return False
         else:
             pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
-
+            if pn is None:
+                self.cli_log_slot_err(slot, "No PN detected")
+                return False
             # search for this PN in lib/libsku_cfg.py
             for pn_regex in self._valid_pn_list:
                 pn_match = re.match(pn_regex, pn)
@@ -6252,6 +6487,7 @@ class mtp_ctrl():
 
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                self.mtp_get_nic_err_msg(slot) # clear out the error message
                 if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
@@ -6262,6 +6498,7 @@ class mtp_ctrl():
                     return False
         else:
             if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                self.mtp_get_nic_err_msg(slot) # clear out the error message
                 if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_dump_nic_err_msg(slot)
