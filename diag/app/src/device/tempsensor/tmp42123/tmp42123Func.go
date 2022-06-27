@@ -67,8 +67,8 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
     }
 
     integer, err = misc.TwoCmplBits64(uint64(tempHighByte), misc.BITS_8)
-    integer = (integer * 10000 + 625 * int64(tempLowByte)) / 10000
-    dec = (integer * 10000 + 625 * int64(tempLowByte)) % 10000
+    integer = (integer * 10000 + 625 * int64(tempLowByte >> 4)) / 10000
+    dec = (integer * 10000 + 625 * int64(tempLowByte >> 4)) % 10000
     if dec < 0 {
         dec = -dec
     }
