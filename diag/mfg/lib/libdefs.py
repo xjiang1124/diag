@@ -40,6 +40,9 @@ class FLX_Factory:
     MILPITAS = "Milpitas"
     PENANG = "Penang"
 
+class FLEX_TWO_WAY_COMM:
+    PRE_POST_RETRY = 0
+    POST_RETRY = 0
 
 class FF_Stage:
     FF_DL = "DL"

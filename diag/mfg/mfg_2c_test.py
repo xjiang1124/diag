@@ -21,6 +21,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -279,6 +280,18 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
+    # Flex flow 2 Way communication Pre-Post 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+
     # Sanity check
     try:
         sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
@@ -306,25 +319,6 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
 
-    # Flex flow 2 Way communication Pre-Post 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list[mtp_id]:
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage)
-                if flex_rs != 0:
-                    if flex_rs in FLEX_ERR_CODE_MAP.err_code:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]))
-                    else:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)))
-                    fail_nic_list[mtp_id].append(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
 
     mtp_thread_list = list()
     mfg_2c_summary = dict()
