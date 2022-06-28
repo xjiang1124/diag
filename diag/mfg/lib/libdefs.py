@@ -418,6 +418,7 @@ class MFG_DIAG_CMDS:
     NIC_GOLDFW_PROG_FMT_NAPLES100 = "fwupdate -p /{:s} -i goldfw"
     NIC_EMMC_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i mainfwb"
+    NIC_BOOT0_PROG_FMT = "cd /data; ./fwupdate -p /data/{:s} -i boot0"
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_BOOT_DISP_S_FMT = "fwupdate -S"
     NIC_IMG_DISP_FMT = "fwupdate -L"

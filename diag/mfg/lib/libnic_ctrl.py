@@ -2004,6 +2004,9 @@ class nic_ctrl():
         if self._nic_type not in FPGA_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)
             nic_cmd_list.append(nic_cmd)
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
+            nic_cmd = MFG_DIAG_CMDS.NIC_BOOT0_PROG_FMT.format(img_name, img_name)
+            nic_cmd_list.append(nic_cmd)
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
