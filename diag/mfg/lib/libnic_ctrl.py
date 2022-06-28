@@ -1586,6 +1586,82 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False                                
 
+    def nic_emmc_hwreset_set(self):
+        """
+        # mmc hwreset enable /dev/mmcblk0
+        # mmc extcsd read /dev/mmcblk0|grep -i reset
+        H/W reset function [RST_N_FUNCTION]: 0x01
+        """
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EMMC_HWRESET_SET_FMT)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
+            return False
+        return True
+
+    def nic_emmc_hwreset_verify(self):
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_HWRESET_CHECK_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            return False
+        if MFG_DIAG_SIG.NIC_EMMC_HWRESET_PASS_SIG in cmd_buf:
+            return True
+        elif MFG_DIAG_SIG.NIC_EMMC_HWRESET_FAIL_SIG in cmd_buf:
+            return False
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+    def nic_emmc_bkops_en(self):
+        """
+        -------------------------
+        ENABLE BKOPS INSTRUCTIONS
+        -------------------------
+        Enable auto background mmc ops.  SEE warning below.
+        # /data/nic_util/mmc.latest bkops_en auto /dev/mmcblk0
+
+        Example:
+
+        BEFORE:
+        # mmc extcsd read /dev/mmcblk0|grep -i ops
+        Background operations support [BKOPS_SUPPORT: 0x01]
+        Background operations status [BKOPS_STATUS: 0x00]
+        Enable background operations handshake [BKOPS_EN]: 0x00    <==== OFF
+
+        AFTER:
+        # mmc extcsd read /dev/mmcblk0|grep -i ops
+        Background operations support [BKOPS_SUPPORT: 0x01]
+        Background operations status [BKOPS_STATUS: 0x00]
+        Enable background operations handshake [BKOPS_EN]: 0x02    <==== AUTO
+
+        WARNING DO NOT SET MANUAL, this is a OTP setting and can't be undone
+
+        # /data/nic_util/mmc.latest bkops --help
+        Usage:
+                mmc.latest bkops_en <auto|manual> <device>
+                        Enable the eMMC BKOPS feature on <device>.
+                        The auto (AUTO_EN) setting is only supported on eMMC 5.0 or newer.
+                        Setting auto won't have any effect if manual is set.
+                        NOTE!  Setting manual (MANUAL_EN) is one-time programmable (unreversible) change.
+        """
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EMMC_BKOPS_EN_FMT)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
+            return False
+        return True
+
+    def nic_emmc_bkops_verify(self):
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_BKOPS_CHECK_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            return False
+        if MFG_DIAG_SIG.NIC_EMMC_BKOPS_PASS_SIG in cmd_buf:
+            return True
+        elif MFG_DIAG_SIG.NIC_EMMC_BKOPS_FAIL_SIG in cmd_buf:
+            return False
+        else:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
 
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)

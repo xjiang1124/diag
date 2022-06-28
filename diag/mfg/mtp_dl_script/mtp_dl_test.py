@@ -350,6 +350,8 @@ def main():
             testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
             if nic_type == NIC_Type.NAPLES100DELL:
                 testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
+            if nic_type == NIC_Type.ORTANO2INTERP:
+                testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
 
             for skip_test in args.skip_test:
                 if skip_test in testlist:
@@ -363,6 +365,10 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_mgmt_init(slot, fpo=True)
                 elif test == "SET_PSLC":
                     ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+                elif test == "EMMC_HWRESET_SET":
+                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
+                elif test == "EMMC_BKOPS_EN":
+                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(slot)
                 elif test == "QSPI_PROG":
                     qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
                     if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
