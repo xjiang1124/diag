@@ -410,7 +410,7 @@ class MFG_DIAG_CMDS:
     NIC_CHECK_EMMC_FMT = "mmc extcsd read /dev/mmcblk0"
     NIC_EMMC_HWRESET_SET_FMT = "mmc hwreset enable /dev/mmcblk0"
     NIC_EMMC_HWRESET_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i reset"
-    NIC_EMMC_BKOPS_EN_FMT = "/data/nic_util/mmc.latest bkops_en auto /dev/mmcblk0"
+    NIC_EMMC_BKOPS_EN_FMT = "/mmc.latest bkops_en auto /dev/mmcblk0"
     NIC_EMMC_BKOPS_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i ops"
     NIC_EMMC_PERF_MODE = "touch /sysconfig/config0/.perf_mode"
     NIC_EMMC_PERF_MODE_CHECK = "[[ -f /sysconfig/config0/.perf_mode ]] ; echo $?"

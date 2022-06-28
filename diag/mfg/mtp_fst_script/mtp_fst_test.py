@@ -206,7 +206,7 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
         return False
     fwlist = json.loads(fw_json[0])
     if "boot0" in fwlist:
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} ".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"]) )
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} rev{:d}".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"], fwlist["boot0"]["image"]["image_version"]))
     else:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
     for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw", "extdiag"]:
