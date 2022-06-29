@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Vendor
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
@@ -568,17 +569,8 @@ def main():
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage)
-            if flex_rs != 0:
-                if flex_rs in FLEX_ERR_CODE_MAP.err_code:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]), level=0)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)), level=0)
-                fail_nic_list.append(slot)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn), level=0)
-        if slot not in pass_nic_list:
+            pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+        if slot not in pass_nic_list and slot not in fail_nic_list:
             pass_nic_list.append(slot)
 
     mtp_mgmt_ctrl.mtp_power_off_nic()

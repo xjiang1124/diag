@@ -27,6 +27,7 @@ from libdefs import FLX_Factory
 from libdefs import MFG_DIAG_CMDS
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 
 def get_linux_prompt_list():
@@ -1712,14 +1713,24 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
 
 
             if FLEX_SHOP_FLOOR_CONTROL:
-                rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
-                if rs == 0:
-                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-                else:
-                    if rs in FLEX_ERR_CODE_MAP.err_code:
-                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                post_cnt = 0
+                retry = FLEX_TWO_WAY_COMM.POST_RETRY
+                while True:
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                    if rs == 0:
+                        cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                        break
                     else:
-                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(rs)))
+                        if rs in FLEX_ERR_CODE_MAP.err_code:
+                            cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                        else:
+                            cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format(sn, str(rs)))
+                        if rs != 9999:
+                            post_cnt = retry
+                        if post_cnt >= retry:
+                            break
+                    post_cnt += 1
+
             else:
                 ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
                 if not ret:
@@ -1767,14 +1778,23 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             if FLEX_SHOP_FLOOR_CONTROL:
-                rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
-                if rs == 0:
-                    cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-                else:
-                    if rs in FLEX_ERR_CODE_MAP.err_code:
-                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                post_cnt = 0
+                retry = FLEX_TWO_WAY_COMM.POST_RETRY
+                while True:
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                    if rs == 0:
+                        cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
+                        break
                     else:
-                        cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(rs)))
+                        if rs in FLEX_ERR_CODE_MAP.err_code:
+                            cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[rs]))
+                        else:
+                            cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format(sn, str(rs)))
+                        if rs != 9999:
+                            post_cnt = retry
+                        if post_cnt >= retry:
+                            break
+                    post_cnt += 1
 
                 #change from display PASS --> FAIL (it fail when post result to flex flow)
                 if rs != 0:
@@ -2501,3 +2521,25 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
                     if mtp_test_summary[idx][1] == sn:
                         # block it
                         mtp_test_summary[idx][4] = True
+
+def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry = 0):
+    post_cnt = 0
+    while True:
+        flex_rs = flx_web_srv_precheck_uut_status(sn, stage)
+        if flex_rs == 0:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
+            break
+        else:
+            if flex_rs in FLEX_ERR_CODE_MAP.err_code:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]))
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format(sn, str(flex_rs)))
+            if flex_rs != 9999:
+                post_cnt = retry
+            if retry == post_cnt:
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                break
+        post_cnt += 1
+
+    return fail_nic_list
