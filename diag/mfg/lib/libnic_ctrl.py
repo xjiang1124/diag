@@ -1551,6 +1551,11 @@ class nic_ctrl():
         return True
 
     def nic_check_cpld_partition(self, console=False):
+        """
+        Read reg 0x1 bit 2.
+        0: PASS (booted from main/cfg0)
+        1: FAIL (booted from gold/failsafe)
+        """
         reg_addr = 1
         read_data = [0]
         if console:

@@ -3550,7 +3550,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True):
+    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True, console=False):
         # cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
@@ -3611,6 +3611,12 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
                 self.cli_log_slot_err_lock(slot, "Expect Version: {:s}, get: {:s}".format(expected_version, cur_ver))
                 self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(expected_timestamp, cur_timestamp))
+                return False
+
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_check_cpld_partition(console):
+                self.cli_log_slot_err(slot, "NIC not booted from cfg0 CPLD/FPGA")
+                self.mtp_dump_nic_err_msg(slot)
                 return False
 
         return True
