@@ -169,7 +169,8 @@ echo $fa_opt
 timestamp=$(date +%m%d%Y_%H%M%S)
 missing_log_file="${cwd}/sn_list_missing_log${timestamp}.txt"
 existing_log_file="${cwd}/sn_list_existing_log${timestamp}.txt"
-rm -f $missing_log_file $existing_log_file
+passing_log_file="${cwd}/sn_list_passing_log${timestamp}.txt"
+rm -f $missing_log_file $existing_log_file $passing_log_file
 
 function run_parse {
     local sn=$1
@@ -186,7 +187,7 @@ function run_convert {
     echo "Done with runnning the parse script, output is $parse_result"
     cp $to_loc_top/convert.pl $to_loc/$card_type
     cd $to_loc/$card_type
-    ./convert.pl $fa_opt $parse_result
+    ./convert.pl $fa_opt $parse_result $missing_log_file $passing_log_file
 }
 
 to_loc_top="${cwd}/scripts/"
@@ -254,6 +255,7 @@ while read -r sn; do
     if [ $sn_path_exists -eq 0 ]; then
         echo "any log for SN $sn does not exist"
         echo $sn >> $missing_log_file
+        continue
     else
         echo $sn >> $existing_log_file
     fi
@@ -268,7 +270,8 @@ while read -r sn; do
         fi
         if [ -d $to_loc/$card_type/$stage/$sn ]; then
             cd $to_loc/$card_type/$stage/$sn
-            find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
+            #find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}"; done' {} \;
+            find ./ -name '*.tar.gz' -exec sh -c 'dir=$(dirname "$0"); tar -xf "${0}" -C "${dir}";' {} \;
             cd $to_loc/$card_type
             if [[ "$fa_opt" == *"RUN"* ]]; then
                 find ./$stage -name $summary_file | xargs grep -anHE "$sn NIC_DIAG_REGRESSION_TEST_[FAIL|PASS]" >> $to_loc/$card_type/testresult.txt
@@ -288,13 +291,15 @@ while read -r sn; do
                 echo "failure log for SN $sn exists in stage $stage"
             else
                 echo "failure log for SN $sn does not exist in stage $stage"
-                echo $sn >> $missing_log_file
             fi
         fi
         if [ ! $keep_log ]; then
             rm -rf $to_loc/$card_type/$stage/$sn
         fi
     done
+    if ! grep -q "$sn NIC_DIAG_REGRESSION_TEST_FAIL" $to_loc/$card_type/testresult.txt; then
+        echo $sn >> $passing_log_file
+    fi
     rm $to_loc/$card_type/testresult.txt
     rm $to_loc/$card_type/logs_fail.txt
 done < "${cwd}/${sn_file}"
@@ -305,6 +310,6 @@ fi
 
 #cp $parse_result $to_loc_top/../
 run_convert
-rm -f ${existing_log_file}
+rm -f ${existing_log_file} ${missing_log_file} ${passing_log_file}
 echo "The parsing result is $parse_result"
 echo "the temporary dir: $to_loc_top$dir_name can be removed"
