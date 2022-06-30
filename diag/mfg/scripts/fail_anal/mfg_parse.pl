@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib "../../YAML-LibYAML-0.83/lib";
 use Time::Local;
 use Cwd;
 use YAML::XS;
@@ -267,6 +266,7 @@ while(my $line = <TR2>)
         if ($debug_msgs) { print "\nThe SN we are looking at: $sn2, line: $line\n" };
         my $fulllogpath=$log_path."/".$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts;
         my $summaryfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."mtp_test.log";
+        my $mtpdiagfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."mtp_diag.log";
         my $slotlogfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."mtp_NIC-".$slot."_diag.log";
         if ($toppath eq "FST") {
             $summaryfile=$toppath."/".$sn2."/".$stage."_".$mtp."_".$ts."/"."test_fst.log";
@@ -287,8 +287,9 @@ while(my $line = <TR2>)
         %diag_fa_code = ();
         $all_test_msg = "";
         if ($result eq "FAIL") {
-            my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts);
+            my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts, $slot);
             parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
+            parse_mtp_diag_file($mtpdiagfile);
 
             my $diag_fa_code_str = "";
             foreach my $diag_fa_code (keys %diag_fa_code) {
@@ -442,6 +443,30 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"SNAKE_RAM_FAILURE"}) {
         $top_diag_fa_code = "SNAKE_RAM_FAILURE";
         delete $diag_fa_code{"SNAKE_RAM_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU1_NOT_INSTALLED"}) {
+        $top_diag_fa_code = "PSU1_NOT_INSTALLED";
+        delete $diag_fa_code{"PSU1_NOT_INSTALLED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU2_NOT_INSTALLED"}) {
+        $top_diag_fa_code = "PSU2_NOT_INSTALLED";
+        delete $diag_fa_code{"PSU2_NOT_INSTALLED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"}) {
+        $top_diag_fa_code = "PSU1_CORD_NOT_CONNECTED";
+        delete $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"}) {
+        $top_diag_fa_code = "PSU2_CORD_NOT_CONNECTED";
+        delete $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"};
         return;
     }
 
@@ -804,7 +829,7 @@ sub parse_eth_prbs_log {
 }
 
 sub find_failure_code {
-    my ($fulllogpath, $sn, $toppath, $stage, $ts) = @_;
+    my ($fulllogpath, $sn, $toppath, $stage, $ts, $failedslot) = @_;
     my $mtp;
     my $slot;
     my $testname;
@@ -892,7 +917,7 @@ sub find_failure_code {
             if (index($test_name, "NIC") == -1) {
                 $asic_l1_failed = 1;
                 my $l1_path = $log_path."/".$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir;
-                my @l1_log_files = glob("${l1_path}l1_screen_board_${sn}_*");
+                my @l1_log_files = glob("${l1_path}*l1_screen_board_${sn}_*");
                 if (@l1_log_files) {
                     my $l1_log_file= $l1_log_files[0];
                     print "#### l1_log_file: $l1_log_file\n";
@@ -935,7 +960,7 @@ sub find_failure_code {
             }
         }
     }
-    parse_mtp_and_slot_log($fulllogpath, $slot, $stage, $all_failure_codes);
+    parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
     if ($all_test_msg eq "") {
         $all_test_msg = "log path: ".$fulllogpath."\n";
     }
@@ -1129,6 +1154,7 @@ sub parse_mtp_and_slot_log {
         }
         if ($line =~ m/\[NIC-$slot\].*Timeout connecting to UART console/) {
             $mtp_test_msg .= $line;
+            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
         #if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
         #    $err_msg_dump = 1;
@@ -1421,7 +1447,6 @@ sub parse_fpga_and_ecc {
                 $ecc_reg_linenum = $.;
                 print "ecc_reg_linenum: $ecc_reg_linenum\n";
                 if ($1 eq "0xffffffff") {
-                    print "ffffffff\n";
                     if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
                         $ecc_not_valid = 1;
                     }
@@ -1508,7 +1533,7 @@ sub parse_fpga_and_ecc {
             print "$line";
             $diag_fa_code{"Bad_I2C"} = 1;
         }
-        if($line =~ m/fwupdate -p/) {
+        if($line =~ m/fwupdate -p .*-C-92_/) {
             $c92_upgrade = 1;
         }
     }
@@ -1559,4 +1584,47 @@ sub parse_fpga_and_ecc {
     } else {
         $fa_row[$curr_row]{"CPLD Reg"} = "Failed to dump CPLD registers status";
     }
+}
+
+sub parse_mtp_diag_file {
+    my ($mtpdiagfile) = @_;
+    my $mfr_id_linenum = 0;
+    my $failed_psu1_linenum = 0;
+    my $failed_psu2_linenum = 0;
+
+    if (!open(TR3, '<', $mtpdiagfile)) {
+        print "Cannot open file $mtpdiagfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        if ($line =~ m/MFR_ID: FSP GROUP/) {
+            $mfr_id_linenum = $.;
+        }
+        if ($line =~ m/Failed to retrieve status: PSU_1/) {
+            $failed_psu1_linenum = $.;
+            if ($failed_psu1_linenum - $mfr_id_linenum < 20) {
+                $diag_fa_code{"PSU1_NOT_INSTALLED"} = 1;
+            }
+        }
+        if ($line =~ m/Failed to retrieve status: PSU_2/) {
+            $failed_psu2_linenum = $.;
+            if ($failed_psu2_linenum - $mfr_id_linenum < 20) {
+                $diag_fa_code{"PSU2_NOT_INSTALLED"} = 1;
+            }
+        }
+        if ($line =~ m/PSU_1               -.-       -.-       -.-       -.-       -.-       -.-/) {
+            $failed_psu1_linenum = $.;
+            if ($failed_psu1_linenum - $mfr_id_linenum < 10) {
+                $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"} = 1;
+            }
+        }
+        if ($line =~ m/PSU_2               -.-       -.-       -.-       -.-       -.-       -.-/) {
+            $failed_psu2_linenum = $.;
+            if ($failed_psu2_linenum - $mfr_id_linenum < 10) {
+                $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"} = 1;
+            }
+        }
+    }
+    close(TR3);
 }

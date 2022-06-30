@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib "../../Excel-Writer-XLSX-1.09/lib";
-use lib "../../YAML-LibYAML-0.83/lib";
-#use Cwd;
 use Excel::Writer::XLSX;
 use YAML::XS 'LoadFile';
 
 my $fa_opt = shift;
 my $result_file = shift;
+my $missing_log_file = shift;
+my $passing_log_file = shift;
 
 my $yaml_file = "./temp.yaml";
+
 my $worksheet_name = "";
 
 if($fa_opt eq "LAST") {
@@ -29,6 +29,19 @@ if($fa_opt eq "LAST") {
     print "unexpected fa_opt $fa_opt\n";
     exit(1);
 }
+
+if (!open(LOG, '<', $missing_log_file)) {
+    print "Cannot open file $missing_log_file\n";
+    return 0;
+}
+chomp(my @missing = <LOG>);
+close (LOG);
+if (!open(LOG, '<', $passing_log_file)) {
+    print "Cannot open file $passing_log_file\n";
+    return 0;
+}
+chomp(my @passing = <LOG>);
+close (LOG);
 
 #open my $fh, '<', $yaml_file or die $!;
 my @fa_array = LoadFile($yaml_file);
@@ -86,7 +99,7 @@ my @colDefs = (
         header_format => $format,
     },
 );
-my $num_failures = scalar(@fa_array);
+my $num_failures = scalar(@fa_array) + scalar(@missing) + scalar(@passing);
 $worksheet->add_table(0, 0, $num_failures, 11, { columns     => \@colDefs,  } );
 
 my $sn_col = 0;
@@ -133,5 +146,15 @@ foreach (@fa_array) {
     $worksheet->write($curr_row, $ecc_sts_col, $_->{"ECC Reg"});
     $worksheet->write($curr_row, $cpld_sts_col, $_->{"CPLD Reg"});
     $worksheet->write($curr_row, $full_diag_fa_col, $_->{"Detailed Diag FA Code"});
+    $curr_row++;
+}
+foreach (@passing) {
+    $worksheet->write($curr_row, $sn_col, $_);
+    $worksheet->write($curr_row, $top_diag_fa_col, "NO_FAILURE_LOG");
+    $curr_row++;
+}
+foreach (@missing) {
+    $worksheet->write($curr_row, $sn_col, $_);
+    $worksheet->write($curr_row, $top_diag_fa_col, "NO_LOG_FOUND");
     $curr_row++;
 }
