@@ -721,6 +721,7 @@ PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL,
 FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]
 CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
+DDR_HARCODED_TRAINING_NIC_LIST = [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI]
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]

@@ -5694,12 +5694,17 @@ class mtp_ctrl():
         if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
             skip_ddr_bist = "0"
 
+        if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
+            ddr_hc_training = "1"
+        else:
+            ddr_hc_training = "0"
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
             # kill the process in case it's hung/timed out
