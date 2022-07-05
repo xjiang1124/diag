@@ -143,6 +143,17 @@ var ortanoitmpDispStaList = [4]DispStaFunc {
     nil,
 }
 
+var ortanoiPODDispStaList = [8](map[string]DispStaFunc) {
+    nil,
+    { "ELB0_CORE":tps53659.DispStatus, "ELB0_ARM":tps53659.DispStatus, "VDDQ_DDR":tps549a20.DispStatus, "VDD_DDR":tps549a20.DispStatus},
+    nil,
+    nil,
+    nil,
+    nil,
+    nil,
+    nil,
+}
+
 //===============================
 // Lacona
 // Status display list
@@ -397,16 +408,15 @@ func init() {
 
     //Ortano Interposer
     ortanoiDispStaList = make(map[string]DispStaFunc)
-    ortanoiDispStaList["ELB0_CORE"] = tps53659.DispStatus
-    ortanoiDispStaList["ELB0_ARM"]  = tps53659.DispStatus
-    ortanoiDispStaList["VDDQ_DDR"]  = tps549a20.DispStatus
-    ortanoiDispStaList["VDD_DDR"]   = tps549a20.DispStatus
 
     itpType = os.Getenv("ITP_TYPE")
-    fmt.Sscanf(itpType, "0x%x", &itpIdx)
-    tmpIdx := (itpIdx & 0xc0 ) >>6
-    // podIdx := (itpIdx & 0x07 )
-    ortanoiDispStaList["TSENSOR"]   = ortanoitmpDispStaList[tmpIdx]
+    if itpType != "" {
+        fmt.Sscanf(itpType, "0x%x", &itpIdx)
+        tmpIdx := (itpIdx & 0xc0 ) >>6
+        podIdx := (itpIdx & 0x07 )
+        ortanoiDispStaList = ortanoiPODDispStaList[podIdx]
+        ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+    }
 
     //Lacona
     laconaDispStaList = make(map[string]DispStaFunc)
