@@ -6542,6 +6542,11 @@ class mtp_ctrl():
             d4_val = "0x10"
             vddq_prog = True
 
+        if nic_type == NIC_Type.POMONTEDELL:
+            d3_val = "0xb7"
+            d4_val = "0x10"
+            vddq_prog = False
+
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                 self.mtp_get_nic_err_msg(slot) # clear out the error message
