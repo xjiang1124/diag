@@ -347,11 +347,14 @@ def main():
             if nic_type not in PSLC_MODE_TYPE_LIST and nic_type != NIC_Type.NAPLES100DELL:
                 continue
 
-            testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+            testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
+
+            # skip extra tests until PCN approved:
+            if nic_type == NIC_Type.ORTANO2ADI or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
+                test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+
             if nic_type == NIC_Type.NAPLES100DELL:
                 testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
-            if nic_type == NIC_Type.ORTANO2INTERP:
-                testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
 
             for skip_test in args.skip_test:
                 if skip_test in testlist:
