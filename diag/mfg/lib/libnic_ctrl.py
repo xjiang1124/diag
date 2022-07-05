@@ -4493,6 +4493,80 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_console_read_secure_boot_keys(self):
+        """
+          "extosa": {
+            "kernel_fit": {
+              "secure_boot": "yes",
+              "secure_boot_keys": "eng",
+            },
+        """
+        exp_secure_boot = "yes"
+        exp_secure_boot_keys = "eng"
+
+        if self._nic_type not in FPGA_TYPE_LIST:
+            return False
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        for loop in range(0,2):
+            nic_cmd = "fwupdate -l"
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                self.nic_console_detach()
+                return False
+        
+            try:
+                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+
+                if 'extosa' not in fw_info:
+                    self.nic_set_err_msg("Missing extosa image")
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+
+                if exp_secure_boot != "":
+                    got_secure_boot = str(fw_info['extosa']['kernel_fit']['secure_boot'])
+                    if got_secure_boot != exp_secure_boot:
+                        self.nic_set_err_msg("Incorrect secure_boot value: {:s}, expecting: {:s}".format(got_secure_boot, exp_secure_boot))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                if exp_secure_boot_keys != "":
+                    got_secure_boot_keys = str(fw_info['extosa']['kernel_fit']['secure_boot_keys'])
+                    if got_secure_boot_keys != exp_secure_boot_keys:
+                        self.nic_set_err_msg("Incorrect secure_boot_keys value: {:s}, expecting: {:s}".format(got_secure_boot_keys, exp_secure_boot_keys))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                break
+
+            except Exception as e:
+                if loop == 1:
+                    # weird characters read
+                    self.nic_set_err_msg("Couldn't read extosa secure_boot fields")
+                    self.nic_set_err_msg(traceback.format_exc())
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+                else:
+                    continue
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
+
     def nic_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
         nic_cmd_list = list()
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd4 {:s}".format(d4_val))

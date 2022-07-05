@@ -3715,6 +3715,15 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_read_secure_boot_keys(self, slot):
+        if not self._nic_ctrl_list[slot].nic_console_read_secure_boot_keys():
+            self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
+            if not GLB_CFG_MFG_TEST_MODE:
+                self.cli_log_slot_err(slot, self.mtp_dump_nic_err_msg(slot))
+            return False
+        self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
+        return True
+
     def mtp_copy_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_copy_emmc(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")

@@ -1189,7 +1189,7 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI and not mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
             if nic_type in FPGA_TYPE_LIST:
-                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "SW_SHUTDOWN"]
+                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_MGMT_INIT")
@@ -1233,6 +1233,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
+                elif test == "KEYS_CHECK":
+                    ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue
