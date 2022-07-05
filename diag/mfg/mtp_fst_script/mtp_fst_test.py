@@ -662,6 +662,8 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
             pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, FF_Stage.FF_FST, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+            if slot in fail_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
