@@ -410,11 +410,13 @@ func init() {
     ortanoiDispStaList = make(map[string]DispStaFunc)
 
     itpType = os.Getenv("ITP_TYPE")
-    fmt.Sscanf(itpType, "0x%x", &itpIdx)
-    tmpIdx := (itpIdx & 0xc0 ) >>6
-    podIdx := (itpIdx & 0x07 )
-    ortanoiDispStaList = ortanoiPODDispStaList[podIdx]
-    ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+    if itpType != "" {
+        fmt.Sscanf(itpType, "0x%x", &itpIdx)
+        tmpIdx := (itpIdx & 0xc0 ) >>6
+        podIdx := (itpIdx & 0x07 )
+        ortanoiDispStaList = ortanoiPODDispStaList[podIdx]
+        ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+    }
 
     //Lacona
     laconaDispStaList = make(map[string]DispStaFunc)
