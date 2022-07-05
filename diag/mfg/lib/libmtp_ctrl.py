@@ -2474,8 +2474,6 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
             if nic_type == NIC_Type.ORTANO2ADI and self.mtp_is_nic_ortanoadi_oracle(slot):
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0026"]
-            if nic_type == NIC_Type.POMONTEDELL:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["90-0017"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
@@ -3302,6 +3300,13 @@ class mtp_ctrl():
         # cpldapp -writeflash ./timer1.bin cfg2
         # cpldapp -writeflash ./lac2_dell_main_2_3.bin
         # cpldapp -writeflash ./timer2.bin cfg3
+
+        or (in FW older than E-24)
+
+        ./artix7fpga -prog ${part_number}_gold.bin gold
+        ./artix7fpga -prog timer1.bin timer1
+        ./artix7fpga -prog ${part_number}_main.bin main
+        ./artix7fpga -prog timer2.bin timer2
         """
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -3309,45 +3314,46 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "This fpga program function not supported for this NIC type!")
             return False
 
-        # check the current cpld version
-        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
-        if not nic_cpld_info:
-            self.cli_log_slot_err_lock(slot, "Program NIC FPGA failed, can not retrieve FPGA revision info")
-            return False
-        cur_ver = nic_cpld_info[0]
-        cur_timestamp = nic_cpld_info[1]
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+        #### Dont skip programming the image right now
+        # # check the current cpld version
+        # nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        # if not nic_cpld_info:
+        #     self.cli_log_slot_err_lock(slot, "Program NIC FPGA failed, can not retrieve FPGA revision info")
+        #     return False
+        # cur_ver = nic_cpld_info[0]
+        # cur_timestamp = nic_cpld_info[1]
+        # try:
+        #     expected_version = NIC_IMAGES.cpld_ver[nic_type]
+        # except KeyError:
+        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
+        #     return False
+        # try:
+        #     expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+        # except KeyError:
+        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
+        #     return False
 
-        if nic_type in self._proto_type_list:
-            self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
-            return True
+        # if nic_type in self._proto_type_list:
+        #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
+        #     return True
 
-        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC FPGA is up-to-date")
-            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-            return True
+        # if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+        #     self.cli_log_slot_inf_lock(slot, "NIC FPGA is up-to-date")
+        #     self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+        #     return True
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+            "main": NIC_IMAGES.cpld_img[nic_type],
+            "gold": NIC_IMAGES.fail_cpld_img[nic_type],
+            "timer1": NIC_IMAGES.timer1_img[nic_type],
+            "timer2": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
-            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
+            program_sequence = ["gold", "timer1", "main", "timer2"]
         else:
-            program_sequence = ["cfg0"]
+            program_sequence = ["main"]
         for partition in program_sequence:
-            img = partition_img_dict[partition]
+            img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
                 self.cli_log_slot_err_lock(slot, "Program NIC FPGA to partition {:s} failed".format(partition))
                 self.mtp_dump_nic_err_msg(slot)
@@ -3372,8 +3378,8 @@ class mtp_ctrl():
         partition_img_dict = {
             "cfg0": NIC_IMAGES.cpld_img[nic_type],
             "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+            "cfg2": NIC_IMAGES.timer1_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
