@@ -408,7 +408,8 @@ class MFG_DIAG_CMDS:
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
-    NIC_UBOOT_PROG_FMT = "/{:s} diaguboot /{:s}"
+    NIC_UBOOT_PROG_FMT = "/{:s} {:s} /{:s}"
+
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     NIC_CHECK_EMMC_FMT = "mmc extcsd read /dev/mmcblk0"
     NIC_EMMC_HWRESET_SET_FMT = "mmc hwreset enable /dev/mmcblk0"

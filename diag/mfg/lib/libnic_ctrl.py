@@ -2,6 +2,9 @@ import time
 import os
 import libmfg_utils
 import re
+import json
+import traceback
+
 from datetime import datetime
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -1876,22 +1879,37 @@ class nic_ctrl():
 
         return True
 
-    def nic_program_uboot(self, uboot_img, installer):
+    def nic_program_uboot(self, boot0_img, installer, ubootg_img=""):
         if not self.nic_copy_image(installer):
             return False
-        if not self.nic_copy_image(uboot_img):
+        if not self.nic_copy_image(boot0_img):
             return False
         installer_path = os.path.basename(installer)
-        img_name = os.path.basename(uboot_img)
+        img_name = os.path.basename(boot0_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, img_name)
+        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "boot0", img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-  
+
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+
+        if ubootg_img:
+            if not self.nic_copy_image(ubootg_img):
+                return False
+            img_name = os.path.basename(ubootg_img)
+
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "golduboot", img_name)
+            qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+            nic_cmd_list.append(nic_cmd)
+
+            if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
 
         self.nic_boot_info_reset()
 
@@ -1942,7 +1960,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        import json
         nic_cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
         nic_cmd_buf = self.nic_get_info(nic_cmd)
         if not nic_cmd_buf:
@@ -4441,7 +4458,8 @@ class nic_ctrl():
         return False
 
     def nic_console_read_uboot(self):
-        import json
+        exp_boot0_version = ""
+        exp_golduboot_version = ""
 
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -4464,17 +4482,27 @@ class nic_ctrl():
             try:
                 fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
 
-                if 'boot0' in fw_info or 'uboot' not in fw_info:
+                if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
                     self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
 
-                if fw_info['uboot']['image']['software_version'] != "lacona_0.2-1-g9feba69":
-                    self.nic_set_err_msg("Incorrect uboot version")
-                    self.nic_console_detach()
-                    self.nic_set_cmd_buf(cmd_buf)
-                    return False
+                if exp_boot0_version != "":
+                    got_boot0_version = str(fw_info['boot0']['image']['image_version'])
+                    if got_boot0_version != exp_boot0_version:
+                        self.nic_set_err_msg("Incorrect boot0 version: {:s}, expecting: {:s}".format(got_boot0_version, exp_boot0_version))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                if exp_golduboot_version != "":
+                    got_golduboot_version = str(fw_info['goldfw']['uboot']['software_version'])
+                    if got_golduboot_version != exp_golduboot_version:
+                        self.nic_set_err_msg("Incorrect uboot version")
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
 
                 break
 
@@ -4482,7 +4510,7 @@ class nic_ctrl():
                 if loop == 1:
                     # weird characters read
                     self.nic_set_err_msg("Couldn't read uboot version")
-                    self.nic_set_err_msg(str(e))
+                    self.nic_set_err_msg(traceback.format_exc())
                     self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False

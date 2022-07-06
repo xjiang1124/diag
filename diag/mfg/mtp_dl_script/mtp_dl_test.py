@@ -150,7 +150,7 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
         ret2 = True
     return ret1 and ret2
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, qspi_img_file, qspi_gold_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, qspi_img_file, qspi_gold_img_file, uboot_img_file, uboot_installer_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -210,6 +210,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
         elif test == "QSPI_GOLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_gold_img_file, True)
+        elif test == "UBOOT_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
@@ -468,6 +470,8 @@ def main():
             if nic_type in ELBA_NIC_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
+            uboot_img_file = ""
+
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
             elif nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
@@ -489,6 +493,8 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(failsafe_cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+                if nic_type in (NIC_Type.ORTANO2):
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI uboot image: " + os.path.basename(uboot_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
             elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
@@ -576,6 +582,9 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI:
                 qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
+            uboot_img_file = ""
+            uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   nic_fru_cfg[mtp_id][key],
                                                                                   cpld_img_file,
@@ -583,6 +592,8 @@ def main():
                                                                                   fea_cpld_img_file,
                                                                                   qspi_img_file,
                                                                                   qspi_gold_img_file,
+                                                                                  uboot_img_file,
+                                                                                  uboot_installer_file,
                                                                                   slot,
                                                                                   swmtestmode,
                                                                                   args.skip_test,

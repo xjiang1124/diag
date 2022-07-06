@@ -25,6 +25,9 @@ class NIC_IMAGES:
     uboot_img = dict()
     uboot_dat = dict()
 
+    # write it down here so release script copies this file
+    uboot_img["INSTALLER"] = "install_file"
+
     # Pensando SKU
     cpld_img["NAPLES25"] = "naples25_rev9_06222020.bin"
     cpld_ver["NAPLES25"] = "0x9"

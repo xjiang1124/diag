@@ -3666,8 +3666,8 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_program_nic_uboot(self, slot, uboot_img, installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file"):
-        if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer):
+    def mtp_program_nic_uboot(self, slot, uboot_img=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"boot0.rev7.img", installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file", ubootg_img=""):
+        if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer, ubootg_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC uboot failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -3705,12 +3705,15 @@ class mtp_ctrl():
 
         # additional: check has diag uboot
         if nic_type in (NIC_Type.ORTANO2):
+            self.mtp_nic_console_lock()
             if not self._nic_ctrl_list[slot].nic_console_read_uboot():
+                self.mtp_nic_console_unlock()
                 self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
                 self.cli_log_slot_inf(slot, "Uboot update needed")
                 if not GLB_CFG_MFG_TEST_MODE:
                     self.cli_log_slot_err(slot, self.mtp_dump_nic_err_msg(slot))
                 return False
+            self.mtp_nic_console_unlock()
             self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
 
         return True

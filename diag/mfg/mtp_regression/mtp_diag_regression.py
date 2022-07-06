@@ -1111,7 +1111,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     if nic_type == NIC_Type.NAPLES25SWM:
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-    
+    qspi_gold_img_file = ""
+    uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+    uboot_img_file = ""
+
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         testlist = ["FPGA_PROG", "QSPI_PROG"]
@@ -1136,6 +1139,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        elif test == "BOOT0_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         elif test == "UBOOT_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
             # if need diaguboot:
