@@ -2,6 +2,9 @@ import time
 import os
 import libmfg_utils
 import re
+import json
+import traceback
+
 from datetime import datetime
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -1476,7 +1479,7 @@ class nic_ctrl():
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.OS_CMD_DELAY
         elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
         else:
@@ -1551,6 +1554,11 @@ class nic_ctrl():
         return True
 
     def nic_check_cpld_partition(self, console=False):
+        """
+        Read reg 0x1 bit 2.
+        0: PASS (booted from main/cfg0)
+        1: FAIL (booted from gold/failsafe)
+        """
         reg_addr = 1
         read_data = [0]
         if console:
@@ -1871,22 +1879,37 @@ class nic_ctrl():
 
         return True
 
-    def nic_program_uboot(self, uboot_img, installer):
+    def nic_program_uboot(self, boot0_img, installer, ubootg_img=""):
         if not self.nic_copy_image(installer):
             return False
-        if not self.nic_copy_image(uboot_img):
+        if not self.nic_copy_image(boot0_img):
             return False
         installer_path = os.path.basename(installer)
-        img_name = os.path.basename(uboot_img)
+        img_name = os.path.basename(boot0_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, img_name)
+        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "boot0", img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-  
+
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
+
+        if ubootg_img:
+            if not self.nic_copy_image(ubootg_img):
+                return False
+            img_name = os.path.basename(ubootg_img)
+
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "golduboot", img_name)
+            qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+            nic_cmd_list.append(nic_cmd)
+
+            if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
 
         self.nic_boot_info_reset()
 
@@ -1937,7 +1960,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        import json
         nic_cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
         nic_cmd_buf = self.nic_get_info(nic_cmd)
         if not nic_cmd_buf:
@@ -4436,7 +4458,11 @@ class nic_ctrl():
         return False
 
     def nic_console_read_uboot(self):
-        import json
+        exp_boot0_version = ""
+        exp_golduboot_version = ""
+
+        if self._nic_type in FPGA_TYPE_LIST:
+            exp_boot0_version = NIC_IMAGES.uboot_dat[self._nic_type]
 
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -4459,17 +4485,27 @@ class nic_ctrl():
             try:
                 fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
 
-                if 'boot0' in fw_info or 'uboot' not in fw_info:
+                if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
                     self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
 
-                if fw_info['uboot']['image']['software_version'] != "lacona_0.2-1-g9feba69":
-                    self.nic_set_err_msg("Incorrect uboot version")
-                    self.nic_console_detach()
-                    self.nic_set_cmd_buf(cmd_buf)
-                    return False
+                if exp_boot0_version != "":
+                    got_boot0_version = str(fw_info['boot0']['image']['image_version'])
+                    if got_boot0_version != exp_boot0_version:
+                        self.nic_set_err_msg("Incorrect boot0 version: {:s}, expecting: {:s}".format(got_boot0_version, exp_boot0_version))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                if exp_golduboot_version != "":
+                    got_golduboot_version = str(fw_info['goldfw']['uboot']['software_version'])
+                    if got_golduboot_version != exp_golduboot_version:
+                        self.nic_set_err_msg("Incorrect uboot version")
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
 
                 break
 
@@ -4477,7 +4513,81 @@ class nic_ctrl():
                 if loop == 1:
                     # weird characters read
                     self.nic_set_err_msg("Couldn't read uboot version")
-                    self.nic_set_err_msg(str(e))
+                    self.nic_set_err_msg(traceback.format_exc())
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+                else:
+                    continue
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
+        return True
+
+    def nic_console_read_secure_boot_keys(self):
+        """
+          "extosa": {
+            "kernel_fit": {
+              "secure_boot": "yes",
+              "secure_boot_keys": "eng",
+            },
+        """
+        exp_secure_boot = "yes"
+        exp_secure_boot_keys = "eng"
+
+        if self._nic_type not in FPGA_TYPE_LIST:
+            return False
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        for loop in range(0,2):
+            nic_cmd = "fwupdate -l"
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                self.nic_console_detach()
+                return False
+        
+            try:
+                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+
+                if 'extosa' not in fw_info:
+                    self.nic_set_err_msg("Missing extosa image")
+                    self.nic_console_detach()
+                    self.nic_set_cmd_buf(cmd_buf)
+                    return False
+
+                if exp_secure_boot != "":
+                    got_secure_boot = str(fw_info['extosa']['kernel_fit']['secure_boot'])
+                    if got_secure_boot != exp_secure_boot:
+                        self.nic_set_err_msg("Incorrect secure_boot value: {:s}, expecting: {:s}".format(got_secure_boot, exp_secure_boot))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                if exp_secure_boot_keys != "":
+                    got_secure_boot_keys = str(fw_info['extosa']['kernel_fit']['secure_boot_keys'])
+                    if got_secure_boot_keys != exp_secure_boot_keys:
+                        self.nic_set_err_msg("Incorrect secure_boot_keys value: {:s}, expecting: {:s}".format(got_secure_boot_keys, exp_secure_boot_keys))
+                        self.nic_console_detach()
+                        self.nic_set_cmd_buf(cmd_buf)
+                        return False
+
+                break
+
+            except Exception as e:
+                if loop == 1:
+                    # weird characters read
+                    self.nic_set_err_msg("Couldn't read extosa secure_boot fields")
+                    self.nic_set_err_msg(traceback.format_exc())
                     self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
