@@ -12,6 +12,8 @@ my $passing_log_file = shift;
 my $yaml_file = "./temp.yaml";
 
 my $worksheet_name = "";
+my @missing;
+my @passing;
 
 if($fa_opt eq "LAST") {
     $worksheet_name = "Last failures";
@@ -30,18 +32,14 @@ if($fa_opt eq "LAST") {
     exit(1);
 }
 
-if (!open(LOG, '<', $missing_log_file)) {
-    print "Cannot open file $missing_log_file\n";
-    return 0;
+if (open(LOG, '<', $missing_log_file)) {
+    chomp(@missing = <LOG>);
+    close (LOG);
 }
-chomp(my @missing = <LOG>);
-close (LOG);
-if (!open(LOG, '<', $passing_log_file)) {
-    print "Cannot open file $passing_log_file\n";
-    return 0;
+if (open(LOG, '<', $passing_log_file)) {
+    chomp(@passing = <LOG>);
+    close (LOG);
 }
-chomp(my @passing = <LOG>);
-close (LOG);
 
 #open my $fh, '<', $yaml_file or die $!;
 my @fa_array = LoadFile($yaml_file);
