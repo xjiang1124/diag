@@ -300,6 +300,10 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])

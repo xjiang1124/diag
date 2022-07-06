@@ -274,6 +274,8 @@ class NIC_IMAGES:
     diagfw_dat["POMONTEDELL"] = "05-28-2022"
     goldfw_img["POMONTEDELL"] = "naples_goldfw_elba_1.46.0-E-24_2022.05.28.tar"
     goldfw_dat["POMONTEDELL"] = "05-27-2022"
+    uboot_img["POMONTEDELL"] = "boot0.rev14.img"
+    uboot_dat["POMONTEDELL"] = "14"
 
     cpld_img["LACONA32DELL"] = "naples200_lac32_dell_main_rev2_3_05272022.bin"
     cpld_ver["LACONA32DELL"] = "0x2"
@@ -290,6 +292,8 @@ class NIC_IMAGES:
     diagfw_dat["LACONA32DELL"] = "05-28-2022"
     goldfw_img["LACONA32DELL"] = "naples_goldfw_elba_1.46.0-E-24_2022.05.28.tar"
     goldfw_dat["LACONA32DELL"] = "05-27-2022"
+    uboot_img["LACONA32DELL"] = "boot0.rev14.img"
+    uboot_dat["LACONA32DELL"] = "14"
 
     cpld_img["LACONA32"] = "naples200_lac32_hpe_main_rev2_3_05272022.bin"
     cpld_ver["LACONA32"] = "0x2"
@@ -306,6 +310,8 @@ class NIC_IMAGES:
     diagfw_dat["LACONA32"] = "05-28-2022"
     goldfw_img["LACONA32"] = "naples_goldfw_elba_1.46.0-E-24_2022.05.28.tar"
     goldfw_dat["LACONA32"] = "05-27-2022"
+    uboot_img["LACONA32"] = "boot0.rev14.img"
+    uboot_dat["LACONA32"] = "14"
 
     cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev1_5_02112022.bin"
     cpld_ver["ORTANO2ADI"] = "0x1"

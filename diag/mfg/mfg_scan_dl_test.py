@@ -172,9 +172,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO2INTERP:
         test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "QSPI_PROG"]
+        test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        test_list = ["FRU_PROG", "FPGA_PROG", "QSPI_PROG"]
+        test_list = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
 
     dsp = FF_Stage.FF_DL
 
@@ -540,6 +540,10 @@ def main():
                 mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+            try:
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
     mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
@@ -736,6 +740,8 @@ def main():
         if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
         uboot_img_file = ""
+        if nic_type in FPGA_TYPE_LIST:
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
         if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
@@ -767,7 +773,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-            if nic_type in (NIC_Type.ORTANO2):
+            if nic_type in FPGA_TYPE_LIST:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI uboot image: " + os.path.basename(uboot_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
         elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:

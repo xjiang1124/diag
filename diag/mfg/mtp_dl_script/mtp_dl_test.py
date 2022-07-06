@@ -170,9 +170,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO2INTERP:
         testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        testlist = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "QSPI_PROG"]
+        testlist = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        testlist = ["FRU_PROG", "FPGA_PROG", "QSPI_PROG"]
+        testlist = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.NAPLES100DELL:
         testlist = ["FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
@@ -493,7 +493,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(failsafe_cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-                if nic_type in (NIC_Type.ORTANO2):
+                if nic_type in FPGA_TYPE_LIST:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI uboot image: " + os.path.basename(uboot_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
             elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
@@ -584,6 +584,8 @@ def main():
 
             uboot_img_file = ""
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+            if nic_type in FPGA_TYPE_LIST:
+                uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   nic_fru_cfg[mtp_id][key],

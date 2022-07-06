@@ -3703,8 +3703,8 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
             return False
 
-        # additional: check has diag uboot
-        if nic_type in (NIC_Type.ORTANO2):
+        # additional: check has correct uboot
+        if nic_type in (NIC_Type.ORTANO2) or nic_type in FPGA_TYPE_LIST:
             self.mtp_nic_console_lock()
             if not self._nic_ctrl_list[slot].nic_console_read_uboot():
                 self.mtp_nic_console_unlock()

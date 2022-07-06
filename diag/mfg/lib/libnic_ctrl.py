@@ -4461,6 +4461,9 @@ class nic_ctrl():
         exp_boot0_version = ""
         exp_golduboot_version = ""
 
+        if self._nic_type in FPGA_TYPE_LIST:
+            exp_boot0_version = NIC_IMAGES.uboot_dat[self._nic_type]
+
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
