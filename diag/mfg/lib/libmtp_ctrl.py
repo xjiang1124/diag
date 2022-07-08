@@ -5274,7 +5274,7 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
-            if vmarg != Voltage_Margin.normal or nic_type == NIC_Type.POMONTEDELL:
+            if vmarg != Voltage_Margin.normal:
                 cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
