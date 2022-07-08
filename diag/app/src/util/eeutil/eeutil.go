@@ -231,6 +231,9 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 } else if pn[0:7] == NAPLES200_PEN[0:7] {      
                     eeprom.EepromTbl = eeprom.OrtanoPensandoTbl
                     eeprom.CustType = "PENORTANO"
+                } else if pn[0:7] == NAPLES200_IBM[0:7] {      
+                    eeprom.EepromTbl = eeprom.OrtanoIBMTbl
+                    eeprom.CustType = "PENORTANO"
                 } else if pn[0:7] == NAPLES200_TAOR[0:7] || pn[0:7] == NAPLES200_TAOR2[0:7]{      
                     eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
                     eeprom.CustType = "PENORTANO"
@@ -464,6 +467,12 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_PEN[0:7])
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_IBM[0:7])
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoIBMTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }
