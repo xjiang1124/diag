@@ -315,21 +315,17 @@ PRIVEK <ek.sk>"""
         ret = 0
         num_retry = 3
 
-        url_list = backend_url.split("#")
-        for url in url_list:
-            cmd = cmd_fmt.format(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, url)
-            print cmd
+        cmd = cmd_fmt.format(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
+        print cmd
 
-            for retry in range(num_retry):
-                print url, "signing EK #", retry
-                session = common.session_start()
-                ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
-                common.session_stop(session)
-                if ret == 0:
-                    break
-                time.sleep(5)
+        for retry in range(num_retry):
+            print url, "signing EK #", retry
+            session = common.session_start()
+            ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
+            common.session_stop(session)
             if ret == 0:
                 break
+            time.sleep(5)
 
         print "ret:", ret
         return ret
