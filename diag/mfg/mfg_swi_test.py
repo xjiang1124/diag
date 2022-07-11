@@ -304,6 +304,19 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                if card_type in FPGA_TYPE_LIST:
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer1_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer2_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
