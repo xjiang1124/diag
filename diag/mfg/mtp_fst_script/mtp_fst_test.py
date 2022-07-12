@@ -323,7 +323,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                 pass_list.remove(slot)
                 continue
         ### OR VERIFY TO EXTDIAG POMONTEDELL
-        elif nic_type in FGPA_TYPE_LIST:
+        elif nic_type in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Verify boot from extdiag")
             cmd = "/nic/tools/fwupdate -r"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
