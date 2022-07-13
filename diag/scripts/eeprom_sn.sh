@@ -54,7 +54,7 @@ serial() {
 detect() {
     bus=$1
     busCheck=$(checkBus $1)
-    if [[ busCheck == "Present" ]]
+    if [[ $busCheck == "Present" ]]
     then
         typeAddr="0x00"
         typeVal=$(i2cget -y $bus $ADDR $typeAddr 2>/dev/null)
@@ -97,7 +97,7 @@ main() {
 }
 
 usage() {
-    echo “eeprom_sn.sh Usage:”
+    echo "eeprom_sn.sh Usage:"
     echo "eeprom_sn.sh -h: help"
     echo "======================"
     echo "eeprom_sn.sh -s [returns serial number of bus 1 and 2]"
@@ -145,25 +145,25 @@ case $key in
 esac
 done
 
-if [[ userBus == "f" ]]
+if [[ $userBus == "f" ]]
 then
-    if [[ userInput == "s" ]]
+    if [[ $userInput == "s" ]]
     then
         main 1
         main 2
         exit
-    elif [[ userInput == "d" ]]
+    elif [[ $userInput == "d" ]]
     then
         detect 1
         detect 2
         exit
     fi
 else
-    if [[ userInput == "s" ]]
+    if [[ $userInput == "s" ]]
     then
         main $userBus
         exit
-    elif [[ userInput == "d" ]]
+    elif [[ $userInput == "d" ]]
     then
         detect $userBus
         exit
