@@ -554,6 +554,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"Bad_J2C"};
         return;
     }
+    if (exists $diag_fa_code{"EMMC_ERR"}) {
+        $top_diag_fa_code = "EMMC_ERR";
+        delete $diag_fa_code{"EMMC_ERR"};
+        return;
+    }
     if (exists $diag_fa_code{"BOOT_GOLDFW"}) {
         $top_diag_fa_code = "BOOT_GOLDFW";
         delete $diag_fa_code{"BOOT_GOLDFW"};
@@ -577,6 +582,41 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"INCORRECT_SN"}) {
         $top_diag_fa_code = "INCORRECT_SN";
         delete $diag_fa_code{"INCORRECT_SN"};
+        return;
+    }
+    if (exists $diag_fa_code{"INCORRECT_PN_REV"}) {
+        $top_diag_fa_code = "INCORRECT_PN_REV";
+        delete $diag_fa_code{"INCORRECT_PN_REV"};
+        return;
+    }
+    if (exists $diag_fa_code{"PN_SW_MATCH_ERR"}) {
+        $top_diag_fa_code = "PN_SW_MATCH_ERR";
+        delete $diag_fa_code{"PN_SW_MATCH_ERR"};
+        return;
+    }
+    if (exists $diag_fa_code{"RETREIVE_PN_FAIL"}) {
+        $top_diag_fa_code = "RETREIVE_PN_FAIL";
+        delete $diag_fa_code{"RETREIVE_PN_FAIL"};
+        return;
+    }
+    if (exists $diag_fa_code{"CARD_RESET"}) {
+        $top_diag_fa_code = "CARD_RESET";
+        delete $diag_fa_code{"CARD_RESET"};
+        return;
+    }
+    if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
+        $top_diag_fa_code = "CARD_SPACE_FULL";
+        delete $diag_fa_code{"CARD_SPACE_FULL"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+        return;
+    }
+    if (exists $diag_fa_code{"OOB_MNIC_NOT_ENABLED"}) {
+        $top_diag_fa_code = "OOB_MNIC_NOT_ENABLED";
+        delete $diag_fa_code{"OOB_MNIC_NOT_ENABLED"};
         return;
     }
     if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
@@ -1005,8 +1045,24 @@ sub parse_fst_rot {
     }
     while(my $line = <TR3>)
     {
-        # TBD
+        # if ($line =~ m/invalid qspi device id read/) {
+        #     $diag_fa_code{"ROT_BAD_DEV_ID"} = 1;
+        #     $test_err_msg .= $line;
+        # }
+        # if ($line =~ m/possible NIC console is dead/) {
+        #     $diag_fa_code{"ROT_CONSOLE_DEAD"} = 1;
+        #     $test_err_msg .= $line;
+        # }
+        # if ($line =~ m/possible bad cable/) {
+        #     $diag_fa_code{"ROT_BAD_CABLE"} = 1;
+        #     $test_err_msg .= $line;
+        # }
     }
+    if ($test_err_msg ne "") {
+        $all_test_msg .= "log path: ".$fulllogpath."\n";
+        $all_test_msg .= $test_err_msg;
+    }
+    close(TR3);
 }
 
 sub parse_mtp_and_slot_log {
@@ -1035,6 +1091,10 @@ sub parse_mtp_and_slot_log {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
+        }
+        if ($line =~ m/No space left on device/) {
+            $diag_fa_code{"CARD_SPACE_FULL"} = 1;
+	        $slot_err_msg .= $line;
         }
         if ($line =~ m/Resetting CPU/) {
             $diag_fa_code{"CARD_RESET"} = 1;
@@ -1083,6 +1143,14 @@ sub parse_mtp_and_slot_log {
                 $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
             }
         }
+        if ($line =~ m/\/emmc_format\.sh/) {
+            my $line2 = <TR3>;
+            if ($line2 =~ m/open: No such file or directory/) {
+                $slot_err_msg .= $line;
+                $slot_err_msg .= $line2;
+                $diag_fa_code{"EMMC_ERR"} = 1;
+            }
+        }
     }
     if ($slot_err_msg ne "") {
         $test_err_msg .= "\n--------slot log--------: ".$slotlogfile."\n";
@@ -1097,6 +1165,20 @@ sub parse_mtp_and_slot_log {
 
     while(my $line = <TR3>)
     {
+        if (index($failure_code_list, "SW_PN_CHECK") != -1) {
+            if ($line =~ m/\[NIC-$slot\].*Check SOFTWARE IMAGE PN.*CARD PN/) {
+                $mtp_test_msg .= $line;
+                my $line2 = <TR3>;
+                $mtp_test_msg .= $line2;
+                if ($line2 =~ m/Check PN REV: Software Image match to nic part number failed/) {
+                    $diag_fa_code{"INCORRECT_PN_REV"} = 1;
+                } elsif ($line2 =~ m/Check SWI Software Image: Software Image match to nic part number failed/) {
+                    $diag_fa_code{"PN_SW_MATCH_ERR"} = 1;
+                } elsif ($line2 =~ m/Check SWI Software Image: Retreive PN Failed/) {
+                    $diag_fa_code{"RETREIVE_PN_FAIL"} = 1;
+                }
+            }
+        }
         if (index($failure_code_list, "SCAN_VERIFY") != -1) {
             if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
                 $mtp_test_msg .= $line;
