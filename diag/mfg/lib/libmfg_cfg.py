@@ -106,8 +106,8 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES25SWMDELL"] = "00"
     diagfw_img["NAPLES25SWMDELL"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES25SWMDELL"] = "03-03-2021"
-    goldfw_img["NAPLES25SWMDELL"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES25SWMDELL"] = "01-31-2021"
+    goldfw_img["NAPLES25SWMDELL"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["NAPLES25SWMDELL"] = "04-25-2022"
 
     # OCP HPE (P37689-001)
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
