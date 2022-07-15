@@ -26,8 +26,6 @@ serial() {
     testVar=$(i2cget -y $bus $ADDR $snaddr 2>/dev/null)
     if [[ $testVar ]]
     then
-        echo "retrieving serial number from EEPROM on I2Cbus $bus..."
-
         while [[ incr -ne 0 ]]
         do
             hex=$(i2cget -y $bus $ADDR $snaddr 2>/dev/null)
@@ -42,7 +40,7 @@ serial() {
         testVar=${SN//"\xff"}
         if [[ $testVar ]]
         then
-            echo -e "Serial number: $SN"
+            echo -e "Bus $bus: SN $SN"
         else
             echo "No serial number / EEPROM found"
         fi
@@ -64,11 +62,14 @@ detect() {
             if [[ $typeVal == "03" ]]
             then
                 echo "SFP"
-            else
+            elif [[ $typeVal == "11" ]]
+            then
                 echo "QSFP"
+            else
+                echo "Unknown device on bus $bus."
             fi
         else
-            echo "Undetermined device on bus $bus. Defaulting to QSFP"
+            echo "Bus $bus: no device found."
         fi
     else
         echo $busCheck
@@ -88,7 +89,6 @@ checkBus() {
 
 main() {
     bus=$1
-    echo "Chcking bus $bus"
     testBus=$(checkBus $bus)
     if [[ $testBus == "Present" ]]
     then
@@ -100,8 +100,8 @@ usage() {
     echo "eeprom_sn.sh Usage:"
     echo "eeprom_sn.sh -h: help"
     echo "======================"
-    echo "eeprom_sn.sh -s [returns serial number of bus 1 and 2]"
-    echo "eeprom_sn.sh -d [detects prescence and type of EEPROM of bus 1 and 2]"
+    echo "eeprom_sn.sh -s [returns serial number of EEPROM on bus 1 and 2]"
+    echo "eeprom_sn.sh -d [detects prescence and type of EEPROM on bus 1 and 2]"
     echo "======================"
     echo "eeprom_sn.sh [-s/-d] -b <bus> [specifies bush]"
  }
