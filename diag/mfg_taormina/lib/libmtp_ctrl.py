@@ -2236,7 +2236,7 @@ class mtp_ctrl():
                 self.cli_log_err("{:s} failed".format(cmd))
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
                 return None
-            match = re.search("%s.* (\d+.?\d*)" % tsensor, self.mtp_get_cmd_buf())
+            match = re.search("%s.* (-?\d+.?\d*)" % tsensor, self.mtp_get_cmd_buf())
             if match:
                 temp_readings[tsensor] = float(match.group(1))
             else:
