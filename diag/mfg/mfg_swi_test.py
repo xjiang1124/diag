@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
@@ -26,6 +27,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -303,6 +305,19 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                if card_type in FPGA_TYPE_LIST:
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer1_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer2_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
@@ -342,15 +357,7 @@ def main():
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage)
-                if flex_rs != 0:
-                    if flex_rs in FLEX_ERR_CODE_MAP.err_code:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]))
-                    else:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)))
-                    fail_nic_list[mtp_id].append(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
     mtp_thread_list = list()
     mfg_swi_summary = dict()

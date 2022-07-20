@@ -2474,8 +2474,6 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
             if nic_type == NIC_Type.ORTANO2ADI and self.mtp_is_nic_ortanoadi_oracle(slot):
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0026"]
-            if nic_type == NIC_Type.POMONTEDELL:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["90-0017"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
@@ -3168,6 +3166,7 @@ class mtp_ctrl():
     def mtp_setting_partition(self, slot):
         # copy script to detect the emmc part size
         if not self._nic_ctrl_list[slot].nic_copy_image("{:s}diag/scripts/emmc_format.sh".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)):
+            self.cli_log_slot_err_lock(slot, "Failed to copy emmc format script")
             return False
         # Run command twice: first time does it, 2nd time says 'already partitioned'
         if not self._nic_ctrl_list[slot].nic_setting_partition():
@@ -3184,6 +3183,36 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "PSLC Verify failed")
             return False
         self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
+        return True
+
+    def mtp_nic_emmc_bkops_en(self, slot):
+        # copy script to detect the emmc part size
+        if not self._nic_ctrl_list[slot].nic_copy_image("{:s}nic_util/mmc.latest".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)):
+            self.cli_log_slot_err_lock(slot, "Failed to copy emmc util")
+            return False
+        if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
+            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            if not self._nic_ctrl_list[slot].nic_emmc_bkops_en(): 
+                self.cli_log_slot_err_lock(slot, "Failed to enable eMMC bkops")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
+                self.cli_log_slot_err_lock(slot, "Incorrect eMMC bkops value reflected")
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                return False
+        return True
+
+    def mtp_nic_emmc_hwreset_set(self, slot):
+        if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
+            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            if not self._nic_ctrl_list[slot].nic_emmc_hwreset_set(): 
+                self.cli_log_slot_err_lock(slot, "Failed to enable eMMC hwreset setting")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
+                self.cli_log_slot_err_lock(slot, "Incorrect eMMC hwreset setting reflected")
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                return False
         return True
 
     def mtp_program_nic_cpld(self, slot, cpld_img, dl_step=True):
@@ -3271,6 +3300,13 @@ class mtp_ctrl():
         # cpldapp -writeflash ./timer1.bin cfg2
         # cpldapp -writeflash ./lac2_dell_main_2_3.bin
         # cpldapp -writeflash ./timer2.bin cfg3
+
+        or (in FW older than E-24)
+
+        ./artix7fpga -prog ${part_number}_gold.bin gold
+        ./artix7fpga -prog timer1.bin timer1
+        ./artix7fpga -prog ${part_number}_main.bin main
+        ./artix7fpga -prog timer2.bin timer2
         """
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -3278,45 +3314,46 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "This fpga program function not supported for this NIC type!")
             return False
 
-        # check the current cpld version
-        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
-        if not nic_cpld_info:
-            self.cli_log_slot_err_lock(slot, "Program NIC FPGA failed, can not retrieve FPGA revision info")
-            return False
-        cur_ver = nic_cpld_info[0]
-        cur_timestamp = nic_cpld_info[1]
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+        #### Dont skip programming the image right now
+        # # check the current cpld version
+        # nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        # if not nic_cpld_info:
+        #     self.cli_log_slot_err_lock(slot, "Program NIC FPGA failed, can not retrieve FPGA revision info")
+        #     return False
+        # cur_ver = nic_cpld_info[0]
+        # cur_timestamp = nic_cpld_info[1]
+        # try:
+        #     expected_version = NIC_IMAGES.cpld_ver[nic_type]
+        # except KeyError:
+        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
+        #     return False
+        # try:
+        #     expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
+        # except KeyError:
+        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
+        #     return False
 
-        if nic_type in self._proto_type_list:
-            self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
-            return True
+        # if nic_type in self._proto_type_list:
+        #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
+        #     return True
 
-        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC FPGA is up-to-date")
-            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-            return True
+        # if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+        #     self.cli_log_slot_inf_lock(slot, "NIC FPGA is up-to-date")
+        #     self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+        #     return True
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+            "main": NIC_IMAGES.cpld_img[nic_type],
+            "gold": NIC_IMAGES.fail_cpld_img[nic_type],
+            "timer1": NIC_IMAGES.timer1_img[nic_type],
+            "timer2": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
-            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
+            program_sequence = ["gold", "timer1", "main", "timer2"]
         else:
-            program_sequence = ["cfg0"]
+            program_sequence = ["main"]
         for partition in program_sequence:
-            img = partition_img_dict[partition]
+            img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
                 self.cli_log_slot_err_lock(slot, "Program NIC FPGA to partition {:s} failed".format(partition))
                 self.mtp_dump_nic_err_msg(slot)
@@ -3341,8 +3378,8 @@ class mtp_ctrl():
         partition_img_dict = {
             "cfg0": NIC_IMAGES.cpld_img[nic_type],
             "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_cpld_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_cpld_img[nic_type]
+            "cfg2": NIC_IMAGES.timer1_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
@@ -3513,7 +3550,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True):
+    def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True, console=False):
         # cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
@@ -3576,6 +3613,12 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(expected_timestamp, cur_timestamp))
                 return False
 
+        if nic_type in ELBA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_check_cpld_partition(console):
+                self.cli_log_slot_err(slot, "NIC not booted from cfg0 CPLD/FPGA")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+
         return True
 
     def mtp_program_nic_qspi(self, slot, qspi_img, force_update=True):
@@ -3623,8 +3666,8 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_program_nic_uboot(self, slot, uboot_img, installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file"):
-        if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer):
+    def mtp_program_nic_uboot(self, slot, uboot_img=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"boot0.rev7.img", installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file", ubootg_img=""):
+        if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer, ubootg_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC uboot failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -3660,16 +3703,28 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Diagfw Verify Failed, Expect: {:s}   Read: {:s}".format(expected_timestamp, kernel_timestamp))
             return False
 
-        # additional: check has diag uboot
-        if nic_type in (NIC_Type.ORTANO2):
+        # additional: check has correct uboot
+        if nic_type in (NIC_Type.ORTANO2) or nic_type in FPGA_TYPE_LIST:
+            self.mtp_nic_console_lock()
             if not self._nic_ctrl_list[slot].nic_console_read_uboot():
+                self.mtp_nic_console_unlock()
                 self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
                 self.cli_log_slot_inf(slot, "Uboot update needed")
                 if not GLB_CFG_MFG_TEST_MODE:
                     self.cli_log_slot_err(slot, self.mtp_dump_nic_err_msg(slot))
                 return False
+            self.mtp_nic_console_unlock()
             self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
 
+        return True
+
+    def mtp_nic_read_secure_boot_keys(self, slot):
+        if not self._nic_ctrl_list[slot].nic_console_read_secure_boot_keys():
+            self.cli_log_slot_inf(slot, self.mtp_get_nic_err_msg(slot))
+            if not GLB_CFG_MFG_TEST_MODE:
+                self.cli_log_slot_err(slot, self.mtp_dump_nic_err_msg(slot))
+            return False
+        self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
         return True
 
     def mtp_copy_nic_emmc(self, slot, emmc_img):
@@ -5219,7 +5274,7 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
             # 2C/4C = internal loopback
-            if vmarg != Voltage_Margin.normal or nic_type == NIC_Type.POMONTEDELL:
+            if vmarg != Voltage_Margin.normal:
                 cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
@@ -5642,12 +5697,17 @@ class mtp_ctrl():
         if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
             skip_ddr_bist = "0"
 
+        if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
+            ddr_hc_training = "1"
+        else:
+            ddr_hc_training = "0"
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist)
+        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
             # kill the process in case it's hung/timed out
@@ -6484,6 +6544,11 @@ class mtp_ctrl():
             d3_val = "0xb7"
             d4_val = "0x10"
             vddq_prog = True
+
+        if nic_type == NIC_Type.POMONTEDELL:
+            d3_val = "0xb7"
+            d4_val = "0x10"
+            vddq_prog = False
 
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):

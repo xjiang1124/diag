@@ -983,7 +983,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
                     ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
                 # check CPLD version
                 elif test == "CPLD_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, timestamp_check=False) # cant read timestamp from smb
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, timestamp_check=False, console=True) # cant read timestamp from smb
                     if not ret:
                         cpld_prog_list.append(slot)
                         ret = True
@@ -1014,7 +1014,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
         mtp_mgmt_ctrl.cli_log_inf("Programmable updates needed... starting", level=0)
         nic_list = libmfg_utils.list_union(cpld_prog_list, qspi_prog_list)
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, nic_util=True, stop_on_err=stop_on_err):
-            mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+            #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             for slot in nic_list:
                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                     if slot not in fail_nic_list:
@@ -1111,10 +1111,13 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
     if nic_type == NIC_Type.NAPLES25SWM:
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
         cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-    
+    qspi_gold_img_file = ""
+    uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+    uboot_img_file = ""
+
     testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        testlist = ["QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY"]
+        testlist = ["FPGA_PROG", "QSPI_PROG"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -1136,6 +1139,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
+        elif test == "BOOT0_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         elif test == "UBOOT_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
             # if need diaguboot:
@@ -1505,7 +1510,7 @@ def main():
                     diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
 
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
-                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                     for nic_list in nic_test_full_list:
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -1518,7 +1523,7 @@ def main():
                                     return
             else:
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err):
-                    mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                    #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                     for nic_list in nic_test_full_list:
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -1878,7 +1883,7 @@ def main():
                             # only do this diag init if swm lp_mode test was performed
                             mtp_mgmt_ctrl.cli_log_inf("Setting Naples25 SWM Back to High Power Mode (requires a nic reboot)", level=0)
                             if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, vmargin=vmarg, swm_lp=False,stop_on_err=stop_on_err):
-                                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                                #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                                 for slot in nic_list:
                                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                                         if slot not in fail_nic_list:
@@ -1897,7 +1902,7 @@ def main():
                     #
                     ######################################################################
                     if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, nic_util=False, dis_hal=True, stop_on_err=stop_on_err):
-                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                        #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                         for nic_list in nic_test_full_list:
                             for slot in nic_list:
                                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -1917,7 +1922,7 @@ def main():
                     #
                     ######################################################################
                     if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, aapl=True, nic_util=False, dis_hal=True, stop_on_err=stop_on_err):
-                        mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+                        #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                         for nic_list in nic_test_full_list:
                             for slot in nic_list:
                                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):

@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Vendor
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
@@ -151,7 +152,7 @@ def hpe_rework_verify(mtp_mgmt_ctrl, slot):
         ret2 = True
     return ret1 and ret2
 
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, qspi_img_file, qspi_gold_img_file, slot, fail_nic_list, pass_nic_list, swmtestmode, skip_testlist = []):
+def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, qspi_img_file, qspi_gold_img_file, uboot_img_file, uboot_installer_file, slot, fail_nic_list, pass_nic_list, swmtestmode, skip_testlist = []):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
@@ -171,9 +172,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.ORTANO2INTERP:
         test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY"]
+        test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        test_list = ["FRU_PROG", "QSPI_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY"]
+        test_list = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
 
     dsp = FF_Stage.FF_DL
 
@@ -215,6 +216,9 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program GOLD QSPI
         elif test == "QSPI_GOLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_gold_img_file, True)
+        # program boot0
+        elif test == "UBOOT_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
@@ -536,8 +540,13 @@ def main():
                 mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+            try:
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
+    mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
@@ -568,17 +577,8 @@ def main():
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage)
-            if flex_rs != 0:
-                if flex_rs in FLEX_ERR_CODE_MAP.err_code:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]), level=0)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)), level=0)
-                fail_nic_list.append(slot)
-                continue
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn), level=0)
-        if slot not in pass_nic_list:
+            pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+        if slot not in pass_nic_list and slot not in fail_nic_list:
             pass_nic_list.append(slot)
 
     mtp_mgmt_ctrl.mtp_power_off_nic()
@@ -659,7 +659,10 @@ def main():
 
         if nic_type not in PSLC_MODE_TYPE_LIST:
             continue
-        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
+        # skip extra tests until PCN approved:
+        if nic_type == NIC_Type.ORTANO2ADI or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
+            test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
         for skip_test in args.skip_test:
             if skip_test in test_list:
                 test_list.remove(skip_test)
@@ -672,6 +675,10 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_nic_mgmt_init(slot, fpo=True)
             elif test == "SET_PSLC":
                 ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+            elif test == "EMMC_HWRESET_SET":
+                ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
+            elif test == "EMMC_BKOPS_EN":
+                ret = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(slot)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -732,6 +739,9 @@ def main():
         failsafe_cpld_img_file = ""
         if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+        uboot_img_file = ""
+        if nic_type in FPGA_TYPE_LIST:
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
         if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
@@ -763,6 +773,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD1 image: " + os.path.basename(cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD2 image: " + os.path.basename(failsafe_cpld_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
+            if nic_type in FPGA_TYPE_LIST:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI uboot image: " + os.path.basename(uboot_img_file))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end\n")
         elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
@@ -846,12 +858,19 @@ def main():
         if nic_type == NIC_Type.ORTANO2ADI:
             qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
+        uboot_img_file = ""
+        uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+        if nic_type in FPGA_TYPE_LIST:
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
+
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                               nic_fru_cfg[mtp_id][key],
                                                                               cpld_img_file,
                                                                               failsafe_cpld_img_file,
                                                                               qspi_img_file,
                                                                               qspi_gold_img_file,
+                                                                              uboot_img_file,
+                                                                              uboot_installer_file,
                                                                               slot,
                                                                               fail_nic_list,
                                                                               pass_nic_list,

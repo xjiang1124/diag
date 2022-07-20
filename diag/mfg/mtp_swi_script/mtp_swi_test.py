@@ -226,9 +226,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
-        test_list = ["FPGA_PROG", "GOLD_FPGA_PROG"]
-    if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["BOARD_CONFIG", "FPGA_PROG", "GOLD_FPGA_PROG"]
+        test_list = ["FPGA_PROG"]
     if nic_type == NIC_Type.ORTANO2:
         test_list = []
     for skip_test in skip_testlist:
@@ -238,16 +236,20 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program CPLD
-        if test == "CPLD_PROG" or test == "FPGA_PROG":
+        if test == "CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
+        # program all FPGA partitions
+        elif test == "FPGA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
+        # verify program of all FPGA partitions
+        elif test == "FPGA_PROG_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
         # program failsafe CPLD
-        elif test == "FSAFE_CPLD_PROG" or test == "GOLD_FPGA_PROG":
+        elif test == "FSAFE_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        elif test == "BOARD_CONFIG":
-            ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
             continue
@@ -1187,7 +1189,7 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI and not mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
             if nic_type in FPGA_TYPE_LIST:
-                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "SW_SHUTDOWN"]
+                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
             if nic_profile:
                 if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_MGMT_INIT")
@@ -1231,6 +1233,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
+                elif test == "KEYS_CHECK":
+                    ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue

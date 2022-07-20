@@ -40,6 +40,9 @@ class FLX_Factory:
     MILPITAS = "Milpitas"
     PENANG = "Penang"
 
+class FLEX_TWO_WAY_COMM:
+    PRE_POST_RETRY = 0
+    POST_RETRY = 0
 
 class FF_Stage:
     FF_DL = "DL"
@@ -376,10 +379,10 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
-    # NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
-    # NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
-    NIC_FPGA_PROG_FMT = "{:s}cpldapp -writeflash /{:s} {:s}"
-    NIC_FPGA_DUMP_FMT = "{:s}cpldapp -verifyflash /{:s} {:s}"
+    NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
+    NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
+    # NIC_FPGA_PROG_FMT = "{:s}cpldapp -writeflash /{:s} {:s}"
+    # NIC_FPGA_DUMP_FMT = "{:s}cpldapp -verifyflash /{:s} {:s}"
     NIC_SGMII_READ_FMT  = "{:s}cpld -smird 0x{:x} 0x{:x}"
     NIC_SGMII_WRITE_FMT = "{:s}cpld -smiwr 0x{:x} 0x{:x} 0x{:x}"
     NIC_SGMII_READ_ELBA_FMT  = "{:s}xo3dcpld -smird 0x{:x} 0x{:x}"
@@ -405,15 +408,21 @@ class MFG_DIAG_CMDS:
     NIC_QSPI_PROG_FMT = "fwupdate -p /{:s} -i 'all'"
     NIC_DIAGFW_PROG_FMT = "fwupdate -p /{:s} -i diagfw"
     NIC_GOLDFW_PROG_FMT = "cd /; tar xvf {:s}; ./fwupdate -p {:s} -i all"
-    NIC_UBOOT_PROG_FMT = "/{:s} diaguboot /{:s}"
+    NIC_UBOOT_PROG_FMT = "/{:s} {:s} /{:s}"
+
     NIC_EMMC_INIT_FMT = "fwupdate --init-emmc"
     NIC_CHECK_EMMC_FMT = "mmc extcsd read /dev/mmcblk0"
+    NIC_EMMC_HWRESET_SET_FMT = "mmc hwreset enable /dev/mmcblk0"
+    NIC_EMMC_HWRESET_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i reset"
+    NIC_EMMC_BKOPS_EN_FMT = "/mmc.latest bkops_en auto /dev/mmcblk0"
+    NIC_EMMC_BKOPS_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i ops"
     NIC_EMMC_PERF_MODE = "touch /sysconfig/config0/.perf_mode"
     NIC_EMMC_PERF_MODE_CHECK = "[[ -f /sysconfig/config0/.perf_mode ]] ; echo $?"
     NIC_EMMC_PROG_FMT_NAPLES100 = "fwupdate -p /data/{:s} -i 'uboot mainfwa mainfwb'"
     NIC_GOLDFW_PROG_FMT_NAPLES100 = "fwupdate -p /{:s} -i goldfw"
     NIC_EMMC_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i 'all'"
     NIC_EMMC_B_PROG_FMT = "cd /data; tar xvf {:s}; ./fwupdate -p /data/{:s} -i mainfwb"
+    NIC_BOOT0_PROG_FMT = "cd /data; ./fwupdate -p /data/{:s} -i boot0"
     NIC_BOOT_DISP_FMT = "fwupdate -r"
     NIC_BOOT_DISP_S_FMT = "fwupdate -S"
     NIC_IMG_DISP_FMT = "fwupdate -L"
@@ -440,7 +449,7 @@ class MFG_DIAG_CMDS:
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
-    NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s}"
+    NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -523,7 +532,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
-    MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=6 -dura=3 -mode=nod_525"
+    MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:s} -snake_num=6 -dura=120 -mode=nod_525"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=nod"
     MTP_PARA_ARM_L1_ELBA_FMT             = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s}"
     MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod"
@@ -612,6 +621,10 @@ class MFG_DIAG_SIG:
     NIC_PARTITION_OK_SIG = "setting OTP PARTITION_SETTING_COMPLETED!"
     NIC_PARTITION1_OK_SIG = "Device is already partitioned"
     NIC_EMMC_PERF_MODE_OK_SIG = "0"
+    NIC_EMMC_HWRESET_PASS_SIG = "H/W reset function [RST_N_FUNCTION]: 0x01"
+    NIC_EMMC_HWRESET_FAIL_SIG = "H/W reset function [RST_N_FUNCTION]: 0x00"
+    NIC_EMMC_BKOPS_PASS_SIG = "Enable background operations handshake [BKOPS_EN]: 0x02"
+    NIC_EMMC_BKOPS_FAIL_SIG = "Enable background operations handshake [BKOPS_EN]: 0x00"
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_PARA_SIG = "=== Setup env top"

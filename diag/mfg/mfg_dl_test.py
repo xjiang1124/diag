@@ -300,10 +300,15 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])
         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
+        mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
         
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
@@ -342,15 +347,7 @@ def main():
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                flex_rs = libmfg_utils.flx_web_srv_precheck_uut_status(sn, stage=stage)
-                if flex_rs != 0:
-                    if flex_rs in FLEX_ERR_CODE_MAP.err_code:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [{:s}]".format(sn, FLEX_ERR_CODE_MAP.err_code[flex_rs]))
-                    else:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Pre-Post [{:s}] result to webserver failed. [ERROR: Unable to locate error code -->({:s})]".format(sn, str(flex_rs)))
-                    fail_nic_list[mtp_id].append(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=0)
 
     mtp_thread_list = list()
     mfg_dl_summary = dict()
