@@ -1061,6 +1061,14 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
+        if len(fail_nic_list) == 0 and corner == Env_Cond.MFG_2C_LV: #if this was the last corner in 2C
+            if not mtp_mgmt_ctrl.tor_fru_passmark(corner):
+                for slot in range(len(nic_prsnt_list)):
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+
         for slot in pass_nic_list:
             key = libmfg_utils.nic_key(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)

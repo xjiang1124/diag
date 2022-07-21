@@ -233,6 +233,8 @@ def single_uut_fw_program(stage,
                         "MGMT_INIT_OS",
                         "OS_TEST_VERIFY",
                         "TIME_SET",
+                        "UL_FRU_PROG",
+                        "UL_FRU_VERIFY",
                         "DIAG_INIT",
                         "TD_GEARBOX_VERIFY",
                         "TD_AVS_SET"
@@ -278,10 +280,14 @@ def single_uut_fw_program(stage,
 
             elif test == "FRU_PROG":
                 ret = mtp_mgmt_ctrl.tor_fru_prog(sn, mac, pn, prog_date)
+            elif test == "UL_FRU_PROG":
+                ret = mtp_mgmt_ctrl.tor_mfg_fru_prog()
             elif test == "FRU_TPM_SN_PROG":
                 ret = mtp_mgmt_ctrl.tor_fru_prog_tpm_pcbasn(pcbasn)
             elif test == "FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_fru_verify()
+            elif test == "UL_FRU_VERIFY":
+                ret = mtp_mgmt_ctrl.tor_mfg_fru_verify()
             elif test == "GET_PCBA_SN":
                 pcbasn = mtp_mgmt_ctrl.get_pchasn_by_yaml(sn)
                 if not pcbasn:
@@ -498,10 +504,18 @@ def single_uut_fw_program(stage,
                     else:
                         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+        if uut_id not in fail_uut_list and stage == "DL2":
+            if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
+                if uut_id in pass_uut_list:
+                    pass_uut_list.remove(uut_id)
+                if uut_id not in fail_uut_list:
+                    fail_uut_list.append(uut_id)
+
         # copy additional logs
         mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
 
         mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
+
         # shut down system
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.uut_chassis_shutdown()

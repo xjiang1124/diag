@@ -197,6 +197,13 @@ def id_final_str(srv = None, mtp = None):
 def sys_exit(err):
     sys.exit("\033[1;91m" + "## ERR: " + err + "\033[0m")
 
+def get_passmark_timestamp():
+    # 20180807225440
+    tmp = str(timestamp_snapshot())
+    tmp = tmp.replace(' ', '')
+    tmp = tmp.replace(':', '')
+    tmp = tmp.replace('-', '')
+    return tmp
 
 def get_timestamp():
     # 2018-08-07 22:54:40.484198
