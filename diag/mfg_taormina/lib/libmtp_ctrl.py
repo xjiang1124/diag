@@ -4362,34 +4362,34 @@ class mtp_ctrl():
             else:
                 return []
         elif test == "PRBS_TOR":
-             #switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>
-             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
-             prbs_type = "prbs58"
-             prbs_duration = "60"
-             cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
-             test_timeout = self.get_test_timeout(cmd, test)
-             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
-                 self.cli_log_err("{:s} failed".format(cmd))
-                 return nic_list[:]
-             cmd_buf = self.mtp_get_cmd_buf()
-             if "PRBS PASSED" not in cmd_buf:
-                 self.mtp_dump_err_msg(cmd_buf)
-                 return nic_list[:]
-             else:
-                 return []
+            #switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>
+            self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
+            prbs_type = "prbs58"
+            prbs_duration = "60"
+            cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PRBS PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return nic_list[:]
+            else:
+                return []
         elif test == "PCI_TOR":
-             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
-             cmd = "./switch cpu pciscan"
-             test_timeout = self.get_test_timeout(cmd, test)
-             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
-                 self.cli_log_err("{:s} failed".format(cmd))
-                 return nic_list[:]
-             cmd_buf = self.mtp_get_cmd_buf()
-             if "PCISCAN TEST PASSED" not in cmd_buf:
-                 self.mtp_dump_err_msg(cmd_buf)
-                 return nic_list[:]
-             else:
-                 return []
+            self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
+            cmd = "./switch cpu pciscan"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PCISCAN TEST PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return nic_list[:]
+            else:
+                return []
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
@@ -5876,7 +5876,7 @@ class mtp_ctrl():
                 pass
             #return False
 
-        self.cli_log_inf("Downloading TPM CONFIG image", level=0)
+        self.cli_log_inf("Downloading TPM CONFIG image")
 
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+tpm_img):
@@ -5925,7 +5925,7 @@ class mtp_ctrl():
             self.cli_log_err("Unable to init bash shell", level=0)
             return False
 
-        self.cli_log_inf("Downloading USB image", level=0)
+        self.cli_log_inf("Downloading USB image")
 
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+usb_img):
@@ -6559,6 +6559,9 @@ class mtp_ctrl():
 
         if self._bio_ver:
             self.cli_log_inf("==> BIOS version: {:s}".format(self._bio_ver))
+
+        if self._svos_ver:
+            self.cli_log_inf("==> SVOS version: {:s}".format(self._svos_ver))
 
         # if not self._boot_image or not self._kernel_timestamp:
         #     self.cli_log_err("Retrieve boot info failed")
