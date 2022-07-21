@@ -6114,23 +6114,28 @@ class mtp_ctrl():
 
         if download:
             self.cli_log_inf("Downloading OS image")
-            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, uut_img_dir, TOR_IMAGES.TFTP_SERVER_DIR+os_img):
+            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+os_img):
                 self.cli_log_err("Failed to get {:s}".format(os_img), level=0)
                 return False
+
+        cmd = "cd /"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
 
         cmd = "rm {:s}secondary.swi {:s}primary.swi".format(uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("{:s} failed".format(cmd), level=0)
             return False
 
-        cmd = "cp {:s}{:s} {:s}primary.swi ; ls -l {:s}primary.swi".format(uut_img_dir,os.path.basename(os_img),uut_img_dir,uut_img_dir)
+        cmd = "cp {:s}{:s} {:s}primary.swi ; ls -l {:s}primary.swi".format("/",os.path.basename(os_img),uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["primary.swi"]):
             self.cli_log_err("Failed to place {:s}".format(os_img), level=0)
             return False
         self.cli_log_inf("Saved OS image to primary image")
         time.sleep(1)
 
-        cmd = "cp {:s}{:s} {:s}secondary.swi ; ls -l {:s}secondary.swi".format(uut_img_dir,os.path.basename(os_img),uut_img_dir,uut_img_dir)
+        cmd = "cp {:s}{:s} {:s}secondary.swi ; ls -l {:s}secondary.swi".format("/",os.path.basename(os_img),uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["secondary.swi"]):
             self.cli_log_err("Failed to place {:s}".format(os_img), level=0)
             return False
@@ -7029,7 +7034,8 @@ class mtp_ctrl():
         return ret
 
     def tor_svos_prog(self, img, download=True, ship_img=False):
-        uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
+        # uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
+        uut_img_dir = "/"
 
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
@@ -7041,6 +7047,12 @@ class mtp_ctrl():
             if not self.mtp_console_enter_shell("sh"):
                 self.cli_log_err("Unable to init bash shell", level=0)
                 return False
+
+            cmd = "cd {:s}".format(uut_img_dir)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
             if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, uut_img_dir, TOR_IMAGES.TFTP_SERVER_DIR+img):
                 self.cli_log_err("Failed to get {:s}".format(img), level=0)
                 return False
