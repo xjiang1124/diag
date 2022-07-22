@@ -1510,7 +1510,7 @@ class mtp_ctrl():
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
+        idx = libmfg_utils.mfg_expect(diagmgr_handle, libmfg_utils.get_linux_prompt_list())
         if idx < 0:
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
