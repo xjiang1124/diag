@@ -980,16 +980,18 @@ class nic_test:
                 teststr = "Testing external UART loopback 12345"
                 session.sendline("echo \"{}\" > /dev/ttyS0".format(teststr))
                 session.expect("\# " + teststr)
-                session.sendline('\r')
-                session.expect("\#")
-                session.sendline("killall cat")
-                session.expect("\#")
                 ret_list[int(slot)-1] = 1
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
                 ret_list[int(slot)-1] = 0
-            session.sendline("exit")
-            session.expect("\$")
+            # kill the background cat /dev/ttyS0 process
+            try:
+                session.sendline("killall cat")
+                session.expect("\#")
+                session.sendline("exit")
+                session.expect("\$")
+            except pexpect.TIMEOUT:
+                print "=== TIMEOUT: Can not connect to NIC on SSH!"
             common.session_stop(session)
 
         for slot in nic_list:
