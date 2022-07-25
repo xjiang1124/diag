@@ -207,6 +207,7 @@ def single_uut_fw_program(stage,
                         "I210_MAC_PROG",
                         "FRU_PROG",
                         "FRU_TPM_SN_PROG",
+                        "SVOS_BOOT",
                         "FRU_VERIFY"]
 
         elif stage == "DL2":
@@ -235,6 +236,8 @@ def single_uut_fw_program(stage,
                         "OS_TEST_VERIFY",
                         "TIME_SET",
                         "UL_FRU_PROG",
+                        "OS_BOOT",
+                        "MGMT_INIT_OS",
                         "UL_FRU_VERIFY",
                         "DIAG_INIT",
                         "TD_GEARBOX_VERIFY",
