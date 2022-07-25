@@ -94,6 +94,7 @@ def single_uut_fw_program(stage,
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
+    edc = fru_cfg["EDC"]
 
     # Prepare local log files
     log_filep_list = list()
@@ -279,7 +280,7 @@ def single_uut_fw_program(stage,
 
 
             elif test == "FRU_PROG":
-                ret = mtp_mgmt_ctrl.tor_fru_prog(sn, mac, pn, prog_date)
+                ret = mtp_mgmt_ctrl.tor_fru_prog(sn, mac, pn, edc, prog_date)
             elif test == "UL_FRU_PROG":
                 ret = mtp_mgmt_ctrl.tor_mfg_fru_prog()
             elif test == "FRU_TPM_SN_PROG":
@@ -592,8 +593,9 @@ def main():
                 if scan_rslt[uut_id]["UUT_VALID"]:
                     sn = scan_rslt[uut_id]["UUT_SN"]
                     pn = scan_rslt[uut_id]["UUT_PN"]
+                    edc = scan_rslt[uut_id]["UUT_EDC"]
                     mac_ui = libmfg_utils.mac_address_format(scan_rslt[uut_id]["UUT_MAC"])
-                    pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+                    pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; EDC = " + edc)
                 else:
                     fail_rslt_list.append(uut_cli_id_str + "UUT Absent")
             libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, open("/dev/null", "w"))
@@ -618,6 +620,7 @@ def main():
                 fru_cfg[uut_id]["MAC"] = None
                 fru_cfg[uut_id]["PN"] = None
                 fru_cfg[uut_id]["TS"] = None
+                fru_cfg[uut_id]["EDC"] = None
 
         ######################################
 

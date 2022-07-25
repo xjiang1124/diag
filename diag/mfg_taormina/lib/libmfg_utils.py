@@ -270,6 +270,12 @@ def part_number_validate(tmp):
     else:
         return None
 
+def edc_validate(tmp):
+    if re.match(ARUBA_EDC_FMT, tmp):
+        return tmp
+    else:
+        return None
+
 def ip_address_validate(tmp):
     if re.match(r'(?:[0-9]{1,3}\.){3}[0-9]{1,3}', tmp):
         return True
@@ -475,13 +481,14 @@ def handle_scan(scan_item_str, usr_input, scanned_list):
     scan_item_to_validation_func = {
         "Serial Number": serial_number_validate,
         "MAC Address": mac_address_validate,
-        "Part Number": part_number_validate
+        "Part Number": part_number_validate,
+        "Engineering Date Code": edc_validate
     }
     validation_func = scan_item_to_validation_func.get(scan_item_str)
     if validation_func(usr_input):
         if usr_input not in scanned_list:
             return True
-        elif usr_input in scanned_list and scan_item_str == "Part Number": #pn is not unique
+        elif usr_input in scanned_list and (scan_item_str == "Part Number" or scan_item_str == "Engineering Date Code"): #pn/edc is not unique
             return True
         else:
             cli_err("UUT {:s}: {:s} is double scanned, please restart the scan process".format(scan_item_str, usr_input))
@@ -513,7 +520,7 @@ def uut_barcode_scan(valid_uut_list=[]):
         usr_prompt_prefix = id_str(mtp = uut_id)
 
         # STEPS 2-4: Scan SN, MAC, PN
-        for scan_item in ["Serial Number", "MAC Address", "Part Number"]:
+        for scan_item in ["Serial Number", "MAC Address", "Part Number", "Engineering Date Code"]:
             while True:
                 usr_prompt = usr_prompt_prefix + "Please scan {:s} {:s} barcode: ".format(uut_id, scan_item)
                 raw_scan = raw_input(usr_prompt)
@@ -535,6 +542,7 @@ def uut_barcode_scan(valid_uut_list=[]):
         uut_scan_rslt[uut_id]["UUT_SN"]  = uut_scan_rslt[uut_id].pop("Serial Number")
         uut_scan_rslt[uut_id]["UUT_MAC"] = uut_scan_rslt[uut_id].pop("MAC Address")
         uut_scan_rslt[uut_id]["UUT_PN"]  = uut_scan_rslt[uut_id].pop("Part Number")
+        uut_scan_rslt[uut_id]["UUT_EDC"] = uut_scan_rslt[uut_id].pop("Engineering Date Code")
 
     return uut_scan_rslt
 
@@ -551,6 +559,8 @@ def gen_barcode_config_file(file_p, scan_rslt):
             tmp = "    SN: \"" + scan_rslt[key]["UUT_SN"] + "\""
             config_lines.append(tmp)
             tmp = "    MAC: \"" + scan_rslt[key]["UUT_MAC"] + "\""
+            config_lines.append(tmp)
+            tmp = "    EDC: \"" + scan_rslt[key]["UUT_EDC"] + "\""
             config_lines.append(tmp)
             tmp = "    PN: \"" + scan_rslt[key]["UUT_PN"] + "\""
             config_lines.append(tmp)

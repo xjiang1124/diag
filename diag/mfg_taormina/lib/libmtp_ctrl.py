@@ -5954,7 +5954,26 @@ class mtp_ctrl():
 
         return True
 
-    def tor_fru_prog(self, sn, mac, pn, prog_date):
+    def tor_store_edc(self, edc):
+        if not self.mtp_mgmt_exec_cmd("echo {:s} > {:s}/edc".format(edc, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)):
+            return False
+        return True
+
+    def tor_retrieve_edc(self):
+        if not self.mtp_mgmt_exec_cmd("cat {:s}/edc".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)):
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            return False
+
+        match = re.search(ARUBA_EDC_FMT, cmd_buf)
+        if not match:
+            return False
+        self._edc = match.group(0)
+
+        return True
+
+    def tor_fru_prog(self, sn, mac, pn, edc, prog_date):
         # if not self.mtp_console_connect():
         #     self.cli_log_err("Unable to telnet to UUT Chassis", level=0)
         #     return
@@ -5975,10 +5994,15 @@ class mtp_ctrl():
             self.cli_log_err("Unable to program fru")
             return False
 
+        if not self.tor_store_edc(edc):
+            self.cli_log_err("Unable to store EDC", level=0)
+            return False
+
         self._sn = sn
         self._mac = mac
         self._pn = pn
         self._prog_date = prog_date
+        self._edc = edc
 
         time.sleep(1)
         return True
@@ -5988,6 +6012,10 @@ class mtp_ctrl():
         Program the MFG portion of "Locked" EEPROM
         Program relevant sections of the "Unlocked" EEPROM
         """
+        if not self.tor_retrieve_edc():
+            self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
+            return False
+
         if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" "diag fruwrite chassis_ul 1 clear_all"'):
             self.cli_log_err("Failed to clear unlocked FRU", level=0)
             return False

@@ -187,6 +187,14 @@ ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
 ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 OCP_DELL_DISP_PN_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
 HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
+"""
+ARUBA_EDC Format:   R-YYWW-ER
+- R refers to PCB Revision (e.g. A, B, C...)
+- YY refers to last 2 digits of Current Year (eg. Current Year is 2015. YY = 15)
+- WW refers to Work Week when changes is made
+- ER refers to division that holds the Engineering Responsibility, which is D3 (fixed) for HPN
+"""
+ARUBA_EDC_FMT = "[0-9A-Z]{1}\-\d{2}[0-5]\d{1}\-[0-9A-Z]{2}"
 
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
