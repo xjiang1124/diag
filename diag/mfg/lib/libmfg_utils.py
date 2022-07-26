@@ -23,7 +23,7 @@ from libdefs import FPN_FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
-from libdefs import FLX_Factory
+from libdefs import Factory
 from libdefs import MFG_DIAG_CMDS
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
@@ -1051,14 +1051,14 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return None
 
-    if factory == FLX_Factory.PENANG:
+    if factory == Factory.FSP or factory == Factory.P1:
         ff_pn = flx_stage_to_penang(stage)
         return FLX_PENANG_SAVE_UUT_RSLT_XML_HEAD + \
                FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(ff_pn,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
-    else:
+    elif factory == Factory.MILPITAS:
         return FLX_SAVE_UUT_RSLT_XML_HEAD + \
                FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
                test_xml + \
@@ -1072,12 +1072,12 @@ def flx_soap_get_uut_info_xml(stage, sn):
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return None
 
-    if factory == FLX_Factory.PENANG:
+    if factory == Factory.FSP or factory == Factory.P1:
         ff_pn = flx_stage_to_penang(stage)
         return FLX_PENANG_GET_UUT_INFO_XML_HEAD + \
                FLX_PENANG_GET_UUT_INFO_ENTRY_FMT.format(sn, ff_pn) + \
                FLX_GET_UUT_INFO_XML_TAIL
-    else:
+    if factory == Factory.MILPITAS:
         return FLX_GET_UUT_INFO_XML_HEAD + \
                FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) + \
                FLX_GET_UUT_INFO_XML_TAIL
@@ -1085,9 +1085,11 @@ def flx_soap_get_uut_info_xml(stage, sn):
 
 def flx_sn_to_factory(sn):
     if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
-        return FLX_Factory.PENANG
+        return Factory.FSP
     elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
-        return FLX_Factory.MILPITAS
+        return Factory.MILPITAS
+    elif re.match(FLX_P1_BUILD_SN_FMT, sn):
+        return Factory.P1
     else:
         return None
 
@@ -1120,8 +1122,8 @@ def flx_stage_to_penang(stage):
         print("Unknown Flex Flow Stage: {:s}".format(stage))
         return None
 
-def soap_post_report(xml, factory=FLX_Factory.PENANG):
-    if factory == FLX_Factory.PENANG:
+def soap_post_report(xml, factory=Factory.FSP):
+    if factory == Factory.FSP or factory == Factory.P1:
         webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
         webservice.putrequest("POST", FLX_PENANG_API_URL)
         webservice.putheader("Content-Type", "text/xml")
@@ -1149,9 +1151,9 @@ def soap_post_report(xml, factory=FLX_Factory.PENANG):
         return "500"
 
 
-def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
+def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
-        if factory == FLX_Factory.PENANG:
+        if factory == Factory.FSP or factory == Factory.P1:
             webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
@@ -1181,9 +1183,9 @@ def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
         print("Unable to connect to webserver")
         return "500"
 
-def soap_get_uut_resp(xml, factory=FLX_Factory.PENANG):
+def soap_get_uut_resp(xml, factory=Factory.FSP):
     try:
-        if factory == FLX_Factory.PENANG:
+        if factory == Factory.FSP or factory == Factory.P1:
             webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
