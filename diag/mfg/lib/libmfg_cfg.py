@@ -121,8 +121,16 @@ class NIC_IMAGES:
     goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
     goldfw_dat["NAPLES25OCP"] = "04-25-2022"
     # OCP DELL (68-0010)
-    diagfw_img["68-0010"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    diagfw_dat["68-0010"] = "11-18-2020"
+    cpld_img["68-0010"] = "NAPLES25_OCP_REV0B_03102021.bin"
+    cpld_ver["68-0010"] = "0xB"
+    cpld_dat["68-0010"] = "01-10"
+    sec_cpld_img["68-0010"] = "NAPLES25_OCP_REV8B_03102021.bin"
+    sec_cpld_ver["68-0010"] = "0x8B"
+    sec_cpld_dat["68-0010"] = "01-10"
+    diagfw_img["68-0010"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["68-0010"] = "03-03-2021"
+    goldfw_img["68-0010"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["68-0010"] = "04-25-2022"
 
     cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
     cpld_ver["NAPLES25SWM833"] = "0x2"
