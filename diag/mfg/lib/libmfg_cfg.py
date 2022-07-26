@@ -1,4 +1,5 @@
 from libdefs import NIC_Type
+from libdefs import Factory
 
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
@@ -736,9 +737,10 @@ DDR_HARCODED_TRAINING_NIC_LIST = [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI]
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 FLX_PENANG_SN_FMT = "FP[N|A|B]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+FLX_P1_SN_FMT           = "FPC\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
-NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
+NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT,FLX_P1_SN_FMT)
 HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
 DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F)"
@@ -755,6 +757,7 @@ DELL_PPID_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_PENAN
 DELL_PPID_PN_FMT = DELL_PPID_PART_NUM_FMT + DELL_PPID_REV_FMT
 FLX_MILPITAS_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_MILPITAS_SN_FMT, HP_MILPITAS_SN_FMT, DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_MILPITAS_FMT)
 FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PENANG_SN_FMT, DELL_PPID_PENANG_SN_FMT,DELL_PPID_PENANG_FMT)
+FLX_P1_BUILD_SN_FMT = r"{:s}".format(FLX_P1_SN_FMT)
 DELL_BUILD_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT, DELL_PPID_PENANG_SN_FMT)
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
@@ -791,6 +794,25 @@ NIC_MGMT_PASSWORD = "pen123"
 MTP_INTERNAL_MGMT_IP_ADDR = "10.1.1.100"
 MTP_INTERNAL_MGMT_NETMASK = "255.255.255.0"
 
+
+Factory_network_config = {
+    Factory.FSP: {
+        "Networks": [u"192.168.1.0/24", u"192.168.2.0/24", u"192.168.3.0/24", u"192.168.4.0/24"],
+        "Flexflow": "10.206.9.16"
+    },
+    Factory.MILPITAS: {
+        "Networks": [u"192.168.5.0/24"],
+        "Flexflow": "10.20.33.140"
+    },
+    Factory.P1: {
+        "Networks": [u"192.168.8.0/22"],
+        "Flexflow": "10.192.39.48"
+    },
+    Factory.LAB: {
+        "Networks": [u"192.168.68.0/22"],
+        "Flexflow": ""
+    }
+}
 
 # Don't touch the following xml format, it is required for flex flow report
 
