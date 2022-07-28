@@ -197,7 +197,8 @@ def single_uut_led_checks(stage,
                         "MGMT_INIT",
                         "DOWNLOAD_USB_LED_TOOL",
                         "TEST_LED_GREEN",
-                        "TEST_LED_ORANGE"
+                        "TEST_LED_ORANGE",
+                        "OS_BOOT"
                         ]
 
         for skipped_test in skip_testlist:
@@ -215,6 +216,8 @@ def single_uut_led_checks(stage,
                 ret = mtp_mgmt_ctrl.tor_led_test('green')
             elif test == "TEST_LED_ORANGE":
                 ret = mtp_mgmt_ctrl.tor_led_test('orange')
+            elif test.startswith("OS_BOOT"):
+                ret = mtp_mgmt_ctrl.tor_boot_select(1)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
@@ -241,6 +244,8 @@ def single_uut_led_checks(stage,
                     pass_uut_list.remove(uut_id)
                 if uut_id not in fail_uut_list:
                     fail_uut_list.append(uut_id)
+
+        time.sleep(5)
 
         # shut down system
         mtp_mgmt_ctrl.uut_chassis_shutdown()
