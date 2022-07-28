@@ -1004,6 +1004,39 @@ class nic_test:
             print "=== uart_loopback_test passed ==="
         print "=== uart_loopback_test done ==="
 
+    def rmii_linkup_test(self, nic_list=[]):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for slot in nic_list:
+            self.nic_con.switch_console(slot)
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session)
+            if ret == 0:
+                # set ck_ovwr bit when RMII does not have 50Mhz clock from the BMC
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macwr 0x4 0x860")
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macrd 0x4")
+                if "0x860" not in session.before:
+                    continue
+                self.nic_con.uart_session_cmd(session, "halctl show port internal")
+                if "BMC                      UP             100M" in session.before:
+                    ret_list[int(slot)-1] = 1
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 1:
+                nic_list.remove(slot)
+
+        if len(nic_list) != 0:
+            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== rmii_linkup_test passed ==="
+        print "=== rmii_linkup_test done ==="
+
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1476,6 +1509,7 @@ if __name__ == "__main__":
     group.add_argument("-therm_alert_line", "--therm_alert_line", help="Test Temp Sensor Alert line", action='store_true')
     group.add_argument("-therm_trip_line", "--therm_trip_line", help="Test Temp Sensor Trip line", action='store_true')
     group.add_argument("-uart_loopback_test", "--uart_loopback_test", help="Test UART loopback", action='store_true')
+    group.add_argument("-rmii_linkup_test", "--rmii_linkup_test", help="Test RMII linkup", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -1612,6 +1646,11 @@ if __name__ == "__main__":
     if args.uart_loopback_test == True:
         slot_list = args.slot_list.split(',')
         test.uart_loopback_test(slot_list)
+        sys.exit()
+
+    if args.rmii_linkup_test == True:
+        slot_list = args.slot_list.split(',')
+        test.rmii_linkup_test(slot_list)
         sys.exit()
 
     if args.setup_uboot_env == True:
