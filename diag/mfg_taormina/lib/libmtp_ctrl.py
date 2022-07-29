@@ -6034,7 +6034,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
             return False
 
-        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" "diag fruwrite chassis_ul 1 clear_all"'):
+        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag fruwrite chassis_ul 1 clear_all"'):
             self.cli_log_err("Failed to clear unlocked FRU", level=0)
             return False
 
