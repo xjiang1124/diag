@@ -101,7 +101,7 @@ echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [ $mtp_id == "0x42" ]
+if [ $mtp_id == "0x42" || $mtp_id == "0x4d"]
 then
     hack_asic_elba.sh
 else
