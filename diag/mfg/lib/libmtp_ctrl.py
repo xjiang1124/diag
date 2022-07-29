@@ -4350,11 +4350,13 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
 
-        if ret and not self.mtp_check_nic_cpld_partition(slot):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-        elif ret:
+        if not emmc_format:
+            if ret and not self.mtp_check_nic_cpld_partition(slot):
+                duration = self.log_slot_test_stop(slot, test, start_ts)
+                self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                ret = False
+        
+        if ret:
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration)) 
         # (DIAG_INIT, CPLD_DIAG) END           
