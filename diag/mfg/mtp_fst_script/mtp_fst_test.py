@@ -469,6 +469,8 @@ def main():
         fst = 1
     elif mtp_capability == 0x5:
         fst = 2
+    elif mtp_capability == 0x6:
+        fst = 3
 
     # local log files
     log_filep_list = list()

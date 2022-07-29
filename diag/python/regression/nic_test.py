@@ -954,6 +954,89 @@ class nic_test:
             print "=== therm_trip_line passed ==="
         print "=== therm_trip_line done ==="
 
+    def uart_loopback_test(self, nic_list=[]):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        print "slot_list:", slot_list
+        self.setup_env_multi_top(slot_list, True, 30, False, True, False)
+
+        for slot in nic_list:
+            session = common.session_start()
+            cmd = "turn_on_hub.sh {}".format(slot)
+            common.session_cmd_no_rc(session, cmd)
+            sleep(0.5)
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x6d".format(slot)
+            common.session_cmd(session, cmd)
+            try:
+                cmd = "ssh_s.sh {}".format(slot)
+                session.sendline(cmd)
+                session.expect("\#")
+                session.sendline("cat /dev/ttyS0 &")
+                session.expect("\#")
+                teststr = "Testing external UART loopback 12345"
+                session.sendline("echo \"{}\" > /dev/ttyS0".format(teststr))
+                session.expect("\# " + teststr)
+                ret_list[int(slot)-1] = 1
+            except pexpect.TIMEOUT:
+                print "=== TIMEOUT: Can not connect to NIC on SSH!"
+                ret_list[int(slot)-1] = 0
+            # kill the background cat /dev/ttyS0 process
+            try:
+                session.sendline("killall cat")
+                session.expect("\#")
+                session.sendline("exit")
+                session.expect("\$")
+            except pexpect.TIMEOUT:
+                print "=== TIMEOUT: Can not connect to NIC on SSH!"
+            common.session_stop(session)
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 1:
+                nic_list.remove(slot)
+
+        if len(nic_list) != 0:
+            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== uart_loopback_test passed ==="
+        print "=== uart_loopback_test done ==="
+
+    def rmii_linkup_test(self, nic_list=[]):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for slot in nic_list:
+            self.nic_con.switch_console(slot)
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session)
+            if ret == 0:
+                # set ck_ovwr bit when RMII does not have 50Mhz clock from the BMC
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macwr 0x4 0x860")
+                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macrd 0x4")
+                if "0x860" not in session.before:
+                    continue
+                self.nic_con.uart_session_cmd(session, "halctl show port internal")
+                if "BMC                      UP             100M" in session.before:
+                    ret_list[int(slot)-1] = 1
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 1:
+                nic_list.remove(slot)
+
+        if len(nic_list) != 0:
+            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list)
+        else:
+            print "=== rmii_linkup_test passed ==="
+        print "=== rmii_linkup_test done ==="
+
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1425,6 +1508,8 @@ if __name__ == "__main__":
     group.add_argument("-vrd_fault_line", "--vrd_fault_line", help="Test VRD_FAULT line", action='store_true')
     group.add_argument("-therm_alert_line", "--therm_alert_line", help="Test Temp Sensor Alert line", action='store_true')
     group.add_argument("-therm_trip_line", "--therm_trip_line", help="Test Temp Sensor Trip line", action='store_true')
+    group.add_argument("-uart_loopback_test", "--uart_loopback_test", help="Test UART loopback", action='store_true')
+    group.add_argument("-rmii_linkup_test", "--rmii_linkup_test", help="Test RMII linkup", action='store_true')
 
     parser.add_argument("-slot", "--slot", help="NIC slot number", type=int, default=0)
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -1556,6 +1641,16 @@ if __name__ == "__main__":
     if args.therm_trip_line == True:
         slot_list = args.slot_list.split(',')
         test.therm_trip_line(slot_list)
+        sys.exit()
+
+    if args.uart_loopback_test == True:
+        slot_list = args.slot_list.split(',')
+        test.uart_loopback_test(slot_list)
+        sys.exit()
+
+    if args.rmii_linkup_test == True:
+        slot_list = args.slot_list.split(',')
+        test.rmii_linkup_test(slot_list)
         sys.exit()
 
     if args.setup_uboot_env == True:

@@ -94,6 +94,7 @@ def single_uut_fw_program(stage,
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
+    edc = fru_cfg["EDC"]
 
     # Prepare local log files
     log_filep_list = list()
@@ -206,6 +207,7 @@ def single_uut_fw_program(stage,
                         "I210_MAC_PROG",
                         "FRU_PROG",
                         "FRU_TPM_SN_PROG",
+                        "SVOS_BOOT",
                         "FRU_VERIFY"]
 
         elif stage == "DL2":
@@ -233,6 +235,10 @@ def single_uut_fw_program(stage,
                         "MGMT_INIT_OS",
                         "OS_TEST_VERIFY",
                         "TIME_SET",
+                        "UL_FRU_PROG",
+                        "OS_BOOT",
+                        "MGMT_INIT_OS",
+                        "UL_FRU_VERIFY",
                         "DIAG_INIT",
                         "TD_GEARBOX_VERIFY",
                         "TD_AVS_SET"
@@ -277,11 +283,15 @@ def single_uut_fw_program(stage,
 
 
             elif test == "FRU_PROG":
-                ret = mtp_mgmt_ctrl.tor_fru_prog(sn, mac, pn, prog_date)
+                ret = mtp_mgmt_ctrl.tor_fru_prog(sn, mac, pn, edc, prog_date)
+            elif test == "UL_FRU_PROG":
+                ret = mtp_mgmt_ctrl.tor_mfg_fru_prog()
             elif test == "FRU_TPM_SN_PROG":
                 ret = mtp_mgmt_ctrl.tor_fru_prog_tpm_pcbasn(pcbasn)
             elif test == "FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_fru_verify()
+            elif test == "UL_FRU_VERIFY":
+                ret = mtp_mgmt_ctrl.tor_mfg_fru_verify()
             elif test == "GET_PCBA_SN":
                 pcbasn = mtp_mgmt_ctrl.get_pchasn_by_yaml(sn)
                 if not pcbasn:
@@ -498,10 +508,18 @@ def single_uut_fw_program(stage,
                     else:
                         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+        if uut_id not in fail_uut_list and stage == "DL2":
+            if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
+                if uut_id in pass_uut_list:
+                    pass_uut_list.remove(uut_id)
+                if uut_id not in fail_uut_list:
+                    fail_uut_list.append(uut_id)
+
         # copy additional logs
         mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
 
         mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
+
         # shut down system
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.uut_chassis_shutdown()
@@ -578,8 +596,9 @@ def main():
                 if scan_rslt[uut_id]["UUT_VALID"]:
                     sn = scan_rslt[uut_id]["UUT_SN"]
                     pn = scan_rslt[uut_id]["UUT_PN"]
+                    edc = scan_rslt[uut_id]["UUT_EDC"]
                     mac_ui = libmfg_utils.mac_address_format(scan_rslt[uut_id]["UUT_MAC"])
-                    pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+                    pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; EDC = " + edc)
                 else:
                     fail_rslt_list.append(uut_cli_id_str + "UUT Absent")
             libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, open("/dev/null", "w"))
@@ -604,6 +623,7 @@ def main():
                 fru_cfg[uut_id]["MAC"] = None
                 fru_cfg[uut_id]["PN"] = None
                 fru_cfg[uut_id]["TS"] = None
+                fru_cfg[uut_id]["EDC"] = None
 
         ######################################
 

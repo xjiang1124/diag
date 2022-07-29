@@ -388,8 +388,8 @@ class MFG_DIAG_CMDS:
     TOR_FRU_DISP_FMT  = "fruread  --chassis 1"
     TOR_PCBASN_DISP_FMT = "fruread --chassis 1 --ext_tpm_serial_nr"
     TOR_FRU_ERASE_FMT = "fruwrite --chassis 1 --clear_all"
-    TOR_FRU_PROG_FMT  = "fruwrite --chassis 1 --prod_name '10000' --part_nr '{:s}' --serial_nr '{:s}' --mac_base '{:s}' --mfg_date '{:s}' --device_ver '' --label_rev 'L01' --platform_name '73-0040-03 A2' --onie_ver '2014.08.00.05' --num_macs '128' --mfg_name 'HPE Aruba' --country_code 'US' --vendor 'HPE Aruba' --diag_ver '{:s}' --service_tag '0' --ext_tpm_serial_nr 'TPM_MISSING' && fruread --chassis 1"
-    TOR_FRU_PROG_TPM_FMT  = "fruwrite --chassis 1 --prod_name '10000' --ext_tpm_serial_nr '{:s}' && fruread --chassis 1"
+    TOR_FRU_PROG_FMT  = "fruwrite --chassis 1 --prod_name 'CX 10000-48Y6C switch' --part_nr '{:s}' --serial_nr '{:s}' --mac_base '{:s}' --mfg_date '{:s}' --num_macs '128' --mfg_name 'Aruba' --ext_tpm_serial_nr 'TPM_MISSING' && fruread --chassis 1"
+    TOR_FRU_PROG_TPM_FMT  = "fruwrite --chassis 1 --prod_name 'CX 10000-48Y6C switch' --ext_tpm_serial_nr '{:s}' && fruread --chassis 1"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 

@@ -6,6 +6,7 @@ import libmfg_utils
 import re
 import threading
 from datetime import datetime
+import ipaddress
 from libmfg_cfg import *
 from libsku_cfg import *
 
@@ -25,6 +26,7 @@ from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
 from libdefs import Swm_Test_Mode
 from libdefs import Voltage_Margin
+from libdefs import Factory
 
 from libnic_ctrl import nic_ctrl
 
@@ -47,6 +49,7 @@ class mtp_ctrl():
         self._fans = 3
         self._status = MTP_Status.MTP_STA_POWEROFF
         self._fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD    # variable to track the fan speed (%) set by the script
+        self._factory_location = Factory.UNKNOWN
 
         self._nic_ctrl_list = [None] * self._slots
         self._nic_alom_ctrl_list = [None] * self._slots
@@ -199,6 +202,11 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP Chassis IP: {:s}".format(self._mgmt_cfg[0]))
 
+        if not self.get_mtp_factory_location():
+            self.cli_log_err("Unable to get MTP factory location")
+            return False
+        self.cli_log_report_inf("MTP Location: {:s}".format(self.get_mtp_factory_location()))
+
         if not self._io_cpld_ver:
             self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
             return False
@@ -301,6 +309,49 @@ class mtp_ctrl():
 
     def get_mtp_slot_num(self):
         return self._slots
+
+    def get_mtp_factory_location(self):
+        if self._factory_location == Factory.UNKNOWN:
+            self.set_mtp_factory_location()
+
+        return self._factory_location
+
+    def set_mtp_factory_location(self, set_to=""):
+        if set_to == "":
+            self._factory_location = self._detect_factory_location()
+        return self._factory_location
+
+    def _detect_factory_location(self):
+        # cmd = "ifconfig enp4s0 | grep 'inet '"
+        # if not self.mtp_mgmt_exec_cmd(cmd):
+        #     self.cli_log_err("Failed to execute command: {:s}".format(cmd), level = 0)
+        #     return None
+        # cmd_buf = self.mtp_get_cmd_buf()
+
+        # if cmd_buf is None or cmd_buf == "":
+        #     self.cli_log_err("Can't get network connection to MTP: {:s}".format(cmd), level = 0)
+        #     return None
+
+        # if "Device not found" in cmd_buf:
+        #     self.cli_log_err("Unable to get MTP ethernet port details: {:s}".format(cmd), level = 0)
+        #     return None
+        if not self._mgmt_cfg:
+            self.cli_log_err("Unable to retrieve MTP MGMT IP for factory detection")
+            return Factory.UNKNOWN
+
+        mtp_ipaddr = self._mgmt_cfg[0]
+
+        # check which network subnet mask this IP address falls into
+        for factory in Factory_network_config.keys():
+            if "Networks" not in Factory_network_config[factory].keys():
+                self.cli_log_err("Bad network config for factory {:s}".format(factory))
+                return Factory.UNKNOWN
+            for subnet in Factory_network_config[factory]["Networks"]:
+                if ipaddress.ip_address(unicode(mtp_ipaddr)) in ipaddress.ip_network(unicode(subnet)):
+                    return factory
+
+        self.cli_log_err("MTP IP does not belong in any valid network range")
+        return Factory.UNKNOWN
 
     def _apc_model_check(self, handle):
         """
@@ -3095,7 +3146,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP DELL
-            if software_pn != "90-0007-0001":
+            if software_pn != "90-0007-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
@@ -4299,11 +4350,13 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
 
-        if ret and not self.mtp_check_nic_cpld_partition(slot):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-        elif ret:
+        if not emmc_format:
+            if ret and not self.mtp_check_nic_cpld_partition(slot):
+                duration = self.log_slot_test_stop(slot, test, start_ts)
+                self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                ret = False
+        
+        if ret:
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration)) 
         # (DIAG_INIT, CPLD_DIAG) END           

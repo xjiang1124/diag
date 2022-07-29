@@ -23,6 +23,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
+from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_IP_Address
 
@@ -91,6 +92,8 @@ class mtp_ctrl():
         self._pn = None
         self._maj = None
         self._prog_date = None
+        self._edc = "3-2228-D3"
+        self._pcbasn = None
 
         self._homedir = "."
         self._tpm_skip = False
@@ -1508,7 +1511,7 @@ class mtp_ctrl():
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(diagmgr_logfile)
         diagmgr_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
+        idx = libmfg_utils.mfg_expect(diagmgr_handle, libmfg_utils.get_linux_prompt_list())
         if idx < 0:
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
@@ -5672,7 +5675,7 @@ class mtp_ctrl():
                 continue
             else:
                 if not svos_boot:
-                    if not self.mtp_mgmt_connect():
+                    if not self.mtp_mgmt_connect(prompt_cfg=True):
                         self.cli_log_err("Unable to ssh to UUT chassis, falling back to console")
                         if not self.mtp_console_connect():
                             self.cli_log_err("Unable to telnet to UUT chassis")
@@ -5952,7 +5955,26 @@ class mtp_ctrl():
 
         return True
 
-    def tor_fru_prog(self, sn, mac, pn, prog_date):
+    def tor_store_edc(self, edc):
+        if not self.mtp_mgmt_exec_cmd("echo {:s} > {:s}/edc".format(edc, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)):
+            return False
+        return True
+
+    def tor_retrieve_edc(self):
+        if not self.mtp_mgmt_exec_cmd("cat {:s}/edc".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)):
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            return False
+
+        match = re.search(ARUBA_EDC_FMT, cmd_buf)
+        if not match:
+            return False
+        self._edc = match.group(0)
+
+        return True
+
+    def tor_fru_prog(self, sn, mac, pn, edc, prog_date):
         # if not self.mtp_console_connect():
         #     self.cli_log_err("Unable to telnet to UUT Chassis", level=0)
         #     return
@@ -5973,12 +5995,144 @@ class mtp_ctrl():
             self.cli_log_err("Unable to program fru")
             return False
 
+        if not self.tor_store_edc(edc):
+            self.cli_log_err("Unable to store EDC", level=0)
+            return False
+
         self._sn = sn
         self._mac = mac
         self._pn = pn
         self._prog_date = prog_date
+        self._edc = edc
 
         time.sleep(1)
+        return True
+
+    def tor_mfg_fru_prog(self):
+        """
+        Program the MFG portion of "Locked" EEPROM
+        Program relevant sections of the "Unlocked" EEPROM
+        """
+        if not self.tor_retrieve_edc():
+            self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
+            return False
+
+        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" "diag fruwrite chassis_ul 1 clear_all"'):
+            self.cli_log_err("Failed to clear unlocked FRU", level=0)
+            return False
+
+        eeprom1_fields = {
+            "id_reg": "0x0d0201f1",
+            "serial_nr": self._sn,
+            "assy_rev_ver": "0x01",
+            "assy_rev_edc": self._edc
+        }
+
+        eeprom2_fields = {
+            "assembly_info pca_rev": "0x01",
+            "assembly_info rework_rev": "0x01",
+            "assembly_info bom_rev": "0x01",
+            "assembly_info num_of_prgm_dev": "13",
+            "pca_edc": self._edc,
+            "pca_serial_num": self._pcbasn
+        }
+
+        for eeprom_field in eeprom1_fields.keys():
+            if not self.mtp_mgmt_exec_cmd('yes | vtysh -c "diag" -c "diag mfgwrite chassis 1 {:s} {:s}"'.format(eeprom_field, eeprom1_fields[eeprom_field])):
+                self.cli_log_err("Failed to write FRU field {:s}".format(eeprom_field), level=0)
+                return False
+
+        for eeprom_field in eeprom2_fields.keys():
+            if not self.mtp_mgmt_exec_cmd('yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 {:s} {:s}"'.format(eeprom_field, eeprom2_fields[eeprom_field])):
+                self.cli_log_err("Failed to write FRU field {:s}".format(eeprom_field), level=0)
+                return False
+
+        return True
+
+    def tor_fru_passmark(self, stage):
+        """
+        yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 passmark_loc 6 pass_mark DL2:20220718090000"
+        yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 passmark_loc 7 pass_mark LED:20220718100000"
+        yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 passmark_loc 8 pass_mark  2C:20220718110000"
+        yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 passmark_loc 9 pass_mark SWI:20220718120000"
+        """
+        pass_timestamp = libmfg_utils.get_passmark_timestamp()
+
+        if stage == "DL2":
+            prog_val = "passmark_loc 6 pass_mark DL2:"+pass_timestamp
+        elif stage == "LED":
+            prog_val = "passmark_loc 7 pass_mark LED:"+pass_timestamp
+        elif stage in ("2C-LV", "2C_LV", Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV):
+            prog_val = "passmark_loc 8 pass_mark 2C:"+pass_timestamp
+        elif stage in ("SWI", FF_Stage.FF_SWI):
+            prog_val = "passmark_loc 9 pass_mark SWI:"+pass_timestamp
+        else:
+            self.cli_log_err("This stage {:s} does not have a passmark defined".format(stage), level=0)
+            return True
+
+        if not self.mtp_mgmt_exec_cmd('yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 {:s}"'.format(prog_val)):
+            self.cli_log_err("Failed to store passmark into FRU", level=0)
+            return False
+
+        return True
+
+    def tor_mfg_fru_verify(self):
+        """
+        Read the MFG portion of "Locked" EEPROM
+        Read relevant sections of the "Unlocked" EEPROM
+        """
+
+        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag mfgread chassis 1"'):
+            self.cli_log_err("Failed to read mfg portion of locked FRU", level=0)
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            self.cli_log_err("Failed to read content of mfg portion of locked FRU", level=0)
+            return False
+
+        eeprom1_fields = {
+            "id_reg": "0x0d0201f1",
+            "serial_nr": self._sn,
+            "assy_rev_ver": "0x01",
+            "assy_rev_edc": self._edc
+        }
+
+        for eeprom_field in eeprom1_fields.keys():
+            exp_val = eeprom1_fields[eeprom_field]
+            match = re.search("%s: *\'%s\x00?\'" % (eeprom_field, exp_val), cmd_buf)            
+            if match:
+                continue
+            else:
+                self.cli_log_err("Incorrect FRU value for {:s}, expected: {:s}".format(eeprom_field, exp_val))
+                return False
+
+
+        eeprom2_fields = {
+            "pca_rev": "0x01",
+            "rework_rev": "0x01",
+            "bom_rev": "0x01",
+            "num_of_prgm_dev": "13",
+            "pca_edc": self._edc,
+            "pca_serial_num": self._pcbasn
+        }
+
+        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag mfgread chassis_ul 1"'):
+            self.cli_log_err("Failed to read unlocked FRU", level=0)
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            self.cli_log_err("Failed to read content of unlocked FRU", level=0)
+            return False
+
+        for eeprom_field in eeprom2_fields.keys():
+            exp_val = eeprom2_fields[eeprom_field]
+            match = re.search("%s: *\'%s\x00?\'" % (eeprom_field, exp_val), cmd_buf)
+            if match:
+                continue
+            else:
+                self.cli_log_err("Incorrect FRU value for {:s}, expected: {:s}".format(eeprom_field, exp_val))
+                return False
+
         return True
 
     def get_pchasn_by_yaml(self, sn):
@@ -6021,7 +6175,7 @@ class mtp_ctrl():
             else:
                 break
 
-        if not frureadata["TPM Serial Number"] == pcbasn or not frureadata["Product Name"] == "10000":
+        if not frureadata["TPM Serial Number"] == pcbasn:
             fru_prog_cmd = MFG_DIAG_CMDS.TOR_FRU_PROG_TPM_FMT.format(pcbasn)
             if not self.mtp_mgmt_exec_cmd2(fru_prog_cmd):
                 self.cli_log_err("Unable to program fru")
@@ -6053,7 +6207,7 @@ class mtp_ctrl():
                 break
 
         time.sleep(1)
-        if not frureadata["TPM Serial Number"] == pcbasn or not frureadata["Product Name"] == "10000":
+        if not frureadata["TPM Serial Number"] == pcbasn:
             self.cli_log_err("Unable to program fru for TPM or Product Name")
             return False            
         else:
@@ -6119,7 +6273,7 @@ class mtp_ctrl():
         # Verify Prod Name #TODO: move this to libmfg_cfg
         prod_match = re.search("Product Name: '(.*)'", cmd_buf)
         if prod_match:
-            if prod_match.group(1) != "10000":
+            if prod_match.group(1) != "CX 10000-48Y6C switch":
                 self.cli_log_err("Incorrect Product name programmed: {:s}".format(prod_match.group(1)), level=0)
                 return False
         else:
@@ -6199,6 +6353,7 @@ class mtp_ctrl():
             self.cli_log_inf("==> FRU: {:s}, {:s}, {:s}".format(self._sn,libmfg_utils.mac_address_format(self._mac),self._pn))
             self.cli_log_inf("==> PCBA SN: {:s}".format(self._pcbasn))
             self.cli_log_inf("==> FRU Program Date: {:s}".format(self._prog_date))
+            self.cli_log_inf("==> Engineering Date Code: {:s}".format(self._edc))
 
         if self._bio_ver:
             self.cli_log_inf("==> BIOS version: {:s}".format(self._bio_ver))
@@ -6330,7 +6485,7 @@ class mtp_ctrl():
                 return False
 
         # switch to ssh
-        if not self.mtp_mgmt_connect():
+        if not self.mtp_mgmt_connect(prompt_cfg=True):
             self.cli_log_err("Unable to connect UUT chassis", level=0)
             return False
 
@@ -6782,7 +6937,7 @@ class mtp_ctrl():
             return False 
 
         # switch back
-        if not self.mtp_mgmt_connect():
+        if not self.mtp_mgmt_connect(prompt_cfg=True):
             self.cli_log_err("Unable to telnet to UUT chassis")
             return False
         return True

@@ -35,10 +35,12 @@ class NIC_Vendor:
     DELL = "DELL"
     UNKNOWN = "Unknown"
 
-
-class FLX_Factory:
+class Factory:
+    UNKNOWN = "Unknown"
     MILPITAS = "Milpitas"
-    PENANG = "Penang"
+    FSP = "Penang FSP"
+    P1 = "Penang P1"
+    LAB = "HW lab"
 
 class FLEX_TWO_WAY_COMM:
     PRE_POST_RETRY = 0

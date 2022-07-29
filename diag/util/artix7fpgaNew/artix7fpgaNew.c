@@ -72,6 +72,7 @@ typedef struct {
 #define PAGE_ID_SWITCH                  1
 #define PAGE_ID_PC                      2
 #define PAGE_ID_SERDES                  3
+#define PAGE_ID_BMC                     2
 
 #define SWITCH_CORE_VERSION_REG         0x00
 #define SWITCH_MAC_LOW_REG              0x04
@@ -81,6 +82,7 @@ typedef struct {
 #define FPGA_BASE_ADDR_MES_REG          0x1001000
 #define FPGA_BASE_ADDR_PC               0x100C000
 #define FPGA_BASE_ADDR_SERDES           0x1008000
+#define FPGA_BASE_ADDR_MAC0             0x1004000
 
 #define PS48_FRAME_SIZE                 6
 #define FLASH_PAGE_SIZE                 128
@@ -502,7 +504,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
         txbuf[4] = 0x10;
         txbuf[5] = 0x01;
     }
-    //aid=3, bid=2, page 3 addr=0x0 (NCSI), page 2 addr=0x1005000 (BMC)
+    //aid=3, bid=2, page 3 addr=0x0 (NCSI), page 2 addr=0x1004000 (BMC mac0 config)
     else if(pageConfig == NCSI_AND_BMC_PAGE_CONFIG)
     {
         // Page 2: MAC Reg
@@ -512,7 +514,7 @@ static int ps48_page_config(uint32_t fd, uint8_t pageConfig)
         txbuf[2] = 0x00;
         txbuf[3] = 0x00;
         txbuf[4] = 0x10;
-        txbuf[5] = 0x05;
+        txbuf[5] = 0x04;
     }
     //aid=2, bid=3, page 3 addr=0x1008000 (serdes xcvr), page 2 addr=0x100c000 (pc)
     else if(pageConfig == PC_AND_SERDES_PAGE_CONFIG)
@@ -802,7 +804,7 @@ static int ps48_write_pipeline(uint32_t fd, uint32_t page_id, uint32_t addr, uin
     return ret;
 }
 
-static int ps48_read(uint32_t fd, uint32_t page_id, uint32_t addr)
+static int ps48_read(uint32_t fd, uint32_t addr_base, uint32_t addr)
 {
     struct spi_ioc_transfer msg[1];
     int buf_size_in_frame = 3;
@@ -811,10 +813,10 @@ static int ps48_read(uint32_t fd, uint32_t page_id, uint32_t addr)
     uint8_t rxbuf[18];
     uint8_t *temp;
     int ret;
-    uint32_t addr_base;
+    //uint32_t addr_base;
     uint32_t addr_f;
 
-    page_id = page_id & 3;
+    /*page_id = page_id & 3;
     switch (page_id)
     {
         case 0x00:
@@ -829,13 +831,14 @@ static int ps48_read(uint32_t fd, uint32_t page_id, uint32_t addr)
         default:
             addr_base = FPGA_BASE_ADDR_SERDES;
             break;
-    }
+    }*/
     addr_f = addr_base + addr;
     //printf("%s: addr_f=0x%x\n", __FUNCTION__, addr_f);
 
     temp = (uint8_t *)(&addr_f);
 
-    txbuf[0] = 0x80 | ((uint8_t)(page_id & 3));
+    //txbuf[0] = 0x80 | ((uint8_t)(page_id & 3));
+    txbuf[0] = 0x80;
     txbuf[1] = 0x00;
     txbuf[5] = *temp++;
     txbuf[4] = *temp++;
@@ -1053,7 +1056,7 @@ static int ps48_qspi_ctrl_read(uint32_t fd, uint32_t addr)
     uint32_t addr_f;
     int ret;
     //addr_f = addr + FPGA_BASE_ADDR_QSPI_CTRL;
-    ret = ps48_read(fd, PAGE_ID_FLASH, addr);
+    ret = ps48_read(fd, FPGA_BASE_ADDR_QSPI_CTRL, addr);
     if (ret == -1) {
         return ret;
     }
@@ -1960,7 +1963,7 @@ static uint32_t ps48_xcvr_read(uint32_t fd, uint32_t offset)
 {
     uint32_t ret;
     uint32_t addr_f;
-    ret = (uint32_t)ps48_read(fd, PAGE_ID_SERDES, offset);
+    ret = (uint32_t)ps48_read(fd, FPGA_BASE_ADDR_SERDES, offset);
     if (ret == -1) {
         printf("ps48_read() failed\n");
         return ret;
@@ -2862,6 +2865,26 @@ int main(int argc, char *argv[])
         if (my_opt) {
             free(my_opt);
         }
+        close(fd);
+    }
+    else if (strcmp(argv[1], "-macrd") == 0)
+    {
+        if ( argc < 3 ) usage();
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        uint32_t offset = strtoul(argv[2], NULL, 0);
+        uint32_t result = ps48_read(fd, FPGA_BASE_ADDR_MAC0, offset);
+        printf("0x%x\n", result);
+        close(fd);
+    }
+    else if (strcmp(argv[1], "-macwr") == 0)
+    {
+        if ( argc < 4 ) usage();
+        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        uint32_t offset = strtoul(argv[2], NULL, 0);
+        uint32_t value = strtoul(argv[3], NULL, 0);
+        ps48_page_config(fd, NCSI_AND_BMC_PAGE_CONFIG);
+        uint32_t result = ps48_write(fd, PAGE_ID_BMC, offset, value);
+        printf("write offset=0x%x: result=0x%x\n", offset, result);
         close(fd);
     }
     else if ( strcmp(argv[1], "-help" ) == 0 ) 
