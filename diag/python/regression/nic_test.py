@@ -992,6 +992,8 @@ class nic_test:
                 session.expect("\$")
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x2d".format(slot)
+            common.session_cmd(session, cmd)
             common.session_stop(session)
 
         for slot in nic_list:
