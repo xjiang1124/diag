@@ -573,13 +573,12 @@ def main():
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
-            fail_nic_list.append(slot)
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
             pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-        if slot not in pass_nic_list and slot not in fail_nic_list:
-            pass_nic_list.append(slot)
+        if slot in pass_nic_list and slot in fail_nic_list:
+            pass_nic_list.remove(slot)
 
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
@@ -1062,7 +1061,7 @@ def main():
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-        mfg_dl_summary.append([slot, sn, nic_type, True, retest_block_default])
+        mfg_dl_summary.append([slot + 1, sn, nic_type, True, retest_block_default])
         
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
@@ -1074,13 +1073,13 @@ def main():
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-        mfg_dl_summary.append([slot, sn, nic_type, False, retest_block_default])
+        mfg_dl_summary.append([slot + 1, sn, nic_type, False, retest_block_default])
     logfile_close(log_filep_list)
 
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot not in pass_nic_list and slot not in fail_nic_list:
-            mfg_dl_summary.append([slot, "SKIPPED", "SLOT", True, retest_block_default])
+            mfg_dl_summary.append([slot + 1, "SKIPPED", "SLOT", True, retest_block_default])
 
     # pkg the logfile
     log_pkg_file = MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
@@ -1133,7 +1132,7 @@ def main():
                 os.system(cmd)            
 
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage, mfg_dl_summary)
+        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage, mfg_dl_summary)
 
     # cleanup the log dir
     logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])

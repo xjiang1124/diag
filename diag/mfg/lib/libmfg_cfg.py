@@ -806,7 +806,7 @@ MTP_INTERNAL_MGMT_NETMASK = "255.255.255.0"
 Factory_network_config = {
     Factory.FSP: {
         "Networks": [u"192.168.1.0/24", u"192.168.2.0/24", u"192.168.3.0/24", u"192.168.4.0/24"],
-        "Flexflow": "10.206.9.16"
+        "Flexflow": "10.206.9.68"
     },
     Factory.MILPITAS: {
         "Networks": [u"192.168.5.0/24"],
@@ -833,7 +833,7 @@ FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
 # Penang flex server
 #FLX_PENANG_WEBSERVER = "10.192.155.61"
 #FLX_PENANG_WEBSERVER = "172.30.178.5"
-FLX_PENANG_WEBSERVER = "10.206.9.16"
+#FLX_PENANG_WEBSERVER = "10.206.9.16"
 FLX_PENANG_API_URL = "/FFTesterWS_PENSANDO/FFTesterWS.asmx"
 FLX_PENANG_GET_UUT_INFO_SOAP = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http://www.flextronics.com/FFTesterWS/SaveResult"

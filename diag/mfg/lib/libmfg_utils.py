@@ -1033,7 +1033,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac=None, pn=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac=None, pn=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1046,10 +1046,10 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
 
     #(stage, SN, start_ts, duration, stop_ts, result)
 
-    factory = flx_sn_to_factory(sn)
-    if not factory:
-        print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return None
+    # factory = flx_sn_to_factory(sn)
+    # if not factory:
+    #     print("Unable to locate flex factory based on sn: {:s}".format(sn))
+    #     return None
 
     if factory == Factory.FSP or factory == Factory.P1:
         ff_pn = flx_stage_to_penang(stage)
@@ -1066,11 +1066,11 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
                FLX_SAVE_UUT_RSLT_XML_TAIL
 
 
-def flx_soap_get_uut_info_xml(stage, sn):
-    factory = flx_sn_to_factory(sn)
-    if not factory:
-        print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return None
+def flx_soap_get_uut_info_xml(stage, sn, factory):
+    # factory = flx_sn_to_factory(sn)
+    # if not factory:
+    #     print("Unable to locate flex factory based on sn: {:s}".format(sn))
+    #     return None
 
     if factory == Factory.FSP or factory == Factory.P1:
         ff_pn = flx_stage_to_penang(stage)
@@ -1123,13 +1123,14 @@ def flx_stage_to_penang(stage):
         return None
 
 def soap_post_report(xml, factory=Factory.FSP):
+    webserverip = Factory_network_config[factory]["Flexflow"]
     if factory == Factory.FSP or factory == Factory.P1:
-        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+        webservice = httplib.HTTP(webserverip)
         webservice.putrequest("POST", FLX_PENANG_API_URL)
         webservice.putheader("Content-Type", "text/xml")
         webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
     else:
-        webservice = httplib.HTTP(FLX_WEBSERVER)
+        webservice = httplib.HTTP(webserverip)
         webservice.putrequest("POST", FLX_API_URL)
         webservice.putheader("Content-Type", "text/xml")
         webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
@@ -1153,13 +1154,14 @@ def soap_post_report(xml, factory=Factory.FSP):
 
 def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
+        webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+            webservice = httplib.HTTP(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
         else:
-            webservice = httplib.HTTP(FLX_WEBSERVER)
+            webservice = httplib.HTTP(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
@@ -1185,13 +1187,14 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
 
 def soap_get_uut_resp(xml, factory=Factory.FSP):
     try:
+        webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
+            webservice = httplib.HTTP(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
         else:
-            webservice = httplib.HTTP(FLX_WEBSERVER)
+            webservice = httplib.HTTP(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
@@ -1209,13 +1212,15 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
         print("Unable to connect to webserver")
         return "500"
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac=None, pn=None):
-    factory = flx_sn_to_factory(sn)
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac=None, pn=None):
+    if factory is None or factory == Factory.UNKNOWN:
+        factory = flx_sn_to_factory(sn)
+
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return False
 
-    xml = flx_soap_get_uut_info_xml(stage, sn)
+    xml = flx_soap_get_uut_info_xml(stage, sn, factory)
     if not xml:
         return False
 
@@ -1223,7 +1228,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
     if not xml:
         return False
 
@@ -1233,26 +1238,30 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
 
     return True
 
-def flx_web_srv_precheck_uut_status(sn, stage=None):
-    factory = flx_sn_to_factory(sn)
+def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
+    if factory is None or factory == Factory.UNKNOWN:
+        factory = flx_sn_to_factory(sn)
+
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_get_uut_info_xml(stage, sn)
+    xml = flx_soap_get_uut_info_xml(stage, sn, factory)
     if not xml:
         return -2
 
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac=None, pn=None):
-    factory = flx_sn_to_factory(sn)
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac=None, pn=None):
+    if factory is None or factory == Factory.UNKNOWN:
+        factory = flx_sn_to_factory(sn)
+
     if not factory:
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
     if not xml:
         return -2
 
@@ -1269,7 +1278,7 @@ def flx_web_srv_get_uut_info(sn, stage=None):
     if not stage:
         stage = FF_Stage.FF_DL
 
-    xml = flx_soap_get_uut_info_xml(stage, sn)
+    xml = flx_soap_get_uut_info_xml(stage, sn, factory)
     if not xml:
         return False
 
@@ -1657,7 +1666,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     return local_test_log_file
 
 
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary=[]):
+def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary=[]):
     mtp_cli_id_str = id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
 
@@ -1671,6 +1680,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
         os.system(cmd)
         return
 
+    factory =  mtp_mgmt_ctrl.get_mtp_factory_location()
     cli_inf(mtp_cli_id_str + "Start posting test report")
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
         nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
@@ -1718,7 +1728,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
                 post_cnt = 0
                 retry = FLEX_TWO_WAY_COMM.POST_RETRY
                 while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
                     if rs == 0:
                         cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
                         break
@@ -1734,7 +1744,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
                     post_cnt += 1
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -1783,7 +1793,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
                 post_cnt = 0
                 retry = FLEX_TWO_WAY_COMM.POST_RETRY
                 while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
                     if rs == 0:
                         cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
                         break
@@ -1807,7 +1817,7 @@ def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test
                             mtp_test_summary[idx][3] = False
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list,mac,pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -2527,7 +2537,8 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry = 0):
     post_cnt = 0
     while True:
-        flex_rs = flx_web_srv_precheck_uut_status(sn, stage)
+        factory = mtp_mgmt_ctrl.get_mtp_factory_location()
+        flex_rs = flx_web_srv_precheck_uut_status(sn, factory, stage)
         if flex_rs == 0:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Pre-Post [{:s}] result to webserver complete".format(sn))
             break

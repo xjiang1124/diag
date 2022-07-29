@@ -87,7 +87,7 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
     cmd = "cp {:s} {:s}".format(test_log_file, args.logdir)
     os.system(cmd)
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_FST, mtp_test_summary)
+        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_FST, mtp_test_summary)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     return
