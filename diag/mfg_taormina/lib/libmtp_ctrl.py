@@ -93,6 +93,7 @@ class mtp_ctrl():
         self._maj = None
         self._prog_date = None
         self._edc = "3-2228-D3"
+        self._pcbasn = None
 
         self._homedir = "."
         self._tpm_skip = False
@@ -6033,7 +6034,7 @@ class mtp_ctrl():
             "assembly_info bom_rev": "0x01",
             "assembly_info num_of_prgm_dev": "13",
             "pca_edc": self._edc,
-            "pca_serial_num": self._sn
+            "pca_serial_num": self._pcbasn
         }
 
         for eeprom_field in eeprom1_fields.keys():
@@ -6112,7 +6113,7 @@ class mtp_ctrl():
             "bom_rev": "0x01",
             "num_of_prgm_dev": "13",
             "pca_edc": self._edc,
-            "pca_serial_num": self._sn
+            "pca_serial_num": self._pcbasn
         }
 
         if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag mfgread chassis_ul 1"'):
@@ -6352,6 +6353,7 @@ class mtp_ctrl():
             self.cli_log_inf("==> FRU: {:s}, {:s}, {:s}".format(self._sn,libmfg_utils.mac_address_format(self._mac),self._pn))
             self.cli_log_inf("==> PCBA SN: {:s}".format(self._pcbasn))
             self.cli_log_inf("==> FRU Program Date: {:s}".format(self._prog_date))
+            self.cli_log_inf("==> Engineering Date Code: {:s}".format(self._edc))
 
         if self._bio_ver:
             self.cli_log_inf("==> BIOS version: {:s}".format(self._bio_ver))
