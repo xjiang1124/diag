@@ -177,7 +177,7 @@ function run_parse {
     echo "In run_parse"
     cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
     cd $to_loc/$card_type
-    ./mfg_parse.pl $fa_opt $test_name $mfg_err_code
+    ./mfg_parse.pl $fa_opt $card_type $test_name $mfg_err_code
 }
 
 function run_convert {
