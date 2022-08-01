@@ -92,7 +92,7 @@ class mtp_ctrl():
         self._pn = None
         self._maj = None
         self._prog_date = None
-        self._edc = "3-2228-D3"
+        self._edc = ""
         self._pcbasn = None
 
         self._homedir = "."
@@ -101,6 +101,89 @@ class mtp_ctrl():
 
         self._svos_boot = True # set to False once OS is installed
         self._secure_login = False  #set to True when using signed OS
+
+        # name is defined by its name in diag fpgautil
+        # None/"" = not present
+        self.sys_modules = {
+            "PSU": {
+                "PSU_1": "",
+                "PSU_2": ""
+                },
+            "FAN": {
+                "FAN-1": "",
+                "FAN-2": "",
+                "FAN-3": "",
+                "FAN-4": "",
+                "FAN-5": "",
+                "FAN-6": ""
+                },
+            "FAN AIRFLOW": "",
+            "SSD": {
+                "SSD": ""
+                },
+            "MEMORY": {
+                "MEMORY CHANNEL-0": "",
+                "MEMORY CHANNEL-2": ""
+                },
+            "SFP": {
+                "SFP-01": "",
+                "SFP-02": "",
+                "SFP-03": "",
+                "SFP-04": "",
+                "SFP-05": "",
+                "SFP-06": "",
+                "SFP-07": "",
+                "SFP-08": "",
+                "SFP-09": "",
+                "SFP-10": "",
+                "SFP-11": "",
+                "SFP-12": "",
+                "SFP-13": "",
+                "SFP-14": "",
+                "SFP-15": "",
+                "SFP-16": "",
+                "SFP-17": "",
+                "SFP-18": "",
+                "SFP-19": "",
+                "SFP-20": "",
+                "SFP-21": "",
+                "SFP-22": "",
+                "SFP-23": "",
+                "SFP-24": "",
+                "SFP-25": "",
+                "SFP-26": "",
+                "SFP-27": "",
+                "SFP-28": "",
+                "SFP-29": "",
+                "SFP-30": "",
+                "SFP-31": "",
+                "SFP-32": "",
+                "SFP-33": "",
+                "SFP-34": "",
+                "SFP-35": "",
+                "SFP-36": "",
+                "SFP-37": "",
+                "SFP-38": "",
+                "SFP-39": "",
+                "SFP-40": "",
+                "SFP-41": "",
+                "SFP-42": "",
+                "SFP-43": "",
+                "SFP-44": "",
+                "SFP-45": "",
+                "SFP-46": "",
+                "SFP-47": "",
+                "SFP-48": ""
+                },
+            "QSFP": {
+                "QSFP-01": "",
+                "QSFP-02": "",
+                "QSFP-03": "",
+                "QSFP-04": "",
+                "QSFP-05": "",
+                "QSFP-06": ""
+                }
+            }
 
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
@@ -7945,3 +8028,209 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd("killall tclsh")
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END failure dump"))
 
+    def parse_fpgautil(self, cmd_buf):
+        missing_list = list()
+
+        module_regexp = {
+            "PSU": r'%s.*H/W Rev: *(.*) *S/N: *(.*) *F/W.*: *(.*)',
+            "FAN": r'%s: *PRESENT',
+            "SSD": r'%s MODEL: *(.*) *S/N: *(.*) *Capacity: *(.*[TGMK]B)',
+            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) SIZE: *(.*)',
+            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)',
+            "QSFP": r'%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)'
+        }
+
+        for module in self.sys_modules["PSU"].keys():
+            regexp = module_regexp["PSU"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #H/W Rev
+            module_info_list.append(match.group(2).strip()) #S/N
+            module_info_list.append(match.group(3).strip()) #F/W
+            self.sys_modules["PSU"][module] = module_info_list[:]
+
+        for module in self.sys_modules["FAN"].keys():
+            regexp = module_regexp["FAN"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            self.sys_modules["FAN"][module] = "PRESENT"
+
+        for module in self.sys_modules["SSD"].keys():
+            regexp = module_regexp["SSD"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #MODEL
+            module_info_list.append(match.group(2).strip()) #S/N
+            module_info_list.append(match.group(3).strip()) #CAPACITY
+            self.sys_modules["SSD"][module] = module_info_list[:]
+
+        for module in self.sys_modules["MEMORY"].keys():
+            regexp = module_regexp["MEMORY"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #SIZE
+            self.sys_modules["MEMORY"][module] = module_info_list[:]
+
+        for module in self.sys_modules["SFP"].keys():
+            regexp = module_regexp["SFP"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #BITRATE
+            self.sys_modules["SFP"][module] = module_info_list[:]
+
+        for module in self.sys_modules["QSFP"].keys():
+            regexp = module_regexp["QSFP"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #BITRATE
+            self.sys_modules["QSFP"][module] = module_info_list[:]
+
+        return missing_list
+
+    def tor_present_sanity_check(self):
+        # check presence of PSUs, FANs, SFPs, QSFPs
+        test = "PRESENT_CHECK"
+
+        retry_cnt = 3
+        while True:
+            cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            cmd_buf = self.mtp_get_cmd_buf()
+            if not cmd_buf:
+                self.cli_log_err("{:s} returned nothing".format(cmd), level=0)
+                return False
+
+            missing_list = self.parse_fpgautil(cmd_buf)
+            if len(missing_list) == 0:
+                return True
+            else:
+                for module in missing_list:
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, module))
+
+            retry_cnt -= 1
+            if retry_cnt >= 0:
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+                continue
+            else:
+                break
+
+        return False
+
+    def tor_linkup_sanity_check(self):
+        # since ports are not enabled by default, need diag PRBS to take care of enabling the ports.
+        test = "LINK_CHECK"
+
+        retry_cnt = 3
+        while retry_cnt > 0:
+            cmd = "cd /fs/nos/home_diag/diag/util"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            prbs_type = "prbs58"
+            prbs_duration = "5"
+            cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
+            test_timeout = self.get_test_timeout(cmd, "PRBS_TOR")
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PRBS PASSED" not in cmd_buf:
+                # self.mtp_dump_err_msg(cmd_buf)
+                ports_down = re.findall(r'(Port-\d+) .*LINK DOWN', cmd_buf)
+                ports_missing = re.findall(r'(Q?SFP\-\d+) is not detecting presence', cmd_buf)
+                if len(ports_down) == 0 and len(ports_missing) == 0:
+                    self.cli_log_err("Failed to run PRBS", level=0)
+                    return False
+
+                for port in ports_down + ports_missing:
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, port))
+
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+
+                retry_cnt -= 1
+                continue
+            else:
+                return True
+
+        return False
+
+    def tor_usb_sanity_check(self):
+        # check presence of PSUs, FANs, SFPs, QSFPs
+        test = "PRESENT_CHECK"
+
+        cmd = "lsusb"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
+
+        retry_cnt = 3
+        while True:
+            cmd = 'dmesg | grep "USB Mass Storage"'
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            cmd_buf = self.mtp_get_cmd_buf()
+            if not cmd_buf:
+                self.cli_log_err("{:s} returned with no output".format(cmd), level=0)
+                return False
+
+            if "USB Mass Storage device detected" in cmd_buf:
+                # USB is present, now check that it's formatted correctly
+
+                cmd = "fdisk -l /dev/sdb"
+                if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                    self.cli_log_err("{:s} failed".format(cmd), level=0)
+                    return False
+
+                cmd_buf = self.mtp_get_cmd_buf()
+                if not cmd_buf:
+                    self.cli_log_err("{:s} returned with no output".format(cmd), level=0)
+                    return False
+
+                if "FAT32" in cmd_buf:
+                    return True
+                else:
+                    self.cli_log_err("USB has bad formatting", level=0)
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, "USB"))
+            else:
+                self.cli_log_err("[{:s}] {:s} module missing".format(test, "USB"))
+
+            retry_cnt -= 1
+            if retry_cnt >= 0:
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+                continue
+            else:
+                break
+
+        return False

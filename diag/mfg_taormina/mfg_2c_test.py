@@ -109,11 +109,14 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
-    for test in ["OS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT", "FRU_INIT", "MGMT_INIT_OS", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT", "MGMT_INIT_OS"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+    for test in ["OS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT", "FRU_INIT", "MGMT_INIT_OS", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
         if test in skip_test:
             continue
 
         start_ts = mtp_mgmt_ctrl.log_test_start(test)
+
+        if test == "PRESENT_CHECK":
+            libmfg_utils.cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
         # boot test OS
         if test == "OS_BOOT":
@@ -122,6 +125,15 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
             ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
         elif test == "CONSOLE_CONNECT":
             ret = mtp_mgmt_ctrl.mtp_console_connect()
+        # Sanity check eth loopbacks, psus and fans
+        elif test == "PRESENT_CHECK":
+            ret = mtp_mgmt_ctrl.tor_present_sanity_check()
+        # Sanity check eth loopbacks
+        elif test == "LINK_CHECK":
+            ret = mtp_mgmt_ctrl.tor_linkup_sanity_check()
+        # Sanity check USB
+        elif test == "USB_PRESENT_CHECK":
+            ret = mtp_mgmt_ctrl.tor_usb_sanity_check()
         # read FRU the first time
         elif test == "FRU_INIT":
             ret = mtp_mgmt_ctrl.tor_fru_init()
@@ -141,9 +153,18 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
         duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
 
         if not ret:
-            sn = mtp_mgmt_ctrl._sn
+            sn = mtp_mgmt_ctrl._sn #refresh to get latest
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
             return False
+
+        if test == "USB_PRESENT_CHECK":
+            if ret:
+                pass_uut_list = [mtp_id]
+                fail_uut_list = []
+            else:
+                pass_uut_list = []
+                fail_uut_list = [mtp_id]
+            libmfg_utils.cli_log_rslt("{:s} Sanity Check complete".format(mtp_id), pass_uut_list, fail_uut_list, mtp_mgmt_ctrl._filep)
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="2C-SSH"):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
@@ -196,6 +217,15 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp
         if idx > 0:
             # start new logfile
             logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+
+        # only do sanity check on first-time setup
+        if idx > 0:
+            if "PRESENT_CHECK" not in skip_test:
+                skip_test.append("PRESENT_CHECK")
+            if "LINK_CHECK" not in skip_test:
+                skip_test.append("LINK_CHECK")
+            if "USB_PRESENT_CHECK" not in skip_test:
+                skip_test.append("USB_PRESENT_CHECK")
 
         if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, stage, skip_test):
             mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id], mtp_test_summary, stage) # save logfile a different way (from log/)
