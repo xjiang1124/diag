@@ -56,7 +56,7 @@ power_on_naples25_swm_ocp() {
 elba_enable_jtag() {
     slot=$1
 
-    if [ $mtp_id == "0x42" || $mtp_id == "0x4d"]
+    if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
     then
         reg=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x22)
         reg=$(expr match "$reg" '.*data=\(0x[0-9|a-f|A-F]*\)')
@@ -72,7 +72,7 @@ elba_enable_jtag() {
 }
 
 elba_delay() {
-    if [ $mtp_id == "0x42" || $mtp_id == "0x4d" ]
+    if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
     then
         echo "Elba delay enabled"
         #sleep 1

@@ -64,7 +64,7 @@ ftdicnt=$(awk '{for (I=1;I<NF;I++) if ($I == "FTDI_DEVICE_COUNT") print$(I+1)}' 
 MEM_SIZE=$(awk 'NR==1 {if (length($2) == 7) print ($2 ~ /^[78]/) ? "8G" : "4G" }' /proc/meminfo)
 echo "export MEM_SIZE="$MEM_SIZE >> temp_profile
 
-if [ $mtp_id == "0x42" || $mtp_id == "0x4d" ]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
 then
     if [[ $ftdicnt -eq 1 ]]; then
         echo "ELBA MTP"
@@ -101,7 +101,7 @@ echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [ $mtp_id == "0x42" || $mtp_id == "0x4d" ]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
 then
     hack_asic_elba.sh
 else
