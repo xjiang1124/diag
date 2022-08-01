@@ -1460,6 +1460,11 @@ class mtp_ctrl():
             self.cli_log_err("Initialize NIC type, present failed", level=0)
             return False
 
+        if not self.get_mtp_factory_location():
+            self.cli_log_err("Unable to get MTP factory location")
+            return False
+        self.cli_log_report_inf("MTP Location: {:s}".format(self.get_mtp_factory_location()))
+
         return True
 
     def mtp_get_nic_sn_start(self, slot=0):
@@ -4332,7 +4337,8 @@ class mtp_ctrl():
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
-        elif ret:
+        
+        if ret:
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
