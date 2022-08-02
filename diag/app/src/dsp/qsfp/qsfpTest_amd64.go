@@ -129,6 +129,11 @@ func QsfpI2CHdl(argList []string) {
 ReturnI2Chdl:
     // Inform diag engine that test handler is done
     // Use chan to return error code
+    if ret != 0 {
+        dcli.Printf("e", "QSFP I2C TEST FAILED\n")
+    } else {
+        dcli.Printf("i", "QSFP I2C TEST PASSED\n")
+    }
     diagEngine.FuncMsgChan <- ret
     return
 }

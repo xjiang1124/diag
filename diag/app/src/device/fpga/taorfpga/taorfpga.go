@@ -44,6 +44,7 @@ const (
     MAXFAN = 6
     AIRFLOW_FRONT_TO_BACK = 0
     AIRFLOW_BACK_TO_FRONT = 1
+    AIRFLOW_MIXED_ERROR = 2
     MAXSFP = 48
     MAXQSFP = 6
 )
@@ -758,8 +759,10 @@ func FAN_AirFlow_Direction() (fan_air_direction int, err error) {
     //fan present is 0 for present, 1 for not present
     if (data32 &  D1_FAN_STAT_PORT_SIDE_INTAKE_MASK) == D1_FAN_STAT_PORT_SIDE_INTAKE_MASK {
         fan_air_direction = AIRFLOW_FRONT_TO_BACK
-    } else {
+    } else if (data32 &  D1_FAN_STAT_PORT_SIDE_INTAKE_MASK) == 0x00 {
         fan_air_direction = AIRFLOW_BACK_TO_FRONT
+    } else {
+        fan_air_direction = AIRFLOW_MIXED_ERROR
     }
     return
 }
@@ -901,7 +904,11 @@ func AsicCoreTemp(devName string) (err int) {
     return
 }
 
-
+/****************************************************************
+*
+* GET ELBA TEMPERATURE
+* 
+****************************************************************/
 func GetTemperature(devName string) (temperatures []float64, err int) {
     var data32 uint32
     var addr uint64 = D1_ELBA0_STAT_REG

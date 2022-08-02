@@ -414,6 +414,14 @@ func I2cI2cHdl(argList []string) {
         }
     }
 
+    if cardType == "TAORMINA" {
+        if ret == errType.SUCCESS {
+            dcli.Printf("i","I2C I2C TEST PASSED\n")
+        } else {
+            dcli.Printf("e","I2C I2C TEST FAILED\n")
+        }
+    }
+
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- ret

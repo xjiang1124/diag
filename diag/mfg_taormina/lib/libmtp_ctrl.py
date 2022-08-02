@@ -4268,6 +4268,19 @@ class mtp_ctrl():
                  return nic_list[:]
              else:
                  return []
+        elif test == "PCI_TOR":
+             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
+             cmd = "./switch cpu pciscan"
+             test_timeout = self.get_test_timeout(cmd, test)
+             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
+                 self.cli_log_err("{:s} failed".format(cmd))
+                 return nic_list[:]
+             cmd_buf = self.mtp_get_cmd_buf()
+             if "PCISCAN TEST PASSED" not in cmd_buf:
+                 self.mtp_dump_err_msg(cmd_buf)
+                 return nic_list[:]
+             else:
+                 return []
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
@@ -4305,6 +4318,10 @@ class mtp_ctrl():
             return 180
         elif test in ("ELBA_ARM_MEMORY"):
             return 360
+        elif test in ("ELBA_EDMA_TEST"):
+            return 360
+        elif test in ("PCI_TOR"):
+            return 30        
         elif test in ("L1"):
             return 40*60
         else:
