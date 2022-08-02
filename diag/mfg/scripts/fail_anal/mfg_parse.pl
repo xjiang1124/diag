@@ -1006,7 +1006,7 @@ sub find_failure_code {
             my $snake_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_elba.log";
             print "#### snake_log_file: $snake_log_file\n";
             parse_snake_log($snake_log_file, $sn, $test_and_failure_code);
-        } elsif ($asic_log_dir ne "" && $failure_code eq "L1") {
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "L1" && $failure_code !~ "ARM_L1") {
             if (index($test_name, "NIC") == -1) {
                 $asic_l1_failed = 1;
                 my $l1_path = $log_path."/".$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir;
@@ -1043,7 +1043,7 @@ sub find_failure_code {
                 print "#### NIC_l1_log_file: $nic_l1_log_file\n";
                 parse_nic_test_logs("L1", $nic_l1_txt_file, $nic_l1_log_file, $sn, $test_and_failure_code);
             }
-        } elsif ($asic_log_dir ne "" && $failure_code eq "ARM_L1") {
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "ARM_L1") {
             my $arm_l1_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_arm_l1_test.log";
             print "#### ARM_L1_log_file: $arm_l1_log_file\n";
             parse_arm_l1_log($arm_l1_log_file, $sn, $test_and_failure_code);
