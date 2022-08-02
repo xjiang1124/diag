@@ -1903,7 +1903,7 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 					ftStatus = FT_Read(ftHandle, data, dwNumBytesSent, &dwNumBytesRead);
 				}
 				printf("recover data from 0x80 %d, retry %d\n", *data, i);
-				if(*data == 0x42)
+				if( *data == 0x42 || *data == 0x4d )
 				{
 					printf("Read 0x80 success, continue read addr 0x%x\n", address);
 					OutputBuffer[20] = address;
