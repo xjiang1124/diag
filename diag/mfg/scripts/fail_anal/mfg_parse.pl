@@ -1424,7 +1424,7 @@ sub parse_fpga_and_ecc {
     my $ecc_reg_linenum = 0;
     my $ecc_not_valid = 0;
     my $ecc_result_exist = 0;
-    my $ecc_result_clean = 0;
+    my $ecc_result_err = 0;
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
@@ -1718,13 +1718,10 @@ sub parse_fpga_and_ecc {
             }
         }
 
-        if($line =~ m/ECC CLEAN on slot/) {
+        if($line =~ m/FAIL: ECC_EN:/) {
             $ecc_result_exist = 1;
-            $ecc_result_clean = 1;
-        }
-        if($line =~ m/ECC ERROR HAPPENED on slot/) {
-            $ecc_result_exist = 1;
-            $ecc_result_clean = 0;
+            $ecc_result_err = 1;
+            $ecc_sts = $ecc_sts.$line;
         }
         if($line =~ m/S2I Operation timed out/) {
             #print "$line";
@@ -1758,7 +1755,7 @@ sub parse_fpga_and_ecc {
         $diag_fa_code{"Bad_J2C"} = 1;
         print "ECC not valid due to bad J2C\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
-    } elsif (($num_ecc_sts_errors == 0) || ($ecc_result_clean == 1)) {
+    } elsif (($num_ecc_sts_errors == 0) || ($ecc_result_err == 0)) {
         print "ECC status OK\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
     } else {
