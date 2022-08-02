@@ -5797,6 +5797,7 @@ class mtp_ctrl():
         retries = 3
         while retries >= 0:
             if retries == 0:
+                self.cli_log_err(self.mtp_get_cmd_buf())
                 return False
             retries -= 1
             if svos_boot:
@@ -8108,6 +8109,10 @@ class mtp_ctrl():
             self.cli_log_err("Unable to telnet to UUT chassis")
 
         if not self._svos_boot:
+            if not self.tor_get_ip():
+                self.cli_log_err("UUT chassis lost IP")
+                return False
+
             if not self.mtp_mgmt_connect():
                 self.cli_log_err("Unable to ssh to UUT chassis")
                 return False
