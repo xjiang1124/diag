@@ -139,7 +139,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 120
+                    ALL: 330
                 INFO: Test timeout setting
             mask:
                 VALUE:

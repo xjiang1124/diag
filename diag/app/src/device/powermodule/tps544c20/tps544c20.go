@@ -43,9 +43,9 @@ func I2cTest(devname string) (err int) {
         cli.Println("e", " pmbus access to", devname,"failed")
         return
     }
-    if data16 != DEVICE_CODE_DATA {
+    if (data16 != DEVICE_CODE_DATAC20) && (data16 != DEVICE_CODE_DATAB20)  {
         err = errType.FAIL
-        cli.Printf("e", "Device-%s Register 0x%x: Read 0x%.04x    Expect 0x%.04x\n", devname, DEVICE_CODE, data16, DEVICE_CODE_DATA)
+        cli.Printf("e", "Device-%s Register 0x%x: Read 0x%.04x    Expect 0x%.04x or 0x%.04x\n", devname, DEVICE_CODE, data16, DEVICE_CODE_DATAC20, DEVICE_CODE_DATAB20)
         return
     }
     return

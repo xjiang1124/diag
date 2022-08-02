@@ -5,11 +5,11 @@ import (
     "config"
     "flag"
     "common/diagEngine"
-    "common/cli"
+    //"common/cli"
     "common/dcli"
-    //"common/errType"
+    "common/errType"
     "platform/taormina"
-    "device/bcm/td3"
+    //"device/bcm/td3"
 )
 
 //========================================================
@@ -88,11 +88,12 @@ func SwitchSnakeHdl(argList []string) {
     dcli.Println("i", "mask", *maskPtr, "duration", *durationPtr, "loopback", *loopbackPtr)
 
 
-    mask:=*maskPtr 
-    duration:=*durationPtr
-    loopback:=*loopbackPtr
+    //mask:=*maskPtr 
+    //duration:=*durationPtr
+    //loopback:=*loopbackPtr
     
-    err = taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90)
+    dcli.Println("e", "ERROR: Test is not working using the DSP.   Please run the test using the 'switch' binary utility")
+    err = errType.FAIL // taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -147,7 +148,7 @@ func SwitchElba_Edma_TestHdl(argList []string) {
     dcli.Println("i", "mask", *maskPtr)
     mask:=*maskPtr
 
-    err = taormina.ElbaEDMA_Test(uint32(mask), 0)
+    err = taormina.ElbaEDMA_Test(uint32(mask), 0, 100)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -216,12 +217,8 @@ func SwitchVrm_FixHdl(argList []string) {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    err = taormina.TD3_VRM_FIX("TDNT_PDVDD")
-    cli.Printf("i", "\n")
-    err |= taormina.ElbaVRMfix()
-    cli.Printf("i", "\n")
-    err |= taormina.TD3_Check_AVS_Programming("TDNT_PDVDD")
-
+    err = taormina.VRMfix()
+    
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err

@@ -43,9 +43,41 @@ func BcmPrbsExtHdl(argList []string) {
     return
 }
 
+
+func BcmTd3DiagHdl(argList []string) {
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+    durationPtr := fs.Int("duration", 900, "test time")
+
+    duration := *durationPtr
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "duration", *durationPtr)
+    dcli.Println("i", "duration", duration)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "duration", *durationPtr)
+
+    err := td3.TD3_Run_Diags()
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+
+
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
     diagEngine.FuncMap["PRBSEXT"] = BcmPrbsExtHdl
+    diagEngine.FuncMap["TD3DIAG"] = BcmTd3DiagHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)

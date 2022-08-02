@@ -39,7 +39,8 @@ const (
     OPTIONS                   = 0xE5
     MASK_SMBALERT             = 0xE7
     DEVICE_CODE               = 0xFC
-        DEVICE_CODE_DATA          = 0x0153
+        DEVICE_CODE_DATAC20       = 0x0153
+        DEVICE_CODE_DATAB20       = 0x0143
 )
 
 const (

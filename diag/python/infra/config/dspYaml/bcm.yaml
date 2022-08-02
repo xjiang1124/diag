@@ -72,4 +72,19 @@ DSP:
                     ALL: prbs58
                 INFO: PRBS polynomial
 
+    TEST#TD3DIAG:
+        INFO: Trident 3 Diagnostics
+        PLATFORM:
+            TOR: ALL
+        PRIORITY: NORMAL
+        PARAM:
+            timeout:
+                VALUE:
+                    ALL: 360
+                INFO: Test timeout setting
+            duration:
+                VALUE:
+                    ALL: 900
+                INFO: test time
+
 ...
