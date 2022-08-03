@@ -1723,6 +1723,10 @@ sub parse_fpga_and_ecc {
             $ecc_result_err = 1;
             $ecc_sts = $ecc_sts.$line;
         }
+        if($line =~ m/MSG :: ECC_EN:0x33 ECC_INTERRUPT:0x0/) {
+            $ecc_result_exist = 1;
+            $ecc_result_err = 0;
+        }
         if($line =~ m/S2I Operation timed out/) {
             #print "$line";
             $diag_fa_code{"Bad_J2C"} = 1;
