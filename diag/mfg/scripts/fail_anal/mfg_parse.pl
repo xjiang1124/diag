@@ -677,6 +677,12 @@ sub parse_snake_log {
             $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
             $err_found = 1;
         }
+        if($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
+            $err_found = 1;
+        }
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
@@ -831,7 +837,12 @@ sub parse_nic_test_logs {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
             }
-            if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname eq "L1"))
+            if(($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) && ($testname =~ "PCIE_PRBS"))
+            {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+            }
+            if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname =~ "L1"))
             {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
