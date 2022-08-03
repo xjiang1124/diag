@@ -1122,48 +1122,6 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        # Set uboot env variables
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if nic_type != NIC_Type.ORTANO and nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI:
-                continue
-            if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot) :
-                continue
-            if nic_type == NIC_Type.ORTANO2ADI and mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
-                continue
-
-            test_list = ["UBOOT_ENV"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "UBOOT_ENV":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_elba_uboot_env(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
         # power cycle NIC
         mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
