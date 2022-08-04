@@ -635,6 +635,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SCAN_VERIFY"}) {
+        $top_diag_fa_code = "SCAN_VERIFY";
+        delete $diag_fa_code{"SCAN_VERIFY"};
+        return;
+    }
+
     if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
         $top_diag_fa_code = "ALL_SLOTS_FAIL";
         delete $diag_fa_code{"ALL_SLOTS_FAIL"};
@@ -1338,6 +1344,11 @@ sub parse_mtp_and_slot_log {
             if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
                 $mtp_test_msg .= $line;
                 $diag_fa_code{"INCORRECT_$1"} = 1;
+            } else {
+                if ($line =~ m/\[NIC-$slot\].*Missing scan for this slot/) {
+                    $mtp_test_msg .= $line;
+                }
+                $diag_fa_code{"SCAN_VERIFY"} = 1;
             }
         }
         if (index($failure_code_list, "VDD_DDR_VERIFY") != -1) {
