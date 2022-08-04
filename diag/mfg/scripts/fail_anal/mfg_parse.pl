@@ -6,6 +6,7 @@ use Cwd;
 use YAML::XS;
 
 my $fa_opt = shift;
+my $card_type = shift;
 my $test_name_opt = shift;
 my $mfg_err_code_opt = shift;
 my $yaml_file = "./temp.yaml";
@@ -446,30 +447,6 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"PSU1_NOT_INSTALLED"}) {
-        $top_diag_fa_code = "PSU1_NOT_INSTALLED";
-        delete $diag_fa_code{"PSU1_NOT_INSTALLED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"PSU2_NOT_INSTALLED"}) {
-        $top_diag_fa_code = "PSU2_NOT_INSTALLED";
-        delete $diag_fa_code{"PSU2_NOT_INSTALLED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"}) {
-        $top_diag_fa_code = "PSU1_CORD_NOT_CONNECTED";
-        delete $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"}) {
-        $top_diag_fa_code = "PSU2_CORD_NOT_CONNECTED";
-        delete $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"};
-        return;
-    }
-
     if (exists $diag_fa_code{"RETEST_NEEDED"}) {
         $top_diag_fa_code = "RETEST_NEEDED";
         delete $diag_fa_code{"RETEST_NEEDED"};
@@ -554,6 +531,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"Bad_J2C"};
         return;
     }
+    if (exists $diag_fa_code{"EMMC_ERR"}) {
+        $top_diag_fa_code = "EMMC_ERR";
+        delete $diag_fa_code{"EMMC_ERR"};
+        return;
+    }
     if (exists $diag_fa_code{"BOOT_GOLDFW"}) {
         $top_diag_fa_code = "BOOT_GOLDFW";
         delete $diag_fa_code{"BOOT_GOLDFW"};
@@ -579,6 +561,80 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"INCORRECT_SN"};
         return;
     }
+    if (exists $diag_fa_code{"INCORRECT_PN_REV"}) {
+        $top_diag_fa_code = "INCORRECT_PN_REV";
+        delete $diag_fa_code{"INCORRECT_PN_REV"};
+        return;
+    }
+    if (exists $diag_fa_code{"PN_SW_MATCH_ERR"}) {
+        $top_diag_fa_code = "PN_SW_MATCH_ERR";
+        delete $diag_fa_code{"PN_SW_MATCH_ERR"};
+        return;
+    }
+    if (exists $diag_fa_code{"RETREIVE_PN_FAIL"}) {
+        $top_diag_fa_code = "RETREIVE_PN_FAIL";
+        delete $diag_fa_code{"RETREIVE_PN_FAIL"};
+        return;
+    }
+    if (exists $diag_fa_code{"CARD_RESET"}) {
+        $top_diag_fa_code = "CARD_RESET";
+        delete $diag_fa_code{"CARD_RESET"};
+        return;
+    }
+    if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
+        $top_diag_fa_code = "CARD_SPACE_FULL";
+        delete $diag_fa_code{"CARD_SPACE_FULL"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+        return;
+    }
+    if (exists $diag_fa_code{"PS48_ERROR"}) {
+        $top_diag_fa_code = "PS48_ERROR";
+        delete $diag_fa_code{"PS48_ERROR"};
+        return;
+    }
+    if (exists $diag_fa_code{"OOB_MNIC_NOT_ENABLED"}) {
+        $top_diag_fa_code = "OOB_MNIC_NOT_ENABLED";
+        delete $diag_fa_code{"OOB_MNIC_NOT_ENABLED"};
+        return;
+    }
+    if (exists $diag_fa_code{"KEY_PROG_CRC_ERR"}) {
+        $top_diag_fa_code = "KEY_PROG_CRC_ERR";
+        delete $diag_fa_code{"KEY_PROG_CRC_ERR"};
+        return;
+    }
+    if (exists $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"}) {
+        $top_diag_fa_code = "ELBA_SELF_POWER_CYCLE(0x50)";
+        delete $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"};
+        return;
+    }
+    if (exists $diag_fa_code{"PSU1_NOT_INSTALLED"}) {
+        $top_diag_fa_code = "PSU1_NOT_INSTALLED";
+        delete $diag_fa_code{"PSU1_NOT_INSTALLED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU2_NOT_INSTALLED"}) {
+        $top_diag_fa_code = "PSU2_NOT_INSTALLED";
+        delete $diag_fa_code{"PSU2_NOT_INSTALLED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"}) {
+        $top_diag_fa_code = "PSU1_CORD_NOT_CONNECTED";
+        delete $diag_fa_code{"PSU1_CORD_NOT_CONNECTED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"}) {
+        $top_diag_fa_code = "PSU2_CORD_NOT_CONNECTED";
+        delete $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"};
+        return;
+    }
+
     if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
         $top_diag_fa_code = "ALL_SLOTS_FAIL";
         delete $diag_fa_code{"ALL_SLOTS_FAIL"};
@@ -616,6 +672,12 @@ sub parse_snake_log {
     while(my $line = <TR3>)
     {
         if($err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
+            $err_found = 1;
+        }
+        if($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
@@ -775,7 +837,12 @@ sub parse_nic_test_logs {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
             }
-            if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname eq "L1"))
+            if(($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) && ($testname =~ "PCIE_PRBS"))
+            {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+            }
+            if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname =~ "L1"))
             {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
@@ -824,6 +891,43 @@ sub parse_eth_prbs_log {
     }
     #if ($test_err_msg ne "") {
         $all_test_msg .= "############### $test_and_failure_code ###############\n"."eth_prbs log file: ".$log_path."/".$logfile."\n\n";
+        $all_test_msg .= $test_err_msg;
+    #}
+}
+
+sub parse_arm_l1_log {
+    my ($logfile, $sn, $test_and_failure_code) = @_;
+    my $test_err_msg = "";
+    my $logend = qr/:: ARM L1 TESTS (PASSED|FAILED)/;
+
+    if (!open(TR3, '<', $logfile)) {
+        $diag_fa_code{"ARM_L1_LOGFILE_NOT_EXIST"} = 1;
+    } else {
+	    my $log_complete = 0;
+        while(my $line = <TR3>)
+        {
+            if($line =~ m/ERROR/) {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+            }
+            if($line =~ m/\s+(\w+)\s+#FAILED#/) {
+                if ($debug_msgs) { print "line: $line"};
+                $test_err_msg .= $line;
+                my $arm_l1_failed_test = uc($1);
+                print "arm l1 failed: $arm_l1_failed_test\n";
+                $diag_fa_code{"ARM_L1_$arm_l1_failed_test"} = 1;
+            }
+            if($logend ne "" && $line =~ m/$logend/) {
+                $log_complete = 1;
+            }
+        }
+        close(TR3);
+	    if ($log_complete == 0) {
+            $diag_fa_code{"ARM_L1_LOG_INCOMPLETE"} = 1;
+        }
+    }
+    #if ($test_err_msg ne "") {
+        $all_test_msg .= "############### $test_and_failure_code ###############\n"."arm_l1 log file: ".$log_path."/".$logfile."\n\n";
         $all_test_msg .= $test_err_msg;
     #}
 }
@@ -913,7 +1017,7 @@ sub find_failure_code {
             my $snake_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_elba.log";
             print "#### snake_log_file: $snake_log_file\n";
             parse_snake_log($snake_log_file, $sn, $test_and_failure_code);
-        } elsif ($asic_log_dir ne "" && $failure_code =~ "L1") {
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "L1" && $failure_code !~ "ARM_L1") {
             if (index($test_name, "NIC") == -1) {
                 $asic_l1_failed = 1;
                 my $l1_path = $log_path."/".$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir;
@@ -926,15 +1030,55 @@ sub find_failure_code {
                     $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
                 }
             } else {
-                my $nic_l1_txt_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+                my $nic_l1_txt_file1=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+                my $nic_l1_txt_file2=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."NIC-".$slot."/log_NIC_ASIC.txt";
                 my $nic_l1_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_arm_l1_test.log";
+                my $nic_l1_txt_file = $nic_l1_txt_file1;
+                if (open(TXT, '<', $nic_l1_txt_file1)) {
+                    my $test_found = 0;
+                    while(my $line = <TXT>)
+                    {
+                        if($line =~ m/testName: L1/) {
+                            $test_found = 1;
+                            last;
+                        }
+                    }
+                    close(TXT);
+                    if ($test_found == 0) {
+                        $nic_l1_txt_file = $nic_l1_txt_file2;
+                    }
+                } else {
+                    $nic_l1_txt_file = $nic_l1_txt_file2;
+                }
                 print "#### NIC_l1_txt_file: $nic_l1_txt_file\n";
                 print "#### NIC_l1_log_file: $nic_l1_log_file\n";
                 parse_nic_test_logs("L1", $nic_l1_txt_file, $nic_l1_log_file, $sn, $test_and_failure_code);
             }
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "ARM_L1") {
+            my $arm_l1_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_arm_l1_test.log";
+            print "#### ARM_L1_log_file: $arm_l1_log_file\n";
+            parse_arm_l1_log($arm_l1_log_file, $sn, $test_and_failure_code);
         } elsif ($asic_log_dir ne "" && $failure_code =~ "PCIE_PRBS") {
-            my $pcie_prbs_txt_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+            my $pcie_prbs_txt_file1=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."AAPL-NIC-".$slot."/log_NIC_ASIC.txt";
+            my $pcie_prbs_txt_file2=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_txt_dir."NIC-".$slot."/log_NIC_ASIC.txt";
             my $pcie_prbs_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_elba_PRBS_PCIE.log";
+            my $pcie_prbs_txt_file = $pcie_prbs_txt_file1;
+            if (open(TXT, '<', $pcie_prbs_txt_file1)) {
+                my $test_found = 0;
+                while(my $line = <TXT>)
+                {
+                    if($line =~ m/testName: PCIE_PRBS/) {
+                        $test_found = 1;
+                        last;
+                    }
+                }
+                close(TXT);
+                if ($test_found == 0) {
+                    $pcie_prbs_txt_file = $pcie_prbs_txt_file2;
+                }
+            } else {
+                $pcie_prbs_txt_file = $pcie_prbs_txt_file2;
+            }
             print "#### PCIE_PRBS_txt_file: $pcie_prbs_txt_file\n";
             print "#### PCIE_PRBS_log_file: $pcie_prbs_log_file\n";
             $diag_fa_code{"PCIE_PRBS_FAILURE"} = 1;
@@ -955,9 +1099,13 @@ sub find_failure_code {
         }
 
         if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
+            parse_mgmt_failure($fulllogpath, $slot);
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
             }
+        }
+        if ($test_name eq "QSFP" && $failure_code eq "I2C") {
+            $diag_fa_code{"QSFP_I2C"} = 1;
         }
     }
     parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
@@ -1005,24 +1153,83 @@ sub parse_fst_rot {
     }
     while(my $line = <TR3>)
     {
-        # TBD
+        # if ($line =~ m/invalid qspi device id read/) {
+        #     $diag_fa_code{"ROT_BAD_DEV_ID"} = 1;
+        #     $test_err_msg .= $line;
+        # }
+        # if ($line =~ m/possible NIC console is dead/) {
+        #     $diag_fa_code{"ROT_CONSOLE_DEAD"} = 1;
+        #     $test_err_msg .= $line;
+        # }
+        # if ($line =~ m/possible bad cable/) {
+        #     $diag_fa_code{"ROT_BAD_CABLE"} = 1;
+        #     $test_err_msg .= $line;
+        # }
     }
+    if ($test_err_msg ne "") {
+        $all_test_msg .= "log path: ".$fulllogpath."\n";
+        $all_test_msg .= $test_err_msg;
+    }
+    close(TR3);
 }
+
+sub parse_mgmt_failure {
+    my ($fulllogpath, $slot) = @_;
+    my $mtpdiagfile=$fulllogpath."/"."mtp_diag.log";
+    my $mtp_diag_msg = "";
+    my $halctl_slot_info = 0;
+    my $eth1_3_down = 0;
+    my $slotnum = 0 + $slot;
+
+    if (!open(TR3, '<', $mtpdiagfile)) {
+        print "Cannot open file $mtpdiagfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        if ($line =~ m/cpldutil \-cpld\-wr \-addr=0x18 \-data=$slotnum/) {
+            $halctl_slot_info = 1;
+        }
+        if ($halctl_slot_info && $line =~ m/^Eth1\/3/ && $line !~ m/Eth1\/3    UP          UP        -/ ) {
+            $mtp_diag_msg .= $line;
+            $eth1_3_down = 1;
+        }
+        if ($eth1_3_down != 0 && $line =~ m/exit/) {
+            $eth1_3_down = 0;
+        }
+        if ($eth1_3_down != 0 && $line =~ m/-smird 0 0x3/) {
+            $mtp_diag_msg .= $line;
+            my $line2 = <TR3>;
+            $mtp_diag_msg .= $line2;
+            if ($line2 =~ m/0xffff/ && $card_type =~ m/ORTANO/) {
+                $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
+            } else {
+                $diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
+            }
+        }
+        if (($line =~ m/PS48 Error:/) && (! exists $diag_fa_code{"PS48_ERROR"})) {
+            $mtp_diag_msg .= $line;
+            $diag_fa_code{"PS48_ERROR"} = 1;
+        }
+    }
+    if ($mtp_diag_msg ne "") {
+        $all_test_msg .= "\n--------mtp_diag log--------: ".$mtpdiagfile."\n";
+        $all_test_msg .= $mtp_diag_msg;
+    }
+    close(TR3);
+}
+
 
 sub parse_mtp_and_slot_log {
     my ($fulllogpath, $slot, $stage, $failure_code_list) = @_;
     my $mtpfile=$fulllogpath."/"."mtp_test.log";
-    my $mtpdiagfile=$fulllogpath."/"."mtp_diag.log";
     my $slotlogfile=$fulllogpath."/"."mtp_NIC-".$slot."_diag.log";
     my $slot_err_msg = "";
-    my $mtp_diag_msg = "";
     my $mtp_test_msg = "";
     my $test_err_msg = "";
     my $jtag_log = 0;
     my $err_msg_dump = 0;
     my $nic_status_dump = 0;
-    my $halctl_slot_info = 0;
-    my $eth1_3_down = 0;
     my $slotnum = 0 + $slot;
 
     if (!open(TR3, '<', $slotlogfile)) {
@@ -1035,6 +1242,10 @@ sub parse_mtp_and_slot_log {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
+        }
+        if ($line =~ m/No space left on device/) {
+            $diag_fa_code{"CARD_SPACE_FULL"} = 1;
+	        $slot_err_msg .= $line;
         }
         if ($line =~ m/Resetting CPU/) {
             $diag_fa_code{"CARD_RESET"} = 1;
@@ -1083,6 +1294,18 @@ sub parse_mtp_and_slot_log {
                 $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
             }
         }
+        if ($line =~ m/\/emmc_format\.sh/) {
+            my $line2 = <TR3>;
+            if ($line2 =~ m/open: No such file or directory/) {
+                $slot_err_msg .= $line;
+                $slot_err_msg .= $line2;
+                $diag_fa_code{"EMMC_ERR"} = 1;
+            }
+        }
+        if ($line =~ m/CRC32 cross check failed; Caculated.*Uboot.*/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"KEY_PROG_CRC_ERR"} = 1;
+        }
     }
     if ($slot_err_msg ne "") {
         $test_err_msg .= "\n--------slot log--------: ".$slotlogfile."\n";
@@ -1097,6 +1320,20 @@ sub parse_mtp_and_slot_log {
 
     while(my $line = <TR3>)
     {
+        if (index($failure_code_list, "SW_PN_CHECK") != -1) {
+            if ($line =~ m/\[NIC-$slot\].*Check SOFTWARE IMAGE PN.*CARD PN/) {
+                $mtp_test_msg .= $line;
+                my $line2 = <TR3>;
+                $mtp_test_msg .= $line2;
+                if ($line2 =~ m/Check PN REV: Software Image match to nic part number failed/) {
+                    $diag_fa_code{"INCORRECT_PN_REV"} = 1;
+                } elsif ($line2 =~ m/Check SWI Software Image: Software Image match to nic part number failed/) {
+                    $diag_fa_code{"PN_SW_MATCH_ERR"} = 1;
+                } elsif ($line2 =~ m/Check SWI Software Image: Retreive PN Failed/) {
+                    $diag_fa_code{"RETREIVE_PN_FAIL"} = 1;
+                }
+            }
+        }
         if (index($failure_code_list, "SCAN_VERIFY") != -1) {
             if ($line =~ m/\[NIC-$slot\].*Incorrect (SN|MAC|PN). Scanned.*read.*/) {
                 $mtp_test_msg .= $line;
@@ -1172,41 +1409,6 @@ sub parse_mtp_and_slot_log {
     }
     close(TR3);
 
-    if ((index($failure_code_list, "NIC_PARA_MGMT_INIT") != -1) || (index($failure_code_list, "NIC_MGMT_INIT") != -1)) {
-        if (!open(TR3, '<', $mtpdiagfile)) {
-            print "Cannot open file $mtpdiagfile\n";
-            return;
-        }
-        while(my $line = <TR3>)
-        {
-            if ($line =~ m/cpldutil \-cpld\-wr \-addr=0x18 \-data=$slotnum/) {
-                $halctl_slot_info = 1;
-            }
-            if ($halctl_slot_info && $line =~ m/Eth1\/3/ && $line !~ m/Eth1\/3    UP          UP        -/) {
-                $mtp_diag_msg .= $line;
-                $eth1_3_down = 1;
-                #$diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
-            }
-            if ($eth1_3_down != 0 && $line =~ m/exit/) {
-                $eth1_3_down = 0;
-            }
-            if ($eth1_3_down != 0 && $line =~ m/-smird 0 0x3/) {
-                $mtp_diag_msg .= $line;
-                my $line2 = <TR3>;
-                $mtp_diag_msg .= $line2;
-                if ($line2 =~ m/0xffff/) {
-                    $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
-                } else {
-                    $diag_fa_code{"ETH1/3_PORT_DOWN"} = 1;
-                }
-            }
-        }
-        if ($mtp_diag_msg ne "") {
-            $test_err_msg .= "\n--------mtp_diag log--------: ".$mtpdiagfile."\n";
-            $test_err_msg .= $mtp_diag_msg;
-        }
-        close(TR3);
-    }
     if ($test_err_msg ne "") {
         $all_test_msg .= $test_err_msg;
     }
@@ -1232,6 +1434,8 @@ sub parse_fpga_and_ecc {
     my $j2c_error_linenum = 0;
     my $ecc_reg_linenum = 0;
     my $ecc_not_valid = 0;
+    my $ecc_result_exist = 0;
+    my $ecc_result_err = 0;
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
@@ -1276,7 +1480,7 @@ sub parse_fpga_and_ecc {
                     $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"} = 1;
                     $smbus_err = 1;
                 } else {
-                    if ($3 ne "0x2d") {
+                    if (($3 ne "0x2d") && ($3 ne "0x35")) {
                         $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x21, expected: 0x2d, actual: $3\n";
                         $num_cpld_sts_errors++;
                         $diag_fa_code{"CON_REDIR_FAILURE(0x21)"} = 1;
@@ -1525,12 +1729,21 @@ sub parse_fpga_and_ecc {
             }
         }
 
+        if($line =~ m/FAIL: ECC_EN:/) {
+            $ecc_result_exist = 1;
+            $ecc_result_err = 1;
+            $ecc_sts = $ecc_sts.$line;
+        }
+        if($line =~ m/MSG :: ECC_EN:0x33 ECC_INTERRUPT:0x0/) {
+            $ecc_result_exist = 1;
+            $ecc_result_err = 0;
+        }
         if($line =~ m/S2I Operation timed out/) {
-            print "$line";
+            #print "$line";
             $diag_fa_code{"Bad_J2C"} = 1;
         }
         if($line =~ m/ERROR:i2c_read_count: 1001/) {
-            print "$line";
+            #print "$line";
             $diag_fa_code{"Bad_I2C"} = 1;
         }
         if($line =~ m/fwupdate -p .*-C-92_/) {
@@ -1539,7 +1752,7 @@ sub parse_fpga_and_ecc {
     }
     close(TR3);
 
-    if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0)) {
+    if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0) && ($ecc_result_exist == 0)) {
         print "ECC not dumped\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not dumped";
         my $retest_ts = "2021-11-23_00-00-00";
@@ -1557,7 +1770,7 @@ sub parse_fpga_and_ecc {
         $diag_fa_code{"Bad_J2C"} = 1;
         print "ECC not valid due to bad J2C\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
-    } elsif ($num_ecc_sts_errors == 0) {
+    } elsif (($num_ecc_sts_errors == 0) || ($ecc_result_err == 0)) {
         print "ECC status OK\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
     } else {

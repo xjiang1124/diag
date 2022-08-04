@@ -171,6 +171,12 @@ func AsicL1_TestHdl(argList []string) {
         err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
 
         err = err + runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot) + 1), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)))
+
+        if err != 0 {
+            dcli.Printf("e", "ASIC L1 TEST FAILED\n")
+        } else {
+            dcli.Printf("i", "ASIC L1 TEST PASSED\n")
+        }
     } else {
         err = runCmd.RunVerbose("L1 TEST PASSED", "L1 TEST FAILED", false, "==>", "stdbuf_tclsh.sh", "/home/diag/diag/scripts/asic/l1_test.tcl", sn, strconv.Itoa(int(slot)), mode, strconv.Itoa(int(intLpbk)), vmarg, strconv.Itoa(int(zmqEn)), strconv.Itoa(int(offload)), strconv.Itoa(int(esecEn)), strconv.Itoa(int(simplified)))
     }

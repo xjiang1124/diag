@@ -1,4 +1,5 @@
 from libdefs import NIC_Type
+from libdefs import Factory
 
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
@@ -52,8 +53,8 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES25SWM"] = "03-10"
     diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES25SWM"] = "03-03-2021"
-    goldfw_img["NAPLES25SWM"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES25SWM"] = "01-31-2021"
+    goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["NAPLES25SWM"] = "04-25-2022"
 
     # NAPLES25SWM HPE Cloud (P41851-001)
     cpld_img["P41851"] = "naples25_swm_revA_06082020.bin"
@@ -111,8 +112,8 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES25SWMDELL"] = "00"
     diagfw_img["NAPLES25SWMDELL"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES25SWMDELL"] = "03-03-2021"
-    goldfw_img["NAPLES25SWMDELL"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES25SWMDELL"] = "01-31-2021"
+    goldfw_img["NAPLES25SWMDELL"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["NAPLES25SWMDELL"] = "04-25-2022"
 
     # OCP HPE (P37689-001)
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
@@ -123,11 +124,19 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES25OCP"] = "01-10"
     diagfw_img["NAPLES25OCP"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES25OCP"] = "03-03-2021"
-    goldfw_img["NAPLES25OCP"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES25OCP"] = "01-31-2021"
+    goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["NAPLES25OCP"] = "04-25-2022"
     # OCP DELL (68-0010)
-    diagfw_img["68-0010"] = "naples_diagfw_1.3.1-E-42_1119_uboot.tar"
-    diagfw_dat["68-0010"] = "11-18-2020"
+    cpld_img["68-0010"] = "NAPLES25_OCP_REV0B_03102021.bin"
+    cpld_ver["68-0010"] = "0xB"
+    cpld_dat["68-0010"] = "01-10"
+    sec_cpld_img["68-0010"] = "NAPLES25_OCP_REV8B_03102021.bin"
+    sec_cpld_ver["68-0010"] = "0x8B"
+    sec_cpld_dat["68-0010"] = "01-10"
+    diagfw_img["68-0010"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
+    diagfw_dat["68-0010"] = "03-03-2021"
+    goldfw_img["68-0010"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["68-0010"] = "04-25-2022"
 
     cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
     cpld_ver["NAPLES25SWM833"] = "0x2"
@@ -160,8 +169,8 @@ class NIC_IMAGES:
     sec_cpld_dat["NAPLES100HPE"] = "03-10"
     diagfw_img["NAPLES100HPE"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
     diagfw_dat["NAPLES100HPE"] = "03-03-2021"
-    goldfw_img["NAPLES100HPE"] = "naples_goldfw_iris_1.3.1-E-45_2021.01.31.tar"
-    goldfw_dat["NAPLES100HPE"] = "01-31-2021"
+    goldfw_img["NAPLES100HPE"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
+    goldfw_dat["NAPLES100HPE"] = "04-25-2022"
     # Cloud release
     cpld_img["P41854"] = "naples100_hpe_rev2_01052021.bin"
     cpld_ver["P41854"] = "0x2"
@@ -736,9 +745,10 @@ DDR_HARCODED_TRAINING_NIC_LIST = [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI]
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 FLX_PENANG_SN_FMT = "FP[N|A|B]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+FLX_P1_SN_FMT           = "FPC\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
-NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
+NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT,FLX_P1_SN_FMT)
 HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
 DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F)"
@@ -755,6 +765,7 @@ DELL_PPID_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_PENAN
 DELL_PPID_PN_FMT = DELL_PPID_PART_NUM_FMT + DELL_PPID_REV_FMT
 FLX_MILPITAS_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_MILPITAS_SN_FMT, HP_MILPITAS_SN_FMT, DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_MILPITAS_FMT)
 FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PENANG_SN_FMT, DELL_PPID_PENANG_SN_FMT,DELL_PPID_PENANG_FMT)
+FLX_P1_BUILD_SN_FMT = r"{:s}".format(FLX_P1_SN_FMT)
 DELL_BUILD_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT, DELL_PPID_PENANG_SN_FMT)
 NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
 NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
@@ -792,6 +803,25 @@ MTP_INTERNAL_MGMT_IP_ADDR = "10.1.1.100"
 MTP_INTERNAL_MGMT_NETMASK = "255.255.255.0"
 
 
+Factory_network_config = {
+    Factory.FSP: {
+        "Networks": [u"192.168.1.0/24", u"192.168.2.0/24", u"192.168.3.0/24", u"192.168.4.0/24"],
+        "Flexflow": "10.206.9.68"
+    },
+    Factory.MILPITAS: {
+        "Networks": [u"192.168.5.0/24"],
+        "Flexflow": "10.20.33.140"
+    },
+    Factory.P1: {
+        "Networks": [u"192.168.8.0/22"],
+        "Flexflow": "10.192.39.48"
+    },
+    Factory.LAB: {
+        "Networks": [u"192.168.68.0/22"],
+        "Flexflow": ""
+    }
+}
+
 # Don't touch the following xml format, it is required for flex flow report
 
 # Milpitas flex server
@@ -803,7 +833,7 @@ FLX_SAVE_UUT_RSLT_SOAP = "http:/www.flextronics.com/FFTester20/SaveResult"
 # Penang flex server
 #FLX_PENANG_WEBSERVER = "10.192.155.61"
 #FLX_PENANG_WEBSERVER = "172.30.178.5"
-FLX_PENANG_WEBSERVER = "10.206.9.16"
+#FLX_PENANG_WEBSERVER = "10.206.9.16"
 FLX_PENANG_API_URL = "/FFTesterWS_PENSANDO/FFTesterWS.asmx"
 FLX_PENANG_GET_UUT_INFO_SOAP = "http://www.flextronics.com/FFTesterWS/GetUnitInfo"
 FLX_PENANG_SAVE_UUT_RSLT_SOAP = "http://www.flextronics.com/FFTesterWS/SaveResult"

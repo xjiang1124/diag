@@ -1644,7 +1644,7 @@ func Pci_scan(skipelba uint32)(err int) {
     if err = pci_scan_devices(skipelba); err != errType.SUCCESS {
         cli.Printf("e", "Failed to Scan PCI Devices\n")
         err = errType.FAIL
-        return
+        goto endCPUpciscan
     }
     cli.Printf("i", " Checking PCI Devices Against Expected List\n");
     for i:=0; i < len(pci_table); i++ {
@@ -1673,7 +1673,7 @@ func Pci_scan(skipelba uint32)(err int) {
             err = errType.FAIL
             Print_List("Expected Table", pci_table ) 
             Print_List("Read Table from PCI", g_pci_tbl) 
-            return
+            goto endCPUpciscan
         } else {
             cli.Printf("i", "  %.02x:%.02x:%.02x %.04x:%.04x %s\n", pci_table[i].bus, 
                                                        pci_table[i].dev, 
@@ -1690,6 +1690,13 @@ func Pci_scan(skipelba uint32)(err int) {
             }
         }
 
+    }
+
+endCPUpciscan:
+    if err == errType.SUCCESS {
+        cli.Printf("i", "CPU PCISCAN TEST PASSED\n\n")
+    } else {
+        cli.Printf("e", "CPU PCISCAN TEST FAILED\n\n")
     }
     return
 }

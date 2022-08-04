@@ -1088,7 +1088,7 @@ class nic_con:
         self.uart_session_cmd(session, "setenv mem_dp_tot_size 26G", 30, expstr)
         self.uart_session_cmd(session, "setenv mem_bypass_size 0", 30, expstr)
         self.uart_session_cmd(session, "setenv mem_dp_tot_size 26G", 30, expstr)
-        self.uart_session_cmd(session, "setenv bootargs isolcpus=2,3,6,7,10,11,14,15 nohz_full=2,3,5,7,10,11,14,15 rcu_nocbs=2,3,6,7,10,11,14,15 rcu_nocb_poll irqaffinity=0-1 console=ttyS0,115200n8", 30, expstr)
+        self.uart_session_cmd(session, "setenv bootargs isolcpus=2,3,6,7,10,11,14,15 nohz_full=2,3,6,7,10,11,14,15 rcu_nocbs=2,3,6,7,10,11,14,15 rcu_nocb_poll irqaffinity=0-1 console=ttyS0,115200n8", 30, expstr)
         self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_cmd(session, "saveenv", 30, expstr)
         self.uart_session_stop(session)

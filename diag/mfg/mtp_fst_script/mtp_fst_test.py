@@ -184,15 +184,12 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     elif "goldfw" in cmd_buf:
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into goldfw", level=0)
     elif "extdiag" in cmd_buf:
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.POMONTEDELL:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into extdiag", level=0)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into extdiag", level=0)
     elif "diagfw" in cmd_buf:
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in FPGA_TYPE_LIST and mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.POMONTEDELL:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Booted into diagfw", level=0)
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
 
 
     cmd = "/nic/tools/fwupdate -l"
@@ -213,7 +210,7 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw", "extdiag"]:
         if nic_type in FPGA_TYPE_LIST and (partition == "mainfwa" or partition == "mainfwb"):
             continue
-        if nic_type != NIC_Type.POMONTEDELL and partition == "extdiag":
+        if nic_type not in FPGA_TYPE_LIST and partition == "extdiag":
             continue
         try:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
@@ -325,12 +322,12 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                 fail_list.append(slot)
                 pass_list.remove(slot)
                 continue
-        ### OR VERIFY TO GOLDUEFI POMONTEDELL
-        elif nic_type == NIC_Type.POMONTEDELL:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Verify boot from golduefi")
+        ### OR VERIFY TO EXTDIAG POMONTEDELL
+        elif nic_type in FPGA_TYPE_LIST:
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Verify boot from extdiag")
             cmd = "/nic/tools/fwupdate -r"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed for verify boot from golduefi")
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed for verify boot from extdiag")
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
                 fail_list.append(slot)
                 pass_list.remove(slot)
@@ -338,22 +335,22 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
             else:
                 cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
                 if "extdiag" in cmd_buf:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Verify boot from golduefi Pass", level=0)
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Verify boot from extdiag Pass", level=0)
                 else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Verify boot from golduefi Fail", level=0)
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Verify boot from extdiag Fail", level=0)
                     fail_list.append(slot)
                     pass_list.remove(slot)
                     continue
         ### OR SWITCH TO GOLDUEFI 
-        elif nic_type in FPGA_TYPE_LIST:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to golduefi")
-            cmd = "/nic/tools/fwupdate -s diagfw"
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to diagfw")
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
-                fail_list.append(slot)
-                pass_list.remove(slot)
-                continue
+        # elif nic_type in FPGA_TYPE_LIST:
+        #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to extdiag")
+        #     cmd = "/nic/tools/fwupdate -s extdiag"
+        #     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+        #         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to extdiag")
+        #         mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        #         fail_list.append(slot)
+        #         pass_list.remove(slot)
+        #         continue
 
     return pass_list, fail_list
 
@@ -472,6 +469,8 @@ def main():
         fst = 1
     elif mtp_capability == 0x5:
         fst = 2
+    elif mtp_capability == 0x6:
+        fst = 3
 
     # local log files
     log_filep_list = list()
@@ -657,13 +656,13 @@ def main():
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
-    for slot in pass_nic_list:
+    for slot in pass_nic_list + fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, FF_Stage.FF_FST, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-            if slot in fail_nic_list:
-                pass_nic_list.remove(slot)
+            if sn is not None and len(sn) > 0:
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, FF_Stage.FF_FST, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+    pass_nic_list = [i for i in pass_nic_list if i not in fail_nic_list]
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)

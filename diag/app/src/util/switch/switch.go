@@ -55,6 +55,12 @@ func main() {
         fmt.Printf(" %s \n", errhelp)
         return
     }
+
+    if os.Args[1] == "grep" {
+        wc, _ := taormina.Grep_syslog_wc(os.Args[2])
+        fmt.Printf(" WC=%d\n\n", wc)
+    }
+    
     if os.Args[1] == "fanstuck" {
          if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
@@ -93,7 +99,24 @@ func main() {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        if os.Args[2] == "tl" {
+        if os.Args[2] == "testinit" {
+            rc := td3.BCMShell_Test_Init()
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        }
+        if os.Args[2] == "testrun" {
+            testnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            rc := td3.BCMshell_Test_Run(int(testnumber))
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        }
+        if os.Args[2] == "testresult" {
             testnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
             loop, runcnt, passcnt, failcnt, _ := td3.BCMshell_Test_Results(int(testnumber))
             fmt.Printf(" LoopCnt=%d\n", loop)
@@ -181,7 +204,7 @@ func main() {
             var dumptemperature uint32 = 1
             var data32 uint32
             var pkt_length, pkt_pattern uint64 = 0, 0  
-            var TD3MaxTemp, ElbaMaxTemp, Fanspeed int = 85, 75, 00 //00 fanspeed means dont set it.. just use what is running
+            var TD3MaxTemp, ElbaMaxTemp, Fanspeed int = 85, 85, 00 //00 fanspeed means dont set it.. just use what is running
             var extraArg bool
             var test_type uint32 = td3.SNAKE_TEST_LINE_RATE
 
@@ -253,6 +276,13 @@ func main() {
             }
         } else if os.Args[2] == "printvlan" {
             td3.PrintBCMShellVLANcmd()
+        } else if os.Args[2] == "test" {
+            rc := td3.TD3_Run_Diags()
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
         }
     } else if os.Args[1] == "elba" {
         if os.Args[2] == "vrmfix" {
@@ -263,13 +293,25 @@ func main() {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
             fmt.Printf(" Checkking PCI LINK:\n"); 
-            e := taormina.Elba_Check_Pci_Link(int(elba), 0, 1) 
+            e := taormina.Elba_Check_Pci_Link(int(elba), 0, 0) 
             if e != errType.SUCCESS {
                 cli.Printf("i", "Checking PCI Link FAILED\n")
                 os.Exit(-1) 
             } else {
                 cli.Printf("i", "Checking PCI Link PASSED\n")
                 os.Exit(0)
+            }
+        } else if os.Args[2] == "checkecc_console" {
+            elba, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            fmt.Printf(" Checkking for ECC Errors:\n"); 
+            e := taormina.ElbaCheckECC_via_console(uint32(elba), 1, 0) 
+            if e == 0 {
+                fmt.Printf(" passed\n")
+            } else {
+                fmt.Printf(" failed\n")
             }
         } else if os.Args[2] == "checkecc" {
             elba, err := strconv.ParseUint(os.Args[3], 0, 32)
@@ -303,6 +345,38 @@ func main() {
                 os.Exit(0)
             }
             return
+        } else if os.Args[2] == "edma1" || os.Args[2] == "EDMA1" {  
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rc := taormina.ElbaEDMA_Test(uint32(mask), 1, 200) 
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+            return
+        } else if os.Args[2] == "edma2" || os.Args[2] == "EDMA2" {  
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rc := taormina.ElbaEDMA_Test_WRPAD(uint32(mask), 1, 200) 
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+            return
         } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //edmatest
             if argc < 4 {
                 fmt.Printf(" %s \n", errhelp)
@@ -312,7 +386,7 @@ func main() {
             if err != nil {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
-            rc := taormina.ElbaEDMA_Test(uint32(mask), 1) 
+            rc := taormina.ElbaEDMA_Test(uint32(mask), 1, 100) 
             if rc != errType.SUCCESS {
                 os.Exit(-1) 
             } else {
@@ -424,7 +498,7 @@ func main() {
             return
         }
         if os.Args[2][0] == 'l' || os.Args[2][0] == 'L' {
-            ps_output, err := td3.ExecBCMshellCMD("ps")
+            ps_output, err := td3.ExecBCMshellCMD("ps", 5)
             if err != errType.SUCCESS {
                 return
             }

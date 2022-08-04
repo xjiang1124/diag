@@ -4191,6 +4191,7 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
         nic_cmd_list.append("dmesg | tail -n20")
+        nic_cmd_list.append("dmesg | grep mmc")
         nic_cmd_list.append("mount")
 
         for nic_cmd in nic_cmd_list:

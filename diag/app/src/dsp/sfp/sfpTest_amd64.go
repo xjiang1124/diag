@@ -117,6 +117,11 @@ func SfpI2CHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
 ReturnI2Chdl:
+    if ret != 0 {
+        dcli.Printf("e", "SFP I2C TEST FAILED\n")
+    } else {
+        dcli.Printf("i", "SFP I2C TEST PASSED\n")
+    }
     diagEngine.FuncMsgChan <- ret
     
     return
@@ -196,6 +201,11 @@ func SfpLaserHdl(argList []string) {
     // Inform diag engine that test handler is done
     // Use chan to return error code
 Return:
+    if err != 0 {
+        dcli.Printf("e", "SFP LASER TEST FAILED\n")
+    } else {
+        dcli.Printf("i", "SFP LASER TEST PASSED\n")
+    }
     diagEngine.FuncMsgChan <- err
     
     return

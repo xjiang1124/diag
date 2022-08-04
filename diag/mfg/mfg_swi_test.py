@@ -27,6 +27,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import FPGA_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -95,7 +96,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
         return
     libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
+        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
     cmd = "rm -rf {:s}".format(test_log_file)
     os.system(cmd)
     return
@@ -304,6 +305,19 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
+                if card_type in FPGA_TYPE_LIST:
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer1_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.timer2_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):

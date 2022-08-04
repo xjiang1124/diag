@@ -468,6 +468,13 @@ def single_uut_fw_program(stage,
                 else:
                     mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+        if uut_id not in fail_uut_list:
+            if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
+                if uut_id in pass_uut_list:
+                    pass_uut_list.remove(uut_id)
+                if uut_id not in fail_uut_list:
+                    fail_uut_list.append(uut_id)
+
         # copy additional logs
         mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
     

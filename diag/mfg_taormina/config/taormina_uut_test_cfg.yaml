@@ -35,6 +35,7 @@ MTP_PRE:
 MTP_PARA:
     SNAKE_TOR: True
     PRBS_TOR: True
+    PCI_TOR: True
     LED_TEST: False
 
 TOR_DSP:
@@ -120,6 +121,14 @@ TOR_DSP:
                 SN: No
                 SLOT: No
         ELBA_EDMA_TEST:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
+    BCM:
+        TD3DIAG:
             INIT: ""
             POST: ""
             OPTS:
