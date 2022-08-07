@@ -6753,8 +6753,58 @@ class mtp_ctrl():
             return False
         return True
 
+    def tor_pcie_rescan(self, slot):
+        """ remove pcie resources and scan back """
+        # cmd = "/home/diag/diag/util/fpgautil power on e{:d}".format(slot)
+        # if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.TOR_POWER_ON_DELAY + MTP_Const.TOR_PCIE_SCAN_DELAY):
+        #     return False
+
+        bus = NIC_IP_Address.PCI_BUS[slot]
+        cmd = "echo 1 > /sys/bus/pci/devices/00{:s}.0/remove".format(bus)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "rmmod ionic"
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "echo 1 > /sys/bus/pci/rescan"
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "lspci -s {:s}".format(bus)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        return True
+
     @single_slot_test("DL", "NIC_MEMTUN_INIT")
     def tor_nic_memtun_init(self, slot):
+        bus = NIC_IP_Address.PCI_BUS[slot]
+        cmd = "lspci -s {:s}".format(bus)
+        if not self._nic_ctrl_list[slot].mtp_get_info(cmd):
+            return False
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        if cmd_buf:
+            if bus in cmd_buf and "1dd8:0002" in cmd_buf:
+                fpo = False
+            else:
+                # try to bringup pcie with first-power-on procedure
+                fpo = True
+        else:
+            # try to bringup pcie with first-power-on procedure
+            fpo = True
+
+        if fpo:
+            if not self._nic_ctrl_list[slot].nic_dummy_fru():
+                self.cli_log_slot_err(slot, "Failed to bringup PCIE with dummy FRU")
+                return False
+
+            # pcie rescan is included in power on
+            if not self.tor_pcie_rescan(slot):
+                self.cli_log_slot_err(slot, "Failed to rescan pcie")
+                return False
+
         ret = False
         for x in range(2):
             self.cli_log_slot_inf(slot, "Opening memtun")
@@ -6764,7 +6814,7 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_err(slot, "Failed to init memtun")
                 cmd = "ps -A | grep memtun"
-                if not self.self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                     self.cli_log_slot_err(slot, "{:s} failed".format(cmd))
 
         return ret
