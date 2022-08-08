@@ -785,6 +785,12 @@ def main():
         mtp_mgmt_ctrl._slots = 2
 
     try:
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("Unable to connect UUT chassis, test abort...")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+            return
+
         if not mtp_mgmt_ctrl.tor_diag_init(corner):
             mtp_mgmt_ctrl.mtp_diag_fail_report("UUT common setup fails, test abort...")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)

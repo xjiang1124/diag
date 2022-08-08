@@ -109,7 +109,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
-    for test in ["OS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT", "FRU_INIT", "MGMT_INIT_OS", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+    for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
         if test in skip_test:
             continue
 
@@ -137,8 +137,6 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
         # read FRU the first time
         elif test == "FRU_INIT":
             ret = mtp_mgmt_ctrl.tor_fru_init()
-        elif test == "MGMT_INIT_OS":
-            ret = mtp_mgmt_ctrl.tor_mgmt_init(False)
         elif test == "NIC_INIT":
             ret = mtp_mgmt_ctrl.tor_nic_init()
         elif test == "NIC_MAINFW_SET":

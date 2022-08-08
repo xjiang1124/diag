@@ -219,7 +219,6 @@ def single_uut_fw_program(stage,
                     "ISP_ENABLE",
                     "SHIP_OS_PROG",
                     "OS_S_BOOT",
-                    "MGMT_INIT_OS",
                     "ISP_DISABLE",
                     "OS_VERIFY",
                     "DIAG_INIT",
@@ -364,7 +363,7 @@ def single_uut_fw_program(stage,
 
         if uut_id not in fail_uut_list:
 
-            testlist = ["OS_S_BOOT", "MGMT_INIT_OS", "NIC_INIT"]
+            testlist = ["OS_S_BOOT", "NIC_INIT"]
 
             for skipped_test in skip_testlist:
                 if skipped_test in testlist:

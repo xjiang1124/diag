@@ -5199,8 +5199,18 @@ class mtp_ctrl():
         if not self.mtp_console_connect():
             self.cli_log_err("Failed to connect console", level=0)
             return False
-            
+
         if selection > 0:
+            # get IP
+            if not self.tor_get_ip():
+                self.cli_log_err("Failed to obtain IP", level=0)
+                return False
+
+            # switch to ssh
+            if not self.mtp_mgmt_connect():
+                self.cli_log_err("Unable to connect UUT chassis", level=0)
+                return False
+
             start=datetime.now()
             if stopreboot and not self._secure_login:
                 self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", sig_list=["#"], timeout=10)
@@ -6567,22 +6577,6 @@ class mtp_ctrl():
         return True
 
     def tor_diag_init(self, stage, fpo=False):
-        if fpo and not self._mgmt_cfg:
-            # console to get IP
-            if not self.mtp_console_connect():
-                self.cli_log_err("Unable to console to UUT chassis", level=0)
-                return False
-
-            # get IP
-            if not self.tor_get_ip():
-                self.cli_log_err("Failed to obtain IP", level=0)
-                return False
-
-        # switch to ssh
-        if not self.mtp_mgmt_connect(prompt_cfg=True):
-            self.cli_log_err("Unable to connect UUT chassis", level=0)
-            return False
-
         homedir = self.get_homedir()
         if fpo:
             # One-time steps related to running the diag image
