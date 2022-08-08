@@ -3175,11 +3175,11 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
-            if software_pn != "90-0017-0001":
+            if software_pn != "90-0017-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
-            if software_pn != "90-0017-0001":
+            if software_pn != "90-0017-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
@@ -3399,15 +3399,15 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "main": NIC_IMAGES.cpld_img[nic_type],
-            "gold": NIC_IMAGES.fail_cpld_img[nic_type],
-            "timer1": NIC_IMAGES.timer1_img[nic_type],
-            "timer2": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": NIC_IMAGES.cpld_img[nic_type],
+            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
+            "cfg2": NIC_IMAGES.timer1_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
-            program_sequence = ["gold", "timer1", "main", "timer2"]
+            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
         else:
-            program_sequence = ["main"]
+            program_sequence = ["cfg0"]
         for partition in program_sequence:
             img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
@@ -3427,6 +3427,8 @@ class mtp_ctrl():
         # cpldapp -verifyflash ./lac2_dell_main_2_3.bin
         # cpldapp -verifyflash ./timer2.bin cfg3
         """
+        nic_type = self.mtp_get_nic_type(slot)
+
         if nic_type not in FPGA_TYPE_LIST:
             self.cli_log_slot_err(slot, "This fpga verify function not support for this NIC type!")
             return False

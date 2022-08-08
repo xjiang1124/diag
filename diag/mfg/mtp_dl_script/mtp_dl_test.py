@@ -172,7 +172,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.POMONTEDELL:
         testlist = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        testlist = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
+        testlist = ["FRU_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.NAPLES100DELL:
         testlist = ["FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:

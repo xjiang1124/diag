@@ -174,7 +174,7 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
     if nic_type == NIC_Type.POMONTEDELL:
         test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        test_list = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
+        test_list = ["FRU_PROG", "FPGA_PROG", "FPGA_PROG_VERIFY", "UBOOT_PROG", "QSPI_PROG"]
 
     dsp = FF_Stage.FF_DL
 

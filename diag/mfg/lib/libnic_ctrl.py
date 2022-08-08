@@ -1400,7 +1400,7 @@ class nic_ctrl():
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
             nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition)
-            if not self.nic_exec_cmd_get_rslt(nic_fgpa_cmd, timeout=180):
+            if not self.nic_exec_cmd_get_rslt(nic_fgpa_cmd, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
                 return False
 
             cmd_buf = self.nic_get_cmd_buf()
@@ -1479,7 +1479,7 @@ class nic_ctrl():
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
             timeout = MTP_Const.OS_CMD_DELAY
         elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
             timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
         else:
