@@ -5707,9 +5707,6 @@ class mtp_ctrl():
         else:
             usb_tarball = TOR_IMAGES.usb_tarball[self.uut_type]
             self.cli_log_inf("Downloading USB tarball")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
             if not self.mtp_mgmt_exec_cmd("tftp -g -r {:s}/{:s} {:s} -b 65000".format(TOR_IMAGES.TFTP_SERVER_DIR, usb_tarball, TOR_IMAGES.TFTP_SERVER_IP), sig_list=["100%"]):
                 return False
             self.mtp_mgmt_exec_cmd("tar xf /cli/fs/home/{:s} -C /".format(usb_tarball))
@@ -5747,9 +5744,6 @@ class mtp_ctrl():
         i210_img = "Dev_Start_I210_Copper_NOMNG_4Mb_A2.bin"
         i210_prog_cmd = "./eeupdate64e.dat /nic=1 /d {:s}".format(i210_img)
         i210_pass_sig = "Shared Flash image updated successfully."
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         self.mtp_mgmt_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         if not self.mtp_mgmt_exec_cmd(i210_prog_cmd, sig_list=[i210_pass_sig], timeout=MTP_Const.TOR_I210_PROG_DELAY):
             return False
@@ -5765,9 +5759,6 @@ class mtp_ctrl():
 
         i210_prog_cmd = "./eeupdate64e.dat /nic=1 /mac={:s}".format(mac)
         i210_pass_sig = "Updating Checksum and CRCs...Done"
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         self.mtp_mgmt_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         if not self.mtp_mgmt_exec_cmd(i210_prog_cmd, sig_list=[i210_pass_sig]):
             return False
@@ -5899,9 +5890,6 @@ class mtp_ctrl():
 
     def tor_led_test(self, color):
         result = True
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         self.mtp_mgmt_exec_cmd("cd /fs/selftest")
         self.mtp_mgmt_exec_cmd("./led.bash {}".format(color)) 
@@ -5928,9 +5916,6 @@ class mtp_ctrl():
         return result
 
     def tor_svos_led_usb_setup(self, usb_img):
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         self.cli_log_inf("Downloading USB image")
 
@@ -5948,10 +5933,6 @@ class mtp_ctrl():
 
     def tor_check_fpgautil(self):
         util_img = TOR_IMAGES.TFTP_SERVER_DIR+"diag/util/fpgautil"
-        if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to console to board", level=0)
-                return False
 
         cmd = "ls {:s}*".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5979,10 +5960,6 @@ class mtp_ctrl():
         """
 
         qspi_img = TOR_IMAGES.first_article_img[self._uut_type]
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         if not self.tor_check_fpgautil():
             return False
@@ -6020,10 +5997,6 @@ class mtp_ctrl():
         }
 
         articles = ["flash_boot0", "flash_uboot_gold", "flash_fw_gold", "flash_uboot_primary", "flash_fw_primary"]
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         if not self.tor_check_fpgautil():
             return False
@@ -6071,12 +6044,8 @@ class mtp_ctrl():
             self.cli_log_err("Unable to update eeupdate directory", level=0)
             return False
 
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-
-        if not self.mtp_console_enter_shell("mkdir -p {}".format(uut_img_dir)):
-            self.cli_log_err("Unable to init bash shell", level=0)
+        if not self.mtp_mgmt_exec_cmd("mkdir -p {}".format(uut_img_dir)):
+            self.cli_log_err("Unable to create util folder", level=0)
             return False
         if download:
             for eachutil_img in util_img:
@@ -6114,10 +6083,6 @@ class mtp_ctrl():
 
     def tor_os_prog(self, os_img, download=True, powercycle_after_prog=False):
         uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         if download:
             self.cli_log_inf("Downloading OS image")
@@ -6194,9 +6159,6 @@ class mtp_ctrl():
         #     return
         mac_ui = libmfg_utils.mac_address_format(mac, ":")     #00ABCDEFGH -> 00:AB:CD:EF:GH
         prog_date = libmfg_utils.hpe_date_format(prog_date) #YYYY-MM-DD_hh-mm-ss -> MM/DD/YYYY HH:MM:SS
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
@@ -6365,9 +6327,6 @@ class mtp_ctrl():
         # if not self.mtp_console_connect():
         #     self.cli_log_err("Unable to telnet to UUT Chassis", level=0)
         #     return
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
@@ -6498,10 +6457,6 @@ class mtp_ctrl():
 
     def tor_fru_init(self):
         """ Read FRU and save it into object's _sn, _mac, _pn """
-        if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to enter shell")
-                return False
         self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT)
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["TPM Serial Number:"])
         cmd_buf = self._mgmt_handle.before
@@ -6647,9 +6602,6 @@ class mtp_ctrl():
 
     def tor_board_id(self):
         if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to console to board", level=0)
-                return False
 
             if not self.tor_check_fpgautil():
                 return False
@@ -7099,16 +7051,9 @@ class mtp_ctrl():
         # uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
         uut_img_dir = "/"
 
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-
         # if download:
         if not self.tor_svos_verify(ship_img):
             self.cli_log_inf("Downloading SVOS image")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
 
             cmd = "cd {:s}".format(uut_img_dir)
             if not self.mtp_mgmt_exec_cmd(cmd):
@@ -7134,10 +7079,6 @@ class mtp_ctrl():
 
     def tor_svos_verify(self, ship_img=False):
         if not self.tor_svos_init():
-            return False
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
             return False
 
         got_date = self._svos_dat
@@ -7484,9 +7425,6 @@ class mtp_ctrl():
             self.cli_log_inf("CPLD is up-to-date")
             return True
         self.cli_log_inf("Downloading CPLD image")
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to console to board", level=0)
-            return False
 
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
@@ -7652,9 +7590,6 @@ class mtp_ctrl():
 
     def tor_fea_cpld_prog(self, device, cpld_img_file, fpgautil_path=MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH):
         self.cli_log_inf("Downloading CPLD feature row image")
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to console to board", level=0)
-            return False
 
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
@@ -7909,9 +7844,6 @@ class mtp_ctrl():
         return True
 
     def tor_isp_enable(self):
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         cmd = "hpe-isp config show"
         if not self.mtp_mgmt_exec_cmd(cmd):
