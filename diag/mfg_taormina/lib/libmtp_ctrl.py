@@ -1431,8 +1431,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
-        return self.mtp_mgmt_exec_cmd2(cmd, sig_list, timeout)
+    def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+        # return self.mtp_mgmt_exec_cmd2(cmd, sig_list, fail_sig_list, timeout)
+        return self.mtp_mgmt_exec_cmd_no_error_printout(cmd, sig_list, timeout)
 
         rc = True
         self._mgmt_handle.sendline(cmd)
@@ -1478,23 +1479,28 @@ class mtp_ctrl():
             self._cmd_buf = self._mgmt_handle.before
             return True
 
-    def mtp_mgmt_exec_cmd2(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+    def mtp_mgmt_exec_cmd2(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
         self.clear_buffer()
         rc = True
         self._mgmt_handle.sendline(cmd)
         cmd_before = ""
-        for sig in sig_list:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
+        if sig_list:
+            sig_list = pass_sig_list + fail_sig_list
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, sig_list, timeout)
+            cmd_before = self._mgmt_handle.before
             if idx < 0:
                 rc = False
-                cmd_before = self._mgmt_handle.before
-                break
+            elif idx < len(pass_sig_list):
+                rc = True
+            else:
+                rc = False
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
         # signature match fails
         if not rc:
             self.mtp_dump_err_msg(cmd_before)
             return False
         elif idx < 0:
+            print("idx < 0")
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         else:
@@ -6362,7 +6368,7 @@ class mtp_ctrl():
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
             return False
-        if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+        if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
         #time.sleep(1)
@@ -6373,7 +6379,7 @@ class mtp_ctrl():
         for x in range(3):
             if not "TPM Serial Number" in frureadata:
                 time.sleep(3)
-                if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+                if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
                     self.cli_log_err("Unable to display fru")
                     return False
                 #time.sleep(1)
@@ -6385,7 +6391,7 @@ class mtp_ctrl():
 
         if not frureadata["TPM Serial Number"] == pcbasn:
             fru_prog_cmd = MFG_DIAG_CMDS.TOR_FRU_PROG_TPM_FMT.format(pcbasn)
-            if not self.mtp_mgmt_exec_cmd2(fru_prog_cmd):
+            if not self.mtp_mgmt_exec_cmd(fru_prog_cmd):
                 self.cli_log_err("Unable to program fru")
                 return False
 
@@ -6393,7 +6399,7 @@ class mtp_ctrl():
 
         time.sleep(1)
 
-        if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+        if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
         #time.sleep(1)
@@ -6404,7 +6410,7 @@ class mtp_ctrl():
         for x in range(3):
             if not "TPM Serial Number" in frureadata:
                 time.sleep(3)
-                if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+                if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
                     self.cli_log_err("Unable to display fru")
                     return False
                 #time.sleep(1)
@@ -6536,9 +6542,14 @@ class mtp_ctrl():
             return False
 
         # Save pcba SN
-        self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_PCBASN_DISP_FMT)
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt])
-        cmd_buf = self._mgmt_handle.before
+        cmd = MFG_DIAG_CMDS.TOR_PCBASN_DISP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            self.cli_log_err("{:s} returned no output".format(cmd), level=0)
+            return False
         pcbasn_match = re.search(TOR_SN_FMT, cmd_buf)
         if pcbasn_match:
             self._pcbasn = pcbasn_match.group(0)
