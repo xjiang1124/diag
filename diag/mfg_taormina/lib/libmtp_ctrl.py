@@ -7448,29 +7448,42 @@ class mtp_ctrl():
         }
         for _device in devices[device]:
             if _device.startswith("fpga"):
-                self.cli_log_inf("Programming primary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash program primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                if "-dual-" in cpld_img_file:
+                    self.cli_log_inf("Programming {:s}".format(_device))
+                    cmd = "{:s}fpgautil flash program allflash /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Verifying programmed primary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash verify primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Verifying programmed {:s}".format(_device))
+                    cmd = "{:s}fpgautil flash verify allflash /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
+                else:
+                    self.cli_log_inf("Programming primary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash program primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Programming secondary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash program secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Verifying programmed primary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash verify primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Verifying programmed secondary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash verify secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Programming secondary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash program secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
+
+                    self.cli_log_inf("Verifying programmed secondary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash verify secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
                 continue
 
