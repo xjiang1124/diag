@@ -1667,11 +1667,6 @@ class mtp_ctrl():
                 self.cli_log_err("Failed to Init TOR board info", level=0)
                 return False
 
-        self.cli_log_inf("Init NIC Connections", level = 0)
-        ret = self.mtp_nic_para_session_init()
-        if not ret:
-            self.cli_log_err("Init NIC Connections Failed", level = 0)
-            return False
 
         self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
 
