@@ -37,6 +37,7 @@ class mtp_ctrl():
         self._mgmt_handle = None
         self._mgmt_prompt = None
         self._mgmt_timeout = MTP_Const.MTP_POWER_ON_TIMEOUT
+        self._diagmgr_handle = None
         self._ts_cfg = ts_cfg
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
@@ -1606,21 +1607,16 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute env command", level=0)
             return False
 
-        # if self._uut_type == UUT_Type.TOR:            
-        #     cmd = "export PYTHONPATH=/home/diag/python_files/lib/python2.7/site-packages"
-        #     if not self.mtp_mgmt_exec_cmd(cmd):
-        #         self.cli_log_err("{:s} failed".format(cmd))
-        #         return False
-
-        # diag init ended here in DL
-        # if self._uut_type == UUT_Type.TOR:
-        #     self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
-        #     return True
-
         # start the mtp diagmgr
         diagmgr_handle = self.mtp_session_create()
         if not diagmgr_handle:
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+
+        diagmgr_handle.sendline("source /home/root/.profile")
+        idx = libmfg_utils.mfg_expect(diagmgr_handle, libmfg_utils.get_linux_prompt_list())
+        if idx < 0:
+            self.cli_log_err("Failed to Init DiagMgr SW Environment", level=0)
             return False
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(diagmgr_logfile)
@@ -1630,7 +1626,8 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.close()
+        # diagmgr_handle.close()
+        self._diagmgr_handle = diagmgr_handle
 
         # config the prompt
         userid = self._mgmt_cfg[1]
