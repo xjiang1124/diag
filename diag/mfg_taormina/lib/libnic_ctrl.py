@@ -48,7 +48,7 @@ class nic_ctrl():
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
-        self._err_msg = None
+        self._err_msg = ""
         self._cmd_buf = None
 
         self._asic_type = None
@@ -1080,21 +1080,22 @@ class nic_ctrl():
             ip_addr = libmfg_utils.get_nic_ip_addr(self._slot, self._nic_type)
             cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, ip_addr, libmfg_utils.get_ssh_option(), dst_directory)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "assword:"], timeout=MTP_Const.NIC_NETCOPY_DELAY)
         if idx < 0:
             libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg("No prompt back in time")
+            self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
         elif idx == 1:
             self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file", "Exiting with failure"], timeout=MTP_Const.OS_CMD_DELAY)
             if idx < 0:
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 return False
-            if idx == 1:
+            if idx == 1 or idx == 2:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
                 self.nic_set_cmd_buf(self._nic_handle.before)

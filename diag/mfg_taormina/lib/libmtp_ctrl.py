@@ -3220,7 +3220,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
             return False
 
         return True
@@ -3488,43 +3489,46 @@ class mtp_ctrl():
                     return False
         return True
 
-
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, nic_test_rslt_list):
+        ret = True
         nic_type = self.mtp_get_nic_type(slot)
-        if not self.mtp_check_nic_status(slot):
-            return
+        if ret and not self.mtp_check_nic_status(slot):
+            ret = False
 
-        if not self.mtp_nic_emmc_init(slot, emmc_format):
-            return
+        if ret and not self.mtp_nic_emmc_init(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
-            return
+        if ret and not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_start_nic_diag(slot, aapl):
-            return
+        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl):
+            ret = False
 
-        if not self.mtp_nic_cpld_init(slot):
-            return
+        if ret and not self.mtp_nic_cpld_init(slot):
+            ret = False
 
-        if fru_valid:
+        if ret and fru_valid:
             if emmc_format:
                 init_date = False
             else:
                 init_date = True
-            if not self.mtp_nic_fru_init(slot, init_date, nic_type):
-                return
+            if ret and not self.mtp_nic_fru_init(slot, init_date, nic_type):
+                ret = False
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])
-        else:
+        elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
-        if not self.mtp_set_nic_vmarg(slot, vmargin):
-            return
+        if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
+            ret = False
 
-        if not self.mtp_nic_display_voltage(slot):
-            return
+        if ret and not self.mtp_nic_display_voltage(slot):
+            ret = False
 
-        return
+        if not ret:
+            nic_test_rslt_list[slot] = False
+
+        return ret
 
 
     # pre setup for the diag test
@@ -3661,6 +3665,8 @@ class mtp_ctrl():
     #     return True
 
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False):
+        ret = True
+
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -3674,23 +3680,13 @@ class mtp_ctrl():
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
         if self._uut_type == UUT_Type.TOR:
-            # if not self._nic_ctrl_list[0]._in_mainfw:
-            #     if not self.tor_nic_memtun_init():
-            #         self.cli_log_err("memtun init failed", level=0)
-            #         return False
-
-            # Removing validate... pexpect keeps missing the mark
-            # if not self.tor_nic_memtun_validate():
-            #     self.cli_log_err("memtun failed", level=0)
-            #     return False
-
             for slot in range(self._slots):
-                self.mtp_nic_boot_info_init(slot)
+                ret &= self.mtp_nic_boot_info_init(slot)
         else:
             if fpo:
-                self.mtp_nic_mgmt_seq_init(fpo)
+                ret = self.mtp_nic_mgmt_seq_init(fpo)
             else:
-                self.mtp_nic_mgmt_para_init(aapl, swm_lp)
+                ret = self.mtp_nic_mgmt_para_init(aapl, swm_lp)
 
             if not self.mtp_mgmt_nic_mac_validate():
                 return False
@@ -3703,15 +3699,18 @@ class mtp_ctrl():
             start_ts = self.log_slot_test_start(slot, "NIC_DIAG_INIT")
 
         nic_thread_list = list()
+        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in range(self._slots):
             if not self._nic_prsnt_list[slot]:
+                nic_test_rslt_list[slot] = False
                 continue
             nic_thread = threading.Thread(target = self.mtp_single_nic_diag_init,
                                           args = (slot,
                                                   emmc_format,
                                                   fru_valid,
                                                   vmargin,
-                                                  aapl))
+                                                  aapl,
+                                                  nic_test_rslt_list))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -3728,6 +3727,10 @@ class mtp_ctrl():
         for slot in range(self._slots):
             duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
+        for slot in range(self._slots):
+            if not nic_test_rslt_list[slot]:
+                ret &= False
+
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
                 return False
@@ -3737,7 +3740,7 @@ class mtp_ctrl():
         self.mtp_mgmt_killall_tclsh_picocom()
 
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
-        return True
+        return ret
 
     def mtp_single_nic_emmc_reformat(self, slot, nic_rslt_list, emmc_format=True):
         if not self.mtp_nic_emmc_init(slot, emmc_format):
