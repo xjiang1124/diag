@@ -100,7 +100,7 @@ class mtp_ctrl():
         self.uut_type = "TAORMINA"
 
         self._svos_boot = True # set to False once OS is installed
-        self._secure_login = False  #set to True when using signed OS
+        # self._secure_login = False  #set to True when using signed OS
 
         # name is defined by its name in diag fpgautil
         # None/"" = not present
@@ -701,33 +701,55 @@ class mtp_ctrl():
             self._mgmt_handle = None
 
 
-    def mtp_session_create(self):
+    def mtp_session_create(self, logfile=None):
+        if logfile is None:
+            logfile = "/tmp/mtpsession.log"
+        logfilep = open(logfile, "w")
+
         # mgmt_cfg is a list with format [ip, userid, passwd]
         ip = self._mgmt_cfg[0]
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
-        handle = pexpect.spawn(ssh_cmd)
-        idx = libmfg_utils.mfg_expect(handle, ["assword:"])
+        handle = pexpect.spawn(ssh_cmd, logfile=logfilep)
+        idx = libmfg_utils.mfg_expect(handle, ["assword:"], timeout=60)
         if idx < 0:
             self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
             return None
         else:
             handle.sendline(passwd)
 
-        idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
             return None
 
+        ## new CXOS:
+        handle.sendline("sudo su")
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(handle.before)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
+            return None
+        ## end new CXOS
+
         cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+        handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(handle, sig_list, timeout=60)
+        if idx < 0:
             self.cli_log_err("Connect to mtp mgmt failed", level = 0)
             return None
-        else:
-            return handle
+        
+        handle.sendline("stty rows 50 cols 200")
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(handle.before)
+            self.cli_log_err("Cant resize shell after ssh login", level = 0)
+            return None
+
+        return handle
 
 
     def mtp_nic_para_session_init(self):
@@ -740,7 +762,7 @@ class mtp_ctrl():
             handle = self.mtp_session_create()
             if handle:
                 if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
-                    self.cli_log_err("Unable to config MTP session")
+                    self.cli_log_err("Unable to config new ssh session for NIC")
                     return False
                 prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
@@ -780,7 +802,7 @@ class mtp_ctrl():
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"], timeout=60)
             if idx < 0:
                 if retries > 0:
                     self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
@@ -794,12 +816,20 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline(passwd)
                 break
-
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list)
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout=60)
         if idx < 0:
             self.cli_log_err(self._mgmt_handle.before)
-            self.cli_log_err("Connect to mtp failed", level = 0)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
             return None
+
+        ## new CXOS:
+        self._mgmt_handle.sendline("sudo su")
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(self._mgmt_handle.before)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
+            return None
+        ## end new CXOS
 
         self._mgmt_prompt = self._prompt_list[idx]
 
@@ -847,7 +877,7 @@ class mtp_ctrl():
             return False
         idx = libmfg_utils.mfg_expect(handle, [prompt_str])
         if idx < 0:
-            self.cli_log_err("Refresh mtp mgmt timeout", level = 0)
+            self.cli_log_err("Prompt not saved", level = 0)
             return False
 
         return True
@@ -956,7 +986,7 @@ class mtp_ctrl():
         #     return None
         self.mtp_console_spawn()
 
-        secure_login = secure_login or self._secure_login #set either by argument or class variable
+        # secure_login = secure_login or self._secure_login #set either by argument or class variable
 
         delay = MTP_Const.TOR_CONSOLE_CON_DELAY
         retries = 0
@@ -964,8 +994,12 @@ class mtp_ctrl():
         max_retries = 10
         prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "$", "#", ">"]
 
+        # secure_login = True #always
+        fresh_login = False
         while True:
+            time.sleep(1) # this is crucial so that the prompt is safely out of the console buffer (not pexpect buffer)
             self.clear_buffer()
+            time.sleep(1)
             self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, prompt_list)
             if idx < 0:
@@ -998,19 +1032,16 @@ class mtp_ctrl():
             elif idx == 2:
                 continue
             elif idx == 3:
-                if secure_login:
-                    self._mgmt_handle.sendline("admin")
-                else:
-                    self._mgmt_handle.sendline("root")
+                self._mgmt_handle.sendline("admin")
+                fresh_login = True
             elif idx == 4:
                 self._mgmt_handle.sendline("")
-            elif idx == 5 and secure_login:
-                self._mgmt_handle.sendline("sudo su root")
-                self._mgmt_handle.sendline("passwd root")
-                self._mgmt_handle.sendline(TOR_MGMT_PASSWORD)
-                self._mgmt_handle.sendline(TOR_MGMT_PASSWORD)
-                secure_login = False
-            elif idx == 6 and secure_login:
+            elif idx == 5:
+                self._mgmt_handle.sendline("sudo su")
+                # allow scp from outside:
+                self._mgmt_handle.sendline('sed -i "s/admin:\/usr\/bin\/vtysh/admin:\/bin\/sh/g" /etc/passwd')
+                fresh_login = False
+            elif idx == 6 and fresh_login:
                 self._mgmt_handle.sendline("start-shell")
             else:
                 break
@@ -5105,8 +5136,9 @@ class mtp_ctrl():
 
     def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False):
 
-        if secure_login:
-            self._secure_login = True
+        # if selection > 0:
+        #     secure_login = True
+        #     self._secure_login = True
 
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
@@ -5114,8 +5146,8 @@ class mtp_ctrl():
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
 
-        if secure_login:
-            self._secure_login = False
+        # if secure_login:
+        #     self._secure_login = False
 
         return False
 
@@ -5158,7 +5190,12 @@ class mtp_ctrl():
         #     waittimetopowercycleretry = 1800
         #     self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
         waittimetopowercycleretry = 1800
-        self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
+        
+        if selection == 0:
+            self.cli_log_inf("Booting to SvOS", level=0)
+        else:
+            self.cli_log_inf("Booting to CX-OS", level=0)
+
         while True:
             if starttosendselection:
                 self._mgmt_handle.send(str(selection))
@@ -5207,17 +5244,17 @@ class mtp_ctrl():
                 return False
 
             # switch to ssh
-            if not self.mtp_mgmt_connect():
+            if not self.mtp_mgmt_connect(prompt_cfg=True):
                 self.cli_log_err("Unable to connect UUT chassis", level=0)
                 return False
 
             start=datetime.now()
-            if stopreboot and not self._secure_login:
-                self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", sig_list=["#"], timeout=10)
+            # if stopreboot and not self._secure_login:
+            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
             self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
             elba0_ready, elba1_ready = False, False
             while not elba0_ready or not elba1_ready:
-                self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
+                # self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
                 # if self._secure_login:
                 #     self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 #     sig = "ready"
@@ -5227,17 +5264,19 @@ class mtp_ctrl():
                 self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 sig1 = "ready"
                 sig2 = "down"
-                for line in self.mtp_get_cmd_buf().splitlines():
-                    if "DSS-4825-6100" in line and (sig1 in line or sig2 in line):
-                        if "1/1" in line:
-                            elba0_ready = True
-                        if "1/2" in line:
-                            elba1_ready = True
-                if elba0_ready and elba1_ready:
-                    self.cli_log_inf("LAGs Ready")
-                    break
-                if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
-                    return False
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf is not None:
+                    for line in cmd_buf.splitlines():
+                        if "DSS-4825-6100" in line and (sig1 in line or sig2 in line):
+                            if "1/1" in line:
+                                elba0_ready = True
+                            if "1/2" in line:
+                                elba1_ready = True
+                    if elba0_ready and elba1_ready:
+                        self.cli_log_inf("LAGs Ready")
+                        break
+                    if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
+                        return False
                 difftime = datetime.now()-start
                 seconds = difftime.total_seconds()
                 if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
@@ -5743,12 +5782,13 @@ class mtp_ctrl():
             return False
         cmd_buf = self.mtp_get_cmd_buf()
         ip_match = re.search("inet addr:((?:[0-9]{1,3}\.){3}[0-9]{1,3})", cmd_buf)
+
         if ip_match:
             self.cli_log_inf("Obtained IP {:s}".format(ip_match.group(1)))
             self._mgmt_cfg = list()
             self._mgmt_cfg.append(ip_match.group(1))
-            self._mgmt_cfg.append("root")
-            self._mgmt_cfg.append(TOR_MGMT_PASSWORD)
+            self._mgmt_cfg.append("admin")
+            self._mgmt_cfg.append("")
             return True
         else:
             return False
@@ -6573,6 +6613,9 @@ class mtp_ctrl():
             else:
                 self._nic_prsnt_list[slot] = False
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+
+            if not self.mtp_mgmt_exec_cmd_para(slot, "source /home/root/.profile"):
+                self.cli_log_slot_err(slot, "Couldn't initialize NIC env vars")
 
         return True
 
@@ -7926,7 +7969,7 @@ class mtp_ctrl():
 
         return True
 
-    def tor_copy_sys_log(self, dest_folder):
+    def tor_copy_sys_log(self, dest_folder, local_copy=False):
         self.cli_log_inf("Copying system logs", level=0)
 
         mtp_mgmt_cfg = self.get_mgmt_cfg()
@@ -7954,13 +7997,22 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Couldn't save system logfile safely", level=0)
                 continue
+            cmd = "chmod +r /{:s}".format(os.path.basename(filename))
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Couldn't change system logfile permissions", level=0)
+                continue
             filename = "/"+os.path.basename(filename)
             dest_name = dest_folder + filename
             if not dest_name.endswith(".log"):
                 dest_name = dest_name + ".log"
-            if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
-                self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
-                continue
+            if local_copy:
+                if not self.mtp_mgmt_exec_cmd("cp {:s} {:s}".format(filename, dest_name)):
+                    self.cli_log_err("Unable to copy UUT system log file {:} locally".format(filename), level=0)
+                    continue
+            else:
+                if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
+                    self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
+                    continue
 
         handle = pexpect.spawn("ls {:s}".format(dest_folder))
         handle.expect("$")

@@ -783,6 +783,7 @@ def main():
     if mtp_mgmt_ctrl._uut_type == UUT_Type.TOR:
         mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
         mtp_mgmt_ctrl._slots = 2
+        mtp_mgmt_ctrl._secure_login = True
 
     try:
         if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True):
@@ -1089,7 +1090,7 @@ def main():
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             # save the x86 system logs
-            mtp_mgmt_ctrl.tor_copy_sys_log(mtp_script_dir)
+            mtp_mgmt_ctrl.tor_copy_sys_log(mtp_script_dir, local_copy=True)
             # clean up logfiles for the next run
             cmd = "cleanup.sh"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
