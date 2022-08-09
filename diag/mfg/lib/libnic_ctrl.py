@@ -1396,7 +1396,8 @@ class nic_ctrl():
         return True
 
     def nic_verify_fpga(self, cpld_img, partition=""):
-        # Elba-fpga-based:
+        if not self.nic_copy_image(cpld_img):
+            return False
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
             nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition)

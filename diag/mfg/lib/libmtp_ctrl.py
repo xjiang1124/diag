@@ -3444,7 +3444,7 @@ class mtp_ctrl():
         else:
             program_sequence = ["cfg0"]
         for partition in program_sequence:
-            img = partition_img_dict[partition]
+            img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_verify_fpga(img, partition):
                 self.cli_log_slot_err_lock(slot, "Verify NIC FPGA from partition {:s} failed".format(partition))
                 self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
