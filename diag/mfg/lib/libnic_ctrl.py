@@ -353,7 +353,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         con_ts = libmfg_utils.timestamp_snapshot()
-        ts_record_cmd = "######## {:s} ########".format(str(con_ts))
+        ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
@@ -402,7 +402,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=3)
 
         con_ts = libmfg_utils.timestamp_snapshot()
-        ts_record_cmd = "######## {:s} ########".format(str(con_ts))
+        ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=4)
 

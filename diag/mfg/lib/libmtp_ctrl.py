@@ -164,7 +164,7 @@ class mtp_ctrl():
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(testname, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
         return start
 
@@ -173,7 +173,7 @@ class mtp_ctrl():
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
         return duration
 
@@ -181,7 +181,7 @@ class mtp_ctrl():
         # log the timestamp in MTP log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(testname, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd(ts_record_cmd)
         return start
 
@@ -190,7 +190,7 @@ class mtp_ctrl():
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd(ts_record_cmd)
         return duration
 
@@ -3920,7 +3920,7 @@ class mtp_ctrl():
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp {:s} fail debug".format(test)))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -3960,7 +3960,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp {:s} fail debug".format(test)))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -5797,7 +5797,7 @@ class mtp_ctrl():
         if slot is None:
             ts = libmfg_utils.timestamp_snapshot()
             ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
             self.mtp_mgmt_exec_cmd(ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
@@ -5816,7 +5816,7 @@ class mtp_ctrl():
         else:
             ts = libmfg_utils.timestamp_snapshot()
             ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
             self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
