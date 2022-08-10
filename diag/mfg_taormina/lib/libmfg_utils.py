@@ -9,6 +9,7 @@ import os
 import time
 import pexpect
 import glob
+import select
 
 from libdefs import MTP_Const
 from libdefs import UUT_Type
@@ -1799,4 +1800,22 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
 
     return logfile_path, open_file_track_list
+
+def aruba_gui_clear_buffer():
+    while True:
+        i,o,e = select.select([sys.stdin],[],[],2)
+        if i:
+            print("this is catch:", sys.stdin.readline())
+        else:
+            break
+
+def aruba_gui_clear_buffer2():
+    # Catch any previously entered User input especially from the GUI before
+    # prompting the User to press any key to continue.
+    while True:
+        rlist, wlist, xlist = select.select([sys.stdin], [], [], 2)
+        if rlist:
+            print("Catching previously entered input:", sys.stdin.readline())
+        else:
+            break
 

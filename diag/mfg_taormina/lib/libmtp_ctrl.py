@@ -5839,7 +5839,6 @@ class mtp_ctrl():
         return True
 
     def tor_led_test(self, color):
-        import select
         result = True
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
@@ -5847,12 +5846,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_exec_cmd("cd /fs/selftest")
         self.mtp_mgmt_exec_cmd("./led.bash {}".format(color)) 
-        while True:
-            i,o,e = select.select([sys.stdin],[],[],2)
-            if i:
-                print("this is catch:", sys.stdin.readline())
-            else:
-                break
+        libmfg_utils.aruba_gui_clear_buffer()
         self.cli_log_inf("DO YOU SEE LED COLOR CHANGE to {}?".format(color), level=0)
         result_input = raw_input("                                  YES/NO: ").replace(' ','')
         
@@ -8135,6 +8129,7 @@ class mtp_ctrl():
 
             retry_cnt -= 1
             if retry_cnt >= 0:
+                libmfg_utils.aruba_gui_clear_buffer2()
                 raw_input("Please re-insert the modules above then press any key to continue.\n")
                 self.cli_log_inf("Rerunning sanity check...")
                 continue
@@ -8173,6 +8168,7 @@ class mtp_ctrl():
                 for port in ports_down + ports_missing:
                     self.cli_log_err("[{:s}] {:s} module missing".format(test, port))
 
+                libmfg_utils.aruba_gui_clear_buffer2()
                 raw_input("Please re-insert the modules above then press any key to continue.\n")
                 self.cli_log_inf("Rerunning sanity check...")
 
@@ -8227,6 +8223,7 @@ class mtp_ctrl():
 
             retry_cnt -= 1
             if retry_cnt >= 0:
+                libmfg_utils.aruba_gui_clear_buffer2()
                 raw_input("Please re-insert the modules above then press any key to continue.\n")
                 self.cli_log_inf("Rerunning sanity check...")
                 continue
