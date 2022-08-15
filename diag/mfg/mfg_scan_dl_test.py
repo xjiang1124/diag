@@ -552,16 +552,6 @@ def main():
         return
     mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-        logfile_close(log_filep_list)
-        return
-
-    # Set Naples25SWM test mode
-    mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
-
-    dsp = stage
-
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
@@ -576,6 +566,15 @@ def main():
             pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
         if slot in pass_nic_list and slot in fail_nic_list:
             pass_nic_list.remove(slot)
+
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+        logfile_close(log_filep_list)
+        return
+
+    # Set Naples25SWM test mode
+    mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
+    dsp = stage
 
     mtp_mgmt_ctrl.mtp_power_off_nic()
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)

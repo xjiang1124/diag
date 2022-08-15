@@ -324,6 +324,18 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
+    # Flex flow 2 Way communication Pre-Post 
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+
     # close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
@@ -343,17 +355,6 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
 
-    # Flex flow 2 Way communication Pre-Post 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list[mtp_id]:
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
     mtp_thread_list = list()
     mfg_4c_summary = dict()
