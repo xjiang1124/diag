@@ -92,32 +92,32 @@ class TOR_IMAGES:
     svos_fpga_image["TAORMINA"] = ["fpgautil"]
 
     first_article_img["TAORMINA"] = "17-0065-02_Taormina-elba-spi-0430.bin"
-    flash_boot0["TAORMINA"] = "boot0_1.29.4-T-2.img"
-    flash_uboot_gold["TAORMINA"] = "ubootg_1.29.4-T-2.img"
-    flash_fw_gold["TAORMINA"] = "kernelg_1.29.4-T-2.img"
-    flash_uboot_primary["TAORMINA"] = "uboota_1.29.4-T-2.img"
-    flash_fw_primary["TAORMINA"] = "kernela_1.29.4-T-2.img"
+    flash_boot0["TAORMINA"] = "boot0_1.49.2-T-2.img"
+    flash_uboot_gold["TAORMINA"] = "ubootg_1.49.2-T-2.img"
+    flash_fw_gold["TAORMINA"] = "kernelg_1.49.2-T-2.img"
+    flash_uboot_primary["TAORMINA"] = "uboota_1.49.2-T-2.img"
+    flash_fw_primary["TAORMINA"] = "kernela_1.49.2-T-2.img"
 
     usb_tarball["TAORMINA"] = "Taormina-USB-small.tar.gz"
 
     ## CX-OS ##
     os_ship_img["TAORMINA"] = "DL_10_09_0011A.swi"
     os_ship_dat["TAORMINA"] = "2022-02-16"
-    os_test_img["TAORMINA"] = "taormina-main-1.29.4-T-2.swi"
-    os_test_dat["TAORMINA"] = "2022-03-06"
+    os_test_img["TAORMINA"] = "taormina-swjenkins-hbm_13272610_0803_2022.swi"
+    os_test_dat["TAORMINA"] = "2022-08-03"
 
     ## BIOS ## 
     bios_img["TAORMINA"] = "17-0056-xx_Taormina-bios-v0004.bin"
-    bios_dat["TAORMINA"] = "DL-01-0004"
+    bios_dat["TAORMINA"] = "DL-01-0010"
 
     ## SVOS ##
-    svos_test_img["TAORMINA"] = "DL_01_X1_0004-internal.svos"
-    svos_test_ver["TAORMINA"] = "DL.01.X1.0004-internal"
-    svos_test_dat["TAORMINA"] = "2021-09-20"
+    svos_test_img["TAORMINA"] = "DL_01_10_0002_INTL.svos"
+    svos_test_ver["TAORMINA"] = "DL.01.10.0002-internal"
+    svos_test_dat["TAORMINA"] = "2021-11-17"
 
-    svos_ship_img["TAORMINA"] = "DL_01_X1_0004.svos"
-    svos_ship_ver["TAORMINA"] = "DL.01.X1.0004"
-    svos_ship_dat["TAORMINA"] = "2021-09-20"
+    svos_ship_img["TAORMINA"] = "DL_01_10_0002.svos"
+    svos_ship_ver["TAORMINA"] = "DL.01.10.0002"
+    svos_ship_dat["TAORMINA"] = "2021-11-17"
 
     ## TPM ##
     tpm_img["TAORMINA"] = "tpmUpdate-v6.43.tar.gz"
@@ -126,11 +126,11 @@ class TOR_IMAGES:
     usb_img["TAORMINA"] = "usb.tar.gz"
 
     ## FPGA ##
-    fpga_img["TAORMINA"] = "17-0055-xx-tagged-0002-01242022-1448.bin"
-    fpga_dat["TAORMINA"] = "0002"
+    fpga_img["TAORMINA"] = "17-0055-xx-dual-tagged-0005-06132022-2100.bin"
+    fpga_dat["TAORMINA"] = "0005"
 
-    test_fpga_img["TAORMINA"] = "17-0055-xx-tagged-0002-01242022-1448.bin"
-    test_fpga_dat["TAORMINA"] = "0002"
+    test_fpga_img["TAORMINA"] = "17-0055-xx-dual-tagged-0005-06132022-2100.bin"
+    test_fpga_dat["TAORMINA"] = "0005"
 
     ## CPLDs ##
     gpio_cpld_test_img["TAORMINA"] = "17-0053_03_Taormina_gcpld-0001-11032021.bin"
