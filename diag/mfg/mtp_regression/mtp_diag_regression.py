@@ -1130,9 +1130,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         # program all FPGA partitions
         elif test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
-        # verify program FPGA
-        elif test == "FPGA_PROG_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
         # program QSPI
         elif test == "QSPI_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)

@@ -201,9 +201,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program all FPGA partitions
         elif test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
-        # verify program FPGA
-        elif test == "FPGA_PROG_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
@@ -980,8 +977,10 @@ def main():
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type == NIC_Type.ORTANO2ADI:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"] 
-        if nic_type == NIC_Type.POMONTEDELL or nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        if nic_type == NIC_Type.POMONTEDELL:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+        if nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)
@@ -1004,6 +1003,9 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
             elif test == "REWORK_VERIFY":
                 ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
+            # verify FPGA against original file
+            elif test == "FPGA_PROG_VERIFY":
+                ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
             # verify cpld
             elif test == "CPLD_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)

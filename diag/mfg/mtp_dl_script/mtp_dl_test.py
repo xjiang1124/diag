@@ -196,9 +196,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program all FPGA partitions
         elif test == "FPGA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
-        # verify program FPGA
-        elif test == "FPGA_PROG_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
         # program failsafe CPLD
         elif test == "FSAFE_CPLD_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
@@ -715,6 +712,8 @@ def main():
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type == NIC_Type.ORTANO2ADI:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"]
+            elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
@@ -753,6 +752,9 @@ def main():
                 # verify CPLD
                 elif test == "CPLD_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
+                # verify FPGA against original file
+                elif test == "FPGA_PROG_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
                 # verify Feature Row
                 elif test == "FEA_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea(slot)

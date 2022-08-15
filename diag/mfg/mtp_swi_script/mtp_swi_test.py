@@ -225,8 +225,10 @@ def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot
         test_list = ["CPLD_PROG"]
     if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
         test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
-    if nic_type in FPGA_TYPE_LIST:
+    if nic_type in (NIC_Type.POMONTEDELL):
         test_list = ["FPGA_PROG"]
+    if nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+        test_list = ["FPGA_PROG", "FPGA_PROG_VERIFY"]
     if nic_type == NIC_Type.ORTANO2:
         test_list = []
     for skip_test in skip_testlist:

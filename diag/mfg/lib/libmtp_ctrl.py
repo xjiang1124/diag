@@ -164,7 +164,7 @@ class mtp_ctrl():
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(testname, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
         return start
 
@@ -173,7 +173,7 @@ class mtp_ctrl():
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
         return duration
 
@@ -181,7 +181,7 @@ class mtp_ctrl():
         # log the timestamp in MTP log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(testname, str(start))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd(ts_record_cmd)
         return start
 
@@ -190,7 +190,7 @@ class mtp_ctrl():
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
-        ts_record_cmd = "######## {:s} ########".format(ts_record)
+        ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.mtp_mgmt_exec_cmd(ts_record_cmd)
         return duration
 
@@ -3175,11 +3175,11 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
-            if software_pn != "90-0017-0001":
+            if software_pn != "90-0017-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
-            if software_pn != "90-0017-0001":
+            if software_pn != "90-0017-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
@@ -3399,15 +3399,15 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "main": NIC_IMAGES.cpld_img[nic_type],
-            "gold": NIC_IMAGES.fail_cpld_img[nic_type],
-            "timer1": NIC_IMAGES.timer1_img[nic_type],
-            "timer2": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": NIC_IMAGES.cpld_img[nic_type],
+            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
+            "cfg2": NIC_IMAGES.timer1_img[nic_type],
+            "cfg3": NIC_IMAGES.timer2_img[nic_type]
         }
         if not main_only:
-            program_sequence = ["gold", "timer1", "main", "timer2"]
+            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
         else:
-            program_sequence = ["main"]
+            program_sequence = ["cfg0"]
         for partition in program_sequence:
             img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
@@ -3427,6 +3427,8 @@ class mtp_ctrl():
         # cpldapp -verifyflash ./lac2_dell_main_2_3.bin
         # cpldapp -verifyflash ./timer2.bin cfg3
         """
+        nic_type = self.mtp_get_nic_type(slot)
+
         if nic_type not in FPGA_TYPE_LIST:
             self.cli_log_slot_err(slot, "This fpga verify function not support for this NIC type!")
             return False
@@ -3442,7 +3444,7 @@ class mtp_ctrl():
         else:
             program_sequence = ["cfg0"]
         for partition in program_sequence:
-            img = partition_img_dict[partition]
+            img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_verify_fpga(img, partition):
                 self.cli_log_slot_err_lock(slot, "Verify NIC FPGA from partition {:s} failed".format(partition))
                 self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
@@ -3918,7 +3920,7 @@ class mtp_ctrl():
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("START post dsp {:s} fail debug".format(test)))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -3958,7 +3960,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END post dsp {:s} fail debug".format(test)))
+        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -5795,7 +5797,7 @@ class mtp_ctrl():
         if slot is None:
             ts = libmfg_utils.timestamp_snapshot()
             ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
             self.mtp_mgmt_exec_cmd(ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
@@ -5814,7 +5816,7 @@ class mtp_ctrl():
         else:
             ts = libmfg_utils.timestamp_snapshot()
             ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "######## {:s} ########".format(ts_record)
+            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
             self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
