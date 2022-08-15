@@ -197,6 +197,21 @@ def single_uut_fw_program(stage,
         if uut_id not in pass_uut_list:
             pass_uut_list.append(uut_id)
 
+        mtp_mgmt_ctrl.cli_log_inf("Programming Matrix:", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("SvOS: {:s}".format(svos_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("CX-OS: {:s}".format(os_ship_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("FPGA: {:s}".format(fpga_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("CPU CPLD: {:s}".format(cpu_cpld_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("GPIO CPLD: {:s}".format(gpio_cpld_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("ELBA CPLD main: {:s}".format(cpld_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("ELBA CPLD gold: {:s}".format(fail_cpld_img_file), level=1)
+        # mtp_mgmt_ctrl.cli_log_inf("ELBA boot0: {:s}".format(boot0_img_file), level=1)
+        # mtp_mgmt_ctrl.cli_log_inf("ELBA ubootg: {:s}".format(ubootg_img_file), level=1)
+        # mtp_mgmt_ctrl.cli_log_inf("ELBA goldfw: {:s}".format(kernelg_img_file), level=1)
+        # mtp_mgmt_ctrl.cli_log_inf("ELBA uboota: {:s}".format(uboota_img_file), level=1)
+        # mtp_mgmt_ctrl.cli_log_inf("ELBA mainfw: {:s}".format(kernela_img_file), level=1)
+        mtp_mgmt_ctrl.cli_log_inf("Programming Matrix end\n", level=0)
+
         mtp_mgmt_ctrl.cli_log_inf("SW Install Process Started", level=0)
         mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 

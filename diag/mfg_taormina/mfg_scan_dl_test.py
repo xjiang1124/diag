@@ -137,7 +137,6 @@ def single_uut_fw_program(stage,
     mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
     mtp_mgmt_ctrl._slots = 2
     
-    qspi_fa_img_file = TOR_IMAGES.first_article_img[uut_type]
     svos_img_file = TOR_IMAGES.svos_test_img[uut_type]
     os_test_img_file = TOR_IMAGES.os_test_img[uut_type]
     os_test_exp_version = TOR_IMAGES.os_test_dat[uut_type]
@@ -153,6 +152,12 @@ def single_uut_fw_program(stage,
     cpld_img_file = NIC_IMAGES.cpld_img[card_type]
     fail_cpld_img_file = NIC_IMAGES.fail_cpld_img[card_type]
     fea_cpld_img_file = NIC_IMAGES.fea_cpld_img[card_type]
+
+    boot0_img_file = TOR_IMAGES.flash_boot0[uut_type]
+    ubootg_img_file = TOR_IMAGES.flash_uboot_gold[uut_type]
+    kernelg_img_file = TOR_IMAGES.flash_fw_gold[uut_type]
+    uboota_img_file = TOR_IMAGES.flash_uboot_primary[uut_type]
+    kernela_img_file = TOR_IMAGES.flash_fw_primary[uut_type]
 
     try:
         if not fru_cfg["SN"]:
@@ -193,6 +198,22 @@ def single_uut_fw_program(stage,
         if uut_id not in pass_uut_list:
             pass_uut_list.append(uut_id)
 
+        if stage == "DL2":
+            mtp_mgmt_ctrl.cli_log_inf("Programming Matrix:", level=0)
+            mtp_mgmt_ctrl.cli_log_inf("SvOS: {:s}".format(svos_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("CX-OS: {:s}".format(os_test_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("FPGA: {:s}".format(test_fpga_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("CPU CPLD: {:s}".format(cpu_cpld_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("GPIO CPLD: {:s}".format(gpio_cpld_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA CPLD main: {:s}".format(cpld_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA CPLD gold: {:s}".format(fail_cpld_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA boot0: {:s}".format(boot0_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA ubootg: {:s}".format(ubootg_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA goldfw: {:s}".format(kernelg_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA uboota: {:s}".format(uboota_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("ELBA mainfw: {:s}".format(kernela_img_file), level=1)
+            mtp_mgmt_ctrl.cli_log_inf("Programming Matrix end\n", level=0)
+
         mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
         mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()          
 
@@ -215,7 +236,6 @@ def single_uut_fw_program(stage,
                         "MGMT_INIT",
                         "SVOS_PROG_UTIL",
                         "BOARD_ID",
-                        # ##"QSPI_FLASH",
                         "SVOS_TEST_PROG",
                         "SVOS_BOOT",
                         "MGMT_INIT",
@@ -231,6 +251,7 @@ def single_uut_fw_program(stage,
                         "BOARD_ID",
                         "CPLD_VERIFY",
                         "OS_PROG_TEST",
+                        "NIC_QSPI_UPDATE",
                         "OS_BOOT",
                         "OS_TEST_VERIFY",
                         "TIME_SET",
@@ -270,8 +291,10 @@ def single_uut_fw_program(stage,
 
             elif test == "SSD_FORMAT":
                 ret = mtp_mgmt_ctrl.tor_ssd_format()
-            elif test == "QSPI_FLASH":
-                ret = mtp_mgmt_ctrl.tor_nic_qspi_flash(qspi_fa_img_file)
+            elif test == "NIC_QSPI_FORMAT":
+                ret = mtp_mgmt_ctrl.tor_nic_qspi_first_article()
+            elif test == "NIC_QSPI_UPDATE":
+                ret = mtp_mgmt_ctrl.tor_nic_qspi_prog()
 
 
             elif test == "I210_NIC_PROG":
@@ -371,7 +394,7 @@ def single_uut_fw_program(stage,
             if not ret:
                 mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
                 mtp_mgmt_ctrl.tor_sys_failure_dump()
-                if test in ("QSPI_FLASH", "others..."):
+                if test in ("NIC_QSPI_FORMAT", "NIC_QSPI_UPDATE", "others..."):
                     mtp_mgmt_ctrl.tor_nic_failure_dump(0)
                     mtp_mgmt_ctrl.tor_nic_failure_dump(1)
                 if uut_id not in fail_uut_list:

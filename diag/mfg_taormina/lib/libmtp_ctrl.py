@@ -5836,7 +5836,14 @@ class mtp_ctrl():
         #     return False
         cmd = "{:s}fpgautil elba {:s} flash writeimage allflash {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, str(slot), qspi_image)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Flashing Partition allflash passed"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Programming Elba{:d} QSPI failed".format(slot))
             return False
+
+        cmd = "{:s}fpgautil elba {:s} flash verifyimage allflash {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, str(slot), qspi_image)
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Verifying Elba{:d} QSPI failed".format(slot))
+            return False
+
         return True
 
     def tor_tpm_config_init(self):
@@ -5957,12 +5964,15 @@ class mtp_ctrl():
 
         return True
 
-    def tor_nic_qspi_flash(self, qspi_img):
+    def tor_nic_qspi_first_article(self):
         """ 
         1. Copy fpga util
         2. Copy spi image
         3. Flash spi image
         """
+
+        qspi_img = TOR_IMAGES.first_article_img[self._uut_type]
+
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
             return False
@@ -5970,11 +5980,10 @@ class mtp_ctrl():
         if not self.tor_check_fpgautil():
             return False
 
-        self.cli_log_inf("Downloading QSPI image", level=0)
-
+        self.cli_log_inf("Downloading QSPI {:s} image".format(article))
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+qspi_img):
-            self.cli_log_err("Unable to get {:s}".format(img), level=0)
+            self.cli_log_err("Unable to get {:s}".format(article), level=0)
             return False
         time.sleep(10)
 
@@ -5991,7 +6000,61 @@ class mtp_ctrl():
             self.cli_log_err("Failed to power cycle nic", level=0)
             return False
 
-        # self.mtp_mgmt_exec_cmd("exit")
+        return True
+
+    def tor_nic_qspi_prog(self):
+        #using HPE terms for these. Pensando terms = boot0, ubootg, goldfw
+        img_location = {
+            "flash_boot0": TOR_IMAGES.flash_boot0[self._uut_type],
+            "flash_uboot_gold": TOR_IMAGES.flash_uboot_gold[self._uut_type],
+            "flash_fw_gold": TOR_IMAGES.flash_fw_gold[self._uut_type],
+            "flash_uboot_primary": TOR_IMAGES.flash_uboot_primary[self._uut_type],
+            "flash_fw_primary": TOR_IMAGES.flash_fw_primary[self._uut_type]
+        }
+
+        articles = ["flash_boot0", "flash_uboot_gold", "flash_fw_gold", "flash_uboot_primary", "flash_fw_primary"]
+
+        if not self.mtp_console_enter_shell("sh"):
+            self.cli_log_err("Unable to init bash shell", level=0)
+            return False
+
+        if not self.tor_check_fpgautil():
+            return False
+
+        for article in articles:
+            qspi_img = img_location[article]
+
+            self.cli_log_inf("Downloading QSPI {:s} image".format(article))
+            time.sleep(4)
+            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+qspi_img):
+                self.cli_log_err("Unable to get {:s}".format(article), level=0)
+                return False
+            time.sleep(10)
+
+        # if not self.mtp_power_on_nic(pre_diag_method=True):
+        #     self.cli_log_err("Failed to power on nic", level=0)
+        #     return False
+
+        for slot in range(0,2):
+            for article in articles:
+                qspi_img = img_location[article]
+                if not self.tor_nic_qspi_prog_fw(slot, article, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH+os.path.basename(qspi_img)):
+                    self.cli_log_err("QSPI update failed for elba {:s}".format(str(slot)), level=0)
+                    return False
+
+        # if not self.mtp_power_cycle_nic(pre_diag_method=True):
+        #     self.cli_log_err("Failed to power cycle nic", level=0)
+        #     return False
+
+        return True
+
+    def tor_nic_qspi_prog_fw(self, slot, article, qspi_img):
+        self.cli_log_slot_inf(slot, "Updating {:s}".format(article))
+        cmd = "ISP_SKIP_PRECOMPARE=1 hpe-isp update mod sc slot {:s} dev {:s} file {:s} force".format(str(slot+1), article, qspi_img)
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Update successful"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Programming Elba{:d} QSPI {:s} failed".format(slot, article))
+            return False
+
         return True
 
     def tor_util_prog(self, util_img, download=True, powercycle_after_prog=False):

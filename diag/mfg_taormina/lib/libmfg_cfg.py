@@ -50,6 +50,11 @@ class MTP_IMAGES:
 
 class TOR_IMAGES:
     first_article_img = dict()
+    flash_boot0 = dict()
+    flash_uboot_gold = dict()
+    flash_fw_gold = dict()
+    flash_uboot_primary = dict()
+    flash_fw_primary = dict()
     usb_tarball = dict()
     os_ship_img = dict()
     os_ship_dat = dict()
@@ -86,7 +91,12 @@ class TOR_IMAGES:
     TFTP_SERVER_FPGA_DIR = TFTP_SERVER_DIR+"/diag/util/"
     svos_fpga_image["TAORMINA"] = ["fpgautil"]
 
-    first_article_img["TAORMINA"] = "17-0065-01_Taormina-elba-spi.bin"
+    first_article_img["TAORMINA"] = "17-0065-02_Taormina-elba-spi-0430.bin"
+    flash_boot0["TAORMINA"] = "boot0_1.29.4-T-2.img"
+    flash_uboot_gold["TAORMINA"] = "ubootg_1.29.4-T-2.img"
+    flash_fw_gold["TAORMINA"] = "kernelg_1.29.4-T-2.img"
+    flash_uboot_primary["TAORMINA"] = "uboota_1.29.4-T-2.img"
+    flash_fw_primary["TAORMINA"] = "kernela_1.29.4-T-2.img"
 
     usb_tarball["TAORMINA"] = "Taormina-USB-small.tar.gz"
 
