@@ -749,6 +749,57 @@ def console_copy_file(mtp_mgmt_ctrl, ip_addr, local_dir, remote_file):
 
     return True
 
+def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
+    ip_addr = mtp_mgmt_ctrl._mgmt_cfg[0]
+    userid = mtp_mgmt_ctrl._mgmt_cfg[1]
+    passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
+    logfilep = mtp_mgmt_ctrl._diag_filep
+    temp_remote_dir = "/home/{:s}/".format(userid) #first, scp to a directory where we have permissions
+
+    if logfilep == "":
+        logfilep = open("/tmp/{:s}_nc".format(ip_addr), "w+")
+    cmd = "md5sum " + local_file
+    session = pexpect.spawn(cmd, logfile=logfilep)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    if match:
+        local_md5sum = match.group(1)
+    else:
+        cli_err("Execute command {:s} failed".format(cmd))
+        return False
+
+    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, temp_remote_dir), logfile=logfilep)
+    session.expect_exact("ssword:")
+    session.sendline(passwd)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
+
+    # verify the file md5sum
+    cmd = "sudo mv {:s}/{:s} {:s}".format(temp_remote_dir, os.path.basename(local_file), remote_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    cmd = "sync"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    cmd = "md5sum " + remote_dir + os.path.basename(local_file)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if not cmd_buf:
+        cli_err("No result from command {:s}".format(cmd))
+        return False
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(cmd_buf))
+
+    # md5sum match
+    if match:
+        if match.group(1) == local_md5sum:
+            return True
+        else:
+            cli_err("File md5sum mismatch copying to UUT")
+            return False
+    else:
+        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+        return False
+
 def mtp_clear_console(mtp_mgmt_ctrl):
     if mtp_mgmt_ctrl._ts_cfg:
         ts_cfg = mtp_mgmt_ctrl._ts_cfg
@@ -1065,13 +1116,8 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
         mtp_mgmt_ctrl.cli_log_err("{:s} failed".format(cmd))
         return False
 
-    ip_addr = mtp_mgmt_ctrl._mgmt_cfg[0]
-    usrid = mtp_mgmt_ctrl._mgmt_cfg[1]
-    passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
-    logfilep = mtp_mgmt_ctrl._diag_filep
-
     cmd = "ls " + packages_src_dir
-    session = pexpect.spawn(cmd, logfile=logfilep)
+    session = pexpect.spawn(cmd, logfile=mtp_mgmt_ctrl._diag_filep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     packages_list = session.before.split()
     session.close()
@@ -1083,7 +1129,7 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
         if package in onboard_packages:
             mtp_mgmt_ctrl.cli_log_inf("{:s} package already exists".format(package))
             continue
-        if not network_copy_file(ip_addr, usrid, passwd, packages_src_dir+package, packages_dst_dir, logfilep=logfilep):
+        if not network_copy_file2(mtp_mgmt_ctrl, packages_src_dir+package, packages_dst_dir):
             mtp_mgmt_ctrl.cli_log_err("Copy python packages failed", level=0)
             return False
         cmd = "cd {:s}".format(packages_dst_dir)
