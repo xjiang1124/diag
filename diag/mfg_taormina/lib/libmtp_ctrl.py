@@ -37,6 +37,7 @@ class mtp_ctrl():
         self._mgmt_handle = None
         self._mgmt_prompt = None
         self._mgmt_timeout = MTP_Const.MTP_POWER_ON_TIMEOUT
+        self._diagmgr_handle = None
         self._ts_cfg = ts_cfg
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
@@ -92,7 +93,7 @@ class mtp_ctrl():
         self._pn = None
         self._maj = None
         self._prog_date = None
-        self._edc = "3-2228-D3"
+        self._edc = ""
         self._pcbasn = None
 
         self._homedir = "."
@@ -100,7 +101,90 @@ class mtp_ctrl():
         self.uut_type = "TAORMINA"
 
         self._svos_boot = True # set to False once OS is installed
-        self._secure_login = False  #set to True when using signed OS
+        # self._secure_login = False  #set to True when using signed OS
+
+        # name is defined by its name in diag fpgautil
+        # None/"" = not present
+        self.sys_modules = {
+            "PSU": {
+                "PSU_1": "",
+                "PSU_2": ""
+                },
+            "FAN": {
+                "FAN-1": "",
+                "FAN-2": "",
+                "FAN-3": "",
+                "FAN-4": "",
+                "FAN-5": "",
+                "FAN-6": ""
+                },
+            "FAN AIRFLOW": "",
+            "SSD": {
+                "SSD": ""
+                },
+            "MEMORY": {
+                "MEMORY CHANNEL-0": "",
+                "MEMORY CHANNEL-2": ""
+                },
+            "SFP": {
+                "SFP-01": "",
+                "SFP-02": "",
+                "SFP-03": "",
+                "SFP-04": "",
+                "SFP-05": "",
+                "SFP-06": "",
+                "SFP-07": "",
+                "SFP-08": "",
+                "SFP-09": "",
+                "SFP-10": "",
+                "SFP-11": "",
+                "SFP-12": "",
+                "SFP-13": "",
+                "SFP-14": "",
+                "SFP-15": "",
+                "SFP-16": "",
+                "SFP-17": "",
+                "SFP-18": "",
+                "SFP-19": "",
+                "SFP-20": "",
+                "SFP-21": "",
+                "SFP-22": "",
+                "SFP-23": "",
+                "SFP-24": "",
+                "SFP-25": "",
+                "SFP-26": "",
+                "SFP-27": "",
+                "SFP-28": "",
+                "SFP-29": "",
+                "SFP-30": "",
+                "SFP-31": "",
+                "SFP-32": "",
+                "SFP-33": "",
+                "SFP-34": "",
+                "SFP-35": "",
+                "SFP-36": "",
+                "SFP-37": "",
+                "SFP-38": "",
+                "SFP-39": "",
+                "SFP-40": "",
+                "SFP-41": "",
+                "SFP-42": "",
+                "SFP-43": "",
+                "SFP-44": "",
+                "SFP-45": "",
+                "SFP-46": "",
+                "SFP-47": "",
+                "SFP-48": ""
+                },
+            "QSFP": {
+                "QSFP-01": "",
+                "QSFP-02": "",
+                "QSFP-03": "",
+                "QSFP-04": "",
+                "QSFP-05": "",
+                "QSFP-06": ""
+                }
+            }
 
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
@@ -618,33 +702,55 @@ class mtp_ctrl():
             self._mgmt_handle = None
 
 
-    def mtp_session_create(self):
+    def mtp_session_create(self, logfile=None):
+        if logfile is None:
+            logfile = "/tmp/mtpsession.log"
+        logfilep = open(logfile, "w")
+
         # mgmt_cfg is a list with format [ip, userid, passwd]
         ip = self._mgmt_cfg[0]
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
-        handle = pexpect.spawn(ssh_cmd)
-        idx = libmfg_utils.mfg_expect(handle, ["assword:"])
+        handle = pexpect.spawn(ssh_cmd, logfile=logfilep)
+        idx = libmfg_utils.mfg_expect(handle, ["assword:"], timeout=60)
         if idx < 0:
             self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
             return None
         else:
             handle.sendline(passwd)
 
-        idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
             return None
 
+        ## new CXOS:
+        handle.sendline("sudo su")
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(handle.before)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
+            return None
+        ## end new CXOS
+
         cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+        handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(handle, sig_list, timeout=60)
+        if idx < 0:
             self.cli_log_err("Connect to mtp mgmt failed", level = 0)
             return None
-        else:
-            return handle
+        
+        handle.sendline("stty rows 50 cols 200")
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(handle.before)
+            self.cli_log_err("Cant resize shell after ssh login", level = 0)
+            return None
+
+        return handle
 
 
     def mtp_nic_para_session_init(self):
@@ -657,7 +763,7 @@ class mtp_ctrl():
             handle = self.mtp_session_create()
             if handle:
                 if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
-                    self.cli_log_err("Unable to config MTP session")
+                    self.cli_log_err("Unable to config new ssh session for NIC")
                     return False
                 prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
@@ -697,7 +803,7 @@ class mtp_ctrl():
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"], timeout=60)
             if idx < 0:
                 if retries > 0:
                     self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level = 0)
@@ -711,12 +817,20 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline(passwd)
                 break
-
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list)
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout=60)
         if idx < 0:
             self.cli_log_err(self._mgmt_handle.before)
-            self.cli_log_err("Connect to mtp failed", level = 0)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
             return None
+
+        ## new CXOS:
+        self._mgmt_handle.sendline("sudo su")
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, self._prompt_list, timeout=60)
+        if idx < 0:
+            self.cli_log_err(self._mgmt_handle.before)
+            self.cli_log_err("Cant reach shell after ssh login", level = 0)
+            return None
+        ## end new CXOS
 
         self._mgmt_prompt = self._prompt_list[idx]
 
@@ -764,7 +878,7 @@ class mtp_ctrl():
             return False
         idx = libmfg_utils.mfg_expect(handle, [prompt_str])
         if idx < 0:
-            self.cli_log_err("Refresh mtp mgmt timeout", level = 0)
+            self.cli_log_err("Prompt not saved", level = 0)
             return False
 
         return True
@@ -873,7 +987,7 @@ class mtp_ctrl():
         #     return None
         self.mtp_console_spawn()
 
-        secure_login = secure_login or self._secure_login #set either by argument or class variable
+        # secure_login = secure_login or self._secure_login #set either by argument or class variable
 
         delay = MTP_Const.TOR_CONSOLE_CON_DELAY
         retries = 0
@@ -881,8 +995,12 @@ class mtp_ctrl():
         max_retries = 10
         prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "$", "#", ">"]
 
+        # secure_login = True #always
+        fresh_login = False
         while True:
+            time.sleep(1) # this is crucial so that the prompt is safely out of the console buffer (not pexpect buffer)
             self.clear_buffer()
+            time.sleep(1)
             self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, prompt_list)
             if idx < 0:
@@ -915,19 +1033,16 @@ class mtp_ctrl():
             elif idx == 2:
                 continue
             elif idx == 3:
-                if secure_login:
-                    self._mgmt_handle.sendline("admin")
-                else:
-                    self._mgmt_handle.sendline("root")
+                self._mgmt_handle.sendline("admin")
+                fresh_login = True
             elif idx == 4:
                 self._mgmt_handle.sendline("")
-            elif idx == 5 and secure_login:
-                self._mgmt_handle.sendline("sudo su root")
-                self._mgmt_handle.sendline("passwd root")
-                self._mgmt_handle.sendline(TOR_MGMT_PASSWORD)
-                self._mgmt_handle.sendline(TOR_MGMT_PASSWORD)
-                secure_login = False
-            elif idx == 6 and secure_login:
+            elif idx == 5:
+                self._mgmt_handle.sendline("sudo su")
+                # allow scp from outside:
+                self._mgmt_handle.sendline('sed -i "s/admin:\/usr\/bin\/vtysh/admin:\/bin\/sh/g" /etc/passwd')
+                fresh_login = False
+            elif idx == 6 and fresh_login:
                 self._mgmt_handle.sendline("start-shell")
             else:
                 break
@@ -1316,8 +1431,9 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
-        return self.mtp_mgmt_exec_cmd2(cmd, sig_list, timeout)
+    def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+        # return self.mtp_mgmt_exec_cmd2(cmd, sig_list, fail_sig_list, timeout)
+        return self.mtp_mgmt_exec_cmd_no_error_printout(cmd, sig_list, timeout)
 
         rc = True
         self._mgmt_handle.sendline(cmd)
@@ -1363,23 +1479,28 @@ class mtp_ctrl():
             self._cmd_buf = self._mgmt_handle.before
             return True
 
-    def mtp_mgmt_exec_cmd2(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+    def mtp_mgmt_exec_cmd2(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
         self.clear_buffer()
         rc = True
         self._mgmt_handle.sendline(cmd)
         cmd_before = ""
-        for sig in sig_list:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
+        if sig_list:
+            sig_list = pass_sig_list + fail_sig_list
+            idx = libmfg_utils.mfg_expect(self._mgmt_handle, sig_list, timeout)
+            cmd_before = self._mgmt_handle.before
             if idx < 0:
                 rc = False
-                cmd_before = self._mgmt_handle.before
-                break
+            elif idx < len(pass_sig_list):
+                rc = True
+            else:
+                rc = False
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
         # signature match fails
         if not rc:
             self.mtp_dump_err_msg(cmd_before)
             return False
         elif idx < 0:
+            print("idx < 0")
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         else:
@@ -1492,21 +1613,16 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute env command", level=0)
             return False
 
-        # if self._uut_type == UUT_Type.TOR:            
-        #     cmd = "export PYTHONPATH=/home/diag/python_files/lib/python2.7/site-packages"
-        #     if not self.mtp_mgmt_exec_cmd(cmd):
-        #         self.cli_log_err("{:s} failed".format(cmd))
-        #         return False
-
-        # diag init ended here in DL
-        # if self._uut_type == UUT_Type.TOR:
-        #     self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
-        #     return True
-
         # start the mtp diagmgr
         diagmgr_handle = self.mtp_session_create()
         if not diagmgr_handle:
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+
+        diagmgr_handle.sendline("source /home/root/.profile")
+        idx = libmfg_utils.mfg_expect(diagmgr_handle, libmfg_utils.get_linux_prompt_list())
+        if idx < 0:
+            self.cli_log_err("Failed to Init DiagMgr SW Environment", level=0)
             return False
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(diagmgr_logfile)
@@ -1516,7 +1632,8 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.close()
+        # diagmgr_handle.close()
+        self._diagmgr_handle = diagmgr_handle
 
         # config the prompt
         userid = self._mgmt_cfg[1]
@@ -1556,11 +1673,6 @@ class mtp_ctrl():
                 self.cli_log_err("Failed to Init TOR board info", level=0)
                 return False
 
-        self.cli_log_inf("Init NIC Connections", level = 0)
-        ret = self.mtp_nic_para_session_init()
-        if not ret:
-            self.cli_log_err("Init NIC Connections Failed", level = 0)
-            return False
 
         self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
 
@@ -2130,7 +2242,7 @@ class mtp_ctrl():
                 self.cli_log_err("{:s} failed".format(cmd))
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
                 return None
-            match = re.search("%s.* (\d+.?\d*)" % tsensor, self.mtp_get_cmd_buf())
+            match = re.search("%s.* (-?\d+.?\d*)" % tsensor, self.mtp_get_cmd_buf())
             if match:
                 temp_readings[tsensor] = float(match.group(1))
             else:
@@ -3114,7 +3226,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.mtp_dump_err_msg(self._nic_ctrl_list[slot].nic_get_err_msg())
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
             return False
 
         return True
@@ -3382,43 +3495,46 @@ class mtp_ctrl():
                     return False
         return True
 
-
-    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, fru_valid, vmargin, aapl, nic_test_rslt_list):
+        ret = True
         nic_type = self.mtp_get_nic_type(slot)
-        if not self.mtp_check_nic_status(slot):
-            return
+        if ret and not self.mtp_check_nic_status(slot):
+            ret = False
 
-        if not self.mtp_nic_emmc_init(slot, emmc_format):
-            return
+        if ret and not self.mtp_nic_emmc_init(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
-            return
+        if ret and not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
+            ret = False
 
-        if not self.mtp_mgmt_start_nic_diag(slot, aapl):
-            return
+        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl):
+            ret = False
 
-        if not self.mtp_nic_cpld_init(slot):
-            return
+        if ret and not self.mtp_nic_cpld_init(slot):
+            ret = False
 
-        if fru_valid:
+        if ret and fru_valid:
             if emmc_format:
                 init_date = False
             else:
                 init_date = True
-            if not self.mtp_nic_fru_init(slot, init_date, nic_type):
-                return
+            if ret and not self.mtp_nic_fru_init(slot, init_date, nic_type):
+                ret = False
             fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
             self.mtp_set_nic_sn(slot, fru_info_list[0])
-        else:
+        elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
-        if not self.mtp_set_nic_vmarg(slot, vmargin):
-            return
+        if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
+            ret = False
 
-        if not self.mtp_nic_display_voltage(slot):
-            return
+        if ret and not self.mtp_nic_display_voltage(slot):
+            ret = False
 
-        return
+        if not ret:
+            nic_test_rslt_list[slot] = False
+
+        return ret
 
 
     # pre setup for the diag test
@@ -3555,6 +3671,8 @@ class mtp_ctrl():
     #     return True
 
     def mtp_nic_diag_init(self, emmc_format=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=0, aapl=False, swm_lp=False, nic_util=False):
+        ret = True
+
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
         if fpo:
@@ -3568,23 +3686,13 @@ class mtp_ctrl():
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
         if self._uut_type == UUT_Type.TOR:
-            # if not self._nic_ctrl_list[0]._in_mainfw:
-            #     if not self.tor_nic_memtun_init():
-            #         self.cli_log_err("memtun init failed", level=0)
-            #         return False
-
-            # Removing validate... pexpect keeps missing the mark
-            # if not self.tor_nic_memtun_validate():
-            #     self.cli_log_err("memtun failed", level=0)
-            #     return False
-
             for slot in range(self._slots):
-                self.mtp_nic_boot_info_init(slot)
+                ret &= self.mtp_nic_boot_info_init(slot)
         else:
             if fpo:
-                self.mtp_nic_mgmt_seq_init(fpo)
+                ret = self.mtp_nic_mgmt_seq_init(fpo)
             else:
-                self.mtp_nic_mgmt_para_init(aapl, swm_lp)
+                ret = self.mtp_nic_mgmt_para_init(aapl, swm_lp)
 
             if not self.mtp_mgmt_nic_mac_validate():
                 return False
@@ -3597,15 +3705,18 @@ class mtp_ctrl():
             start_ts = self.log_slot_test_start(slot, "NIC_DIAG_INIT")
 
         nic_thread_list = list()
+        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in range(self._slots):
             if not self._nic_prsnt_list[slot]:
+                nic_test_rslt_list[slot] = False
                 continue
             nic_thread = threading.Thread(target = self.mtp_single_nic_diag_init,
                                           args = (slot,
                                                   emmc_format,
                                                   fru_valid,
                                                   vmargin,
-                                                  aapl))
+                                                  aapl,
+                                                  nic_test_rslt_list))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -3622,6 +3733,10 @@ class mtp_ctrl():
         for slot in range(self._slots):
             duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
+        for slot in range(self._slots):
+            if not nic_test_rslt_list[slot]:
+                ret &= False
+
         if fru_valid and sn_tag:
             if not self.mtp_nic_scan_fru_validate():
                 return False
@@ -3631,7 +3746,7 @@ class mtp_ctrl():
         self.mtp_mgmt_killall_tclsh_picocom()
 
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
-        return True
+        return ret
 
     def mtp_single_nic_emmc_reformat(self, slot, nic_rslt_list, emmc_format=True):
         if not self.mtp_nic_emmc_init(slot, emmc_format):
@@ -4253,34 +4368,34 @@ class mtp_ctrl():
             else:
                 return []
         elif test == "PRBS_TOR":
-             #switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>
-             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
-             prbs_type = "prbs58"
-             prbs_duration = "60"
-             cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
-             test_timeout = self.get_test_timeout(cmd, test)
-             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
-                 self.cli_log_err("{:s} failed".format(cmd))
-                 return nic_list[:]
-             cmd_buf = self.mtp_get_cmd_buf()
-             if "PRBS PASSED" not in cmd_buf:
-                 self.mtp_dump_err_msg(cmd_buf)
-                 return nic_list[:]
-             else:
-                 return []
+            #switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>
+            self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
+            prbs_type = "prbs58"
+            prbs_duration = "60"
+            cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PRBS PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return nic_list[:]
+            else:
+                return []
         elif test == "PCI_TOR":
-             self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
-             cmd = "./switch cpu pciscan"
-             test_timeout = self.get_test_timeout(cmd, test)
-             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
-                 self.cli_log_err("{:s} failed".format(cmd))
-                 return nic_list[:]
-             cmd_buf = self.mtp_get_cmd_buf()
-             if "PCISCAN TEST PASSED" not in cmd_buf:
-                 self.mtp_dump_err_msg(cmd_buf)
-                 return nic_list[:]
-             else:
-                 return []
+            self.mtp_mgmt_exec_cmd("cd /home/diag/diag/util")
+            cmd = "./switch cpu pciscan"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PCISCAN TEST PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return nic_list[:]
+            else:
+                return []
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
@@ -5022,8 +5137,9 @@ class mtp_ctrl():
 
     def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False):
 
-        if secure_login:
-            self._secure_login = True
+        # if selection > 0:
+        #     secure_login = True
+        #     self._secure_login = True
 
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
@@ -5031,8 +5147,8 @@ class mtp_ctrl():
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
 
-        if secure_login:
-            self._secure_login = False
+        # if secure_login:
+        #     self._secure_login = False
 
         return False
 
@@ -5075,7 +5191,12 @@ class mtp_ctrl():
         #     waittimetopowercycleretry = 1800
         #     self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
         waittimetopowercycleretry = 1800
-        self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
+        
+        if selection == 0:
+            self.cli_log_inf("Booting to SvOS", level=0)
+        else:
+            self.cli_log_inf("Booting to CX-OS", level=0)
+
         while True:
             if starttosendselection:
                 self._mgmt_handle.send(str(selection))
@@ -5116,15 +5237,25 @@ class mtp_ctrl():
         if not self.mtp_console_connect():
             self.cli_log_err("Failed to connect console", level=0)
             return False
-            
+
         if selection > 0:
+            # get IP
+            if not self.tor_get_ip():
+                self.cli_log_err("Failed to obtain IP", level=0)
+                return False
+
+            # switch to ssh
+            if not self.mtp_mgmt_connect(prompt_cfg=True):
+                self.cli_log_err("Unable to connect UUT chassis", level=0)
+                return False
+
             start=datetime.now()
-            if stopreboot and not self._secure_login:
-                self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", sig_list=["#"], timeout=10)
+            # if stopreboot and not self._secure_login:
+            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
             self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
             elba0_ready, elba1_ready = False, False
             while not elba0_ready or not elba1_ready:
-                self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
+                # self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
                 # if self._secure_login:
                 #     self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 #     sig = "ready"
@@ -5134,17 +5265,19 @@ class mtp_ctrl():
                 self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 sig1 = "ready"
                 sig2 = "down"
-                for line in self.mtp_get_cmd_buf().splitlines():
-                    if "DSS-4825-6100" in line and (sig1 in line or sig2 in line):
-                        if "1/1" in line:
-                            elba0_ready = True
-                        if "1/2" in line:
-                            elba1_ready = True
-                if elba0_ready and elba1_ready:
-                    self.cli_log_inf("LAGs Ready")
-                    break
-                if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
-                    return False
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf is not None:
+                    for line in cmd_buf.splitlines():
+                        if "DSS-4825-6100" in line and (sig1 in line or sig2 in line):
+                            if "1/1" in line:
+                                elba0_ready = True
+                            if "1/2" in line:
+                                elba1_ready = True
+                    if elba0_ready and elba1_ready:
+                        self.cli_log_inf("LAGs Ready")
+                        break
+                    if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
+                        return False
                 difftime = datetime.now()-start
                 seconds = difftime.total_seconds()
                 if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
@@ -5574,9 +5707,6 @@ class mtp_ctrl():
         else:
             usb_tarball = TOR_IMAGES.usb_tarball[self.uut_type]
             self.cli_log_inf("Downloading USB tarball")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
             if not self.mtp_mgmt_exec_cmd("tftp -g -r {:s}/{:s} {:s} -b 65000".format(TOR_IMAGES.TFTP_SERVER_DIR, usb_tarball, TOR_IMAGES.TFTP_SERVER_IP), sig_list=["100%"]):
                 return False
             self.mtp_mgmt_exec_cmd("tar xf /cli/fs/home/{:s} -C /".format(usb_tarball))
@@ -5614,9 +5744,6 @@ class mtp_ctrl():
         i210_img = "Dev_Start_I210_Copper_NOMNG_4Mb_A2.bin"
         i210_prog_cmd = "./eeupdate64e.dat /nic=1 /d {:s}".format(i210_img)
         i210_pass_sig = "Shared Flash image updated successfully."
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         self.mtp_mgmt_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         if not self.mtp_mgmt_exec_cmd(i210_prog_cmd, sig_list=[i210_pass_sig], timeout=MTP_Const.TOR_I210_PROG_DELAY):
             return False
@@ -5632,9 +5759,6 @@ class mtp_ctrl():
 
         i210_prog_cmd = "./eeupdate64e.dat /nic=1 /mac={:s}".format(mac)
         i210_pass_sig = "Updating Checksum and CRCs...Done"
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         self.mtp_mgmt_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         if not self.mtp_mgmt_exec_cmd(i210_prog_cmd, sig_list=[i210_pass_sig]):
             return False
@@ -5650,12 +5774,13 @@ class mtp_ctrl():
             return False
         cmd_buf = self.mtp_get_cmd_buf()
         ip_match = re.search("inet addr:((?:[0-9]{1,3}\.){3}[0-9]{1,3})", cmd_buf)
+
         if ip_match:
             self.cli_log_inf("Obtained IP {:s}".format(ip_match.group(1)))
             self._mgmt_cfg = list()
             self._mgmt_cfg.append(ip_match.group(1))
-            self._mgmt_cfg.append("root")
-            self._mgmt_cfg.append(TOR_MGMT_PASSWORD)
+            self._mgmt_cfg.append("admin")
+            self._mgmt_cfg.append("")
             return True
         else:
             return False
@@ -5669,6 +5794,7 @@ class mtp_ctrl():
         retries = 3
         while retries >= 0:
             if retries == 0:
+                self.cli_log_err(self.mtp_get_cmd_buf())
                 return False
             retries -= 1
             if svos_boot:
@@ -5708,7 +5834,14 @@ class mtp_ctrl():
         #     return False
         cmd = "{:s}fpgautil elba {:s} flash writeimage allflash {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, str(slot), qspi_image)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Flashing Partition allflash passed"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Programming Elba{:d} QSPI failed".format(slot))
             return False
+
+        cmd = "{:s}fpgautil elba {:s} flash verifyimage allflash {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, str(slot), qspi_image)
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Verifying Elba{:d} QSPI failed".format(slot))
+            return False
+
         return True
 
     def tor_tpm_config_init(self):
@@ -5741,7 +5874,7 @@ class mtp_ctrl():
                 pass
             #return False
 
-        self.cli_log_inf("Downloading TPM CONFIG image", level=0)
+        self.cli_log_inf("Downloading TPM CONFIG image")
 
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+tpm_img):
@@ -5756,20 +5889,11 @@ class mtp_ctrl():
         return True
 
     def tor_led_test(self, color):
-        import select
         result = True
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         self.mtp_mgmt_exec_cmd("cd /fs/selftest")
         self.mtp_mgmt_exec_cmd("./led.bash {}".format(color)) 
-        while True:
-            i,o,e = select.select([sys.stdin],[],[],2)
-            if i:
-                print("this is catch:", sys.stdin.readline())
-            else:
-                break
+        libmfg_utils.aruba_gui_clear_buffer()
         self.cli_log_inf("DO YOU SEE LED COLOR CHANGE to {}?".format(color), level=0)
         result_input = raw_input("                                  YES/NO: ").replace(' ','')
         
@@ -5792,11 +5916,8 @@ class mtp_ctrl():
         return result
 
     def tor_svos_led_usb_setup(self, usb_img):
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
-        self.cli_log_inf("Downloading USB image", level=0)
+        self.cli_log_inf("Downloading USB image")
 
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+usb_img):
@@ -5812,10 +5933,6 @@ class mtp_ctrl():
 
     def tor_check_fpgautil(self):
         util_img = TOR_IMAGES.TFTP_SERVER_DIR+"diag/util/fpgautil"
-        if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to console to board", level=0)
-                return False
 
         cmd = "ls {:s}*".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5835,24 +5952,22 @@ class mtp_ctrl():
 
         return True
 
-    def tor_nic_qspi_flash(self, qspi_img):
+    def tor_nic_qspi_first_article(self):
         """ 
         1. Copy fpga util
         2. Copy spi image
         3. Flash spi image
         """
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
+
+        qspi_img = TOR_IMAGES.first_article_img[self._uut_type]
 
         if not self.tor_check_fpgautil():
             return False
 
-        self.cli_log_inf("Downloading QSPI image", level=0)
-
+        self.cli_log_inf("Downloading QSPI {:s} image".format(article))
         time.sleep(4)
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+qspi_img):
-            self.cli_log_err("Unable to get {:s}".format(img), level=0)
+            self.cli_log_err("Unable to get {:s}".format(article), level=0)
             return False
         time.sleep(10)
 
@@ -5869,7 +5984,57 @@ class mtp_ctrl():
             self.cli_log_err("Failed to power cycle nic", level=0)
             return False
 
-        # self.mtp_mgmt_exec_cmd("exit")
+        return True
+
+    def tor_nic_qspi_prog(self):
+        #using HPE terms for these. Pensando terms = boot0, ubootg, goldfw
+        img_location = {
+            "flash_boot0": TOR_IMAGES.flash_boot0[self._uut_type],
+            "flash_uboot_gold": TOR_IMAGES.flash_uboot_gold[self._uut_type],
+            "flash_fw_gold": TOR_IMAGES.flash_fw_gold[self._uut_type],
+            "flash_uboot_primary": TOR_IMAGES.flash_uboot_primary[self._uut_type],
+            "flash_fw_primary": TOR_IMAGES.flash_fw_primary[self._uut_type]
+        }
+
+        articles = ["flash_boot0", "flash_uboot_gold", "flash_fw_gold", "flash_uboot_primary", "flash_fw_primary"]
+
+        if not self.tor_check_fpgautil():
+            return False
+
+        for article in articles:
+            qspi_img = img_location[article]
+
+            self.cli_log_inf("Downloading QSPI {:s} image".format(article))
+            time.sleep(4)
+            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, TOR_IMAGES.TFTP_SERVER_DIR+qspi_img):
+                self.cli_log_err("Unable to get {:s}".format(article), level=0)
+                return False
+            time.sleep(10)
+
+        # if not self.mtp_power_on_nic(pre_diag_method=True):
+        #     self.cli_log_err("Failed to power on nic", level=0)
+        #     return False
+
+        for slot in range(0,2):
+            for article in articles:
+                qspi_img = img_location[article]
+                if not self.tor_nic_qspi_prog_fw(slot, article, MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH+os.path.basename(qspi_img)):
+                    self.cli_log_err("QSPI update failed for elba {:s}".format(str(slot)), level=0)
+                    return False
+
+        # if not self.mtp_power_cycle_nic(pre_diag_method=True):
+        #     self.cli_log_err("Failed to power cycle nic", level=0)
+        #     return False
+
+        return True
+
+    def tor_nic_qspi_prog_fw(self, slot, article, qspi_img):
+        self.cli_log_slot_inf(slot, "Updating {:s}".format(article))
+        cmd = "ISP_SKIP_PRECOMPARE=1 hpe-isp update mod sc slot {:s} dev {:s} file {:s} force".format(str(slot+1), article, qspi_img)
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Update successful"], timeout=MTP_Const.TOR_QSPI_PROG_DELAY):
+            self.cli_log_slot_err(slot, "Programming Elba{:d} QSPI {:s} failed".format(slot, article))
+            return False
+
         return True
 
     def tor_util_prog(self, util_img, download=True, powercycle_after_prog=False):
@@ -5879,12 +6044,8 @@ class mtp_ctrl():
             self.cli_log_err("Unable to update eeupdate directory", level=0)
             return False
 
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-
-        if not self.mtp_console_enter_shell("mkdir -p {}".format(uut_img_dir)):
-            self.cli_log_err("Unable to init bash shell", level=0)
+        if not self.mtp_mgmt_exec_cmd("mkdir -p {}".format(uut_img_dir)):
+            self.cli_log_err("Unable to create util folder", level=0)
             return False
         if download:
             for eachutil_img in util_img:
@@ -5923,29 +6084,30 @@ class mtp_ctrl():
     def tor_os_prog(self, os_img, download=True, powercycle_after_prog=False):
         uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
 
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-
         if download:
             self.cli_log_inf("Downloading OS image")
-            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, uut_img_dir, TOR_IMAGES.TFTP_SERVER_DIR+os_img):
+            if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+os_img):
                 self.cli_log_err("Failed to get {:s}".format(os_img), level=0)
                 return False
+
+        cmd = "cd /"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
 
         cmd = "rm {:s}secondary.swi {:s}primary.swi".format(uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("{:s} failed".format(cmd), level=0)
             return False
 
-        cmd = "cp {:s}{:s} {:s}primary.swi ; ls -l {:s}primary.swi".format(uut_img_dir,os.path.basename(os_img),uut_img_dir,uut_img_dir)
+        cmd = "cp {:s}{:s} {:s}primary.swi ; ls -l {:s}primary.swi".format("/",os.path.basename(os_img),uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["primary.swi"]):
             self.cli_log_err("Failed to place {:s}".format(os_img), level=0)
             return False
         self.cli_log_inf("Saved OS image to primary image")
         time.sleep(1)
 
-        cmd = "cp {:s}{:s} {:s}secondary.swi ; ls -l {:s}secondary.swi".format(uut_img_dir,os.path.basename(os_img),uut_img_dir,uut_img_dir)
+        cmd = "cp {:s}{:s} {:s}secondary.swi ; ls -l {:s}secondary.swi".format("/",os.path.basename(os_img),uut_img_dir,uut_img_dir)
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["secondary.swi"]):
             self.cli_log_err("Failed to place {:s}".format(os_img), level=0)
             return False
@@ -5997,9 +6159,6 @@ class mtp_ctrl():
         #     return
         mac_ui = libmfg_utils.mac_address_format(mac, ":")     #00ABCDEFGH -> 00:AB:CD:EF:GH
         prog_date = libmfg_utils.hpe_date_format(prog_date) #YYYY-MM-DD_hh-mm-ss -> MM/DD/YYYY HH:MM:SS
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
         if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
@@ -6034,7 +6193,7 @@ class mtp_ctrl():
             self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
             return False
 
-        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" "diag fruwrite chassis_ul 1 clear_all"'):
+        if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag fruwrite chassis_ul 1 clear_all"'):
             self.cli_log_err("Failed to clear unlocked FRU", level=0)
             return False
 
@@ -6168,10 +6327,7 @@ class mtp_ctrl():
         # if not self.mtp_console_connect():
         #     self.cli_log_err("Unable to telnet to UUT Chassis", level=0)
         #     return
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-        if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+        if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
         #time.sleep(1)
@@ -6182,7 +6338,7 @@ class mtp_ctrl():
         for x in range(3):
             if not "TPM Serial Number" in frureadata:
                 time.sleep(3)
-                if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+                if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
                     self.cli_log_err("Unable to display fru")
                     return False
                 #time.sleep(1)
@@ -6194,7 +6350,7 @@ class mtp_ctrl():
 
         if not frureadata["TPM Serial Number"] == pcbasn:
             fru_prog_cmd = MFG_DIAG_CMDS.TOR_FRU_PROG_TPM_FMT.format(pcbasn)
-            if not self.mtp_mgmt_exec_cmd2(fru_prog_cmd):
+            if not self.mtp_mgmt_exec_cmd(fru_prog_cmd):
                 self.cli_log_err("Unable to program fru")
                 return False
 
@@ -6202,7 +6358,7 @@ class mtp_ctrl():
 
         time.sleep(1)
 
-        if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+        if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
             self.cli_log_err("Unable to display fru")
             return False
         #time.sleep(1)
@@ -6213,7 +6369,7 @@ class mtp_ctrl():
         for x in range(3):
             if not "TPM Serial Number" in frureadata:
                 time.sleep(3)
-                if not self.mtp_mgmt_exec_cmd2(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
+                if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT):
                     self.cli_log_err("Unable to display fru")
                     return False
                 #time.sleep(1)
@@ -6301,10 +6457,6 @@ class mtp_ctrl():
 
     def tor_fru_init(self):
         """ Read FRU and save it into object's _sn, _mac, _pn """
-        if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to enter shell")
-                return False
         self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT)
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["TPM Serial Number:"])
         cmd_buf = self._mgmt_handle.before
@@ -6345,9 +6497,14 @@ class mtp_ctrl():
             return False
 
         # Save pcba SN
-        self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_PCBASN_DISP_FMT)
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt])
-        cmd_buf = self._mgmt_handle.before
+        cmd = MFG_DIAG_CMDS.TOR_PCBASN_DISP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            self.cli_log_err("{:s} returned no output".format(cmd), level=0)
+            return False
         pcbasn_match = re.search(TOR_SN_FMT, cmd_buf)
         if pcbasn_match:
             self._pcbasn = pcbasn_match.group(0)
@@ -6374,6 +6531,9 @@ class mtp_ctrl():
 
         if self._bio_ver:
             self.cli_log_inf("==> BIOS version: {:s}".format(self._bio_ver))
+
+        if self._svos_ver:
+            self.cli_log_inf("==> SVOS version: {:s}".format(self._svos_ver))
 
         # if not self._boot_image or not self._kernel_timestamp:
         #     self.cli_log_err("Retrieve boot info failed")
@@ -6442,9 +6602,6 @@ class mtp_ctrl():
 
     def tor_board_id(self):
         if not self._mgmt_cfg:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to console to board", level=0)
-                return False
 
             if not self.tor_check_fpgautil():
                 return False
@@ -6487,25 +6644,12 @@ class mtp_ctrl():
                 self._nic_prsnt_list[slot] = False
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
 
+            if not self.mtp_mgmt_exec_cmd_para(slot, "source /home/root/.profile"):
+                self.cli_log_slot_err(slot, "Couldn't initialize NIC env vars")
+
         return True
 
     def tor_diag_init(self, stage, fpo=False):
-        if fpo and not self._mgmt_cfg:
-            # console to get IP
-            if not self.mtp_console_connect():
-                self.cli_log_err("Unable to console to UUT chassis", level=0)
-                return False
-
-            # get IP
-            if not self.tor_get_ip():
-                self.cli_log_err("Failed to obtain IP", level=0)
-                return False
-
-        # switch to ssh
-        if not self.mtp_mgmt_connect(prompt_cfg=True):
-            self.cli_log_err("Unable to connect UUT chassis", level=0)
-            return False
-
         homedir = self.get_homedir()
         if fpo:
             # One-time steps related to running the diag image
@@ -6561,8 +6705,58 @@ class mtp_ctrl():
             return False
         return True
 
+    def tor_pcie_rescan(self, slot):
+        """ remove pcie resources and scan back """
+        # cmd = "/home/diag/diag/util/fpgautil power on e{:d}".format(slot)
+        # if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.TOR_POWER_ON_DELAY + MTP_Const.TOR_PCIE_SCAN_DELAY):
+        #     return False
+
+        bus = NIC_IP_Address.PCI_BUS[slot]
+        cmd = "echo 1 > /sys/bus/pci/devices/00{:s}.0/remove".format(bus)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "rmmod ionic"
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "echo 1 > /sys/bus/pci/rescan"
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        cmd = "lspci -s {:s}".format(bus)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            return False
+
+        return True
+
     @single_slot_test("DL", "NIC_MEMTUN_INIT")
     def tor_nic_memtun_init(self, slot):
+        bus = NIC_IP_Address.PCI_BUS[slot]
+        cmd = "lspci -s {:s}".format(bus)
+        if not self._nic_ctrl_list[slot].mtp_get_info(cmd):
+            return False
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        if cmd_buf:
+            if bus in cmd_buf and "1dd8:0002" in cmd_buf:
+                fpo = False
+            else:
+                # try to bringup pcie with first-power-on procedure
+                fpo = True
+        else:
+            # try to bringup pcie with first-power-on procedure
+            fpo = True
+
+        if fpo:
+            if not self._nic_ctrl_list[slot].nic_dummy_fru():
+                self.cli_log_slot_err(slot, "Failed to bringup PCIE with dummy FRU")
+                return False
+
+            # pcie rescan is included in power on
+            if not self.tor_pcie_rescan(slot):
+                self.cli_log_slot_err(slot, "Failed to rescan pcie")
+                return False
+
         ret = False
         for x in range(2):
             self.cli_log_slot_inf(slot, "Opening memtun")
@@ -6572,7 +6766,7 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_err(slot, "Failed to init memtun")
                 cmd = "ps -A | grep memtun"
-                if not self.self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                     self.cli_log_slot_err(slot, "{:s} failed".format(cmd))
 
         return ret
@@ -6854,18 +7048,18 @@ class mtp_ctrl():
         return ret
 
     def tor_svos_prog(self, img, download=True, ship_img=False):
-        uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
+        # uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
+        uut_img_dir = "/"
 
         # if download:
         if not self.tor_svos_verify(ship_img):
             self.cli_log_inf("Downloading SVOS image")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
+
+            cmd = "cd {:s}".format(uut_img_dir)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
                 return False
+
             if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, uut_img_dir, TOR_IMAGES.TFTP_SERVER_DIR+img):
                 self.cli_log_err("Failed to get {:s}".format(img), level=0)
                 return False
@@ -6885,10 +7079,6 @@ class mtp_ctrl():
 
     def tor_svos_verify(self, ship_img=False):
         if not self.tor_svos_init():
-            return False
-
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
             return False
 
         got_date = self._svos_dat
@@ -7235,9 +7425,6 @@ class mtp_ctrl():
             self.cli_log_inf("CPLD is up-to-date")
             return True
         self.cli_log_inf("Downloading CPLD image")
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to console to board", level=0)
-            return False
 
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
@@ -7261,29 +7448,42 @@ class mtp_ctrl():
         }
         for _device in devices[device]:
             if _device.startswith("fpga"):
-                self.cli_log_inf("Programming primary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash program primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                if "-dual-" in cpld_img_file:
+                    self.cli_log_inf("Programming {:s}".format(_device))
+                    cmd = "{:s}fpgautil flash program allflash /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Verifying programmed primary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash verify primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Verifying programmed {:s}".format(_device))
+                    cmd = "{:s}fpgautil flash verify allflash /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
+                else:
+                    self.cli_log_inf("Programming primary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash program primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Programming secondary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash program secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Verifying programmed primary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash verify primary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
-                self.cli_log_inf("Verifying programmed secondary {:s} partition".format(_device))
-                cmd = "{:s}fpgautil flash verify secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
-                if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-                    self.cli_log_err("{:s} failed".format(cmd))
-                    return False
+                    self.cli_log_inf("Programming secondary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash program secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
+
+                    self.cli_log_inf("Verifying programmed secondary {:s} partition".format(_device))
+                    cmd = "{:s}fpgautil flash verify secondary /{:s}".format(fpgautil_path, os.path.basename(cpld_img_file))
+                    if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["Verification passed"], timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
+                        self.cli_log_err("{:s} failed".format(cmd))
+                        return False
 
                 continue
 
@@ -7403,9 +7603,6 @@ class mtp_ctrl():
 
     def tor_fea_cpld_prog(self, device, cpld_img_file, fpgautil_path=MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH):
         self.cli_log_inf("Downloading CPLD feature row image")
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to console to board", level=0)
-            return False
 
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
@@ -7660,9 +7857,6 @@ class mtp_ctrl():
         return True
 
     def tor_isp_enable(self):
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
 
         cmd = "hpe-isp config show"
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -7855,7 +8049,7 @@ class mtp_ctrl():
 
         return True
 
-    def tor_copy_sys_log(self, dest_folder):
+    def tor_copy_sys_log(self, dest_folder, local_copy=False):
         self.cli_log_inf("Copying system logs", level=0)
 
         mtp_mgmt_cfg = self.get_mgmt_cfg()
@@ -7883,13 +8077,22 @@ class mtp_ctrl():
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Couldn't save system logfile safely", level=0)
                 continue
+            cmd = "chmod +r /{:s}".format(os.path.basename(filename))
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Couldn't change system logfile permissions", level=0)
+                continue
             filename = "/"+os.path.basename(filename)
             dest_name = dest_folder + filename
             if not dest_name.endswith(".log"):
                 dest_name = dest_name + ".log"
-            if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
-                self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
-                continue
+            if local_copy:
+                if not self.mtp_mgmt_exec_cmd("cp {:s} {:s}".format(filename, dest_name)):
+                    self.cli_log_err("Unable to copy UUT system log file {:} locally".format(filename), level=0)
+                    continue
+            else:
+                if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
+                    self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
+                    continue
 
         handle = pexpect.spawn("ls {:s}".format(dest_folder))
         handle.expect("$")
@@ -7912,6 +8115,10 @@ class mtp_ctrl():
             self.cli_log_err("Unable to telnet to UUT chassis")
 
         if not self._svos_boot:
+            if not self.tor_get_ip():
+                self.cli_log_err("UUT chassis lost IP")
+                return False
+
             if not self.mtp_mgmt_connect():
                 self.cli_log_err("Unable to ssh to UUT chassis")
                 return False
@@ -7945,3 +8152,212 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].mtp_exec_cmd("killall tclsh")
         self._nic_ctrl_list[slot].mtp_exec_cmd("######## {:s} ########".format("END failure dump"))
 
+    def parse_fpgautil(self, cmd_buf):
+        missing_list = list()
+
+        module_regexp = {
+            "PSU": r'%s.*H/W Rev: *(.*) *S/N: *(.*) *F/W.*: *(.*)',
+            "FAN": r'%s: *PRESENT',
+            "SSD": r'%s MODEL: *(.*) *S/N: *(.*) *Capacity: *(.*[TGMK]B)',
+            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) SIZE: *(.*)',
+            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)',
+            "QSFP": r'%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)'
+        }
+
+        for module in self.sys_modules["PSU"].keys():
+            regexp = module_regexp["PSU"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #H/W Rev
+            module_info_list.append(match.group(2).strip()) #S/N
+            module_info_list.append(match.group(3).strip()) #F/W
+            self.sys_modules["PSU"][module] = module_info_list[:]
+
+        for module in self.sys_modules["FAN"].keys():
+            regexp = module_regexp["FAN"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            self.sys_modules["FAN"][module] = "PRESENT"
+
+        for module in self.sys_modules["SSD"].keys():
+            regexp = module_regexp["SSD"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #MODEL
+            module_info_list.append(match.group(2).strip()) #S/N
+            module_info_list.append(match.group(3).strip()) #CAPACITY
+            self.sys_modules["SSD"][module] = module_info_list[:]
+
+        for module in self.sys_modules["MEMORY"].keys():
+            regexp = module_regexp["MEMORY"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #SIZE
+            self.sys_modules["MEMORY"][module] = module_info_list[:]
+
+        for module in self.sys_modules["SFP"].keys():
+            regexp = module_regexp["SFP"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #BITRATE
+            self.sys_modules["SFP"][module] = module_info_list[:]
+
+        for module in self.sys_modules["QSFP"].keys():
+            regexp = module_regexp["QSFP"] % module
+            match = re.search(regexp, cmd_buf)
+            if not match:
+                missing_list.append(module)
+                continue
+            module_info_list = list()
+            module_info_list.append(match.group(1).strip()) #PN
+            module_info_list.append(match.group(2).strip()) #SN
+            module_info_list.append(match.group(3).strip()) #BITRATE
+            self.sys_modules["QSFP"][module] = module_info_list[:]
+
+        return missing_list
+
+    def tor_present_sanity_check(self):
+        # check presence of PSUs, FANs, SFPs, QSFPs
+        test = "PRESENT_CHECK"
+
+        retry_cnt = 3
+        while True:
+            cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            cmd_buf = self.mtp_get_cmd_buf()
+            if not cmd_buf:
+                self.cli_log_err("{:s} returned nothing".format(cmd), level=0)
+                return False
+
+            missing_list = self.parse_fpgautil(cmd_buf)
+            if len(missing_list) == 0:
+                return True
+            else:
+                for module in missing_list:
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, module))
+
+            retry_cnt -= 1
+            if retry_cnt >= 0:
+                libmfg_utils.aruba_gui_clear_buffer2()
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+                continue
+            else:
+                break
+
+        return False
+
+    def tor_linkup_sanity_check(self):
+        # since ports are not enabled by default, need diag PRBS to take care of enabling the ports.
+        test = "LINK_CHECK"
+
+        retry_cnt = 3
+        while retry_cnt > 0:
+            cmd = "cd /fs/nos/home_diag/diag/util"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            prbs_type = "prbs58"
+            prbs_duration = "5"
+            cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
+            test_timeout = self.get_test_timeout(cmd, "PRBS_TOR")
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PRBS PASSED" not in cmd_buf:
+                # self.mtp_dump_err_msg(cmd_buf)
+                ports_down = re.findall(r'(Port-\d+) .*LINK DOWN', cmd_buf)
+                ports_missing = re.findall(r'(Q?SFP\-\d+) is not detecting presence', cmd_buf)
+                if len(ports_down) == 0 and len(ports_missing) == 0:
+                    self.cli_log_err("Failed to run PRBS", level=0)
+                    return False
+
+                for port in ports_down + ports_missing:
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, port))
+
+                libmfg_utils.aruba_gui_clear_buffer2()
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+
+                retry_cnt -= 1
+                continue
+            else:
+                return True
+
+        return False
+
+    def tor_usb_sanity_check(self):
+        # check presence of PSUs, FANs, SFPs, QSFPs
+        test = "PRESENT_CHECK"
+
+        cmd = "lsusb"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
+            return False
+
+        retry_cnt = 3
+        while True:
+            cmd = 'dmesg | grep "USB Mass Storage"'
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} failed".format(cmd), level=0)
+                return False
+
+            cmd_buf = self.mtp_get_cmd_buf()
+            if not cmd_buf:
+                self.cli_log_err("{:s} returned with no output".format(cmd), level=0)
+                return False
+
+            if "USB Mass Storage device detected" in cmd_buf:
+                # USB is present, now check that it's formatted correctly
+
+                cmd = "fdisk -l /dev/sdb"
+                if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                    self.cli_log_err("{:s} failed".format(cmd), level=0)
+                    return False
+
+                cmd_buf = self.mtp_get_cmd_buf()
+                if not cmd_buf:
+                    self.cli_log_err("{:s} returned with no output".format(cmd), level=0)
+                    return False
+
+                if "FAT32" in cmd_buf:
+                    return True
+                else:
+                    self.cli_log_err("USB has bad formatting", level=0)
+                    self.cli_log_err("[{:s}] {:s} module missing".format(test, "USB"))
+            else:
+                self.cli_log_err("[{:s}] {:s} module missing".format(test, "USB"))
+
+            retry_cnt -= 1
+            if retry_cnt >= 0:
+                libmfg_utils.aruba_gui_clear_buffer2()
+                raw_input("Please re-insert the modules above then press any key to continue.\n")
+                self.cli_log_inf("Rerunning sanity check...")
+                continue
+            else:
+                break
+
+        return False

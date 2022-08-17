@@ -9,6 +9,7 @@ import os
 import time
 import pexpect
 import glob
+import select
 
 from libdefs import MTP_Const
 from libdefs import UUT_Type
@@ -618,8 +619,10 @@ def get_userid(proj):
         return "diag"
 
 def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=""):
+    temp_remote_dir = "/home/{:s}/".format(userid) #first, scp to a directory where we have permissions
+
     if logfilep == "":
-        logfilep = open("/dev/null", "w+")
+        logfilep = open("/tmp/{:s}_nc".format(ip_addr), "w+")
     cmd = "md5sum " + local_file
     session = pexpect.spawn(cmd, logfile=logfilep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
@@ -631,7 +634,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=
         cli_err("Execute command {:s} failed".format(cmd))
         return False
 
-    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, remote_dir), logfile=logfilep)
+    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, temp_remote_dir), logfile=logfilep)
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
@@ -644,6 +647,10 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=
     session.sendline(passwd)
     session.expect_exact(get_linux_prompt_list())
 
+    cmd = "sudo mv {:s}/{:s} {:s}".format(temp_remote_dir, os.path.basename(local_file), remote_dir)
+    session.sendline(cmd)
+    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_SYNC_DELAY)
+
     cmd = "sync"
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_SYNC_DELAY)
@@ -653,12 +660,13 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
+
     # md5sum match
     if match:
         if match.group(1) == local_md5sum:
             return True
         else:
-            cli_err("File md5sum mismatch")
+            cli_err("File md5sum mismatch copying to UUT")
             return False
     else:
         cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
@@ -667,7 +675,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=
 
 def network_get_file(ip_addr, userid, passwd, local_file, remote_file, logfilep=""):
     if logfilep == "":
-        logfilep = open("/tmp/temp", "w+")
+        logfilep = open("/tmp/{:s}_ng".format(ip_addr), "w+")
     session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file), logfile=logfilep)
     session.expect_exact("ssword:")
     session.sendline(passwd)
@@ -696,7 +704,8 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file, logfilep=
     session.sendline(passwd)
     session.expect_exact(get_linux_prompt_list())
 
-    cmd = "md5sum " + remote_file
+    # need sudo with new CXOS
+    cmd = "sudo md5sum " + remote_file
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
@@ -739,6 +748,57 @@ def console_copy_file(mtp_mgmt_ctrl, ip_addr, local_dir, remote_file):
         return False
 
     return True
+
+def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
+    ip_addr = mtp_mgmt_ctrl._mgmt_cfg[0]
+    userid = mtp_mgmt_ctrl._mgmt_cfg[1]
+    passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
+    logfilep = mtp_mgmt_ctrl._diag_filep
+    temp_remote_dir = "/home/{:s}/".format(userid) #first, scp to a directory where we have permissions
+
+    if logfilep == "":
+        logfilep = open("/tmp/{:s}_nc".format(ip_addr), "w+")
+    cmd = "md5sum " + local_file
+    session = pexpect.spawn(cmd, logfile=logfilep)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    if match:
+        local_md5sum = match.group(1)
+    else:
+        cli_err("Execute command {:s} failed".format(cmd))
+        return False
+
+    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, temp_remote_dir), logfile=logfilep)
+    session.expect_exact("ssword:")
+    session.sendline(passwd)
+    session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
+
+    # verify the file md5sum
+    cmd = "sudo mv {:s}/{:s} {:s}".format(temp_remote_dir, os.path.basename(local_file), remote_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    cmd = "sync"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    cmd = "md5sum " + remote_dir + os.path.basename(local_file)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if not cmd_buf:
+        cli_err("No result from command {:s}".format(cmd))
+        return False
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(cmd_buf))
+
+    # md5sum match
+    if match:
+        if match.group(1) == local_md5sum:
+            return True
+        else:
+            cli_err("File md5sum mismatch copying to UUT")
+            return False
+    else:
+        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+        return False
 
 def mtp_clear_console(mtp_mgmt_ctrl):
     if mtp_mgmt_ctrl._ts_cfg:
@@ -1056,13 +1116,8 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
         mtp_mgmt_ctrl.cli_log_err("{:s} failed".format(cmd))
         return False
 
-    ip_addr = mtp_mgmt_ctrl._mgmt_cfg[0]
-    usrid = mtp_mgmt_ctrl._mgmt_cfg[1]
-    passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
-    logfilep = mtp_mgmt_ctrl._diag_filep
-
     cmd = "ls " + packages_src_dir
-    session = pexpect.spawn(cmd, logfile=logfilep)
+    session = pexpect.spawn(cmd, logfile=mtp_mgmt_ctrl._diag_filep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     packages_list = session.before.split()
     session.close()
@@ -1074,7 +1129,7 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
         if package in onboard_packages:
             mtp_mgmt_ctrl.cli_log_inf("{:s} package already exists".format(package))
             continue
-        if not network_copy_file(ip_addr, usrid, passwd, packages_src_dir+package, packages_dst_dir, logfilep=logfilep):
+        if not network_copy_file2(mtp_mgmt_ctrl, packages_src_dir+package, packages_dst_dir):
             mtp_mgmt_ctrl.cli_log_err("Copy python packages failed", level=0)
             return False
         cmd = "cd {:s}".format(packages_dst_dir)
@@ -1799,4 +1854,22 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
 
     return logfile_path, open_file_track_list
+
+def aruba_gui_clear_buffer():
+    while True:
+        i,o,e = select.select([sys.stdin],[],[],2)
+        if i:
+            print("this is catch:", sys.stdin.readline())
+        else:
+            break
+
+def aruba_gui_clear_buffer2():
+    # Catch any previously entered User input especially from the GUI before
+    # prompting the User to press any key to continue.
+    while True:
+        rlist, wlist, xlist = select.select([sys.stdin], [], [], 2)
+        if rlist:
+            print("Catching previously entered input:", sys.stdin.readline())
+        else:
+            break
 

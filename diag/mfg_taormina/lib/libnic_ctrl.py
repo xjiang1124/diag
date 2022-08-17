@@ -48,7 +48,7 @@ class nic_ctrl():
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
-        self._err_msg = None
+        self._err_msg = ""
         self._cmd_buf = None
 
         self._asic_type = None
@@ -142,13 +142,18 @@ class nic_ctrl():
             cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 return False
             if idx == 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
+            elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
@@ -182,7 +187,7 @@ class nic_ctrl():
         self._nic_handle.sendline(cmd)
         retries = 0
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
                 # try one more time:
                 if retries == 0:
@@ -193,6 +198,11 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
             if idx == 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
+            elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
@@ -240,13 +250,18 @@ class nic_ctrl():
             cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
             elif idx == 0:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
+            elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
@@ -1080,21 +1095,22 @@ class nic_ctrl():
             ip_addr = libmfg_utils.get_nic_ip_addr(self._slot, self._nic_type)
             cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, ip_addr, libmfg_utils.get_ssh_option(), dst_directory)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "assword:"], timeout=MTP_Const.NIC_NETCOPY_DELAY)
         if idx < 0:
             libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg(self._nic_handle.before)
+            self.nic_set_err_msg("No prompt back in time")
+            self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
         elif idx == 1:
             self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file", "Exiting with failure"], timeout=MTP_Const.OS_CMD_DELAY)
             if idx < 0:
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_err_msg(self._nic_handle.before)
                 return False
-            if idx == 1:
+            if idx == 1 or idx == 2:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
                 self.nic_set_cmd_buf(self._nic_handle.before)
@@ -3267,6 +3283,57 @@ class nic_ctrl():
 
         return True
 
+    def nic_dummy_fru(self):
+        fmt_dummy_fru_json = """
+{{
+    "manufacturing-date": "1658966400",
+    "manufacturer": "Pensando",
+    "product-name": "DSS-48x25G-6x100G",
+    "serial-number": "US10L6B001 ",
+    "part-number": "DSS-4825-6100",
+    "frufileid": "06\/04\/21",
+    "board-id": "1",
+    "engineering-change-level": "0",
+    "num-mac-address": "16",
+    "mac-address": "04:90:81:{:02}:6f:a6"
+}}
+
+        """
+        dummy_fru_json = fmt_dummy_fru_json.format(self._slot)
+
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self._nic_handle.send("cat > /tmp/fru.json")
+        self._nic_handle.send("\r")
+        self._nic_handle.send(dummy_fru_json)
+        self._nic_handle.send(chr(3))
+
+        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("cat /tmp/fru.json")
+        nic_cmd_list.append("killall pciemgrd-gold")
+        nic_cmd_list.append("/platform/bin/pciemgrd-gold &")
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FSETUP_ELBA_UBOOT_DELAY)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_console_detach()
+                return False
+
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
     def nic_memtun_init(self):
         cmd = "ps -A | grep memtun"
         if not self.mtp_exec_cmd(cmd):
@@ -3301,7 +3368,7 @@ class nic_ctrl():
             if pingsuccess:
                 break
         if not pingsuccess:
-            self.nic_set_err_msg("NIC-0{} : {:s} failed,".format(slot+1, cmd))
+            self.nic_set_err_msg("NIC-0{} : {:s} failed,".format(self._slot+1, cmd))
             return False
 
         return True
