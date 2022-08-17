@@ -1444,6 +1444,8 @@ sub parse_fpga_and_ecc {
     my $smbus_err = 0;
     my $j2c_error_linenum = 0;
     my $ecc_reg_linenum = 0;
+    my $ecc_start_linenum = 0;
+    my $ecc_result_linenum = 0;
     my $ecc_not_valid = 0;
     my $ecc_result_exist = 0;
     my $ecc_result_err = 0;
@@ -1739,15 +1741,23 @@ sub parse_fpga_and_ecc {
                 $multi_uncorr_syn = 1;
             }
         }
-
-        if($line =~ m/FAIL: ECC_EN:/) {
-            $ecc_result_exist = 1;
-            $ecc_result_err = 1;
-            $ecc_sts = $ecc_sts.$line;
+        if($line =~ m/=== Dumping ECC info ===/) {
+            $ecc_start_linenum = $.;
         }
-        if($line =~ m/MSG :: ECC_EN:0x33 ECC_INTERRUPT:0x0/) {
-            $ecc_result_exist = 1;
-            $ecc_result_err = 0;
+        if($line =~ m/FAIL: ECC_EN:/) {
+            $ecc_result_linenum = $.;
+            if ($ecc_result_linenum - $ecc_start_linenum < 300) {
+                $ecc_result_exist = 1;
+                $ecc_result_err = 1;
+                $ecc_sts = $ecc_sts.$line;
+            }
+        }
+        if($line =~ m/MSG :: ECC_EN:0x\d+ ECC_INTERRUPT:0x0 ECC_INTERRUPT_COUNTER:0x0/) {
+            $ecc_result_linenum = $.;
+            if ($ecc_result_linenum - $ecc_start_linenum < 300) {
+                $ecc_result_exist = 1;
+                $ecc_result_err = 0;
+            }
         }
         if($line =~ m/S2I Operation timed out/) {
             #print "$line";
@@ -1781,7 +1791,7 @@ sub parse_fpga_and_ecc {
         $diag_fa_code{"Bad_J2C"} = 1;
         print "ECC not valid due to bad J2C\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
-    } elsif (($num_ecc_sts_errors == 0) || ($ecc_result_err == 0)) {
+    } elsif (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
         print "ECC status OK\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
     } else {
