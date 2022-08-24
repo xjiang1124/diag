@@ -47,9 +47,6 @@ var HpeTblLACONA = []entry {
     entry{"Board Info Area Checksum",               INT8,       127,       1,    []byte{0}},
 } 
  
-
-
-
 var HpeTblLACONAext = []entry {
     entry{"Product Info Format Version",            INT8,        128,        1,    []byte{1}},
     entry{"Product Area Length",                    INT8,        129,        1,    []byte{0x0C}},
@@ -92,10 +89,6 @@ var HpeTblLACONAext = []entry {
         0x20, 0x20}},
 } 
 
-
-
-
-
 //Board Information Area Table
 var HpeTblLACONA32G = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{1}},
@@ -115,10 +108,10 @@ var HpeTblLACONA32G = []entry {
         0x41, 0x4E, 0x44, 0x4F}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xEC}},
     entry{"Product Name",                           STRING,      24,      44,    []byte{
-        0x44, 0x53, 0x43, 0x32, 0x2d, 0x32, 0x35, 0x2c, 0x32, 0x78, 
-        0x53, 0x46, 0x50, 0x35, 0x36, 0x2c, 0x33, 0x32, 0x67, 0x52, 
-        0x41, 0x4d, 0x2c, 0x36, 0x34, 0x47, 0x65, 0x4d, 0x4d, 0x43, 
-        0x2c, 0x56, 0x69, 0x2c, 0x48, 0x50, 0x45, 0x20, 0x20, 0x20,
+        0x50, 0x43, 0x41, 0x20, 0x44, 0x53, 0x50, 0x20, 0x44, 0x53,
+        0x43, 0x32, 0x35, 0x76, 0x32, 0x20, 0x31, 0x30, 0x2F, 0x32,
+        0x35, 0x47, 0x20, 0x32, 0x70, 0x20, 0x53, 0x46, 0x50, 0x32,
+        0x38, 0x20, 0x33, 0x32, 0x47, 0x20, 0x53, 0x50, 0x4C, 0x20,
         0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        68,       1,    []byte{0xCB}},
     entry{"Serial Number",                          STRING,      69,      10,    []byte{0x00, 0x00, 0x00, 0x00,
@@ -142,9 +135,6 @@ var HpeTblLACONA32G = []entry {
     entry{"PAD",                                    INT8,       122,       5,    []byte{0, 0, 0, 0, 0}},
     entry{"Board Info Area Checksum",               INT8,       127,       1,    []byte{0}},
 } 
- 
-
-
 
 var HpeTblLACONA32Gext = []entry {
     entry{"Product Info Format Version",            INT8,        128,        1,    []byte{1}},
@@ -162,7 +152,7 @@ var HpeTblLACONA32Gext = []entry {
     entry{"HPE Product Number",                    STRING,       177,       10,    []byte{
         0x50, 0x34, 0x37, 0x39, 0x32, 0x38, 0x2d, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
-    entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x42}},
+    entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x41}},
     entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
     entry{"HPE Serial Number",                      STRING,      191,       10,    []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
