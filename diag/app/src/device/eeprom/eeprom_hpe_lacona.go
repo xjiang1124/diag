@@ -152,7 +152,7 @@ var HpeTblLACONA32Gext = []entry {
     entry{"HPE Product Number",                    STRING,       177,       10,    []byte{
         0x50, 0x34, 0x37, 0x39, 0x32, 0x38, 0x2d, 0x42, 0x32, 0x31}},
     entry{"Product Version Type/Length",            INT8,        187,        1,    []byte{0xC2}},
-    entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x41}},
+    entry{"Product Version",                        STRING,      188,        2,    []byte{0x30, 0x43}},
     entry{"PCA Serial Number Type/Length",          INT8,        190,        1,    []byte{0xCA}},
     entry{"HPE Serial Number",                      STRING,      191,       10,    []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
