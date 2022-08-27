@@ -703,7 +703,7 @@ def main():
         # # power cycle all nic
         # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
         # Ensure nic_util and nic_arm as needed for elba's efuse script
@@ -879,7 +879,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
 
 
