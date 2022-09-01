@@ -676,7 +676,7 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
         # init nic diag env.

@@ -4535,7 +4535,7 @@ class nic_ctrl():
             },
         """
         exp_secure_boot = "yes"
-        exp_secure_boot_keys = "eng"
+        exp_secure_boot_keys = "prod"
 
         if self._nic_type not in FPGA_TYPE_LIST:
             return False

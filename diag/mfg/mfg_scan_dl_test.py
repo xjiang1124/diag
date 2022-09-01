@@ -467,6 +467,7 @@ def main():
             continue
         if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
             continue
+        pass_nic_list.append(slot)
         pn = nic_fru_cfg[mtp_id][key]["PN"]
         mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
@@ -930,7 +931,7 @@ def main():
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-    if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list, enable=False):
+    if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list, enable=False, dsp=dsp):
         mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
     # init nic diag env.

@@ -219,7 +219,40 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
             return False
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "")
-    
+
+    # if nic_type in ELBA_NIC_TYPE_LIST:
+    #     if nic_type in FPGA_TYPE_LIST:
+    #         cmd = "/nic/bin/halctl show system --yaml"
+    #         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+    #             mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute halctl show system")
+    #             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+    #             return False
+    #     else:
+    #         cmd = "/nic/bin/pdsctl show system --yaml"
+    #         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+    #             mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute pdsctl show system")
+    #             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+    #             return False
+
+    #     die_temp = False
+    #     local_temp = False
+    #     die_temp_match = re.search(r'dietemperature:\s([0-9]+)$', mtp_mgmt_ctrl.mtp_get_cmd_buf())
+    #     if die_temp_match:
+    #         die_temp_val=int(die_temp_match.group(0).strip())
+    #         die_temp = True
+    #     else:
+    #         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to find die temperature value")
+
+    #     local_temp_match = re.search(r'localtemperature:\s([0-9]+)$', mtp_mgmt_ctrl.mtp_get_cmd_buf())
+    #     if local_temp_match:
+    #         local_temp_val=int(local_temp_match.group(0).strip())
+    #         local_temp = True
+    #     else:
+    #         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to find local temperature value")        
+
+    #     if die_temp: mtp_mgmt_ctrl.cli_log_slot_inf(slot, "dietemperature: {:d}".format(die_temp_val))
+    #     if local_temp: mtp_mgmt_ctrl.cli_log_slot_inf(slot, "localtemperature: {:d}".format(local_temp_val))
+
     return True
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
