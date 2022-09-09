@@ -2839,4 +2839,3 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
 
     return errType.SUCCESS
 }
-
