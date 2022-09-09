@@ -5,6 +5,7 @@ import (
     "bytes"
     "time"
     "strconv"
+    "strings"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -100,13 +101,14 @@ var CardDataInfo = map[string]updateInfo{
 
 //Add PNs to table of accepted cards
 var CardTypes = []card{
-    card{"IBM Ortano", IBM_PN},
-    card{"PEN Ortano", PEN_PN},
+    card{"ORTANO-IBM", IBM_PN},
+    card{"ORTANO-PEN", PEN_PN},
                       }
 
 //Data structure slices
-var Data []byte
-var Info []entryinfo
+var Data    []byte
+var DataRaw []byte
+var Info    []entryinfo
 
 //==============================================================================
 //                     G E N E R I C     F U N C T I O N S
@@ -189,7 +191,7 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     return
 }
 
-func findPN(start int, end int) (pn string, err int) {
+func findPn(start int, end int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
     partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_PN_4)
@@ -214,6 +216,18 @@ func findPN(start int, end int) (pn string, err int) {
         err = errType.FAIL
         return
     }
+}
+
+func findPnBlind() (pn string, err int) {
+    dataString := string(DataRaw[:])
+    for _, card := range CardTypes {
+        if strings.Contains(dataString, card.pn) {
+            pn = card.pn
+            return
+        }
+    }
+    err = errType.PN_NOT_SUPPORT
+    return
 }
 
 //unused function
@@ -491,6 +505,19 @@ func writeToFRU(devName string) (err int) {
     return
 }
 
+func readFromFruBlind(devName string) (err int) {
+    var fruData byte
+
+    for i:=0;i<MAX_BYTES;i++ {
+        fruData, err =readOffset(devName, i)
+        DataRaw = append(DataRaw, fruData)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+    return
+}
+
 func readFromFru(devName string) (err int) {
     //Reads values from FRU and uploads into Data slice
     var sliceLen int
@@ -501,6 +528,7 @@ func readFromFru(devName string) (err int) {
         Data = append(Data, 0xFF)
     }
 
+    // Calculate FRU table size based on IPMI headers
     //Checks header for variables
     for i:=0;i<6;i++ {
         fruData, err = readOffset(devName, i)
@@ -582,44 +610,67 @@ func CardInList(partNum string) (found bool, minPN string) {
     return
 }
 
-func DisplayData(devName string, bus uint32, devAddr byte, field string) (err int){
+func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo bool) (err int){
     //Displays data of EEPROM
     //Formatting
     var outputString string
+    var cardPN string
+    var dataValue []byte
+
     fmtStr  := "%-45s%-20s"
     fmtDate := "%-45s0x%02X%02X%02X  %s"
     fmtMac  := "%-45s%02X-%02X-%02X-%02X-%02X-%02X"
     fmtHex  := "%-45s0x%-20X"
+
     //Opens connection
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
         return
     }
     defer smbusNew.Close()
-    //Reads data from FRU and puts into Data slice
-    err = readFromFru(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    //Finds PN on card and sets EepromTbl
-    start := checkCHdrStart()
-    boardInfoOffset, _, _ := getOffsetsCHdr(start)
-    boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
-    cardPN, err := findPN(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen)
 
+    //Reads data from FRU and puts into Data slice
+    if fpo == true {
+        err = readFromFruBlind(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        cardPN, err = findPnBlind()
+        if err != errType.SUCCESS {
+            return
+        }
+
+    } else {
+        err = readFromFru(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        //Finds PN on card and sets EepromTbl
+        start := checkCHdrStart()
+        boardInfoOffset, _, _ := getOffsetsCHdr(start)
+        boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
+        cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen)
+    }
     if (err == errType.SUCCESS) {
         EepromTbl=CardDataInfo[cardPN].tbl
     } else {
         err = errType.PN_NOT_SUPPORT
         return
     }
+
     //Displays info
     for i:=0;i<len(EepromTbl);i++ {
         dataName := EepromTbl[i].Name
         dataOffset := EepromTbl[i].Offset
         dataLen := EepromTbl[i].NumBytes
         dataType := EepromTbl[i].DataType
-        dataValue := Data[dataOffset:(dataOffset+dataLen)]
+        if fpo == true {
+            dataValue = DataRaw[dataOffset:(dataOffset+dataLen)]
+        } else {
+            dataValue = Data[dataOffset:(dataOffset+dataLen)]
+        }
         //Checks for the field
         if field != "ALL" {
             if field == "SN" {

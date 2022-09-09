@@ -546,6 +546,7 @@ func main() {
     DellOcpPtr := flag.Bool  ("DellOcp", false,     "Dell OCP eeprom operation option")
     custTypePtr:= flag.String("custType", "pensando", "Customerized eeeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
+    fpoPtr     := flag.Bool  ("fpo",    false,      "First time power on")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -626,7 +627,7 @@ func main() {
 
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
-        err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field)
+        err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
 
         if err == errType.SUCCESS {
             return

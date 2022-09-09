@@ -290,11 +290,11 @@ func EepromUpdateNew(devName string, bus uint32, devAddr byte, sn string, pn str
     return
 } 
 
-func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string) (err int) {
+func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string, fpo bool) (err int) {
     //Displays data read from Eeprom
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.DisplayData(devName, bus, devAddr, field)
+    err = eeprom.DisplayData(devName, bus, devAddr, field, fpo)
 
     return
 }
