@@ -626,6 +626,15 @@ func main() {
 
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
+        err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field)
+
+        if err == errType.SUCCESS {
+            return
+        }
+        if err != errType.PN_NOT_SUPPORT {
+            return
+        }
+
         if pn != MTPOCPADAPTER && custType != "MTPOCPADAPTER" && devName != "FRU_ADAP" {
             err = eepromDispTableFix(uut, devName, iInfo.Bus, iInfo.DevAddr) 
             if err != errType.SUCCESS {
@@ -666,6 +675,12 @@ func main() {
         if *updatePtr == true {
             misc.SleepInUSec(1000)
             cli.Printf("i", "Programming/Updating Fru\n")
+            found, _ := eeprom.CardInList(pn)
+            if found == true {
+                hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, mac, date)
+                misc.SleepInUSec(500000)
+                return
+            }
             if mac != "" && eeprom.HpeAlom == false {
                 hwdev.EepromUpdateMac(devName, iInfo.Bus, iInfo.DevAddr, mac)
                 misc.SleepInUSec(500000)
@@ -737,4 +752,3 @@ func main() {
 
     flag.Usage()
 }
-

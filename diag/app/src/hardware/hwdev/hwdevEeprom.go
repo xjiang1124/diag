@@ -273,3 +273,32 @@ func EepromVerifyCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bo
     return
 }
 
+//==============================================================================
+//                         N E W     F U N C T I O N S
+//==============================================================================
+
+func EepromUpdateNew(devName string, bus uint32, devAddr byte, sn string, pn string, mac string, date string) (err int) {
+    //Function updates SN, PN, MAC. and Date. All fields required to update successfully.
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.ProgData(devName, bus, devAddr, sn, pn, mac, date)
+    if err != errType.SUCCESS {
+        cli.Println("e", "EEPROM update failed!")
+        return
+    }
+
+    return
+} 
+
+func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string) (err int) {
+    //Displays data read from Eeprom
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.DisplayData(devName, bus, devAddr, field)
+    if err != errType.SUCCESS {
+        cli.Println("e", "EEPROM display failed; defaulting to legacy code.")
+        return
+    }
+
+    return
+}

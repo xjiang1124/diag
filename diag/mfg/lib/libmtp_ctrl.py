@@ -3171,15 +3171,15 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
-            if software_pn != "90-0017-0001":
+            if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
-            if software_pn != "90-0017-0002":
+            if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
-            if software_pn != "90-0017-0002":
+            if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
@@ -6662,7 +6662,7 @@ class mtp_ctrl():
         self.mtp_single_j2c_unlock()
         return True
 
-    def mtp_nic_esec_write_protect(self, pass_nic_list=[], fail_nic_list=[], enable=False):
+    def mtp_nic_esec_write_protect(self, pass_nic_list=[], fail_nic_list=[], enable=False, dsp="DL"):
         nic_list = list()
         for slot in pass_nic_list:
             nic_type = self.mtp_get_nic_type(slot)
@@ -6672,7 +6672,6 @@ class mtp_ctrl():
         if not nic_list:
             return True
 
-        dsp = "DL"
         if enable:
             test = "ENABLE_ESEC_WP"
         else:

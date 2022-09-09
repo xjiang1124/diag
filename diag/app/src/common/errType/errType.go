@@ -43,4 +43,6 @@ const(
     LINK_DOWN            = 700
     LINK_UP              = 701
     LINK_DISABLED        = 702
+    // FRU
+    PN_NOT_SUPPORT       = 800
 )

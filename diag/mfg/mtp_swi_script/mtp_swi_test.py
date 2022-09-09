@@ -506,8 +506,21 @@ def main():
         if "SCAN_VERIFY" not in args.skip_test:
             # load the barcode config file made in toplevel
             scan_cfg_file = mtp_script_dir + "/" + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
-            scanned_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)[mtp_id]
-
+            scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+            if mtp_id not in scanned_fru_cfg_dict:
+                mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
+                # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
+                scanned_fru_cfg = dict()
+                for slot in range(MTP_Const.MTP_SLOT_NUM):
+                    key = libmfg_utils.nic_key(slot)
+                    if not nic_prsnt_list[slot]:
+                        continue
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+            else:
+                scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
             tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
             fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=True)
 
@@ -703,7 +716,7 @@ def main():
         # # power cycle all nic
         # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
         # Ensure nic_util and nic_arm as needed for elba's efuse script
@@ -879,7 +892,7 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True):
+        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
 
 
