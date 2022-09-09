@@ -2463,7 +2463,7 @@ func MatchSearchFruPartnumber(devName string, bus uint32, devAddr byte, pn strin
     defer smbusNew.Close()
 
     if (CardType == "ORTANO2" || CardType == "ORTANO2A" || CardType == "ORTANO2I") {
-        fmt.Printf("Adjust read lenghth for Ortano2/2A/2I")
+        cli.Println("i", "Adjust read lenghth for Ortano2/2A/2I")
         rdLength = 512
     }
 
