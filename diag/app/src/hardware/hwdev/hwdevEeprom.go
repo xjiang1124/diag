@@ -295,10 +295,6 @@ func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string) (e
     hwinfo.EnableHubChannelExclusive(devName)
 
     err = eeprom.DisplayData(devName, bus, devAddr, field)
-    if err != errType.SUCCESS {
-        cli.Println("e", "EEPROM display failed; defaulting to legacy code.")
-        return
-    }
 
     return
 }

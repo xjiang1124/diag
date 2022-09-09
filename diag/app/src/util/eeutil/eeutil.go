@@ -634,6 +634,7 @@ func main() {
         if err != errType.PN_NOT_SUPPORT {
             return
         }
+        cli.Println("i", "Legacy FRU table")
 
         if pn != MTPOCPADAPTER && custType != "MTPOCPADAPTER" && devName != "FRU_ADAP" {
             err = eepromDispTableFix(uut, devName, iInfo.Bus, iInfo.DevAddr) 

@@ -210,7 +210,7 @@ func findPN(start int, end int) (pn string, err int) {
     if (found == true) && (err == errType.SUCCESS) {
         return 
     } else {
-        cli.Printf("e", "ERROR: Assembly number not found.")
+        cli.Println("i", "Assembly number not found")
         err = errType.FAIL
         return
     }
@@ -611,7 +611,6 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string) (err in
         EepromTbl=CardDataInfo[cardPN].tbl
     } else {
         err = errType.PN_NOT_SUPPORT
-        cli.Printf("e", "ERROR: Card type not supported.")
         return
     }
     //Displays info
