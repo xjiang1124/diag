@@ -435,6 +435,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_TXDETECTRX";
+        delete $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"};
+        return;
+    }
+
     if (exists $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"}) {
         $top_diag_fa_code = "SNAKE_PBM_ECC_FAILURE";
         delete $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"};
@@ -686,17 +692,19 @@ sub parse_snake_log {
         if($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
+            $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"} = 1;
             $err_found = 1;
         }
-        if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc|_mc)(.*)interrupt/) {
+        if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc_|correctable|uncorrectable)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
-            if ($line =~ m/ERROR :: elb(.*)pbm(.*)(_ecc|_mc)(.*)interrupt/) {
-                $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"} = 1;
-            } else {
-                $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
-            }
+            $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
+            $err_found = 1;
+        }
+        if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_mc)(.*)interrupt/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
             $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
@@ -748,6 +756,9 @@ sub parse_snake_log {
 sub parse_l1_log {
     my ($logfile, $sn, $test_and_failure_code) = @_;
     my $log_complete = 0;
+    my $subtest_start = 0;
+    my @lines_saved;
+    my $j2c_err_logged = 0;
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
         return;
@@ -755,6 +766,10 @@ sub parse_l1_log {
     my $test_err_msg = "";
     while(my $line = <TR3>)
     {
+        if (@lines_saved >= 25) {
+            shift @lines_saved;
+        }
+        push(@lines_saved, $line);
         if($line =~ m/#FAIL#\s+(\w+)\s+\d+:\d+/) {
             if ($1 eq "elb_l1_ddr_bist") {
                 $diag_fa_code{"L1_DDR_BIST"} = 1;
@@ -764,9 +779,25 @@ sub parse_l1_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
         }
-        if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/)
-        {
+        if($line =~ m/(.*)MSG ::.*Started ===/) {
+            $subtest_start = 1;
+        }
+        if($line =~ m/(.*)MSG ::.*Done===/) {
+            $subtest_start = 0;
+        }
+        if ($subtest_start && ($line =~ m/ERROR ::/)) {
+            $test_err_msg .= $line;
+        }
+        if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/) {
             $log_complete = 1;
+        }
+        if(($j2c_err_logged == 0) && ($line =~ m/MSG :: j2c : write req error/)) {
+            $test_err_msg .= join("", @lines_saved);
+            $j2c_err_logged = 1;
+        }
+        if(($j2c_err_logged == 0) && ($line =~ m/S2I Operation timed out/)) {
+            $test_err_msg .= join("", @lines_saved);
+            $j2c_err_logged = 1;
         }
     }
     #if ($test_err_msg ne "") {
@@ -833,15 +864,17 @@ sub parse_nic_test_logs {
     } else {
 	    my $log_complete = 0;
         my $prev_line = "";
+        my $err_msg_num = 0;
         while(my $line = <TR3>)
         {
             if($line =~ m/ERROR :: elb_aapl_prbs_check :: sbus_addr/) {
                 $test_err_msg .= $prev_line;
                 $test_err_msg .= $line;
-            } elsif($line =~ m/ERROR/)
+            } elsif(($line =~ m/ERROR/) && ($err_msg_num < 3))
             {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
+                $err_msg_num++;
             }
             if(($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) && ($testname =~ "PCIE_PRBS"))
             {
@@ -875,6 +908,7 @@ sub parse_nic_test_logs {
 sub parse_eth_prbs_log {
     my ($logfile, $sn, $test_and_failure_code) = @_;
     my $test_err_msg = "";
+    my $err_msg_num = 0;
 
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"ETH_PRBS_LOGFILE_NOT_EXIST"} = 1;
@@ -882,9 +916,12 @@ sub parse_eth_prbs_log {
 	    my $log_complete = 0;
         while(my $line = <TR3>)
         {
-            if($line =~ m/ERROR/) {
+            if($line =~ m/ERROR :: elb_aapl_prbs_check :: sbus_addr.*error count/) {
+                $test_err_msg .= $line;
+            } elsif(($line =~ m/ERROR/) && ($err_msg_num < 3)) {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
+                $err_msg_num++;
             }
             if($line =~ m/:: MX PRBS (PASSED|FAILED)/) {
                 $log_complete = 1;

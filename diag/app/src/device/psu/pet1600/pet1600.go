@@ -16,6 +16,7 @@ const (
     // CMD data length in bytes
     MFR_ID_LEN    = 19
     MFR_MODEL_LEN = 20
+    MFR_SERIAL_LEN = 12
 )
 
 func DispStatus(devName string) (err int) {
@@ -39,6 +40,12 @@ func DispStatus(devName string) (err int) {
     dataBuf, err := pmbusCmd.ReadMfrId(devName, MFR_ID_LEN)
     outStr = string(dataBuf[:MFR_ID_LEN])
     cli.Println("i", "MFR_ID:", outStr)
+    if err != errType.SUCCESS {
+        return
+    }
+    dataBuf, err = pmbusCmd.ReadMfrSn(devName, MFR_SERIAL_LEN)
+    outStr = string(dataBuf[:MFR_SERIAL_LEN])
+    cli.Println("i", "MFR_SERIAL:", outStr)
     if err != errType.SUCCESS {
         return
     }

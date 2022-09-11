@@ -273,6 +273,12 @@ func ReadMfrId(devName string, numBytes int) (dataBuf []byte, err int) {
     return
 }
 
+func ReadMfrSn(devName string, numBytes int) (dataBuf []byte, err int) {
+    dataBuf = make([]byte, numBytes)
+    _, err = smbus.ReadBlock(devName, MFR_SERIAL, dataBuf)
+    return
+}
+
 func ReadMfrModel(devName string, numBytes int) (dataBuf []byte, err int) {
     dataBuf = make([]byte, numBytes)
     _, err = smbus.ReadBlock(devName, MFR_MODEL, dataBuf)

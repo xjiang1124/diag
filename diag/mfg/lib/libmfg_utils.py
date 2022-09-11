@@ -9,6 +9,7 @@ import time
 import pexpect
 import glob
 import threading
+import subprocess
 
 # mfg servers
 try:
@@ -502,6 +503,64 @@ def mfg_expect_re(session, exp_list, timeout=None):
     else:
         return idx
 
+def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
+    """
+    calculate local file and remote file md5sum, compare each other.
+    parameter local_file can be absolute or relative path;
+    parameter remote_file must pass in with absolute path;
+    return True if match
+    return False if mismatch
+    """
+
+    # calculate the local file md5sum value
+    cmd = ["md5sum", local_file]
+    try:
+        cmdoutput = subprocess.check_output(cmd)
+    except subprocess.CalledProcessError as Err:
+        cli_err("Execute command {:s} failed".format(" ".join(cmd)))
+        cli_err("Get output: {:s}".format(Err.output))
+        cli_err("Get returncode: {:s}".format(str(Err.returncode)))
+        return False
+    local_md5sum = cmdoutput.split()[0]
+
+    # calculate remote file ms5sum
+    cmd = get_ssh_connect_cmd(userid, ip_addr)
+    session = pexpect.spawn(cmd)
+    session.setecho(False)
+    session.expect_exact("assword:")
+    session.sendline(passwd)
+    session.expect_exact(get_linux_prompt_list())
+
+    cmd = "md5sum " + remote_file
+    session.sendline(cmd)
+    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    session.close()
+    if not match:
+        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+        return False
+    remote_md5sum = match.group(1)
+
+    # md5sum compare
+    if remote_md5sum == local_md5sum:
+        return True
+    else:
+        cli_err("File md5sum mismatch")
+        return False
+
+def need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename=None, filename_on_mtp=None):
+    """
+    check if the file on MTP need copy/update by compare file md5sum with local source file
+    return True if copy needed, namely md5sum mismath
+    return False if copy not needed, namly md5sum match
+    """
+
+    if local_filename is None or filename_on_mtp is None:
+        return True
+
+    if not network_md5_compare(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename, filename_on_mtp):
+        return True
+    return False
 
 def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + local_file
@@ -770,21 +829,32 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     image_dir = "/home/diag/"
 
     done_list = []
-    for image in image_list:
+    image_list_unique = list(set(image_list))
+    image_list_unique.sort()
+    for image in image_list_unique:
         if image == "":
             continue
+        image_rel_path = "release/{:s}".format(image)
+        if not file_exist(image_rel_path):
+            mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(image_rel_path), level=0)
+            return False
         if image not in image_on_mtp and image not in done_list:
-            image_rel_path = "release/{:s}".format(image)
-            if not file_exist(image_rel_path):
-                mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(image_rel_path), level=0)
-                return False
-
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s}".format(image), level=0)
             if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir):
                 mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort".format(image), level=0)
                 return False
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s} complete".format(image), level=0)
             done_list.append(image)
+        elif image in image_on_mtp and image not in done_list:
+            if need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir + os.path.basename(image_rel_path)):
+                mtp_mgmt_ctrl.cli_log_inf("Copy and overwrite existing md5sum not match firmware image {:s}".format(image), level=0)
+                if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir):
+                    mtp_mgmt_ctrl.cli_log_err("Overwrite Firmware image {:s} failed... Abort".format(image), level=0)
+                    return False
+                mtp_mgmt_ctrl.cli_log_inf("Overwrite Firmware image {:s} complete".format(image), level=0)
+                done_list.append(image)
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("Firmware image {:s} on MTP is up-to-date".format(image), level=0)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Firmware image {:s} on MTP is up-to-date".format(image), level=0)
 
@@ -793,14 +863,6 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
 def mtp_update_asic_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(nic_image), level=0)
-
-    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
-        mtp_mgmt_ctrl.cli_log_inf("ASIC images on MTP is up-to-date", level=0)
-        return True
-
-    # cleanup the stale asic images
-    cmd = "rm -f /home/diag/" + mtp_image
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     if os.path.isabs(mtp_image):
         mtp_image_file = mtp_image
@@ -826,6 +888,16 @@ def mtp_update_asic_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, for
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
 
+    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
+            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
+            mtp_mgmt_ctrl.cli_log_inf("ASIC images on MTP is up-to-date", level=0)
+            return True
+
+    # cleanup the stale asic images
+    cmd = "rm -f /home/diag/" + mtp_image
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     mtp_mgmt_ctrl.cli_log_inf("Copy ASIC image: {:s}".format(mtp_image_file), level=0)
     if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy MTP ASIC image failed... Abort", level=0)
@@ -840,14 +912,6 @@ def mtp_update_asic_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, for
 def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, force_update=False):
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(nic_image), level=0)
-
-    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
-        mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
-        return True
-
-    # cleanup the stale diag images
-    cmd = "rm -f /home/diag/image_a*.tar"
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     if "amd64" not in mtp_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong MTP image: {:s}".format(mtp_image), level=0)
@@ -872,13 +936,24 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, for
         mtp_mgmt_ctrl.cli_log_err("NIC Diag image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
         return False
 
-    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
     mtp_usrid = mtp_mgmt_cfg[1]
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
 
+    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
+            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
+            mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
+            return True
+
+    # cleanup the stale diag images
+    cmd = "rm -f /home/diag/image_a*.tar"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    # copy activity
+    mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
     if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy MTP Chassis image failed... Abort", level=0)
         return False
@@ -902,13 +977,6 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, for
     return True
 
 def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
-    if mtp_image in image_on_mtp and nic_image in image_on_mtp:
-        mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
-        return True
-
-    # cleanup the stale diag images
-    cmd = "rm -f /home/diag/image_a*.tar"
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     if "penctl.linux" not in mtp_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl image: {:s}".format(mtp_image), level=0)
@@ -939,6 +1007,16 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
     mtp_usrid = mtp_mgmt_cfg[1]
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
+
+    if mtp_image in image_on_mtp and nic_image in image_on_mtp:
+        if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
+            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
+            mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
+            return True
+
+    # cleanup the stale diag images
+    cmd = "rm -f /home/diag/image_a*.tar"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy FST Penctl image failed... Abort", level=0)
