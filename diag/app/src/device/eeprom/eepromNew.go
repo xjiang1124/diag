@@ -50,9 +50,6 @@ const (
     //Supported board PNs
     IBM_PN      string = "68-0028"
     PEN_PN      string = "68-0021"
-
-    //TEST
-    TEST_PN     string = "68-1337"
 )
 
 type progInfo struct {
@@ -92,11 +89,11 @@ var CardDataInfo = map[string]updateInfo{
                                                         FIELD_NUM_SN_3, 
                                                         FIELD_NUM_PN_10, 
                                                         FIELD_NUM_MAC_9}}},
-    //ONLY TEST; NOT REAL!
-    TEST_PN:updateInfo{Lacona32DELLTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
-        AREA_TYPE_BOARD_INFO, FIELD_NUM_SN_3, FIELD_NUM_PN_4, FIELD_NUM_MAC_9},
-                                                   progInfo{FIELD_TYPE_NUM, 
-        AREA_TYPE_BOARD_INFO, FIELD_NUM_NONE, FIELD_NUM_PN_10, FIELD_NUM_NONE}}},
+    // Example for multiple progInfo
+    //TEST_PN:updateInfo{Lacona32DELLTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
+    //    AREA_TYPE_BOARD_INFO, FIELD_NUM_SN_3, FIELD_NUM_PN_4, FIELD_NUM_MAC_9},
+    //                                               progInfo{FIELD_TYPE_NUM, 
+    //    AREA_TYPE_BOARD_INFO, FIELD_NUM_NONE, FIELD_NUM_PN_10, FIELD_NUM_NONE}}},
 }
 
 //Add PNs to table of accepted cards
@@ -600,8 +597,10 @@ func readOffset(devName string, offset int) (data byte, err int) {
 
 func CardInList(partNum string) (found bool, minPN string) {
     //Looks through supported card slice and returns true if card number is present
+    cli.Println("d", partNum)
     for _, card := range(CardTypes) {
-        if card.pn == partNum[:len(card.pn)] {
+        if strings.Contains(partNum, card.pn) {
+        //if card.pn == partNum[:len(card.pn)] {
             found = true
             minPN = card.pn
             return
