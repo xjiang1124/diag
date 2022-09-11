@@ -49,7 +49,7 @@ const (
 
     //Supported board PNs
     IBM_PN      string = "68-0028"
-    PEN_PN      string = "68-0021"
+    //PEN_PN      string = "68-0021"
 )
 
 type progInfo struct {
@@ -84,11 +84,11 @@ var CardDataInfo = map[string]updateInfo{
                                                         FIELD_NUM_SN_3, 
                                                         FIELD_NUM_PN_10, 
                                                         FIELD_NUM_MAC_9}}},
-    PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
-                                                        AREA_TYPE_BOARD_INFO, 
-                                                        FIELD_NUM_SN_3, 
-                                                        FIELD_NUM_PN_10, 
-                                                        FIELD_NUM_MAC_9}}},
+    //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
+    //                                                    AREA_TYPE_BOARD_INFO, 
+    //                                                    FIELD_NUM_SN_3, 
+    //                                                    FIELD_NUM_PN_10, 
+    //                                                    FIELD_NUM_MAC_9}}},
     // Example for multiple progInfo
     //TEST_PN:updateInfo{Lacona32DELLTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //    AREA_TYPE_BOARD_INFO, FIELD_NUM_SN_3, FIELD_NUM_PN_4, FIELD_NUM_MAC_9},
@@ -99,7 +99,7 @@ var CardDataInfo = map[string]updateInfo{
 //Add PNs to table of accepted cards
 var CardTypes = []card{
     card{"ORTANO-IBM", IBM_PN},
-    card{"ORTANO-PEN", PEN_PN},
+    //card{"ORTANO-PEN", PEN_PN},
                       }
 
 //Data structure slices
@@ -597,7 +597,6 @@ func readOffset(devName string, offset int) (data byte, err int) {
 
 func CardInList(partNum string) (found bool, minPN string) {
     //Looks through supported card slice and returns true if card number is present
-    cli.Println("d", partNum)
     for _, card := range(CardTypes) {
         if strings.Contains(partNum, card.pn) {
         //if card.pn == partNum[:len(card.pn)] {
