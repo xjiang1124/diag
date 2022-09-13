@@ -1150,6 +1150,11 @@ sub find_failure_code {
         if ($test_name eq "QSFP" && $failure_code eq "I2C") {
             $diag_fa_code{"QSFP_I2C"} = 1;
         }
+        if ($failure_code eq "CONSOLE_BOOT") {
+            if (%diag_fa_code == 0) {
+                $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
+            }
+        }
     }
     parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
     if ($all_test_msg eq "") {
