@@ -55,8 +55,15 @@ foreach slot $slot_list {
     catch {exec /home/diag/diag/scripts/turn_on_slot.sh on $slot}
 
     diag_open_j2c_if $port $slot1
-    _msrd
+    set val [_msrd]
+    if {$val != 0x1} {
+        plog_err "Uboot PROG failed: slot $slot"
+        dict set test_result $slot "FAIL"
+        continue
+    }
+
     elb_card_rst $port $slot1 hod 3200 3000 0 0 "127" 0 1 normal 0 0
+
     set val [_msrd]
     if {$val != 0x1} {
         plog_err "Uboot PROG failed: slot $slot"
