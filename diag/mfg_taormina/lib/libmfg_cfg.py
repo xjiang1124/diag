@@ -85,7 +85,7 @@ class TOR_IMAGES:
     cpu_cpld_ship_dat = dict()
     svos_fpga_image = dict()
 
-    TFTP_SERVER_IP  = "192.168.99.10"
+    TFTP_SERVER_IP  = "192.168.100.7"
     TFTP_SERVER_DIR = "/"
 
     TFTP_SERVER_FPGA_DIR = TFTP_SERVER_DIR+"/diag/util/"
