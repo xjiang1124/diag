@@ -109,6 +109,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
+    mtp_mgmt_ctrl.print_script_version()
+
     for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
         if test in skip_test:
             continue

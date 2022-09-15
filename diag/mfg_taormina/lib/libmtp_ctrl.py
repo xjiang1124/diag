@@ -354,13 +354,6 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("TOR ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search("image_amd64_.....?_(.*)\.tar", MTP_IMAGES.AMD64_IMG["ELBA"])
-        if script_ver_match:
-            script_ver = script_ver_match.group(1)
-        else:
-            script_ver = ""
-        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
-
         self.cli_log_inf("TOR System Info Dump End\n", level=0)
         return True
 
@@ -6694,9 +6687,9 @@ class mtp_ctrl():
             self.cli_log_err("Unable to post-init diag environment", level=0)
             return False
 
-        # get the mtp system info
+        # get the tor system info
         if not self.mtp_sys_info_disp():
-            self.cli_log_err("Unable to retrieve MTP system info", level=0)
+            self.cli_log_err("Unable to retrieve TOR system info", level=0)
             return False
 
         # init all the nic.
@@ -8361,3 +8354,11 @@ class mtp_ctrl():
                 break
 
         return False
+
+    def print_script_version(self):
+        script_ver_match = re.search("image_amd64_.....?_(.*)\.tar", MTP_IMAGES.AMD64_IMG["ELBA"])
+        if script_ver_match:
+            script_ver = script_ver_match.group(1)
+        else:
+            script_ver = ""
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
