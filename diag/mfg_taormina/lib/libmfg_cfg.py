@@ -36,7 +36,7 @@ class NIC_IMAGES:
     diagfw_dat["TAORMINA"] = ""
     goldfw_img["TAORMINA"] = "kernelg_1.29.0-T-Beta-9.img"
     goldfw_dat["TAORMINA"] = "02-24-2021"
-    mainfw_dat["TAORMINA"] = "07-08-2022"
+    mainfw_dat["TAORMINA"] = "08-22-2022"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()
@@ -92,19 +92,19 @@ class TOR_IMAGES:
     svos_fpga_image["TAORMINA"] = ["fpgautil"]
 
     first_article_img["TAORMINA"] = "17-0065-02_Taormina-elba-spi-0430.bin"
-    flash_boot0["TAORMINA"] = "boot0_1.49.2-T-2.img"
-    flash_uboot_gold["TAORMINA"] = "ubootg_1.49.2-T-2.img"
-    flash_fw_gold["TAORMINA"] = "kernelg_1.49.2-T-2.img"
-    flash_uboot_primary["TAORMINA"] = "uboota_1.49.2-T-2.img"
-    flash_fw_primary["TAORMINA"] = "kernela_1.49.2-T-2.img"
+    flash_boot0["TAORMINA"] = "boot0_1.49.3-T-1.img"
+    flash_uboot_gold["TAORMINA"] = "ubootg_1.49.3-T-1.img"
+    flash_fw_gold["TAORMINA"] = "kernelg_1.49.3-T-1.img"
+    flash_uboot_primary["TAORMINA"] = "uboota_1.49.3-T-1.img"
+    flash_fw_primary["TAORMINA"] = "kernela_1.49.3-T-1.img"
 
     usb_tarball["TAORMINA"] = "Taormina-USB-small.tar.gz"
 
     ## CX-OS ##
     os_ship_img["TAORMINA"] = "DL_10_10_1000.swi"
     os_ship_dat["TAORMINA"] = "2022-08-15"
-    os_test_img["TAORMINA"] = "taormina-swjenkins-hbm_13272610_0803_2022.swi"
-    os_test_dat["TAORMINA"] = "2022-08-03"
+    os_test_img["TAORMINA"] = "taormina-swjenkins-main_0912_2022.swi"
+    os_test_dat["TAORMINA"] = "2022-09-08"
 
     ## BIOS ## 
     bios_img["TAORMINA"] = "17-0056-xx_Taormina-bios-v0004.bin"
