@@ -804,6 +804,7 @@ sub parse_l1_log {
     my $subtest_start = 0;
     my @lines_saved;
     my $j2c_err_logged = 0;
+    my $health_check_test = 0;
 
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
@@ -825,6 +826,12 @@ sub parse_l1_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
         }
+        if($line =~ m/(.*)MSG ::.*HEALTH CHECK Started ===/) {
+            $health_check_test = 1;
+        }
+        if($line =~ m/(.*)MSG ::.*HEALTH CHECK Done===/) {
+            $health_check_test = 0;
+        }
         if($line =~ m/(.*)MSG ::.*Started ===/) {
             $subtest_start = 1;
         }
@@ -832,7 +839,11 @@ sub parse_l1_log {
             $subtest_start = 0;
         }
         if ($subtest_start && ($line =~ m/ERROR ::/)) {
-            $test_err_msg .= $line;
+            if ($health_check_test && ($line =~ m/ERROR ::.*FAILED:/)) {
+                $test_err_msg .= $lines_saved[-4].$lines_saved[-3].$lines_saved[-2].$lines_saved[-1];
+            } else {
+                $test_err_msg .= $line;
+            }
         }
         if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/) {
             $log_complete = 1;
