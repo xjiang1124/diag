@@ -29,11 +29,14 @@ const (
     MFG_DATE_LEN        int = 3
 
     //Profinfo data structure constants
-    FIELD_NUM_NONE      int = 0xFFFF
-    FIELD_NUM_SN_3      int = 3
-    FIELD_NUM_PN_4      int = 4
-    FIELD_NUM_PN_10     int = 10
-    FIELD_NUM_MAC_9     int = 9
+    FIELD_NUM_NONE          int = 0xFFFF
+    FIELD_NUM_SN_3          int = 3
+    FIELD_NUM_PN_4          int = 4
+    FIELD_NUM_PN_10         int = 10
+    FIELD_NUM_MAC_9         int = 9
+    FIELD_NUM_PROD_NAME_2   int = 2
+    FIELD_NUM_SKU_4         int = 4
+
 
     //Field types; Area field number vs absolute byte offset
     FIELD_TYPE_NUM      int = 0
@@ -50,6 +53,12 @@ const (
     //Supported board PNs
     IBM_PN      string = "68-0028"
     //PEN_PN      string = "68-0021"
+
+    // Product name
+    PROD_NAME_IBM   string = "DSC2-200,2xQSFP56,32gRAM,64GeMMC,IBM"
+
+    // SKU 
+    SKU_IBM         string = "DSC2-2Q200-32R32F64P-B"
 )
 
 type progInfo struct {
@@ -58,11 +67,15 @@ type progInfo struct {
     sn          int
     pn          int
     mac         int
+    prodName    int
+    sku         int
 }
 
 type updateInfo struct {
-    tbl  []entry
-    info []progInfo
+    tbl         []entry
+    prodName    string
+    sku         string
+    info        []progInfo
 }
 
 type card struct {
@@ -78,12 +91,23 @@ type entryinfo struct {
 }
 
 //Part number and data location maps
-var CardDataInfo = map[string]updateInfo{
-    IBM_PN: updateInfo{OrtanoIBMTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
-                                                        AREA_TYPE_BOARD_INFO,  
-                                                        FIELD_NUM_SN_3, 
-                                                        FIELD_NUM_PN_10, 
-                                                        FIELD_NUM_MAC_9}}},
+var CardDataInfo = map[string]updateInfo {
+    IBM_PN: updateInfo {
+        OrtanoIBMTbl,
+        PROD_NAME_IBM,
+        SKU_IBM,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                },
+        },
+    },
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -305,6 +329,7 @@ func updateChkSum() {
 func updateFields(sn string, pn string, mac string, date string) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
+    var prodNameOff, prodNameLen, skuOff, skuLen int
 
     //Checks PN validity and sets card type
     found, minPN := CardInList(pn)
@@ -341,10 +366,13 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
     dateByte = append(dateByte, byte(int(difference.Minutes()) & 0xFF)) 
     dateByte = append(dateByte, byte((int(difference.Minutes()) >> 8) & 0xFF))
     dateByte = append(dateByte, byte((int(difference.Minutes()) >> 16) & 0xFF))
-    
+
     //Converts SN and PN to byte & declares offset/length variables
     snByte := []byte(sn)
     pnByte := []byte(pn)
+
+    prodNameByte:= []byte(card.prodName)
+    skuByte     := []byte(card.sku)
 
     //Find offset/Len of SN/PN/MAC/Date of each progInfo entry
     start := checkCHdrStart()
@@ -368,6 +396,14 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 macOff = entry.mac
                 macLen = MAC_LEN
             }
+            if entry.prodName != FIELD_NUM_NONE {
+                prodNameOff = entry.prodName
+                prodNameLen = len(card.prodName)
+            }
+            if entry.prodName != FIELD_NUM_NONE {
+                skuOff = entry.sku
+                skuLen = len(card.sku)
+            }
         } else {
             if entry.sn != FIELD_NUM_NONE {
                 snInt := entry.sn
@@ -380,6 +416,14 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
             if entry.mac != FIELD_NUM_NONE {
                 macInt := entry.mac
                 macOff, macLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, macInt)
+            }
+            if entry.prodName != FIELD_NUM_NONE {
+                prodNameInt := entry.prodName
+                prodNameOff, prodNameLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, prodNameInt)
+            }
+            if entry.prodName != FIELD_NUM_NONE {
+                skuInt := entry.sku
+                skuOff, skuLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, skuInt)
             }
         }
 
@@ -434,9 +478,20 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 for i:=len(snByte);i<snLen;i++ {
                     snByte=append(snByte, 0x20)
                 }
-            } else if (len(pnByte) < pnLen) {
+            }
+            if (len(pnByte) < pnLen) {
                 for i:=len(pnByte);i<pnLen;i++ {
                     pnByte=append(pnByte, 0x20)
+                }
+            }
+            if (len(prodNameByte) < prodNameLen) {
+                for i:=len(prodNameByte);i<prodNameLen;i++ {
+                    prodNameByte=append(prodNameByte, 0x20)
+                }
+            }
+            if (len(skuByte) < skuLen) {
+                for i:=len(skuByte);i<skuLen;i++ {
+                    skuByte=append(skuByte, 0x20)
                 }
             }
         }
@@ -450,21 +505,38 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                     incrementVar++
                 }
                 incrementVar = 0
-            } else if offset == snOff {
+            }
+            if offset == snOff {
                 for i:=offset;i<offset+snLen;i++ {
                     Data[i]=snByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
-            } else if offset == pnOff {
+            }
+            if offset == pnOff {
                 for i:=offset;i<offset+pnLen;i++ {
                     Data[i]=pnByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
-            } else if offset == macOff {
+            }
+            if offset == macOff {
                 for i:=offset;i<offset+macLen;i++ {
                     Data[i]=macByte[incrementVar]
+                    incrementVar++
+                }
+                incrementVar = 0
+            }
+            if offset == prodNameOff {
+                for i:=offset;i<offset+prodNameLen;i++ {
+                    Data[i]=prodNameByte[incrementVar]
+                    incrementVar++
+                }
+                incrementVar = 0
+            }
+            if offset == skuOff {
+                for i:=offset;i<offset+skuLen;i++ {
+                    Data[i]=skuByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
