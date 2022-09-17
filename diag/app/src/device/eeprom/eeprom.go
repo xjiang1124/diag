@@ -1102,7 +1102,7 @@ var OrtanoIBMTbl = []entry {
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-                                                                                        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20},
+                                                                                        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Serial Number Type/Length",              INT8,        64,       1,    []byte{0xCB}},
     entry{"Serial Number",                          STRING,      65,       11,   []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20}},
