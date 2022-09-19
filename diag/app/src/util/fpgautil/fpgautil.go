@@ -57,7 +57,7 @@ const errhelp = "\nfpgautil:\n" +
         " \n" +
         "fpgautil inventory\n" +
         "\n" +
-        "fpgautil flash devid\n" +
+        "fpgautil flash devid/readsr/writesr <data>\n" +
         "fpgautil flash r8/r32/r64 <addr> <length>\n" +
         "fpgautil flash w32/w64 <addr> <data>\n" +
         "fpgautil flash sectorerase <addr>\n" +
@@ -72,7 +72,7 @@ const errhelp = "\nfpgautil:\n" +
         "fpgautil system pcycle\n" +
         "fpgautil rescan pci\n" +
         " \n" +
-        "fpgautil elba <elba#> flash devid/flagstatus/status\n" +
+        "fpgautil elba <elba#> flash devid/flagstatus/readsr/writesr <data>\n" +
         "fpgautil elba <elba#> flash read <addr> <length>\n" +
         "fpgautil elba <elba#> flash w32/w64 <addr> <data>\n" +
         "fpgautil elba <elba#> flash sectorerase <addr>/all\n" +
@@ -866,6 +866,9 @@ func main() {
             if os.Args[4] == "devid" {
                 devid, _ := taorfpga.Spi_elba_flash_read_id(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  DevID=0x%.08x\n", devid)
+            } else if os.Args[4] == "wrenable" {
+                taorfpga.Spi_elba_flash_WriteEnable(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" Wr Enable Set\n")
             } else if os.Args[4] == "volconfig" {
                 config, _ := taorfpga.Spi_elba_flash_read_volatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  vol config=0x%.04x\n", config)
@@ -908,9 +911,13 @@ func main() {
             } else if os.Args[4] == "flagstatus" {
                 flag, _ := taorfpga.Spi_elba_flash_read_flag_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
-            } else if os.Args[4] == "status" {
-                flag, _ := taorfpga.Spi_elba_flash_read_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+            } else if os.Args[4] == "readsr" {
+                flag, _ := taorfpga.Spi_elba_flash_read_status_register(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  Status Reg=0x%.02x\n", flag)
+            } else if os.Args[4] == "writesr" {
+                wr32, _ := strconv.ParseUint(os.Args[5], 0, 32)
+                taorfpga.Spi_elba_flash_write_status_register((taorfpga.ELBA0_SPI_BUS + elbaNumber), uint32(wr32))
+                fmt.Printf("WROTE %.02x to SR\n", wr32 & 0xFF)
             } else if os.Args[4] == "writeimage" || os.Args[4] == "verifyimage" || os.Args[4] == "generateimage"  {
                 if argc < 7 {
                     fmt.Printf(" %s \n", errhelp)

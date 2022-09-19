@@ -13,17 +13,48 @@ import (
 
     "common/dcli"
     "common/diagEngine"
-    "common/errType"
-    "device/sfp"
-    "device/fpga/taorfpga"
-    "hardware/i2cinfo"
-    "common/misc"
-    "hardware/hwinfo"
+    //"common/errType"
+    //"device/sfp"
+    //"device/fpga/taorfpga"
+    //"hardware/i2cinfo"
+    //"common/misc"
+    //"hardware/hwinfo"
+    "platform/taormina"
 ) 
+
+func SfpI2CHdl(argList []string) {
+
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    ret := taormina.Sfp_i2c_test(argList)
+    diagEngine.FuncMsgChan <- ret
+    
+    return
+}
+
+func SfpLaserHdl(argList []string) {
+    
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+    ret := taormina.Sfp_signal_test(argList)
+    diagEngine.FuncMsgChan <- ret}
+
 
 /*
     Read Device ID and compare with expected one
  */
+
+/*
 func testSfp(devName string) (sn string, err int) {
     devID, err := sfp.ReadId(devName)
 
@@ -210,4 +241,4 @@ Return:
     
     return
 }
-
+*/

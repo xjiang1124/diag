@@ -17,6 +17,9 @@ const ELBA0_SPI_BUS    uint32 = 6
 const ELBA1_SPI_BUS    uint32 = 7
 
 
+var WRITE_STATUS_REG_OP                  = []byte{0x01, 0x00}
+var WRITE_STATUS_REG_RDLNG               uint32 = 0
+
 var PAGE_PROGRAM_OP                     = []byte{0x02, 0x00, 0x00, 0x00}   
 var PAGE_PROGRAM_RDLNG                  uint32 = 0
 
@@ -255,14 +258,34 @@ func Spi_elba_flash_read_nonvolatile_config(spiNumber uint32) (config uint16, er
 
 
 
-func Spi_elba_flash_read_status(spiNumber uint32) (flag uint32, err error) {
+func Spi_elba_flash_read_status_register(spiNumber uint32) (flag uint32, err error) {
     data := []byte{}
     data, err = Fpga_spi_generic_transaction(spiNumber, READ_STATUS_REG_OP, READ_STATUS_REG_RDLNG) 
     if err == nil {
         flag = uint32(data[0])
     } else {
-        fmt.Printf("[ERROR] Spi_elba_flash_read_status: Fpga_spi_generic_transaction Failed\n")
+        fmt.Printf("[ERROR] Spi_elba_flash_read_status_register: Fpga_spi_generic_transaction Failed\n")
     }
+    return
+}
+
+
+
+func Spi_elba_flash_write_status_register(spiNumber uint32, data uint32) (err error) {
+    err = Spi_elba_flash_WriteEnable(spiNumber) 
+    if err != nil {
+        return
+    }
+
+    WRITE_STATUS_REG_OP[1] = uint8(data & 0xff)
+    fmt.Printf(" WRITE_STATUS_REG_OP=0x%.02x%.02x\n", WRITE_STATUS_REG_OP[1], WRITE_STATUS_REG_OP[0])
+    _ , err = Fpga_spi_generic_transaction(spiNumber, WRITE_STATUS_REG_OP, WRITE_STATUS_REG_RDLNG) 
+    if err != nil {
+        return
+    }
+
+    err = Spi_elba_flash_WriteDisable(spiNumber) 
+
     return
 }
 
@@ -279,7 +302,7 @@ func Spi_elba_flash_read_flag_status(spiNumber uint32) (flag uint32, err error) 
 func Spi_elba_flash_PollBusyMicroSec(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
     var errGo error
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        sr_reg, errGo = Spi_elba_flash_read_status_register(spiNumber)  
         if errGo != nil {
             fmt.Printf("[ERROR] Spi_elba_flash_PollBusyMicroSec-> Read Status Failed\n")
             err = 1
@@ -298,7 +321,7 @@ func Spi_elba_flash_PollBusyMicroSec(spiNumber uint32, timeout_ms int) (sr_reg u
 func Spi_elba_flash_PollBusy(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
     var errGo error
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        sr_reg, errGo = Spi_elba_flash_read_status_register(spiNumber)  
         if errGo != nil {
             fmt.Printf("[ERROR] Spi_elba_flash_PollBusy-> Read Status Failed\n")
             err = 1
@@ -318,7 +341,7 @@ func Spi_elba_flash_CheckWriteEnable() (spiNumber uint32, err error) {
     var errGo error
     var sr_reg uint32
     for i:=0; i< 5000; i++ {
-        sr_reg, errGo = Spi_elba_flash_read_status(spiNumber)  
+        sr_reg, errGo = Spi_elba_flash_read_status_register(spiNumber)  
         if errGo != nil {
             fmt.Printf("[ERROR] Spi_elba_flash_CheckWriteEnable-> Read Status Failed\n")
             return

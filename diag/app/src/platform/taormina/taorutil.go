@@ -912,8 +912,10 @@ func USBtest(FileSizeMB int, FileCopies int) (err int) {
     if err == errType.SUCCESS {
 
         out, errGo = exec.Command("mkfs.vfat", "/dev/sdb1").Output()
+        dcli.Printf("i", "%s", out)
         if errGo != nil {
             dcli.Printf("e", "mkfs.vfat failed.  Err = %s", errGo)
+            dcli.Printf("e", "mkfs.vfat failed.  Output=%s", out)
             err = errType.FAIL
             return
         }
@@ -1168,6 +1170,291 @@ func ElbaPing(elba uint32) (err int) {
     }
     return
 }
+
+
+/********************************************************************************* 
+*
+* 
+* 
+*********************************************************************************/ 
+func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, rdpad_max int) (err int) {
+    var cmdStr string
+    var elbafailmask, i uint32
+    var forStart, forEnd uint32
+    var time uint32 = 90
+    var testStarted uint32 = 0
+    var passCnt = (rdpad_max / 10) + 3
+
+
+    if rdpad_max > 101 {
+        t := (rdpad_max - 100) / 10
+        t = t * 10
+        time = time + uint32(t)
+    }
+
+
+    
+    if elbaMask == 1 {
+        forStart = 0
+        forEnd = 1
+    } else if elbaMask == 2 {
+        forStart = 1
+        forEnd = 2
+    } else if elbaMask == 3 {
+        forStart = 0
+        forEnd = 2
+    } else {
+        cli.Printf("e", "Elba Mask must be 0x1, 0x2, 0x3 for both elbas.  You entered 0x%x\n", elbaMask)
+        err = errType.FAIL
+        return
+    }
+
+    dcli.Printf("i", " Starting Elba EMDA Test:  Mask=0x%x\n", elbaMask)
+
+
+    {
+        year, month, _ := CXOS_Get_Build_Date()
+        dcli.Printf("i","CXOS Build Date %d-%.02d\n", year, month)
+        if (year < 2022) || ((year==2022) && (month < 7)) {
+            cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%.02d\n", year, month)
+            err = errType.FAIL
+            return
+        }
+    }
+
+
+    for i=forStart; i < forEnd; i++ {
+        rc := ElbaCheckECC_via_console(i, 0, 0) 
+        if rc != errType.SUCCESS {
+            elbafailmask |= (1<<i)
+        }
+    }
+
+
+    cli.Printf("i","Removing Elba from PCI\n");
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        if  i == ELBA0 {
+            exec.Command("bash", "-c", "echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove").Output() 
+        } else {
+            exec.Command("bash", "-c", "echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove").Output()
+        }
+    }
+
+    dcli.Printf("i","Setting fwenv vars for mem bypass and rebooting Elba\n")
+    cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824;sysreset.sh\n")
+    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        testStarted=1
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+    misc.SleepInSec(15)
+
+
+   
+    dcli.Printf("i","Creating cmd files\n")
+    cmdStr = fmt.Sprintf("pwd\ncd /nic/bin;rdpad_max=%d /nic/bin/ddr_test.sh | tee run_edma.log\n", rdpad_max)
+    errGo := ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+    //cmdStr = fmt.Sprintf("pwd\ncd /data/nic_util;rdpad_max=%d /nic/bin/ddr_test.sh | tee run_edma.log\n", rdpad_max)
+    errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    if errGo != nil {
+        dcli.Printf("e", "Unable to write file: %v", errGo)
+        err = errType.FAIL
+        return
+    }
+
+    //Start Test
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+        dcli.Printf("i", "Elba-%d Starting Test\n", i)
+        testStarted=1
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+
+    //Sleep.. give it a few extra seconds to finsih as the program needs time to setup/malloc memory
+    if (testStarted > 0) {
+        for i=0;i<(time);i++ {
+            misc.SleepInSec(1)
+            if calledFromCLI > 0 { fmt.Printf(".") 
+            } else { dcli.Printf("i", ".") }
+        }
+        if calledFromCLI > 0 { fmt.Printf("\n") }
+    }
+     
+    //Get Results
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            continue
+        }
+
+        dcli.Printf("i", "Elba-%d Get Results\n", i)
+        dcli.Printf("i", "Elba-%d Reading the log file\n", i)
+        cmdStr = fmt.Sprintf("pwd\ncat /nic/bin/run_edma.log\n")           
+        if  i == ELBA0 {
+            errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+            if errGo != nil {
+                dcli.Printf("e", "Unable to write file: %v", errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+            if errGo != nil {
+                dcli.Printf("e", "Unable to write file: %v", errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        }
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        dcli.Printf("i", string(output))
+
+        numbPass := strings.Count(string(output), "PASS")
+        fmt.Printf(" NumPASS=%d\n", numbPass)
+        if (int(numbPass) != passCnt) {
+            dcli.Printf("e","[ERROR] ELBA-%d FAILED EDMA TEST.    Passes read=%d   Expected=%d\n", i, int(numbPass),passCnt)
+            elbafailmask |= (1<<i)
+        }
+        if ( (elbafailmask & (1<<i)) == (1<<i) ) {
+            cmdStr = fmt.Sprintf("pwd\ncat /nic/util/ddr_test.log\n")           
+            if  i == ELBA0 {
+                errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+                if errGo != nil {
+                    dcli.Printf("e", "Unable to write file: %v", errGo)
+                    err = errType.FAIL
+                    return
+                }
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+                if errGo != nil {
+                    dcli.Printf("e", "Unable to write file: %v", errGo)
+                    err = errType.FAIL
+                    return
+                }
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            }
+            output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            dcli.Printf("i", string(output))
+
+            dcli.Printf("i","Creating cmd files for dmesg\n")
+            cmdStr = fmt.Sprintf("pwd\ndmesg | tail -n 100\n")           
+            if  i == ELBA0 {
+                errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+                if errGo != nil {
+                    dcli.Printf("e", "Unable to write file: %v", errGo)
+                    err = errType.FAIL
+                    return
+                }
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                errGo = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+                if errGo != nil {
+                    dcli.Printf("e", "Unable to write file: %v", errGo)
+                    err = errType.FAIL
+                    return
+                }
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            }
+            output , errGo = exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            dcli.Printf("i", string(output)) 
+        }
+
+
+        rc := ElbaCheckECC_via_console(i, 0, 0)
+        if rc != errType.SUCCESS {
+            elbafailmask |= (1<<i)
+        } 
+        
+    }
+
+    dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
+    cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
+    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+    for i=forStart; i < forEnd; i++ {
+        testStarted=1
+        if  i == ELBA0 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+        } else if i == ELBA1 {
+            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+        } 
+        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+    
+
+    for i=forStart; i < forEnd; i++ {
+        if elbafailmask & (1<<i) == (1<<i) {
+            err = errType.FAIL
+            dcli.Printf("e", "Elba-%d ELBA_EDMA_TEST TEST FAILED\n", i)
+        } else {
+            dcli.Printf("i", "Elba-%d ELBA_EDMA_TEST TEST PASSED\n", i)
+        }
+    }
+
+    if err == errType.SUCCESS {
+        dcli.Printf("i", "SWITCH ELBA_EDMA_TEST TEST PASSED\n")
+    } else {
+        dcli.Printf("e", "SWITCH ELBA_EDMA_TEST TEST FAILED\n")
+    }
+
+    return
+}
+
 
 /********************************************************************************* 
 *
@@ -1507,7 +1794,7 @@ func ElbaEDMA_Test_Console_Only(elbaMask uint32, calledFromCLI int, rdpad_max in
     }
 
     dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824\n")
+    cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
     for i=forStart; i < forEnd; i++ {
@@ -2169,8 +2456,9 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
         
     }
 
+    /*
     dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824\n")
+    cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
     _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
     for i=forStart; i < forEnd; i++ {
@@ -2187,6 +2475,7 @@ func ElbaEDMA_Test_WRPAD(elbaMask uint32, calledFromCLI int, wrpad_max int) (err
             return
         }
     }
+    */
     
 
     for i=forStart; i < forEnd; i++ {
@@ -3480,6 +3769,7 @@ func Elba_Show_Firmware(elba int, useCLI int) (err int) {
         err = errType.FAIL
         return
     }
+
     {
         res := make(map[string]interface{})
         outs := string(out)
