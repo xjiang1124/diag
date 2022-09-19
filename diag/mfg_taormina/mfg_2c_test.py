@@ -111,7 +111,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
     mtp_mgmt_ctrl.print_script_version()
 
-    for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+    for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "SSH_SETUP", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
         if test in skip_test:
             continue
 
@@ -149,6 +149,9 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
             mtp_mgmt_ctrl._nic_ctrl_list[1]._in_mainfw = True
             ret = mtp_mgmt_ctrl.tor_nic_fw_verify(0)
             ret = mtp_mgmt_ctrl.tor_nic_fw_verify(1)
+        elif test == "SSH_SETUP":
+            ret  = mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(0)
+            ret &= mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(1)
 
         duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
 

@@ -3518,4 +3518,61 @@ class nic_ctrl():
             self.nic_set_err_msg("Unable to read FW date")
             return False
 
+    def nic_console_clear_ssh_folder(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
 
+        # delete the sshd files
+        self._nic_handle.sendline("rm -rf /sysconfig/config0/ssh/")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_console_check_ssh_folder(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self._nic_handle.sendline("ls -ltd /sysconfig/config0/ssh/*")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+
+        if "/sysconfig/config0/ssh/ssh-started" not in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Required SSH files missing on NIC")
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True

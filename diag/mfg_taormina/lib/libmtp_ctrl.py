@@ -8362,3 +8362,16 @@ class mtp_ctrl():
         else:
             script_ver = ""
         self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
+
+    def mtp_mgmt_clear_nic_ssh(self, slot):
+        if not self._nic_ctrl_list[slot].nic_console_check_ssh_folder():
+            self.cli_log_slot_inf(slot, "Required SSH files missing on NIC... clearing folder to reset")
+            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            if not self._nic_ctrl_list[slot].nic_console_clear_ssh_folder():
+                self.cli_log_slot_err(slot, "Failed to setup NIC ssh folder")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+
+        return True
+
+
