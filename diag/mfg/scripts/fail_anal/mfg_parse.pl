@@ -322,6 +322,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"}) {
+        $top_diag_fa_code = "2WAY_COMMUNICATION_FAILURE";
+        delete $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"NIC_POWER_FAILURE"}) {
         $top_diag_fa_code = "NIC_POWER_FAILURE";
         delete $diag_fa_code{"NIC_POWER_FAILURE"};
@@ -507,36 +513,6 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
-        $top_diag_fa_code = "SNAKE_LOG_INCOMPLETE";
-        delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
-        return;
-    }
-    if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"}) {
-        $top_diag_fa_code = "SNAKE_LOGFILE_NOT_EXIST";
-        delete $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"};
-        return;
-    }
-    if (exists $diag_fa_code{"L1_LOG_INCOMPLETE"}) {
-        $top_diag_fa_code = "L1_LOG_INCOMPLETE";
-        delete $diag_fa_code{"L1_LOG_INCOMPLETE"};
-        return;
-    }
-    if (exists $diag_fa_code{"NIC_LOG_INCOMPLETE"}) {
-        $top_diag_fa_code = "NIC_LOG_INCOMPLETE";
-        delete $diag_fa_code{"NIC_LOG_INCOMPLETE"};
-        return;
-    }
-    if (exists $diag_fa_code{"NIC_TXT_INCOMPLETE"}) {
-        $top_diag_fa_code = "NIC_TXT_INCOMPLETE";
-        delete $diag_fa_code{"NIC_TXT_INCOMPLETE"};
-        return;
-    }
-    if (exists $diag_fa_code{"Bad_J2C"}) {
-        $top_diag_fa_code = "Bad_J2C";
-        delete $diag_fa_code{"Bad_J2C"};
-        return;
-    }
     if (exists $diag_fa_code{"EMMC_ERR"}) {
         $top_diag_fa_code = "EMMC_ERR";
         delete $diag_fa_code{"EMMC_ERR"};
@@ -587,6 +563,77 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_RESET"};
         return;
     }
+    if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "SNAKE_LOG_INCOMPLETE";
+        delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"SNAKE_LOG_EMPTY"}) {
+        $top_diag_fa_code = "SNAKE_LOG_EMPTY";
+        delete $diag_fa_code{"SNAKE_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "SNAKE_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"L1_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "L1_LOG_INCOMPLETE";
+        delete $diag_fa_code{"L1_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"L1_LOG_EMPTY"}) {
+        $top_diag_fa_code = "L1_LOG_EMPTY";
+        delete $diag_fa_code{"L1_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "NIC_LOG_INCOMPLETE";
+        delete $diag_fa_code{"NIC_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_LOG_EMPTY"}) {
+        $top_diag_fa_code = "NIC_LOG_EMPTY";
+        delete $diag_fa_code{"NIC_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_TXT_INCOMPLETE"}) {
+        $top_diag_fa_code = "NIC_TXT_INCOMPLETE";
+        delete $diag_fa_code{"NIC_TXT_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_TXT_EMPTY"}) {
+        $top_diag_fa_code = "NIC_TXT_EMPTY";
+        delete $diag_fa_code{"NIC_TXT_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "ETH_PRBS_LOG_INCOMPLETE";
+        delete $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"ETH_PRBS_LOG_EMPTY"}) {
+        $top_diag_fa_code = "ETH_PRBS_LOG_EMPTY";
+        delete $diag_fa_code{"ETH_PRBS_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"ARM_L1_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "ARM_L1_LOG_INCOMPLETE";
+        delete $diag_fa_code{"ARM_L1_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"ARM_L1_LOG_EMPTY"}) {
+        $top_diag_fa_code = "ARM_L1_LOG_EMPTY";
+        delete $diag_fa_code{"ARM_L1_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C"}) {
+        $top_diag_fa_code = "Bad_J2C";
+        delete $diag_fa_code{"Bad_J2C"};
+        return;
+    }
+
     if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
         $top_diag_fa_code = "CARD_SPACE_FULL";
         delete $diag_fa_code{"CARD_SPACE_FULL"};
@@ -686,6 +733,8 @@ sub parse_snake_log {
         if($err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
+            my $line2 = <TR3>;
+            $test_err_msg .= $line2;
             $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
             $err_found = 1;
         }
@@ -693,7 +742,6 @@ sub parse_snake_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"} = 1;
-            $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc_|correctable|uncorrectable)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
@@ -741,14 +789,18 @@ sub parse_snake_log {
             $log_complete = 1;
         }
     }
+    if (-e -z $logfile) {
+        $diag_fa_code{"SNAKE_LOG_EMPTY"} = 1;
+    } elsif ($log_complete == 0) {
+        $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} = 1;
+    }
     $all_test_msg .= "############### $test_and_failure_code ###############\n"."log file: ".$log_path."/".$logfile."\n\n";
     if ($test_err_msg ne "") {
         $all_test_msg .= $test_err_msg;
     } else {
-        $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} = 1;
-    }
-    if ($log_complete == 0) {
-        $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} = 1;
+        if (! exists $diag_fa_code{"SNAKE_LOG_EMPTY"}) {
+            $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} = 1;
+        }
     }
     close(TR3);
 }
@@ -759,6 +811,8 @@ sub parse_l1_log {
     my $subtest_start = 0;
     my @lines_saved;
     my $j2c_err_logged = 0;
+    my $health_check_test = 0;
+
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
         return;
@@ -779,6 +833,12 @@ sub parse_l1_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
         }
+        if($line =~ m/(.*)MSG ::.*HEALTH CHECK Started ===/) {
+            $health_check_test = 1;
+        }
+        if($line =~ m/(.*)MSG ::.*HEALTH CHECK Done===/) {
+            $health_check_test = 0;
+        }
         if($line =~ m/(.*)MSG ::.*Started ===/) {
             $subtest_start = 1;
         }
@@ -786,7 +846,11 @@ sub parse_l1_log {
             $subtest_start = 0;
         }
         if ($subtest_start && ($line =~ m/ERROR ::/)) {
-            $test_err_msg .= $line;
+            if ($health_check_test && ($line =~ m/ERROR ::.*FAILED:/)) {
+                $test_err_msg .= $lines_saved[-4].$lines_saved[-3].$lines_saved[-2].$lines_saved[-1];
+            } else {
+                $test_err_msg .= $line;
+            }
         }
         if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/) {
             $log_complete = 1;
@@ -804,7 +868,9 @@ sub parse_l1_log {
         $all_test_msg .= "############### $test_and_failure_code ###############\n"."L1 log file: ".$logfile."\n\n";
         $all_test_msg .= $test_err_msg;
     #}
-    if ($log_complete == 0) {
+    if (-e -z $logfile) {
+        $diag_fa_code{"L1_LOG_EMPTY"} = 1;
+    } elsif ($log_complete == 0) {
         $diag_fa_code{"L1_LOG_INCOMPLETE"} = 1;
     }
     close(TR3);
@@ -824,6 +890,7 @@ sub parse_nic_test_logs {
     } elsif ($testname eq "L1") {
         $logend = qr/:: ARM L1 TESTS (PASSED|FAILED)/;
     }
+
     if (!open(TR3, '<', $txtfile)) {
         $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"} = 1;
     } else {
@@ -855,10 +922,13 @@ sub parse_nic_test_logs {
             }
         }
         close(TR3);
-	    if ($txt_complete == 0) {
+        if (-e -z $txtfile) {
+            $diag_fa_code{"NIC_TXT_EMPTY"} = 1;
+        } elsif ($txt_complete == 0) {
             $diag_fa_code{"NIC_TXT_INCOMPLETE"} = 1;
         }
     }
+
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"} = 1;
     } else {
@@ -895,7 +965,10 @@ sub parse_nic_test_logs {
             $prev_line = $line;
         }
         close(TR3);
-	    if ($log_complete == 0) {
+        if (-e -z $logfile) {
+            $diag_fa_code{"NIC_LOG_EMPTY"} = 1;
+            return;
+        } elsif ($log_complete == 0) {
             $diag_fa_code{"NIC_LOG_INCOMPLETE"} = 1;
         }
     }
@@ -928,7 +1001,9 @@ sub parse_eth_prbs_log {
             }
         }
         close(TR3);
-	    if ($log_complete == 0) {
+        if (-e -z $logfile) {
+            $diag_fa_code{"ETH_PRBS_LOG_EMPTY"} = 1;
+        } elsif ($log_complete == 0) {
             $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"} = 1;
         }
     }
@@ -965,7 +1040,9 @@ sub parse_arm_l1_log {
             }
         }
         close(TR3);
-	    if ($log_complete == 0) {
+        if (-e -z $logfile) {
+            $diag_fa_code{"ARM_L1_LOG_EMPTY"} = 1;
+        } elsif ($log_complete == 0) {
             $diag_fa_code{"ARM_L1_LOG_INCOMPLETE"} = 1;
         }
     }
@@ -1149,6 +1226,11 @@ sub find_failure_code {
         }
         if ($test_name eq "QSFP" && $failure_code eq "I2C") {
             $diag_fa_code{"QSFP_I2C"} = 1;
+        }
+        if ($failure_code eq "CONSOLE_BOOT") {
+            if (%diag_fa_code == 0) {
+                $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
+            }
         }
     }
     parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
@@ -1441,6 +1523,10 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
+        if ($line =~ m/\[NIC-$slot\].*Pre-Post \[\w+\] result to webserver failed/) {
+            $mtp_test_msg .= $line;
+            $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+        }
         #if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
         #    $err_msg_dump = 1;
         #}
@@ -1489,6 +1575,7 @@ sub parse_fpga_and_ecc {
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
+    my $mc_info;
 
     if (!open(TR3, '<', $mtpfile)) {
         print "Cannot open file $mtpfile\n";
@@ -1750,30 +1837,49 @@ sub parse_fpga_and_ecc {
             }
         }
 
+        if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
+            $mc_info .= $1."\r\n";
+        }
         if ($corr_syn == 0) {
             if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $corr_syn = 1;
             }
         }
         if ($multi_corr_syn == 0) {
             if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $multi_corr_syn = 1;
             }
         }
         if ($uncorr_syn == 0) {
             if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $uncorr_syn = 1;
             }
         }
         if ($multi_uncorr_syn == 0) {
             if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $multi_uncorr_syn = 1;
             }
@@ -1786,6 +1892,7 @@ sub parse_fpga_and_ecc {
             if ($ecc_result_linenum - $ecc_start_linenum < 300) {
                 $ecc_result_exist = 1;
                 $ecc_result_err = 1;
+                print $ecc_sts;
                 $ecc_sts = $ecc_sts.$line;
             }
         }
@@ -1821,6 +1928,7 @@ sub parse_fpga_and_ecc {
         }
         if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"} ||
             exists $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} ||
+            exists $diag_fa_code{"SNAKE_LOG_EMPTY"} ||
             exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
