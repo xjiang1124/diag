@@ -142,13 +142,13 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
         elif test == "NIC_INIT":
             ret = mtp_mgmt_ctrl.tor_nic_init()
         elif test == "NIC_MAINFW_SET":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(0)
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(1)
+            ret  = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(0)
+            ret &= mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(1)
         elif test == "MAINFW_VERIFY":
             mtp_mgmt_ctrl._nic_ctrl_list[0]._in_mainfw = True
             mtp_mgmt_ctrl._nic_ctrl_list[1]._in_mainfw = True
-            ret = mtp_mgmt_ctrl.tor_nic_fw_verify(0)
-            ret = mtp_mgmt_ctrl.tor_nic_fw_verify(1)
+            ret  = mtp_mgmt_ctrl.tor_nic_fw_verify(0)
+            ret &= mtp_mgmt_ctrl.tor_nic_fw_verify(1)
         elif test == "SSH_SETUP":
             ret  = mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(0)
             ret &= mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(1)

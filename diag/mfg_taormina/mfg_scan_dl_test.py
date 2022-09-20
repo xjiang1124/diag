@@ -461,7 +461,7 @@ def single_uut_fw_program(stage,
                 # Set emmcs to pSLC mode
                 elif test == "NIC_EMMC_FORMAT":
                     ret  = mtp_mgmt_ctrl.tor_nic_emmc_format(0)
-                    ret  = mtp_mgmt_ctrl.tor_nic_emmc_format(1)
+                    ret &= mtp_mgmt_ctrl.tor_nic_emmc_format(1)
                 # Init ARM Diag Environment
                 elif test == "NIC_DIAG_INIT":
                     ret = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=fru_cfg)
