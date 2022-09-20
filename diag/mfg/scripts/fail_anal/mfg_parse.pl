@@ -346,6 +346,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"DDR_INIT_FAILURE"}) {
+        $top_diag_fa_code = "DDR_INIT_FAILURE";
+        delete $diag_fa_code{"DDR_INIT_FAILURE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
         $top_diag_fa_code = "RETEST_NEEDED";
         delete $diag_fa_code{"RETEST_NEEDED"};
@@ -526,6 +532,11 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"BOOT_UBOOT"}) {
         $top_diag_fa_code = "BOOT_UBOOT";
         delete $diag_fa_code{"BOOT_UBOOT"};
+        return;
+    }
+    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
+        $top_diag_fa_code = "CARD_REBOOTED";
+        delete $diag_fa_code{"CARD_REBOOTED"};
         return;
     }
     if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
@@ -1363,7 +1374,7 @@ sub parse_mtp_and_slot_log {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at 80/) {
+        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at/ && $line !~ m/elb_mc_mr_/) {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
@@ -1430,6 +1441,10 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/CRC32 cross check failed; Caculated.*Uboot.*/) {
             $slot_err_msg .= $line;
             $diag_fa_code{"KEY_PROG_CRC_ERR"} = 1;
+        }
+        if ($line =~ m/ERROR :: mc\d initialization failed w/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"DDR_INIT_FAILURE"} = 1;
         }
     }
     if ($slot_err_msg ne "") {
@@ -1712,6 +1727,9 @@ sub parse_fpga_and_ecc {
                             $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
                         } else {
                             $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                            if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
+                                $diag_fa_code{"CARD_REBOOTED"} = 1;
+                            }
                         }
                     }
                 }
@@ -1840,7 +1858,7 @@ sub parse_fpga_and_ecc {
         if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
             $mc_info .= $1."\r\n";
         }
-        if ($corr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1851,7 +1869,7 @@ sub parse_fpga_and_ecc {
                 $corr_syn = 1;
             }
         }
-        if ($multi_corr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1862,7 +1880,7 @@ sub parse_fpga_and_ecc {
                 $multi_corr_syn = 1;
             }
         }
-        if ($uncorr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1873,7 +1891,7 @@ sub parse_fpga_and_ecc {
                 $uncorr_syn = 1;
             }
         }
-        if ($multi_uncorr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1887,7 +1905,7 @@ sub parse_fpga_and_ecc {
         if($line =~ m/=== Dumping ECC info ===/) {
             $ecc_start_linenum = $.;
         }
-        if($line =~ m/FAIL: ECC_EN:/) {
+        if(($ecc_result_err == 0) && ($line =~ m/FAIL: ECC_EN:/)) {
             $ecc_result_linenum = $.;
             if ($ecc_result_linenum - $ecc_start_linenum < 300) {
                 $ecc_result_exist = 1;
