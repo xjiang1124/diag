@@ -322,6 +322,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"}) {
+        $top_diag_fa_code = "2WAY_COMMUNICATION_FAILURE";
+        delete $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"NIC_POWER_FAILURE"}) {
         $top_diag_fa_code = "NIC_POWER_FAILURE";
         delete $diag_fa_code{"NIC_POWER_FAILURE"};
@@ -727,6 +733,8 @@ sub parse_snake_log {
         if($err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
+            my $line2 = <TR3>;
+            $test_err_msg .= $line2;
             $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
             $err_found = 1;
         }
@@ -734,7 +742,6 @@ sub parse_snake_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"} = 1;
-            $err_found = 1;
         }
         if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc_|correctable|uncorrectable)(.*)interrupt/) {
             if ($debug_msgs) { print "line: $line"};
@@ -1516,6 +1523,10 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
+        if ($line =~ m/\[NIC-$slot\].*Pre-Post \[\w+\] result to webserver failed/) {
+            $mtp_test_msg .= $line;
+            $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+        }
         #if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
         #    $err_msg_dump = 1;
         #}
@@ -1564,6 +1575,7 @@ sub parse_fpga_and_ecc {
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
+    my $mc_info;
 
     if (!open(TR3, '<', $mtpfile)) {
         print "Cannot open file $mtpfile\n";
@@ -1825,30 +1837,49 @@ sub parse_fpga_and_ecc {
             }
         }
 
+        if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
+            $mc_info .= $1."\r\n";
+        }
         if ($corr_syn == 0) {
             if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $corr_syn = 1;
             }
         }
         if ($multi_corr_syn == 0) {
             if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $multi_corr_syn = 1;
             }
         }
         if ($uncorr_syn == 0) {
             if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $uncorr_syn = 1;
             }
         }
         if ($multi_uncorr_syn == 0) {
             if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
-                $ecc_sts = $ecc_sts."$1\n";
+                if ($mc_info ne "") {
+                    $ecc_sts .= $mc_info;
+                    $mc_info = "";
+                }
+                $ecc_sts = $ecc_sts.$1."\r\n";
                 $num_ecc_sts_errors++;
                 $multi_uncorr_syn = 1;
             }
@@ -1861,6 +1892,7 @@ sub parse_fpga_and_ecc {
             if ($ecc_result_linenum - $ecc_start_linenum < 300) {
                 $ecc_result_exist = 1;
                 $ecc_result_err = 1;
+                print $ecc_sts;
                 $ecc_sts = $ecc_sts.$line;
             }
         }
