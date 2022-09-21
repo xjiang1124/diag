@@ -15,19 +15,19 @@ import (
 
 
 const errhelp = "\nswitch:\n" +
-        "switch fantest\n" +
+        //"switch fantest\n" +
+        "switch test fan/i2c/qsfp/sfp/sfp_laser/dramsize/resistor/presence  (example -> 'switch test fan')\n" +
         "\n" +
         "switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>\n" +
         "switch td3 snake <elbPortMask> <time> <phy/ext>\n" +
         "                                ///////OPTIONAL ARGS//////////\n" +
-        "                                pktsize:<size>\n" +
-        "                                pktpattern:<pattern>\n" +
+        "                                pktsize:<size>    pktpattern:<pattern>\n" +
+        //"                                pktpattern:<pattern>\n" +
         "                                dumptemps:<0/1>\n" +
         "                                fanspeed:<50/60/70/80/90/100>\n" +
         "                                maxelbatemp:value\n" +
         "                                maxtd3temp:value\n" +
         "                                EXAMPLE pktsize:1480 pktpattern:0xFFFFFFFF dumptemps:1 fanspeed:70 maxelbatemp:65 maxtd3temp:80\n" +
-        "switch td3 snakeforward <elbPortMask> <time> <phy/ext>\n" +
         "switch td3 snakecompliance <elbPortMask> <time> <phy/ext>\n" +
         "switch td3 vrmfix\n" +
         "\n" + 
@@ -45,6 +45,45 @@ const errhelp = "\nswitch:\n" +
         "switch voltage margin <+/-percent>\n" +
         "\n"
         
+/* 
+I2C -> I2C
+QSFP -> I2C
+SFP -> I2C
+SFP -> LAS
+CPU - DRAMSIZE
+SWITCH -> RESISTOR (command not in switch help)
+SWITCH -> PRESENT 
+ 
+ 
+root@10000:/home/diag/diag# diag -stest
+============ TOR1:TAORMINA ============
+-------- SWITCH --------
+ELBA_RTC            idle
+VRM_FIX             idle
+FPGA_STRAPPING      idle
+ELBA_EDMA_TEST      idle
+ELBA_ARM_MEMORY     idle
+INVENTORY           idle
+FANRPM              idle
+PRESENT             idle
+SNAKE               idle
+-------- I2C --------
+I2C                 idle
+-------- BCM --------
+PRBSEXT             idle
+-------- SFP --------
+I2C                 idle
+LASER               idle
+-------- CPU --------
+DRAMSIZE            idle
+PCISCAN             idle
+USB                 idle
+MEMORY              idle
+-------- QSFP --------
+I2C                 idle
+-------- ASIC --------
+L1                  idle
+*/ 
 
                                
 
@@ -60,8 +99,45 @@ func main() {
         wc, _ := taormina.Grep_syslog_wc(os.Args[2])
         fmt.Printf(" WC=%d\n\n", wc)
     }
-    
-    if os.Args[1] == "fanstuck" {
+    //"switch test fan/i2c/qsfp/sfp/sfp_laser/dramsize/resistor/presence  (example -> 'switch test fan')\n" +
+    if os.Args[1] == "test" {
+        if argc < 3 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        if os.Args[2] == "fan" {
+            fmt.Printf(" FAN TEST\n")
+            rc := taormina.Fan_RPM_test(25)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "i2c" {
+        } else if os.Args[2] == "qsfp" {
+        } else if os.Args[2] == "sfp" {
+            argList := []string{}
+            fmt.Printf(" SFP LASER TEST\n")
+            rc := taormina.Sfp_i2c_test(argList)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "sfp_laser" {
+            argList := []string{}
+            fmt.Printf(" SFP LASER TEST\n")
+            rc := taormina.Sfp_signal_test(argList)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "dramsize" {
+        } else if os.Args[2] == "resistor" {
+        } else if os.Args[2] == "presence" {
+        }
+    } else if os.Args[1] == "fanstuck" {
          if argc < 3 {
             fmt.Printf(" %s \n", errhelp)
             return
@@ -377,7 +453,7 @@ func main() {
                 os.Exit(0)
             }
             return
-        } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //edmatest
+        } else if os.Args[2] == "edma3" || os.Args[2] == "EDMA3" {  
             if argc < 4 {
                 fmt.Printf(" %s \n", errhelp)
                 return
@@ -387,6 +463,22 @@ func main() {
                 fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
             }
             rc := taormina.ElbaEDMA_Test(uint32(mask), 1, 100) 
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+            return
+        } else if os.Args[2][0] == 'e' || os.Args[2][0] == 'E' {  //edmatest
+            if argc < 4 {
+                fmt.Printf(" %s \n", errhelp)
+                return
+            }
+            mask, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rc := taormina.ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(uint32(mask), 1, 100) 
             if rc != errType.SUCCESS {
                 os.Exit(-1) 
             } else {

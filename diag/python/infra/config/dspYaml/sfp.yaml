@@ -64,6 +64,11 @@ DSP:
             TOR: ALL
         PRIORITY: NORMAL 
         PARAM:
+            timeout:
+                VALUE:
+                    TOR: 90
+                INFO: Test timeout setting
+            
 
     TEST#LASER:
         INFO: Test SFP Laser funtionality
@@ -72,6 +77,11 @@ DSP:
             TOR: ALL
         PRIORITY: NORMAL
         PARAM:
+            timeout:
+                VALUE:
+                    TOR: 90
+                INFO: Test timeout setting
+            
  
     CMD#present:
         INFO: Display SFP present status

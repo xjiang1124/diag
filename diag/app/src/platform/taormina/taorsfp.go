@@ -6,55 +6,24 @@
 //CODE AND COMMENTS BELOW THIS
 
 
-package main
+package taormina
 
 import (
     "flag"
 
     "common/dcli"
-    "common/diagEngine"
-    //"common/errType"
-    //"device/sfp"
-    //"device/fpga/taorfpga"
-    //"hardware/i2cinfo"
-    //"common/misc"
-    //"hardware/hwinfo"
-    "platform/taormina"
+    //"common/diagEngine"
+    "common/errType"
+    "device/sfp"
+    "device/fpga/taorfpga"
+    "hardware/i2cinfo"
+    "common/misc"
+    "hardware/hwinfo"
 ) 
-
-func SfpI2CHdl(argList []string) {
-
-    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-
-    errFs := fs.Parse(argList)
-    if errFs != nil {
-        dcli.Println("e", "Parse failed", errFs)
-    }
-
-    ret := taormina.Sfp_i2c_test(argList)
-    diagEngine.FuncMsgChan <- ret
-    
-    return
-}
-
-func SfpLaserHdl(argList []string) {
-    
-    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-
-    errFs := fs.Parse(argList)
-    if errFs != nil {
-        dcli.Println("e", "Parse failed", errFs)
-    }
-
-    ret := taormina.Sfp_signal_test(argList)
-    diagEngine.FuncMsgChan <- ret}
-
 
 /*
     Read Device ID and compare with expected one
  */
-
-/*
 func testSfp(devName string) (sn string, err int) {
     devID, err := sfp.ReadId(devName)
 
@@ -83,9 +52,8 @@ func testSfp(devName string) (sn string, err int) {
     return
 }
 
-func SfpI2CHdl(argList []string) {
+func Sfp_i2c_test(argList []string) (ret int) {
     var data uint32
-    var ret int
     sfpSNmap := make(map[string]byte)
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -153,14 +121,12 @@ ReturnI2Chdl:
     } else {
         dcli.Printf("i", "SFP I2C TEST PASSED\n")
     }
-    diagEngine.FuncMsgChan <- ret
     
     return
 }
 
-func SfpLaserHdl(argList []string) {
+func Sfp_signal_test(argList []string) (err int) {
     
-    var err int
     var data uint32
 
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -237,8 +203,6 @@ Return:
     } else {
         dcli.Printf("i", "SFP LASER TEST PASSED\n")
     }
-    diagEngine.FuncMsgChan <- err
     
     return
 }
-*/
