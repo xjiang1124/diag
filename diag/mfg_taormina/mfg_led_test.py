@@ -188,6 +188,8 @@ def single_uut_led_checks(stage,
         if uut_id not in pass_uut_list:
             pass_uut_list.append(uut_id)
 
+        mtp_mgmt_ctrl.print_script_version()
+
         mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
         mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 

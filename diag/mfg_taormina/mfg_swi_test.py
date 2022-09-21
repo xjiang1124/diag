@@ -197,6 +197,8 @@ def single_uut_fw_program(stage,
         if uut_id not in pass_uut_list:
             pass_uut_list.append(uut_id)
 
+        mtp_mgmt_ctrl.print_script_version()
+
         mtp_mgmt_ctrl.cli_log_inf("Programming Matrix:", level=0)
         mtp_mgmt_ctrl.cli_log_inf("SvOS: {:s}".format(svos_img_file), level=1)
         mtp_mgmt_ctrl.cli_log_inf("CX-OS: {:s}".format(os_ship_img_file), level=1)
