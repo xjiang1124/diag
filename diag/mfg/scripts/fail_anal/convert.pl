@@ -96,9 +96,13 @@ my @colDefs = (
         header => 'Detailed Diag FA Code',
         header_format => $format,
     },
+    {
+        header => 'Rev',
+        header_format => $format,
+    },
 );
 my $num_failures = scalar(@fa_array) + scalar(@missing) + scalar(@passing);
-$worksheet->add_table(0, 0, $num_failures, 11, { columns     => \@colDefs,  } );
+$worksheet->add_table(0, 0, $num_failures, 12, { columns     => \@colDefs,  } );
 
 my $sn_col = 0;
 my $stage_col = 1;
@@ -112,6 +116,7 @@ my $cpld_sts_col = 8;
 my $ecc_sts_col = 9;
 my $err_msg_col = 10;
 my $full_diag_fa_col = 11;
+my $rev_col = 12;
 
 my $default_fmt = $workbook->add_format();
 $default_fmt->set_align("top");
@@ -129,6 +134,7 @@ $worksheet->set_column($cpld_sts_col, $cpld_sts_col, 55, $default_fmt);
 $worksheet->set_column($ecc_sts_col, $ecc_sts_col, 48, $default_fmt);
 $worksheet->set_column($err_msg_col, $err_msg_col, 60, $default_fmt);
 $worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 32, $default_fmt);
+$worksheet->set_column($rev_col, $rev_col, 16, $default_fmt);
 
 my $curr_row = 1;
 foreach (@fa_array) {
@@ -144,6 +150,7 @@ foreach (@fa_array) {
     $worksheet->write($curr_row, $ecc_sts_col, $_->{"ECC Reg"});
     $worksheet->write($curr_row, $cpld_sts_col, $_->{"CPLD Reg"});
     $worksheet->write($curr_row, $full_diag_fa_col, $_->{"Detailed Diag FA Code"});
+    $worksheet->write($curr_row, $rev_col, $_->{"Rev"});
     $curr_row++;
 }
 foreach (@passing) {

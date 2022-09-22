@@ -5,6 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
+my $rev = "1.1.09212022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -246,7 +247,7 @@ my $curr_row = 0;
 open(TR2, '<', $failure_logs) or die $!;
 
 my %diag_fa_code;
-my $fa_table;
+#my $fa_table;
 my @fa_row;
 my $top_diag_fa_code = "";
 my $all_test_msg = "";
@@ -284,6 +285,7 @@ while(my $line = <TR2>)
         $fa_row[$curr_row]{"Date"} = $ts;
         $fa_row[$curr_row]{"MTP"} = $mtp;
         $fa_row[$curr_row]{"Slot"} = $slot;
+        $fa_row[$curr_row]{"Rev"} = $rev;
 
         %diag_fa_code = ();
         $all_test_msg = "";
@@ -343,6 +345,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"}) {
         $top_diag_fa_code = "DDR_ECC_FAILURE_AFTER_C92_UPGRADED";
         delete $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"DDR_INIT_FAILURE"}) {
+        $top_diag_fa_code = "DDR_INIT_FAILURE";
+        delete $diag_fa_code{"DDR_INIT_FAILURE"};
         return;
     }
 
@@ -528,6 +536,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"BOOT_UBOOT"};
         return;
     }
+    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
+        $top_diag_fa_code = "CARD_REBOOTED";
+        delete $diag_fa_code{"CARD_REBOOTED"};
+        return;
+    }
     if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
         $top_diag_fa_code = "MISSING_ENV_VAR";
         delete $diag_fa_code{"MISSING_ENV_VAR"};
@@ -628,12 +641,21 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"ARM_L1_LOG_EMPTY"};
         return;
     }
+    if (exists $diag_fa_code{"Bad_J2C_L1"}) {
+        $top_diag_fa_code = "Bad_J2C_L1";
+        delete $diag_fa_code{"Bad_J2C_L1"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C_ECC"}) {
+        $top_diag_fa_code = "Bad_J2C_ECC";
+        delete $diag_fa_code{"Bad_J2C_ECC"};
+        return;
+    }
     if (exists $diag_fa_code{"Bad_J2C"}) {
         $top_diag_fa_code = "Bad_J2C";
         delete $diag_fa_code{"Bad_J2C"};
         return;
     }
-
     if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
         $top_diag_fa_code = "CARD_SPACE_FULL";
         delete $diag_fa_code{"CARD_SPACE_FULL"};
@@ -858,10 +880,12 @@ sub parse_l1_log {
         if(($j2c_err_logged == 0) && ($line =~ m/MSG :: j2c : write req error/)) {
             $test_err_msg .= join("", @lines_saved);
             $j2c_err_logged = 1;
+            $diag_fa_code{"Bad_J2C_L1"} = 1;
         }
         if(($j2c_err_logged == 0) && ($line =~ m/S2I Operation timed out/)) {
             $test_err_msg .= join("", @lines_saved);
             $j2c_err_logged = 1;
+            $diag_fa_code{"Bad_J2C_L1"} = 1;
         }
     }
     #if ($test_err_msg ne "") {
@@ -1363,7 +1387,7 @@ sub parse_mtp_and_slot_log {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at 80/) {
+        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at/ && $line !~ m/elb_mc_mr_/) {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
@@ -1430,6 +1454,10 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/CRC32 cross check failed; Caculated.*Uboot.*/) {
             $slot_err_msg .= $line;
             $diag_fa_code{"KEY_PROG_CRC_ERR"} = 1;
+        }
+        if ($line =~ m/ERROR :: mc\d initialization failed w/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"DDR_INIT_FAILURE"} = 1;
         }
     }
     if ($slot_err_msg ne "") {
@@ -1575,6 +1603,7 @@ sub parse_fpga_and_ecc {
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
+    my $ecc_disp_start = 0;
     my $mc_info;
 
     if (!open(TR3, '<', $mtpfile)) {
@@ -1712,6 +1741,9 @@ sub parse_fpga_and_ecc {
                             $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
                         } else {
                             $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                            if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
+                                $diag_fa_code{"CARD_REBOOTED"} = 1;
+                            }
                         }
                     }
                 }
@@ -1840,7 +1872,7 @@ sub parse_fpga_and_ecc {
         if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
             $mc_info .= $1."\r\n";
         }
-        if ($corr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1851,7 +1883,7 @@ sub parse_fpga_and_ecc {
                 $corr_syn = 1;
             }
         }
-        if ($multi_corr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1862,7 +1894,7 @@ sub parse_fpga_and_ecc {
                 $multi_corr_syn = 1;
             }
         }
-        if ($uncorr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1873,7 +1905,7 @@ sub parse_fpga_and_ecc {
                 $uncorr_syn = 1;
             }
         }
-        if ($multi_uncorr_syn == 0) {
+        if ($ecc_result_err == 0) {
             if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
                 if ($mc_info ne "") {
                     $ecc_sts .= $mc_info;
@@ -1887,7 +1919,13 @@ sub parse_fpga_and_ecc {
         if($line =~ m/=== Dumping ECC info ===/) {
             $ecc_start_linenum = $.;
         }
-        if($line =~ m/FAIL: ECC_EN:/) {
+        if($line =~ m/=== Collect ECC info ===/) {
+            $ecc_disp_start = 1;
+        }
+        if($line =~ m/ECC COLLECTION DONE/) {
+            $ecc_disp_start = 0;
+        }
+        if(($ecc_result_err == 0) && ($line =~ m/FAIL: ECC_EN:/)) {
             $ecc_result_linenum = $.;
             if ($ecc_result_linenum - $ecc_start_linenum < 300) {
                 $ecc_result_exist = 1;
@@ -1904,8 +1942,11 @@ sub parse_fpga_and_ecc {
             }
         }
         if($line =~ m/S2I Operation timed out/) {
-            #print "$line";
-            $diag_fa_code{"Bad_J2C"} = 1;
+            if ($ecc_disp_start) {
+                $diag_fa_code{"Bad_J2C_ECC"} = 1;
+            } else {
+                $diag_fa_code{"Bad_J2C"} = 1;
+            }
         }
         if($line =~ m/ERROR:i2c_read_count: 1001/) {
             #print "$line";
@@ -1916,7 +1957,9 @@ sub parse_fpga_and_ecc {
         }
     }
     close(TR3);
-
+    if (($j2c_error_linenum != 0) && ($ecc_reg_linenum == 0)) {
+        $ecc_not_valid = 1;
+    }
     if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0) && ($ecc_result_exist == 0)) {
         print "ECC not dumped\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not dumped";
@@ -1933,7 +1976,7 @@ sub parse_fpga_and_ecc {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
     } elsif ($ecc_not_valid == 1) {
-        $diag_fa_code{"Bad_J2C"} = 1;
+        $diag_fa_code{"Bad_J2C_ECC"} = 1;
         print "ECC not valid due to bad J2C\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
     } elsif (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
