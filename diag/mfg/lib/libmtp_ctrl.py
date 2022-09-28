@@ -2627,7 +2627,7 @@ class mtp_ctrl():
             return False
         # ping to update the arp cache
         for x in range(2):
-            time.sleep(5)
+            time.sleep(11)
             cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_slot_err(slot, "Command {:s} failed".format(cmd))
