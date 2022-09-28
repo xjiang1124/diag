@@ -19,6 +19,7 @@ class NIC_Type:
     LACONA32DELL = "LACONA32DELL"
     LACONA32 = "LACONA32"
     ORTANO2ADI = "ORTANO2ADI"
+    ORTANO2ADIIBM = "ORTANO2ADIIBM"
     ORTANO2INTERP = "ORTANO2INTERP"
     UNKNOWN = "Unknown"
 
@@ -594,6 +595,7 @@ class MFG_DIAG_CMDS:
     NIC_SW_PROFILE_CMD_FMT = "/{:s}"
     NIC_SW_MODE_SWITCH_FMT = "device_conf_gen.sh switch"
     NIC_SW_DEVICE_CHK_FMT = "pdsctl show device"
+    NIC_SW_SYSTEM_CHK_FMT = "pdsctl show system"
 
     NIC_L1_HEALTH_CHECK = "tclsh /home/diag/diag/scripts/asic/l1_test.tcl {:s} {:d} hod 1 normal 0 1 0 1"
 
@@ -618,6 +620,7 @@ class MFG_DIAG_SIG:
     MTP_FAN0_PRSNT_SIG = "Fan 0 is present"
     MTP_FAN1_PRSNT_SIG = "Fan 1 is present"
     MTP_FAN2_PRSNT_SIG = "Fan 2 is present"
+    MTP_PRSNT_SIG = "TEST PASSED"
     NIC_CON_OK_SIG = "# stty speed 4800"
     NIC_MGMT_OK_SIG = "Management port is ready"
     NIC_PARTITION_OK_SIG = "setting OTP PARTITION_SETTING_COMPLETED!"
@@ -654,6 +657,7 @@ class MFG_DIAG_SIG:
     MFG_ASIC_PCIE_MAPPING_MSG_SIG = "SBUS_PCIE_MAPPING"
     NIC_SW_DEVICE_CHK_SIG1 = "Device Profile *: bitw-smart-switch"
     NIC_SW_DEVICE_CHK_SIG2 = "Operational Mode *: bitw-smart-switch"
+    NIC_SW_SYSTEM_CHK_SIG1 = "Die id"
     NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
@@ -684,5 +688,6 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_POMONTEDELL = r"\bUUT_(\d+) +POMONTEDELL\b"
     MFG_NIC_TYPE_LACONA32DELL = r"\bUUT_(\d+) +LACONA32DELL\b"
     MFG_NIC_TYPE_LACONA32 = r"\bUUT_(\d+) +LACONA32\b"
-    MFG_NIC_TYPE_ORTANO2ADI = r"\bUUT_(\d+) +ORTANO2A\b"
+    MFG_NIC_TYPE_ORTANO2ADI = r"\bUUT_(\d+) +ORTANO2A\b +68-0026\b"
+    MFG_NIC_TYPE_ORTANO2ADIIBM = r"\bUUT_(\d+) +ORTANO2A\b +68-0028\b"
     MFG_NIC_TYPE_ORTANO2INTERP = r"\bUUT_(\d+) +ORTANO2I\b"

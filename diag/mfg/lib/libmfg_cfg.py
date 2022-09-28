@@ -3,7 +3,7 @@ from libdefs import Factory
 
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
-MFG_BYPASS_PSU_CHECK = True
+MFG_BYPASS_PSU_CHECK = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -244,14 +244,15 @@ class NIC_IMAGES:
     sec_cpld_img["ORTANO2"] = "naples200_ortano2_rev3_9_07292021.bin"
     sec_cpld_ver["ORTANO2"] = "0x3"
     sec_cpld_dat["ORTANO2"] = "0x09"
-    fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsafe_rev3_9_07292021.bin"
+    fail_cpld_img["ORTANO2"] = "naples200_ortano2_failsafe_rev3_A_04202022.bin"
     fail_cpld_ver["ORTANO2"] = "0x3"
-    fail_cpld_dat["ORTANO2"] = "0x09"
+    fail_cpld_dat["ORTANO2"] = "0x10"
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
-    diagfw_img["ORTANO2"] = "elba_diagfw-uboot_1.15.9-C-30_2021.08.20.tar"
-    diagfw_dat["ORTANO2"] = "08-20-2021"
-    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-30_2021.08.20.tar"
-    goldfw_dat["ORTANO2"] = "08-20-2021"
+    diagfw_img["ORTANO2"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
+    diagfw_dat["ORTANO2"] = "06-16-2022"
+    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
+    goldfw_dat["ORTANO2"] = "06-16-2022"
+    uboot_img["ORTANO2"] = "boot0.rev14.img"
     # ORTANO ORACLE (68-0015)
     # cpld_img["ORTANO2"] = "naples200_ortano2_rev3_9_07292021.bin"
     # cpld_ver["ORTANO2"] = "0x3"
@@ -265,8 +266,8 @@ class NIC_IMAGES:
     # fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
     # diagfw_img["ORTANO2"] = "elba_diagfw-uboot_1.15.9-C-30_2021.08.20.tar"
     # diagfw_dat["ORTANO2"] = "08-20-2021"
-    goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-64-1-3_2022.04.08.tar"
-    goldfw_dat["68-0015"] = "04-09-2022"
+    goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
+    goldfw_dat["68-0015"] = "06-16-2022"
 
     cpld_img["POMONTEDELL"] = "naples200_pom_dell_main_rev2_8_08162022.bin"
     cpld_ver["POMONTEDELL"] = "0x2"
@@ -328,25 +329,53 @@ class NIC_IMAGES:
     sec_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev1_5_02112022.bin"
     sec_cpld_ver["ORTANO2ADI"] = "0x1"
     sec_cpld_dat["ORTANO2ADI"] = "0x05"
-    fail_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
+    fail_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_failsafe_rev3_D_06082022.bin"
     fail_cpld_ver["ORTANO2ADI"] = "0x3"
-    fail_cpld_dat["ORTANO2ADI"] = "0x12"
-    fea_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
-    diagfw_img["ORTANO2ADI"] = "elba_diagfw_1.15.9-C-56_2022.01.08.tar"
-    diagfw_dat["ORTANO2ADI"] = "01-08-2022"
-    goldfw_img["ORTANO2ADI"] = "elba_goldfw_1.15.9-C-64-1-3_2022.04.08.tar"
-    goldfw_dat["ORTANO2ADI"] = "04-09-2022"
+    fail_cpld_dat["ORTANO2ADI"] = "0x13"
+    fea_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_fea_rev3_D_06082022.bin"
+    diagfw_img["ORTANO2ADI"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
+    diagfw_dat["ORTANO2ADI"] = "06-16-2022"
+    goldfw_img["ORTANO2ADI"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
+    goldfw_dat["ORTANO2ADI"] = "06-16-2022"
+    uboot_img["ORTANO2ADI"] = "boot0.rev14.img"
     cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_03302022.bin"
     cpld_ver["68-0026"] = "0x3"
     cpld_dat["68-0026"] = "0x12"
     sec_cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_03302022.bin"
     sec_cpld_ver["68-0026"] = "0x3"
     sec_cpld_dat["68-0026"] = "0x12"
-    fail_cpld_img["68-0026"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
+    fail_cpld_img["68-0026"] = "naples200_ortano2A_failsafe_rev3_D_06082022.bin"
     fail_cpld_ver["68-0026"] = "0x3"
-    fail_cpld_dat["68-0026"] = "0x12"
-    goldfw_img["68-0026"] = "elba_goldfw_1.15.9-C-64-1-3_2022.04.08.tar"
-    goldfw_dat["68-0026"] = "04-09-2022"
+    fail_cpld_dat["68-0026"] = "0x13"
+    goldfw_img["68-0026"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
+    goldfw_dat["68-0026"] = "06-16-2022"
+    #IBM ADI
+    cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    cpld_ver["ORTANO2ADIIBM"] = "0x1"
+    cpld_dat["ORTANO2ADIIBM"] = "0x05"
+    sec_cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    sec_cpld_ver["ORTANO2ADIIBM"] = "0x1"
+    sec_cpld_dat["ORTANO2ADIIBM"] = "0x05"
+    fail_cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
+    fail_cpld_ver["ORTANO2ADIIBM"] = "0x3"
+    fail_cpld_dat["ORTANO2ADIIBM"] = "0x12"
+    fea_cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
+    diagfw_img["ORTANO2ADIIBM"] = "naples_diagfw_elba_1.51-g-4_2022.09.20.tar"
+    diagfw_dat["ORTANO2ADIIBM"] = "09-20-2022"
+    goldfw_img["ORTANO2ADIIBM"] = "naples_goldfw_elba_1.51-g-4_2022.09.20.tar"
+    goldfw_dat["ORTANO2ADIIBM"] = "09-19-2022"
+    uboot_img["ORTANO2ADIIBM"] = "boot0.rev14.img"
+    cpld_img["68-0028"] = "naples200_ortano2A_rev3_C_03302022.bin"
+    cpld_ver["68-0028"] = "0x3"
+    cpld_dat["68-0028"] = "0x12"
+    sec_cpld_img["68-0028"] = "naples200_ortano2A_rev3_C_03302022.bin"
+    sec_cpld_ver["68-0028"] = "0x3"
+    sec_cpld_dat["68-0028"] = "0x12"
+    fail_cpld_img["68-0028"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
+    fail_cpld_ver["68-0028"] = "0x3"
+    fail_cpld_dat["68-0028"] = "0x12"
+    goldfw_img["68-0028"] = "naples_goldfw_elba_1.51-g-4_2022.09.20.tar"
+    goldfw_dat["68-0028"] = "09-19-2022"
 
     cpld_img["ORTANO2INTERP"] = "naples200_ortano2I_rev3_A_05132022.bin"
     cpld_ver["ORTANO2INTERP"] = "0x3"
@@ -474,8 +503,10 @@ class PART_NUMBERS_MATCH:
     LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                    #P47930-001       LACONA32 HPE
 
     ORTANO2ADI_ORC_PN_FMT = r"68-0026-0[1-9]{1} [A-Z0-9]{2}"     #68-0026-01 01    ORTANO2ADI ORACLE
-    #ORTANO2ADI_PEN_PN_FMT = r"68-0021-0[1-9]{1} [A-Z0-9]{2}"     #68-0021-01 01    ORTANO2ADI GENERIC (PENSANDO)
     ORTANO2ADI_FMT_ALL = r"{:s}".format(ORTANO2ADI_ORC_PN_FMT)
+
+    ORTANO2ADI_IBM_PN_FMT = r"68-0028-0[1-9]{1} [A-Z0-9]{2}"     #68-0028-01 01    ORTANO2ADI IBM
+    ORTANO2ADIIBM_FMT_ALL = r"{:s}".format(ORTANO2ADI_IBM_PN_FMT)
 
     ORTANO2INTERP_ORC_PN_FMT = r"68-0029-0[1-9]{1} [A-Z0-9]{2}"    #68-0029-01 02    ORTANO2INTERP_ORC_PN_FMT ORACLE
     ORTANO2INTERP_FMT_ALL = r"{:s}".format(ORTANO2INTERP_ORC_PN_FMT)
@@ -725,26 +756,26 @@ DIAG_OS_PROMPT_LIST = ["$", "#", ">"]
 DIAG_SSH_OPTIONS = " -o PreferredAuthentications=password -o PubkeyAuthentication=no -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30'"
 
 MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw", "extdiag"]
-MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP]
+MFG_VALID_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
 MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2]
-MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP]
-MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP]
+MTP_REV03_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP]
+MTP_REV04_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP]
 
 CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
-ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP]
+ELBA_NIC_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP]
 
-PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP]
+PSLC_MODE_TYPE_LIST = [NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP]
 FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]
-CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
-DDR_HARCODED_TRAINING_NIC_LIST = [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI]
+CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP,NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
+DDR_HARCODED_TRAINING_NIC_LIST = []
 
 # please check the label specification
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-FLX_PENANG_SN_FMT = "FP[N|A|B]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
+FLX_PENANG_SN_FMT = "FP[N|A|B|D]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 FLX_P1_SN_FMT           = "FPC\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
@@ -773,7 +804,7 @@ PN_MINUS_REV_MASK = -3 # (last three digits)
 HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
 HP_SWN_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
 NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_MILPITAS_SN_FMT,FLX_PENANG_SN_FMT)
-HP_DISP_SN_FMT = r"HPE Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
+HP_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 DELL_PPID_DISP_SN_FMT = r"Serial Number +({:s})".format(DELL_PPID_SN_FMT)
 ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
 NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"

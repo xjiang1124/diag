@@ -91,7 +91,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -126,6 +126,7 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
         bus_str = bus.split(":", 1)[0]
         bus_int = int(bus_str, 16)+4
     eth = "enp"+str(bus_int)+"s0"
+    
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ifconfig {:s} down".format(eth))
@@ -159,6 +160,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.LACONA32
     elif "68-0026-01" in pn:
         product_name = NIC_Type.ORTANO2ADI
+    elif "68-0028-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIIBM
     elif "68-0029-01" in pn:
         product_name = NIC_Type.ORTANO2INTERP
     else:
@@ -334,7 +337,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
             continue
 
         ### SET PEFORMANCE MODE
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
             # Ensure performance mode even though this step is not needed with newer mainfw anymore.
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
             cmd = "touch /sysconfig/config0/.perf_mode"
@@ -346,7 +349,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                 # continue
 
         ### SWITCH TO MAINFW
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
             cmd = "/nic/tools/fwupdate -s mainfwa"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
@@ -374,16 +377,6 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                     fail_list.append(slot)
                     pass_list.remove(slot)
                     continue
-        ### OR SWITCH TO GOLDUEFI 
-        # elif nic_type in FPGA_TYPE_LIST:
-        #     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to extdiag")
-        #     cmd = "/nic/tools/fwupdate -s extdiag"
-        #     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
-        #         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to switch to extdiag")
-        #         mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
-        #         fail_list.append(slot)
-        #         pass_list.remove(slot)
-        #         continue
 
     return pass_list, fail_list
 
@@ -508,14 +501,14 @@ def main():
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
-    if "CLOUD" in card_type and stage != "FETCH_SN":
+    if ("CLOUD" in card_type or card_type == "ORTANO2ADIIBM") and stage != "FETCH_SN":
         test_log_filep = open(test_log_file, "a+", buffering=0)
     else:
         test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     diag_log_file = "diag_fst.log"
-    if "CLOUD" in card_type and stage != "FETCH_SN":
+    if ("CLOUD" in card_type or card_type == "ORTANO2ADIIBM") and stage != "FETCH_SN":
         diag_log_filep = open(diag_log_file, "a+", buffering=0)
     else:
         diag_log_filep = open(diag_log_file, "w+", buffering=0)
@@ -564,7 +557,7 @@ def main():
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-    elif "CLOUD" in card_type:
+    elif "CLOUD" in card_type or card_type == "ORTANO2ADIIBM":
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
@@ -597,7 +590,7 @@ def main():
 
             # hack to remove ROT in-flight
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
+            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2ADIIBM and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
@@ -642,7 +635,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    if "CLOUD" in card_type:
+    if "CLOUD" in card_type or card_type == "ORTANO2ADIIBM":
         if stage == "FETCH_SN":
             cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
@@ -670,7 +663,7 @@ def main():
                 #sort it based on slot number
                 fail_match.sort(key = lambda x: x[0])
 
-    if "ORTANO" not in card_type:
+    if "ORTANO" not in card_type or card_type == "ORTANO2ADIIBM":
         for _slot, _sn, _nic_type in fail_match:
             slot = int(_slot)-1
             mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type.strip())

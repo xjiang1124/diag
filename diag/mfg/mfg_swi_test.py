@@ -262,6 +262,9 @@ def main():
                     if card_type == NIC_Type.ORTANO2ADI:
                         mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0028"])
+                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0028"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
@@ -270,6 +273,8 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
                     if card_type == NIC_Type.ORTANO2ADI:
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0028"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                 try:
@@ -285,6 +290,9 @@ def main():
                     if card_type == NIC_Type.ORTANO2ADI:
                         mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0028"])
+                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0028"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
@@ -293,6 +301,8 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
                     if card_type == NIC_Type.ORTANO2ADI:
                         mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0028"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
                 try:

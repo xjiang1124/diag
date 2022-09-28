@@ -166,15 +166,15 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         test_list = ["FRU_PROG"]
 
     if nic_type == NIC_Type.ORTANO2:
-        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
-    if nic_type == NIC_Type.ORTANO2ADI:
-        test_list = ["FRU_PROG", "QSPI_GOLD_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "UBOOT_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
+        test_list = ["FRU_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2INTERP:
-        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        test_list = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
+        test_list = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        test_list = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG", "QSPI_PROG"]
+        test_list = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG"]
 
     dsp = FF_Stage.FF_DL
 
@@ -515,6 +515,13 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
             try:
+                if card_type == NIC_Type.ORTANO2ADI:
+                    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
+                if card_type == NIC_Type.ORTANO2ADIIBM:
+                    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+            try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
             except KeyError:
@@ -543,7 +550,6 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
-    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
     mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
@@ -587,7 +593,7 @@ def main():
             if str.upper(valid) != "YES":
                 continue
             pn = nic_fru_cfg[mtp_id][key]["PN"]
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+            mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
             mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -655,10 +661,14 @@ def main():
 
         if nic_type not in PSLC_MODE_TYPE_LIST:
             continue
-        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
+        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
         # skip extra tests until PCN approved:
-        if nic_type == NIC_Type.ORTANO2ADI or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
-            test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "SET_PSLC"]
+        if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
+            testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC"]
+
+        if nic_type == NIC_Type.NAPLES100DELL:
+            test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
+
         for skip_test in args.skip_test:
             if skip_test in test_list:
                 test_list.remove(skip_test)
@@ -675,6 +685,13 @@ def main():
                 ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
             elif test == "EMMC_BKOPS_EN":
                 ret = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(slot)
+            elif test == "QSPI_PROG":
+                qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+                if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
+                    qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
+                if nic_type == NIC_Type.NAPLES25SWM:
+                    qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+                ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -851,12 +868,12 @@ def main():
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
         qspi_gold_img_file = ""
-        if nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
             qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
         uboot_img_file = ""
         uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-        if nic_type in FPGA_TYPE_LIST:
+        if nic_type in FPGA_TYPE_LIST or nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
             uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
         nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
@@ -900,7 +917,7 @@ def main():
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         dsp = stage
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2INTERP: 
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2INTERP: 
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -975,7 +992,7 @@ def main():
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY"]
         if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
-        if nic_type == NIC_Type.ORTANO2ADI:
+        if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"] 
         if nic_type == NIC_Type.POMONTEDELL:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
