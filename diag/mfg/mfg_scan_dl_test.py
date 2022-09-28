@@ -904,50 +904,6 @@ def main():
                 nic_thread_list.remove(nic_thread)
         time.sleep(5)
 
-    # Ortano Boot check moved out of parallel tests to sequential test
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot in fail_nic_list:
-            continue
-        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-            continue
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) != "YES":
-            continue
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        dsp = stage
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2INTERP: 
-            testlist = ["CPLD_BOOT_CHECK"]
-        else:
-            continue
-        for skip_test in args.skip_test:
-            if skip_test in testlist:
-                testlist.remove(skip_test)
-        for test in testlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-            
-            # check CPLD partition
-            if test == "CPLD_BOOT_CHECK":
-                ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
-                ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
-                continue
-
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                break
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
     if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list, enable=False, dsp=dsp):
         mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
