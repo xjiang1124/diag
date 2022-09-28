@@ -20,7 +20,7 @@ def get_ssh_cmd(ip, cmd):
     return ssh_cmd
 
 def get_bus_list(card_type="CAPRI"):
-    if card_type == "ORTANO":
+    if card_type == "ORTANO" or card_type == "ORTANO2ADIIBM":
         upstream_port = "0002"
     else:
         upstream_port = "1000"
@@ -77,6 +77,8 @@ def get_product_name_from_pn(pn):
         product_name = "NAPLES100DELL"
     elif "68-0026-01" in pn:
         product_name = "ORTANO2ADI"
+    elif "68-0028-01" in pn:
+        product_name = "ORTANO2ADIIBM"
     else:
         product_name = "UNKNOWN"
         print("Unknow PN:", pn)
@@ -482,7 +484,7 @@ def fst_cloud_fetch_sn(card_type, fst):
         except KeyError as e:
             print("[ERROR] FWLIST missing info")
             print(e)
-        print("---------")
+        print("---------")        
 
         # Switch to mainfw
         cmd = "/nic/tools/fwupdate -s mainfwa"
@@ -534,6 +536,8 @@ def fst_cloud_check_pcie(fst):
         else:
             tgt_speed = "8GT/s"
 
+        print(result1.replace("\n", ""))
+
         if tgt_speed in result1 and tgt_width in result1:
             print("slot:", str(slot), bus, "sn:", sn, "type:", product_name, "pass")
         else:
@@ -559,7 +563,7 @@ def main():
         fst_general_old(fst_type)
     elif card_type == "ORACLE":
         fst_general_oracle(fst_type)
-    elif card_type == "NAPLES100IBM" or "CLOUD" in card_type:
+    elif card_type == "NAPLES100IBM" or card_type == "ORTANO2ADIIBM" or "CLOUD" in card_type:
         if stage == "FETCH_SN":
             fst_cloud_fetch_sn(card_type, fst_type)
         elif stage == "CHECK_PCIE":

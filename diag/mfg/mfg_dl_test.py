@@ -226,12 +226,12 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_prsnt_list[slot]:
                 continue
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
+            mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_prsnt_list[slot]:
                 continue
-            mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
+            mtp_mgmt_ctrl.mtp_nic_pn_init(slot, fpo=True)
 
     # type check
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
@@ -277,6 +277,13 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
                 try:
+                    if card_type == NIC_Type.ORTANO2ADI:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                try:
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
                 except KeyError:
@@ -307,7 +314,6 @@ def main():
 
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])
-        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
         mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
         
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):

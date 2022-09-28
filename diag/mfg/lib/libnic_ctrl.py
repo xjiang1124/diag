@@ -791,6 +791,36 @@ class nic_ctrl():
         self.nic_console_detach()
         return True
 
+    def nic_pdsctl_system_show(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        die_id_match = re.findall(MFG_DIAG_SIG.NIC_SW_SYSTEM_CHK_SIG1, cmd_buf)
+        if die_id_match:
+            pass
+        else:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_console_detach()
+            return False
+
+        self.nic_console_detach()
+        return True
+
     def nic_set_i2c_after_pw_cycle(self):
         if not self.nic_console_attach_fast():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1104,7 +1134,7 @@ class nic_ctrl():
                     return False
             #VERIFY FRU PROGRAMMING
             cmd_buf = self.nic_get_cmd_buf()
-            match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
+            match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
             if not match:
                 self.nic_set_err_msg(" SMB FRU PROGRAMMING FAILED\n")
                 self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
@@ -1146,7 +1176,7 @@ class nic_ctrl():
         if not cmd_buf:
             return False
         #VERIFY FRU PROGRAMMING
-        match = re.findall(r"FRU Checkum and Type/Length Checks Passed", cmd_buf)
+        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
         if not match:
             self.nic_set_err_msg(" ASIC FRU PROGRAMMING FAILED\n")
             self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
@@ -2392,7 +2422,7 @@ class nic_ctrl():
 
 
     # check nic mfg vendor based on the sn format
-    def nic_vendor_init(self, sn=None):
+    def nic_vendor_init(self, sn=None, fpo=False):
         nic_type = self._nic_type
         if sn == None:
             if self._nic_type == NIC_Type.NAPLES25OCP:
@@ -2401,6 +2431,8 @@ class nic_ctrl():
                 nic_cmd = MFG_DIAG_CMDS.NIC_HPESWM_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
             else:
                 nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            if fpo: 
+                nic_cmd += " -fpo"
             fru_buf = self.nic_get_info(nic_cmd)
 
         else:
@@ -2428,10 +2460,12 @@ class nic_ctrl():
         self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
         return False
 
-    def nic_sn_init(self):
+    def nic_sn_init(self, fpo=False):
         nic_type = self._nic_type
 
         cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_SN_FMT.format(self._slot+1)
+        if fpo: cmd += " -fpo "
+
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Unable to read SMB FRU")
             return False
@@ -2459,6 +2493,7 @@ class nic_ctrl():
             return True
         # else:
         cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
+        if fpo: cmd += " -fpo "
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Unable to read SMB FRU")
             return False
@@ -2474,10 +2509,11 @@ class nic_ctrl():
         self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
         return False
 
-    def nic_pn_init(self):
+    def nic_pn_init(self, fpo=False):
         nic_type = self._nic_type
 
         cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_PN_FMT.format(self._slot+1)
+        if fpo: cmd += " -fpo "
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Unable to read SMB FRU")
             return False
@@ -2505,6 +2541,7 @@ class nic_ctrl():
             return True
         # else:
         cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
+        if fpo: cmd += " -fpo "
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_err_msg("Unable to read SMB FRU")
             return False
@@ -2558,8 +2595,8 @@ class nic_ctrl():
             
         return pro_no
         
-    def nic_fru_init(self, init_date=True, swmtestmode=Swm_Test_Mode.SWMALOM):
-        if not self.nic_vendor_init():
+    def nic_fru_init(self, init_date=True, swmtestmode=Swm_Test_Mode.SWMALOM, fpo=False):
+        if not self.nic_vendor_init(fpo=fpo):
             return False
 
         if self._nic_type == NIC_Type.NAPLES25OCP:
@@ -2572,6 +2609,9 @@ class nic_ctrl():
             nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         else:
             nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+
+        if fpo:
+            nic_cmd += " -fpo"
         fru_buf = self.nic_get_info(nic_cmd)
         if not fru_buf:
             print ("fru_buf 1 match: ")
@@ -2637,7 +2677,7 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
+            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
@@ -2693,6 +2733,9 @@ class nic_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
+
+            if fpo:
+                cmd += " -fpo"   
             if not self.mtp_exec_cmd(cmd):
                 print ("fru_buf 7 match: ")
                 self.nic_set_err_msg("Unable to read SMB FRU")
@@ -2756,7 +2799,7 @@ class nic_ctrl():
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
+                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
                     match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
