@@ -19,6 +19,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
+from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
@@ -334,7 +335,7 @@ def main():
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=0)
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
     # Close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
