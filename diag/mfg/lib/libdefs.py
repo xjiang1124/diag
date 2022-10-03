@@ -44,8 +44,8 @@ class Factory:
     LAB = "HW lab"
 
 class FLEX_TWO_WAY_COMM:
-    PRE_POST_RETRY = 0
-    POST_RETRY = 0
+    PRE_POST_RETRY = 2
+    POST_RETRY = 2
 
 class FF_Stage:
     FF_DL = "DL"
