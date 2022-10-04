@@ -626,6 +626,8 @@ func main() {
             cli.Println("e", "eepromTlbInit Failed\n")
             return
         }
+    } else {
+        eeprom.I2cAddr16 = true
     }
 
     if *dispPtr == true {

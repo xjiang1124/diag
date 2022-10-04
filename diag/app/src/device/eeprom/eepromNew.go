@@ -619,48 +619,48 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 }
                 incrementVar = 0
             }
-            //if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
-            if (offset == snOff) {
+            if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
+            //if (offset == snOff) {
                 for i:=offset;i<offset+snLen;i++ {
                     Data[i]=snByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            //if (offset == pnOff) && (entry.pn != FIELD_NUM_NONE) {
-            if (offset == pnOff) {
+            if (offset == pnOff) && (entry.pn != FIELD_NUM_NONE) {
+            //if (offset == pnOff) {
                 for i:=offset;i<offset+pnLen;i++ {
                     Data[i]=pnByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            //if (offset == macOff) && (entry.mac != FIELD_NUM_NONE) {
-            if (offset == macOff) {
+            if (offset == macOff) && (entry.mac != FIELD_NUM_NONE) {
+            //if (offset == macOff) {
                 for i:=offset;i<offset+macLen;i++ {
                     Data[i]=macByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            //if (offset == prodNameOff) && (entry.prodName != FIELD_NUM_NONE) {
-            if (offset == prodNameOff) {
+            if (offset == prodNameOff) && (entry.prodName != FIELD_NUM_NONE) {
+            //if (offset == prodNameOff) {
                 for i:=offset;i<offset+prodNameLen;i++ {
                     Data[i]=prodNameByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            //if (offset == skuOff) && (entry.sku != FIELD_NUM_NONE) {
-            if (offset == skuOff) {
+            if (offset == skuOff) && (entry.sku != FIELD_NUM_NONE) {
+            //if (offset == skuOff) {
                 for i:=offset;i<offset+skuLen;i++ {
                     Data[i]=skuByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            //if (offset == fruIdOff) && (entry.fruId != FIELD_NUM_NONE) {
-            if (offset == fruIdOff) {
+            if (offset == fruIdOff) && (entry.fruId != FIELD_NUM_NONE) {
+            //if (offset == fruIdOff) {
                 for i:=offset;i<offset+fruIdLen;i++ {
                     Data[i]=fruIdByte[incrementVar]
                     incrementVar++
