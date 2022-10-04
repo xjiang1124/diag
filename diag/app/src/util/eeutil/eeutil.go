@@ -627,7 +627,12 @@ func main() {
             return
         }
     } else {
-        eeprom.I2cAddr16 = true
+        info, _ := i2cinfo.GetI2cInfo(devName)
+        if (info.Flag == i2cinfo.FLAG_16BIT_EEPROM) {
+            eeprom.I2cAddr16 = true
+        } else {
+            eeprom.I2cAddr16 = false
+        }
     }
 
     if *dispPtr == true {
