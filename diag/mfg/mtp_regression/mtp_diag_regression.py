@@ -57,7 +57,7 @@ def get_test_stage_name(mtp_mgmt_ctrl, corner):
 
     return dsp
 
-def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
+def naples_diag_cfg_show(card_type, naples_test_db, corner, mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List:".format(card_type), level = 0)
     cmd_list = naples_test_db.get_init_cmd_list()
     mtp_mgmt_ctrl.cli_log_inf("Init Command List:")
@@ -85,6 +85,8 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
+    if corner in (Env_Cond.MFG_HT, Env_Cond.MFG_LT):
+        mtp_para_test_list = libmfg_utils.list_subtract(mtp_para_test_list, ["ETH_PRBS"])
     mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
     for item in mtp_para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
@@ -153,11 +155,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod"
         else:
             mode = "hod_1100"
-    elif nic_type == NIC_Type.ORTANO2ADI and test == "L1":
-        if mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
-            mode = "hod"
-        else:
-            mode = "hod_1100"
+    elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM) and test == "L1":
+        mode = "hod"
     elif nic_type == NIC_Type.ORTANO2INTERP:
         mode = "hod"
     elif nic_type == NIC_Type.POMONTEDELL:
@@ -460,16 +459,16 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         nic_top_test_list = orc_list[:]
         nic_bot_test_list = pen_list[:]
 
-    # separate lists for ORC ortano and PEN ortano 
-    if nic_type == NIC_Type.ORTANO2ADI:
-        orc_list, pen_list = [], []
+    # separate lists for ORC ortano adi and IBM ortano adi 
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
+        orc_list, ibm_list = [], []
         for slot in nic_list:
-            if mtp_mgmt_ctrl.mtp_is_nic_ortanoadi_oracle(slot):
+            if nic_type == NIC_Type.ORTANO2ADI:
                 orc_list.append(slot)
             else:
-                pen_list.append(slot)
+                ibm_list.append(slot)
         nic_top_test_list = orc_list[:]
-        nic_bot_test_list = pen_list[:]
+        nic_bot_test_list = ibm_list[:]
 
     if len(nic_top_test_list) == 0:
         nic_top_test_list = nic_list[:]
@@ -574,7 +573,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         if len(nic_top_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_top_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -617,7 +616,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         if len(nic_bottom_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_bottom_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -713,7 +712,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             mtp_mgmt_ctrl.mtp_nic_console_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
-        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and (card_type == NIC_Type.ORTANO2 or card_type == NIC_Type.ORTANO2ADI):
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
             # external loopback for P2C
             if vmarg == Voltage_Margin.normal:
                 diag_cmd += " -p 'int_lpbk=0'"
@@ -889,6 +888,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 number_of_l1_tests = 9
                 if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
                     number_of_l1_tests = 8
+                if nic_type == NIC_Type.ORTANO2ADIIBM:
+                    number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -1070,7 +1071,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
             continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP):
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -1293,6 +1294,7 @@ def main():
     test_cfg_file[NIC_Type.ORTANO] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADI] = "config/ortano_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADIIBM] = "config/ortanoadi_ibm_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
@@ -1309,6 +1311,8 @@ def main():
     mtp_para_test_list = dict()
     for nic_type in test_db.keys():
         mtp_para_test_list[nic_type] = test_db[nic_type].get_mtp_para_test_list()
+        if corner in (Env_Cond.MFG_HT, Env_Cond.MFG_LT):
+            mtp_para_test_list[nic_type] = libmfg_utils.list_subtract(mtp_para_test_list[nic_type], ["ETH_PRBS"])
 
     para_test_list = dict()
     for nic_type in test_db.keys():
@@ -1367,6 +1371,12 @@ def main():
             mtp_mgmt_ctrl.mtp_wait_soaking()
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
+        inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
+        if corner == Env_Cond.MFG_HT and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP temperature is over 60 degree")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
+            return
 
         # Construct data structures for cards to test
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -1436,7 +1446,7 @@ def main():
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if nic_list:
                 nic_test_db = test_db[nic_type]
-                naples_diag_cfg_show(nic_type, nic_test_db, mtp_mgmt_ctrl)
+                naples_diag_cfg_show(nic_type, nic_test_db, corner, mtp_mgmt_ctrl)
                 naples_exec_init_cmd(nic_test_db, mtp_mgmt_ctrl)
                 naples_exec_skip_cmd(nic_list, nic_test_db, mtp_mgmt_ctrl)
                 naples_exec_param_cmd(nic_list, nic_test_db, mtp_mgmt_ctrl)

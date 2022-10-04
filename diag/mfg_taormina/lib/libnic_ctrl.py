@@ -135,25 +135,33 @@ class nic_ctrl():
 
 
     def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY, dontwait=False):
+        fail_signatures = ["Connection refused", "Network is unreachable", "Exiting with failure", "closed by remote host", "timed out"]
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot, self._nic_type)
         if self._in_mainfw: 
             cmd = MFG_DIAG_CMDS.TOR_DSM_SSH_CONNECT_FMT.format(NIC_MGMT_PASSWORD, NIC_MGMT_USERNAME, NIC_IP_Address.DSM_LAG_IP[self._slot])
         else:
             cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
+        retries = 0
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
+                # try one more time:
+                if retries == 0:
+                    retries += 1
+                    continue
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_err_msg(self._nic_handle.before)
-                return False
-            if idx == 0:
-                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("Timed out waiting for NIC password prompt")
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
-            elif idx == 1:
+            elif idx < len(fail_signatures) - 1:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("ssh to NIC failed")
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
+            elif idx == len(fail_signatures):
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
@@ -179,6 +187,7 @@ class nic_ctrl():
 
 
     def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY, fail_sig=None):
+        fail_signatures = ["Connection refused", "Network is unreachable", "Exiting with failure", "closed by remote host", "timed out"]
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot, self._nic_type)
         if self._in_mainfw: 
             cmd = MFG_DIAG_CMDS.TOR_DSM_SSH_CONNECT_FMT.format(NIC_MGMT_PASSWORD, NIC_MGMT_USERNAME, NIC_IP_Address.DSM_LAG_IP[self._slot])
@@ -187,7 +196,7 @@ class nic_ctrl():
         self._nic_handle.sendline(cmd)
         retries = 0
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
                 # try one more time:
                 if retries == 0:
@@ -195,14 +204,16 @@ class nic_ctrl():
                     continue
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("Timed out waiting for NIC password prompt")
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
-            if idx == 0:
+            elif idx < len(fail_signatures) - 1:
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("ssh to NIC failed")
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
-            elif idx == 1:
+            elif idx == len(fail_signatures):
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
@@ -214,13 +225,19 @@ class nic_ctrl():
         for nic_cmd in cmd_list:
             prev_cmd_buf = self._nic_handle.before
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + [self._nic_con_prompt], timeout)
             if idx < 0:
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt])
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 ret = False
                 break
+            elif idx < len(fail_signatures) - 1:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("ssh to NIC failed")
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
             elif fail_sig != None:
                 if fail_sig in self._nic_handle.before:
                     self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -243,36 +260,50 @@ class nic_ctrl():
 
 
     def nic_get_info(self, nic_cmd):
+        fail_signatures = ["Connection refused", "Network is unreachable", "Exiting with failure", "closed by remote host", "timed out"]
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot, self._nic_type)
         if self._in_mainfw: 
             cmd = MFG_DIAG_CMDS.TOR_DSM_SSH_CONNECT_FMT.format(NIC_MGMT_PASSWORD, NIC_MGMT_USERNAME, NIC_IP_Address.DSM_LAG_IP[self._slot])
         else:
             cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
+        retries = 0
         while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["Network is unreachable", "assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
             if idx < 0:
-                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
-            elif idx == 0:
+                # try one more time:
+                if retries == 0:
+                    retries += 1
+                    continue
                 libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("Timed out waiting for NIC password prompt")
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
-            elif idx == 1:
+            elif idx < len(fail_signatures) - 1:
+                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_err_msg("ssh to NIC failed")
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                return False
+            elif idx == len(fail_signatures):
                 self._nic_handle.sendline(NIC_MGMT_PASSWORD)
                 continue
             else:
                 break
 
         self._nic_handle.sendline(nic_cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, fail_signatures + [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             info_buf = None
+        elif idx < len(fail_signatures) - 1:
+            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("ssh to NIC failed")
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
         else:
             info_buf = self._nic_handle.before
 
@@ -3518,4 +3549,61 @@ class nic_ctrl():
             self.nic_set_err_msg("Unable to read FW date")
             return False
 
+    def nic_console_clear_ssh_folder(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
 
+        # delete the sshd files
+        self._nic_handle.sendline("rm -rf /sysconfig/config0/ssh/")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # sync
+        self._nic_handle.sendline("sync")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_console_check_ssh_folder(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self._nic_handle.sendline("ls -ltd /sysconfig/config0/ssh/*")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+
+        if "/sysconfig/config0/ssh/ssh-started" not in cmd_buf:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Required SSH files missing on NIC")
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True

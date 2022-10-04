@@ -42,6 +42,12 @@ else
     sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
 fi
 
+## COPY PYTHON PACKAGES
+if [[ ${mfg_folder} == "mfg_taormina" ]]; then
+    mkdir $mfg_script_dir/release/packages
+    cp --preserve=timestamps -r /vol/hw/diag/mfg_release/prog/packages/ $mfg_script_dir/release/packages
+fi
+
 ## PRUNING
 rm -rf $mfg_script_dir/scripts
 

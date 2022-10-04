@@ -148,7 +148,7 @@ func SwitchElba_Edma_TestHdl(argList []string) {
     dcli.Println("i", "mask", *maskPtr)
     mask:=*maskPtr
 
-    err = taormina.ElbaEDMA_Test(uint32(mask), 0, 100)
+    err = taormina.ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(uint32(mask), 0, 100)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

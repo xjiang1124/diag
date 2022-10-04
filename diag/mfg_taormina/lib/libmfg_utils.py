@@ -1119,6 +1119,10 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
     cmd = "ls " + packages_src_dir
     session = pexpect.spawn(cmd, logfile=mtp_mgmt_ctrl._diag_filep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
+    if "No such file" in session.before:
+        session.close()
+        mtp_mgmt_ctrl.cli_log_err("Packages missing from release folder", level=0)
+        return False
     packages_list = session.before.split()
     session.close()
 
