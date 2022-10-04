@@ -64,7 +64,7 @@ const (
     // SKU 
     SKU_IBM         string = "DSC2-2Q200-32R32F64P-B"
     SKU_ADI_MSFT    string = "DSC2-2Q200-32R32F64P-M2"
-    SKU_NETAPP_R2   string = "111-05363"
+    SKU_NETAPP_R2   string = "NA"
 
     // FRU ID
     FRU_ID_IBM          string = "06/28/22"
@@ -141,6 +141,7 @@ var CardDataInfo = map[string]updateInfo {
                 },
         },
     },
+    // NetApp SKU goes alone with assembly number
     PN_NETAPP_R2: updateInfo {
         OrtanoPenStandardTbl,
         PROD_NAME_NETAPP_R2,
@@ -154,20 +155,19 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PN_10,
                 FIELD_NUM_MAC_9,
                 FIELD_NUM_PROD_NAME_2,
-                //FIELD_NUM_NONE,
-                FIELD_NUM_SKU_4,
+                FIELD_NUM_NONE,
                 FIELD_NUM_FRU_ID_5,
                 },
-            //progInfo {
-            //    FIELD_TYPE_NUM,
-            //    AREA_TYPE_BOARD_INFO,
-            //    FIELD_NUM_NONE,
-            //    FIELD_NUM_SKU_4,
-            //    FIELD_NUM_NONE,
-            //    FIELD_NUM_NONE,
-            //    FIELD_NUM_NONE,
-            //    FIELD_NUM_NONE,
-            //    },
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_NONE,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
 
         },
     },
@@ -446,9 +446,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
     boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
     //Loops through card.info slice and updates each field
     for _, entry := range(card.info) {
-        //cli.Println("d", card.prodName)
-        //cli.Println("d", card.sku)
-        //cli.Println("d", card.fruId)
         //SN, PN, MAC, and DATE offsets and locations
         //If NONE is found, provious offset and length will retain. Same field will be retained.
         //Same field will be updated.
@@ -539,8 +536,7 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
             (len(mac) != MAC_LEN)               ||
             (len(date) != (MFG_DATE_LEN*2))     ||
             (len(prodNameByte) > prodNameLen)   ||
-            //(len(skuByte) > skuLen && (entry.sku != FIELD_NUM_NONE)) ||
-            (len(skuByte) > skuLen) ||
+            (len(skuByte) > skuLen && (entry.sku != FIELD_NUM_NONE)) ||
             (len(fruIdByte) > fruIdLen) ) {
             err = errType.INVALID_PARAM
             var errorOutput string
@@ -620,7 +616,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
-            //if (offset == snOff) {
                 for i:=offset;i<offset+snLen;i++ {
                     Data[i]=snByte[incrementVar]
                     incrementVar++
@@ -628,7 +623,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == pnOff) && (entry.pn != FIELD_NUM_NONE) {
-            //if (offset == pnOff) {
                 for i:=offset;i<offset+pnLen;i++ {
                     Data[i]=pnByte[incrementVar]
                     incrementVar++
@@ -636,7 +630,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == macOff) && (entry.mac != FIELD_NUM_NONE) {
-            //if (offset == macOff) {
                 for i:=offset;i<offset+macLen;i++ {
                     Data[i]=macByte[incrementVar]
                     incrementVar++
@@ -644,7 +637,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == prodNameOff) && (entry.prodName != FIELD_NUM_NONE) {
-            //if (offset == prodNameOff) {
                 for i:=offset;i<offset+prodNameLen;i++ {
                     Data[i]=prodNameByte[incrementVar]
                     incrementVar++
@@ -652,7 +644,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == skuOff) && (entry.sku != FIELD_NUM_NONE) {
-            //if (offset == skuOff) {
                 for i:=offset;i<offset+skuLen;i++ {
                     Data[i]=skuByte[incrementVar]
                     incrementVar++
@@ -660,7 +651,6 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 incrementVar = 0
             }
             if (offset == fruIdOff) && (entry.fruId != FIELD_NUM_NONE) {
-            //if (offset == fruIdOff) {
                 for i:=offset;i<offset+fruIdLen;i++ {
                     Data[i]=fruIdByte[incrementVar]
                     incrementVar++
