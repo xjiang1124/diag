@@ -36,6 +36,7 @@ const (
     FIELD_NUM_MAC_9         int = 9
     FIELD_NUM_PROD_NAME_2   int = 2
     FIELD_NUM_SKU_4         int = 4
+    FIELD_NUM_FRU_ID_5      int = 5
 
 
     //Field types; Area field number vs absolute byte offset
@@ -51,14 +52,24 @@ const (
     AREA_TYPE_MRA_C1        int = 0xC6
 
     //Supported board PNs
-    IBM_PN      string = "68-0028"
-    //PEN_PN      string = "68-0021"
+    PN_IBM          string = "68-0028"
+    PN_ADI_MSFT     string = "68-0034"
+    PN_NETAPP_R2    string = "111-05363"
 
     // Product name
-    PROD_NAME_IBM   string = "DSC2-200,2xQSFP56,32gRAM,64GeMMC,IBM"
+    PROD_NAME_IBM       string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_ADI_MSFT  string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_NETAPP_R2 string = "NAPLES 100,  NetApp, R2"
 
     // SKU 
     SKU_IBM         string = "DSC2-2Q200-32R32F64P-B"
+    SKU_ADI_MSFT    string = "DSC2-2Q200-32R32F64P-M2"
+    SKU_NETAPP_R2   string = "NA"
+
+    // FRU ID
+    FRU_ID_IBM          string = "06/28/22"
+    FRU_ID_ADI_MSFT     string = "09/29/22"
+    FRU_ID_NETAPP_R2    string = "09/30/22"
 )
 
 type progInfo struct {
@@ -69,12 +80,14 @@ type progInfo struct {
     mac         int
     prodName    int
     sku         int
+    fruId       int
 }
 
 type updateInfo struct {
     tbl         []entry
     prodName    string
     sku         string
+    fruId       string
     info        []progInfo
 }
 
@@ -92,10 +105,11 @@ type entryinfo struct {
 
 //Part number and data location maps
 var CardDataInfo = map[string]updateInfo {
-    IBM_PN: updateInfo {
-        OrtanoIBMTbl,
+    PN_IBM: updateInfo {
+        OrtanoPenStandardTbl,
         PROD_NAME_IBM,
         SKU_IBM,
+        FRU_ID_IBM,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -105,9 +119,59 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_MAC_9,
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
                 },
         },
     },
+    PN_ADI_MSFT: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_ADI_MSFT,
+        SKU_ADI_MSFT,
+        FRU_ID_ADI_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+    },
+    // NetApp SKU goes alone with assembly number
+    PN_NETAPP_R2: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_NETAPP_R2,
+        SKU_NETAPP_R2,
+        FRU_ID_NETAPP_R2,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_NONE,
+                FIELD_NUM_FRU_ID_5,
+                },
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_NONE,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+
+        },
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -122,8 +186,9 @@ var CardDataInfo = map[string]updateInfo {
 
 //Add PNs to table of accepted cards
 var CardTypes = []card{
-    card{"ORTANO-IBM", IBM_PN},
-    //card{"ORTANO-PEN", PEN_PN},
+    card{"ORTANO-IBM",      PN_IBM},
+    card{"ORTANO-ADI-MSFT", PN_ADI_MSFT},
+    card{"NETAPP-R2",       PN_NETAPP_R2},
                       }
 
 //Data structure slices
@@ -138,7 +203,7 @@ var Info    []entryinfo
 func convertToByteTbl(pn string) (err int){
     //Writes all entries of EepromTbl into new slices
     //Checks and sets EepromTbl based on the input part number
-    found, partNum := CardInList(pn)
+    found, partNum := CardInListNew(pn)
     if found == true {
         EepromTbl = CardDataInfo[partNum].tbl
     } else {
@@ -222,14 +287,14 @@ func findPn(start int, end int) (pn string, err int) {
     }
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum := string(pnBytes) //full PN
-    found, pn := CardInList(partNum)
+    found, pn := CardInListNew(partNum)
     if (found == true) && (err == errType.SUCCESS) {
         return 
     }
     partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10)
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum = string(pnBytes)
-    found, pn = CardInList(partNum)
+    found, pn = CardInListNew(partNum)
     if (found == true) && (err == errType.SUCCESS) {
         return 
     } else {
@@ -329,10 +394,10 @@ func updateChkSum() {
 func updateFields(sn string, pn string, mac string, date string) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
-    var prodNameOff, prodNameLen, skuOff, skuLen int
+    var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen int
 
     //Checks PN validity and sets card type
-    found, minPN := CardInList(pn)
+    found, minPN := CardInListNew(pn)
     if found != true {
         cli.Printf("e", "ERROR: Card part number not supported")
         return errType.FAIL
@@ -373,6 +438,7 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
 
     prodNameByte:= []byte(card.prodName)
     skuByte     := []byte(card.sku)
+    fruIdByte   := []byte(card.fruId)
 
     //Find offset/Len of SN/PN/MAC/Date of each progInfo entry
     start := checkCHdrStart()
@@ -400,9 +466,13 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 prodNameOff = entry.prodName
                 prodNameLen = len(card.prodName)
             }
-            if entry.prodName != FIELD_NUM_NONE {
+            if entry.sku != FIELD_NUM_NONE {
                 skuOff = entry.sku
                 skuLen = len(card.sku)
+            }
+            if entry.fruId != FIELD_NUM_NONE {
+                skuOff = entry.fruId
+                skuLen = len(card.fruId)
             }
         } else {
             if entry.sn != FIELD_NUM_NONE {
@@ -421,9 +491,13 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 prodNameInt := entry.prodName
                 prodNameOff, prodNameLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, prodNameInt)
             }
-            if entry.prodName != FIELD_NUM_NONE {
+            if entry.sku != FIELD_NUM_NONE {
                 skuInt := entry.sku
                 skuOff, skuLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, skuInt)
+            }
+            if entry.fruId != FIELD_NUM_NONE {
+                fruIdInt := entry.fruId
+                fruIdOff, fruIdLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, fruIdInt)
             }
         }
 
@@ -456,19 +530,49 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
         }
 
         //Returns error if string longer than specified value
-        if (len(sn) > snLen) || (len(pn) > pnLen) || (len(mac) != MAC_LEN) || (len(date) != (MFG_DATE_LEN*2)) {
+        if (
+            (len(sn) > snLen)                   ||
+            (len(pn) > pnLen)                   ||
+            (len(mac) != MAC_LEN)               ||
+            (len(date) != (MFG_DATE_LEN*2))     ||
+            (len(prodNameByte) > prodNameLen)   ||
+            (len(skuByte) > skuLen && (entry.sku != FIELD_NUM_NONE)) ||
+            (len(fruIdByte) > fruIdLen) ) {
             err = errType.INVALID_PARAM
             var errorOutput string
+            var maxLen, realLen int
+
             if len(date) != (2*MFG_DATE_LEN) {
-                errorOutput += " date"
+                errorOutput = "Date"
+                maxLen = 2*MFG_DATE_LEN
+                realLen = len(date)
             } else if len(sn) > snLen {
-                errorOutput += " serial number"
+                errorOutput = "Serial Number"
+                maxLen = snLen
+                realLen = len(sn)
             } else if len(pn) > pnLen {
-                errorOutput += " assembly number"
+                errorOutput = "Assembly Number"
+                maxLen = pnLen
+                realLen = len(pn)
             } else if len(mac) != MAC_LEN {
-                errorOutput += " MAC address"
+                errorOutput = "MAC Address"
+                maxLen = MAC_LEN
+                realLen = len(mac)
+            } else if len(prodNameByte) > prodNameLen {
+                errorOutput = " Product Name"
+                maxLen = prodNameLen
+                realLen = len(prodNameByte)
+            } else if len(skuByte) > skuLen {
+                errorOutput = "SKU"
+                maxLen = skuLen
+                realLen = len(skuByte)
+            } else if len(fruIdByte) > fruIdLen {
+                errorOutput = "FRU ID"
+                maxLen = fruIdLen
+                realLen = len(fruIdByte)
             }
-            cli.Printf("e", "ERROR: Input fields differ from specified lengths. Affected field(s):%s", errorOutput)
+            cli.Printf("e", "ERROR: Input fields differ from specified lengths. Affected field(s): %s; expected: %d; got: %d", 
+                errorOutput, maxLen, realLen)
             return
         }
 
@@ -494,6 +598,11 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                     skuByte=append(skuByte, 0x20)
                 }
             }
+            if (len(fruIdByte) < fruIdLen) {
+                for i:=len(fruIdByte);i<fruIdLen;i++ {
+                    fruIdByte=append(fruIdByte, 0x20)
+                }
+            }
         }
 
         //Update Data slice (byte)
@@ -506,37 +615,44 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 }
                 incrementVar = 0
             }
-            if offset == snOff {
+            if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+snLen;i++ {
                     Data[i]=snByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            if offset == pnOff {
+            if (offset == pnOff) && (entry.pn != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+pnLen;i++ {
                     Data[i]=pnByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            if offset == macOff {
+            if (offset == macOff) && (entry.mac != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+macLen;i++ {
                     Data[i]=macByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            if offset == prodNameOff {
+            if (offset == prodNameOff) && (entry.prodName != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+prodNameLen;i++ {
                     Data[i]=prodNameByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
             }
-            if offset == skuOff {
+            if (offset == skuOff) && (entry.sku != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+skuLen;i++ {
                     Data[i]=skuByte[incrementVar]
+                    incrementVar++
+                }
+                incrementVar = 0
+            }
+            if (offset == fruIdOff) && (entry.fruId != FIELD_NUM_NONE) {
+                for i:=offset;i<offset+fruIdLen;i++ {
+                    Data[i]=fruIdByte[incrementVar]
                     incrementVar++
                 }
                 incrementVar = 0
@@ -667,7 +783,8 @@ func readOffset(devName string, offset int) (data byte, err int) {
 //                      P U B L I C     F U N C T I O N S
 //==============================================================================
 
-func CardInList(partNum string) (found bool, minPN string) {
+func CardInListNew(partNum string) (found bool, minPN string) {
+    found = false
     //Looks through supported card slice and returns true if card number is present
     for _, card := range(CardTypes) {
         if strings.Contains(partNum, card.pn) {

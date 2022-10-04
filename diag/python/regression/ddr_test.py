@@ -52,7 +52,9 @@ class ddr_test:
 
                     if pc_mode == "board":
                         self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+
                     #ret = self.nic_con.uart_session_start(con_session)
+                    self.nic_con.switch_console(int(slot))
                     con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
 
                     #self.nic_con.uart_session_stop(con_session)
@@ -292,6 +294,8 @@ class ddr_test:
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
                     self.nic_con.power_cycle_multi(self.baud_rate, slot, 30)
+
+                    self.nic_con.switch_console(int(slot))
                     ret = self.nic_con.uart_session_start(session, self.baud_rate)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)

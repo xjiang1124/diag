@@ -42,8 +42,8 @@ const NAPLES200_IBM       string  = "68-0028-01 01"   //ORTANO IBM
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
 const NAPLES200_TAOR2     string  = "73-0040-03 A2"   //TAORMINA ORTANO Pensando (newer part number)
 
-const LACONA16GB_HPE     string  = "P47927-001"      
-const LACONA32GB_HPE     string  = "P47930-001"      
+const LACONA16GB_HPE     string  = "P47927-001"
+const LACONA32GB_HPE     string  = "P47930-001"
 
 func init() {
     //procNameTemp := strings.Split(os.Args[0], "/")
@@ -619,10 +619,20 @@ func main() {
         return
     }
 
-    rc := eepromTlbInit(uut, pn, *updatePtr)
-    if rc != 0 {
-        cli.Println("e", "eepromTlbInit Failed\n")
-        return
+    found, _ := eeprom.CardInListNew(pn)
+    if !found {
+        rc := eepromTlbInit(uut, pn, *updatePtr)
+        if rc != 0 {
+            cli.Println("e", "eepromTlbInit Failed\n")
+            return
+        }
+    } else {
+        info, _ := i2cinfo.GetI2cInfo(devName)
+        if (info.Flag == i2cinfo.FLAG_16BIT_EEPROM) {
+            eeprom.I2cAddr16 = true
+        } else {
+            eeprom.I2cAddr16 = false
+        }
     }
 
     if *dispPtr == true {
@@ -680,7 +690,7 @@ func main() {
             misc.SleepInUSec(1000)
             cli.Printf("i", "Programming/Updating Fru\n")
             if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-                found, _ := eeprom.CardInList(pn)
+                found, _ := eeprom.CardInListNew(pn)
                 if found == true {
                     hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, mac, date)
                     misc.SleepInUSec(500000)
