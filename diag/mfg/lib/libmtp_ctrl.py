@@ -6795,3 +6795,18 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].nic_i2c_bus_scan()
 
         return True
+
+    def mtp_nic_read_transceiver_sn(self, slot, port):
+        if not self._nic_ctrl_list[slot].nic_read_transceiver_sn(port):
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if port in self._nic_ctrl_list[slot]._loopback_sn.keys():
+            self.cli_log_slot_inf(slot, "Detected port {:s} loopback transceiver {:s}".format(port, self._nic_ctrl_list[slot]._loopback_sn[port]))
+        else:
+            self.cli_log_slot_inf(slot, "Missing port {:s} loopback info".format(port))
+            return False
+
+        return True
+
