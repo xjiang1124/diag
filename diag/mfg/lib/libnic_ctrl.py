@@ -2116,7 +2116,7 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
-        nic_diag_list = ["diag", "start_diag.arm64.sh"]
+        nic_diag_list = ["start_diag.arm64.sh"]
         for util in nic_diag_list:
             if not self.nic_copy_compressed_image(
                 src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
@@ -2126,7 +2126,7 @@ class nic_ctrl():
                 return False
 
         if emmc_utils:
-            nic_diag_list = ["nic_arm", "nic_util"]
+            nic_diag_list = ["diag", "nic_arm", "nic_util"]
             for util in nic_diag_list:
                 if not self.nic_copy_compressed_image(
                     src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
@@ -2134,6 +2134,12 @@ class nic_ctrl():
                     dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
                     timeout=180):
                     return False
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
 
         return True
 
