@@ -59,7 +59,7 @@ const (
     // Product name
     PROD_NAME_IBM       string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_ADI_MSFT  string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
-    PROD_NAME_NETAPP_R2 string = "NAPLES 100,  NetApp, R2"
+    PROD_NAME_NETAPP_R2 string = "NAPLES 100, NetApp, R2"
 
     // SKU 
     SKU_IBM         string = "DSC2-2Q200-32R32F64P-B"
@@ -232,10 +232,11 @@ func checkCHdrStart() (int) {
     return ZERO_START
 }
 
-func getOffsetsCHdr(start int) (boardInfoOff int, productInfoOff int, multiRecordOff int) {
+func getOffsetsCHdr(start int) (boardInfoOff int, productInfoOff int, multiRecordOff int, err int) {
     //Reads and returns area starting byte offsets
     if Data[start+1] != 0x00 || Data[start+2] != 0x00 {
         fmt.Printf("ERROR: common header Internal Use Area Offset and Chassis Area Offset not supported.\n")
+        err = errType.FAIL
         return
     }
     boardInfoOff = (int(Data[start+3]) * OFFSET_NORM_FACTOR)
@@ -363,7 +364,8 @@ func updateChkSum() {
     //Function to update all checksums
     //Offset and length variables
     var cHdrStrt int = checkCHdrStart()
-    var boardInfoAreaOff, productInfoAreaOff, multiRecordAreaOff int = getOffsetsCHdr(cHdrStrt)
+    var boardInfoAreaOff, productInfoAreaOff, multiRecordAreaOff int 
+    boardInfoAreaOff, productInfoAreaOff, multiRecordAreaOff, _ = getOffsetsCHdr(cHdrStrt)
     var boardInfoAreaLen int = int(Data[cHdrStrt+boardInfoAreaOff + 1]) * OFFSET_NORM_FACTOR
     var productInfoAreaLen int = int(Data[cHdrStrt+productInfoAreaOff + 1]) * OFFSET_NORM_FACTOR 
     //Check sum variable initialization
@@ -442,7 +444,11 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
 
     //Find offset/Len of SN/PN/MAC/Date of each progInfo entry
     start := checkCHdrStart()
-    boardInfoOffset, _, _ := getOffsetsCHdr(start)
+    boardInfoOffset, _, _, err := getOffsetsCHdr(start)
+    if err != errType.SUCCESS {
+        return
+    }
+
     boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
     //Loops through card.info slice and updates each field
     for _, entry := range(card.info) {
@@ -724,7 +730,10 @@ func readFromFru(devName string) (err int) {
         fruData, err =readOffset(devName, i)
         Data[i] = fruData
     }
-    boardInfoOff, productInfoOff, mraInfoOff := getOffsetsCHdr(start)
+    boardInfoOff, productInfoOff, mraInfoOff, err := getOffsetsCHdr(start)
+    if err != errType.SUCCESS {
+        return
+    }
 
     boardInfoByte, _ := readOffset(devName, start+boardInfoOff + 1)
     boardInfoLen := int(boardInfoByte) * OFFSET_NORM_FACTOR
@@ -836,7 +845,11 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
 
         //Finds PN on card and sets EepromTbl
         start := checkCHdrStart()
-        boardInfoOffset, _, _ := getOffsetsCHdr(start)
+        boardInfoOffset, _, _, err1 := getOffsetsCHdr(start)
+        if err1 != errType.SUCCESS {
+            err = err1
+            return
+        }
         boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
         cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen)
     }
