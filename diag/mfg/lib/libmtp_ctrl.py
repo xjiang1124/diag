@@ -1413,7 +1413,7 @@ class mtp_ctrl():
         pass_sig_list = []
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        if self._mtp_rev is not None and len(self._mtp_rev) > 0 and not MFG_BYPASS_PSU_CHECK:
+        if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
             if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
@@ -2201,7 +2201,7 @@ class mtp_ctrl():
         timeout = MTP_Const.MFG_TEMP_WAIT_TIMEOUT
         while timeout > 0:
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
-            if self._mtp_rev is not None and len(self._mtp_rev) > 0 and not MFG_BYPASS_PSU_CHECK and int(self._mtp_rev) > 3:
+            if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 3:
                 cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
                 self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
 
