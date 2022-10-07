@@ -2582,6 +2582,12 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_nic_sw_mode_switch_verify(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_mode_switch_verify():
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
     def mtp_pdsctl_system_show(self, slot):
         if not self._nic_ctrl_list[slot].nic_pdsctl_system_show():
             self.mtp_dump_nic_err_msg(slot)
