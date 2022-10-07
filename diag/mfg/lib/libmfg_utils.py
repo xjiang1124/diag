@@ -1777,6 +1777,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                 test_rslt_list.append(result)
                 err_dsc_list.append(nic_cli_id_str)
                 err_code_list.append(result)
+            # for failure case, there should be a test that failed.
+            if len(sub_match) == 0 or "FAIL" not in test_rslt_list:
+                test_list.append(MTP_DIAG_Report.NIC_UNKNOWN_FAILURE_CODE)
+                test_rslt_list.append("FAIL")
+                err_dsc_list.append(nic_cli_id_str)
+                err_code_list.append("FAIL")
 
             mac=None 
             pn=None
