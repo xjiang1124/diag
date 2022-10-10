@@ -1836,22 +1836,8 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT.format(img_name, img_name)
-        gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
-        nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        self.nic_boot_info_reset()
-
-        return True
-    def nic_program_gold_naples100(self, gold_img):
-        #if not self.nic_copy_image(gold_img):
-            #return False
-        img_name = os.path.basename(gold_img)
-
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT_NAPLES100.format(img_name)
+        if self._nic_type == NIC_Type.NAPLES100:
+            nic_cmd = MFG_DIAG_CMDS.NIC_GOLDFW_PROG_FMT_NAPLES100.format(img_name)
         gold_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=gold_fail_sig):
@@ -2016,45 +2002,6 @@ class nic_ctrl():
         if self._nic_type in ELBA_NIC_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_BOOT0_PROG_FMT.format(img_name, img_name)
             nic_cmd_list.append(nic_cmd)
-        emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        self.nic_boot_info_reset()
-
-        return True
-      
-    def nic_program_emmc_ibm(self, emmc_img):
-        if not self.nic_copy_image_IBM(emmc_img):
-            return False
-        img_name = os.path.basename(emmc_img)
-
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
-        nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_IBM.format(img_name, img_name)
-        nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT_IBM.format(img_name, img_name)
-        emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
-        nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        self.nic_boot_info_reset()
-
-        return True
-    def nic_program_emmc_naples100(self, emmc_img):
-        if not self.nic_copy_image(emmc_img, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-            return False
-        img_name = os.path.basename(emmc_img)
-
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
-        nic_cmd_list.append(nic_cmd)
-        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name)
-        nic_cmd_list.append(nic_cmd)
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)

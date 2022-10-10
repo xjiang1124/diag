@@ -3760,17 +3760,6 @@ class mtp_ctrl():
             return False
 
         return True
-    def mtp_program_nic_gold_naples100(self, slot, gold_img):
-        if not self._nic_ctrl_list[slot].nic_program_gold_naples100(gold_img):
-            self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
-            self.mtp_dump_nic_err_msg(slot)
-            return False
-
-        if not self.mtp_mgmt_set_nic_gold_boot(slot):
-            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
-            return False
-
-        return True
 
     def mtp_program_nic_uboot(self, slot, uboot_img=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"boot0.rev7.img", installer=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"install_file", ubootg_img=""):
         if not self._nic_ctrl_list[slot].nic_program_uboot(uboot_img, installer, ubootg_img):
@@ -3854,24 +3843,6 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
-        return True
-        
-    def mtp_program_nic_emmc_ibm(self, slot, emmc_img):
-        if not self._nic_ctrl_list[slot].nic_program_emmc_ibm(emmc_img):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_nic_err_msg(slot)
-            return False
-
-        if not self.mtp_mgmt_set_nic_sw_boot(slot):
-            self.cli_log_slot_err_lock(slot, "Set NIC default sw boot failed")
-            return False
-
-        return True
-    def mtp_program_nic_emmc_naples100(self, slot, emmc_img):
-        if not self._nic_ctrl_list[slot].nic_program_emmc_naples100(emmc_img):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_nic_err_msg(slot)
-            return False
         return True
 
 
