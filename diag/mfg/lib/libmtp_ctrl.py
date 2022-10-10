@@ -78,6 +78,7 @@ class mtp_ctrl():
         self._diag_ver = None
         self._asic_ver = None
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
+        self._fst_ver = None
 
         self._debug_mode = dbg_mode
         self._filep = filep
@@ -786,16 +787,20 @@ class mtp_ctrl():
 
 
     def mtp_nic_para_session_init(self, slot_list=[], fpo=True):
+        if self._fst_ver is not None:
+            mtp_prompt = "#"
+        else:
+            mtp_prompt = "$"
         if slot_list == []:
             slot_list = range(self._slots)
         userid = self._mgmt_cfg[1]
         for slot in slot_list:
             handle = self.mtp_session_create()
             if handle:
-                if not self.mtp_prompt_cfg(handle, userid, "$", slot):
+                if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
                     self.cli_log_err("Unable to config MTP session")
                     return False
-                prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + "$"
+                prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 if fpo:
                     self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
                 self._nic_ctrl_list[slot].nic_handle_init(handle, prompt)
@@ -2787,6 +2792,12 @@ class mtp_ctrl():
     def mtp_get_nic_err_msg(self, slot):
         return self._nic_ctrl_list[slot].nic_get_err_msg()
 
+
+    def mtp_nic_fst_exec_cmd(self, slot, cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        if not self._nic_ctrl_list[slot].nic_fst_exec_cmd(cmd, timeout):
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
 
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
         nic_type = self.mtp_get_nic_type(slot)

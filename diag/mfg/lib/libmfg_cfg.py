@@ -439,7 +439,7 @@ class MFG_IMAGE_FILES:
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
-    MTP_PENCTL_IMAGE = "penctl.linux.0915"
+    MTP_PENCTL_IMAGE = "penctl.linux.02012021"
     MTP_PENCTL_TOKEN = "penctl.token"
 
 
