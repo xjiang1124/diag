@@ -153,9 +153,10 @@ def main():
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)        
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_PENCTL_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_PENCTL_TOKEN
+        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
+
+        mtp_diag_image = MFG_IMAGE_FILES.penctl_img
+        nic_diag_image = MFG_IMAGE_FILES.penctl_token_img
 
         if not libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)

@@ -428,9 +428,9 @@ class MTP_IMAGES:
     mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
     mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
 
-    MTP_PENCTL_IMAGE = "penctl.linux.02012021"
-    MTP_PENCTL_TOKEN = "penctl.token"
-    MTP_ROTCTRL_IMAGE = "rotctrl"
+    penctl_img = "penctl.linux.02012021"
+    penctl_token_img = "penctl.token"
+    rotctrl_img = "rotctrl"
 
 # MFG release images
 class MFG_IMAGE_FILES:
@@ -439,8 +439,8 @@ class MFG_IMAGE_FILES:
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
-    MTP_PENCTL_IMAGE = "penctl.linux.02012021"
-    MTP_PENCTL_TOKEN = "penctl.token"
+    penctl_img = "penctl.linux.02012021"
+    penctl_token_img = "penctl.token"
 
 
 class PART_NUMBERS_MATCH:
