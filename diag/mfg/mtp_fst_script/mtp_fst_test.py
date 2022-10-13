@@ -849,6 +849,8 @@ def main():
                         if slot not in fail_nic_list:
                             fail_nic_list.append(slot)
 
+                        break
+
                     else:
                         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
