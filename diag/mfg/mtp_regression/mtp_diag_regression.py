@@ -157,6 +157,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod_1100"
     elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM) and test == "L1":
         mode = "hod"
+    elif nic_type == NIC_Type.ORTANO2ADIMSFT and test == "L1":
+        mode = "hod_1100"
     elif nic_type == NIC_Type.ORTANO2INTERP:
         mode = "hod"
     elif nic_type == NIC_Type.POMONTEDELL:
@@ -573,7 +575,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         if len(nic_top_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_top_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -616,7 +618,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         if len(nic_bottom_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_bottom_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -712,7 +714,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             mtp_mgmt_ctrl.mtp_nic_console_lock()
 
         # quick hack for parameter ETH_PRBS. need to move into yaml config
-        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
             # external loopback for P2C
             if vmarg == Voltage_Margin.normal:
                 diag_cmd += " -p 'int_lpbk=0'"
@@ -888,7 +890,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 number_of_l1_tests = 9
                 if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
                     number_of_l1_tests = 8
-                if nic_type == NIC_Type.ORTANO2ADIIBM:
+                if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
                     number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
@@ -1071,7 +1073,7 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
             continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP):
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -1295,6 +1297,7 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADI] = "config/ortano_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADIIBM] = "config/ortanoadi_ibm_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADIMSFT] = "config/ortanoadi_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"

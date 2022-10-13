@@ -35,7 +35,7 @@ def get_nic_ssh_cmd(ip, cmd):
     return ssh_cmd
 
 def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
-    if card_type == "ORTANO":
+    if card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT":
         # elba
         cmd = "lspci -d 1dd8:0002"
     else:
@@ -91,7 +91,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -114,7 +114,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
             return False
     return True
 
-def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
+def get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus):
 
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cat /sys/bus/pci/devices/0000:{:s}/subordinate_bus_number".format(bus))
     result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
@@ -126,6 +126,8 @@ def get_eth_mnic(mtp_mgmt_ctrl, slot, bus):
         bus_str = bus.split(":", 1)[0]
         bus_int = int(bus_str, 16)+4
     eth = "enp"+str(bus_int)+"s0"
+    if card_type == "ORTANO2ADIMSFT":
+        eth += "f0"
     
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
@@ -162,6 +164,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2ADI
     elif "68-0028-01" in pn:
         product_name = NIC_Type.ORTANO2ADIIBM
+    elif "68-0034-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIMSFT
     elif "68-0029-01" in pn:
         product_name = NIC_Type.ORTANO2INTERP
     else:
@@ -278,7 +282,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
         pass_list.append(slot)
 
         ### DECODE ETH
-        nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, slot, bus)
+        nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus)
         if not nic_mgmt_ip:
             fail_list.append(slot)
             pass_list.remove(slot)
@@ -581,7 +585,7 @@ def main():
             test = "FETCH_SN"
         else:
             test = "PCIE_LINK"
-    elif card_type == "ORTANO":
+    elif card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT":
         dsp = FF_Stage.FF_FST
 
         testlist = ["FETCH_SN", "PCIE_LINK", "ROT"]
@@ -590,7 +594,7 @@ def main():
 
             # hack to remove ROT in-flight
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2ADIIBM and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
+            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
