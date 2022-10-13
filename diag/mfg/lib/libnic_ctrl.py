@@ -652,6 +652,15 @@ class nic_ctrl():
         nic_shutdown_cmd_list = [emmc_fsck_cmd,
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
+
+        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+            nic_shutdown_cmd_list += [
+                                 "fwenv -n gold -E",
+                                 "fwenv -n gold",
+                                 "fwenv -E",
+                                 "fwenv"
+                                 ]
+
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
