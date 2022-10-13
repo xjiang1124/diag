@@ -60,6 +60,8 @@ class nic_ctrl():
         self._cmd_buf = None
 
         self._asic_type = None
+        self._ip_addr = None
+        self._fst_pcie_bus = None
 
         self._refresh_required = True
         self._failed_console_boot = False
@@ -294,6 +296,31 @@ class nic_ctrl():
         cmd = "exit"
         if not self.mtp_exec_cmd(cmd):
             return False
+
+        self.nic_set_cmd_buf(info_buf)
+
+        return info_buf
+
+    def nic_fst_exec_cmd(self, nic_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """ same function as nic_get_info, except for NIC IP and ssh uses a private key to connect, so no password prompt """
+        if self._ip_addr is None:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg("No NIC IP defined!")
+            return False
+
+        if self._asic_type == "capri":
+            cmd = libmfg_utils.get_fst_nic_ssh_cmd_penctl(self._ip_addr, NIC_MGMT_USERNAME)
+        else:
+            cmd = libmfg_utils.get_fst_nic_ssh_cmd(self._ip_addr, NIC_MGMT_USERNAME, NIC_MGMT_PASSWORD)
+        
+        self._nic_handle.sendline(cmd + " " + nic_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            info_buf = None
+        else:
+            info_buf = self._nic_handle.before
 
         self.nic_set_cmd_buf(info_buf)
 
@@ -652,6 +679,15 @@ class nic_ctrl():
         nic_shutdown_cmd_list = [emmc_fsck_cmd,
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
+
+        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+            nic_shutdown_cmd_list += [
+                                 "fwenv -n gold -E",
+                                 "fwenv -n gold",
+                                 "fwenv -E",
+                                 "fwenv"
+                                 ]
+
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)

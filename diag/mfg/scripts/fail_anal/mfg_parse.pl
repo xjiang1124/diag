@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.1.09212022";
+my $rev = "1.2.10122022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -291,8 +291,10 @@ while(my $line = <TR2>)
         $all_test_msg = "";
         if ($result eq "FAIL") {
             my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts, $slot);
-            parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
-            parse_mtp_diag_file($mtpdiagfile);
+            if ($stage ne "FST") {
+                parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
+                parse_mtp_diag_file($mtpdiagfile);
+            }
 
             my $diag_fa_code_str = "";
             foreach my $diag_fa_code (keys %diag_fa_code) {
@@ -1257,7 +1259,9 @@ sub find_failure_code {
             }
         }
     }
-    parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
+    if ($stage ne "FST") {
+        parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
+    }
     if ($all_test_msg eq "") {
         $all_test_msg = "log path: ".$fulllogpath."\n";
     }
@@ -1294,27 +1298,83 @@ sub parse_fst_pcie_link {
 
 sub parse_fst_rot {
     my ($fulllogpath, $slot, $test_and_failure_code) = @_;
-    my $logfile=$fulllogpath."/"."test_fst.log";
+    my $fstlogfile=$fulllogpath."/"."test_fst.log";
     my $test_err_msg = "";
-    if (!open(TR3, '<', $logfile)) {
-        print "Cannot open file $logfile\n";
+    my $state_linenum = 0;
+    my $fail_linenum = 0;
+    my @fa_code;
+    my $fa_code_str = "";
+
+    if (!open(TR3, '<', $fstlogfile)) {
+        print "Cannot open file $fstlogfile\n";
         return;
     }
     while(my $line = <TR3>)
     {
-        # if ($line =~ m/invalid qspi device id read/) {
-        #     $diag_fa_code{"ROT_BAD_DEV_ID"} = 1;
-        #     $test_err_msg .= $line;
-        # }
-        # if ($line =~ m/possible NIC console is dead/) {
-        #     $diag_fa_code{"ROT_CONSOLE_DEAD"} = 1;
-        #     $test_err_msg .= $line;
-        # }
-        # if ($line =~ m/possible bad cable/) {
-        #     $diag_fa_code{"ROT_BAD_CABLE"} = 1;
-        #     $test_err_msg .= $line;
-        # }
+        if ($line =~ m/NIC at serial port (\w+) failed/) {
+            my $usbport = $1;
+            my $rotfile = $fulllogpath."/"."rot_$usbport.log";
+            $test_err_msg .= $line;
+            if (!open(TR, '<', $rotfile)) {
+                print "Cannot open file $rotfile\n";
+                next;
+            }
+            while(my $rotline = <TR>) {
+                if ($rotline =~ m/after (dtr|rts) state/) {
+                    $state_linenum = $.;
+                }
+                if ($rotline =~ m/invalid qspi device id read/) {
+                        #$diag_fa_code{"INVALID_QSPI_ID_$usbport"} = 1;
+                        push(@fa_code, "INVALID_QSPI_ID_$usbport");
+                        $test_err_msg .= $rotline;
+                }
+                if ($rotline =~ m/possible bad cable/) {
+                        #$diag_fa_code{"BAD_CABLE_$usbport"} = 1;
+                        push(@fa_code, "BAD_CABLE_$usbport");
+                        $test_err_msg .= $rotline;
+                }
+                if ($rotline =~ m/possible NIC console is dead/) {
+                        #$diag_fa_code{"CONSOLE_DEAD_$usbport"} = 1;
+                        push(@fa_code, "CONSOLE_DEAD_$usbport");
+                        $test_err_msg .= $rotline;
+                }
+                if (($rotline =~ m/force gold is not set as expected/) ||
+                    ($rotline =~ m/force gold is not cleared as expected/) ||
+                    ($rotline =~ m/failed to connect nic after forcing goldfw/) ||
+                    ($rotline =~ m/failed to find gold-fw prompt, possible still in mainfw/)) {
+                        @fa_code = grep(!/DTR_FAILURE_$usbport/, @fa_code);
+                        #$diag_fa_code{"RTS_FAILURE_$usbport"} = 1;
+                        push(@fa_code, "RTS_FAILURE_$usbport");
+                        $test_err_msg .= $rotline;
+                }
+                if ($rotline =~ m/failed to connect to nic/) {
+                    $fail_linenum = $.;
+                    if ($fail_linenum - $state_linenum > 4) {
+                        #$diag_fa_code{"CARD_REBOOTED_$usbport"} = 1;
+                        push(@fa_code, "CARD_REBOOTED_$usbport");
+                        $test_err_msg .= $rotline;
+                    }
+                } else {
+                    if ($rotline =~ m/failed to connect/) {
+                        my $rotline2 = <TR>;
+                        if ($rotline2 =~ m/get data from uart register, possible dtr signal is wrong/) {
+                            #$diag_fa_code{"DTR_FAILURE_$usbport"} = 1;
+                            push(@fa_code, "DTR_FAILURE_$usbport");
+                            $test_err_msg .= $rotline;
+                            $test_err_msg .= $rotline2;
+                        }
+                    }
+                }
+
+            }
+            close(TR);
+        }
     }
+    foreach (@fa_code) {
+        print "fa code is: $_\n";
+        $fa_code_str .= $_."\n";
+    }
+    $diag_fa_code{$fa_code_str} = 1;
     if ($test_err_msg ne "") {
         $all_test_msg .= "log path: ".$fulllogpath."\n";
         $all_test_msg .= $test_err_msg;
@@ -1443,6 +1503,16 @@ sub parse_mtp_and_slot_log {
                 $diag_fa_code{"MVL_ACC_FAILURE"} = 1;
             }
         }
+        if ($line =~ m/\/data\/nic_util\/mvl_link\.sh/) {
+            my $line2 = <TR3>;
+            my $line3 = <TR3>;
+            if ($line3 !~ m/MVL RJ45 port link is up/) {
+                $slot_err_msg .= $line;
+                $slot_err_msg .= $line2;
+                $slot_err_msg .= $line3;
+                $diag_fa_code{"MVL_LINK_DOWN"} = 1;
+            }
+        }
         if ($line =~ m/\/emmc_format\.sh/) {
             my $line2 = <TR3>;
             if ($line2 =~ m/open: No such file or directory/) {
@@ -1482,9 +1552,11 @@ sub parse_mtp_and_slot_log {
                     $diag_fa_code{"INCORRECT_PN_REV"} = 1;
                 } elsif ($line2 =~ m/Check SWI Software Image: Software Image match to nic part number failed/) {
                     $diag_fa_code{"PN_SW_MATCH_ERR"} = 1;
-                } elsif ($line2 =~ m/Check SWI Software Image: Retreive PN Failed/) {
-                    $diag_fa_code{"RETREIVE_PN_FAIL"} = 1;
                 }
+            }
+            if ($line =~ m/\[NIC-$slot\].*Check SWI Software Image: Retreive PN Failed/) {
+                $mtp_test_msg .= $line;
+                $diag_fa_code{"RETREIVE_PN_FAIL"} = 1;
             }
         }
         if (index($failure_code_list, "SCAN_VERIFY") != -1) {
@@ -1654,6 +1726,8 @@ sub parse_fpga_and_ecc {
                 }
             }
             if($line =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
+            #if($line =~ m/(.*)(0x26; Value:)\s(\w+)/) { ##?? not work
+                print "##### line: $line";
                 if ($smbus_err == 0 && ((hex($3) | 0x20) != 0x27)) {
                     $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27 or 0x07, actual: $3\n";
                     $num_cpld_sts_errors++;

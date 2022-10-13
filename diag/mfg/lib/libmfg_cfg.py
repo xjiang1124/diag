@@ -51,10 +51,10 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8f_03102021.bin"
     sec_cpld_ver["NAPLES25SWM"] = "0x8F"
     sec_cpld_dat["NAPLES25SWM"] = "03-10"
-    diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES25SWM"] = "03-03-2021"
-    goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
-    goldfw_dat["NAPLES25SWM"] = "04-25-2022"
+    diagfw_img["NAPLES25SWM"] = "capri_diagfw_uboot_1.3.1-E-65_2022.10.04.tar"
+    diagfw_dat["NAPLES25SWM"] = "08-30-2022"
+    goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
+    goldfw_dat["NAPLES25SWM"] = "08-31-2022"
 
     # NAPLES25SWM HPE Cloud (P41851-001)
     cpld_img["P41851"] = "naples25_swm_revA_06082020.bin"
@@ -110,10 +110,10 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev83_01062021.bin"
     sec_cpld_ver["NAPLES25SWMDELL"] = "0x83"
     sec_cpld_dat["NAPLES25SWMDELL"] = "00"
-    diagfw_img["NAPLES25SWMDELL"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES25SWMDELL"] = "03-03-2021"
-    goldfw_img["NAPLES25SWMDELL"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
-    goldfw_dat["NAPLES25SWMDELL"] = "04-25-2022"
+    diagfw_img["NAPLES25SWMDELL"] = "capri_diagfw_uboot_1.3.1-E-65_2022.10.04.tar"
+    diagfw_dat["NAPLES25SWMDELL"] = "08-30-2022"
+    goldfw_img["NAPLES25SWMDELL"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
+    goldfw_dat["NAPLES25SWMDELL"] = "08-31-2022"
 
     # OCP HPE (P37689-001)
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
@@ -122,10 +122,10 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV8B_03102021.bin"
     sec_cpld_ver["NAPLES25OCP"] = "0x8B"
     sec_cpld_dat["NAPLES25OCP"] = "01-10"
-    diagfw_img["NAPLES25OCP"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES25OCP"] = "03-03-2021"
-    goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
-    goldfw_dat["NAPLES25OCP"] = "04-25-2022"
+    diagfw_img["NAPLES25OCP"] = "capri_diagfw_uboot_1.3.1-E-65_2022.10.04.tar"
+    diagfw_dat["NAPLES25OCP"] = "08-30-2022"
+    goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
+    goldfw_dat["NAPLES25OCP"] = "08-31-2022"
     # OCP DELL (68-0010)
     cpld_img["68-0010"] = "NAPLES25_OCP_REV0B_03102021.bin"
     cpld_ver["68-0010"] = "0xB"
@@ -133,10 +133,10 @@ class NIC_IMAGES:
     sec_cpld_img["68-0010"] = "NAPLES25_OCP_REV8B_03102021.bin"
     sec_cpld_ver["68-0010"] = "0x8B"
     sec_cpld_dat["68-0010"] = "01-10"
-    diagfw_img["68-0010"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["68-0010"] = "03-03-2021"
-    goldfw_img["68-0010"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
-    goldfw_dat["68-0010"] = "04-25-2022"
+    diagfw_img["68-0010"] = "capri_diagfw_uboot_1.3.1-E-65_2022.10.04.tar"
+    diagfw_dat["68-0010"] = "08-30-2022"
+    goldfw_img["68-0010"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
+    goldfw_dat["68-0010"] = "08-31-2022"
 
     cpld_img["NAPLES25SWM833"] = "naples25_833_rev2_02112021.bin"
     cpld_ver["NAPLES25SWM833"] = "0x2"
@@ -455,9 +455,9 @@ class MTP_IMAGES:
     mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
     mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
 
-    MTP_PENCTL_IMAGE = "penctl.linux.02012021"
-    MTP_PENCTL_TOKEN = "penctl.token"
-    MTP_ROTCTRL_IMAGE = "rotctrl"
+    penctl_img = "penctl.linux.02012021"
+    penctl_token_img = "penctl.token"
+    rotctrl_img = "rotctrl"
 
 # MFG release images
 class MFG_IMAGE_FILES:
@@ -466,8 +466,8 @@ class MFG_IMAGE_FILES:
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
-    MTP_PENCTL_IMAGE = "penctl.linux.0915"
-    MTP_PENCTL_TOKEN = "penctl.token"
+    penctl_img = "penctl.linux.02012021"
+    penctl_token_img = "penctl.token"
 
 
 class PART_NUMBERS_MATCH:
