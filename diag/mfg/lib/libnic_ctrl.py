@@ -51,6 +51,7 @@ class nic_ctrl():
         self._fw_json = None
         self._riser_sn = None
         self._riser_progdate = None
+        self._loopback_sn = dict()
         
         self._nic_type = None
         self._nic_handle = None
@@ -59,6 +60,8 @@ class nic_ctrl():
         self._cmd_buf = None
 
         self._asic_type = None
+        self._ip_addr = None
+        self._fst_pcie_bus = None
 
         self._refresh_required = True
         self._failed_console_boot = False
@@ -293,6 +296,31 @@ class nic_ctrl():
         cmd = "exit"
         if not self.mtp_exec_cmd(cmd):
             return False
+
+        self.nic_set_cmd_buf(info_buf)
+
+        return info_buf
+
+    def nic_fst_exec_cmd(self, nic_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """ same function as nic_get_info, except for NIC IP and ssh uses a private key to connect, so no password prompt """
+        if self._ip_addr is None:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            self.nic_set_err_msg("No NIC IP defined!")
+            return False
+
+        if self._asic_type == "capri":
+            cmd = libmfg_utils.get_fst_nic_ssh_cmd_penctl(self._ip_addr, NIC_MGMT_USERNAME)
+        else:
+            cmd = libmfg_utils.get_fst_nic_ssh_cmd(self._ip_addr, NIC_MGMT_USERNAME, NIC_MGMT_PASSWORD)
+        
+        self._nic_handle.sendline(cmd + " " + nic_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            info_buf = None
+        else:
+            info_buf = self._nic_handle.before
 
         self.nic_set_cmd_buf(info_buf)
 
@@ -651,6 +679,15 @@ class nic_ctrl():
         nic_shutdown_cmd_list = [emmc_fsck_cmd,
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
+
+        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+            nic_shutdown_cmd_list += [
+                                 "fwenv -n gold -E",
+                                 "fwenv -n gold",
+                                 "fwenv -E",
+                                 "fwenv"
+                                 ]
+
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -2116,7 +2153,7 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
-        nic_diag_list = ["diag", "start_diag.arm64.sh"]
+        nic_diag_list = ["start_diag.arm64.sh"]
         for util in nic_diag_list:
             if not self.nic_copy_compressed_image(
                 src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
@@ -2126,7 +2163,7 @@ class nic_ctrl():
                 return False
 
         if emmc_utils:
-            nic_diag_list = ["nic_arm", "nic_util"]
+            nic_diag_list = ["diag", "nic_arm", "nic_util"]
             for util in nic_diag_list:
                 if not self.nic_copy_compressed_image(
                     src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
@@ -2134,6 +2171,12 @@ class nic_ctrl():
                     dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
                     timeout=180):
                     return False
+
+        nic_cmd_list = list()
+        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
 
         return True
 
@@ -4998,3 +5041,43 @@ class nic_ctrl():
             return False
 
         return True
+
+    def nic_read_transceiver_sn(self, port):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        if port != "1" and port != "2":
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("{:s}/diag/scripts/eeprom_sn.sh -s -b {:s}".format("/data/", port))
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_set_err_msg("Can't read transceiver EEPROM")
+                self.nic_console_detach()
+                return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_set_err_msg("No output when reading loopback transceiver EEPROM")
+            self.nic_console_detach()
+            return False
+
+        sn_match = re.search("Bus %s: SN (.*)" % port, cmd_buf)
+        if sn_match is None or len(sn_match.groups()) == 0:
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Failed to parse Port {:s} loopback transceiver EEPROM".format(port))
+            return False
+        self._loopback_sn[port] = sn_match.group(1)
+    
+        self.nic_console_detach()
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+

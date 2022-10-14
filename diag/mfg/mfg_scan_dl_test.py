@@ -515,12 +515,12 @@ def main():
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(nic_type))
             try:
-                if card_type == NIC_Type.ORTANO2ADI:
+                if nic_type == NIC_Type.ORTANO2ADI:
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADI"])
-                if card_type == NIC_Type.ORTANO2ADIIBM:
+                if nic_type == NIC_Type.ORTANO2ADIIBM:
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(nic_type))
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
@@ -536,19 +536,19 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(nic_type))
-        for card_type in FPGA_TYPE_LIST:
+        for nic_type in FPGA_TYPE_LIST:
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.timer1_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.timer1_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(nic_type))
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.timer2_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.timer2_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(nic_type))
             try:
-                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[nic_type])
             except KeyError:
-                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(nic_type))
 
     mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     

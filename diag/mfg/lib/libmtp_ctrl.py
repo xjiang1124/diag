@@ -78,6 +78,7 @@ class mtp_ctrl():
         self._diag_ver = None
         self._asic_ver = None
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
+        self._fst_ver = None
 
         self._debug_mode = dbg_mode
         self._filep = filep
@@ -786,16 +787,20 @@ class mtp_ctrl():
 
 
     def mtp_nic_para_session_init(self, slot_list=[], fpo=True):
+        if self._fst_ver is not None:
+            mtp_prompt = "#"
+        else:
+            mtp_prompt = "$"
         if slot_list == []:
             slot_list = range(self._slots)
         userid = self._mgmt_cfg[1]
         for slot in slot_list:
             handle = self.mtp_session_create()
             if handle:
-                if not self.mtp_prompt_cfg(handle, userid, "$", slot):
+                if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
                     self.cli_log_err("Unable to config MTP session")
                     return False
-                prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + "$"
+                prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 if fpo:
                     self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
                 self._nic_ctrl_list[slot].nic_handle_init(handle, prompt)
@@ -1413,7 +1418,7 @@ class mtp_ctrl():
         pass_sig_list = []
 
         # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        if self._mtp_rev is not None and len(self._mtp_rev) > 0 and not MFG_BYPASS_PSU_CHECK:
+        if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
             if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
@@ -2201,7 +2206,7 @@ class mtp_ctrl():
         timeout = MTP_Const.MFG_TEMP_WAIT_TIMEOUT
         while timeout > 0:
             inlet = self.mtp_get_inlet_temp(low_threshold, high_threshold)
-            if self._mtp_rev is not None and len(self._mtp_rev) > 0 and not MFG_BYPASS_PSU_CHECK and int(self._mtp_rev) > 3:
+            if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 3:
                 cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
                 self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
 
@@ -2582,6 +2587,12 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_nic_sw_mode_switch_verify(self, slot):
+        if not self._nic_ctrl_list[slot].nic_sw_mode_switch_verify():
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
     def mtp_pdsctl_system_show(self, slot):
         if not self._nic_ctrl_list[slot].nic_pdsctl_system_show():
             self.mtp_dump_nic_err_msg(slot)
@@ -2781,6 +2792,12 @@ class mtp_ctrl():
     def mtp_get_nic_err_msg(self, slot):
         return self._nic_ctrl_list[slot].nic_get_err_msg()
 
+
+    def mtp_nic_fst_exec_cmd(self, slot, cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        if not self._nic_ctrl_list[slot].nic_fst_exec_cmd(cmd, timeout):
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
 
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
         nic_type = self.mtp_get_nic_type(slot)
@@ -3129,7 +3146,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0009":
+            if software_pn != "90-0002-0010":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
@@ -3145,7 +3162,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
-            if software_pn != "90-0007-0002":
+            if software_pn != "90-0007-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
@@ -3157,7 +3174,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0002-0009":
+            if software_pn != "90-0002-0010":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
@@ -3165,7 +3182,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP DELL
-            if software_pn != "90-0007-0002":
+            if software_pn != "90-0007-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
@@ -4417,12 +4434,24 @@ class mtp_ctrl():
         elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
+        # (DIAG_INIT, NIC_VMARG) START
+        test = "NIC_VMARG"
+        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = self.log_slot_test_start(slot, test)
+
         if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
             ret = False
 
         if ret and not self.mtp_nic_display_voltage(slot):
             ret = False
-        
+
+        duration = self.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+        else:
+            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration)) 
+        # (DIAG_INIT, NIC_VMARG) END 
+
         duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
         if not ret:
@@ -5203,7 +5232,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
-        isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001") else False
+        isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003") else False
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             self.mtp_dump_nic_err_msg(slot)
@@ -6795,3 +6824,18 @@ class mtp_ctrl():
         self._nic_ctrl_list[slot].nic_i2c_bus_scan()
 
         return True
+
+    def mtp_nic_read_transceiver_sn(self, slot, port):
+        if not self._nic_ctrl_list[slot].nic_read_transceiver_sn(port):
+            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if port in self._nic_ctrl_list[slot]._loopback_sn.keys():
+            self.cli_log_slot_inf(slot, "Detected port {:s} loopback transceiver {:s}".format(port, self._nic_ctrl_list[slot]._loopback_sn[port]))
+        else:
+            self.cli_log_slot_inf(slot, "Missing port {:s} loopback info".format(port))
+            return False
+
+        return True
+

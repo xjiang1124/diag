@@ -589,6 +589,7 @@ class MFG_DIAG_CMDS:
     MFG_MK_DIR_FMT = "mkdir -p {:s}"
     MFG_MK_DIR_777_FMT = "mkdir -m777 -p {:s}"          #mkdir with chown 777: rwx privileges
     MFG_LOG_LINK_FMT = "ln {:s} {:s}"
+    MFG_DIR_LINK_FMT = "ln -s {:s} {:s}"
 
     FST_DIAG_CMD_FMT = "/home/diag/mtp_fst_script/diag_fst_test.py"
     FST_DIAG_CMD_FMT_CLD = "/home/diag/mtp_fst_script/diag_fst_test.py -card_type {} -stage {} -fst {:d}"

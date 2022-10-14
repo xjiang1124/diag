@@ -2173,7 +2173,9 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 fail_nic_list[mtp_id].append(slot)
                             continue
 
+                        ### QSFP/SFP PORT 1
                         if read_data[0] & 0x01 == 0:
+                            # not present, retry 3x
                             if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
                                     fail_nic_list[mtp_id].append(slot)
@@ -2182,8 +2184,22 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot] = 1
                                 loopback_fail_list[mtp_id][slot] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot] = 1
+                                    loopback_fail_list[mtp_id][slot] += 1
+                                    failure_detected = True
 
+                        ### QSFP/SFP PORT 2
                         if read_data[0] & 0x02 == 0:
+                            # not present, retry 3x
                             if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
                                     fail_nic_list[mtp_id].append(slot)
@@ -2192,6 +2208,18 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot+length] = 1
                                 loopback_fail_list[mtp_id][slot+length] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "2"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot+length] = 1
+                                    loopback_fail_list[mtp_id][slot+length] += 1
+                                    failure_detected = True
 
                     elif nic_type in CAPRI_NIC_TYPE_LIST:
                         # QSFP/SFP port 1
@@ -2638,3 +2666,14 @@ def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stag
         time.sleep(3)
 
     return fail_nic_list
+
+def get_fst_ssh_connect_cmd(ip, username, passwd):
+    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"
+    ssh_cmd = ssh_cmd_fmt.format(passwd, username, ip)
+    return ssh_cmd
+
+def get_fst_nic_ssh_cmd_penctl(ip, username):
+    ssh_cmd_fmt = "ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' -i  ~/.ssh/id_rsa {}@{}"
+    ssh_cmd = ssh_cmd_fmt.format(username, ip)
+    return ssh_cmd
+
