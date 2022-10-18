@@ -273,10 +273,10 @@ def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog
     if nic_type == NIC_Type.NAPLES25OCP:
         test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
     if nic_type in ELBA_NIC_TYPE_LIST:
-        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]        
+        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
     if nic_type in FPGA_TYPE_LIST:
         test_list = ["NIC_INIT"]
-    if nic_type == NIC_Type.ORTANO2:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADIMSFT:
         test_list = ["NIC_INIT"]
 
     for skip_test in skip_testlist:
@@ -580,6 +580,8 @@ def main():
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0034"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
@@ -599,6 +601,10 @@ def main():
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0028"]
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0028"]
                 fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0034"]
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0034"]
+                fail_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0034"]
 
             emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
             gold_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(gold_img_file)
@@ -693,6 +699,9 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0028"]
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["68-0034"]
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0034"]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   cpld_img_file,
@@ -835,6 +844,8 @@ def main():
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0034"]
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,
@@ -929,7 +940,9 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
-                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0028"] 
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0034"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
 
@@ -1020,7 +1033,9 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADI:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
-                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0028"] 
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img["68-0034"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
 
@@ -1174,7 +1189,7 @@ def main():
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIMSFT:
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 sw_test_list = ["SW_BOOT", "PDSCTL_SYSTEM", "SET_GOLDFW", "SW_SHUTDOWN"]     

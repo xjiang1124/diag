@@ -726,6 +726,12 @@ class nic_ctrl():
                                  MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
                                  MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
                                  MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
+
+        if self._nic_type == NIC_Type.ORTANO2ADIMSFT:
+            nic_shutdown_cmd_list.pop()
+            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
+            nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
+            
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -2720,7 +2726,7 @@ class nic_ctrl():
                 match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
                 match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
+            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP):
                 match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
             elif self._nic_type == NIC_Type.NAPLES25OCP:
                 match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
@@ -2842,7 +2848,7 @@ class nic_ctrl():
                     match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.NAPLES25OCP:
                     match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP):
+                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP):
                     match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
                 elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
                     match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
@@ -5051,6 +5057,7 @@ class nic_ctrl():
             return False
 
         nic_cmd_list = list()
+        nic_cmd_list.append("chmod +x {:s}/diag/scripts/eeprom_sn.sh".format("/data/"))
         nic_cmd_list.append("{:s}/diag/scripts/eeprom_sn.sh -s -b {:s}".format("/data/", port))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
