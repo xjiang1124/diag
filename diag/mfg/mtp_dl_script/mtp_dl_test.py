@@ -348,10 +348,6 @@ def main():
 
             testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
 
-            # skip extra tests until PCN approved:
-            if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT) or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
-                test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC"]
-
             if nic_type == NIC_Type.NAPLES100DELL:
                 testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
 
