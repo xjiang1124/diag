@@ -317,6 +317,7 @@ class MTP_DIAG_Report:
     NIC_DIAG_REGRESSION_PN_BY_FRU2_RE = r"SN = {:s},\sPN\s=\s(\w.*\w),\sTYPE\s=\s\w+"
     NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE = r"FRU: {:s},\s(\w.*\w),\s(\w.*\w)"
     NIC_RETEST_BLOCKED_MSG = "--[ MOVE TO DEBUG DO NOT RETEST ]--"
+    NIC_UNKNOWN_FAILURE_CODE = "UNKNOWN"
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
