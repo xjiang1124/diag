@@ -461,16 +461,16 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
         nic_top_test_list = orc_list[:]
         nic_bot_test_list = pen_list[:]
 
-    # separate lists for ORC ortano adi and IBM ortano adi 
-    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
-        orc_list, ibm_list = [], []
+    # separate lists for ortano adi non-msft & msft
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM):
+        orc_list, msft_list = [], []
         for slot in nic_list:
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM):
                 orc_list.append(slot)
             else:
-                ibm_list.append(slot)
+                msft_list.append(slot)
         nic_top_test_list = orc_list[:]
-        nic_bot_test_list = ibm_list[:]
+        nic_bot_test_list = msft_list[:]
 
     if len(nic_top_test_list) == 0:
         nic_top_test_list = nic_list[:]
@@ -890,8 +890,6 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                 number_of_l1_tests = 9
                 if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
                     number_of_l1_tests = 8
-                if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-                    number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":

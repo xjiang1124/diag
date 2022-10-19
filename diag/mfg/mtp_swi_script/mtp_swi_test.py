@@ -1189,10 +1189,12 @@ def main():
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIMSFT:
-                sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]     
+            if nic_type == NIC_Type.ORTANO2ADI:
+                sw_test_list = ["SW_BOOT", "SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
-                sw_test_list = ["SW_BOOT", "PDSCTL_SYSTEM", "SET_GOLDFW", "SW_SHUTDOWN"]     
+                sw_test_list = ["SW_BOOT", "PDSCTL_SYSTEM", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
             if nic_profile:
