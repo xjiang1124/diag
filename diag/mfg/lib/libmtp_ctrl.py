@@ -4984,8 +4984,6 @@ class mtp_ctrl():
                       NIC_Type.LACONA32DELL:    MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32DELL,
                       NIC_Type.LACONA32:        MFG_DIAG_RE.MFG_NIC_TYPE_LACONA32,
                       NIC_Type.ORTANO2ADI:      MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADI,
-                      NIC_Type.ORTANO2ADIIBM:   MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADIIBM,
-                      NIC_Type.ORTANO2ADIMSFT:  MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADIMSFT,
                       NIC_Type.ORTANO2INTERP:   MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2INTERP
                       }
         
@@ -4996,8 +4994,20 @@ class mtp_ctrl():
                     slot = int(match[idx]) - 1
                     if not self._slots_to_skip[slot]:
                         self._nic_prsnt_list[slot] = True
-                        self._nic_type_list[slot] = nic_type
-                        self._nic_ctrl_list[slot].nic_set_type(nic_type)
+                        if nic_type == NIC_Type.ORTANO2ADI:
+                            self._nic_ctrl_list[slot].nic_pn_init(fpo=True)
+                            pn = self._nic_ctrl_list[slot]._pn
+                            if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
+                                final_nic_type = NIC_Type.ORTANO2ADI
+                            elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
+                                final_nic_type = NIC_Type.ORTANO2ADIIBM
+                            elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
+                                final_nic_type = NIC_Type.ORTANO2ADIMSFT
+                            self._nic_type_list[slot] = final_nic_type
+                            self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                        else:
+                            self._nic_type_list[slot] = nic_type
+                            self._nic_ctrl_list[slot].nic_set_type(nic_type)
                     else:
                         self._nic_prsnt_list[slot] = False
                         self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
@@ -5870,8 +5880,6 @@ class mtp_ctrl():
         skip_ddr_bist = "1"
         if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
             skip_ddr_bist = "0"
-        if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-            skip_ddr_bist = "1"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
