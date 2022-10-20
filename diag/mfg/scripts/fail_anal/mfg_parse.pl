@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.2.10122022";
+my $rev = "1.3.10192022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -1656,10 +1656,10 @@ sub parse_fpga_and_ecc {
     my $sts_dump_exist = 0;
     my $old_ecc_dump_exist = 0;
     my $new_ecc_dump_exist = 0;
-    my $corr_syn = 0;
-    my $multi_corr_syn = 0;
-    my $uncorr_syn = 0;
-    my $multi_uncorr_syn = 0;
+    #my $corr_syn = 0;
+    #my $multi_corr_syn = 0;
+    #my $uncorr_syn = 0;
+    #my $multi_uncorr_syn = 0;
     my $cpld_sts = "";
     my $num_cpld_sts_errors = 0;
     my $ecc_sts = "";
@@ -1671,11 +1671,16 @@ sub parse_fpga_and_ecc {
     my $ecc_result_linenum = 0;
     my $ecc_not_valid = 0;
     my $ecc_result_exist = 0;
+    my $ecc_result_exist_current = 0;
     my $ecc_result_err = 0;
+    my $ecc_result_err_current = 0;
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
     my $ecc_disp_start = 0;
+    my $ecc_j2c_s2i_timeout = 0;
+    my $ecc_j2c_error = 0;
+    my $ecc_j2c_error_current = 0;
     my $mc_info;
 
     if (!open(TR3, '<', $mtpfile)) {
@@ -1711,6 +1716,12 @@ sub parse_fpga_and_ecc {
     }
     while(my $line = <TR3>)
     {
+        if ($line =~ m/START post dsp NIC_POWER fail debug/) {
+            my $line2;
+            do {
+                $line2 = <TR3>;
+            } while ($line2 !~ m/END post dsp NIC_POWER fail debug/);
+        }
         if ($sts_dump_exist == 0) {
             if($line =~ m/(.*)(Addr: 0x21; Value:)\s(\w+)/) {
                 my $line2 = <TR3>;
@@ -1827,197 +1838,211 @@ sub parse_fpga_and_ecc {
                 $test_err_msg .= $line;
             }
         }
-        if ($old_ecc_dump_exist == 0) {
-            if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
-                $j2c_error_linenum = $.;
-                print "j2c_error_linenum: $j2c_error_linenum\n";
+        if ($ecc_result_err == 0) {
+            if($line =~ m/=== Dumping ECC info ===/) {
+                $ecc_start_linenum = $.;
             }
-            if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
-                $ecc_reg_linenum = $.;
-                print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                if ($3 eq "0xffffffff") {
-                    if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
-                        $ecc_not_valid = 1;
+            if($line =~ m/=== Collect ECC info ===/) {
+                $ecc_disp_start = 1;
+                $ecc_j2c_error_current = 0;
+            }
+            #if ($old_ecc_dump_exist == 0) {
+                if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
+                    $j2c_error_linenum = $.;
+                    print "j2c_error_linenum: $j2c_error_linenum\n";
+                }
+                if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
+                    $ecc_reg_linenum = $.;
+                    print "ecc_reg_linenum: $ecc_reg_linenum\n";
+                    if ($3 eq "0xffffffff") {
+                        if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
+                            $ecc_j2c_error_current = 1;
+                        }
+                    } elsif ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
+                        $ecc_j2c_error_current = 1;
                     }
-                } elsif ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
-                    $num_ecc_sts_errors++;
-                } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
-                    $ecc_not_valid = 1;
                 }
-            }
-            if($line =~ m/(.*)(Reg 0x30530454; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-            }
-            if($line =~ m/(.*)(Reg 0x30530458; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-            }
-            if($line =~ m/(.*)(Reg 0x30530464; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-            }
-            if($line =~ m/(.*)(Reg 0x30530468; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-            }
-            if($line =~ m/(.*)(Reg 0x3053046c; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-            }
-            if($line =~ m/(.*)(Reg 0x30530470; value:)\s(\w+)/) {
-                if ($3 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $3\n";
-                    $num_ecc_sts_errors++;
-                }
-                $old_ecc_dump_exist = 1;
-            }
-        }
-
-        if ($new_ecc_dump_exist == 0) {
-            if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
-                $j2c_error_linenum = $.;
-                print "j2c_error_linenum: $j2c_error_linenum\n";
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
-                $ecc_reg_linenum = $.;
-                print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                if ($1 eq "0xffffffff") {
-                    if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
-                        $ecc_not_valid = 1;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530454; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $3\n";
+                        $num_ecc_sts_errors++;
                     }
-                } elsif ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
-                    $num_ecc_sts_errors++;
-                } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
-                    $ecc_not_valid = 1;
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x30530454:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $1\n";
-                    $num_ecc_sts_errors++;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530458; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x30530458:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $1\n";
-                    $num_ecc_sts_errors++;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530464; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x30530464:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $1\n";
-                    $num_ecc_sts_errors++;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530468; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x30530468:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $1\n";
-                    $num_ecc_sts_errors++;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x3053046c; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x3053046c:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $1\n";
-                    $num_ecc_sts_errors++;
+                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530470; value:)\s(\w+)/)) {
+                    if ($3 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $3\n";
+                        $num_ecc_sts_errors++;
+                    }
+                    $old_ecc_dump_exist = 1;
                 }
-            }
-            if($line !~ m/P000/ && $line =~ m/Reg 0x30530470:\s+(\w+)/) {
-                if ($1 ne "0x00000000") {
-                    $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $1\n";
-                    $num_ecc_sts_errors++;
-                }
-                $new_ecc_dump_exist = 1;
-            }
-        }
+            #}
 
-        if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
-            $mc_info .= $1."\r\n";
-        }
-        if ($ecc_result_err == 0) {
-            if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                if ($mc_info ne "") {
-                    $ecc_sts .= $mc_info;
-                    $mc_info = "";
+            #if ($new_ecc_dump_exist == 0) {
+                if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
+                    $j2c_error_linenum = $.;
+                    print "j2c_error_linenum: $j2c_error_linenum\n";
                 }
-                $ecc_sts = $ecc_sts.$1."\r\n";
-                $num_ecc_sts_errors++;
-                $corr_syn = 1;
-            }
-        }
-        if ($ecc_result_err == 0) {
-            if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
-                if ($mc_info ne "") {
-                    $ecc_sts .= $mc_info;
-                    $mc_info = "";
+                if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
+                    $ecc_reg_linenum = $.;
+                    print "ecc_reg_linenum: $ecc_reg_linenum\n";
+                    if ($1 eq "0xffffffff") {
+                        if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
+                            $ecc_j2c_error_current = 1;
+                        }
+                    } elsif ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
+                        $ecc_j2c_error_current = 1;
+                    }
                 }
-                $ecc_sts = $ecc_sts.$1."\r\n";
-                $num_ecc_sts_errors++;
-                $multi_corr_syn = 1;
-            }
-        }
-        if ($ecc_result_err == 0) {
-            if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                if ($mc_info ne "") {
-                    $ecc_sts .= $mc_info;
-                    $mc_info = "";
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530454:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-                $ecc_sts = $ecc_sts.$1."\r\n";
-                $num_ecc_sts_errors++;
-                $uncorr_syn = 1;
-            }
-        }
-        if ($ecc_result_err == 0) {
-            if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
-                if ($mc_info ne "") {
-                    $ecc_sts .= $mc_info;
-                    $mc_info = "";
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530458:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
                 }
-                $ecc_sts = $ecc_sts.$1."\r\n";
-                $num_ecc_sts_errors++;
-                $multi_uncorr_syn = 1;
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530464:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
+                }
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530468:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
+                }
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x3053046c:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
+                }
+                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530470:\s+(\w+)/)) {
+                    if ($1 ne "0x00000000") {
+                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $1\n";
+                        $num_ecc_sts_errors++;
+                    }
+                    $new_ecc_dump_exist = 1;
+                }
+            #}
+
+            if ($ecc_j2c_error_current == 0) {
+                if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
+                    $mc_info .= $1."\r\n";
+                }
+                #if ($ecc_result_err == 0) {
+                    if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
+                        if ($mc_info ne "") {
+                            $ecc_sts .= $mc_info;
+                            $mc_info = "";
+                        }
+                        $ecc_sts = $ecc_sts.$1."\r\n";
+                        $num_ecc_sts_errors++;
+                        #$corr_syn = 1;
+                    }
+                #}
+                #if ($ecc_result_err == 0) {
+                    if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
+                        if ($mc_info ne "") {
+                            $ecc_sts .= $mc_info;
+                            $mc_info = "";
+                        }
+                        $ecc_sts = $ecc_sts.$1."\r\n";
+                        $num_ecc_sts_errors++;
+                        #$multi_corr_syn = 1;
+                    }
+                #}
+                #if ($ecc_result_err == 0) {
+                    if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
+                        if ($mc_info ne "") {
+                            $ecc_sts .= $mc_info;
+                            $mc_info = "";
+                        }
+                        $ecc_sts = $ecc_sts.$1."\r\n";
+                        $num_ecc_sts_errors++;
+                        #$uncorr_syn = 1;
+                    }
+                #}
+                #if ($ecc_result_err == 0) {
+                    if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
+                        if ($mc_info ne "") {
+                            $ecc_sts .= $mc_info;
+                            $mc_info = "";
+                        }
+                        $ecc_sts = $ecc_sts.$1."\r\n";
+                        $num_ecc_sts_errors++;
+                        #$multi_uncorr_syn = 1;
+                    }
+                #}
+                #if(($ecc_result_err == 0) && ($line =~ m/FAIL: ECC_EN:/)) {
+                if($line =~ m/FAIL: ECC_EN:/) {
+                    $ecc_result_linenum = $.;
+                    if ($ecc_result_linenum - $ecc_start_linenum < 300) {
+                        $ecc_result_exist_current = 1;
+                        $ecc_result_err_current = 1;
+                        print $ecc_sts;
+                        $ecc_sts = $ecc_sts.$line;
+                    }
+                }
+                if($line =~ m/MSG :: ECC_EN:0x\d+ ECC_INTERRUPT:0x0 ECC_INTERRUPT_COUNTER:0x0/) {
+                    $ecc_result_linenum = $.;
+                    if ($ecc_result_linenum - $ecc_start_linenum < 300) {
+                        $ecc_result_exist_current = 1;
+                        $ecc_result_err_current = 0;
+                    }
+                }
             }
-        }
-        if($line =~ m/=== Dumping ECC info ===/) {
-            $ecc_start_linenum = $.;
-        }
-        if($line =~ m/=== Collect ECC info ===/) {
-            $ecc_disp_start = 1;
-        }
-        if($line =~ m/ECC COLLECTION DONE/) {
-            $ecc_disp_start = 0;
-        }
-        if(($ecc_result_err == 0) && ($line =~ m/FAIL: ECC_EN:/)) {
-            $ecc_result_linenum = $.;
-            if ($ecc_result_linenum - $ecc_start_linenum < 300) {
-                $ecc_result_exist = 1;
-                $ecc_result_err = 1;
-                print $ecc_sts;
-                $ecc_sts = $ecc_sts.$line;
-            }
-        }
-        if($line =~ m/MSG :: ECC_EN:0x\d+ ECC_INTERRUPT:0x0 ECC_INTERRUPT_COUNTER:0x0/) {
-            $ecc_result_linenum = $.;
-            if ($ecc_result_linenum - $ecc_start_linenum < 300) {
-                $ecc_result_exist = 1;
-                $ecc_result_err = 0;
+
+            if($line =~ m/ECC COLLECTION DONE/) {
+                $ecc_disp_start = 0;
+                if (($j2c_error_linenum != 0) && ($ecc_reg_linenum == 0)) {
+                    $ecc_j2c_error_current = 1;
+                }
+                $ecc_j2c_error |= $ecc_j2c_error_current;
+                $ecc_result_exist |= $ecc_result_exist_current;
+                $ecc_result_err |= $ecc_result_err_current;
             }
         }
         if($line =~ m/S2I Operation timed out/) {
             if ($ecc_disp_start) {
-                $diag_fa_code{"Bad_J2C_ECC"} = 1;
+                #$diag_fa_code{"Bad_J2C_ECC"} = 1;
+                $ecc_j2c_s2i_timeout = 1;
             } else {
                 $diag_fa_code{"Bad_J2C"} = 1;
             }
@@ -2031,10 +2056,17 @@ sub parse_fpga_and_ecc {
         }
     }
     close(TR3);
-    if (($j2c_error_linenum != 0) && ($ecc_reg_linenum == 0)) {
-        $ecc_not_valid = 1;
+    # When ECC error is not detected, check if there's J2C error when dumping ECC
+    if (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
+        if (($ecc_j2c_s2i_timeout == 1) || ($ecc_j2c_error == 1)) {
+            $ecc_not_valid = 1;
+        }
     }
-    if (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0) && ($ecc_result_exist == 0)) {
+    if ($ecc_not_valid == 1) {
+        $diag_fa_code{"Bad_J2C_ECC"} = 1;
+        print "ECC not valid due to bad J2C\n";
+        $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
+    } elsif (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0) && ($ecc_result_exist == 0)) {
         print "ECC not dumped\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC not dumped";
         my $retest_ts = "2021-11-23_00-00-00";
@@ -2049,10 +2081,6 @@ sub parse_fpga_and_ecc {
             exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
             $diag_fa_code{"RETEST_NEEDED"} = 1;
         }
-    } elsif ($ecc_not_valid == 1) {
-        $diag_fa_code{"Bad_J2C_ECC"} = 1;
-        print "ECC not valid due to bad J2C\n";
-        $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
     } elsif (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
         print "ECC status OK\n";
         $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
