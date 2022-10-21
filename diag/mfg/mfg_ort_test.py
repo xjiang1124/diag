@@ -364,8 +364,7 @@ def main():
 
         # power off all the test mtp
         if loop == iteration:
-            #libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
-            pass
+            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
         # dump the summary
         libmfg_utils.mfg_summary_disp("{:s} ITERATION-{:06d}".format(stage, loop), mfg_ort_summary, mtpid_fail_list)
