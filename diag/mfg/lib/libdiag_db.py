@@ -44,7 +44,7 @@ class diag_db():
                     self._skip_test_list.append(skip_cmd)
 
         # build parameter list
-        if corner == Env_Cond.MFG_NT:
+        if corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_ORT_HT:
             param_list = diag_test_cfg["PARAMS"]["P2C"]
         else:
             param_list = diag_test_cfg["PARAMS"]["4C"]

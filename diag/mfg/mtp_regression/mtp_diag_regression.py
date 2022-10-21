@@ -52,6 +52,8 @@ def get_test_stage_name(mtp_mgmt_ctrl, corner):
             dsp = FF_Stage.FF_2C_L
         else:
             dsp = FF_Stage.FF_4C_L
+    elif corner == Env_Cond.MFG_ORT_HT:
+        dsp = FF_Stage.FF_ORT
     else:
         dsp = "REGR"
 
@@ -1249,6 +1251,13 @@ def main():
         high_temp_threshold = None
         vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
         stage = FF_Stage.FF_4C_L
+    # ORT 40C temperature, no voltage corner
+    elif corner == Env_Cond.MFG_ORT_HT:
+        fanspd = MTP_Const.MFG_ORT_HIGH_FAN_SPD
+        low_temp_threshold = None
+        high_temp_threshold = None
+        vmarg_list = [Voltage_Margin.normal]
+        stage = FF_Stage.FF_ORT
     else:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
 
@@ -1257,6 +1266,8 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
+    if stage == FF_Stage.FF_ORT: 
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
     if args.mtpcfg:
         mtp_chassis_cfg_file_list.append(os.path.abspath(args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -1432,7 +1443,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA):    #Skip SWM Low Power Test for 4C
+                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA, Env_Cond.MFG_ORT_HT):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -1492,7 +1503,7 @@ def main():
                 #
                 ######################################################################
 
-                if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
+                if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT or corner == Env_Cond.MFG_ORT_HT):
                     mtp_mgmt_ctrl.mtp_power_off_nic()
                     mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
@@ -1551,7 +1562,7 @@ def main():
                 ### CAPRI TEST ORDER
                 test_section_list = ["ALOM_LP_MODE", "PRE_CHECK", "ARM_DSP", "NIC_DIAG_INIT_AAPL", "ARM_PRBS", "SNAKE", "J2C_SEQ"]
 
-                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA):   #Skip SWM Low Power Test for 4 corner
+                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA, Env_Cond.MFG_ORT_HT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
 
             if args.skip_test:
