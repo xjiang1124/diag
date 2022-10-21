@@ -59,6 +59,7 @@ class FF_Stage:
     FF_FST = "FST"
     FF_CFG = "CFG"
     FF_SRN = "SRN"
+    FF_ORT = "ORT"
 
 
 class FPN_FF_Stage:
@@ -81,6 +82,7 @@ class Env_Cond(Enum):
     MFG_RDT = "RDT"
     MFG_EDVT_HT = "EDVT_HT"
     MFG_EDVT_LT = "EDVT_LT"
+    MFG_ORT_HT = "ORT_HT"
 
     def __str__(self):
         return self.value
@@ -164,7 +166,7 @@ class MTP_Const:
     NIC_FW_SET_DELAY = 90
     NIC_FPGA_PROG_DELAY = 5 * 60
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
-    NIC_ESEC_WRITE_PROT_DELAY = 9 * 60
+    NIC_ESEC_WRITE_PROT_DELAY = 15 * 60
     NIC_I2C_DETECT_DELAY = 60
 
     MTP_DIAGMGR_DELAY = 10
@@ -183,6 +185,8 @@ class MTP_Const:
 
     # more than 12 hours
     MFG_P2C_TEST_TIMEOUT = 48000
+    # more than 12 hours
+    MFG_ORT_TEST_TIMEOUT = 48000
     # more than 24 hours
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
@@ -193,7 +197,8 @@ class MTP_Const:
     # 1 hour
     MFG_FST_TEST_TIMEOUT = 3600
     MFG_CFG_TEST_TIMEOUT = 3600
-    
+
+    MFG_ORT_HIGH_FAN_SPD = 100
     MFG_EDVT_HIGH_FAN_SPD = 100
     MFG_EDVT_NORM_FAN_SPD = 60
     MFG_EDVT_LOW_FAN_SPD = 60
@@ -253,6 +258,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_FST_LOG_DIR_FMT = "/mfg_log/{:s}/FST/{:s}/"
     DIAG_MFG_CSP_LOG_DIR_FMT = "/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_SRN_LOG_DIR_FMT = "/mfg_log/{:s}/SRN/{:s}/"
+    DIAG_MFG_ORT_LOG_DIR_FMT = "/mfg_log/{:s}/ORT/{:s}/"
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
@@ -262,6 +268,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
     DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"                                                                                                                             
     DIAG_MFG_MODEL_SRN_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SRN/{:s}/"
+    DIAG_MFG_MODEL_ORT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/ORT/{:s}/"
 
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
@@ -280,6 +287,8 @@ class MTP_DIAG_Logfile:
     MFG_FST_LOG_DIR = "FST_{:s}_{:s}/"
     MFG_SRN_LOG_PKG_FILE = "SRN_{:s}_{:s}.tar.gz"
     MFG_SRN_LOG_DIR = "SRN_{:s}_{:s}/"
+    MFG_ORT_LOG_PKG_FILE = "ORT_{:s}_{:s}.tar.gz"
+    MFG_ORT_LOG_DIR = "ORT_{:s}_{:s}/"
 
     SCAN_BARCODE_FILE = "fru_barcode.yaml"
 

@@ -557,10 +557,10 @@ def fst_init_nic(mtp_mgmt_ctrl):
 
     return True
 
-def fst_setup_nic_ssh(mtp_mgmt_ctrl, slot):
+def fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot):
     bus = mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus
 
-    nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, slot, bus)
+    nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus)
     if not nic_mgmt_ip:
         return False
 
@@ -831,7 +831,7 @@ def main():
                     elif test == "PCIE_LINK":
                         ret = check_nic_pcie(mtp_mgmt_ctrl, slot)
                     elif test == "SETUP_SSH":
-                        ret = fst_setup_nic_ssh(mtp_mgmt_ctrl, slot)
+                        ret = fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot)
                     else:
                         mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                         continue
