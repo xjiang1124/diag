@@ -744,6 +744,7 @@ class nic_test:
     def ena_dis_uboot_pcie(self, nic_list=[], enable=True):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_list_remain = nic_list[:]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -765,6 +766,7 @@ class nic_test:
             for slot in nic_list_remain:
                 if ret_list[int(slot)-1] == 0:
                     nic_list.remove(slot)
+                    nic_pass_list.append(slot)
 
             print "remaining slots: ", ",".join(nic_list)
             nic_list_remain = nic_list[:]
@@ -773,7 +775,7 @@ class nic_test:
                 break
 
         if len(nic_list) != 0:
-            print "=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list)
+            print "=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== ena_dis_uboot_pcie passed ==="
         print "=== ena_dis_uboot_pcie done #", retry, "==="
@@ -782,6 +784,7 @@ class nic_test:
     def ena_dis_esec_wp(self, nic_list=[], enable=True):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_list_remain = nic_list[:]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -800,6 +803,7 @@ class nic_test:
             for slot in nic_list_remain:
                 if ret_list[int(slot)-1] == 0:
                     nic_list.remove(slot)
+                    nic_pass_list.append(slot)
 
             print "remaining slots: ", ",".join(nic_list)
             nic_list_remain = nic_list[:]
@@ -808,7 +812,7 @@ class nic_test:
                 break
 
         if len(nic_list) != 0:
-            print "=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list)
+            print "=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== ena_dis_esec_wp passed ==="
         print "=== ena_dis_esec_wp done #", retry, "==="
