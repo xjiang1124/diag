@@ -8153,8 +8153,8 @@ class mtp_ctrl():
             "FAN": r'%s: *PRESENT',
             "SSD": r'%s MODEL: *(.*) *S/N: *(.*) *Capacity: *(.*[TGMK]B)',
             "MEMORY": r'%s: *PN: *(.*) SN: *(.*) SIZE: *(.*)',
-            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)',
-            "QSFP": r'%s *(.*)PN: *(.*)SN: *(.*) BITRATE: *(.* [GMK]b/s)'
+            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)',
+            "QSFP": r'%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)'
         }
 
         for module in self.sys_modules["PSU"].keys():
