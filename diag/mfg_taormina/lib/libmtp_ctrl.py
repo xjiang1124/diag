@@ -5312,6 +5312,8 @@ class mtp_ctrl():
                 sys.stdout.flush()
                 time.sleep(5)
 
+            self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+
         if selection == 0:
             if not self.mtp_console_enter_shell("sh"):
                 self.cli_log_err("Unable to init bash shell", level=0)
