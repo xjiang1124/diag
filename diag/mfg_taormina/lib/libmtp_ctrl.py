@@ -2833,6 +2833,39 @@ class mtp_ctrl():
     def tor_nic_emmc_format(self, slot):
         return self.mtp_setting_partition(slot)
 
+    @single_slot_test("DL", "EMMC_BKOPS_EN")
+    def tor_nic_emmc_bkops_en(self, slot):
+        # copy script to detect the emmc part size
+        if not self._nic_ctrl_list[slot].nic_copy_image("{:s}nic_util/mmc.latest".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)):
+            self.cli_log_slot_err_lock(slot, "Failed to copy emmc util")
+            return False
+        if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
+            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            if not self._nic_ctrl_list[slot].nic_emmc_bkops_en(): 
+                self.cli_log_slot_err_lock(slot, "Failed to enable eMMC bkops")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
+                self.cli_log_slot_err_lock(slot, "Incorrect eMMC bkops value reflected")
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                return False
+        return True
+
+    @single_slot_test("DL", "EMMC_HWRESET_SET")
+    def tor_nic_emmc_hwreset_set(self, slot):
+        if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
+            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            if not self._nic_ctrl_list[slot].nic_emmc_hwreset_set(): 
+                self.cli_log_slot_err_lock(slot, "Failed to enable eMMC hwreset setting")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
+                self.cli_log_slot_err_lock(slot, "Incorrect eMMC hwreset setting reflected")
+                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                return False
+        return True
+
+
     def mtp_program_nic_cpld(self, slot, cpld_img):
         # check the current cpld version
         cpld_has_timestamp = 1

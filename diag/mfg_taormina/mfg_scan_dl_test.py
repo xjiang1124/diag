@@ -430,6 +430,8 @@ def single_uut_fw_program(stage,
                         "NIC_GOLDFW_VERIFY",
                         "MEMTUN_INIT",
                         "NIC_EMMC_FORMAT",
+                        "EMMC_HWRESET_SET",
+                        "EMMC_BKOPS_EN",
                         "NIC_PWRCYC",
                         "NIC_GOLDFW_VERIFY",
                         "MEMTUN_INIT",
@@ -462,6 +464,12 @@ def single_uut_fw_program(stage,
                 elif test == "NIC_EMMC_FORMAT":
                     ret  = mtp_mgmt_ctrl.tor_nic_emmc_format(0)
                     ret &= mtp_mgmt_ctrl.tor_nic_emmc_format(1)
+                elif test == "EMMC_HWRESET_SET":
+                    ret  = mtp_mgmt_ctrl.tor_nic_emmc_hwreset_set(0)
+                    ret &= mtp_mgmt_ctrl.tor_nic_emmc_hwreset_set(1)
+                elif test == "EMMC_BKOPS_EN":
+                    ret  = mtp_mgmt_ctrl.tor_nic_emmc_bkops_en(0)
+                    ret &= mtp_mgmt_ctrl.tor_nic_emmc_bkops_en(1)
                 # Init ARM Diag Environment
                 elif test == "NIC_DIAG_INIT":
                     ret = mtp_mgmt_ctrl.mtp_nic_diag_init(emmc_format=True, fru_valid=False, sn_tag=True, fru_cfg=fru_cfg)
