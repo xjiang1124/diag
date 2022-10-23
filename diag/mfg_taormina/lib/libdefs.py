@@ -404,6 +404,11 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
     NIC_SETTING_PARTITION_FMT = "sh /emmc_format.sh"
+    NIC_CHECK_EMMC_FMT = "mmc extcsd read /dev/mmcblk0"
+    NIC_EMMC_HWRESET_SET_FMT = "mmc hwreset enable /dev/mmcblk0"
+    NIC_EMMC_HWRESET_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i reset"
+    NIC_EMMC_BKOPS_EN_FMT = "/mmc.latest bkops_en auto /dev/mmcblk0"
+    NIC_EMMC_BKOPS_CHECK_FMT = "mmc extcsd read /dev/mmcblk0 | grep -i ops"
     NIC_DIAG_ASIC_VERSION_FMT = "head /data/nic_arm/{:s}/asic_version.txt"
     # onboard diag utils version
     NIC_DIAG_UTIL_VERSION_FMT = "head /data/nic_util/version.txt"
@@ -596,6 +601,10 @@ class MFG_DIAG_SIG:
     NIC_PARTITION_OK_SIG = "setting OTP PARTITION_SETTING_COMPLETED!"
     NIC_PARTITION1_OK_SIG = "Device is already partitioned"
     NIC_EMMC_PERF_MODE_OK_SIG = "0"
+    NIC_EMMC_HWRESET_PASS_SIG = "H/W reset function [RST_N_FUNCTION]: 0x01"
+    NIC_EMMC_HWRESET_FAIL_SIG = "H/W reset function [RST_N_FUNCTION]: 0x00"
+    NIC_EMMC_BKOPS_PASS_SIG = "Enable background operations handshake [BKOPS_EN]: 0x02"
+    NIC_EMMC_BKOPS_FAIL_SIG = "Enable background operations handshake [BKOPS_EN]: 0x00"
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"

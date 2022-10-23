@@ -45,7 +45,7 @@ fi
 ## COPY PYTHON PACKAGES
 if [[ ${mfg_folder} == "mfg_taormina" ]]; then
     mkdir $mfg_script_dir/release/packages
-    cp --preserve=timestamps -r /vol/hw/diag/mfg_release/prog/packages/ $mfg_script_dir/release/packages
+    cp --preserve=timestamps -r /vol/hw/diag/mfg_release/prog/packages/ $mfg_script_dir/release/
 fi
 
 ## PRUNING
