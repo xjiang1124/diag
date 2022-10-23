@@ -36,9 +36,25 @@ def get_nic_ssh_cmd(ip, cmd):
     return ssh_cmd
 
 def setup_penctrl_ssh(mtp_mgmt_ctrl, slot, ip):
+    cmd = "ls ~/.ssh/id_rsa"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Executing command {:s} failed".format(cmd), level=0)
+        return False
+    cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if "No such file" in cmd_buf:
+        # create new ssh key-pair
+        cmd_list = [
+            "mkdir ~/.ssh",
+            "chmod 700 ~/.ssh",
+            "< /dev/zero ssh-keygen -q -N \"\" -f ~/.ssh/id_rsa"
+        ]
+        for cmd in cmd_list:
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Executing command failed {:s}".format(cmd), level=0)
+                return False
+
     cmd_list = [
-            "< /dev/zero ssh-keygen -q -N \"\" -f ~/.ssh/id_rsa",   # create new ssh key-pair, or nothing if already present.
-            "export \"DSC_URL\"=\"http://{:s}\"".format(ip),        # set env variable used by penctl
+            "export \"DSC_URL\"=\"http://{:s}\"".format(ip),                                                                                # set env variable used by penctl
             "{:s} -a {:s} system enable-sshd".format("/home/diag/penctl.linux.02012021", "/home/diag/penctl.token"),                        # penctl enable-sshd
             "{:s} -a {:s} update ssh-pub-key -f ~/.ssh/id_rsa.pub".format("/home/diag/penctl.linux.02012021", "/home/diag/penctl.token")    # penctl point to the pub key
     ]
