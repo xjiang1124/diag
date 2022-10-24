@@ -167,6 +167,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "nod"
     elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         mode = "nod_550"
+    elif nic_type in CAPRI_NIC_TYPE_LIST:
+        mode = "hod"
     else:
         mode = ""
 
