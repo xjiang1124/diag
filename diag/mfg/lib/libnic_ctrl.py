@@ -331,7 +331,6 @@ class nic_ctrl():
         self._err_msg = "" #clear it out
         return ret
 
-
     def nic_get_cmd_buf(self):
         return self._cmd_buf
 
@@ -385,9 +384,11 @@ class nic_ctrl():
         self._nic_handle.sendline(ts_record_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
-        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
+        cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+        self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
         time.sleep(5)
         # send return
