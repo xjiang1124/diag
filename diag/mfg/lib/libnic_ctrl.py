@@ -681,7 +681,7 @@ class nic_ctrl():
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
 
-        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST and self._nic_type != NIC_Type.ORTANO2ADIIBM:
+        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST:
             nic_shutdown_cmd_list += [
                                  "fwenv -n gold -E",
                                  "fwenv -n gold",
