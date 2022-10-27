@@ -655,6 +655,15 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
 
 
 def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None):
+    shared_script_dir = os.path.dirname(mtp_script_dir)
+    mtp_script_dir = os.path.dirname(mtp_script_dir) + ".{:s}/".format(mtp_mgmt_ctrl._id)
+    # remove previous copy to this MTP
+    cmd = "rm -rf {:s}".format(mtp_script_dir)
+    os.system(cmd)
+    # make new staging folder for copy
+    cmd = "cp -r {:s} {:s}".format(shared_script_dir, mtp_script_dir)
+    os.system(cmd)
+    os.system("sync")
     if extra_script:
         cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
         os.system(cmd)
@@ -673,15 +682,6 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
         os.system(cmd)
     os.system("sync")
-    if logfile_dir:
-        if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
-            cmd = "rm -rf {:s}/{:s}".format(mtp_script_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            os.system(cmd)
-        cmd = "rm -rf {:s}".format(logfile_dir)
-        os.system(cmd)
-    # cmd = "rm -rf {:s}/lib {:s}/config ".format(mtp_script_dir, mtp_script_dir)
-    cmd = "rm -rf {:s}/lib {:s}/config {:s}/*.log".format(mtp_script_dir, mtp_script_dir, mtp_script_dir)
-    os.system(cmd)
 
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
@@ -692,7 +692,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
         return False
     # remove the stale test script
-    cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_dir)
+    cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+shared_script_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
         return False
@@ -701,8 +701,16 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
         return False
+    # move test script folder to common folder
+    cmd = "mv {:s} {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_dir, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+shared_script_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
+        return False
     # remove the test script pkg
     cmd = "rm -f {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg)
+    os.system(cmd)
+    # remove the MTP-specific test script folder
+    cmd = "rm -rf {:s}".format(mtp_script_dir)
     os.system(cmd)
     return True
 
