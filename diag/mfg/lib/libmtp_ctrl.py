@@ -4986,7 +4986,8 @@ class mtp_ctrl():
             self.cli_log_inf("Bypass NIC SN/MAC load")
 
         if fpo:
-            ret = self.mtp_nic_mgmt_seq_init(nic_list, fpo, stop_on_err)
+            # ret = self.mtp_nic_mgmt_seq_init(nic_list, fpo, stop_on_err)
+            ret = self.mtp_nic_mgmt_para_init_fpo(nic_list, stop_on_err)
         else:
             ret = self.mtp_nic_mgmt_para_init(nic_list, aapl, swm_lp, stop_on_err)
 
