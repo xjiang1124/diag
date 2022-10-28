@@ -1170,6 +1170,8 @@ def flx_soap_get_uut_info_xml(stage, sn, factory):
 
 
 def flx_sn_to_factory(sn):
+    if not sn:
+        return False
     if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
         return Factory.FSP
     elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
