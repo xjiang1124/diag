@@ -1170,6 +1170,8 @@ def flx_soap_get_uut_info_xml(stage, sn, factory):
 
 
 def flx_sn_to_factory(sn):
+    if not sn:
+        return False
     if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
         return Factory.FSP
     elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
@@ -1944,13 +1946,13 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
         for slot, sn, nic_type, rc, retest_blocked in summary_dict[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
             if rc:
-                cli_inf("{:s} {:s} {:s} PASS".format(nic_cli_id_str, sn, nic_type))
+                cli_inf("{:s} {:s} {:s} FINAL RESULT PASS".format(nic_cli_id_str, sn, nic_type))
             else:
                 final_result = False
                 if not retest_blocked:
-                    cli_err("{:s} {:s} {:s} FAIL".format(nic_cli_id_str, sn, nic_type))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL".format(nic_cli_id_str, sn, nic_type))
                 else:
-                    cli_err("{:s} {:s} {:s} FAIL {:s}".format(nic_cli_id_str, sn, nic_type, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL {:s}".format(nic_cli_id_str, sn, nic_type, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
