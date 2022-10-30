@@ -85,6 +85,7 @@ class mtp_ctrl():
         self._debug_mode = dbg_mode
         self._filep = filep
         self._cmd_buf = None
+        self._buf_before_sig = None
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
@@ -272,6 +273,9 @@ class mtp_ctrl():
         self._diag_filep = diag_filep
         self._mgmt_handle.logfile_read = self._diag_filep
 
+
+    def mtp_get_cmd_buf_before_sig(self):
+        return self._buf_before_sig
 
     def mtp_get_cmd_buf(self):
         return self._cmd_buf
@@ -1333,8 +1337,11 @@ class mtp_ctrl():
         rc = True
         self._mgmt_handle.sendline(cmd)
         cmd_before = ""
+        if sig_list:
+            self._buf_before_sig = ""
         for sig in sig_list:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
+            self._buf_before_sig += self._mgmt_handle.before
             if idx < 0:
                 rc = False
                 cmd_before = self._mgmt_handle.before
@@ -4725,6 +4732,27 @@ class mtp_ctrl():
 
     #     return True
 
+    def nic_semi_parallel_log(self, nic_list, buf):
+        buf = buf[:] # make a copy
+        capture = [True] * self._slots
+        logbuf = [""] * self._slots
+        for line in buf.splitlines():
+            for slot in nic_list:
+                if re.search("Starting [\w ]+ on slot %s" % str(slot+1), line) or re.search("Checking [\w ]*result on slot %s" % str(slot+1), line):
+                    capture = [False] * self._slots
+                    capture[slot] = True
+                elif re.search("Setup env on slot %s env setup done" % str(slot+1), line) or re.search("on slot %s started" % str(slot+1), line) or re.search("Check?ing [\w ]*result on slot %s Done" % str(slot+1), line):
+                    capture = [False] * self._slots
+                    logbuf[slot] += line + "\n" #final line
+                if capture[slot]:
+                    if line.strip(): # skip empty new line
+                        logbuf[slot] += line + "\n"
+
+        for slot in nic_list:
+            self._nic_ctrl_list[slot].mtp_exec_cmd(": <<'////'\nCopied log from mtp_diag.log:\n{:s}\n////".format(logbuf[slot]))
+
+        return True
+
     def mtp_nic_mgmt_para_init(self, nic_list, aapl, swm_lp=False, stop_on_err=False):
         nic_test_list = list()
         for slot in nic_list:
@@ -4785,6 +4813,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 self.mtp_set_nic_status_fail(slot)
             return False
+        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
         if "failed" in self.mtp_get_cmd_buf():
             match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
             if match:
@@ -4883,6 +4912,7 @@ class mtp_ctrl():
                 sn = self.mtp_get_nic_sn(int(slot))
                 self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
+        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
         if "failed" in self.mtp_get_cmd_buf():
             match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
             if match:
@@ -4921,12 +4951,12 @@ class mtp_ctrl():
 
                 # time.sleep(5)
                 cmd = "ping -c 1 {:s}".format(ipaddr)
-                if not self.mtp_mgmt_exec_cmd(cmd):
+                if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
                     return False
 
                 # time.sleep(5)
                 cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-                if not self.mtp_mgmt_exec_cmd(cmd):
+                if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
                     return False
 
         return True
@@ -5669,8 +5699,9 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_TIMEOUT):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
             return ["TIMEOUT", nic_list[:]]
-
         ret = "SUCCESS"
+
+        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
 
         match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
         for _slot, rslt in match:
