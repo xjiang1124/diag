@@ -1623,7 +1623,8 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
-        if ($line =~ m/\[NIC-$slot\].*Pre-Post \[\w+\] result to webserver failed/) {
+        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/)) {
             $mtp_test_msg .= $line;
             $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
         }

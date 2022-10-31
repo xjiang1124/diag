@@ -21,7 +21,8 @@
 #    -s, --stage       Stage(s), comma separated
 #    -f, --faopt       FA option: first/last/all/first_run/last_run/all_run
 #    -l, --snfile      SN file
-#    -d, --logdir      Directory to store logs
+#    -d, --dlogdir     Directory to store logs
+#    -e, --slogdir     Directory where original logs are stored
 #    -r, --remote      Mfg logs are stored remotely
 #    -k, --keep        Keep extracted logs after running parser
 #    -t, --testname    Test name (optional parameter to only parse this particular test name)
