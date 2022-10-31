@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.3.10192022";
+my $rev = "1.4.10312022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
