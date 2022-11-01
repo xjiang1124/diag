@@ -317,13 +317,17 @@ class nic_ctrl():
             cmd = libmfg_utils.get_fst_nic_ssh_cmd(self._ip_addr, NIC_MGMT_USERNAME, NIC_MGMT_PASSWORD)
         
         self._nic_handle.sendline(cmd + " " + nic_cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            info_buf = None
-        else:
-            info_buf = self._nic_handle.before
+        while True:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword", self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+            if idx < 0:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                info_buf = None
+            elif idx == 0:
+                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+            else:
+                info_buf = self._nic_handle.before
+                break
 
         self.nic_set_cmd_buf(info_buf)
 

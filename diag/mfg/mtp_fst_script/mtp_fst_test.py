@@ -146,6 +146,47 @@ def get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus):
         return ""
     return "169.254.{:d}.1".format(bus_int)
 
+def get_eth_mnic_new(mtp_mgmt_ctrl, card_type, slot, bus):
+    bus_str = bus.split(":", 1)[0]
+    bus_int = int(bus_str, 16)+4
+    eth = "enp"+str(bus_int)+"s0"
+    if card_type == "ORTANO2ADIMSFT":
+        eth += "f0"
+
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
+
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth))
+    time.sleep(1)
+    if card_type == "GENERAL_OLD":
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} 169.254.0.2/24".format(eth))
+    else:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} 169.254.{:d}.2/24".format(eth, bus_int))
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} up".format(eth))
+    time.sleep(1)
+    if eth+": ERROR" in mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to enable NIC mnic")
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth))
+        time.sleep(1)
+        return ""
+    if card_type == "GENERAL_OLD":
+        return "169.254.0.1"
+    else:
+        return "169.254.{:d}.1".format(bus_int)
+
+def disable_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus=""):
+    if not bus:
+        bus = mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus
+    bus_str = bus.split(":", 1)[0]
+    bus_int = int(bus_str, 16)+4
+    eth = "enp"+str(bus_int)+"s0"
+    if card_type == "ORTANO2ADIMSFT":
+        eth += "f0"
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth)):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to turn off eth interface {:s}".format(eth))
+        return False
+    return True
+
 def get_product_name_from_pn(pn):
     if "DSC2-2Q200-32R32F64P-R3" in pn:
         product_name = NIC_Type.ORTANO2INTERP
@@ -193,6 +234,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.UNKNOWN
     elif "DSC1-2S25-4H8P-S" in pn:
         product_name = NIC_Type.NAPLES25SWM
+    elif "111-05363" in pn:
+        product_name = NIC_Type.NAPLES100
     else:
         product_name = NIC_Type.UNKNOWN
         print("Unknown PN:", pn)
@@ -389,7 +432,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
             sn = fru["serial-number"]
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to parse serial-number from FRU")
-            SN = "SN_UNKNOWN"
+            sn = "SN_UNKNOWN"
 
         try:
             pn = fru["board-assembly-area"]
@@ -402,17 +445,16 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
 
         product_name = get_product_name_from_pn(pn)
 
-        if product_name == "UNKNOWN":
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
-            continue
-
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
-
         # for flexflow/logging purposes:
         mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
         mtp_mgmt_ctrl.mtp_set_nic_type(slot, product_name)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
+        if product_name == NIC_Type.UNKNOWN:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
+            continue
+
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, product_name))
 
         ### GET FW INFO
         if not get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
@@ -576,14 +618,14 @@ def fst_init_nic(mtp_mgmt_ctrl):
 def fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot):
     bus = mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus
 
-    nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus)
+    nic_mgmt_ip = get_eth_mnic_new(mtp_mgmt_ctrl, card_type, slot, bus)
     if not nic_mgmt_ip:
         return False
 
     mtp_mgmt_ctrl._nic_ctrl_list[slot]._ip_addr = nic_mgmt_ip
 
-    if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri":
-        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
+    if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri" and card_type != "GENERAL_OLD":
+        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, nic_mgmt_ip):
             return False
 
     return True
@@ -607,7 +649,7 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
         sn = fru["serial-number"]
     else:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to parse serial-number from FRU")
-        SN = "UNKNOWN"
+        sn = "UNKNOWN"
 
     try:
         pn = fru["board-assembly-area"]
@@ -619,18 +661,16 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
             pn = ""
 
     nic_type = get_product_name_from_pn(pn)
+    # for flexflow/logging purposes:
+    mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+    mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
     if nic_type == NIC_Type.UNKNOWN:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, nic_type))
         return False
 
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, nic_type))
-
-    # for flexflow/logging purposes:
-    mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-    mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
 
     ### GET FW INFO
     if not get_nic_fw_info(mtp_mgmt_ctrl, slot):
@@ -802,7 +842,7 @@ def main():
     pass_nic_list = list()
     fail_nic_list = list()
 
-    if card_type == "AUTODETECT":
+    if card_type == "AUTODETECT" or card_type == "GENERAL_OLD":
         try:
             dsp = FF_Stage.FF_FST
 
@@ -835,38 +875,33 @@ def main():
             for slot in range(mtp_mgmt_ctrl._slots):
                 if not nic_prsnt_list[slot]:
                     continue
-
-                testlist = ["SETUP_SSH", "FETCH_SN", "PCIE_LINK"]
-
+                testlist = ["SETUP_SSH", "FETCH_SN", "PCIE_LINK", "SSH_DISABLE"]
                 for test in testlist:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)
                     start_ts = libmfg_utils.timestamp_snapshot()
-
                     if test == "FETCH_SN":
                         ret = fetch_nic_info(mtp_mgmt_ctrl, slot)
                     elif test == "PCIE_LINK":
                         ret = check_nic_pcie(mtp_mgmt_ctrl, slot)
                     elif test == "SETUP_SSH":
                         ret = fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot)
+                    elif test == "SSH_DISABLE":
+                        ret = disable_eth_mnic(mtp_mgmt_ctrl, card_type, slot)
                     else:
                         mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                         continue
-
                     stop_ts = libmfg_utils.timestamp_snapshot()
                     duration = str(stop_ts - start_ts)
-
                     if not ret:
                         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                         mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-
                         if slot in pass_nic_list:
                             pass_nic_list.remove(slot)
-
                         if slot not in fail_nic_list:
                             fail_nic_list.append(slot)
-
+                        if test != "SSH_DISABLE":
+                            disable_eth_mnic(mtp_mgmt_ctrl, card_type, slot)
                         break
-
                     else:
                         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -877,7 +912,7 @@ def main():
             err_msg = traceback.format_exc()
             mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
 
-    elif card_type == "GENERAL_OLD" or card_type == "ORACLE":
+    elif card_type == "ORACLE": # or card_type == "GENERAL_OLD"
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         #cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
@@ -1003,7 +1038,7 @@ def main():
                 #sort it based on slot number
                 fail_match.sort(key = lambda x: x[0])
 
-    if card_type != "AUTODETECT" and ("ORTANO" not in card_type or card_type == "ORTANO2ADIIBM"):
+    if card_type not in ("AUTODETECT", "GENERAL_OLD") and ("ORTANO" not in card_type or card_type == "ORTANO2ADIIBM"):
         for _slot, _sn, _nic_type in fail_match:
             slot = int(_slot)-1
             mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type.strip())
