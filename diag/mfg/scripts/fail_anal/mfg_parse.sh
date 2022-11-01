@@ -9,7 +9,8 @@ Help()
    echo "-s, --stage       Stage(s), comma separated"
    echo "-f, --faopt       FA option: first/last/all/first_run/last_run/all_run"
    echo "-l, --snfile      SN file"
-   echo "-d, --logdir      Directory to store logs"
+   echo "-d, --dlogdir     Directory to store logs"
+   echo "-e, --slogdir     Directory where original logs are stored"
    echo "-r, --remote      Mfg logs are stored remotely"
    echo "-k, --keep        Keep extracted logs after running parser"
    echo "-t, --testname    Test name (optional parameter to only parse this particular test name)"
@@ -22,6 +23,7 @@ stage=
 fa_opt=
 sn_file=
 log_dir=
+src_log_dir=
 test_name=
 mfg_err_code=
 cwd=$(pwd)
@@ -57,8 +59,14 @@ case $key in
     shift # past value
     ;;
     #-------------
-    -d|--logdir)
+    -d|--dlogdir)
     log_dir="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -e|--slogdir)
+    src_log_dir="$2"
     shift # past argument
     shift # past value
     ;;
@@ -128,6 +136,11 @@ if [ -z "$log_dir" ]; then
     echo "Option -d not specified, using default dir name mfg_log"
     log_dir="mfg_log"
 fi
+echo $src_log_dir
+if [ -z "$src_log_dir" ]; then
+    echo "Option -e not specified, using default dir name mfg_log"
+    src_log_dir="mfg_log"
+fi
 if [ -z "$is_remote" ]; then
     echo "Option -r not specified, copying logs locally"
 fi
@@ -147,11 +160,11 @@ card_type_orig=$card_type
 card_type=$(echo $card_type | awk '{print toupper($0)}')
 echo $card_type
 if [ ! $is_remote ]; then
-    if [[ ! -d "/mfg_log/${card_type}" ]]; then
+    if [[ ! -d "/${src_log_dir}/${card_type}" ]]; then
         card_type=$card_type_orig
     fi
 else
-    if sshpass -p 'pensando' ssh mfg@hw-mftg-data '[ ! -d "/mfg_log/${card_type}" ]'; then
+    if sshpass -p 'pensando' ssh mfg@hw-mftg-data '[ ! -d "/${src_log_dir}/${card_type}" ]'; then
         card_type=$card_type_orig
     fi
 fi
@@ -209,22 +222,22 @@ while read -r sn; do
         echo "stage=$i"
         case $i in
             "DL")
-            from_loc="/mfg_log/$card_type/DL/${sn}"
+            from_loc="/${src_log_dir}/$card_type/DL/${sn}"
             ;;
             "SWI")
-            from_loc="/mfg_log/$card_type/SWI/${sn}"
+            from_loc="/${src_log_dir}/$card_type/SWI/${sn}"
             ;;
             "FST")
-            from_loc="/mfg_log/$card_type/FST/${sn}"
+            from_loc="/${src_log_dir}/$card_type/FST/${sn}"
             ;;
             "P2C")
-            from_loc="/mfg_log/$card_type/P2C/${sn}"
+            from_loc="/${src_log_dir}/$card_type/P2C/${sn}"
             ;;
             "4C-L")
-            from_loc="/mfg_log/$card_type/4C/4C-L/${sn}"
+            from_loc="/${src_log_dir}/$card_type/4C/4C-L/${sn}"
             ;;
             "4C-H")
-            from_loc="/mfg_log/$card_type/4C/4C-H/${sn}"
+            from_loc="/${src_log_dir}/$card_type/4C/4C-H/${sn}"
             ;;
             *)
             echo "Invalid stage $i"
