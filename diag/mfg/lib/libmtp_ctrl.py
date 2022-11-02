@@ -1391,7 +1391,7 @@ class mtp_ctrl():
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
                 continue
-            self._psu_sn[psu] = psu_sn_match.group(1)
+            self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
         # PSU test
         cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT

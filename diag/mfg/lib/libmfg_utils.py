@@ -1814,12 +1814,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
 
             # save infra serial numbers
             if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list[psu] = mtp_mgmt_ctrl._psu_sn
+                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
             # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri" and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[slot]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[slot]._loopback_sn
+            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -1905,12 +1905,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
 
             # save infra serial numbers
             if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list[psu] = mtp_mgmt_ctrl._psu_sn
+                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
             # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri" and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[slot]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[slot]._loopback_sn
+            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
