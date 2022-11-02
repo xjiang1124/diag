@@ -62,6 +62,7 @@ class nic_ctrl():
         self._asic_type = None
         self._ip_addr = None
         self._fst_pcie_bus = None
+        self._emmc_mfr_id = ""
 
         self._refresh_required = True
         self._failed_console_boot = False
@@ -1745,6 +1746,27 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+    def nic_read_emmc_id(self):
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_READ_ID_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
+            return False
+        id_match = re.search("0x([0-9A-Za-z]+)", cmd_buf)
+        if not id_match:
+            self.nic_set_err_msg("Failed to parse emmc manufacturer id")
+            return False
+        self._emmc_mfr_id = id_match.group(1)
+
+        # also find mfr id dumped by kernel
+        nic_cmd_list = list()
+        nic_cmd = "dmesg | grep mmc"
+        nic_cmd_list.append(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list):
+            self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
+            return False
+
+        return True
 
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
@@ -1991,6 +2013,10 @@ class nic_ctrl():
         return True
 
     def nic_init_emmc(self, init=False, emmc_check=False):
+        if init:
+            if not self.nic_read_emmc_id():
+                return False
+
         nic_cmd_list = list()
         if emmc_check and self._nic_type in PSLC_MODE_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_CHECK_EMMC_FMT
