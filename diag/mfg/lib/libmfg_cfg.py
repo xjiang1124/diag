@@ -965,8 +965,11 @@ FLX_SAVE_UUT_PN_RSLT_FMT =                                                      
 FLX_SAVE_UUT_RSLT_ENTRY_END =                                                              \
          '&lt;/GROUP&gt;&#xD;                                                              \
           &lt;/DUT&gt;&#xD;                                                                \
-          &lt;/PANEL&gt;&#xD;                                                              \
-          &lt;/BATCH&gt;'
+          &lt;/PANEL&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_WITH_EXTRA_END =                                                   \
+         '&lt;EXTRA {:s} xmlns:b="tty"/&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_BATCH_END =                                                        \
+         '&lt;/BATCH&gt;'
 
 FLX_SAVE_UUT_RSLT_XML_TAIL =                                                               \
         '</strXMLResultText>                                                               \
