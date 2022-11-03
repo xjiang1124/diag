@@ -412,10 +412,16 @@ func init() {
     itpType = os.Getenv("ITP_TYPE")
     if itpType != "" {
         fmt.Sscanf(itpType, "0x%x", &itpIdx)
-        tmpIdx := (itpIdx & 0xc0 ) >>6
-        podIdx := (itpIdx & 0x07 )
-        ortanoiDispStaList = ortanoiPODDispStaList[podIdx]
-        ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+        if ( os.Getenv("CARD_TYPE") == "ORTANO2I" ) {
+            tmpIdx := (itpIdx & 0xc0 ) >>6
+            podIdx := (itpIdx & 0x07 )
+            ortanoiDispStaList = ortanoiPODDispStaList[podIdx]
+            ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+       } else {
+            tmpIdx := (itpIdx & 0x04 ) >> 2
+            ortanoiDispStaList = ortanoiPODDispStaList[1]
+            ortanoiDispStaList["TSENSOR"] = ortanoitmpDispStaList[tmpIdx]
+       }
     }
 
     //Lacona
@@ -539,7 +545,9 @@ func init() {
     dispMap["ORTANO"]       = ortanoDispStaList
     dispMap["ORTANO2"]      = ortanoDispStaList
     dispMap["ORTANO2A"]     = ortanoaDispStaList
+    dispMap["ORTANO2AC"]    = ortanoaDispStaList
     dispMap["ORTANO2I"]     = ortanoiDispStaList
+    dispMap["ORTANO2S"]     = ortanoiDispStaList
     dispMap["LACONADELL"]   = laconaDispStaList
     dispMap["LACONA"]       = laconaDispStaList
     dispMap["LACONA32DELL"]  = laconaDispStaList
@@ -577,7 +585,9 @@ func init() {
     eepromMap["ORTANO"]       = naplesEepList
     eepromMap["ORTANO2"]      = naplesEepList
     eepromMap["ORTANO2A"]     = naplesEepList
+    eepromMap["ORTANO2AC"]    = naplesEepList
     eepromMap["ORTANO2I"]     = naplesEepList
+    eepromMap["ORTANO2S"]     = naplesEepList
     eepromMap["LACONADELL"]   =  naplesEepList
     eepromMap["LACONA"]       =  naplesEepList
     eepromMap["LACONA32DELL"]  =  naplesEepList
@@ -617,7 +627,9 @@ func init() {
     i2cHubMap["ORTANO"]         = naples100I2cHubMap
     i2cHubMap["ORTANO2"]        = naples100I2cHubMap
     i2cHubMap["ORTANO2A"]       = naples100I2cHubMap
+    i2cHubMap["ORTANO2AC"]      = naples100I2cHubMap
     i2cHubMap["ORTANO2I"]       = naples100I2cHubMap
+    i2cHubMap["ORTANO2S"]       = naples100I2cHubMap
     i2cHubMap["LACONADELL"]     = naples100I2cHubMap
     i2cHubMap["LACONA"]         = naples100I2cHubMap
     i2cHubMap["LACONA32DELL"]    = naples100I2cHubMap
@@ -653,7 +665,9 @@ func init() {
     i2cHubListMap["ORTANO"]        = forioI2cHubList
     i2cHubListMap["ORTANO2"]       = forioI2cHubList
     i2cHubListMap["ORTANO2A"]      = forioI2cHubList
+    i2cHubListMap["ORTANO2AC"]     = forioI2cHubList
     i2cHubListMap["ORTANO2I"]      = forioI2cHubList
+    i2cHubListMap["ORTANO2S"]      = forioI2cHubList
     i2cHubListMap["LACONADELL"]    = forioI2cHubList
     i2cHubListMap["LACONA"]        = forioI2cHubList
     i2cHubListMap["LACONA32DELL"]   = forioI2cHubList
@@ -689,7 +703,9 @@ func init() {
     psuListMap["ORTANO"]        = nicPsuList
     psuListMap["ORTANO2"]       = nicPsuList
     psuListMap["ORTANO2A"]      = nicPsuList
+    psuListMap["ORTANO2AC"]      = nicPsuList
     psuListMap["ORTANO2I"]      = nicPsuList
+    psuListMap["ORTANO2S"]      = nicPsuList
     psuListMap["LACONADELL"]    = nicPsuList
     psuListMap["LACONA"]        = nicPsuList
     psuListMap["LACONA32DELL"]   = nicPsuList
@@ -726,7 +742,7 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "ORTANO2A", "ORTANO2I", "POMONTE", "POMONTEDELL":
+    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "ORTANO2A", "ORTANO2AC", "ORTANO2I", "ORTANO2S", "POMONTE", "POMONTEDELL":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)

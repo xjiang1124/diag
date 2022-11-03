@@ -135,6 +135,15 @@ then
     itp_type="$(xo3dcpld -r 0x93)"
     type="ORTANO2I"
     asic_type="ELBA"
+elif [[ $cpld_id == "0x4e" ]]
+then
+    itp_type="$(xo3dcpld -r 0x99)"
+    type="ORTANO2S"
+    asic_type="ELBA"
+elif [[ $cpld_id == "0x50" ]]
+then
+    type="ORTANO2AC"
+    asic_type="ELBA"
 else
     type="UNKNOW"
     asic_type="UNKNOW"

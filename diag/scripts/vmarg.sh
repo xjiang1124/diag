@@ -33,7 +33,7 @@ set_vmarg_lacona()
 set_vmarg()
 {
     echo $CARD_TYPE
-    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" || $CARD_TYPE == "ORTANO2I" ]]
+    if [[ $CARD_TYPE == "ORTANO" || $CARD_TYPE == "ORTANO2" || $CARD_TYPE == "ORTANO2A" || $CARD_TYPE == "ORTANO2AC" || $CARD_TYPE == "ORTANO2I" || $CARD_TYPE == "ORTANO2S" ]]
     then
         if [[ "$1" == "high" ]]
         then
@@ -45,7 +45,7 @@ set_vmarg()
         then
             index=0
         fi
-        if [[ $CARD_TYPE == "ORTANO2A" ]]
+        if [[ $CARD_TYPE == "ORTANO2A" || $CARD_TYPE == "ORTANO2AC" ]]
         then
             tmp=(${ortanoA_vmarg[$index]})
         else

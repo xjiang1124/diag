@@ -10,6 +10,12 @@ var Cardinfo = map[string]map[string]string{
     "ORTANO2I": map[string]string{
         "ASIC": "ELBA",
         "CTRL": "CPLD"},
+    "ORTANO2S": map[string]string{
+        "ASIC": "ELBA",
+        "CTRL": "CPLD"},
+    "ORTANO2AC": map[string]string{
+        "ASIC": "ELBA",
+        "CTRL": "CPLD"},
     "LACONA32": map[string]string{
         "ASIC": "ELBA",
         "CTRL": "FPGA"},

@@ -252,7 +252,15 @@ func get_cpld_registers(port_ctrl *uint32, port_rate *uint32, sys_ctrl *uint32) 
         *port_ctrl = ortanoCpld.REG_LED_PORT_CTRL
         *port_rate = ortanoCpld.REG_LED_PORT_RATE
         *sys_ctrl = ortanoCpld.REG_LED_SYS_CTRL
+    } else if (cardType == "ORTANO2AC") {
+        *port_ctrl = ortanoCpld.REG_LED_PORT_CTRL
+        *port_rate = ortanoCpld.REG_LED_PORT_RATE
+        *sys_ctrl = ortanoCpld.REG_LED_SYS_CTRL
     } else if (cardType == "ORTANO2I") {
+        *port_ctrl = ortanoCpld.REG_LED_PORT_CTRL
+        *port_rate = ortanoCpld.REG_LED_PORT_RATE
+        *sys_ctrl = ortanoCpld.REG_LED_SYS_CTRL
+    } else if (cardType == "ORTANO2S") {
         *port_ctrl = ortanoCpld.REG_LED_PORT_CTRL
         *port_rate = ortanoCpld.REG_LED_PORT_RATE
         *sys_ctrl = ortanoCpld.REG_LED_SYS_CTRL

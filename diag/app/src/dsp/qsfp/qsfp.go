@@ -36,7 +36,9 @@ func init() {
     qsfpTestMap["ORTANO"] = naples100QsfpList
     qsfpTestMap["ORTANO2"] = naples100QsfpList
     qsfpTestMap["ORTANO2A"] = naples100QsfpList
+    qsfpTestMap["ORTANO2AC"] = naples100QsfpList
     qsfpTestMap["ORTANO2I"] = naples100QsfpList
+    qsfpTestMap["ORTANO2S"] = naples100QsfpList
     qsfpTestMap["POMONTEDELL"] = naples100QsfpList
     qsfpTestMap["POMONTE"] = naples100QsfpList
     qsfpTestMap["NAPLES100_IBM"] = naples100QsfpList

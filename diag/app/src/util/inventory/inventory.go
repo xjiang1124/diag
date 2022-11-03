@@ -96,6 +96,15 @@ func InterposerID(uutName string) (data byte, err int) {
     return
 }
 
+func CapabilityID(uutName string) (data byte, err int) {
+    devName := "CPLD"
+    addr := uint64(naples100Cpld.REG_CAPABILITY_ID)
+
+    data, err = hwdev.NaplesCpldRd(devName, addr, uutName)
+
+    return
+}
+
 func present() (err int) {
     var presentStr string
     var out []byte
@@ -106,6 +115,7 @@ func present() (err int) {
     var SN string
     var submatchall [][]string
     var interpoID byte
+    var capabilityID byte
 
     maxUut := 10
     prsntNoneStr := "UUT_NONE"
@@ -151,8 +161,12 @@ func present() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_ORTANO2A:
                 presentStr = "ORTANO2A"
+            case nicCpldCommon.ID_ORTANO2AC:
+                presentStr = "ORTANO2AC"
             case nicCpldCommon.ID_ORTANO2I:
                 presentStr = "ORTANO2I"
+            case nicCpldCommon.ID_ORTANO2S:
+                presentStr = "ORTANO2S"
             case nicCpldCommon.ID_LACONA_DELL:
                 presentStr = "LACONADELL"
             case nicCpldCommon.ID_LACONA32_DELL:
@@ -176,9 +190,16 @@ func present() (err int) {
             default:
                 presentStr = "Unknown"
             }
-            interpoID, err = InterposerID(uutName)
-            if  err  != errType.SUCCESS {
-                interpoID = 0
+            if presentStr == "ORTANO2I" {
+                interpoID, err = InterposerID(uutName)
+                if  err  != errType.SUCCESS {
+                    interpoID = 0
+                }
+            } else if presentStr == "ORTANO2S" {
+                capabilityID, err = CapabilityID(uutName)
+                if  err  != errType.SUCCESS {
+                    capabilityID = 0
+                }
             }
         } else {
             presentStr = prsntNoneStr
@@ -229,8 +250,10 @@ func present() (err int) {
             }
         }
 
-        if interpoID != 0 {
+        if presentStr == "ORTANO2I" {
             cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s  INTERPOSER=%d\n", i, presentStr, PN, SN, interpoID)
+        } else if presentStr == "ORTANO2S" {
+            cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s  CAPABILITY=%d\n", i, presentStr, PN, SN, capabilityID)
         } else {
             cli.Printf("i", "UUT_%-2d  %-12s  %-13s  %s\n", i, presentStr, PN, SN)
         }
@@ -376,8 +399,12 @@ func sysDetect() (err int) {
                 presentStr = "ORTANO2"
             case nicCpldCommon.ID_ORTANO2A:
                 presentStr = "ORTANO2A"
+            case nicCpldCommon.ID_ORTANO2AC:
+                presentStr = "ORTANO2AC"
             case nicCpldCommon.ID_ORTANO2I:
                 presentStr = "ORTANO2I"
+            case nicCpldCommon.ID_ORTANO2S:
+                presentStr = "ORTANO2S"
             case nicCpldCommon.ID_NAPLES25SWM_DELL:
                 presentStr = "NAPLES25SWMDELL"
             case nicCpldCommon.ID_NAPLES25SWM_833:
@@ -467,7 +494,7 @@ func powerStatusDump(slot int)  {
 
     if cardType == "NAPLES25SWM" {
         pwrStatName = powerStatNameSWM
-    } else if cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" {
+    } else if cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2AC" || cardType == "ORTANO2I" || cardType == "ORTANO2S" {
         powerStatusDumpOrtano(uutName)
         return
     } else if cardType == "LACONA32DELL" || cardType == "LACONA32" || cardType == "POMONTEDELL" || cardType == "POMONTE" {
