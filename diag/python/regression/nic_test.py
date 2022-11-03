@@ -960,6 +960,7 @@ class nic_test:
 
     def uart_loopback_test(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1003,15 +1004,17 @@ class nic_test:
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
                 nic_list.remove(slot)
+                nic_pass_list.append(slot)
 
         if len(nic_list) != 0:
-            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list)
+            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== uart_loopback_test passed ==="
         print "=== uart_loopback_test done ==="
 
     def rmii_linkup_test(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -1022,23 +1025,30 @@ class nic_test:
             session = common.session_start()
             ret = self.nic_con.uart_session_start(session)
             if ret == 0:
-                # set ck_ovwr bit when RMII does not have 50Mhz clock from the BMC
-                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macwr 0x4 0x860")
-                self.nic_con.uart_session_cmd(session, "/data/nic_util/artix7fpga -macrd 0x4")
-                if "0x860" not in session.before:
+                self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 0")
+                self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
+                if session.before.splitlines()[1] != "0xe":
+                    print "slot", slot, "Reg 0x9C, expect: 0xe, actual:", session.before.splitlines()[1]
+                    continue
+                self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 1")
+                self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
+                if session.before.splitlines()[1] != "0xf":
+                    print "slot", slot, "Reg 0x9C, expect: 0xf, actual:", session.before.splitlines()[1]
                     continue
                 self.nic_con.uart_session_cmd(session, "halctl show port internal")
                 if "BMC                      UP             100M" in session.before:
                     ret_list[int(slot)-1] = 1
+                self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 0")
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
                 nic_list.remove(slot)
+                nic_pass_list.append(slot)
 
         if len(nic_list) != 0:
-            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list)
+            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== rmii_linkup_test passed ==="
         print "=== rmii_linkup_test done ==="

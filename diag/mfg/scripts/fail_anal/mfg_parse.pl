@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.3.10192022";
+my $rev = "1.4.10312022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -1623,7 +1623,8 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
-        if ($line =~ m/\[NIC-$slot\].*Pre-Post \[\w+\] result to webserver failed/) {
+        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/)) {
             $mtp_test_msg .= $line;
             $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
         }
