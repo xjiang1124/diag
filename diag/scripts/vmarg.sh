@@ -117,5 +117,6 @@ set_vmarg()
 }
 
 echo "=== Setting Vmarg to $1 ==="
+/data/nic_util/devmgr -status
 set_vmarg $1
 echo "=== Vmarg is at $1 ==="
