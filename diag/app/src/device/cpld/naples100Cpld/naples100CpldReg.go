@@ -58,6 +58,7 @@ const (
     REG_SYS_HEALTH_REG_1   = 0x39
     REG_ID                 = 0x80
     REG_INTERPOSER_ID      = 0x93
+    REG_CAPABILITY_ID      = 0x99
 )
 
 const (

@@ -249,7 +249,9 @@ PRIVEK <ek.sk>"""
 
             if pn == "68-0015-02" or \
                pn == "68-0026-01" or \
-               pn == "68-0029-01":
+               pn == "68-0026-03" or \
+               pn == "68-0029-01" or \
+               pn == "68-0077-01":
                 output1 = list(output)
                 print("Adding Oracle signature")
                 output1[15] = 'O'
@@ -404,7 +406,9 @@ PRIVEK <ek.sk>"""
         asic_type = "CAPRI"
         if card_type == "ORTANO2"       or \
            card_type == "ORTANO2A"      or \
+           card_type == "ORTANO2AC"     or \
            card_type == "ORTANO2I"      or \
+           card_type == "ORTANO2S"      or \
            card_type == "LACONA32"      or \
            card_type == "LACONA32DELL"  or \
            card_type == "POMONTE"       or \

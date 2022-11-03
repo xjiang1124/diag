@@ -31,6 +31,8 @@ const (
     ID_LACONA32        = 0x4A
     ID_ORTANO2A        = 0x4B
     ID_ORTANO2I        = 0x4C
+    ID_ORTANO2S        = 0x4E
+    ID_ORTANO2AC       = 0x50
     ID_TAORMINA_ELBA   = 0x80
 )
 
