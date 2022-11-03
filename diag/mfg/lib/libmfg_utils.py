@@ -1138,7 +1138,7 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         for lpbk, lpbk_sn in zip(nic_loopback_sn_list.keys(), nic_loopback_sn_list.values()):
             extra_info_xml += "LOOPBACK_PORT{:s}=\"{:s}\" ".format(lpbk, lpbk_sn)
 
-        extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_WITH_EXTRA_END.format(extra_info_xml)
+        extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
 
     #(stage, SN, start_ts, duration, stop_ts, result)
 
@@ -1151,18 +1151,18 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         ff_pn = flx_stage_to_penang(stage)
         return FLX_PENANG_SAVE_UUT_RSLT_XML_HEAD + \
                FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(ff_pn,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
+               extra_info_xml + \
+               FLX_SAVE_UUT_RSLT_ENTRY_2_FMT + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
-               extra_info_xml + \
-               FLX_SAVE_UUT_RSLT_ENTRY_BATCH_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
     elif factory == Factory.MILPITAS:
         return FLX_SAVE_UUT_RSLT_XML_HEAD + \
                FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
+               extra_info_xml + \
+               FLX_SAVE_UUT_RSLT_ENTRY_2_FMT + \
                test_xml + \
                FLX_SAVE_UUT_RSLT_ENTRY_END + \
-               extra_info_xml + \
-               FLX_SAVE_UUT_RSLT_ENTRY_BATCH_END + \
                FLX_SAVE_UUT_RSLT_XML_TAIL
 
 

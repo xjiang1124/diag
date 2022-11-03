@@ -5082,7 +5082,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Failed to parse Port {:s} loopback transceiver EEPROM".format(port))
             return False
-        self._loopback_sn[port] = sn_match.group(1)
+        self._loopback_sn[port] = sn_match.group(1).strip()
     
         self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
