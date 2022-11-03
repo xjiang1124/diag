@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.4.10312022";
+my $rev = "1.5.11032022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -374,6 +374,49 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
+        $top_diag_fa_code = "L1_DDR_BIST";
+        delete $diag_fa_code{"L1_DDR_BIST"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"ARM_DDR_BIST"}) {
+        $top_diag_fa_code = "ARM_DDR_BIST";
+        delete $diag_fa_code{"ARM_DDR_BIST"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
+        $top_diag_fa_code = "EDMA_FAILURE";
+        delete $diag_fa_code{"EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
+        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            delete $diag_fa_code{"LV_EDMA_FAILURE"};
+            return;
+        } else {
+            $top_diag_fa_code = "HV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            return;
+        }
+    }
+
+    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+        $top_diag_fa_code = "LV_EDMA_FAILURE";
+        delete $diag_fa_code{"LV_EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"}) {
         $top_diag_fa_code = "PCIE_PLL_FAILURE(0x2e)";
         delete $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"};
@@ -395,33 +438,6 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"FLASH_PLL_FAILURE(0x2d)"}) {
         $top_diag_fa_code = "FLASH_PLL_FAILURE(0x2d)";
         delete $diag_fa_code{"FLASH_PLL_FAILURE(0x2d)"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
-        $top_diag_fa_code = "L1_DDR_BIST";
-        delete $diag_fa_code{"L1_DDR_BIST"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
-        $top_diag_fa_code = "EDMA_FAILURE";
-        delete $diag_fa_code{"EDMA_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
-        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
-            delete $diag_fa_code{"HV_EDMA_FAILURE"};
-            delete $diag_fa_code{"LV_EDMA_FAILURE"};
-            return;
-        }
-    }
-
-    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-        $top_diag_fa_code = "LV_EDMA_FAILURE";
-        delete $diag_fa_code{"LV_EDMA_FAILURE"};
         return;
     }
 
@@ -663,11 +679,7 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_SPACE_FULL"};
         return;
     }
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
-        return;
-    }
+
     if (exists $diag_fa_code{"PS48_ERROR"}) {
         $top_diag_fa_code = "PS48_ERROR";
         delete $diag_fa_code{"PS48_ERROR"};
@@ -1257,6 +1269,9 @@ sub find_failure_code {
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
             }
+        }
+        if (($failure_code eq "DDR_BIST") || ($failure_code eq "LV_DDR_BIST") || ($failure_code eq "HV_DDR_BIST")) {
+            $diag_fa_code{"ARM_DDR_BIST"} = 1;
         }
     }
     if ($stage ne "FST") {
