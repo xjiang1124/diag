@@ -4774,6 +4774,7 @@ class mtp_ctrl():
 
 
     def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False, fru_fpo=False):
+        ret = True
         if not nic_list:
             self.cli_log_err("No NICs passed")
             return False
@@ -4845,8 +4846,13 @@ class mtp_ctrl():
 
         self.mtp_mgmt_killall_tclsh_picocom()
 
+        # if any slot failed, return false
+        for slot in nic_list:
+            if not self.mtp_check_nic_status(slot):
+                ret = False
+
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
-        return True
+        return ret
 
     # check if any duplicate mac address in the internal network
     def mtp_mgmt_nic_mac_validate(self):
