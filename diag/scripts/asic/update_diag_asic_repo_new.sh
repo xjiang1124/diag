@@ -8,11 +8,11 @@ ARCH=$2
 ASIC_TYPE=${ASIC_TYPE,,}
 ARCH=${ARCH,,}
 
-ASIC_REPO="/home/$USER/ws/asic_lib/asic/"
-ASIC_TMP="/home/$USER/ws/asic_lib/temp/"
+ASIC_REPO="/home/$USER/workspace/asic/"
+ASIC_TMP="/home/$USER/workspace/temp/"
 
-DIAG_REPO_TOP="/home/dwang/ws/asic_lib/asic/"
-#DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic/"
+#DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic.2020.02.10/"
+DIAG_REPO_TOP="/vol/hw/diag/diag_repo/asic/"
 
 if [[ $ASIC_TYPE == "capri" ]]
 then
@@ -35,13 +35,13 @@ else
         DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
         #DIAG_REPO="/vol/hw/diag/diag_repo/asic/elba/amd64/"
         #ASIC_GEN="/vol/dump/$USER/workspace/asic/ip/cosim/diag/nic/"
-        ASIC_IMG="/vol/dump/$USER/ws/asic_lib/elba_amd64/ip/cosim/diag_elb/nic.tar.gz"
+        ASIC_IMG="/vol/dump/$USER/workspace/elba_amd64/ip/cosim/diag_elb/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic
     else
         DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
         #DIAG_REPO="/vol/hw/diag/diag_repo/asic/elba/arm64"
         #ASIC_GEN="/vol/dump/$USER/workspace/asic/ip/cosim/diag/nic/fake_root_target/nic/"
-        ASIC_IMG="/vol/dump/$USER/ws/asic_lib/elba_arm64/ip/cosim/diag_elb/nic.tar.gz"
+        ASIC_IMG="/vol/dump/$USER/workspace/elba_arm64/ip/cosim/diag_elb/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
 fi
