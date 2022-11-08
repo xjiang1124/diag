@@ -3247,7 +3247,7 @@ class mtp_ctrl():
             if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
+        elif naples_pn[0:6] in ("0X322F","0W5WGK"):      #LACONA32 DELL
             if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False

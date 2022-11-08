@@ -161,6 +161,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2
     elif "0X322F" in pn:
         product_name = NIC_Type.LACONA32DELL
+    elif "0W5WGK" in pn:
+        product_name = NIC_Type.LACONA32DELL
     elif "0PCFPC" in pn:
         product_name = NIC_Type.POMONTEDELL
     elif "P47930" in pn:
