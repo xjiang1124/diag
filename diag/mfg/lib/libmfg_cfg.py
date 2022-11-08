@@ -948,8 +948,11 @@ FLX_SAVE_UUT_RSLT_ENTRY_FMT =                                                   
          '&lt;BATCH&gt;&#xD;                                                               \
           &lt;FACTORY TESTER="{:s}" USER="admin" /&gt;&#xD;                                \
           &lt;PANEL&gt;&#xD;                                                               \
-          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD; \
-          &lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT =                                                        \
+         '&lt;EXTRA {:s} /&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_2_FMT =                                                              \
+         '&lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
 FLX_SAVE_UUT_TEST_RSLT_FMT =                                                               \
          '&lt;TEST NAME="{:s}" STATUS="{:s}" VALUE="{:s}" DESCRIPTION="{:s}" FAILURECODE="{:s}" /&gt;&#xD;'
@@ -965,8 +968,8 @@ FLX_SAVE_UUT_PN_RSLT_FMT =                                                      
 FLX_SAVE_UUT_RSLT_ENTRY_END =                                                              \
          '&lt;/GROUP&gt;&#xD;                                                              \
           &lt;/DUT&gt;&#xD;                                                                \
-          &lt;/PANEL&gt;&#xD;                                                              \
-          &lt;/BATCH&gt;'
+          &lt;/PANEL&gt;&#xD;'                                                             \
+         '&lt;/BATCH&gt;'
 
 FLX_SAVE_UUT_RSLT_XML_TAIL =                                                               \
         '</strXMLResultText>                                                               \
@@ -987,6 +990,5 @@ FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT =                                            
          '&lt;BATCH&gt;&#xD;                                                               \
           &lt;FACTORY TESTER="{:s}" USER="tester01" /&gt;&#xD;                             \
           &lt;PANEL&gt;&#xD;                                                               \
-          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD; \
-          &lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 

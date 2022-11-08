@@ -47,6 +47,7 @@ class mtp_ctrl():
         self._slots = MTP_Const.MTP_SLOT_NUM
         self._slots_to_skip = slots_to_skip
         self._fans = 3
+        self._psu_num = 2
         self._status = MTP_Status.MTP_STA_POWEROFF
         self._fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD    # variable to track the fan speed (%) set by the script
         self._factory_location = Factory.UNKNOWN
@@ -79,6 +80,7 @@ class mtp_ctrl():
         self._asic_ver = None
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
         self._fst_ver = None
+        self._psu_sn = dict()
 
         self._debug_mode = dbg_mode
         self._filep = filep
@@ -207,6 +209,10 @@ class mtp_ctrl():
             self.cli_log_err("Unable to get MTP factory location")
             return False
         self.cli_log_report_inf("MTP Location: {:s}".format(self.get_mtp_factory_location()))
+
+        for psu in self._psu_sn.keys():
+            if self._psu_sn[psu]:
+                self.cli_log_report_inf("MTP PSU_{:s} MFR ID: {:s}".format(psu, self._psu_sn[psu]))
 
         if not self._io_cpld_ver:
             self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
@@ -1373,6 +1379,42 @@ class mtp_ctrl():
 
         return rc
 
+    def mtp_psu_init(self):
+        # store serial number
+        for psu in range(self._psu_num):
+            psu = str(psu+1)
+            cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                self.cli_log_err("Executing command {:s} failed".format(cmd))
+                continue
+            psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
+            if not psu_sn_match:
+                self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
+                continue
+            self._psu_sn[psu] = psu_sn_match.group(1).strip()
+
+        # PSU test
+        cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+        pass_sig_list = []
+
+        # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
+        if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
+            if int(self._mtp_rev) > 3:
+                apc1 = self._apc_cfg[0]
+                apc2 = self._apc_cfg[4]
+
+                if apc1 != "" :
+                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
+                if apc2 != "":
+                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
+
+                if not self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                    self.cli_log_err("PSU test failed")
+                    return False
+                else:
+                    self.cli_log_inf("PSU test passed")
+
+        return True
 
     def mtp_fan_init(self, fan_spd):
         rc = True
@@ -1412,28 +1454,6 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             rc = False
-
-        # PSU test
-        cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
-        pass_sig_list = []
-
-        # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
-            if int(self._mtp_rev) > 3:
-                apc1 = self._apc_cfg[0]
-                apc2 = self._apc_cfg[4]
-
-                if apc1 != "" :
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
-                if apc2 != "":
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
-
-                rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-                if rc:
-                    self.cli_log_inf("PSU test passed")
-                else:
-                    self.cli_log_err("PSU test failed")
-                    return rc
 
         return rc
 
@@ -2168,6 +2188,8 @@ class mtp_ctrl():
         rc &= self.mtp_cpld_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
+        # read psu info and test psu
+        rc &= self.mtp_psu_init()
         # mtp inlet temperature
         rc &= self.mtp_inlet_temp_test(stage)
 

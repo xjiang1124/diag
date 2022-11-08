@@ -336,6 +336,7 @@ class MFG_DIAG_CMDS:
     MTP_ASIC_SUPPORTED_FMT =  "env | grep MTP_TYPE | cat"
     MTP_FAN_STATUS_FMT = "devmgr -dev FAN -status"
     MTP_FAN_SET_SPD_FMT = "devmgr -dev=fan -speed -pct={:d}"
+    MTP_PSU_DISP_FMT = "devmgr -dev=psu_{:s} -status"
     MTP_VRM_TEST_FMT = "mtptest -vrm"
     MTP_FAN_TEST_FMT = "mtptest -fanspd"
     MTP_FAN_PRSNT_FMT = "mtptest -present"
