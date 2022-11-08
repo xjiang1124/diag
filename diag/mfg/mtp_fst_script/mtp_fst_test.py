@@ -131,8 +131,6 @@ def get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus):
         bus_str = bus.split(":", 1)[0]
         bus_int = int(bus_str, 16)+4
     eth = "enp"+str(bus_int)+"s0"
-    if card_type == "ORTANO2ADIMSFT":
-        eth += "f0"
     
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
