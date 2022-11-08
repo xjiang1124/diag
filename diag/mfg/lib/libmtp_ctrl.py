@@ -1439,7 +1439,7 @@ class mtp_ctrl():
                             elif float(pout) < 20:
                                 self.cli_log_err("PSU2 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
                                 rc = False
-                        else
+                        else:
                             self.cli_log_err("PSU2 test failed")
                             rc = False
                     else:
