@@ -1402,16 +1402,50 @@ class mtp_ctrl():
             if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
+                if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                    self.cli_log_err("Failed to get MTP PSU info", level = 0)
+                    return False
 
                 if apc1 != "" :
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
-                if apc2 != "":
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
+                    match = re.search(MFG_DIAG_SIG.MTP_PSU1_OK_SIG, self.mtp_get_cmd_buf())
+                    if match:
+                        match_psu = re.search(r"PSU_1\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                        if match_psu:
+                            pout = match_psu.group(1)
+                            pin = match_psu.group(4)
+                            if "-" in pin or "-" in pout:
+                                self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                            elif float(pout) < 20:
+                                self.cli_log_err("PSU1 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                        else:
+                            self.cli_log_err("PSU1 test failed.")
+                            rc = False
+                    else:
+                        self.cli_log_err("PSU1 result test failed.")
+                        rc = False
 
-                if not self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-                    self.cli_log_err("PSU test failed")
-                    return False
-                else:
+                if apc2 != "" :
+                    match = re.search(MFG_DIAG_SIG.MTP_PSU2_OK_SIG, self.mtp_get_cmd_buf())
+                    if match:
+                        match_psu = re.search(r"PSU_2\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                        if match_psu:
+                            pout = match_psu.group(1)
+                            pin = match_psu.group(4)
+                            if "-" in pin or "-" in pout:
+                                self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                            elif float(pout) < 20:
+                                self.cli_log_err("PSU2 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                        else
+                            self.cli_log_err("PSU2 test failed")
+                            rc = False
+                    else:
+                        self.cli_log_err("PSU2 result test failed.")
+                        rc = False
+                if rc:
                     self.cli_log_inf("PSU test passed")
 
         return True
