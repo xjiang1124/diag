@@ -1380,16 +1380,19 @@ class mtp_ctrl():
         return rc
 
     def mtp_psu_init(self):
+        rc = True
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
             cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
+                rc = False
                 continue
             psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
+                rc = False
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
@@ -1448,7 +1451,7 @@ class mtp_ctrl():
                 if rc:
                     self.cli_log_inf("PSU test passed")
 
-        return True
+        return rc
 
     def mtp_fan_init(self, fan_spd):
         rc = True
