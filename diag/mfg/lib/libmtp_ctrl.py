@@ -1002,6 +1002,23 @@ class mtp_ctrl():
             self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
             return "[FAIL]: Failed to locate MTP MAC info"
 
+    def mtp_get_memory_size(self):
+        """
+        return mtp memory size in KB to differntiate if it is 4G Tubor MTP or 8G Turbo MTP;
+        Since for run_l1 test, 4G memory can run 5 NIC card in parallel while 8G memory can run all 10 NIC in parallel
+        """
+        memorysize = ""
+        cmd = "cat /proc/meminfo"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute cmd to get MTP Memory info", level = 0)
+            return memorysize
+        match = re.findall(r"MemTotal:\s+(\d+)\s+kB", self.mtp_get_cmd_buf())
+        if match:
+            memorysize = match[0]
+            self.cli_log_inf("MTP Total Memory is {:s} KB".format(memorysize), level = 0)
+        else:
+            self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
+        return memorysize
 
     def mtp_set_sn_rev_mac_command(self, sn, maj, mac):
         cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_SN_MAJ_MAC_FMT.format(sn, maj, mac)
@@ -1773,7 +1790,7 @@ class mtp_ctrl():
             return False
 
         self.cli_log_inf("Init Diag ZMQ Environment complete\n", level=0)
-        return True;
+        return True
 
 
     def mtp_diag_get_img_files(self):
@@ -2537,6 +2554,14 @@ class mtp_ctrl():
 
 # 1. Routines that need console, can not be run in parallel
     def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=False):
+        # Reason For Adding 3 seconds Sleep ####################################################################################################################
+        # MEM EDMA test call/rely on command "sysinit.sh classic hw diag" to generate file /nic/conf/gen/mpu_prog_info.json
+        # while when function mtp_nic_mgmt_para_init execute command nic_test.py, nic_test.py will run "sysinit.sh classic hw diag" as well
+        # For some how, if immediately run EDMA test after mtp_nic_mgmt_para_init over NIC power cycle, EDMA got timeout because mpu_prog_info.json not generated.
+        # For Ortana2 card, it keep failing like this.
+        # As workaround so added 3 seconds delay here to avoid the unknown mpu_prog_info.json not generated issue
+        # self.cli_log_slot_inf(slot, "Sleep 5 Seconds to avoid mpu_prog_info.json not generated issue")
+        time.sleep(5)
         if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None and not skip_check:
             # no need to do this
             self.cli_log_slot_inf(slot, "NIC boot info already present")

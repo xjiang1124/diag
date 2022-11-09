@@ -1389,7 +1389,7 @@ def flx_web_srv_get_uut_info(sn, stage=None):
     
     return resp
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[]):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -1528,22 +1528,51 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
     elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT:
-        diag_log_dir = log_dir + "diag_logs/"
-        asic_log_dir = log_dir + "asic_logs/"
-        nic_log_dir = log_dir + "nic_logs/"
-        # move the extra logfile
-        cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
+        if not vmarg:
+            diag_log_dir = log_dir + "diag_logs/"
+            asic_log_dir = log_dir + "asic_logs/"
+            nic_log_dir = log_dir + "nic_logs/"
+            # move the extra logfile
+            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+        else:
+            for vmag in vmarg:
+                if vmag.lower() == "high":
+                    diag_log_dir = log_dir + "hv_diag_logs/"
+                    asic_log_dir = log_dir + "hv_asic_logs/"
+                    nic_log_dir = log_dir + "hv_nic_logs/"
+                elif vmag.lower() == "low":
+                    diag_log_dir = log_dir + "lv_diag_logs/"
+                    asic_log_dir = log_dir + "lv_asic_logs/"
+                    nic_log_dir = log_dir + "lv_nic_logs/"
+                else:
+                    diag_log_dir = log_dir + "diag_logs/"
+                    asic_log_dir = log_dir + "asic_logs/"
+                    nic_log_dir = log_dir + "nic_logs/"
+                # move the extra logfile
+                cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+
     elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
         hv_diag_log_dir = log_dir + "hv_diag_logs/"
         hv_asic_log_dir = log_dir + "hv_asic_logs/"
@@ -1577,6 +1606,23 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
+        if vmarg and "normal" in vmarg:
+            diag_log_dir = log_dir + "diag_logs/"
+            asic_log_dir = log_dir + "asic_logs/"
+            nic_log_dir = log_dir + "nic_logs/"
+            # move the extra logfile
+            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
     # for SWI/FST, no extra logfiles
     else:
         pass
