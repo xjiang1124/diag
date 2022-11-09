@@ -1380,16 +1380,19 @@ class mtp_ctrl():
         return rc
 
     def mtp_psu_init(self):
+        rc = True
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
             cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
+                rc = False
                 continue
             psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
+                rc = False
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
@@ -1402,19 +1405,53 @@ class mtp_ctrl():
             if int(self._mtp_rev) > 3:
                 apc1 = self._apc_cfg[0]
                 apc2 = self._apc_cfg[4]
+                if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                    self.cli_log_err("Failed to get MTP PSU info", level = 0)
+                    return False
 
                 if apc1 != "" :
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU1_OK_SIG)
-                if apc2 != "":
-                    pass_sig_list.append(MFG_DIAG_SIG.MTP_PSU2_OK_SIG)
+                    match = re.search(MFG_DIAG_SIG.MTP_PSU1_OK_SIG, self.mtp_get_cmd_buf())
+                    if match:
+                        match_psu = re.search(r"PSU_1\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                        if match_psu:
+                            pout = match_psu.group(1)
+                            pin = match_psu.group(4)
+                            if "-" in pin or "-" in pout:
+                                self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                            elif float(pout) < 20:
+                                self.cli_log_err("PSU1 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                        else:
+                            self.cli_log_err("PSU1 test failed.")
+                            rc = False
+                    else:
+                        self.cli_log_err("PSU1 result test failed.")
+                        rc = False
 
-                if not self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-                    self.cli_log_err("PSU test failed")
-                    return False
-                else:
+                if apc2 != "" :
+                    match = re.search(MFG_DIAG_SIG.MTP_PSU2_OK_SIG, self.mtp_get_cmd_buf())
+                    if match:
+                        match_psu = re.search(r"PSU_2\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                        if match_psu:
+                            pout = match_psu.group(1)
+                            pin = match_psu.group(4)
+                            if "-" in pin or "-" in pout:
+                                self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                            elif float(pout) < 20:
+                                self.cli_log_err("PSU2 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
+                                rc = False
+                        else:
+                            self.cli_log_err("PSU2 test failed")
+                            rc = False
+                    else:
+                        self.cli_log_err("PSU2 result test failed.")
+                        rc = False
+                if rc:
                     self.cli_log_inf("PSU test passed")
 
-        return True
+        return rc
 
     def mtp_fan_init(self, fan_spd):
         rc = True
@@ -3247,7 +3284,7 @@ class mtp_ctrl():
             if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:6] == "0X322F":      #LACONA32 DELL
+        elif naples_pn[0:6] in ("0X322F","0W5WGK"):      #LACONA32 DELL
             if software_pn != "90-0017-0003":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
