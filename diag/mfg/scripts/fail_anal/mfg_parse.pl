@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.4.10312022";
+my $rev = "1.6.11042022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -374,6 +374,78 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
+        $top_diag_fa_code = "L1_DDR_BIST";
+        delete $diag_fa_code{"L1_DDR_BIST"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"ARM_DDR_BIST"}) {
+        $top_diag_fa_code = "ARM_DDR_BIST";
+        delete $diag_fa_code{"ARM_DDR_BIST"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
+        $top_diag_fa_code = "EDMA_FAILURE";
+        delete $diag_fa_code{"EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
+        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            delete $diag_fa_code{"LV_EDMA_FAILURE"};
+            return;
+        } else {
+            $top_diag_fa_code = "HV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            return;
+        }
+    }
+
+    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+        $top_diag_fa_code = "LV_EDMA_FAILURE";
+        delete $diag_fa_code{"LV_EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SW_BOOT"}) {
+        $top_diag_fa_code = "SW_BOOT";
+        delete $diag_fa_code{"SW_BOOT"};
+        return;
+    }
+    if (exists $diag_fa_code{"EFUSE_PROG"}) {
+        $top_diag_fa_code = "EFUSE_PROG";
+        delete $diag_fa_code{"EFUSE_PROG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE_VOLT_LOW";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE_BOOT_DSC";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE_SSH_HANG";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"}) {
         $top_diag_fa_code = "PCIE_PLL_FAILURE(0x2e)";
         delete $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"};
@@ -395,33 +467,6 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"FLASH_PLL_FAILURE(0x2d)"}) {
         $top_diag_fa_code = "FLASH_PLL_FAILURE(0x2d)";
         delete $diag_fa_code{"FLASH_PLL_FAILURE(0x2d)"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
-        $top_diag_fa_code = "L1_DDR_BIST";
-        delete $diag_fa_code{"L1_DDR_BIST"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
-        $top_diag_fa_code = "EDMA_FAILURE";
-        delete $diag_fa_code{"EDMA_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
-        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
-            delete $diag_fa_code{"HV_EDMA_FAILURE"};
-            delete $diag_fa_code{"LV_EDMA_FAILURE"};
-            return;
-        }
-    }
-
-    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-        $top_diag_fa_code = "LV_EDMA_FAILURE";
-        delete $diag_fa_code{"LV_EDMA_FAILURE"};
         return;
     }
 
@@ -663,11 +708,7 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_SPACE_FULL"};
         return;
     }
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
-        return;
-    }
+
     if (exists $diag_fa_code{"PS48_ERROR"}) {
         $top_diag_fa_code = "PS48_ERROR";
         delete $diag_fa_code{"PS48_ERROR"};
@@ -1258,6 +1299,15 @@ sub find_failure_code {
                 $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
             }
         }
+        if (($failure_code eq "DDR_BIST") || ($failure_code eq "LV_DDR_BIST") || ($failure_code eq "HV_DDR_BIST")) {
+            $diag_fa_code{"ARM_DDR_BIST"} = 1;
+        }
+        if ($test_name eq "SWI" && $failure_code eq "EFUSE_PROG") {
+            $diag_fa_code{"EFUSE_PROG"} = 1;
+        }
+        if ($test_name eq "SWI" && $failure_code eq "SW_BOOT") {
+            $diag_fa_code{"SW_BOOT"} = 1;
+        }
     }
     if ($stage ne "FST") {
         parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
@@ -1440,6 +1490,8 @@ sub parse_mtp_and_slot_log {
     my $err_msg_dump = 0;
     my $nic_status_dump = 0;
     my $slotnum = 0 + $slot;
+    my $vmarg_low_start = 0;
+    my $vmarg_low_start_linenum = 0;
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
@@ -1470,7 +1522,7 @@ sub parse_mtp_and_slot_log {
         }
         if ($line =~ m/DSC# fwupdate -s diagfw/) {
             $diag_fa_code{"BOOT_UBOOT"} = 1;
-                $slot_err_msg .= $line;
+            $slot_err_msg .= $line;
         }
         if (index($failure_code_list, "NIC_JTAG") != -1) {
             if ($line =~ m/NIC_JTAG Started/) {
@@ -1483,9 +1535,51 @@ sub parse_mtp_and_slot_log {
 	            $slot_err_msg .= $line;
             }
         }
+        if ($line =~ m/\/home\/diag\/diag\/scripts\/vmarg\.sh low/) {
+            $vmarg_low_start = 1;
+            $vmarg_low_start_linenum = $.;
+        }
+        if ($line =~ m/=== Vmarg is at low ===/) {
+            my $line2 = <TR3>;
+            if ($line2 =~ /sync/) {
+                my $line3 = <TR3>;
+                if ($line3 =~ /exit/) {
+                    my $line4 = <TR3>;
+                    if ($line4 =~ /Connection to .* closed./) {
+                        if ($vmarg_low_start == 1) {
+                            $vmarg_low_start = 0;
+                        }
+                    }
+                }
+            }
+        }
         if ($line =~ m/Timeout, server .* not responding/) {
             $slot_err_msg .= $line;
-            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
+            if (($vmarg_low_start == 1) && ($. - $vmarg_low_start_linenum  < 30)) {
+                $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"} = 1;
+            } else {
+                $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
+            }
+        }
+        if ($line =~ m/VRM_ARM        VBOOT/) {
+            if ($. - $vmarg_low_start_linenum  < 800) {
+                my $line2 = <TR3>;
+                if ($line2 =~ /.*MSG ::\s+(\d\.\d+)\s+(\d\.\d+)\s+.*/) {
+                    my $vboot = $1 * 1000;
+                    my $vout = $2 * 1000;
+                    if ($vout < $vboot * 0.95) {
+                        $slot_err_msg .= $line;
+                        $slot_err_msg .= $line2;
+                        $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"} = 1;
+                    }
+                }
+            }
+        }
+        if ($line =~ m/DSC# uptime/) {
+            if ($. - $vmarg_low_start_linenum  < 100) {
+                $slot_err_msg .= $line;
+                $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"} = 1;
+            }
         }
         if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
             if ($line =~ m/env \| grep -v PS1/) {

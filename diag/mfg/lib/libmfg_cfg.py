@@ -526,7 +526,7 @@ class PART_NUMBERS_MATCH:
     ORTANO2_FMT_ALL = r"{:s}|{:s}".format(ORTANO2_ORC_PN_FMT,ORTANO2_PEN_PN_FMT)
 
     POMONTEDELL_PN_FMT = r"0PCFPC(?:X|A)[0-9]{2}"             #0PCFPC X/A       POMONTE DELL
-    LACONA32DELL_PN_FMT = r"0X322F(?:X|A)[0-9]{2}"            #0X322F X/A       LACONA32 DELL
+    LACONA32DELL_PN_FMT = r"(?:0X322F|0W5WGK)(?:X|A)[0-9]{2}" #0X322F 0W5WGK X/A       LACONA32 DELL
     LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                    #P47930-001       LACONA32 HPE
 
     ORTANO2ADI_ORC_PN_FMT = r"68-0026-0[1-9]{1} [A-Z0-9]{2}"     #68-0026-01 01    ORTANO2ADI ORACLE
@@ -813,7 +813,7 @@ HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_PENANG_SN_FMT,FLX_P1_SN_FMT)
 HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
-DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F)"
+DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F|0W5WGK)"
 DELL_PPID_MFG_ID_FMT = r"(?:FLUPK|FLEPK)"
 DELL_PPID_DATE_CODE_FMT = r"[0-9][1-9A-C][1-9A-V]"
 DELL_PPID_SER_NUM_FMT = r"[0-9A-O][0-9A-Z]{3}"
@@ -948,8 +948,11 @@ FLX_SAVE_UUT_RSLT_ENTRY_FMT =                                                   
          '&lt;BATCH&gt;&#xD;                                                               \
           &lt;FACTORY TESTER="{:s}" USER="admin" /&gt;&#xD;                                \
           &lt;PANEL&gt;&#xD;                                                               \
-          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD; \
-          &lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT =                                                        \
+         '&lt;EXTRA {:s} /&gt;&#xD;'
+FLX_SAVE_UUT_RSLT_ENTRY_2_FMT =                                                              \
+         '&lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
 FLX_SAVE_UUT_TEST_RSLT_FMT =                                                               \
          '&lt;TEST NAME="{:s}" STATUS="{:s}" VALUE="{:s}" DESCRIPTION="{:s}" FAILURECODE="{:s}" /&gt;&#xD;'
@@ -965,8 +968,8 @@ FLX_SAVE_UUT_PN_RSLT_FMT =                                                      
 FLX_SAVE_UUT_RSLT_ENTRY_END =                                                              \
          '&lt;/GROUP&gt;&#xD;                                                              \
           &lt;/DUT&gt;&#xD;                                                                \
-          &lt;/PANEL&gt;&#xD;                                                              \
-          &lt;/BATCH&gt;'
+          &lt;/PANEL&gt;&#xD;'                                                             \
+         '&lt;/BATCH&gt;'
 
 FLX_SAVE_UUT_RSLT_XML_TAIL =                                                               \
         '</strXMLResultText>                                                               \
@@ -987,6 +990,5 @@ FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT =                                            
          '&lt;BATCH&gt;&#xD;                                                               \
           &lt;FACTORY TESTER="{:s}" USER="tester01" /&gt;&#xD;                             \
           &lt;PANEL&gt;&#xD;                                                               \
-          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD; \
-          &lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
+          &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 

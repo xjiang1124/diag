@@ -131,8 +131,6 @@ def get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus):
         bus_str = bus.split(":", 1)[0]
         bus_int = int(bus_str, 16)+4
     eth = "enp"+str(bus_int)+"s0"
-    if card_type == "ORTANO2ADIMSFT":
-        eth += "f0"
     
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
 
@@ -160,6 +158,8 @@ def get_product_name_from_pn(pn):
     elif "68-0021-02" in pn:
         product_name = NIC_Type.ORTANO2
     elif "0X322F" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0W5WGK" in pn:
         product_name = NIC_Type.LACONA32DELL
     elif "0PCFPC" in pn:
         product_name = NIC_Type.POMONTEDELL
