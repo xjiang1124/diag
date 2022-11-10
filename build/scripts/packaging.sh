@@ -114,6 +114,7 @@ do
         cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/xo3dcpld      $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/cbin/artix7fpga    $NIC_UTIL_DIR
         cp $TOP_DIR/tools/bin/arm64/stressapptest_arm           $NIC_UTIL_DIR
+        cp $TOP_DIR/tools/bin/arm64/fio                         $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil       $NIC_UTIL_DIR

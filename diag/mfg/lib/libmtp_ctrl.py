@@ -1409,7 +1409,8 @@ class mtp_ctrl():
             psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
-                rc = False
+                if not MFG_BYPASS_PSU_CHECK:
+                    rc = False
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
