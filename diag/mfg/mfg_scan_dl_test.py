@@ -693,59 +693,59 @@ def main():
                     pass_nic_list.remove(slot)
 
 
-        ## 2. program fw
-        nic_thread_list = list()
-        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
+    ## 2. program fw
+    nic_thread_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot in fail_nic_list:
+            continue
+        if not nic_prsnt_list[slot]:
+            continue
 
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-            if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
-                qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-            qspi_gold_img_file = ""
-            if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-                qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+        if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
+        if nic_type == NIC_Type.NAPLES25SWM:
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+        qspi_gold_img_file = ""
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
+            qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
-            uboot_img_file = ""
-            uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP:
-                uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
+        uboot_img_file = ""
+        uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP:
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
-            nic_thread = threading.Thread(target = single_nic_qspi_program, args = (mtp_mgmt_ctrl,
-                                                                                    qspi_img_file,
-                                                                                    qspi_gold_img_file,
-                                                                                    uboot_img_file,
-                                                                                    uboot_installer_file,
-                                                                                    slot,
-                                                                                    args.skip_test,
-                                                                                    nic_test_rslt_list))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
+        nic_thread = threading.Thread(target = single_nic_qspi_program, args = (mtp_mgmt_ctrl,
+                                                                                qspi_img_file,
+                                                                                qspi_gold_img_file,
+                                                                                uboot_img_file,
+                                                                                uboot_installer_file,
+                                                                                slot,
+                                                                                args.skip_test,
+                                                                                nic_test_rslt_list))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+        time.sleep(2)
 
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
+    # monitor all the thread
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_test_rslt_list[slot]:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_test_rslt_list[slot]:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
