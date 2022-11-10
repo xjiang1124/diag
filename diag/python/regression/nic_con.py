@@ -781,6 +781,7 @@ class nic_con:
             print "=== TIMEOUT: Faled to fix elb bx ==="
             ret = -1
 
+        self.uart_session_stop(session)
         common.session_stop(session)
         return ret
 
