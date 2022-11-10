@@ -422,11 +422,6 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
-        $top_diag_fa_code = "CARD_REBOOTED";
-        delete $diag_fa_code{"CARD_REBOOTED"};
-        return;
-    }
     if (exists $diag_fa_code{"VMARG_L_VOLT_LOW"}) {
         $top_diag_fa_code = "VMARG_L_VOLT_LOW";
         delete $diag_fa_code{"VMARG_L_VOLT_LOW"};
@@ -445,6 +440,17 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"VMARG_L_CARD_REBOOTED"}) {
+        $top_diag_fa_code = "VMARG_L_CARD_REBOOTED";
+        delete $diag_fa_code{"VMARG_L_CARD_REBOOTED"};
+        return;
+    }
+    if (exists $diag_fa_code{"VMARG_H_CARD_REBOOTED"}) {
+        $top_diag_fa_code = "VMARG_H_CARD_REBOOTED";
+        delete $diag_fa_code{"VMARG_H_CARD_REBOOTED"};
+        return;
+    }
+
     if (exists $diag_fa_code{"VMARG_L_SSH_HUNG"}) {
         $top_diag_fa_code = "VMARG_L_SSH_HUNG";
         delete $diag_fa_code{"VMARG_L_SSH_HUNG"};
@@ -454,6 +460,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"VMARG_H_SSH_HUNG"}) {
         $top_diag_fa_code = "VMARG_H_SSH_HUNG";
         delete $diag_fa_code{"VMARG_H_SSH_HUNG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
+        $top_diag_fa_code = "CARD_REBOOTED";
+        delete $diag_fa_code{"CARD_REBOOTED"};
         return;
     }
 
@@ -1622,10 +1634,16 @@ sub parse_mtp_and_slot_log {
             }
         }
         if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
-            if ($line =~ m/env \| grep -v PS1/) {
+            if (($line =~ m/env \| grep -v PS1/) && ($line !~ m /DSC#/)) {
                 my $line2 = <TR3>;
                 if ($line2 !~ m/ASIC_LIB=/) {
-                    $diag_fa_code{"CARD_REBOOTED"} = 1;
+                    if (($. - $vmarg_low_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_L_SSH_HUNG"})) {
+                        $diag_fa_code{"VMARG_L_CARD_REBOOTED"} = 1;
+                    } elsif (($. - $vmarg_high_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_H_SSH_HUNG"})) {
+                        $diag_fa_code{"VMARG_H_CARD_REBOOTED"} = 1;
+                    } else {
+                        $diag_fa_code{"CARD_REBOOTED"} = 1;
+                    }
                 }
             }
         }
