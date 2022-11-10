@@ -2555,14 +2555,6 @@ class mtp_ctrl():
 
 # 1. Routines that need console, can not be run in parallel
     def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=False):
-        # Reason For Adding 3 seconds Sleep ####################################################################################################################
-        # MEM EDMA test call/rely on command "sysinit.sh classic hw diag" to generate file /nic/conf/gen/mpu_prog_info.json
-        # while when function mtp_nic_mgmt_para_init execute command nic_test.py, nic_test.py will run "sysinit.sh classic hw diag" as well
-        # For some how, if immediately run EDMA test after mtp_nic_mgmt_para_init over NIC power cycle, EDMA got timeout because mpu_prog_info.json not generated.
-        # For Ortana2 card, it keep failing like this.
-        # As workaround so added 3 seconds delay here to avoid the unknown mpu_prog_info.json not generated issue
-        # self.cli_log_slot_inf(slot, "Sleep 5 Seconds to avoid mpu_prog_info.json not generated issue")
-        time.sleep(5)
         if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None and not skip_check:
             # no need to do this
             self.cli_log_slot_inf(slot, "NIC boot info already present")
