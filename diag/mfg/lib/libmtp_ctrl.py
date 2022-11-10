@@ -1006,6 +1006,23 @@ class mtp_ctrl():
             self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
             return "[FAIL]: Failed to locate MTP MAC info"
 
+    def mtp_get_memory_size(self):
+        """
+        return mtp memory size in KB to differntiate if it is 4G Tubor MTP or 8G Turbo MTP;
+        Since for run_l1 test, 4G memory can run 5 NIC card in parallel while 8G memory can run all 10 NIC in parallel
+        """
+        memorysize = ""
+        cmd = "cat /proc/meminfo"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute cmd to get MTP Memory info", level = 0)
+            return memorysize
+        match = re.findall(r"MemTotal:\s+(\d+)\s+kB", self.mtp_get_cmd_buf())
+        if match:
+            memorysize = match[0]
+            self.cli_log_inf("MTP Total Memory is {:s} KB".format(memorysize), level = 0)
+        else:
+            self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
+        return memorysize
 
     def mtp_set_sn_rev_mac_command(self, sn, maj, mac):
         cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_SN_MAJ_MAC_FMT.format(sn, maj, mac)
@@ -1781,7 +1798,7 @@ class mtp_ctrl():
             return False
 
         self.cli_log_inf("Init Diag ZMQ Environment complete\n", level=0)
-        return True;
+        return True
 
 
     def mtp_diag_get_img_files(self):
