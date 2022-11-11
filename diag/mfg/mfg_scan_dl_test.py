@@ -610,25 +610,6 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if nic_prsnt_list[slot]:
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
-                continue
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
-            mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
-            match = re.findall(PART_NUMBERS_MATCH.ORTANO2ADI_ALL_FMT_ALL, pn)
-            if match:
-                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADI
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADIIBM
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADIMSFT
-                mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
         if not nic_prsnt_list[slot]:

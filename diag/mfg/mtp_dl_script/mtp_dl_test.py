@@ -314,10 +314,6 @@ def main():
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
-
         dsp = FF_Stage.FF_DL
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):

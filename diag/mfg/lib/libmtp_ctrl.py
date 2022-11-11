@@ -8,6 +8,7 @@ import threading
 from datetime import datetime
 import ipaddress
 from libmfg_cfg import *
+from libsku_utils import *
 from libsku_cfg import *
 
 from libdefs import NIC_Type
@@ -1541,21 +1542,14 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
-        self.cli_log_inf("Init NIC Connections", level = 0)
-        ret = self.mtp_nic_para_session_init()
-        if not ret:
-            self.cli_log_err("Init NIC Connections Failed", level = 0)
-            return False
-
-        if not self.mtp_nic_init():
-            self.cli_log_err("Initialize NIC type, present failed", level=0)
-            return False
-
         if not self.get_mtp_factory_location():
             self.cli_log_err("Unable to get MTP factory location")
             return False
         self.cli_log_report_inf("MTP Location: {:s}".format(self.get_mtp_factory_location()))
 
+        if not self.mtp_nic_init():
+            self.cli_log_err("Initialize NIC type, present failed", level=0)
+            return False
         return True
 
     def mtp_get_nic_sn_start(self, slot=0):
@@ -1639,12 +1633,6 @@ class mtp_ctrl():
 
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
-            return False
-
-        self.cli_log_inf("Init NIC Connections", level = 0)
-        ret = self.mtp_nic_para_session_init()
-        if not ret:
-            self.cli_log_err("Init NIC Connections Failed", level = 0)
             return False
 
         self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
@@ -4337,13 +4325,10 @@ class mtp_ctrl():
 
     def mtp_nic_sn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._sn:
-            self._nic_ctrl_list[slot].nic_sn_init(fpo=fpo)
-        self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
-
-    def mtp_nic_pn_init(self, slot, fpo=False):
-        if not self._nic_ctrl_list[slot]._pn:
-            self._nic_ctrl_list[slot].nic_pn_init(fpo=fpo)
-        self.mtp_set_nic_pn(slot, self._nic_ctrl_list[slot]._pn)
+            if not self._nic_ctrl_list[slot].nic_sn_init(self._factory_location, fpo=fpo):
+                return False
+            self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
+        return True
 
     def mtp_nic_cpld_init(self, slot, smb=False):
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
@@ -4453,8 +4438,15 @@ class mtp_ctrl():
         self.cli_log_inf("End MTP NIC Info Dump")
 
 
-    def mtp_nic_init(self):
+    def mtp_nic_init(self, new_ssh_sessions=True):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
+
+        # open ssh session to each NIC
+        if new_ssh_sessions:
+            self.cli_log_inf("Init NIC Connections", level = 0)
+            if not self.mtp_nic_para_session_init():
+                self.cli_log_err("Init NIC Connections Failed", level = 0)
+                return False
 
         # init nic present list
         if not self.mtp_init_nic_type():
@@ -5199,7 +5191,7 @@ class mtp_ctrl():
             return False
 
         # find type
-        self.cli_log_inf("Init NIC Present/Type")
+        self.cli_log_inf("Init NIC Presence, Type")
         regex_dict = {
                       NIC_Type.NAPLES100:       MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100,
                       NIC_Type.NAPLES100IBM:    MFG_DIAG_RE.MFG_NIC_TYPE_NAPLES100IBM,
@@ -5229,23 +5221,34 @@ class mtp_ctrl():
                     slot = int(match[idx]) - 1
                     if not self._slots_to_skip[slot]:
                         self._nic_prsnt_list[slot] = True
-                        if nic_type == NIC_Type.ORTANO2ADI:
-                            self._nic_ctrl_list[slot].nic_pn_init(fpo=True)
-                            pn = self._nic_ctrl_list[slot]._pn
-                            if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
-                                final_nic_type = NIC_Type.ORTANO2ADI
-                            elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
-                                final_nic_type = NIC_Type.ORTANO2ADIIBM
-                            elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
-                                final_nic_type = NIC_Type.ORTANO2ADIMSFT
-                            self._nic_type_list[slot] = final_nic_type
-                            self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                        else:
-                            self._nic_type_list[slot] = nic_type
-                            self._nic_ctrl_list[slot].nic_set_type(nic_type)
+                        self._nic_type_list[slot] = nic_type
+                        self._nic_ctrl_list[slot].nic_set_type(nic_type)
                     else:
                         self._nic_prsnt_list[slot] = False
                         self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+
+        self.cli_log_inf("Init NIC SN, PN")
+        for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+            if not self.mtp_nic_sn_init(slot, fpo=True):
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                self.mtp_set_nic_status_fail(slot)
+                continue
+
+        # set final nic_type
+        for slot in range(self._slots):
+            if self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADI
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIIBM
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIMSFT
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
 
         return True
 
