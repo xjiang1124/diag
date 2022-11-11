@@ -752,10 +752,8 @@ class nic_test:
 
         for retry in range(self.num_retry):
             print "Trying break into uboot {}".format(retry)
-            for slot in nic_list_remain:
-                self.nic_con.power_cycle_multi(self.baud_rate, int(slot), 0)
-            print "Wait for 60 seconds before entering uboot"
-            sleep(60)
+            nic_list_str = ",".join(nic_list_remain)
+            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
             for slot in nic_list_remain:
                 if enable == True:
                     ret = self.nic_con.enable_pcie_uboot(int(slot))
@@ -792,10 +790,8 @@ class nic_test:
 
         for retry in range(self.num_retry):
             print "Trying break into uboot {}".format(retry)
-            for slot in nic_list_remain:
-                self.nic_con.power_cycle_multi(self.baud_rate, int(slot), 0)
-            print "Wait for 60 seconds before entering uboot"
-            sleep(60)
+            nic_list_str = ",".join(nic_list_remain)
+            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
             for slot in nic_list_remain:
                 ret = self.nic_con.ena_dis_esec_wp(int(slot), enable)
                 ret_list[int(slot)-1] = ret
