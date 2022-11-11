@@ -198,7 +198,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):
         testlist = ["QSPI_VERIFY", "FRU_PROG"]
     if nic_type == NIC_Type.NAPLES25OCP:
-        testlist = ["QSPI_VERIFY", "FRU_PROG" "CPLD_PROG"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO2:
         testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
