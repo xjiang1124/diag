@@ -31,12 +31,6 @@ class MTP_ASIC_SUPPORT:
     ELBA  = "ELBA"
     TURBO_ELBA = "TURBO_ELBA"
 
-class NIC_Vendor:
-    PENSANDO = "Pensando"
-    HPE = "HPE"
-    DELL = "DELL"
-    UNKNOWN = "Unknown"
-
 class Factory:
     UNKNOWN = "Unknown"
     MILPITAS = "Milpitas"

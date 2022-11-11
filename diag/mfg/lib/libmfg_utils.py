@@ -278,6 +278,8 @@ def part_number_validate(tmp):
     else:
         return None
 
+def part_number_match(pn, regex):
+    return re.match(regex, pn) is not None
 
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))

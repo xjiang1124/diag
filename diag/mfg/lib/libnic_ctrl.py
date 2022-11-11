@@ -8,7 +8,6 @@ import traceback
 from datetime import datetime
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
-from libdefs import NIC_Vendor
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -21,6 +20,7 @@ from libdefs import MFG_DIAG_SIG
 from libdefs import Swm_Test_Mode
 
 from libmfg_cfg import *
+from libsku_utils import *
 
 class nic_ctrl():
     def __init__(self, slot, diag_log_filep, diag_cmd_log_filep=None, dbg_mode = False):
@@ -41,9 +41,9 @@ class nic_ctrl():
         self._mac = None
         self._pn = None
         self._date = None
+        self._pn_format = None # store a regex from class PART_NUMBERS_MATCH
         self._img_timestamp = None
         self._boot_image = None
-        self._vendor = None
         self._alom_sn = None
         self._alom_pn = None
         self._assettagnumber = None
@@ -52,7 +52,6 @@ class nic_ctrl():
         self._riser_sn = None
         self._riser_progdate = None
         self._loopback_sn = dict()
-        
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
@@ -1133,103 +1132,6 @@ class nic_ctrl():
             cmd = MFG_DIAG_CMDS.NIC_POWER_RAIL_DISP_FMT.format(self._slot+1)
             self.mtp_exec_cmd(cmd)
             return False
-
-
-    def nic_program_fru(self, date, sn, mac, pn, nic_type=None):
-        if not self.nic_vendor_init(sn):
-            return False
-
-        if self.nic_2nd_fru_exist(pn):
-            if self._vendor == NIC_Vendor.HPE and nic_type != NIC_Type.LACONA32:
-                #Program HPE
-                if nic_type == NIC_Type.NAPLES25OCP:
-                    cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        #print("****MTP FRU PROG 1st****")
-                        return False
-
-                elif nic_type == NIC_Type.NAPLES25SWM:
-                    #Program HPE SWM
-                    cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        #print("****MTP FRU PROG 1st****")
-                        return False
-
-                elif nic_type == NIC_Type.NAPLES100HPE:
-                    cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        return False
-                else:
-                    #Program HPE
-                    cmd = MFG_DIAG_CMDS.MTP_HP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        #print("****MTP FRU PROG 3rd****")
-                        return False
-            else:
-                #Program Non HPE
-
-                if nic_type in ELBA_NIC_TYPE_LIST:
-                    cmd = MFG_DIAG_CMDS.MTP_ORTANO_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                    if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                        return False
-
-                cmd = MFG_DIAG_CMDS.MTP_FRU_PROG_FMT.format(date, sn, mac, pn, self._slot+1)
-                if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-                    #print("****MTP FRU PROG 4th****")
-                    return False
-            #VERIFY FRU PROGRAMMING
-            cmd_buf = self.nic_get_cmd_buf()
-            match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
-            if not match:
-                self.nic_set_err_msg(" SMB FRU PROGRAMMING FAILED\n")
-                self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-
-               
-
-        nic_cmd_list = list()
-        if self._vendor == NIC_Vendor.HPE and nic_type != NIC_Type.LACONA32:
-            if nic_type == NIC_Type.NAPLES25OCP:
-                #In NIC Program HPE SWM
-                nic_cmd = MFG_DIAG_CMDS.NIC_HP_OCP_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-                nic_cmd_list.append(nic_cmd)
-
-            elif nic_type == NIC_Type.NAPLES25SWM:
-                #In NIC Program HPE SWM
-                nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-                nic_cmd_list.append(nic_cmd)
-         
-            elif nic_type == NIC_Type.NAPLES100HPE:
-                nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-                nic_cmd_list.append(nic_cmd)
-            else:    
-                #In NIC Program HPE
-                nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-                nic_cmd_list.append(nic_cmd)
-          
-        else:
-            #In NIC Program Non HPE
-            if nic_type in ELBA_NIC_TYPE_LIST:
-                nic_cmd = MFG_DIAG_CMDS.NIC_ORTANO_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-            else:
-                nic_cmd = MFG_DIAG_CMDS.NIC_FRU_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, date, sn, mac, pn)
-            nic_cmd_list.append(nic_cmd)
-  
-            
-        cmd_buf = self.nic_get_info(nic_cmd)
-        if not cmd_buf:
-            return False
-        #VERIFY FRU PROGRAMMING
-        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
-        if not match:
-            self.nic_set_err_msg(" ASIC FRU PROGRAMMING FAILED\n")
-            self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        return True
-
 
     def nic_program_alom_fru(self, date, alom_sn, alom_pn):
         if not self.nic_vendor_init(alom_sn):
@@ -2505,534 +2407,66 @@ class nic_ctrl():
                 return False
         return True
 
-
-    # check nic mfg vendor based on the sn format
-    def nic_vendor_init(self, sn=None, fpo=False):
-        nic_type = self._nic_type
-        if sn == None:
-            if self._nic_type == NIC_Type.NAPLES25OCP:
-                nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT_OCP.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-            elif self._nic_type == NIC_Type.NAPLES25SWM:
-                nic_cmd = MFG_DIAG_CMDS.NIC_HPESWM_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-            else:
-                nic_cmd = MFG_DIAG_CMDS.NIC_VENDOR_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-            if fpo: 
-                nic_cmd += " -fpo"
-            fru_buf = self.nic_get_info(nic_cmd)
-
-        else:
-            fru_buf = sn
-
+    def nic_fru_init(self, factory_location, init_date=True, swmtestmode=Swm_Test_Mode.SWMALOM, fpo=False):
+        ### 1. Validate ASIC-facing FRU
+        fru_buf = self.nic_read_fru(fpo, smb_fru=False)
         if not fru_buf:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            self.nic_set_err_msg("Unable to get NIC vendor from FRU")
-            return False
-
-        match = re.findall(NAPLES_SN_FMT, fru_buf)
-        if match:
-            self._vendor = NIC_Vendor.PENSANDO
-            return True
-        match = re.findall(HP_SN_FMT, fru_buf)
-        if match:
-            self._vendor = NIC_Vendor.HPE
-            return True
-        match = re.findall(DELL_PPID_SN_FMT, fru_buf)
-        if match:
-            self._vendor = NIC_Vendor.DELL
-            return True
-
-        self.nic_set_err_msg("Unknown vendor for: {:s}".format(fru_buf))
-        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-        return False
-
-    def nic_sn_init(self, fpo=False):
-        nic_type = self._nic_type
-
-        cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_SN_FMT.format(self._slot+1)
-        if fpo: cmd += " -fpo "
-
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Unable to read SMB FRU")
-            return False
-
-        fru_buf = self.nic_get_cmd_buf()
-
-        match = re.search(NAPLES_DISP_SN_FMT, fru_buf)
-        if match:
-            self._sn = match.group(1)
-            return True
-        # else:
-        match = re.search(DELL_PPID_DISP_SN_FMT, fru_buf)
-        if match:
-            self._sn = match.group(1)
-            return True
-        # else:
-        match = re.search(HP_DISP_SN_FMT, fru_buf)
-        if match:
-            self._sn = match.group(1)
-            return True
-        # else:
-        match = re.search(ALOM_SN_FMT, fru_buf)
-        if match:
-            self._sn = match.group(1)
-            return True
-        # else:
-        cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
-        if fpo: cmd += " -fpo "
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Unable to read SMB FRU")
-            return False
-        fru_buf = self.nic_get_cmd_buf()
-        match = re.search(HP_DISP_SN_FMT, fru_buf)
-        if match:
-            self._sn = match.group(1)
-            return True
-        else:
-            self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
-            return False
-
-        self.nic_set_err_msg("Unknown SN in: {:s}".format(fru_buf))
-        return False
-
-    def nic_pn_init(self, fpo=False):
-        nic_type = self._nic_type
-
-        cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_PN_FMT.format(self._slot+1)
-        if fpo: cmd += " -fpo "
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Unable to read SMB FRU")
-            return False
-
-        fru_buf = self.nic_get_cmd_buf()
-
-        match = re.search(NAPLES_DISP_PN_FMT, fru_buf)
-        if match:
-            self._pn = match.group(1)
-            return True
-        # else:
-        match = re.search(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-        if match:
-            self._pn = match.group(1)
-            return True
-        # else:
-        match = re.search(DELL_PPID_DISP_PN_FMT, fru_buf)
-        if match:
-            self._pn = match.group(1)
-            return True
-        # else:
-        match = re.search(HP_SWM_DISP_PN_FMT, fru_buf)
-        if match:
-            self._pn = match.group(1)
-            return True
-        # else:
-        cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
-        if fpo: cmd += " -fpo "
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_err_msg("Unable to read SMB FRU")
-            return False
-        fru_buf = self.nic_get_cmd_buf()
-        match = re.search(HP_DISP_PN_FMT, fru_buf)
-        if match:
-            self._pn = match.group(1)
-            return True
-        else:
-            self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU:\n {}".format(fru_buf))
-            return False
-
-        self.nic_set_err_msg("Unknown PN in: {:s}".format(fru_buf))
-        return False
-
-
-    def get_nic_fru_hpe_pn(self):
-
-        if self._nic_type == NIC_Type.NAPLES25SWM:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._nic_type == NIC_Type.NAPLES100HPE:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        fru_buf = self.nic_get_info(nic_cmd)
-        if not fru_buf:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-            
-        pro_no = None
-        match = None
-        
-        #retrieve SWM card Product Number PN
-        if self._vendor == NIC_Vendor.HPE:
-            if self._nic_type == NIC_Type.NAPLES25SWM:
-                                                               
-                                                        
-                match = re.findall(HP_SWN_PN_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.NAPLES100HPE:
-                match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
-            else:
-                match = re.findall(HP_DISP_PN_FMT, fru_buf)
-        else:
-            match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
-        if match:
-            pro_no = match[0]
-        else:
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            
-        return pro_no
-        
-    def nic_fru_init(self, init_date=True, swmtestmode=Swm_Test_Mode.SWMALOM, fpo=False):
-        if not self.nic_vendor_init(fpo=fpo):
-            return False
-
-        if self._nic_type == NIC_Type.NAPLES25OCP:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_OCP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._nic_type == NIC_Type.NAPLES25SWM:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._nic_type == NIC_Type.NAPLES100HPE:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-
-        if fpo:
-            nic_cmd += " -fpo"
-        fru_buf = self.nic_get_info(nic_cmd)
-        if not fru_buf:
-            print ("fru_buf 1 match: ")
             self.nic_set_err_msg("Unable to read ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
-        match = None
-        # retrieve card serial number
-        if self._vendor == NIC_Vendor.HPE:
-            #match = re.findall(HP_DISP_SN_FMT, fru_buf)
-            if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.NAPLES25OCP:
-               match = re.findall(ALOM_SN_FMT, fru_buf)
-            else:
-               match = re.findall(HP_DISP_SN_FMT, fru_buf)
-        elif self._vendor == NIC_Vendor.DELL:
-            match = re.findall(DELL_PPID_DISP_SN_FMT, fru_buf)
-        else:
-            match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
-        if match:
-            self._sn = match[0]
-        else:
-            print ("fru_buf 2: ")
-            self.nic_set_err_msg("Serial number doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        match = None
-        # retrieve card MAC address
-        match = re.findall(NAPLES_DISP_MAC_FMT, fru_buf)
-        if match:
-            self._mac = match[0]
-        else:
-            print ("fru_buf 3 match: ")
-            self.nic_set_err_msg("MAC address doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        match = None
-        # retrieve program date if it is valid
-        if init_date:
-            match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
-            if match:
-                self._date = match[0].replace('/','')
-            else:
-                print ("fru_buf 4 match: ")
-                self.nic_set_err_msg("Date field doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-        else:
-            self._date = None
-        match = None
-        # retrieve card PN
-        #print("******READ SWM TEST MODE***********")
-        #print(swmtestmode)
-        #print("***********************************")
-        if self._vendor == NIC_Vendor.HPE:
-            if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.LACONA32):
-                match = re.findall(HP_SWM_DISP_PN_FMT, fru_buf)
-            else:
-                match = re.findall(HP_DISP_PN_FMT, fru_buf)
-        else:
-            if self._nic_type == NIC_Type.NAPLES100IBM:
-                match = re.findall(IBM_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.VOMERO2:
-                match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
-                match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP):
-                match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.NAPLES25OCP:
-                match = re.findall(OCP_DELL_DISP_PN_FMT, fru_buf)
-            elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
-                match = re.findall(DELL_PPID_PN_FMT, fru_buf)
-            else:
-                match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
-                if not match:
-                    #Try a 2nd match for the new FRU format which moves the pensando part number into the assembly field
-                    match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
 
-        if match:
-            self._pn = match[0]
-        else:
-            print ("fru_buf 6 match: ")
-            self.nic_set_err_msg("Assembly/Part number doesn't match any known formats in ASIC FRU:\n {}".format(fru_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
+        asic_sn = self._sn
+        asic_pn = self._pn
+        asic_mac = self._mac
+        asic_date = self._date
+        if self._prod_num != None:
+            asic_prod_num = self._prod_num
         
-        # retrieve SWM card Product Number PN
-        #if self._vendor == NIC_Vendor.HPE:
-            #if self._nic_type == NIC_Type.NAPLES25SWM:
-                #match = re.findall(HP_SWN_PN_FMT, fru_buf)
-            #else:
-                #match = re.findall(HP_DISP_PN_FMT, fru_buf)
-        #else:
-            #match = re.findall(NAPLES_DISP_PN_FMT, fru_buf)
-        #if match:
-            #self._pro_no = match[0]
-        #else:
-            #print ("fru_buf 6 match: ")
-            #self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            #return False
-        
-            
-        # Asset Tag Type/Length
-        #match = None
-        #match = re.findall(HPESWM_DISP_ASSET_FMT, fru_buf)
- 
-        #if match:
-            #self._assettagnumber = match[0]
-        #else:
-            #print ("No asset Tag Number")
-
+        ### 2. Validate SMBUS (MTP-facing) FRU, if present
         if self.nic_2nd_fru_exist(self._pn):
-            if self._nic_type == NIC_Type.NAPLES25OCP:
-                cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_DISP_FMT.format(self._slot+1)
-            elif self._nic_type == NIC_Type.NAPLES25SWM:
-                cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
-            elif self._nic_type == NIC_Type.NAPLES100HPE:
-                cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-            elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
-                cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
-            else:
-                cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
 
-            if fpo:
-                cmd += " -fpo"   
-            if not self.mtp_exec_cmd(cmd):
-                print ("fru_buf 7 match: ")
+            fru_buf = self.nic_read_fru(fpo, smb_fru=True)
+            if not fru_buf:
                 self.nic_set_err_msg("Unable to read SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            # secondary SN
-            match = None
-            if self._vendor == NIC_Vendor.HPE:
-                if self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.NAPLES25OCP:
-                    match = re.findall(ALOM_SN_FMT, fru_buf)
-                else:    
-                    match = re.findall(HP_DISP_SN_FMT, self.nic_get_cmd_buf())
-            elif self._vendor == NIC_Vendor.DELL:
-                match = re.findall(DELL_PPID_SN_FMT, self.nic_get_cmd_buf())
-            else:
-                match = re.findall(NAPLES_DISP_SN_FMT, self.nic_get_cmd_buf())
-            if match:
-                sn = match[0]
-            else:
-                print ("fru_buf 8 match: ")
-                self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-                
-            # secondary MAC
-            match = re.findall(NAPLES_DISP_MAC_FMT, self.nic_get_cmd_buf())
-            if match:
-                mac = match[0]
-            else:
-                print ("fru_buf 9 match: ")
-                self.nic_set_err_msg("MAC address doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-            # secondary date
-            if init_date:
-                match = re.findall(NAPLES_DISP_DATE_FMT, self.nic_get_cmd_buf())
-                if match:
-                    date = match[0].replace('/','')
-                else:
-                    print ("fru_buf 10 match: ")
-                    self.nic_set_err_msg("Date field doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-            else:
-                date = None
-            # secondary PN
-            match = None            
-            if self._vendor == NIC_Vendor.HPE:
-                if (self._nic_type == NIC_Type.NAPLES25SWM or self._nic_type == NIC_Type.NAPLES25OCP or self._nic_type == NIC_Type.NAPLES100HPE or self._nic_type == NIC_Type.LACONA32):
-                    match = re.findall(HP_SWM_DISP_PN_FMT, self.nic_get_cmd_buf())
-                else:
-                    match = re.findall(HP_DISP_PN_FMT, self.nic_get_cmd_buf())
-            else:
-                if self._nic_type == NIC_Type.NAPLES100IBM:
-                    match = re.findall(IBM_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
-             
-                                                 
-                elif self._nic_type == NIC_Type.VOMERO2:
-                    match = re.findall(VOMERO2_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
-                    match = re.findall(PEN_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.NAPLES25OCP:
-                    match = re.findall(OCP_DELL_DISP_PN_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP):
-                    match = re.findall(ORTANO_DISP_ASSEMBLY_FMT, self.nic_get_cmd_buf())
-                elif self._nic_type == NIC_Type.POMONTEDELL or self._nic_type == NIC_Type.LACONA32DELL:
-                    match = re.findall(DELL_PPID_PN_FMT, self.nic_get_cmd_buf())
-                else:
-                    match = re.findall(NAPLES_DISP_PN_FMT, self.nic_get_cmd_buf())
-                    if not match:
-                        #Try a 2nd match for the new FRU format which moves the pensando part number into the assembly field
-                        match = re.findall(PEN_DISP_ASSEMBLY_FMT, fru_buf)
-            if match:
-                pn = match[0]
-            else:
-                print ("fru_buf 11 match: ")
-                self.nic_set_err_msg("Assembly/Part number doesn't match any known formats in SMB FRU:\n {}".format(self.nic_get_cmd_buf()))
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
-            
 
-            if self._sn != sn or self._mac != mac or self._pn != pn or self._date != date:
-                err_msg = " ERR: FRU MISMATCH BETWEEN ASIC FRU AND SMB FRU \n"
-                err_msg += " SN  " + self._sn + " " + sn + "\n"
-                err_msg += " MAC " + self._mac + " " + mac + "\n"
-                err_msg += " PN  " + self._pn + " " + pn + "\n"
-                if date != None:
-                    err_msg += " DT  " + self._date + " " + date + "\n"
+            ### 3. COMPARE ASIC & SMBUS
+            if self._sn != asic_sn or self._mac != asic_mac or self._pn != asic_pn or self._date != asic_date:
+                err_msg = " ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU \n"
+                err_msg += " SN  " + self._sn + " " + asic_sn + "\n"
+                err_msg += " MAC " + self._mac + " " + asic_mac + "\n"
+                err_msg += " PN  " + self._pn + " " + asic_pn + "\n"
+                if asic_date != None:
+                    err_msg += " DT  " + self._date + " " + asic_date + "\n"
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_err_msg(err_msg)
                 return False
 
-
-        #ALOM CARD WITH SWM IF ATTACHED
-        if self._nic_type == NIC_Type.NAPLES25SWM:
-            if swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM:
-                errlist = list()
-                rc = self.nic_swm_check_alom_present(errlist)
-                if not rc:
-                    print(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
-                    self.nic_set_err_msg(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-                else:
-                    print(" ALOM PRESENT")
-
-                fru_buf = self.mtp_read_alom_fru(self._slot)    
-                
-                if not fru_buf:
-                    print ("fru_buf 12: {}".format(nic_cmd))
-                    self.nic_set_err_msg("Unable to read ALOM FRU")
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False        
-                
-                match = None
-                match = re.findall(ALOM_SN_FMT, fru_buf)
-                if match:
-                    self._alom_sn = match[0]
-                else:
-                    print ("fru_buf 13: {}".format(fru_buf))
-                    self.nic_set_err_msg("ALOM Serial number doesn't match any known formats:\n {}".format(fru_buf))
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-
-                # retrieve ALOM card PN
-                match = None
-                match = re.findall(ALOM_DISP_BIA_PN_FMT, fru_buf)
-                if match:
-                    self._alom_pn = match[0]
-                else:
-                    print ("fru_buf 14: {}".format(fru_buf))
-
-                    self.nic_set_err_msg("ALOM BIA part number doesn't match any known formats:\n {}".format(fru_buf))
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-            
-           
-                # retrieve ALOM card Product Number PN
-                match = None
-                match = re.findall(ALOM_DISP_PIA_PN_FMT, fru_buf)
-                if match:
-                    self._alom_pro_no = match[0]
-                    #print("******ALOM PRODUCT NUMBER******")
-                    #print(self._alom_pro_no)
-                    #print("******************************")
-                else:
-                    print ("fru_buf 15: {}".format(fru_buf))
-
-                    self.nic_set_err_msg("ALOM PIA part number doesn't match any known formats:\n {}".format(fru_buf))
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-        
-        # OCP Adapter FRU, as well
-        if self._nic_type == NIC_Type.NAPLES25OCP:
-            if not self.nic_ocp_adapter_fru_init():
-                return False
-                
         return True
-        
-    def nic_disp_fru(self):
-        if self._nic_type == NIC_Type.NAPLES25SWM:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._nic_type == NIC_Type.NAPLES100HPE:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
-            nic_cmd = MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        else:
-            nic_cmd = MFG_DIAG_CMDS.NIC_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
-        '''
-        if self._nic_type == NIC_Type.NAPLES25SWM and 
-        (swmtestmode == Swm_Test_Mode.SWMALOM or swmtestmode == Swm_Test_Mode.ALOM):
-                errlist = list()
-                rc = self.nic_swm_check_alom_present(errlist)
-                if not rc:
-                    print(" NIC_FRU_DISPLAY: ALOM IS NOT SHOWING PRESENT")
-                    self.nic_set_err_msg(" NIC_FRU_DISPLAY: ALOM IS NOT SHOWING PRESENT")
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-                fru_buf = self.mtp_read_alom_fru(self._slot)
-                if not fru_buf:
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
-        '''
-        fru_buf = self.nic_get_info(nic_cmd)
+
+    def nic_sn_init(self, factory_location, fpo=False):
+        """ To validate SN, first need to read PN """
+        fru_buf = self.nic_read_fru(fpo, smb_fru=True)
         if not fru_buf:
+            self.nic_set_err_msg("Unable to read SMB FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
+
         return True
 
-    def nic_disp_2nd_fru(self):
-        #SMB FRU dump
-        if self._nic_type == NIC_Type.NAPLES25OCP:
-            cmd = MFG_DIAG_CMDS.MTP_HP_OCP_FRU_DISP_FMT.format(self._slot+1)
-        elif self._nic_type == NIC_Type.NAPLES25SWM:
-            cmd = MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(self._slot+1)
-        elif self._nic_type == NIC_Type.NAPLES100HPE:
-            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-        elif self._vendor == NIC_Vendor.HPE and self._nic_type != NIC_Type.LACONA32:
-            cmd = MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(self._slot+1)
-        else:
-            cmd = MFG_DIAG_CMDS.MTP_FRU_DISP_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-        return True
+
+
+
+
+
 
     def nic_get_fru(self):
-        if not self._sn or not self._mac or not self._pn or not self._vendor:
+        if not self._sn or not self._mac or not self._pn:
 
             return None
         else:
-            return [self._sn, self._mac, self._pn, self._date, self._vendor]
+            return [self._sn, self._mac, self._pn, self._date]
 
     def nic_alom_get_fru(self):
         if not self._alom_sn or not self._alom_pn:
@@ -3051,11 +2485,99 @@ class nic_ctrl():
             return None
         else:
             return self._assettagnumber
+
     def nic_get_naples_pn(self):
         if not self._pn:
             return None
         else:
-            return self._pn                            
+            return self._pn
+
+    def nic_read_fru(self, fpo=False, smb_fru=False, alom=False, ocp_adap=False):
+        cmd = "eeutil -disp -dev=fru"
+        if fpo:
+            cmd += " -fpo"
+
+        if alom:
+            cmd += " -hpeAlom"
+        elif ocp_adap:
+            cmd += " -custType MTPOCPADAPTER"
+        # legacy type specifications:
+        elif self._nic_type == NIC_Type.NAPLES25SWM:
+            cmd += " -hpeSwm"
+        elif self._nic_type == NIC_Type.NAPLES25OCP:
+            cmd += " -hpeOcp"
+        elif self._nic_type == NIC_Type.NAPLES25 and libmfg_utils.part_number_match(self._pn, PART_NUMBERS_MATCH.N25_HPE_PN_FMT):
+            cmd += " -hpe"
+
+        if smb_fru:
+            cmd += " -uut=UUT_{:d}".format(self._slot+1)
+            fru_buf = self.mtp_get_info(cmd)
+        else:
+            fru_buf = self.nic_get_info(cmd)
+
+        return fru_buf
+
+    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, smb_fru=False):
+        eeutil_cmd_lookup = {
+            PART_NUMBERS_MATCH.N100_PEN_PN_FMT:         "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N100_NET_PN_FMT:         "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N100_IBM_PN_FMT:         "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N100_HPE_PN_FMT:         "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT:     "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N100_DELL_PN_FMT:        "eeutil -dev=fru -update",
+
+            PART_NUMBERS_MATCH.N25_PEN_PN_FMT:          "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N25_HPE_PN_FMT:          "eeutil -dev=fru -update -hpe",
+            PART_NUMBERS_MATCH.N25_EQI_PN_FMT:          "eeutil -dev=fru -update",
+
+            PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT:      "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N25_SWM_PEN_TAA_PN_FMT:  "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N25_SWM_DEL_PN_FMT:      "eeutil -dev=fru -update",
+            PART_NUMBERS_MATCH.N25_SWM_833_PN_FMT:      "eeutil -dev=fru -update",
+
+            PART_NUMBERS_MATCH.N25_OCP_HPE_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256 -hpeOcp",
+            PART_NUMBERS_MATCH.N25_OCP_DEL_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256"
+        }
+
+        if nic_type is None:
+            # allow passing in nic_type, for rework script purposes
+            nic_type = self._nic_type
+
+        if nic_type in CAPRI_NIC_TYPE_LIST:
+            if not self._pn_format:
+                self.nic_set_err_msg("FRU not initialized correctly")
+                return False
+            cmd = eeutil_cmd_lookup[self._pn_format]
+        else:
+            cmd = "eeutil -dev=fru -update -erase -numBytes=512"
+        
+        cmd += " -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}'".format(date, sn, mac, pn)
+
+        if smb_fru:
+            cmd += " -uut=UUT_{:d}".format(self._slot+1)
+            cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+        else:
+            cmd_buf = self.nic_get_info(cmd)
+
+        if not cmd_buf:
+            if smb_fru:
+                self.nic_set_err_msg("Unable to program SMB FRU")
+            else:
+                self.nic_set_err_msg("Unable to program ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
+        if not match:
+            self.nic_set_err_msg(" FRU PROGRAMMING FAILED\n")
+            self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
 
     def nic_cpld_init(self, smb=False):
         read_data = [0]

@@ -17,7 +17,6 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libdefs import NIC_Vendor
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl

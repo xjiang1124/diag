@@ -17,7 +17,6 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libdefs import NIC_Vendor
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL

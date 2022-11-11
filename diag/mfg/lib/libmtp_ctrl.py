@@ -2899,18 +2899,23 @@ class mtp_ctrl():
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
-        if not self._nic_ctrl_list[slot].nic_program_fru(date, sn, mac, pn, nic_type):
-            self.cli_log_slot_err_lock(slot, "Program NIC FRU failed")
+        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=False):
+            self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
-            if not self._nic_ctrl_list[slot].nic_disp_2nd_fru():
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=True):
+                self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-        if not self._nic_ctrl_list[slot].nic_disp_fru():
+        if not self._nic_ctrl_list[slot].nic_read_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -4282,9 +4287,8 @@ class mtp_ctrl():
         test = "NIC_FRU_INIT"
         self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = self.log_slot_test_start(slot, test)
-        #self.cli_log_slot_inf_lock(slot, msg)
 
-        if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot], fpo=fru_fpo):
+        if not self._nic_ctrl_list[slot].nic_fru_init(self._factory_location, init_date, self._swmtestmode[slot], fpo=fru_fpo):
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_set_nic_status_fail(slot)
@@ -4415,7 +4419,6 @@ class mtp_ctrl():
                             if riser_sn is None or riser_progdate is None:
                                 self.cli_log_slot_err_lock(slot, "Retrieve OCP Adapter FRU failed")
                     else:
-                        self.cli_log_slot_inf(slot, "==> Manufacture Vendor: {:s}".format(fru_info_list[4]))
                         self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0],fru_info_list[1],fru_info_list[2]))
                         if fru_info_list[3]:
                             self.cli_log_slot_inf(slot, "==> FRU Program Date: {:s}".format(fru_info_list[3]))
