@@ -657,6 +657,14 @@ def main():
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
+    if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(pass_nic_list):
+        for slot in pass_nic_list:
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
@@ -672,13 +680,10 @@ def main():
 
         if nic_type not in PSLC_MODE_TYPE_LIST:
             continue
-        test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
-        # skip extra tests until PCN approved:
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT) or (nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot)):
-            testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC"]
+        test_list = ["QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
 
         if nic_type == NIC_Type.NAPLES100DELL:
-            test_list = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
+            test_list = ["QSPI_PROG"]
 
         for skip_test in args.skip_test:
             if skip_test in test_list:

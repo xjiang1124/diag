@@ -335,6 +335,14 @@ def main():
         if "CONSOLE_BOOT" not in args.skip_test:
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(pass_nic_list):
+            for slot in pass_nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
@@ -346,10 +354,10 @@ def main():
             if nic_type not in PSLC_MODE_TYPE_LIST and nic_type != NIC_Type.NAPLES100DELL:
                 continue
 
-            testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
+            testlist = ["QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
 
             if nic_type == NIC_Type.NAPLES100DELL:
-                testlist = ["NIC_BOOT_INIT", "NIC_MGMT_INIT", "QSPI_PROG"]
+                testlist = ["QSPI_PROG"]
 
             for skip_test in args.skip_test:
                 if skip_test in testlist:
@@ -357,11 +365,7 @@ def main():
             for test in testlist:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "NIC_BOOT_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
-                elif test == "NIC_MGMT_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_mgmt_init(slot, fpo=True)
-                elif test == "SET_PSLC":
+                if test == "SET_PSLC":
                     ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
                 elif test == "EMMC_HWRESET_SET":
                     ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
