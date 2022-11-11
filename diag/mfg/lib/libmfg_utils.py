@@ -1190,21 +1190,32 @@ def flx_soap_get_uut_info_xml(stage, sn, factory):
 
 def flx_sn_to_factory(sn):
     if not sn:
-        return False
-    if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
-        return Factory.FSP
-    elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
-        return Factory.MILPITAS
-    elif re.match(FLX_P1_BUILD_SN_FMT, sn):
-        return Factory.P1
-    else:
         return None
 
+    for factory_location in SN_FORMAT_TABLE.keys():
+        if factory_location == Factory.LAB:
+            # skip, dont use lab SN to match
+            continue
+
+        for sn_regex in SN_FORMAT_TABLE[factory_location].values():
+            if re.match(sn_regex, sn):
+                return factory_location
+
+    return None
+
 def FindDellSN(sn):
-    if re.match(DELL_BUILD_SN_FMT, sn):
-        return True
-    else:
-        return False
+    dell_cards = [
+        PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT,
+        PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT
+        ]
+
+    for factory_location in SN_FORMAT_TABLE.keys():
+        for pn_regex in SN_FORMAT_TABLE[factory_location]:
+            if pn_regex in dell_cards:
+                sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
+                if re.match(sn_regex, sn):
+                    return True
+    return False
 
 def flx_stage_to_penang(stage):
     if stage == FF_Stage.FF_DL:
