@@ -46,6 +46,7 @@ class nic_ctrl():
         self._boot_image = None
         self._alom_sn = None
         self._alom_pn = None
+        self._alom_prod_num = None
         self._assettagnumber = None
         self._kernel_timestamp = None
         self._fw_json = None
@@ -1132,25 +1133,6 @@ class nic_ctrl():
             cmd = MFG_DIAG_CMDS.NIC_POWER_RAIL_DISP_FMT.format(self._slot+1)
             self.mtp_exec_cmd(cmd)
             return False
-
-    def nic_program_alom_fru(self, date, alom_sn, alom_pn):
-        if not self.nic_vendor_init(alom_sn):
-            return False
-
-               
-        cmd = MFG_DIAG_CMDS.MTP_HP_ALOM_FRU_PROG_FMT.format(date, alom_sn, alom_pn, self._slot+1)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-           return False
-
-        cmd = MFG_DIAG_CMDS.MTP_HP_ALOM_FRU_DISP_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
-           return False
-           
-        return True
-
-    def mtp_read_alom_fru(self, slot):
-        cmd = MFG_DIAG_CMDS.MTP_HP_ALOM_FRU_DISP_FMT.format(slot+1)
-        return self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
 
     def nic_dump_fru(self, expect_sn="", expect_mac="", expect_pn=""):
         """
@@ -2483,6 +2465,17 @@ class nic_ctrl():
                 self.nic_set_err_msg(err_msg)
                 return False
 
+        ### 4. Validate ALOM FRU, if present
+        if self._nic_type == NIC_Type.NAPLES25SWM and swmtestmode in (Swm_Test_Mode.SWMALOM, Swm_Test_Mode.ALOM):
+            errlist = list()
+            if not self.nic_swm_check_alom_present(errlist):
+                self.nic_set_err_msg(" NIC_FRU_INIT: ALOM IS NOT SHOWING PRESENT")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if not self.nic_alom_fru_init(factory_location):
+                return False
+
         return True
 
     def nic_sn_init(self, factory_location, fpo=False):
@@ -2500,6 +2493,30 @@ class nic_ctrl():
 
         if not self.nic_fru_validate_sn(fru_buf, factory_location):
             self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_alom_fru_init(self, factory_location):
+        fru_buf = self.nic_read_fru(fpo, smb_fru=True, alom=True)
+        if not fru_buf:
+            self.nic_set_err_msg("Unable to read ALOM FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_alom_bia(fru_buf):
+            self.nic_set_err_msg("ALOM BIA part number doesn't match any known formats")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_alom_pia(fru_buf):
+            self.nic_set_err_msg("ALOM PIA part number doesn't match any known formats")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_sn(fru_buf, factory_location, alom=True):
+            self.nic_set_err_msg("ALOM serial number doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
@@ -2639,6 +2656,60 @@ class nic_ctrl():
             if match:
                 self._pn = match[0]
                 self._pn_format = pn_regex
+                return True
+
+        return False
+
+    def nic_fru_validate_alom_bia(self, fru_buf):
+        """ Save to self._alom_pn and return True/False """
+        PART_NUM_FIELD = r"Part Number"
+        pn_table = {
+            NIC_Type.NAPLES25SWM: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                ]
+        }
+        if self._nic_type not in pn_table.keys():
+            self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
+            return False
+
+        pn_regex_list = pn_table[self._nic_type]
+        if not pn_regex_list:
+            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
+            return False
+
+        for disp_field, pn_regex in pn_regex_list:
+            pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
+
+            match = re.findall(pn_disp_regex, fru_buf)
+            if match:
+                self._alom_pn = match[0]
+                return True
+
+        return False
+
+    def nic_fru_validate_alom_pia(self, fru_buf):
+        """ Save to self._alom_prod_num and return True/False """
+        PROD_NUM_FIELD = r"HPE Product Number"
+        pn_table = {
+            NIC_Type.NAPLES25SWM: [
+                (PROD_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                ]
+        }
+        if self._nic_type not in pn_table.keys():
+            self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
+            return False
+
+        pn_regex_list = pn_table[self._nic_type]
+        if not pn_regex_list:
+            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
+            return False
+
+        for disp_field, pn_regex in pn_regex_list:
+            pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
+
+            match = re.findall(pn_disp_regex, fru_buf)
+            if match:
+                self._alom_prod_num = match[0]
                 return True
 
         return False
@@ -2795,6 +2866,28 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        return True
+
+    def nic_program_alom_fru(self, date, alom_sn, alom_pn):
+        cmd = "eeutil -dev=fru -update -erase -numBytes=1024 -hpeAlom"
+
+        cmd += " -date='{:s}' -sn='{:s}' -pn='{:s}'".format(date, alom_sn, alom_pn)
+
+        cmd += " -uut=UUT_{:d}".format(self._slot+1)
+        cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+    
+        if not cmd_buf:
+            self.nic_set_err_msg("Unable to program SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
+        if not match:
+            self.nic_set_err_msg(" FRU PROGRAMMING FAILED\n")
+            self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+           
         return True
 
     def nic_cpld_init(self, smb=False):

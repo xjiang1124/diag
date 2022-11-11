@@ -2966,40 +2966,37 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
 
         return True
-    def mtp_verify_hpe_pn_fru(self, slot, hpe_pn):
-    
-        fru_pn = self._nic_ctrl_list[slot].get_nic_fru_hpe_pn()
 
-        if fru_pn != hpe_pn:
-            self.cli_log_slot_err_lock(slot, "HPE PN Verify Failed expect {:s}".format(hpe_pn))
+    def mtp_verify_hpe_pn_fru(self, slot, hpe_pn):
+        got_pn = self._nic_ctrl_list[slot]._prod_num
+        if not got_pn:
             return False
+
+        if got_pn != hpe_pn:
+            self.cli_log_slot_err_lock(slot, "Read HPE PN: {:s}, expect {:s}".format(got_pn, hpe_pn))
+            return False
+
         self.cli_log_slot_inf_lock(slot, "Verify HPE PN FRU Pass, PN={:s}".format(hpe_pn))
 
         return True
         
     def mtp_verify_nic_alom_fru(self, slot, alom_sn, alom_pn, date):
+        alom_fru_info = self.mtp_get_nic_alom_fru(slot)
+        got_alom_sn = alom_fru_info[0]
+        got_alom_pn = alom_fru_info[1]
+        got_alom_date = alom_fru_info[2]
     
-        fru_buf = self._nic_ctrl_list[slot].mtp_read_alom_fru(slot)
-
-        if not fru_buf:
-            self.mtp_set_nic_status_fail(slot)
+        if got_alom_sn != alom_sn:
+            self.cli_log_slot_err_lock(slot, "ALOM SN Verify Failed, got {:s}, expecting {:s}".format(got_alom_sn, alom_sn))
+            return False
+        if got_alom_pn != alom_pn:
+            self.cli_log_slot_err_lock(slot, "ALOM PN Verify Failed, got {:s}, expecting {:s}".format(got_alom_pn, alom_pn))
+            return False
+        if got_alom_date != alom_date:
+            self.cli_log_slot_err_lock(slot, "ALOM Date Verify Failed, got {:s}, expecting {:s}".format(got_alom_date, alom_date))
             return False
 
-        # retrieve card serial number
-        
-        newdate = date[0] + date[1] + '/' + date[2] + date[3] + '/' + date[4] + date[5]
-            
-        if not re.findall(alom_sn, fru_buf):
-            self.cli_log_slot_err_lock(slot, "ALOM SN Verify Failed expect {:s}".format(alom_sn))
-            return False
-        if not re.findall(alom_pn, fru_buf):
-            self.cli_log_slot_err_lock(slot, "ALOM PN Verify Failed expect {:s}".format(alom_pn))
-            return False
-        if not re.findall(newdate, fru_buf):           
-            self.cli_log_slot_err_lock(slot, "Date Verify Failed expect {:s}".format(newdate))
-            return False
         self.cli_log_slot_inf_lock(slot, "Verify NIC ALOM FRU Pass, sn={:s}, pn={:s}, date={:s}".format(alom_sn, alom_pn, date))
-
         return True
 
     def mtp_verify_nic_assettag(self, slot, exp_assettag):
