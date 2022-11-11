@@ -8,6 +8,8 @@ PEN_PN_MINUS_REV_MASK = -3 # (last three digits)
 
 HPE_MILPITAS_SN_FMT = r"5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HPE_PENANG_SN_FMT = r"[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
+HPE_PART_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
+HPE_PROD_NUM_FMT = r"([A-Z0-9]{6}-B[0-9]{2})"
 
 DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
 DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F|0W5WGK)"

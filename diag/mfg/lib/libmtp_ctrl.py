@@ -3011,138 +3011,16 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
 
-    def mtp_reverse_lookup_naples_pn(self, slot):
+
+    def mtp_nic_hpe_rework_verify(self, slot):
+        """ REWORK VERIFICATION FOR CAP CHANGE 
+            For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42
         """
-         Get NIC type from PN
-        """
-        naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
-        
-        if not naples_pn:
-            self.cli_log_slot_err_lock(slot, "Verify NIC:  Retreive PN Failed")
+        if not self._nic_ctrl_list[slot].nic_hpe_verify_rework("0B"):
+            self.mtp_get_nic_err_msg(slot)
             return False
 
-        if re.match(PART_NUMBERS_MATCH.N100_PN_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES100
-
-        elif re.match(PART_NUMBERS_MATCH.N100_IBM_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES100IBM
-
-        elif re.match(PART_NUMBERS_MATCH.N100_HPE_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES100HPE
-
-        elif re.match(PART_NUMBERS_MATCH.N100_DELL_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES100DELL
-
-        elif re.match(PART_NUMBERS_MATCH.N25_PN_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES25
-
-        elif re.match(PART_NUMBERS_MATCH.N25_SWM_HPE_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES25SWM
-
-        elif re.match(PART_NUMBERS_MATCH.N25_SWM_DEL_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES25SWMDELL
-
-        elif re.match(PART_NUMBERS_MATCH.N25_SWM_833_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES25SWM833
-
-        elif re.match(PART_NUMBERS_MATCH.N25_OCP_PN_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.NAPLES25OCP
-
-        elif re.match(PART_NUMBERS_MATCH.FORIO_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.FORIO
-
-        elif re.match(PART_NUMBERS_MATCH.VOMERO_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.VOMERO
-
-        elif re.match(PART_NUMBERS_MATCH.VOMERO2_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.VOMERO2
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO2_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO2
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO2ADI
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO2ADIIBM
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO2ADIMSFT
-
-        elif re.match(PART_NUMBERS_MATCH.ORTANO2INTERP_FMT_ALL, naples_pn):
-            nic_type = NIC_Type.ORTANO2INTERP
-
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type for PN {:s}".format(naples_pn))
-            return False
-
-        self.mtp_set_nic_type(slot, nic_type)
         return True
-
-    def mtp_verify_naples_pn(self, slot):
-        naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
-        
-        if not naples_pn:
-            self.cli_log_slot_err_lock(slot, "Verify NIC:  Retreive PN Failed")
-            return False
-
-        nic_type = self.mtp_get_nic_type(slot)
-        if nic_type == NIC_Type.NAPLES100:
-            exp_pn = PART_NUMBERS_MATCH.N100_PN_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES100IBM:
-            exp_pn = PART_NUMBERS_MATCH.N100_IBM_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES100HPE:
-            exp_pn = PART_NUMBERS_MATCH.N100_HPE_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES100DELL:
-            exp_pn = PART_NUMBERS_MATCH.N100_DELL_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES25:
-            exp_pn = PART_NUMBERS_MATCH.N25_PN_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES25SWM:
-            exp_pn = PART_NUMBERS_MATCH.N25_SWM_HPE_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES25SWMDELL:
-            exp_pn = PART_NUMBERS_MATCH.N25_SWM_DEL_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES25SWM833:
-            exp_pn = PART_NUMBERS_MATCH.N25_SWM_833_FMT_ALL
-        elif nic_type == NIC_Type.NAPLES25OCP:
-            exp_pn = PART_NUMBERS_MATCH.N25_OCP_PN_FMT_ALL
-        elif nic_type == NIC_Type.FORIO:
-            exp_pn = PART_NUMBERS_MATCH.FORIO_FMT_ALL
-        elif nic_type == NIC_Type.VOMERO:
-            exp_pn = PART_NUMBERS_MATCH.VOMERO_FMT_ALL
-        elif nic_type == NIC_Type.VOMERO2:
-            exp_pn = PART_NUMBERS_MATCH.VOMERO2_FMT_ALL
-        elif nic_type == NIC_Type.ORTANO:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO_FMT_ALL
-        elif nic_type == NIC_Type.ORTANO2:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO2_FMT_ALL
-        elif nic_type == NIC_Type.POMONTEDELL:
-            exp_pn = PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT
-        elif nic_type == NIC_Type.LACONA32DELL:
-            exp_pn = PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT
-        elif nic_type == NIC_Type.LACONA32:
-            exp_pn = PART_NUMBERS_MATCH.LACONA32_PN_FMT
-        elif nic_type == NIC_Type.ORTANO2ADI:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL
-        elif nic_type == NIC_Type.ORTANO2ADIIBM:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL
-        elif nic_type == NIC_Type.ORTANO2ADIMSFT:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL
-        elif nic_type == NIC_Type.ORTANO2INTERP:
-            exp_pn = PART_NUMBERS_MATCH.ORTANO2INTERP_FMT_ALL
-        else:
-            self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
-            return False
-
-        match = re.findall(exp_pn, naples_pn)
-        if match:
-            self.cli_log_slot_inf_lock(slot, "==> Verify Naples_PN Pass, naples_pn={:s}".format(naples_pn))
-            return True
-        else:
-            self.cli_log_slot_err_lock(slot, "NAPLES_PN Verify Failed, Read {:s}".format(naples_pn))
-            return False
 
     def mtp_nic_program_ocp_adapter_fru(self, slot, date, sn, mac, pn):
         nic_type = self.mtp_get_nic_type(slot)

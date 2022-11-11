@@ -44,6 +44,7 @@ class nic_ctrl():
         self._pn_format = None # store a regex from class PART_NUMBERS_MATCH
         self._img_timestamp = None
         self._boot_image = None
+        self._prod_num = None
         self._alom_sn = None
         self._alom_pn = None
         self._alom_prod_num = None
@@ -2417,6 +2418,15 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        ### 1b. Validate HPE product number, if applicable
+        if self._pn_format in (
+            PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+            ):
+            if not self.nic_fru_validate_hpe_prod_num(fru_buf):
+                self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
         asic_sn = self._sn
         asic_pn = self._pn
         asic_mac = self._mac
@@ -2453,6 +2463,15 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
+            ### 2b. Validate HPE product number, if applicable
+            if self._pn_format in (
+                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                ):
+                if not self.nic_fru_validate_hpe_prod_num(fru_buf):
+                    self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+
             ### 3. COMPARE ASIC & SMBUS
             if self._sn != asic_sn or self._mac != asic_mac or self._pn != asic_pn or self._date != asic_date:
                 err_msg = " ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU \n"
@@ -2464,6 +2483,11 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 self.nic_set_err_msg(err_msg)
                 return False
+            if self._prod_num != None:
+                if self._prod_num != asic_prod_num:
+                    self.nic_set_err_msg("ERR: FRU MISMATCH BETWEEN SMB FRU AND ASIC FRU \n")
+                    self.nic_set_err_msg(" HPE PROD NUM " + self._prod_num + " " + asic_prod_num + "\n")
+                    return False
 
         ### 4. Validate ALOM FRU, if present
         if self._nic_type == NIC_Type.NAPLES25SWM and swmtestmode in (Swm_Test_Mode.SWMALOM, Swm_Test_Mode.ALOM):
@@ -2745,10 +2769,68 @@ class nic_ctrl():
             self._date = None
         return True
 
+    def nic_fru_validate_hpe_prod_num(self, fru_buf):
+        """ Save to self._prod_num and return True/False """
+        disp_field = r"HPE Product Number"
+        pn_regex = HPE_PROD_NUM_FMT
+        pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
 
+        match = re.findall(pn_disp_regex, fru_buf)
+        if match:
+            self._prod_num = match[0]
+            return True
 
+        return False
 
+    def nic_fru_validate_hpe_version(self, fru_buf, exp_version):
+        REVISION_FIELD = r"Revision Code"
+        PROD_VER_FIELD = r"Product Version"
+        VER_HEX_MATCH = "[0-9A-Fa-f]+"
 
+        if self._pn_format == PART_NUMBERS_MATCH.N25_HPE_PN_FMT:
+            disp_field = REVISION_FIELD
+        elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:
+            disp_field = PROD_VER_FIELD
+        else:
+            # not applicable
+            self.nic_set_err_msg("validate_hpe_version function not for this nic type")
+            return False
+        hpe_version_disp_regex = r"%s +(%s)" % (disp_field, VER_HEX_MATCH)
+
+        match = re.findall(hpe_version_disp_regex, fru_buf)
+        if not match:
+            self.nic_set_err_msg("Couldn't find {:s} field in FRU".format(disp_field))
+            return False
+        if match[0] != exp_version:
+            self.nic_set_err_msg("Looking for {:s} = {:s}, got {}".format(disp_field, exp_version, match[0]))
+            return False
+
+        return True
+
+    def nic_hpe_verify_rework(self, exp_version):
+        fru_buf = self.nic_read_fru(smb_fru=False)
+        if not fru_buf:
+            self.nic_set_err_msg("Unable to read ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_hpe_version(fru_buf, exp_version):
+            self.nic_set_err_msg("Product Version/Revision doesn't match any known formats in ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        fru_buf = self.nic_read_fru(smb_fru=True)
+        if not fru_buf:
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_hpe_version(fru_buf, exp_version):
+            self.nic_set_err_msg("Product Version/Revision doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
 
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn:
