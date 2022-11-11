@@ -5,6 +5,7 @@ from libmfg_cfg import Factory
 FLX_SN_SUFFIX_FMT = r"\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
 PEN_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}"
 PEN_PN_MINUS_REV_MASK = -3 # (last three digits)
+OCP_ADAPTER_FIXED_PN = "73-0024-03"
 
 HPE_MILPITAS_SN_FMT = r"5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
 HPE_PENANG_SN_FMT = r"[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
@@ -21,6 +22,7 @@ DELL_PPID_FMT = DELL_PPID_COUNTRY_FMT + DELL_PPID_PART_NUM_FMT + DELL_PPID_MFG_I
 
 PEN_MAC_DASHES_FMT = r"00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}"
 PEN_MAC_NO_DASHES_FMT = r"00[a,A][e,E][c,C][d,D][a-fA-F0-9]{2}[a-fA-F0-9]{2}[a-fA-F0-9]{2}"
+OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
 
 class PART_NUMBERS_MATCH:
     N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES100 PENSANDO

@@ -2500,6 +2500,11 @@ class nic_ctrl():
             if not self.nic_alom_fru_init(factory_location):
                 return False
 
+        ### 5. Validate OCP Adapter FRU, if present
+        if self._nic_type == NIC_Type.NAPLES25OCP:
+            if not self.nic_ocp_adapter_fru_init(factory_location):
+                return False
+
         return True
 
     def nic_sn_init(self, factory_location, fpo=False):
@@ -2541,6 +2546,29 @@ class nic_ctrl():
 
         if not self.nic_fru_validate_sn(fru_buf, factory_location, alom=True):
             self.nic_set_err_msg("ALOM serial number doesn't match any known formats")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_ocp_adapter_fru_init(self, factory_location, fpo=False):
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+            self.nic_set_err_msg("OCP Adapter FRU init function is not for type {:s}".format(self._nic_type))
+            return False
+
+        fru_buf = self.nic_read_fru(fpo, smb_fru=True, ocp_adap=True)
+        if not fru_buf:
+            self.nic_set_err_msg("Unable to read OCP Adapter FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_sn(fru_buf, factory_location, ocp_adap=True):
+            self.nic_set_err_msg("OCP Adapter serial number doesn't match any known formats")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_date(fru_buf, init_date=True, ocp_adap=True):
+            self.nic_set_err_msg("OCP Adapter date field doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
@@ -2970,6 +2998,32 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
            
+        return True
+
+    def nic_program_ocp_adapter_fru(self, date, sn, mac, pn):
+        if self._nic_type != NIC_Type.NAPLES25OCP:
+            self.nic_set_err_msg("This function is only for OCP")
+            return False
+        
+        cmd = "eeutil -dev=fru -update -erase -numBytes=128 -custType MTPOCPADAPTER"
+
+        cmd += " -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}'".format(date, sn, mac, pn)
+        
+        cmd += " -uut=UUT_{:d}".format(self._slot+1)
+        cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+    
+        if not cmd_buf:
+            self.nic_set_err_msg("Unable to program SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
+        if not match:
+            self.nic_set_err_msg(" FRU PROGRAMMING FAILED\n")
+            self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
         return True
 
     def nic_cpld_init(self, smb=False):
@@ -4950,37 +5004,6 @@ class nic_ctrl():
         # check signature
         if MFG_DIAG_SIG.NIC_L1_ESEC_PROG_OK_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
-
-        return True
-
-    def nic_ocp_adapter_fru_init(self):
-        if self._nic_type != NIC_Type.NAPLES25OCP:
-            self.nic_set_err_msg("OCP Adapter FRU init function is not for type {:s}".format(self._nic_type))
-            return False
-
-        cmd = MFG_DIAG_CMDS.MTP_OCP_ADAP_FRU_DISP_FMT.format(self._slot+1)
-        fru_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
-        if not fru_buf:
-            self.nic_set_err_msg("Failed to read OCP Adapter FRU")
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        match = re.findall(NAPLES_DISP_SN_FMT, fru_buf)
-        if match:
-            self._riser_sn = match[0]
-        else:
-            self.nic_set_err_msg("OCP Adapter serial number doesn't match any known formats:\n {}".format(fru_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-            return False
-
-        match = None
-        match = re.findall(NAPLES_DISP_DATE_FMT, fru_buf)
-        if match:
-            self._riser_progdate = match[0].replace('/','')
-        else:
-            self.nic_set_err_msg("OCP Adapter date field doesn't match any known formats:\n {}".format(fru_buf))
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         return True

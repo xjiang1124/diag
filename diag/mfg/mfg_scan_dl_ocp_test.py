@@ -18,6 +18,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import *
+from libsku_utils import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
@@ -398,10 +399,6 @@ def main():
                     pass_nic_list.remove(slot)
                 continue
 
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
-
     mtp_mgmt_ctrl.cli_log_inf("Program Process Started", level=0)
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -422,21 +419,6 @@ def main():
             alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
-        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-        if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
-        if nic_type == NIC_Type.NAPLES25SWM:
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
-        if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
-        failsafe_cpld_img_file = ""
-        if nic_type in ELBA_NIC_TYPE_LIST:
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
-        uboot_img_file = ""
-        if nic_type in (NIC_Type.ORTANO2):
-            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
         if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
             mtp_exp_capability = 0x1
@@ -466,7 +448,7 @@ def main():
             pass_nic_list.append(slot)
 
         # DL precheck
-        pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT"]
+        pre_check_testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT"]
         for skipped_test in args.skip_test:
             if skipped_test in pre_check_testlist:
                 pre_check_testlist.remove(skipped_test)
@@ -475,8 +457,6 @@ def main():
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             if test == "NIC_POWER":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
-            elif test == "NIC_TYPE":
-                ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
             elif test == "NIC_PRSNT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
             elif test == "NIC_INIT":
@@ -522,7 +502,7 @@ def main():
         test_list = [""]
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.NAPLES25OCP:
-            test_list = ["ADAP_FRU_PROG", "ADAP_FRU_VERIFY"]
+            test_list = ["ADAP_FRU_PROG", "ADAP_FRU_INIT", "ADAP_FRU_VERIFY"]
 
         dsp = FF_Stage.FF_DL
 
@@ -532,12 +512,15 @@ def main():
         for test in test_list:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-            # program FRU
+            # write
             if test == "ADAP_FRU_PROG":
                 ret = mtp_mgmt_ctrl.mtp_nic_program_ocp_adapter_fru(slot, prog_date, sn, mac, pn)
-            # read back FRU
+            # read
+            elif test == "ADAP_FRU_INIT":
+                ret = mtp_mgmt_ctrl.mtp_nic_ocp_adapter_fru_init(slot)
+            # verify
             elif test == "ADAP_FRU_VERIFY":
-                ret = mtp_mgmt_ctrl.mtp_nic_program_ocp_adapter_fru(slot, prog_date, sn, mac, pn)
+                ret = mtp_mgmt_ctrl.mtp_nic_verify_ocp_adapter_fru(slot, prog_date, sn, mac, pn)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -563,7 +546,7 @@ def main():
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)

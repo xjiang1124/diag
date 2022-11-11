@@ -3023,6 +3023,13 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_program_ocp_adapter_fru(self, slot, date, sn, mac, pn):
+        """
+        sn  = scanned
+        mac = FF:FF:FF:FF:FF (fixed)
+        pn  = 73-0024-03 (fixed)
+        date= generated
+        """
+
         nic_type = self.mtp_get_nic_type(slot)
 
         if nic_type != NIC_Type.NAPLES25OCP:
@@ -3035,20 +3042,15 @@ class mtp_ctrl():
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
-        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
-            self.cli_log_slot_err_lock(slot, "Display OCP Adapter FRU failed")
-            self.mtp_dump_nic_err_msg(slot)
-            return False
+
         return True
 
     def mtp_nic_verify_ocp_adapter_fru(self, slot, exp_date, exp_sn, exp_mac, exp_pn):
-        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
-            self.cli_log_slot_err_lock(slot, "Load OCP Adapter FRU failed")
-            self.mtp_dump_nic_err_msg(slot)
-            return False
-
-        sn = self._riser_sn
-        date = self._riser_progdate
+        """ check programmed sn and date only. MAC and PN have no validation rules. """
+        sn = self.mtp_get_nic_ocp_adapter_sn(slot)
+        date = self.mtp_get_nic_ocp_adapter_progdate(slot)
+        mac = exp_mac
+        pn = exp_pn
 
         if sn != exp_sn:
             self.cli_log_slot_err_lock(slot, "SN Verify Failed, get {:s}, expect {:s}".format(sn, exp_sn))
@@ -4164,12 +4166,12 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_nic_ocp_adapter_fru_init(self, slot):
+    def mtp_nic_ocp_adapter_fru_init(self, slot, fpo=False):
         if self.mtp_get_nic_type(slot) != NIC_Type.NAPLES25OCP:
             self.cli_log_slot_err(slot, "OCP Adapter FRU init function is not for type {:s}".format(self.mtp_get_nic_type(slot)))
             return False
 
-        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init():
+        if not self._nic_ctrl_list[slot].nic_ocp_adapter_fru_init(self._factory_location, fpo):
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
