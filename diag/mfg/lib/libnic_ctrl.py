@@ -2415,6 +2415,26 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        if not self.nic_fru_validate_pn(fru_buf):
+            self.nic_set_err_msg("Part number doesn't match any known formats in ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_sn(fru_buf, factory_location):
+            self.nic_set_err_msg("Serial number doesn't match any known formats in ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_mac(fru_buf):
+            self.nic_set_err_msg("MAC address doesn't match any known formats in ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_date(fru_buf, init_date):
+            self.nic_set_err_msg("Date field doesn't match any known formats in ASIC FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
         asic_sn = self._sn
         asic_pn = self._pn
         asic_mac = self._mac
@@ -2428,6 +2448,26 @@ class nic_ctrl():
             fru_buf = self.nic_read_fru(fpo, smb_fru=True)
             if not fru_buf:
                 self.nic_set_err_msg("Unable to read SMB FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if not self.nic_fru_validate_pn(fru_buf):
+                self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if not self.nic_fru_validate_sn(fru_buf, factory_location):
+                self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if not self.nic_fru_validate_mac(fru_buf):
+                self.nic_set_err_msg("MAC address doesn't match any known formats in SMB FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
+            if not self.nic_fru_validate_date(fru_buf, init_date):
+                self.nic_set_err_msg("Date field doesn't match any known formats in SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
@@ -2453,8 +2493,186 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        if not self.nic_fru_validate_pn(fru_buf):
+            self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_validate_sn(fru_buf, factory_location):
+            self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
         return True
 
+    def nic_fru_validate_sn(self, fru_buf, factory_location, alom=False, ocp_adap=False):
+        """ Save to self._sn and return True/False """
+
+        if alom:
+            pn = self._alom_pn
+        else:
+            pn = self._pn
+
+        if libmfg_utils.part_number_match(pn, PART_NUMBERS_MATCH.N25_HPE_PN_FMT):
+            disp_field = r"HPE Serial Number"
+        else:
+            disp_field = r"Serial Number"
+
+        if factory_location not in SN_FORMAT_TABLE.keys():
+            self.nic_set_err_msg("Missing factory_location initialization for {:s}".format(factory_location))
+            return False
+
+        sn_regex = SN_FORMAT_TABLE[factory_location]["DEFAULT"]
+        for pn_regex in SN_FORMAT_TABLE[factory_location]:
+            if libmfg_utils.part_number_match(pn, pn_regex):
+                sn_regex = SN_FORMAT_TABLE[factory_location][self._pn_format]
+        sn_disp_regex = r"%s +(%s)" % (disp_field, sn_regex)
+        match = re.findall(sn_disp_regex, fru_buf)
+        if match:
+            if alom:
+                self._alom_sn = match[0]
+            elif ocp_adap:
+                self._riser_sn = match[0]
+            else:
+                self._sn = match[0]
+        else:
+            return False
+
+        return True
+
+    def nic_fru_validate_pn(self, fru_buf):
+        """ Save to self._pn and return True/False """
+        PART_NUM_FIELD = r"Part Number"
+        ASSY_NUM_FIELD = r"Assembly Number"
+        PROD_NUM_FIELD = r"HPE Product Number"
+        pn_table = {
+            NIC_Type.NAPLES100: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N100_PEN_PN_FMT),                     #68-0003-01 01    NAPLES 100 PENSANDO
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.N100_NET_PN_FMT)                      #111-04635        NAPLES 100 NETAPP
+                ],
+            NIC_Type.NAPLES100IBM: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.N100_IBM_PN_FMT)                      #68-0013-01 03    NAPLES100 IBM
+                ],
+            NIC_Type.NAPLES100HPE: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N100_HPE_PN_FMT),                     #P37692-001       NAPLES100 HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT)                  #P41854-001       NAPLES100 HPE CLOUD
+                ],
+            NIC_Type.NAPLES100DELL: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N100_DELL_PN_FMT)                     #68-0024-01 XX    NAPLES100 DELL
+                ],
+
+            NIC_Type.NAPLES25: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_PEN_PN_FMT),                      #68-0005-03 XX    NAPLES25 PENSANDO
+                (PROD_NUM_FIELD, PART_NUMBERS_MATCH.N25_HPE_PN_FMT),                      #P18669-001       NAPLES25 HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_EQI_PN_FMT)                       #68-0008-xx yy    NAPLES25 EQUINIX
+                ],
+            NIC_Type.NAPLES25SWM: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT),              #P41851-001       NAPLES25 SWM HPE CLOUD
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT),              #P46653-001       NAPLES25 SWM HPE TAA
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT),                  #68-0016-01 XX    NAPLES25 SWM PENSANDO
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_PEN_TAA_PN_FMT),              #68-0017-01 XX    NAPLES25 SWM PENSANDO TAA
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                ],
+            NIC_Type.NAPLES25SWMDELL: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_DEL_PN_FMT)                   #68-0014-01 XX    NAPLES25 SWM DELL
+                ],
+            NIC_Type.NAPLES25SWM833: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_833_PN_FMT)                   #68-0019-01 XX    NAPLES25 SWM 833
+                ],
+
+            NIC_Type.NAPLES25OCP: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_OCP_PEN_PN_FMT),                  #68-00xx-xx       NAPLES25 OCP PENSANDO
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_OCP_HPE_PN_FMT),                  #P37689-001       NAPLES25 OCP HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_OCP_HPE_CLD_PN_FMT),              #P41857-001       NAPLES25 OCP HPE CLOUD
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.N25_OCP_DEL_PN_FMT)                   #68-0010-01       NAPLES25 OCP DELL
+                ],
+
+            NIC_Type.FORIO: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.FORIO_PN_FMT)                         #68-0007-01 XX    FORIO
+                ],
+            NIC_Type.VOMERO: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.VOMERO_PN_FMT)                        #68-0009-01 XX    VOMERO
+                ],
+            NIC_Type.VOMERO2: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.VOMERO2_PN_FMT)                       #68-0011-01 XX    VOMERO2
+                ],
+
+            NIC_Type.ORTANO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO_PN_FMT)                        #68-0015-01 XX    ORTANO1
+                ],
+            NIC_Type.ORTANO2: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2_ORC_PN_FMT),                  #68-0015-02 XX    ORTANO2 ORACLE
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2_PEN_PN_FMT)                   #68-0021-02 XX    ORTANO2 MICROSOFT
+                ],
+            NIC_Type.ORTANO2ADI: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT),               #68-0026-01 XX    ORTANO2ADI ORACLE
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT),               #68-0028-01 XX    ORTANO2ADI IBM
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT)               #68-0034-01 XX    ORTANO2ADI MICROSOFT
+                ],
+            NIC_Type.ORTANO2INTERP: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT)             #68-0029-01 XX    ORTANO2 Interposer
+                ],
+
+            NIC_Type.POMONTEDELL: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
+                ],
+            NIC_Type.LACONA32DELL: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT)                  #0X322F X/A       LACONA32 DELL
+                ],
+            NIC_Type.LACONA32: [
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32_PN_FMT)                      #P47930-001       LACONA32 HPE
+                ]
+        }
+        if self._nic_type not in pn_table.keys():
+            self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
+            return False
+
+        pn_regex_list = pn_table[self._nic_type]
+        if not pn_regex_list:
+            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
+            return False
+
+        for disp_field, pn_regex in pn_regex_list:
+            pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
+            match = re.findall(pn_disp_regex, fru_buf)
+            if match:
+                self._pn = match[0]
+                self._pn_format = pn_regex
+                return True
+
+        return False
+
+    def nic_fru_validate_mac(self, fru_buf):
+        """ Save to self._mac and return True/False """
+        disp_field = r"MAC Address Base"
+        mac_regex = PEN_MAC_DASHES_FMT
+        mac_disp_regex = r"%s +(%s)" % (disp_field, mac_regex)
+        match = re.findall(mac_disp_regex, fru_buf)
+        if match:
+            self._mac = match[0]
+        else:
+            return False
+        return True
+
+    def nic_fru_validate_date(self, fru_buf, init_date, ocp_adap=False):
+        """ Save to self._date and return True/False """
+        if init_date:
+            disp_field = r"Manufacturing Date/Time"
+            date_hex = r"0x[A-Z0-9]+"
+            date_regex = r"\d{2}/\d{2}/\d{2}"
+            date_disp_regex = r"%s +%s +(%s)" % (disp_field, date_hex, date_regex)
+            match = re.findall(date_disp_regex, fru_buf)
+            if match:
+                if ocp_adap:
+                    self._riser_progdate = match[0].replace('/','')
+                else:
+                    self._date = match[0].replace('/','')
+            else:
+                return False
+        else:
+            self._date = None
+        return True
 
 
 

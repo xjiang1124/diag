@@ -3305,7 +3305,7 @@ class mtp_ctrl():
                 return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
-                self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PN_MINUS_REV_MASK]+" C1", naples_pn))
+                self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PEN_PN_MINUS_REV_MASK]+" C1", naples_pn))
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
             if software_pn != "90-0011-0003":
@@ -6747,8 +6747,8 @@ class mtp_ctrl():
 
                 if expected != received:
                     if item == "PN" and ignore_pn_rev:
-                        expected = expected[:PN_MINUS_REV_MASK]
-                        received = received[:PN_MINUS_REV_MASK]
+                        expected = expected[:PEN_PN_MINUS_REV_MASK]
+                        received = received[:PEN_PN_MINUS_REV_MASK]
                         if expected == received:
                             if slot not in fru_reprogram_list:
                                 fru_reprogram_list.append(slot)

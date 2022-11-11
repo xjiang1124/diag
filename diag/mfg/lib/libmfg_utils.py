@@ -30,6 +30,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
+from libsku_utils import *
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -250,33 +251,35 @@ def dell_ppid_validate(tmp):
     else:
         return None
 
-def serial_number_validate(tmp):
-    if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
-        return tmp
-    elif re.match(HP_SN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    elif re.match(DELL_PPID_SN_FMT, tmp) and (len(tmp) == 14):
-        return tmp
+def serial_number_validate(tmp, factory_location=Factory.LAB, pn_regex="DEFAULT"):
+    sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
+    match = re.match(sn_regex, tmp)
+    if match:
+        if match.group(0) == tmp:
+            # no truncation happened during regex match
+            return tmp
+        else:
+            return None
     else:
         return None
 
 
 def mac_address_validate(tmp):
-    if re.match(NAPLES_MAC_FMT, tmp) and (len(tmp) == 12):
+    if re.match(PEN_MAC_NO_DASHES_FMT, tmp) and (len(tmp) == 12):
         return tmp
     else:
         return None
 
 
 def part_number_validate(tmp):
-    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13 or len(tmp) == 12):
-        return tmp
-    if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    if re.match(DELL_PPID_PN_FMT, tmp) and (len(tmp) <= 9 and len(tmp) >= 8):
-        return tmp
-    else:
-        return None
+    all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
+
+    for pn_regex in all_pn_regexes:
+        if re.match(pn_regex, tmp):
+            return tmp
+
+    return None
+>>>>>>> cb789fbec... 2. Tightly couple input validation of PN and SN with the nic type, using table in lib/libsku_utils.py
 
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None

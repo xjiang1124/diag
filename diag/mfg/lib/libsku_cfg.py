@@ -1,4 +1,4 @@
-from libmfg_cfg import PART_NUMBERS_MATCH
+from libsku_utils import PART_NUMBERS_MATCH
 
 MFG_VALID_NIC_PN_LIST = [
     PART_NUMBERS_MATCH.N100_PEN_PN_FMT,                     #68-0003-01 01    NAPLES 100 PENSANDO
