@@ -2179,40 +2179,49 @@ class nic_ctrl():
         return True
 
 
-    def nic_copy_diag_img(self, emmc_utils=False):
+    def nic_setup_diag_img(self, nic_diag_image, nic_asic_image="", emmc_utils=False):
+        # if emmc_utils: arm64 diag image on NIC will be updated
+        if emmc_utils:
+            if self._nic_type == NIC_Type.NAPLES100:
+                # programmed fw does not support unpacking gzip. untar on MTP and copy one by one into /data/.
+                nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh"]
+                for util in nic_diag_list:
+                    if not self.nic_copy_compressed_image(
+                        src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
+                        src_img=util,
+                        dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
+                        timeout=180):
+                        return False
+
+            else:
+                # copy image_arm64 from MTP and untar it into /data/
+                if not self.nic_copy_image(nic_diag_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                    return False
+
+                nic_cmd_list = list()
+                nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
+                nic_cmd_list.append(nic_cmd)
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
+                    return False
+
+                # for CI/CD, copy independent asic lib to /data
+                if nic_asic_image:
+                    if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                        return False
+
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
         nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
-
-        nic_diag_list = ["start_diag.arm64.sh"]
-        for util in nic_diag_list:
-            if not self.nic_copy_compressed_image(
-                src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
-                src_img=util,
-                dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH,
-                timeout=100):
-                return False
-
-        if emmc_utils:
-            nic_diag_list = ["diag", "nic_arm", "nic_util"]
-            for util in nic_diag_list:
-                if not self.nic_copy_compressed_image(
-                    src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
-                    src_img=util,
-                    dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
-                    timeout=180):
-                    return False
-
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
+        nic_cmd = "sync"
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/diag/", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/diag")
+        nic_cmd_list.append(nic_cmd)
+        nic_cmd = MFG_DIAG_CMDS.MFG_DIR_LINK_FMT.format("/data/start_diag.arm64.sh", MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH+"/start_diag.arm64.sh")
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
-
 
     def nic_save_logfile(self, logfile_list):
         if not self._sn:

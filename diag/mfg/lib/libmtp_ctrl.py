@@ -92,6 +92,7 @@ class mtp_ctrl():
         self._diagmgr_logfile = None
         self._temppn = None
 
+        self._cicd_run = False
 
     def cli_log_inf(self, msg, level = 1):
         if msg is None:
@@ -4036,13 +4037,19 @@ class mtp_ctrl():
 #        return fail_list
 
 
-    def mtp_mgmt_copy_nic_diag(self, slot, nic_utils=False):
+    def mtp_mgmt_setup_nic_diag(self, slot, nic_utils=False):
         if nic_utils:
-            msg = "Copy NIC Diag/Utils Image"
+            msg = "Copy and Setup NIC Diag Image"
         else:
-            msg = "Copy NIC Diag Image"
+            msg = "Setup NIC Diag Image"
         self.cli_log_slot_inf_lock(slot, msg)
-        if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
+
+        nic_diag_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.MTP_ARM64_IMAGE
+        if self._cicd_run:
+            nic_asic_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ASIC_ARM64_IMAGE
+        else:
+            nic_asic_image = ""
+        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, nic_asic_image, nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -4499,7 +4506,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
 
-        if ret and not self.mtp_mgmt_copy_nic_diag(slot, emmc_format):
+        if ret and not self.mtp_mgmt_setup_nic_diag(slot, emmc_format):
             duration = self.log_slot_test_stop(slot, test, start_ts)
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             ret = False
