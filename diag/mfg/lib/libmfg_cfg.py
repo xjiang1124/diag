@@ -461,8 +461,8 @@ class MTP_IMAGES:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_elba_ortanoadi_pilot_v1.45-release.tar"
-    MTP_ARM64_IMAGE = "image_arm64_elba_ortanoadi_pilot_v1.45-release.tar"
+    MTP_AMD64_IMAGE = "image_amd64_elba.tar"
+    MTP_ARM64_IMAGE = "image_arm64_elba.tar"
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     

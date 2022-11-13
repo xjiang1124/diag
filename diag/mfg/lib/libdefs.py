@@ -450,6 +450,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
     NIC_SCP_COMPRESSED_FMT = "tar c -C {:s} {:s} | ssh {:s}@{:s} {:s} \"tar x -C {:s}\"" #format(srcdir,img,user,ip,sshoptions,dstdir)
+    NIC_UNTAR_FMT = "tar xf {:s} -C {:s}"
     NIC_SYS_CLEAN_FMT = "{:s}scripts/sys_clean.sh"
     NIC_SET_EXTDIAG_BOOT_FMT = "fwupdate -s extdiag"
 

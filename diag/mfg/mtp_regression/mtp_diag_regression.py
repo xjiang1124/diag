@@ -1424,6 +1424,12 @@ def main():
             if nic_skipped_list[slot]:
                 skip_nic_list.append(slot)
 
+        # if CI/CD run:
+        if args.mtpcfg:
+            for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                for slot in nic_list:
+                    mtp_mgmt_ctrl._nic_ctrl_list[slot]._cicd_run = True
+
         # check if MTP support present NIC
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
