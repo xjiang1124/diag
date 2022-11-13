@@ -10,3 +10,7 @@
 # output_image: there will be two image outputs: _cfg.bin and _ufm.bin
 ./convert_xo3d.py cpld_nvm_partition_no input_image output_image
 
+#================================
+# Both main and failsave use cfg0
+./convert_xo3d_new.py cfg0 input.jed output.bin
+
