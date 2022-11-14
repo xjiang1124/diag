@@ -22,7 +22,7 @@ class nic_con:
     def uart_session_start(self, session, baud=115200):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
-        expstr = ["capri login:", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
+        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
         for ite in range(4):
             print "ite: ", ite
