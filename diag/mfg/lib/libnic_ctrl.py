@@ -2591,6 +2591,9 @@ class nic_ctrl():
         return True
 
     def validate_serial_number_strict(self, sn, factory_location, pn_format, pn):
+        if factory_location == Factory.LAB:
+            return libmfg_utils.serial_number_validate(sn)
+
         try:
             sn_regex = SN_FORMAT_TABLE[factory_location][pn_format]
         except KeyError:
@@ -2600,7 +2603,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("factory_location not initialized correctly to validate Serial Number")
                 return False
 
-        if match(sn_regex, sn):
+        if re.match(sn_regex, sn):
             return True
         else:
             self.nic_set_err_msg("Serial Number did not match formatting for {:s} at site {:s}".format(pn, factory_location))
