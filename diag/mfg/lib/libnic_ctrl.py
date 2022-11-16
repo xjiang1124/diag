@@ -2409,6 +2409,11 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+        if not self.nic_fru_validate_sn(factory_location):
+            self.nic_set_err_msg("Serial number in ASIC FRU does not match this factory location")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
         if not self.nic_fru_parse_mac(fru_buf):
             self.nic_set_err_msg("MAC address doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)

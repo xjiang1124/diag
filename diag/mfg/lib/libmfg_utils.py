@@ -292,7 +292,6 @@ def part_number_validate(tmp):
             return tmp
 
     return None
->>>>>>> cb789fbec... 2. Tightly couple input validation of PN and SN with the nic type, using table in lib/libsku_utils.py
 
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
