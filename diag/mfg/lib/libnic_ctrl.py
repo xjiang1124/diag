@@ -2398,22 +2398,22 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_pn(fru_buf):
+        if not self.nic_fru_parse_pn(fru_buf):
             self.nic_set_err_msg("Part number doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_sn(fru_buf, factory_location):
+        if not self.nic_fru_parse_sn(fru_buf):
             self.nic_set_err_msg("Serial number doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_mac(fru_buf):
+        if not self.nic_fru_parse_mac(fru_buf):
             self.nic_set_err_msg("MAC address doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_date(fru_buf, init_date):
+        if not self.nic_fru_parse_date(fru_buf, init_date):
             self.nic_set_err_msg("Date field doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -2422,7 +2422,7 @@ class nic_ctrl():
         if self._pn_format in (
             PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
             ):
-            if not self.nic_fru_validate_hpe_prod_num(fru_buf):
+            if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                 self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
@@ -2443,22 +2443,22 @@ class nic_ctrl():
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            if not self.nic_fru_validate_pn(fru_buf):
+            if not self.nic_fru_parse_pn(fru_buf):
                 self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            if not self.nic_fru_validate_sn(fru_buf, factory_location):
+            if not self.nic_fru_parse_sn(fru_buf):
                 self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            if not self.nic_fru_validate_mac(fru_buf):
+            if not self.nic_fru_parse_mac(fru_buf):
                 self.nic_set_err_msg("MAC address doesn't match any known formats in SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
 
-            if not self.nic_fru_validate_date(fru_buf, init_date):
+            if not self.nic_fru_parse_date(fru_buf, init_date):
                 self.nic_set_err_msg("Date field doesn't match any known formats in SMB FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
@@ -2467,7 +2467,7 @@ class nic_ctrl():
             if self._pn_format in (
                 PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
                 ):
-                if not self.nic_fru_validate_hpe_prod_num(fru_buf):
+                if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                     self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                     return False
@@ -2507,21 +2507,31 @@ class nic_ctrl():
 
         return True
 
-    def nic_sn_init(self, factory_location, fpo=False):
-        """ To validate SN, first need to read PN """
+    def nic_smb_fru_init(self, factory_location, fpo=False):
+        """ Same as nic_fru_init(), but SMB fru only, and no validation """
         fru_buf = self.nic_read_fru(fpo, smb_fru=True)
         if not fru_buf:
             self.nic_set_err_msg("Unable to read SMB FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_pn(fru_buf):
+        if not self.nic_fru_parse_pn(fru_buf):
             self.nic_set_err_msg("Part number doesn't match any known formats in SMB FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_sn(fru_buf, factory_location):
+        if not self.nic_fru_parse_sn(fru_buf):
             self.nic_set_err_msg("Serial number doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_parse_mac(fru_buf):
+            self.nic_set_err_msg("MAC address doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_parse_date(fru_buf, init_date = not fpo):
+            self.nic_set_err_msg("Date field doesn't match any known formats in SMB FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
@@ -2534,17 +2544,17 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_alom_bia(fru_buf):
+        if not self.nic_fru_parse_alom_bia(fru_buf):
             self.nic_set_err_msg("ALOM BIA part number doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_alom_pia(fru_buf):
+        if not self.nic_fru_parse_alom_pia(fru_buf):
             self.nic_set_err_msg("ALOM PIA part number doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_sn(fru_buf, factory_location, alom=True):
+        if not self.nic_fru_parse_sn(fru_buf, alom=True):
             self.nic_set_err_msg("ALOM serial number doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -2562,54 +2572,66 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_sn(fru_buf, factory_location, ocp_adap=True):
+        if not self.nic_fru_parse_sn(fru_buf, ocp_adap=True):
             self.nic_set_err_msg("OCP Adapter serial number doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_date(fru_buf, init_date=True, ocp_adap=True):
+        if not self.nic_fru_parse_date(fru_buf, init_date=True, ocp_adap=True):
             self.nic_set_err_msg("OCP Adapter date field doesn't match any known formats")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
         return True
 
-    def nic_fru_validate_sn(self, fru_buf, factory_location, alom=False, ocp_adap=False):
-        """ Save to self._sn and return True/False """
+    def validate_serial_number_strict(self, sn, factory_location, pn_format, pn):
+        try:
+            sn_regex = SN_FORMAT_TABLE[factory_location][pn_format]
+        except KeyError:
+            try:
+                sn_regex = SN_FORMAT_TABLE[factory_location]["DEFAULT"]
+            except KeyError:
+                self.nic_set_err_msg("factory_location not initialized correctly to validate Serial Number")
+                return False
 
+        if match(sn_regex, sn):
+            return True
+        else:
+            self.nic_set_err_msg("Serial Number did not match formatting for {:s} at site {:s}".format(pn, factory_location))
+            return False
+
+    def nic_fru_validate_sn(self, factory_location, alom=False, ocp_adap=False):
         if alom:
+            sn = self._alom_sn
             pn = self._alom_pn
+            pn_format = PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT
+        elif ocp_adap:
+            sn = self._riser_sn
+            pn = OCP_ADAPTER_FIXED_PN
+            pn_format = PART_NUMBERS_MATCH.N25_OCP_ADAPTER_PN_FMT
         else:
+            sn = self._sn
             pn = self._pn
+            pn_format = self._pn_format
 
-        if libmfg_utils.part_number_match(pn, PART_NUMBERS_MATCH.N25_HPE_PN_FMT):
-            disp_field = r"HPE Serial Number"
-        else:
-            disp_field = r"Serial Number"
-
-        if factory_location not in SN_FORMAT_TABLE.keys():
-            self.nic_set_err_msg("Missing factory_location initialization for {:s}".format(factory_location))
+        if not self.validate_serial_number_strict(sn, factory_location, pn_format, pn):
             return False
-
-        sn_regex = SN_FORMAT_TABLE[factory_location]["DEFAULT"]
-        for pn_regex in SN_FORMAT_TABLE[factory_location]:
-            if libmfg_utils.part_number_match(pn, pn_regex):
-                sn_regex = SN_FORMAT_TABLE[factory_location][self._pn_format]
-        sn_disp_regex = r"%s +(%s)" % (disp_field, sn_regex)
-        match = re.findall(sn_disp_regex, fru_buf)
-        if match:
-            if alom:
-                self._alom_sn = match[0]
-            elif ocp_adap:
-                self._riser_sn = match[0]
-            else:
-                self._sn = match[0]
-        else:
-            return False
-
         return True
 
-    def nic_fru_validate_pn(self, fru_buf):
+    def nic_fru_parse_sn(self, fru_buf, alom=False, ocp_adap=False):
+        sn = libmfg_utils.serial_number_validate(fru_buf, exact_match=False)
+        if not sn:
+            self.nic_set_err_msg("SN read failed")
+            return False
+        if alom:
+            self._alom_sn = sn
+        elif ocp_adap:
+            self._riser_sn = sn
+        else:
+            self._sn = sn
+        return True
+
+    def nic_fru_parse_pn(self, fru_buf):
         """ Save to self._pn and return True/False """
         PART_NUM_FIELD = r"Part Number"
         ASSY_NUM_FIELD = r"Assembly Number"
@@ -2710,9 +2732,10 @@ class nic_ctrl():
                 self._pn_format = pn_regex
                 return True
 
+        self.nic_set_err_msg("Exhausted part number search")
         return False
 
-    def nic_fru_validate_alom_bia(self, fru_buf):
+    def nic_fru_parse_alom_bia(self, fru_buf):
         """ Save to self._alom_pn and return True/False """
         PART_NUM_FIELD = r"Part Number"
         pn_table = {
@@ -2739,7 +2762,7 @@ class nic_ctrl():
 
         return False
 
-    def nic_fru_validate_alom_pia(self, fru_buf):
+    def nic_fru_parse_alom_pia(self, fru_buf):
         """ Save to self._alom_prod_num and return True/False """
         PROD_NUM_FIELD = r"HPE Product Number"
         pn_table = {
@@ -2766,7 +2789,7 @@ class nic_ctrl():
 
         return False
 
-    def nic_fru_validate_mac(self, fru_buf):
+    def nic_fru_parse_mac(self, fru_buf):
         """ Save to self._mac and return True/False """
         disp_field = r"MAC Address Base"
         mac_regex = PEN_MAC_DASHES_FMT
@@ -2778,7 +2801,7 @@ class nic_ctrl():
             return False
         return True
 
-    def nic_fru_validate_date(self, fru_buf, init_date, ocp_adap=False):
+    def nic_fru_parse_date(self, fru_buf, init_date, ocp_adap=False):
         """ Save to self._date and return True/False """
         if init_date:
             disp_field = r"Manufacturing Date/Time"
@@ -2797,7 +2820,7 @@ class nic_ctrl():
             self._date = None
         return True
 
-    def nic_fru_validate_hpe_prod_num(self, fru_buf):
+    def nic_fru_parse_hpe_prod_num(self, fru_buf):
         """ Save to self._prod_num and return True/False """
         disp_field = r"HPE Product Number"
         pn_regex = HPE_PROD_NUM_FMT
@@ -2810,7 +2833,7 @@ class nic_ctrl():
 
         return False
 
-    def nic_fru_validate_hpe_version(self, fru_buf, exp_version):
+    def nic_fru_parse_hpe_version(self, fru_buf):
         REVISION_FIELD = r"Revision Code"
         PROD_VER_FIELD = r"Product Version"
         VER_HEX_MATCH = "[0-9A-Fa-f]+"
@@ -2821,7 +2844,7 @@ class nic_ctrl():
             disp_field = PROD_VER_FIELD
         else:
             # not applicable
-            self.nic_set_err_msg("validate_hpe_version function not for this nic type")
+            self.nic_set_err_msg("parse_hpe_version function not for this nic type")
             return False
         hpe_version_disp_regex = r"%s +(%s)" % (disp_field, VER_HEX_MATCH)
 
@@ -2842,7 +2865,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_hpe_version(fru_buf, exp_version):
+        if not self.nic_fru_parse_hpe_version(fru_buf):
             self.nic_set_err_msg("Product Version/Revision doesn't match any known formats in ASIC FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -2853,7 +2876,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        if not self.nic_fru_validate_hpe_version(fru_buf, exp_version):
+        if not self.nic_fru_parse_hpe_version(fru_buf):
             self.nic_set_err_msg("Product Version/Revision doesn't match any known formats in SMB FRU")
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False

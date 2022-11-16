@@ -251,18 +251,31 @@ def dell_ppid_validate(tmp):
     else:
         return None
 
-def serial_number_validate(tmp, factory_location=Factory.LAB, pn_regex="DEFAULT"):
-    sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
-    match = re.match(sn_regex, tmp)
-    if match:
-        if match.group(0) == tmp:
-            # no truncation happened during regex match
-            return tmp
-        else:
-            return None
-    else:
-        return None
+def serial_number_validate(buf, exact_match=True):
+    """
+        This is a "LOOSE" validation compared to libnic_ctrl::nic_fru_validate_sn().
+        Check that the 'buf' containing serial number matches *ANY* of the rules.
+        If exact_match=True, 'buf' must contain whole serial number and nothing else.
+    """
+    all_sn_regexes = [p[s] for p in SN_FORMAT_TABLE.values() for s in p] # flatten dict
 
+    for sn_regex in all_sn_regexes:
+        if exact_match:
+            match = re.match(sn_regex, buf)
+            if match:
+                if match.group(0) == buf:
+                    # check no truncation happened during regex match
+                    return buf
+                else:
+                    return None
+        else:
+            disp_field = "Serial Number"
+            sn_disp_regex = r"%s +(%s)" % (disp_field, sn_regex)
+            match = re.findall(sn_disp_regex, buf)
+            if match:
+                return match[0]
+
+    return None
 
 def mac_address_validate(tmp):
     if re.match(PEN_MAC_NO_DASHES_FMT, tmp) and (len(tmp) == 12):

@@ -4202,7 +4202,7 @@ class mtp_ctrl():
 
     def mtp_nic_sn_init(self, slot, fpo=False):
         if not self._nic_ctrl_list[slot]._sn:
-            if not self._nic_ctrl_list[slot].nic_sn_init(self._factory_location, fpo=fpo):
+            if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
                 return False
             self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
         return True
@@ -4429,6 +4429,7 @@ class mtp_ctrl():
                 self.mtp_set_nic_sn(slot, fru_info_list[0])
             else:
                 self.cli_log_slot_err(slot, "Unable to load SN")
+                ret = False
         elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
