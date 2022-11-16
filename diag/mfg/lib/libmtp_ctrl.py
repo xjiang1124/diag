@@ -4315,7 +4315,7 @@ class mtp_ctrl():
         self.cli_log_inf("End MTP NIC Info Dump")
 
 
-    def mtp_nic_init(self, new_ssh_sessions=True):
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
 
         # open ssh session to each NIC
@@ -4326,7 +4326,7 @@ class mtp_ctrl():
                 return False
 
         # init nic present list
-        if not self.mtp_init_nic_type():
+        if not self.mtp_init_nic_type(stage):
             self.cli_log_inf("Failed to init NICs in the MTP Chassis", level = 0)
             return False
 
@@ -5060,7 +5060,7 @@ class mtp_ctrl():
         if not rc:
             return rc
 
-    def mtp_init_nic_type(self):
+    def mtp_init_nic_type(self, stage=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5105,11 +5105,15 @@ class mtp_ctrl():
                         self._nic_prsnt_list[slot] = False
                         self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
 
+        if stage is None or stage == FF_Stage.FF_DL:
+            fru_fpo = True
+        else:
+            fru_fpo = False
         self.cli_log_inf("Init NIC SN, PN")
         for slot in range(self._slots):
             if not self._nic_prsnt_list[slot]:
                 continue
-            if not self.mtp_nic_sn_init(slot, fpo=True):
+            if not self.mtp_nic_sn_init(slot, fru_fpo):
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 self.mtp_set_nic_status_fail(slot)

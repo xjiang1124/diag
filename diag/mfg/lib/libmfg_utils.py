@@ -798,7 +798,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
+    if not mtp_mgmt_ctrl.mtp_nic_init(stage):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
