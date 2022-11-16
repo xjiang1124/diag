@@ -550,6 +550,10 @@ def main():
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
+                nic_test_rslt_list[slot] = False
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                nic_test_rslt_list[slot] = False
                 continue
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -613,6 +617,8 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
             if str.upper(valid) != "YES":
@@ -642,20 +648,20 @@ def main():
                 exp_assettag = 'C0'
                 hpe_pn = "000000-000"
 
-            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type == NIC_Type.NAPLES25SWM:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -671,9 +677,6 @@ def main():
                 # nic present check
                 elif test == "NIC_PRSNT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
-                # nic status check
-                elif test == "NIC_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
                 elif test == "NIC_DIAG_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
                 # verify FRU

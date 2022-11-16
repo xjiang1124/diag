@@ -4443,23 +4443,24 @@ class mtp_ctrl():
         elif not fru_valid:
             self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
-        # (DIAG_INIT, NIC_VMARG) START
-        test = "NIC_VMARG"
-        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = self.log_slot_test_start(slot, test)
+        if ret:
+            # (DIAG_INIT, NIC_VMARG) START
+            test = "NIC_VMARG"
+            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = self.log_slot_test_start(slot, test)
 
-        if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
-            ret = False
+            if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
+                ret = False
 
-        if ret and not self.mtp_nic_display_voltage(slot):
-            ret = False
+            if ret and not self.mtp_nic_display_voltage(slot):
+                ret = False
 
-        duration = self.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-        else:
-            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration)) 
-        # (DIAG_INIT, NIC_VMARG) END 
+            duration = self.log_slot_test_stop(slot, test, start_ts)
+            if not ret:
+                self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            else:
+                self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration)) 
+            # (DIAG_INIT, NIC_VMARG) END 
 
         duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
