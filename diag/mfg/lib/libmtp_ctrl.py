@@ -3016,8 +3016,18 @@ class mtp_ctrl():
         """ REWORK VERIFICATION FOR CAP CHANGE 
             For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42
         """
-        if not self._nic_ctrl_list[slot].nic_hpe_verify_rework("0B"):
+        exp_prod_ver = "0B"
+        if not self._nic_ctrl_list[slot].nic_fru_init_hpe_version():
             self.mtp_get_nic_err_msg(slot)
+            return False
+
+        got_prod_ver = self._nic_ctrl_list[slot].nic_get_hpe_version()
+        if not got_prod_ver:
+            self.cli_log_slot_err(slot, "Failed to parse Product Version/Revision Code")
+            return False
+
+        if got_prod_ver != exp_prod_ver:
+            self.nic_set_err_msg("Looking for Product Version/Revision Code = {:s}, got {}".format(exp_prod_ver, got_prod_ver))
             return False
 
         return True

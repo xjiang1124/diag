@@ -45,6 +45,7 @@ class nic_ctrl():
         self._img_timestamp = None
         self._boot_image = None
         self._prod_num = None
+        self._hpe_prod_ver = None
         self._alom_sn = None
         self._alom_pn = None
         self._alom_prod_num = None
@@ -2852,13 +2853,11 @@ class nic_ctrl():
         if not match:
             self.nic_set_err_msg("Couldn't find {:s} field in FRU".format(disp_field))
             return False
-        if match[0] != exp_version:
-            self.nic_set_err_msg("Looking for {:s} = {:s}, got {}".format(disp_field, exp_version, match[0]))
-            return False
+        self._hpe_prod_ver = match[0]
 
         return True
 
-    def nic_hpe_verify_rework(self, exp_version):
+    def nic_fru_init_hpe_version(self):
         fru_buf = self.nic_read_fru(smb_fru=False)
         if not fru_buf:
             self.nic_set_err_msg("Unable to read ASIC FRU")
@@ -2907,6 +2906,9 @@ class nic_ctrl():
             return None
         else:
             return self._assettagnumber
+
+    def nic_get_hpe_version(self):
+        return self._nic_ctrl_list[slot]._hpe_prod_ver
 
     def nic_get_naples_pn(self):
         if not self._pn:
