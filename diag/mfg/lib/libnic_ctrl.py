@@ -2706,9 +2706,13 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2_PEN_PN_FMT)                   #68-0021-02 XX    ORTANO2 MICROSOFT
                 ],
             NIC_Type.ORTANO2ADI: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT),               #68-0026-01 XX    ORTANO2ADI ORACLE
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT),               #68-0028-01 XX    ORTANO2ADI IBM
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT)                #68-0026-01 XX    ORTANO2ADI ORACLE
+                ],
+            NIC_Type.ORTANO2ADIMSFT: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT)               #68-0034-01 XX    ORTANO2ADI MICROSOFT
+                ],
+            NIC_Type.ORTANO2ADIIBM: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT)                #68-0028-01 XX    ORTANO2ADI IBM
                 ],
             NIC_Type.ORTANO2INTERP: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT)             #68-0029-01 XX    ORTANO2 Interposer

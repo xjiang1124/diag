@@ -5134,11 +5134,11 @@ class mtp_ctrl():
         for slot in range(self._slots):
             if self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
                 pn = self.mtp_get_nic_pn(slot)
-                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADI
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADIIBM
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADIMSFT
                 self._nic_type_list[slot] = final_nic_type
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
