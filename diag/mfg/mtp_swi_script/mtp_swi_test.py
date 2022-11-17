@@ -453,9 +453,6 @@ def main():
         # power cycle all nic
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
 
         dsp = FF_Stage.FF_SWI
         NAPLES100IBM = 0
@@ -629,7 +626,7 @@ def main():
             if nic_type == NIC_Type.NAPLES100IBM:
                 NAPLES100IBM = 1
 
-            test_list = ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "NAPLES_PN_VERIFY"]
+            test_list = ["SW_PN_CHECK", "NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -654,8 +651,6 @@ def main():
                 # check nic boot from diagfw
                 elif test == "NIC_DIAG_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
-                elif test == "NAPLES_PN_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_naples_pn(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue

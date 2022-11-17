@@ -17,7 +17,6 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libdefs import NIC_Vendor
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
@@ -29,7 +28,7 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import PART_NUMBERS_MATCH
+from libsku_cfg import PART_NUMBERS_MATCH
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
@@ -68,89 +67,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
-
-def hpe_rework_verify(mtp_mgmt_ctrl, slot):
-    ### REWORK VERIFICATION FOR CAP CHANGE ###
-    ### For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42 ###
-    nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_fru_info:
-        nic_vendor = nic_fru_info[4]
-    else:
-        return False
-    if nic_type == NIC_Type.NAPLES25 and nic_vendor == NIC_Vendor.HPE:
-        arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
-        if not arm_fru:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
-            return False
-        arm_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", arm_fru)
-        if arm_match:
-            if arm_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on ASIC FRU")
-                ret1 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(arm_match[0]))
-                ret1 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(arm_fru))
-            ret1 = False
-
-        mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(slot+1))
-        smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
-        smb_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", smb_fru)
-        if smb_match:
-            if smb_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on SMB FRU")
-                ret2 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(smb_match[0]))
-                ret2 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(smb_fru))
-            ret2 = False
-
-    if nic_type == NIC_Type.NAPLES25SWM and nic_vendor == NIC_Vendor.HPE:
-        arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
-        if not arm_fru:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
-            return False
-        cloud_arm_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, arm_fru)
-        if cloud_arm_match:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
-            return True
-        arm_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", arm_fru)
-        if arm_match:
-            if arm_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on ASIC FRU")
-                ret1 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(arm_match[0]))
-                ret1 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(arm_fru))
-            ret1 = False
-
-        mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(slot+1))
-        smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
-        cloud_smb_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, smb_fru)
-        if cloud_smb_match:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
-            return True
-        smb_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", smb_fru)
-        if smb_match:
-            if smb_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on SMB FRU")
-                ret2 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(smb_match[0]))
-                ret2 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(smb_fru))
-            ret2 = False
-    else:
-        ret1 = True
-        ret2 = True
-    return ret1 and ret2
 
 def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, uboot_img_file, uboot_installer_file, slot, skip_testlist, nic_test_rslt_list):
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -611,25 +527,6 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if nic_prsnt_list[slot]:
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
-                continue
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
-            mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
-            match = re.findall(PART_NUMBERS_MATCH.ORTANO2ADI_ALL_FMT_ALL, pn)
-            if match:
-                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADI
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIIBM_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADIIBM
-                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADIMSFT_FMT_ALL, pn):
-                    nic_type = NIC_Type.ORTANO2ADIMSFT
-                mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
             continue
         if not nic_prsnt_list[slot]:
@@ -1059,7 +956,7 @@ def main():
             elif test == "FRU_ALOM_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
             elif test == "REWORK_VERIFY":
-                ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
+                ret = mtp_mgmt_ctrl.mtp_nic_hpe_rework_verify(slot)
             # verify FPGA against original file
             elif test == "FPGA_PROG_VERIFY":
                 ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)

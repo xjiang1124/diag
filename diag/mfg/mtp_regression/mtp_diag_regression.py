@@ -1473,13 +1473,6 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Start", level=0)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_sn_init(slot)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_pn_init(slot)
-
         programmables_checked = False
 
         for vmarg_idx, vmarg in enumerate(vmarg_list):

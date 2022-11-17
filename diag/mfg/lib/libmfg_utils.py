@@ -30,6 +30,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
+from libsku_utils import *
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -250,34 +251,50 @@ def dell_ppid_validate(tmp):
     else:
         return None
 
-def serial_number_validate(tmp):
-    if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
-        return tmp
-    elif re.match(HP_SN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    elif re.match(DELL_PPID_SN_FMT, tmp) and (len(tmp) == 14):
-        return tmp
-    else:
-        return None
+def serial_number_validate(buf, exact_match=True):
+    """
+        This is a "LOOSE" validation compared to libnic_ctrl::nic_fru_validate_sn().
+        Check that the 'buf' containing serial number matches *ANY* of the rules.
+        If exact_match=True, 'buf' must contain whole serial number and nothing else.
+    """
+    all_sn_regexes = [p[s] for p in SN_FORMAT_TABLE.values() for s in p] # flatten dict
 
+    for sn_regex in all_sn_regexes:
+        if exact_match:
+            match = re.match(sn_regex, buf)
+            if match:
+                if match.group(0) == buf:
+                    # check no truncation happened during regex match
+                    return buf
+                else:
+                    return None
+        else:
+            disp_field = "Serial Number"
+            sn_disp_regex = r"%s +(%s)" % (disp_field, sn_regex)
+            match = re.findall(sn_disp_regex, buf)
+            if match:
+                return match[0]
+
+    return None
 
 def mac_address_validate(tmp):
-    if re.match(NAPLES_MAC_FMT, tmp) and (len(tmp) == 12):
+    if re.match(PEN_MAC_NO_DASHES_FMT, tmp) and (len(tmp) == 12):
         return tmp
     else:
         return None
 
 
 def part_number_validate(tmp):
-    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13 or len(tmp) == 12):
-        return tmp
-    if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    if re.match(DELL_PPID_PN_FMT, tmp) and (len(tmp) <= 9 and len(tmp) >= 8):
-        return tmp
-    else:
-        return None
+    all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
 
+    for pn_regex in all_pn_regexes:
+        if re.match(pn_regex, tmp):
+            return tmp
+
+    return None
+
+def part_number_match(pn, regex):
+    return re.match(regex, pn) is not None
 
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))
@@ -780,7 +797,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
+    if not mtp_mgmt_ctrl.mtp_nic_init(stage):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -1185,21 +1202,32 @@ def flx_soap_get_uut_info_xml(stage, sn, factory):
 
 def flx_sn_to_factory(sn):
     if not sn:
-        return False
-    if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
-        return Factory.FSP
-    elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
-        return Factory.MILPITAS
-    elif re.match(FLX_P1_BUILD_SN_FMT, sn):
-        return Factory.P1
-    else:
         return None
 
+    for factory_location in SN_FORMAT_TABLE.keys():
+        if factory_location == Factory.LAB:
+            # skip, dont use lab SN to match
+            continue
+
+        for sn_regex in SN_FORMAT_TABLE[factory_location].values():
+            if re.match(sn_regex, sn):
+                return factory_location
+
+    return None
+
 def FindDellSN(sn):
-    if re.match(DELL_BUILD_SN_FMT, sn):
-        return True
-    else:
-        return False
+    dell_cards = [
+        PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT,
+        PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT
+        ]
+
+    for factory_location in SN_FORMAT_TABLE.keys():
+        for pn_regex in SN_FORMAT_TABLE[factory_location]:
+            if pn_regex in dell_cards:
+                sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
+                if re.match(sn_regex, sn):
+                    return True
+    return False
 
 def flx_stage_to_penang(stage):
     if stage == FF_Stage.FF_DL:
@@ -2496,31 +2524,6 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fa
 
     cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
-    mtp_thread_list = list()
-    setup_rslt_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, mtp_capability, setup_rslt_list))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
-        time.sleep(2)
-
-    # monitor all the thread
-    while True:
-        if len(mtp_thread_list) == 0:
-            break
-        for mtp_thread in mtp_thread_list[:]:
-            if not mtp_thread.is_alive():
-                mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
-        time.sleep(5)
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if not setup_rslt_list[mtp_id]:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         nic_list = list()       # needs para_init
