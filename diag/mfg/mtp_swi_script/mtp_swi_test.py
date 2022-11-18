@@ -346,11 +346,7 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program sw image onto EMMC
         if test == "SW_INSTALL":
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES100:
-                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc_naples100(slot, emmc_img_file)
-            else:
-                ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
         else:       
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
@@ -373,11 +369,7 @@ def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_ni
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if test == "GOLDFW_PROG":
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES100:
-                ret = mtp_mgmt_ctrl.mtp_program_nic_gold_naples100(slot, gold_img_file)
-            else:
-                ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
             continue
