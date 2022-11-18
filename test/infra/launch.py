@@ -84,6 +84,8 @@ class LaunchApp(object):
         if mtp_resource == None:
             return defs.Result.INFRA_FAILURE
 
+        mtp_ip = mtp_resource.get("host-ip")
+
         testbed_id = testbed_spec.get('ID').split("-")[1]
         data = {
             'MODE': "",
@@ -99,7 +101,7 @@ class LaunchApp(object):
             'APC2_PORT': "",
             'APC2_USERID': "",
             'APC2_PASSWORD': "",
-            'IP': mtp_instance.get("NodeMgmtIP", ""),
+            'IP': mtp_ip,
             'USERID': "diag",
             'PASSWORD': "lab123",
             'ALIAS': f"{self.__testsuite.config.testbed.lower()}{testbed_id}",
@@ -109,18 +111,17 @@ class LaunchApp(object):
         }
 
         # add in APC info
-        pdu_info = mtp_instance.get("PDUPort", None)
-        if pdu_info:
-            for idx, pdu_port in enumerate(pdu_info.get("Ports", [])):
-                data[f"APC{idx+1}"] = pdu_port.get("SwitchIP", "")
-                data[f"APC{idx+1}_PORT"] = pdu_port.get("SwitchPort", "")
-                data[f'APC{idx+1}_USERID'] =  pdu_port.get('SwitchUsername', "")
-                data[f'APC{idx+1}_PASSWORD'] =  pdu_port.get('SwitchPassword', "")
-        else:
-            data['APC1'] = mtp_resource.get('ApcIP', ""),
-            data['APC1_PORT'] = mtp_resource.get('ApcPort', ""),
-            data['APC1_USERID'] =  mtp_resource.get('ApcUsername', ""),
-            data['APC1_PASSWORD'] =  mtp_resource.get('ApcPassword', ""),
+        for idx, pdu_idx in enumerate(["", "2"]):
+            pdu_info = mtp_resource.get("pdu-ip"+pdu_idx, None)
+            if pdu_info:
+                data[f"APC{idx+1}"] = mtp_resource.get("pdu-ip"+pdu_idx, "")
+                data[f"APC{idx+1}_PORT"] = mtp_resource.get("pdu-port"+pdu_idx, "")
+                if mtp_resource.get("pdu-username"+pdu_idx):
+                    data[f'APC{idx+1}_USERID'] =  mtp_resource.get("pdu-username"+pdu_idx, "")
+                    data[f'APC{idx+1}_PASSWORD'] =  mtp_resource.get("pdu-password"+pdu_idx, "")
+                else:
+                    data[f'APC{idx+1}_USERID'] =  "apc"
+                    data[f'APC{idx+1}_PASSWORD'] =  "apc"
 
         # change SKIP_SLOTS to skip none or use outermost 2 slots
         test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
