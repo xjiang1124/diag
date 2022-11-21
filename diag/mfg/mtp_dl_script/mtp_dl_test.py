@@ -17,7 +17,6 @@ from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libdefs import NIC_Vendor
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
@@ -26,7 +25,7 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import PART_NUMBERS_MATCH
+from libsku_cfg import PART_NUMBERS_MATCH
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -67,114 +66,65 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
 
-def hpe_rework_verify(mtp_mgmt_ctrl, slot):
-    ### REWORK VERIFICATION FOR CAP CHANGE ###
-    ### For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42 ###
-    nic_fru_info = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)
+def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, uboot_img_file, uboot_installer_file, slot, skip_testlist, nic_test_rslt_list):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+
+    dsp = FF_Stage.FF_DL
+    testlist = ["QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_fru_info:
-        nic_vendor = nic_fru_info[4]
-    else:
-        return False
-    if nic_type == NIC_Type.NAPLES25 and nic_vendor == NIC_Vendor.HPE:
-        arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
-        if not arm_fru:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
-            return False
-        arm_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", arm_fru)
-        if arm_match:
-            if arm_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on ASIC FRU")
-                ret1 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(arm_match[0]))
-                ret1 = False
+    if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP:
+        testlist = ["QSPI_PROG", "UBOOT_PROG"]
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
+        testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
+    for skip_test in skip_testlist:
+        if skip_test in testlist:
+            testlist.remove(skip_test)
+    for test in testlist:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        if test == "QSPI_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
+        elif test == "QSPI_GOLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_gold_img_file, True)
+        elif test == "UBOOT_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(arm_fru))
-            ret1 = False
-
-        mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_FRU_DISP_FMT.format(slot+1))
-        smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
-        smb_match = re.findall("\] Revision Code +([0-9A-Za-z]*)[ \n\r]", smb_fru)
-        if smb_match:
-            if smb_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Revision Code = 0B on SMB FRU")
-                ret2 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Revision Code = 0B, got {}".format(smb_match[0]))
-                ret2 = False
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+            continue
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_test_rslt_list[slot] = False
+            # mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+            break
         else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Revision Code field in: \n{}".format(smb_fru))
-            ret2 = False
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-    if nic_type == NIC_Type.NAPLES25SWM and nic_vendor == NIC_Vendor.HPE:
-        arm_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(MFG_DIAG_CMDS.NIC_HP_SWM_FRU_DISP_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH))
-        if not arm_fru:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: command didn't work: {}".format(arm_fru))
-            return False
-        cloud_arm_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, arm_fru)
-        if cloud_arm_match:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
-            return True
-        arm_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", arm_fru)
-        if arm_match:
-            if arm_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on ASIC FRU")
-                ret1 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(arm_match[0]))
-                ret1 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(arm_fru))
-            ret1 = False
 
-        mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.MTP_HP_SWM_FRU_DISP_FMT.format(slot+1))
-        smb_fru = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
-        cloud_smb_match = re.findall(PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT, smb_fru)
-        if cloud_smb_match:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip rework verification for cloud card")
-            return True
-        smb_match = re.findall("\] Product Version +([0-9A-Za-z]*)[ \n\r]", smb_fru)
-        if smb_match:
-            if smb_match[0] == "0B":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "REWORK VERIFICATION: Found Product Version = 0B on SMB FRU")
-                ret2 = True
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Looking for Product Version = 0B, got {}".format(smb_match[0]))
-                ret2 = False
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "REWORK VERIFICATION: Couldn't find Product Version field in: \n{}".format(smb_fru))
-            ret2 = False
-    else:
-        ret1 = True
-        ret2 = True
-    return ret1 and ret2
-
-def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, qspi_img_file, qspi_gold_img_file, uboot_img_file, uboot_installer_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
+def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file, fea_cpld_img_file, slot, swmtestmode, skip_testlist, nic_test_rslt_list):
     sn = fru_cfg["SN"]
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
 
     dsp = FF_Stage.FF_DL
-    testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
+    testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):
+        testlist = ["QSPI_VERIFY", "FRU_PROG"]
     if nic_type == NIC_Type.NAPLES25OCP:
-        testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG"]
-    if nic_type == NIC_Type.ORTANO:
-        testlist = ["FRU_PROG", "QSPI_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO2:
-        testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "UBOOT_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-        testlist = ["FRU_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.ORTANO2INTERP:
-        testlist = ["FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        testlist = ["VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG", "UBOOT_PROG"]
+        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        testlist = ["FRU_PROG", "FPGA_PROG", "UBOOT_PROG"]
-    if nic_type == NIC_Type.NAPLES100DELL:
-        testlist = ["FRU_PROG", "CPLD_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -202,13 +152,6 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
         # program feature row
         elif test == "FEA_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, fea_cpld_img_file)
-        # program QSPI
-        elif test == "QSPI_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
-        elif test == "QSPI_GOLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_gold_img_file, True)
-        elif test == "UBOOT_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
@@ -216,6 +159,8 @@ def single_nic_fw_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_f
             ret = mtp_mgmt_ctrl.mtp_nic_fix_vrm(slot)
         elif test == "VDD_DDR_FIX":
             ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot)
+        elif test == "QSPI_VERIFY":
+            ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
@@ -286,10 +231,6 @@ def main():
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
-
         dsp = FF_Stage.FF_DL
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -335,70 +276,7 @@ def main():
         if "CONSOLE_BOOT" not in args.skip_test:
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
-        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(pass_nic_list):
-            for slot in pass_nic_list:
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-
-            if nic_type not in PSLC_MODE_TYPE_LIST and nic_type != NIC_Type.NAPLES100DELL:
-                continue
-
-            testlist = ["QSPI_PROG", "SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
-
-            if nic_type == NIC_Type.NAPLES100DELL:
-                testlist = ["QSPI_PROG"]
-
-            for skip_test in args.skip_test:
-                if skip_test in testlist:
-                    testlist.remove(skip_test)
-            for test in testlist:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "SET_PSLC":
-                    ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
-                elif test == "EMMC_HWRESET_SET":
-                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
-                elif test == "EMMC_BKOPS_EN":
-                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(slot)
-                elif test == "QSPI_PROG":
-                    qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-                    if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
-                        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
-                    if nic_type == NIC_Type.NAPLES25SWM:
-                        qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-                    ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            # power cycle only the cards that went through set_pslc
-            if slot not in fail_nic_list:
-                mtp_mgmt_ctrl.mtp_power_off_single_nic(slot)
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
-
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, emmc_format=True, emmc_check=True, fru_fpo=True):
-            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
         tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
         if "SCAN_VERIFY" not in args.skip_test:
@@ -520,7 +398,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
-            pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
+            pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_INIT", "NIC_DIAG_BOOT"]
             for skipped_test in args.skip_test:
                 if skipped_test in pre_check_testlist:
                     pre_check_testlist.remove(skipped_test)
@@ -535,15 +413,12 @@ def main():
                 # nic type check
                 elif test == "NIC_TYPE":
                     ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-                # nic present check
-                elif test == "NIC_PRSNT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
                 # check nic init status
                 elif test == "NIC_INIT":
                     ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
                 # check if nic comes up from diagfw
                 elif test == "NIC_DIAG_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
@@ -559,57 +434,51 @@ def main():
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        # program the NIC firmware
+
+
+
+        # program the qspi, before initializing emmc
+        ## 1. setup mgmt
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(pass_nic_list):
+            for slot in pass_nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+
+        ## 2. program fw
         nic_thread_list = list()
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            if not nic_prsnt_list[slot]:
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
             if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
                 qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
-                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
-            failsafe_cpld_img_file = ""
-            fea_cpld_img_file = ""
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
-                fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fea_cpld_img[nic_type]
-            elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
-
             qspi_gold_img_file = ""
             if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
                 qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
             uboot_img_file = ""
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-            if nic_type in FPGA_TYPE_LIST or nic_type == NIC_Type.ORTANO2 or nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
+            if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP:
                 uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
 
-            nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
-                                                                                  nic_fru_cfg[mtp_id][key],
-                                                                                  cpld_img_file,
-                                                                                  failsafe_cpld_img_file,
-                                                                                  fea_cpld_img_file,
-                                                                                  qspi_img_file,
-                                                                                  qspi_gold_img_file,
-                                                                                  uboot_img_file,
-                                                                                  uboot_installer_file,
-                                                                                  slot,
-                                                                                  swmtestmode,
-                                                                                  args.skip_test,
-                                                                                  nic_test_rslt_list))
+            nic_thread = threading.Thread(target = single_nic_qspi_program, args = (mtp_mgmt_ctrl,
+                                                                                    qspi_img_file,
+                                                                                    qspi_gold_img_file,
+                                                                                    uboot_img_file,
+                                                                                    uboot_installer_file,
+                                                                                    slot,
+                                                                                    args.skip_test,
+                                                                                    nic_test_rslt_list))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -632,15 +501,123 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
+        ## 2b. set emmc settings for elba
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                continue
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+
+            if nic_type not in PSLC_MODE_TYPE_LIST:
+                continue
+
+            testlist = ["SET_PSLC", "EMMC_HWRESET_SET", "EMMC_BKOPS_EN"]
+
+            for skip_test in args.skip_test:
+                if skip_test in testlist:
+                    testlist.remove(skip_test)
+            for test in testlist:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+                if test == "SET_PSLC":
+                    ret = mtp_mgmt_ctrl.mtp_setting_partition(slot)
+                elif test == "EMMC_HWRESET_SET":
+                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(slot)
+                elif test == "EMMC_BKOPS_EN":
+                    ret = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(slot)
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+                    continue
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, emmc_format=True, emmc_check=True, fru_fpo=True):
+            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+
+        # 4. program the fru, cpld
+        nic_thread_list = list()
+        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                nic_test_rslt_list[slot] = False
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                nic_test_rslt_list[slot] = False
+                continue
+            key = libmfg_utils.nic_key(slot)
+            valid = nic_fru_cfg[mtp_id][key]["VALID"]
+            if str.upper(valid) != "YES":
+                continue
+
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
+            if nic_type == NIC_Type.NAPLES25SWM:
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
+            if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
+            failsafe_cpld_img_file = ""
+            fea_cpld_img_file = ""
+            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+                fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fea_cpld_img[nic_type]
+            elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+
+            nic_thread = threading.Thread(target = single_nic_program, args = (mtp_mgmt_ctrl,
+                                                                               nic_fru_cfg[mtp_id][key],
+                                                                               cpld_img_file,
+                                                                               failsafe_cpld_img_file,
+                                                                               fea_cpld_img_file,
+                                                                               slot,
+                                                                               swmtestmode,
+                                                                               args.skip_test,
+                                                                               nic_test_rslt_list))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_test_rslt_list[slot]:
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+
+        ## 5. flash asic esecure fw
         if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
             mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
 
+        ## 6. verify everything
         # init nic diag env.
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -671,20 +648,20 @@ def main():
                 exp_assettag = 'C0'
                 hpe_pn = "000000-000"
 
-            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type == NIC_Type.NAPLES25SWM:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "QSPI_VERIFY"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "QSPI_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -700,9 +677,6 @@ def main():
                 # nic present check
                 elif test == "NIC_PRSNT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
-                # nic status check
-                elif test == "NIC_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
                 elif test == "NIC_DIAG_BOOT":
                     ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
                 # verify FRU
@@ -717,7 +691,7 @@ def main():
                             if ret:
                                 ret = mtp_mgmt_ctrl.mtp_verify_nic_alom_fru(slot, exp_alom_sn, exp_alom_pn, exp_date)
                 elif test == "REWORK_VERIFY":
-                    ret = hpe_rework_verify(mtp_mgmt_ctrl, slot)
+                    ret = mtp_mgmt_ctrl.mtp_nic_hpe_rework_verify(slot)
                 # verify CPLD
                 elif test == "CPLD_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot)
@@ -727,9 +701,6 @@ def main():
                 # verify Feature Row
                 elif test == "FEA_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea(slot)
-                # verify QSPI
-                elif test == "QSPI_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
                 elif test == "BOARD_CONFIG":
                     ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
                 elif test == "L1_ESEC_PROG":
