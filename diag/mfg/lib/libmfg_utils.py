@@ -1253,34 +1253,37 @@ def flx_stage_to_penang(stage):
         return None
 
 def soap_post_report(xml, factory=Factory.FSP):
-    webserverip = Factory_network_config[factory]["Flexflow"]
-    if factory == Factory.FSP or factory == Factory.P1:
-        webservice = httplib.HTTP(webserverip)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
-    else:
-        webservice = httplib.HTTP(webserverip)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
+    try:
+        webserverip = Factory_network_config[factory]["Flexflow"]
+        if factory == Factory.FSP or factory == Factory.P1:
+            webservice = httplib.HTTP(webserverip)
+            webservice.putrequest("POST", FLX_PENANG_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
+        else:
+            webservice = httplib.HTTP(webserverip)
+            webservice.putrequest("POST", FLX_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
 
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
+        webservice.putheader("Content-length", "%d" % len(xml))
+        webservice.endheaders()
 
-    webservice.send(xml)
+        webservice.send(xml)
 
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
-    if match:
-        return match[0]
-    else:
-        print("################## SAVE UUT RSLT #######################")
-        print(resp)
-        print("################## SAVE UUT RSLT #######################")
-        return "500"
-
+        statuscode, statusmessage, header = webservice.getreply()
+        resp = webservice.getfile().read()
+        match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
+        if match:
+            return match[0]
+        else:
+            print("################## SAVE UUT RSLT #######################")
+            print(resp)
+            print("################## SAVE UUT RSLT #######################")
+            return "500"
+    except:
+        print("Error occur when post report to webserver")
+        return "999"
 
 def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
@@ -1362,7 +1365,15 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if not xml:
         return False
 
-    ret = soap_post_report(xml, factory)
+    retry = 0
+    while retry < 3:
+        ret = soap_post_report(xml, factory)
+        if int(ret) != 0:
+            print("{:d}th post uut report failed.".format((retry + 1)))
+            retry += 1
+            time.sleep(2)
+        else:
+            break
     if int(ret) != 0:
         return False
 
@@ -1395,7 +1406,15 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if not xml:
         return -2
 
-    ret = soap_post_report(xml, factory)
+    retry = 0
+    while retry < 3:
+        ret = soap_post_report(xml, factory)
+        if int(ret) != 0:
+            print("{:d}th post uut status failed.".format((retry + 1)))
+            retry += 1
+            time.sleep(2)
+        else:
+            break
 
     return int(ret)
 
