@@ -1886,14 +1886,16 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             err_code_list = list()
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
 
-            # save infra serial numbers
-            if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
+            # FST will give syntax error since nic_ctrl is not initialized
+            if stage != FF_Stage.FF_FST:
+                # save infra serial numbers
+                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                    mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
-            # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+                # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
+                if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                        nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -1977,14 +1979,16 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             err_code_list = list()
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
 
-            # save infra serial numbers
-            if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
+            # FST will give syntax error since nic_ctrl is not initialized
+            if stage != FF_Stage.FF_FST:
+                # save infra serial numbers
+                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                    mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
-            # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+                # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
+                if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                        nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
