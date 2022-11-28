@@ -3183,7 +3183,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PEN_PN_MINUS_REV_MASK]+" C1", naples_pn))
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
-            if software_pn != "90-0011-0003":
+            if software_pn != "90-0019-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
