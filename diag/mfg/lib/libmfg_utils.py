@@ -1433,8 +1433,8 @@ def flx_web_srv_get_uut_info(sn, stage=None):
 
     resp = soap_get_uut_resp(xml, factory)
     #print(resp)
-    
     return resp
+
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[]):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
