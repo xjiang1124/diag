@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.6.11042022";
+my $rev = "1.7.11092022";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -422,27 +422,62 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE_VOLT_LOW";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"};
+    if (exists $diag_fa_code{"VMARG_L_VOLT_LOW"}) {
+        $top_diag_fa_code = "VMARG_L_VOLT_LOW";
+        delete $diag_fa_code{"VMARG_L_VOLT_LOW"};
         return;
     }
 
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE_BOOT_DSC";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"};
+    if (exists $diag_fa_code{"VMARG_L_BOOT_UBOOT"}) {
+        $top_diag_fa_code = "VMARG_L_BOOT_UBOOT";
+        delete $diag_fa_code{"VMARG_L_BOOT_UBOOT"};
         return;
     }
 
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE_SSH_HANG";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"};
+    if (exists $diag_fa_code{"VMARG_H_BOOT_UBOOT"}) {
+        $top_diag_fa_code = "VMARG_H_BOOT_UBOOT";
+        delete $diag_fa_code{"VMARG_H_BOOT_UBOOT"};
         return;
     }
 
-    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
-        $top_diag_fa_code = "NIC_UNRESPONSIVE";
-        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+    if (exists $diag_fa_code{"VMARG_L_CARD_REBOOTED"}) {
+        $top_diag_fa_code = "VMARG_L_CARD_REBOOTED";
+        delete $diag_fa_code{"VMARG_L_CARD_REBOOTED"};
+        return;
+    }
+    if (exists $diag_fa_code{"VMARG_H_CARD_REBOOTED"}) {
+        $top_diag_fa_code = "VMARG_H_CARD_REBOOTED";
+        delete $diag_fa_code{"VMARG_H_CARD_REBOOTED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"VMARG_L_SSH_HUNG"}) {
+        $top_diag_fa_code = "VMARG_L_SSH_HUNG";
+        delete $diag_fa_code{"VMARG_L_SSH_HUNG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"VMARG_H_SSH_HUNG"}) {
+        $top_diag_fa_code = "VMARG_H_SSH_HUNG";
+        delete $diag_fa_code{"VMARG_H_SSH_HUNG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
+        $top_diag_fa_code = "CARD_REBOOTED";
+        delete $diag_fa_code{"CARD_REBOOTED"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_UNRESP_SSH_HUNG"}) {
+        $top_diag_fa_code = "NIC_UNRESP_SSH_HUNG";
+        delete $diag_fa_code{"NIC_UNRESP_SSH_HUNG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CONSOLE_UNRESP"}) {
+        $top_diag_fa_code = "CONSOLE_UNRESP";
+        delete $diag_fa_code{"CONSOLE_UNRESP"};
         return;
     }
 
@@ -583,16 +618,7 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"BOOT_UBOOT"};
         return;
     }
-    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
-        $top_diag_fa_code = "CARD_REBOOTED";
-        delete $diag_fa_code{"CARD_REBOOTED"};
-        return;
-    }
-    if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
-        $top_diag_fa_code = "MISSING_ENV_VAR";
-        delete $diag_fa_code{"MISSING_ENV_VAR"};
-        return;
-    }
+
     if (exists $diag_fa_code{"INCORRECT_PN"}) {
         $top_diag_fa_code = "INCORRECT_PN";
         delete $diag_fa_code{"INCORRECT_PN"};
@@ -1492,6 +1518,8 @@ sub parse_mtp_and_slot_log {
     my $slotnum = 0 + $slot;
     my $vmarg_low_start = 0;
     my $vmarg_low_start_linenum = 0;
+    my $vmarg_high_start = 0;
+    my $vmarg_high_start_linenum = 0;
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
@@ -1553,12 +1581,32 @@ sub parse_mtp_and_slot_log {
                 }
             }
         }
+        if ($line =~ m/\/home\/diag\/diag\/scripts\/vmarg\.sh high/) {
+            $vmarg_high_start = 1;
+            $vmarg_high_start_linenum = $.;
+        }
+        if ($line =~ m/=== Vmarg is at high ===/) {
+            my $line2 = <TR3>;
+            if ($line2 =~ /sync/) {
+                my $line3 = <TR3>;
+                if ($line3 =~ /exit/) {
+                    my $line4 = <TR3>;
+                    if ($line4 =~ /Connection to .* closed./) {
+                        if ($vmarg_high_start == 1) {
+                            $vmarg_high_start = 0;
+                        }
+                    }
+                }
+            }
+        }
         if ($line =~ m/Timeout, server .* not responding/) {
             $slot_err_msg .= $line;
             if (($vmarg_low_start == 1) && ($. - $vmarg_low_start_linenum  < 30)) {
-                $diag_fa_code{"NIC_UNRESPONSIVE_SSH_HANG"} = 1;
+                $diag_fa_code{"VMARG_L_SSH_HUNG"} = 1;
+            } elsif (($vmarg_high_start == 1) && ($. - $vmarg_high_start_linenum  < 30)) {
+                $diag_fa_code{"VMARG_H_SSH_HUNG"} = 1;
             } else {
-                $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
+                $diag_fa_code{"NIC_UNRESP_SSH_HUNG"} = 1;
             }
         }
         if ($line =~ m/VRM_ARM        VBOOT/) {
@@ -1570,7 +1618,7 @@ sub parse_mtp_and_slot_log {
                     if ($vout < $vboot * 0.95) {
                         $slot_err_msg .= $line;
                         $slot_err_msg .= $line2;
-                        $diag_fa_code{"NIC_UNRESPONSIVE_VOLT_LOW"} = 1;
+                        $diag_fa_code{"VMARG_L_VOLT_LOW"} = 1;
                     }
                 }
             }
@@ -1578,14 +1626,24 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/DSC# uptime/) {
             if ($. - $vmarg_low_start_linenum  < 100) {
                 $slot_err_msg .= $line;
-                $diag_fa_code{"NIC_UNRESPONSIVE_BOOT_DSC"} = 1;
+                $diag_fa_code{"VMARG_L_BOOT_UBOOT"} = 1;
+            }
+            if ($. - $vmarg_high_start_linenum  < 100) {
+                $slot_err_msg .= $line;
+                $diag_fa_code{"VMARG_H_BOOT_UBOOT"} = 1;
             }
         }
         if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
-            if ($line =~ m/env \| grep -v PS1/) {
+            if (($line =~ m/env \| grep -v PS1/) && ($line !~ m /DSC#/)) {
                 my $line2 = <TR3>;
                 if ($line2 !~ m/ASIC_LIB=/) {
-                    $diag_fa_code{"MISSING_ENV_VAR"} = 1;
+                    if (($. - $vmarg_low_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_L_SSH_HUNG"})) {
+                        $diag_fa_code{"VMARG_L_CARD_REBOOTED"} = 1;
+                    } elsif (($. - $vmarg_high_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_H_SSH_HUNG"})) {
+                        $diag_fa_code{"VMARG_H_CARD_REBOOTED"} = 1;
+                    } else {
+                        $diag_fa_code{"CARD_REBOOTED"} = 1;
+                    }
                 }
             }
         }
@@ -1715,7 +1773,7 @@ sub parse_mtp_and_slot_log {
         }
         if ($line =~ m/\[NIC-$slot\].*Timeout connecting to UART console/) {
             $mtp_test_msg .= $line;
-            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
+            $diag_fa_code{"CONSOLE_UNRESP"} = 1;
         }
         if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/)) {
@@ -1921,9 +1979,6 @@ sub parse_fpga_and_ecc {
                             $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
                         } else {
                             $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
-                            if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
-                                $diag_fa_code{"CARD_REBOOTED"} = 1;
-                            }
                         }
                     }
                 }

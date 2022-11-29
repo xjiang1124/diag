@@ -248,10 +248,14 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2"] = "0x3"
     fail_cpld_dat["ORTANO2"] = "0x10"
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
-    diagfw_img["ORTANO2"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
-    diagfw_dat["ORTANO2"] = "06-16-2022"
-    goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
-    goldfw_dat["ORTANO2"] = "06-16-2022"
+    # diagfw_img["ORTANO2"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
+    # diagfw_dat["ORTANO2"] = "06-16-2022"
+    # goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
+    # goldfw_dat["ORTANO2"] = "06-16-2022"
+    diagfw_img["ORTANO2"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
+    diagfw_dat["ORTANO2"] = "10-27-2022"
+    goldfw_img["ORTANO2"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
+    goldfw_dat["ORTANO2"] = "10-26-2022"
     uboot_img["ORTANO2"] = "boot0.rev14.img"
     # ORTANO ORACLE (68-0015)
     # cpld_img["ORTANO2"] = "naples200_ortano2_rev3_9_07292021.bin"
@@ -360,10 +364,10 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2ADIIBM"] = "0x3"
     fail_cpld_dat["ORTANO2ADIIBM"] = "0x12"
     fea_cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
-    diagfw_img["ORTANO2ADIIBM"] = "naples_diagfw_elba_1.51.0-G-6_2022.09.30.tar"
-    diagfw_dat["ORTANO2ADIIBM"] = "09-29-2022"
-    goldfw_img["ORTANO2ADIIBM"] = "naples_goldfw_elba_1.51.0-G-6_2022.09.30.tar"
-    goldfw_dat["ORTANO2ADIIBM"] = "09-29-2022"
+    diagfw_img["ORTANO2ADIIBM"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
+    diagfw_dat["ORTANO2ADIIBM"] = "10-27-2022"
+    goldfw_img["ORTANO2ADIIBM"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
+    goldfw_dat["ORTANO2ADIIBM"] = "10-26-2022"
     uboot_img["ORTANO2ADIIBM"] = "boot0.rev14.img"
     cpld_img["68-0028"] = "naples200_ortano2A_rev3_D_06082022.bin"
     cpld_ver["68-0028"] = "0x3"
@@ -387,10 +391,10 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2ADIMSFT"] = "0x3"
     fail_cpld_dat["ORTANO2ADIMSFT"] = "0x12"
     fea_cpld_img["ORTANO2ADIMSFT"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
-    diagfw_img["ORTANO2ADIMSFT"] = "naples_diagfw_elba_1.51.0-G-6_2022.09.30.tar"
-    diagfw_dat["ORTANO2ADIMSFT"] = "09-29-2022"
-    goldfw_img["ORTANO2ADIMSFT"] = "naples_goldfw_elba_1.51.0-G-6_2022.09.30.tar"
-    goldfw_dat["ORTANO2ADIMSFT"] = "09-29-2022"
+    diagfw_img["ORTANO2ADIMSFT"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
+    diagfw_dat["ORTANO2ADIMSFT"] = "10-27-2022"
+    goldfw_img["ORTANO2ADIMSFT"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
+    goldfw_dat["ORTANO2ADIMSFT"] = "10-26-2022"
     uboot_img["ORTANO2ADIMSFT"] = "boot0.rev14.img"
     cpld_img["68-0034"] = "naples200_ortano2A_rev3_D_06082022.bin"
     cpld_ver["68-0034"] = "0x3"
@@ -461,86 +465,13 @@ class MTP_IMAGES:
 
 # MFG release images
 class MFG_IMAGE_FILES:
-    MTP_AMD64_IMAGE = "image_amd64_elba_ortanoadi_pilot_v1.45-release.tar"
-    MTP_ARM64_IMAGE = "image_arm64_elba_ortanoadi_pilot_v1.45-release.tar"
+    MTP_AMD64_IMAGE = "image_amd64_elba.tar"
+    MTP_ARM64_IMAGE = "image_arm64_elba.tar"
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
     penctl_img = "penctl.linux.02012021"
     penctl_token_img = "penctl.token"
-
-
-class PART_NUMBERS_MATCH:
-    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES 100 PENSANDO
-    N100_NET_PN_FMT = r"111-04635"                            #111-04635        NAPLES 100 NETAPP
-    N100_PN_FMT_ALL = r"{:s}|{:s}".format(N100_PEN_PN_FMT,N100_NET_PN_FMT)
-
-    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"        #68-0013-01 03    NAPLES100 IBM
-    N100_IBM_FMT_ALL = r"{:s}".format(N100_IBM_PN_FMT)
-
-    N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
-    N100_HPE_CLD_PN_FMT = r"P41854-00[0-9]{1}"                #P41854-001       NAPLES100 HPE CLOUD
-    N100_HPE_FMT_ALL = r"{:s}|{:s}".format(N100_HPE_PN_FMT, N100_HPE_CLD_PN_FMT)
-
-    N100_DELL_PN_FMT  = r"68-0024-0[0-9]{1} [A-Z0-9]{2}"      #68-0024-01 XX    NAPLES100 DELL
-    N100_DELL_FMT_ALL = r"{:s}".format(N100_DELL_PN_FMT) 
-
-    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}"         #68-0005-03 01    NAPLES25 PENSANDO
-    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                     #P18669-001       NAPLES25 HPE
-    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"            #68-0008-xx yy    NAPLES25 EQUINIX
-    N25_PN_FMT_ALL = r"{:s}|{:s}|{:s}".format(N25_PEN_PN_FMT,N25_HPE_PN_FMT,N25_EQI_PN_FMT)
-
-    N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"             #P26968-001       NAPLES25 SWM HPE 
-    N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"             #P41851-001       NAPLES25 SWM HPE CLOUD
-    N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"             #P46653-001       NAPLES25 SWM HPE TAA
-    N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}" #68-0016-01 01    NAPLES25 SWM PENSANDO 
-    N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
-    N25_SWM_HPE_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_SWM_HPE_PN_FMT, N25_SWM_HPE_CLD_PN_FMT, N25_SWM_HPE_TAA_PN_FMT, N25_SWM_PEN_PN_FMT, N25_SWM_PEN_TAA_PN_FMT)
-
-    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"     #68-0014-01 00       NAPLES25 SWM DELL
-    N25_SWM_DEL_FMT_ALL = r"{:s}".format(N25_SWM_DEL_PN_FMT)
-
-    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"     #68-0019-01 01       NAPLES25 SWM 833 PENSANDO
-    N25_SWM_833_FMT_ALL = r"{:s}".format(N25_SWM_833_PN_FMT)
-
-    N25_OCP_PEN_PN_FMT = r"68-0023-0[0-9]{1} [A-Z0-9]{2}"     #68-00xx-xx       NAPLES25 OCP PENSANDO
-    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
-    N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
-    N25_OCP_DEL_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"     #68-0010-01       NAPLES25 OCP DELL
-    N25_OCP_PN_FMT_ALL = r"{:s}|{:s}|{:s}|{:s}".format(N25_OCP_PEN_PN_FMT,N25_OCP_HPE_PN_FMT, N25_OCP_HPE_CLD_PN_FMT, N25_OCP_DEL_PN_FMT)    
-
-    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"              #68-0007-01 01    FORIO
-    FORIO_FMT_ALL = r"{:s}".format(FORIO_PN_FMT)
-
-    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"             #68-0009-01 01    VOMERO
-    VOMERO_FMT_ALL = r"{:s}".format(VOMERO_PN_FMT)
-
-    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"         #68-0011-01 01    VOMERO2
-    VOMERO2_FMT_ALL = r"{:s}".format(VOMERO2_PN_FMT)
-
-    ORTANO_PN_FMT = r"68-0015-01 [A-Z0-9]{2}"                 #68-0015-01 01    ORTANO
-    ORTANO_FMT_ALL = r"{:s}".format(ORTANO_PN_FMT)
-
-    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"     #68-0015-02 01    ORTANO2 ORACLE
-    ORTANO2_PEN_PN_FMT = r"68-0021-0[2-9]{1} [A-Z0-9]{2}"     #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
-    ORTANO2_FMT_ALL = r"{:s}|{:s}".format(ORTANO2_ORC_PN_FMT,ORTANO2_PEN_PN_FMT)
-
-    POMONTEDELL_PN_FMT = r"0PCFPC(?:X|A)[0-9]{2}"             #0PCFPC X/A       POMONTE DELL
-    LACONA32DELL_PN_FMT = r"(?:0X322F|0W5WGK)(?:X|A)[0-9]{2}" #0X322F 0W5WGK X/A       LACONA32 DELL
-    LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                    #P47930-001       LACONA32 HPE
-
-    ORTANO2ADI_ORC_PN_FMT = r"68-0026-0[1-9]{1} [A-Z0-9]{2}"     #68-0026-01 01    ORTANO2ADI ORACLE
-    ORTANO2ADI_FMT_ALL = r"{:s}".format(ORTANO2ADI_ORC_PN_FMT)
-
-    ORTANO2ADI_IBM_PN_FMT = r"68-0028-0[1-9]{1} [A-Z0-9]{2}"     #68-0028-01 01    ORTANO2ADI IBM
-    ORTANO2ADIIBM_FMT_ALL = r"{:s}".format(ORTANO2ADI_IBM_PN_FMT)
-
-    ORTANO2ADI_MSFT_PN_FMT = r"68-0034-0[1-9]{1} [A-Z0-9]{2}"     #68-0034-01 01    ORTANO2ADI MICROSOFT
-    ORTANO2ADIMSFT_FMT_ALL = r"{:s}".format(ORTANO2ADI_MSFT_PN_FMT)
-    ORTANO2ADI_ALL_FMT_ALL = r"{:s}|{:s}|{:s}".format(ORTANO2ADI_ORC_PN_FMT,ORTANO2ADI_IBM_PN_FMT,ORTANO2ADI_MSFT_PN_FMT)
-
-    ORTANO2INTERP_ORC_PN_FMT = r"68-0029-0[1-9]{1} [A-Z0-9]{2}"    #68-0029-01 02    ORTANO2INTERP_ORC_PN_FMT ORACLE
-    ORTANO2INTERP_FMT_ALL = r"{:s}".format(ORTANO2INTERP_ORC_PN_FMT)
 
 class FLEX_ERR_CODE_MAP:
     err_code = dict()
@@ -803,61 +734,6 @@ TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Ty
 CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP,NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
 DDR_HARCODED_TRAINING_NIC_LIST = []
 
-# please check the label specification
-# FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
-FLX_MILPITAS_SN_FMT = "FLM\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-FLX_PENANG_SN_FMT = "FP[N|A|B|D]\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-FLX_P1_SN_FMT           = "FPC\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
-HP_MILPITAS_SN_FMT = "5UP\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
-HP_PENANG_SN_FMT = "[2|3]Y[U|1]\d{1}[0-5]{1}\d{1}[0-9B-DF-HJ-NP-TV-Z]{4}"
-NAPLES_SN_FMT = r"{:s}|{:s}".format(FLX_PENANG_SN_FMT,FLX_P1_SN_FMT)
-HP_SN_FMT = r"{:s}|{:s}".format(HP_MILPITAS_SN_FMT, HP_PENANG_SN_FMT)
-DELL_PPID_COUNTRY_FMT = r"(?:US|MY)"
-DELL_PPID_PART_NUM_FMT = r"(?:0PCFPC|0X322F|0W5WGK)"
-DELL_PPID_MFG_ID_FMT = r"(?:FLUPK|FLEPK)"
-DELL_PPID_DATE_CODE_FMT = r"[0-9][1-9A-C][1-9A-V]"
-DELL_PPID_SER_NUM_FMT = r"[0-9A-O][0-9A-Z]{3}"
-DELL_PPID_REV_FMT = r"[X|A][0-9]{2}"
-DELL_PPID_FMT = DELL_PPID_COUNTRY_FMT + DELL_PPID_PART_NUM_FMT + DELL_PPID_MFG_ID_FMT + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
-DELL_PPID_MILPITAS_SN_FMT = r"USFLUPK" + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT
-DELL_PPID_PENANG_SN_FMT   = r"MYFLEPK" + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT
-DELL_PPID_MILPITAS_FMT = r"US" + DELL_PPID_PART_NUM_FMT + "FLUPK" + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
-DELL_PPID_PENANG_FMT   = r"MY" + DELL_PPID_PART_NUM_FMT + "FLEPK" + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
-DELL_PPID_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_PENANG_SN_FMT)
-DELL_PPID_PN_FMT = DELL_PPID_PART_NUM_FMT + DELL_PPID_REV_FMT
-FLX_MILPITAS_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_MILPITAS_SN_FMT, HP_MILPITAS_SN_FMT, DELL_PPID_MILPITAS_SN_FMT,DELL_PPID_MILPITAS_FMT)
-FLX_PENANG_BUILD_SN_FMT = r"{:s}|{:s}|{:s}|{:s}".format(FLX_PENANG_SN_FMT, HP_PENANG_SN_FMT, DELL_PPID_PENANG_SN_FMT,DELL_PPID_PENANG_FMT)
-FLX_P1_BUILD_SN_FMT = r"{:s}".format(FLX_P1_SN_FMT)
-DELL_BUILD_SN_FMT = r"{:s}|{:s}".format(DELL_PPID_MILPITAS_SN_FMT, DELL_PPID_PENANG_SN_FMT)
-NAPLES_MAC_FMT = r"00AECD[A-F0-9]{6}"
-NAPLES_PN_FMT = r"68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2}$"
-PN_MINUS_REV_MASK = -3 # (last three digits)
-HP_PN_FMT = r"[A-Z0-9]{6}-[0-9]{3}$"
-HP_SWN_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
-NAPLES_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(FLX_PENANG_SN_FMT,FLX_P1_SN_FMT)
-HP_DISP_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
-DELL_PPID_DISP_SN_FMT = r"Serial Number +({:s})".format(DELL_PPID_SN_FMT)
-ALOM_SN_FMT = r"Serial Number +({:s}|{:s})".format(HP_MILPITAS_SN_FMT,HP_PENANG_SN_FMT)
-NAPLES_DISP_MAC_FMT = r"MAC Address Base +(00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2})"
-NAPLES_DISP_DATE_FMT = r"Manufacturing Date/Time.*(\d{2}/\d{2}/\d{2})"
-#NAPLES_DISP_DATE_FMT = r"(\d{2}/\d{2}/\d{2})"
-NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-IBM_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-PEN_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{2})"
-VOMERO2_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-ORTANO_DISP_ASSEMBLY_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-NAPLES_DISP_PN_FMT = r"Part Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-#NAPLES_DISP_PN_FMT = r"(Part|Assembly) Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-HP_DISP_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-[0-9]{3})"
-HP_SWM_DISP_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
-ALOM_DISP_BIA_PN_FMT = r"Part Number +([A-Z0-9]{6}-[0-9]{3})"
-ALOM_DISP_PIA_PN_FMT = r"HPE Product Number +([A-Z0-9]{6}-B[0-9]{2})"
-OCP_DELL_DISP_PN_FMT = r"Assembly Number +(68-[0-9]{4}-[0-9]{2} [0-9A-Z]{1,2})"
-DELL_PPID_DISP_PN_FMT = r"Part Number +({:s})".format(DELL_PPID_PN_FMT)
-HPESWM_DISP_ASSET_FMT = r"Asset Tag Type/Length.*0x(\w+)"
-OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
-OCP_ADAPTER_FIXED_PN  = "00-0000-00 00"
-
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
 
@@ -951,7 +827,7 @@ FLX_SAVE_UUT_RSLT_ENTRY_FMT =                                                   
           &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT =                                                        \
          '&lt;EXTRA {:s} /&gt;&#xD;'
-FLX_SAVE_UUT_RSLT_ENTRY_2_FMT =                                                              \
+FLX_SAVE_UUT_RSLT_ENTRY_2_FMT =                                                            \
          '&lt;GROUP NAME="{:s}" GROUPINDEX="1" LOOPINDEX="-1" TYPE="PassFailTest" Remark="Comment" TOTALTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
 FLX_SAVE_UUT_TEST_RSLT_FMT =                                                               \

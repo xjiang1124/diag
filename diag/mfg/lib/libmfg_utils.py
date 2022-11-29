@@ -30,6 +30,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
+from libsku_utils import *
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -250,34 +251,50 @@ def dell_ppid_validate(tmp):
     else:
         return None
 
-def serial_number_validate(tmp):
-    if re.match(NAPLES_SN_FMT, tmp) and (len(tmp) == 11):
-        return tmp
-    elif re.match(HP_SN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    elif re.match(DELL_PPID_SN_FMT, tmp) and (len(tmp) == 14):
-        return tmp
-    else:
-        return None
+def serial_number_validate(buf, exact_match=True):
+    """
+        This is a "LOOSE" validation compared to libnic_ctrl::nic_fru_validate_sn().
+        Check that the 'buf' containing serial number matches *ANY* of the rules.
+        If exact_match=True, 'buf' must contain whole serial number and nothing else.
+    """
+    all_sn_regexes = [p[s] for p in SN_FORMAT_TABLE.values() for s in p] # flatten dict
 
+    for sn_regex in all_sn_regexes:
+        if exact_match:
+            match = re.match(sn_regex, buf)
+            if match:
+                if match.group(0) == buf:
+                    # check no truncation happened during regex match
+                    return buf
+                else:
+                    return None
+        else:
+            disp_field = "Serial Number"
+            sn_disp_regex = r"%s +(%s)" % (disp_field, sn_regex)
+            match = re.findall(sn_disp_regex, buf)
+            if match:
+                return match[0]
+
+    return None
 
 def mac_address_validate(tmp):
-    if re.match(NAPLES_MAC_FMT, tmp) and (len(tmp) == 12):
+    if re.match(PEN_MAC_NO_DASHES_FMT, tmp) and (len(tmp) == 12):
         return tmp
     else:
         return None
 
 
 def part_number_validate(tmp):
-    if re.match(NAPLES_PN_FMT, tmp) and (len(tmp) == 13 or len(tmp) == 12):
-        return tmp
-    if re.match(HP_PN_FMT, tmp) and (len(tmp) == 10):
-        return tmp
-    if re.match(DELL_PPID_PN_FMT, tmp) and (len(tmp) <= 9 and len(tmp) >= 8):
-        return tmp
-    else:
-        return None
+    all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
 
+    for pn_regex in all_pn_regexes:
+        if re.match(pn_regex, tmp):
+            return tmp
+
+    return None
+
+def part_number_match(pn, regex):
+    return re.match(regex, pn) is not None
 
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))
@@ -780,7 +797,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
+    if not mtp_mgmt_ctrl.mtp_nic_init(stage):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -1185,21 +1202,32 @@ def flx_soap_get_uut_info_xml(stage, sn, factory):
 
 def flx_sn_to_factory(sn):
     if not sn:
-        return False
-    if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
-        return Factory.FSP
-    elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
-        return Factory.MILPITAS
-    elif re.match(FLX_P1_BUILD_SN_FMT, sn):
-        return Factory.P1
-    else:
         return None
 
+    for factory_location in SN_FORMAT_TABLE.keys():
+        if factory_location == Factory.LAB:
+            # skip, dont use lab SN to match
+            continue
+
+        for sn_regex in SN_FORMAT_TABLE[factory_location].values():
+            if re.match(sn_regex, sn):
+                return factory_location
+
+    return None
+
 def FindDellSN(sn):
-    if re.match(DELL_BUILD_SN_FMT, sn):
-        return True
-    else:
-        return False
+    dell_cards = [
+        PART_NUMBERS_MATCH.LACONA32DELL_PN_FMT,
+        PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT
+        ]
+
+    for factory_location in SN_FORMAT_TABLE.keys():
+        for pn_regex in SN_FORMAT_TABLE[factory_location]:
+            if pn_regex in dell_cards:
+                sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
+                if re.match(sn_regex, sn):
+                    return True
+    return False
 
 def flx_stage_to_penang(stage):
     if stage == FF_Stage.FF_DL:
@@ -1225,34 +1253,37 @@ def flx_stage_to_penang(stage):
         return None
 
 def soap_post_report(xml, factory=Factory.FSP):
-    webserverip = Factory_network_config[factory]["Flexflow"]
-    if factory == Factory.FSP or factory == Factory.P1:
-        webservice = httplib.HTTP(webserverip)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
-    else:
-        webservice = httplib.HTTP(webserverip)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
+    try:
+        webserverip = Factory_network_config[factory]["Flexflow"]
+        if factory == Factory.FSP or factory == Factory.P1:
+            webservice = httplib.HTTP(webserverip)
+            webservice.putrequest("POST", FLX_PENANG_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
+        else:
+            webservice = httplib.HTTP(webserverip)
+            webservice.putrequest("POST", FLX_API_URL)
+            webservice.putheader("Content-Type", "text/xml")
+            webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
 
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
+        webservice.putheader("Content-length", "%d" % len(xml))
+        webservice.endheaders()
 
-    webservice.send(xml)
+        webservice.send(xml)
 
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
-    if match:
-        return match[0]
-    else:
-        print("################## SAVE UUT RSLT #######################")
-        print(resp)
-        print("################## SAVE UUT RSLT #######################")
-        return "500"
-
+        statuscode, statusmessage, header = webservice.getreply()
+        resp = webservice.getfile().read()
+        match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
+        if match:
+            return match[0]
+        else:
+            print("################## SAVE UUT RSLT #######################")
+            print(resp)
+            print("################## SAVE UUT RSLT #######################")
+            return "500"
+    except:
+        print("Error occur when post report to webserver")
+        return "999"
 
 def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
@@ -1334,7 +1365,15 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if not xml:
         return False
 
-    ret = soap_post_report(xml, factory)
+    retry = 0
+    while retry < 3:
+        ret = soap_post_report(xml, factory)
+        if int(ret) != 0:
+            print("{:d}th post uut report failed.".format((retry + 1)))
+            retry += 1
+            time.sleep(2)
+        else:
+            break
     if int(ret) != 0:
         return False
 
@@ -1367,7 +1406,15 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if not xml:
         return -2
 
-    ret = soap_post_report(xml, factory)
+    retry = 0
+    while retry < 3:
+        ret = soap_post_report(xml, factory)
+        if int(ret) != 0:
+            print("{:d}th post uut status failed.".format((retry + 1)))
+            retry += 1
+            time.sleep(2)
+        else:
+            break
 
     return int(ret)
 
@@ -1386,10 +1433,10 @@ def flx_web_srv_get_uut_info(sn, stage=None):
 
     resp = soap_get_uut_resp(xml, factory)
     #print(resp)
-    
     return resp
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
+
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[]):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -1528,22 +1575,51 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
     elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT:
-        diag_log_dir = log_dir + "diag_logs/"
-        asic_log_dir = log_dir + "asic_logs/"
-        nic_log_dir = log_dir + "nic_logs/"
-        # move the extra logfile
-        cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
+        if not vmarg:
+            diag_log_dir = log_dir + "diag_logs/"
+            asic_log_dir = log_dir + "asic_logs/"
+            nic_log_dir = log_dir + "nic_logs/"
+            # move the extra logfile
+            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+        else:
+            for vmag in vmarg:
+                if vmag.lower() == "high":
+                    diag_log_dir = log_dir + "hv_diag_logs/"
+                    asic_log_dir = log_dir + "hv_asic_logs/"
+                    nic_log_dir = log_dir + "hv_nic_logs/"
+                elif vmag.lower() == "low":
+                    diag_log_dir = log_dir + "lv_diag_logs/"
+                    asic_log_dir = log_dir + "lv_asic_logs/"
+                    nic_log_dir = log_dir + "lv_nic_logs/"
+                else:
+                    diag_log_dir = log_dir + "diag_logs/"
+                    asic_log_dir = log_dir + "asic_logs/"
+                    nic_log_dir = log_dir + "nic_logs/"
+                # move the extra logfile
+                cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+
     elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
         hv_diag_log_dir = log_dir + "hv_diag_logs/"
         hv_asic_log_dir = log_dir + "hv_asic_logs/"
@@ -1577,6 +1653,23 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
+        if vmarg and "normal" in vmarg:
+            diag_log_dir = log_dir + "diag_logs/"
+            asic_log_dir = log_dir + "asic_logs/"
+            nic_log_dir = log_dir + "nic_logs/"
+            # move the extra logfile
+            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
+            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                return None
     # for SWI/FST, no extra logfiles
     else:
         pass
@@ -1812,14 +1905,16 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             err_code_list = list()
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
 
-            # save infra serial numbers
-            if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
+            # FST will give syntax error since nic_ctrl is not initialized
+            if stage != FF_Stage.FF_FST:
+                # save infra serial numbers
+                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                    mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
-            # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+                # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
+                if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                        nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -1903,14 +1998,16 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             err_code_list = list()
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
 
-            # save infra serial numbers
-            if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
-                mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
+            # FST will give syntax error since nic_ctrl is not initialized
+            if stage != FF_Stage.FF_FST:
+                # save infra serial numbers
+                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                    mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
-            # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
-            if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
-                    nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+                # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
+                if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
+                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                        nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -2450,31 +2547,6 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fa
 
     cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
-    mtp_thread_list = list()
-    setup_rslt_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, mtp_capability, setup_rslt_list))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
-        time.sleep(2)
-
-    # monitor all the thread
-    while True:
-        if len(mtp_thread_list) == 0:
-            break
-        for mtp_thread in mtp_thread_list[:]:
-            if not mtp_thread.is_alive():
-                mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
-        time.sleep(5)
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if not setup_rslt_list[mtp_id]:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         nic_list = list()       # needs para_init

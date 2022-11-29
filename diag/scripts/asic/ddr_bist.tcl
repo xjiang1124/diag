@@ -20,6 +20,7 @@ set parameters {
     {dual_rank.arg   0               "Dual rank"}
     {ddr_freq.arg    3200            "DDR frequency"}
     {ddr5.arg        0               "DDR5 option"}
+    {vmarg.arg       "normal"        "Voltage margin: normal/high/low"}
 }
 
 set usage "- Usage:"
@@ -40,8 +41,9 @@ set addr_space  $options(addr_space)
 set dual_rank   $options(dual_rank)
 set ddr_freq    $options(ddr_freq)
 set ddr5        $options(ddr5)
+set vmarg       $options(vmarg)
 
-puts "sn: $sn; slot: $slot; mode $mode; hc: $hc; ctrl_pi: $ctrl_pi; addr_space: $addr_space; dual_rank: $dual_rank; ddr5: $ddr5"
+puts "sn: $sn; slot: $slot; mode $mode; hc: $hc; ctrl_pi: $ctrl_pi; addr_space: $addr_space; dual_rank: $dual_rank; ddr5: $ddr5; vmarg: $vmarg"
 
 if { $slot == "" } {
     error "Need slot arg"

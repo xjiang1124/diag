@@ -224,15 +224,6 @@ def main():
             mtpid_fail_list.append(mtp_id)
             continue
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            mtp_mgmt_ctrl.mtp_nic_sn_init(slot, fpo=True)
-
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            mtp_mgmt_ctrl.mtp_nic_pn_init(slot, fpo=True)
 
     # type check
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
