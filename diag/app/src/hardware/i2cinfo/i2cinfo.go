@@ -556,7 +556,7 @@ func init() {
         I2cTbl = append(I2cTbl, OrtanoIPODTbl[podIdx]...)
         I2cTbl = append(I2cTbl, OrtanoITMPTbl[tmpIdx]...)
     } else if CardType == "ORTANO2S" {
-        itpType = os.Getenv("CAP_TYPE")
+        itpType = os.Getenv("ITP_TYPE")
 
         fmt.Sscanf(itpType, "0x%x", &itpIdx)
         tmpIdx := (itpIdx & 0x04 )  >> 2

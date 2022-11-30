@@ -93,7 +93,7 @@ type progInfo struct {
 
 type field_info struct {
     offset  int 
-    value   byte 
+    value   []byte 
 }
 
 type updateInfo struct {
@@ -111,11 +111,11 @@ type card struct {
 }
 
 var solo_oracle_ext = []field_info {
-    field_info { 94, 0x0d, },
+    field_info { 94, []byte{0x0d}, },
 }
 
 var adicr_oracle_ext = []field_info {
-    field_info { 94, 0x0e, },
+    field_info { 94, []byte{0x0e}, },
 }
 
 type entryinfo struct {
@@ -754,8 +754,9 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
     // update card extra field
     extTbl := card.ext
     if extTbl != nil {
-        for i:= 0; i < len(extTbl); i++ {
-            Data[extTbl[i].offset] =  extTbl[i].value
+         for i:= 0; i < len(extTbl); i++ {
+            copy(Data[(extTbl[i].offset):], extTbl[i].value)
+            copy(Data[(extTbl[i].offset + len(extTbl[i].value)):], Data[(extTbl[i].offset + len(extTbl[i].value)):])
         }
     }
     return
