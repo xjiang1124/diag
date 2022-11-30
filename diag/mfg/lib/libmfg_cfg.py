@@ -378,8 +378,8 @@ class NIC_IMAGES:
     fail_cpld_img["68-0028"] = "naples200_ortano2A_failsafe_rev3_D_06082022.bin"
     fail_cpld_ver["68-0028"] = "0x3"
     fail_cpld_dat["68-0028"] = "0x13"
-    goldfw_img["68-0028"] = "naples_goldfw_elba_1.51.0-G-6_2022.09.30.tar"
-    goldfw_dat["68-0028"] = "09-29-2022"
+    goldfw_img["68-0028"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
+    goldfw_dat["68-0028"] = "10-26-2022"
     #MSFT ADI
     cpld_img["ORTANO2ADIMSFT"] = "naples200_ortano2A_rev1_5_02112022.bin"
     cpld_ver["ORTANO2ADIMSFT"] = "0x1"
@@ -405,8 +405,8 @@ class NIC_IMAGES:
     fail_cpld_img["68-0034"] = "naples200_ortano2A_failsafe_rev3_D_06082022.bin"
     fail_cpld_ver["68-0034"] = "0x3"
     fail_cpld_dat["68-0034"] = "0x13"
-    goldfw_img["68-0034"] = "naples_goldfw_elba_1.51.0-G-6_2022.09.30.tar"
-    goldfw_dat["68-0034"] = "09-29-2022"
+    goldfw_img["68-0034"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
+    goldfw_dat["68-0034"] = "10-26-2022"
 
     cpld_img["ORTANO2INTERP"] = "naples200_ortano2I_rev3_A_05132022.bin"
     cpld_ver["ORTANO2INTERP"] = "0x3"
