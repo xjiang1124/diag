@@ -12,6 +12,9 @@ PATH=$PATH:$DIAG_DIR/scripts
 PATH=$PATH:$DIAG_DIR/scripts/asic
 PATH=$PATH:$DIAG_DIR/tools
 PATH=$PATH:/root
+PATH=$PATH:/data
+PATH=$PATH:/data/nic_util
+PATH=$PATH:/data/nic_arm
 
 export CARD_TYPE="NAPLES100"
 export REDIS_IP=10.1.1.100
