@@ -116,12 +116,12 @@ type card struct {
 
 // Ortano Solo PCIe subsystem ID
 var soloOracleExt = []fieldInfo {
-    field_info { 94, []byte{0x0d}, },
+    fieldInfo { 94, []byte{0x0d}, },
 }
 
 // Ortano ADI CR PCIe subsystem ID
 var adicrOracleExt = []fieldInfo {
-    field_info { 94, []byte{0x0e}, },
+    fieldInfo { 94, []byte{0x0e}, },
 }
 
 // Lipari Elba number of MAC address
