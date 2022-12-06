@@ -97,7 +97,7 @@ type progInfo struct {
 
 type fieldInfo struct {
     offset  int
-    value   byte
+    value   []byte
 }
 
 type updateInfo struct {
@@ -116,17 +116,17 @@ type card struct {
 
 // Ortano Solo PCIe subsystem ID
 var soloOracleExt = []fieldInfo {
-    fieldInfo { 94, 0x0d, },
+    field_info { 94, []byte{0x0d}, },
 }
 
 // Ortano ADI CR PCIe subsystem ID
 var adicrOracleExt = []fieldInfo {
-    fieldInfo { 94, 0x0e, },
+    field_info { 94, []byte{0x0e}, },
 }
 
 // Lipari Elba number of MAC address
 var lipariElbaExt = []fieldInfo {
-    fieldInfo { 125, 0x10, },
+    fieldInfo { 125, []byte{0x10}, },
 }
 
 type entryinfo struct {
@@ -784,8 +784,9 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
     // update card extra field
     extTbl := card.ext
     if extTbl != nil {
-        for i:= 0; i < len(extTbl); i++ {
-            Data[extTbl[i].offset] =  extTbl[i].value
+         for i:= 0; i < len(extTbl); i++ {
+            copy(Data[(extTbl[i].offset):], extTbl[i].value)
+            copy(Data[(extTbl[i].offset + len(extTbl[i].value)):], Data[(extTbl[i].offset + len(extTbl[i].value)):])
         }
     }
     return
