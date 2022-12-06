@@ -58,19 +58,22 @@ const (
     PN_NETAPP_R2    string = "111-05363"
     PN_SOLO_ORACLE  string = "68-0077-01"
     PN_ADICR_ORACLE string = "68-0026-03"
+    PN_LIPARI_ELBA  string = "68-0032"
 
     // Product name
-    PROD_NAME_IBM       string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
-    PROD_NAME_ADI_MSFT  string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
-    PROD_NAME_NETAPP_R2 string = "NAPLES 100, NetApp, R2"
-    PROD_NAME_ORACLE    string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_ADI_MSFT      string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_NETAPP_R2     string = "NAPLES 100, NetApp, R2"
+    PROD_NAME_ORACLE        string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_LIPARI_ELBA   string = "AMD DSS-28800"
 
     // SKU 
-    SKU_IBM          string = "DSC2-2Q200-32R32F64P-B"
-    SKU_ADI_MSFT     string = "DSC2-2Q200-32R32F64P-M2"
-    SKU_NETAPP_R2    string = "NA"
-    SKU_SOLO_ORACLE  string = "DSC2-2Q200-32R32F64P-R4"
-    SKU_ADICR_ORACLE string = "DSC2-2Q200-32R32F64P-R5"
+    SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
+    SKU_ADI_MSFT        string = "DSC2-2Q200-32R32F64P-M2"
+    SKU_NETAPP_R2       string = "NA"
+    SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"
+    SKU_ADICR_ORACLE    string = "DSC2-2Q200-32R32F64P-R5"
+    SKU_LIPARI_ELBA     string = "DSS-28800"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -78,6 +81,7 @@ const (
     FRU_ID_NETAPP_R2     string = "09/30/22"
     FRU_ID_ADICR_ORACLE  string = "11/18/22"
     FRU_ID_SOLO_ORACLE   string = "11/18/22"
+    FRU_ID_LIPARI_ELBA   string = "12/01/22"
 )
 
 type progInfo struct {
@@ -91,9 +95,9 @@ type progInfo struct {
     fruId       int
 }
 
-type field_info struct {
-    offset  int 
-    value   byte 
+type fieldInfo struct {
+    offset  int
+    value   byte
 }
 
 type updateInfo struct {
@@ -102,20 +106,27 @@ type updateInfo struct {
     sku         string
     fruId       string
     info        []progInfo
-    ext         []field_info
+    ext         []fieldInfo
 }
 
 type card struct {
-    Name     string
+    Name    string
     pn      string
 }
 
-var solo_oracle_ext = []field_info {
-    field_info { 94, 0x0d, },
+// Ortano Solo PCIe subsystem ID
+var soloOracleExt = []fieldInfo {
+    fieldInfo { 94, 0x0d, },
 }
 
-var adicr_oracle_ext = []field_info {
-    field_info { 94, 0x0e, },
+// Ortano ADI CR PCIe subsystem ID
+var adicrOracleExt = []fieldInfo {
+    fieldInfo { 94, 0x0e, },
+}
+
+// Lipari Elba number of MAC address
+var lipariElbaExt = []fieldInfo {
+    fieldInfo { 125, 0x10, },
 }
 
 type entryinfo struct {
@@ -223,7 +234,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_NONE,
                 },
         },
-        solo_oracle_ext,
+        soloOracleExt,
     },
     PN_ADICR_ORACLE: updateInfo {
         OrtanoOracleTbl,
@@ -252,7 +263,26 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_NONE,
                 },
         },
-        adicr_oracle_ext,
+        adicrOracleExt,
+    },
+    PN_LIPARI_ELBA: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_LIPARI_ELBA,
+        SKU_LIPARI_ELBA,
+        FRU_ID_LIPARI_ELBA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        lipariElbaExt,
     },
 
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
