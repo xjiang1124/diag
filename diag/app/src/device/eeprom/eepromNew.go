@@ -57,7 +57,7 @@ const (
     PN_ADI_MSFT     string = "68-0034"
     PN_NETAPP_R2    string = "111-05363"
     PN_SOLO_ORACLE  string = "68-0077-01"
-    PN_ADICR_ORACLE string = "68-0026-03"
+    PN_ADICR_ORACLE string = "68-0049-03"
 
     // Product name
     PROD_NAME_IBM       string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
