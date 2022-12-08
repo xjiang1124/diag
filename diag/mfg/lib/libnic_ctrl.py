@@ -546,6 +546,19 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+        if expect_startup_img not in self._nic_handle.before:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
         # detach the console connection
         if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -572,6 +585,19 @@ class nic_ctrl():
         self._nic_handle.sendline("sync")
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+        if expect_startup_img not in self._nic_handle.before:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -606,6 +632,19 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+        if expect_startup_img not in self._nic_handle.before:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
         # detach the console connection
         if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -631,6 +670,19 @@ class nic_ctrl():
         self._nic_handle.sendline("sync")
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+        if expect_startup_img not in self._nic_handle.before:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -665,6 +717,19 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
+        # show and compare startup image
+        expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT.replace("fwupdate -s", "").strip()
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+        if expect_startup_img not in self._nic_handle.before:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
         # detach the console connection
         if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -688,7 +753,7 @@ class nic_ctrl():
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
 
-        if self._nic_type in CONSOLE_DDR_BIST_NIC_LIST:
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
             nic_shutdown_cmd_list += [
                                  "fwenv -n gold -E",
                                  "fwenv -n gold",
@@ -953,9 +1018,9 @@ class nic_ctrl():
                 continue
 
             if smode:
-                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_S_FMT)
+                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
             else:
-                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_DISP_FMT)
+                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
 
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
             if idx < 0:
@@ -2319,6 +2384,7 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
 
@@ -2329,6 +2395,7 @@ class nic_ctrl():
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT
         nic_cmd_list.append(nic_cmd)
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
         if not self.nic_exec_cmds(nic_cmd_list):
             return False
 

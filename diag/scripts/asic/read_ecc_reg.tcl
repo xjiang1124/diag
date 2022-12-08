@@ -28,6 +28,7 @@ foreach slot $slot_list {
     set port [mtp_get_j2c_port $slot]
     set slot1 [mtp_get_j2c_slot $slot]
     diag_open_j2c_if $port $slot1
+    mc_int
     set ecc_msg [check_ecc_intr]
     elb_ddr_rst_ecc_intr_counter
     diag_close_j2c_if $port $slot1
