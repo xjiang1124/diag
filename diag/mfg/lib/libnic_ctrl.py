@@ -5082,7 +5082,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
-        if port != "1" and port != "2":
+        if port not in ("0","1","2"):
+            self.nic_set_err_msg("Script error: invalid port specified")
             return False
 
         nic_cmd_list = list()
