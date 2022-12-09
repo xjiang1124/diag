@@ -29,6 +29,15 @@
                 "AMD64" : "nic_x86_64.tar.gz",
                 "ARM64" : "nic_aarch64.tar.gz"
             }
+        },
+        {
+            "Release" : "latest",
+            "Asic" : "capri",
+            "Board" : "naples",
+            "Images" : {
+                "AMD64" : "nic_x86_64.tar.gz",
+                "ARM64" : "nic_aarch64.tar.gz"
+            }
         }
     ]
 }
