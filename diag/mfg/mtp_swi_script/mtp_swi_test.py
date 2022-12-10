@@ -1176,7 +1176,7 @@ def main():
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADI:
+            if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
                 sw_test_list = ["SW_BOOT", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2ADIMSFT:
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]

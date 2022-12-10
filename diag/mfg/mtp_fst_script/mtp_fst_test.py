@@ -96,7 +96,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -208,8 +208,12 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2ADIIBM
     elif "68-0034-01" in pn:
         product_name = NIC_Type.ORTANO2ADIMSFT
+    elif "68-0049-03" in pn:
+        product_name = NIC_Type.ORTANO2ADICR
     elif "68-0029-01" in pn:
         product_name = NIC_Type.ORTANO2INTERP
+    elif "68-0077-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
     elif "68-0013-01" in pn:
         product_name = NIC_Type.NAPLES100IBM
     elif "P26968" in pn:
@@ -459,7 +463,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
             continue
 
         ### SET PEFORMANCE MODE
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
             # Ensure performance mode even though this step is not needed with newer mainfw anymore.
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
             cmd = "touch /sysconfig/config0/.perf_mode"
@@ -471,7 +475,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                 # continue
 
         ### SWITCH TO MAINFW
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
             cmd = "/nic/tools/fwupdate -s mainfwa"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
@@ -673,7 +677,7 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
         return False
 
     ### SET PEFORMANCE MODE
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
         # Ensure performance mode even though this step is not needed with newer mainfw anymore.
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
         cmd = "touch /sysconfig/config0/.perf_mode"
@@ -683,7 +687,7 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
             # return False
 
     ### SWITCH TO MAINFW
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
         cmd = "/nic/tools/fwupdate -s mainfwa"
         if not mtp_mgmt_ctrl.mtp_nic_fst_exec_cmd(slot, cmd):
@@ -716,7 +720,7 @@ def check_nic_pcie(mtp_mgmt_ctrl, slot):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -961,7 +965,7 @@ def main():
 
             # hack to remove ROT in-flight
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP) and test == "ROT":
+            if (nic_type != NIC_Type.ORTANO2 and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO and nic_type != NIC_Type.ORTANO2ADICR) and test == "ROT":
                 continue
 
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test), level=0)

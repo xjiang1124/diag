@@ -2735,7 +2735,12 @@ class nic_ctrl():
             NIC_Type.ORTANO2INTERP: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT)             #68-0029-01 XX    ORTANO2 Interposer
                 ],
-
+            NIC_Type.ORTANO2SOLO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
+                ],
+            NIC_Type.ORTANO2ADICR: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
+                ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
                 ],
@@ -2745,6 +2750,7 @@ class nic_ctrl():
             NIC_Type.LACONA32: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32_PN_FMT)                      #P47930-001       LACONA32 HPE
                 ]
+
         }
         if self._nic_type not in pn_table.keys():
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
