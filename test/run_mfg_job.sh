@@ -67,6 +67,13 @@ cp -r ${PSDIAG_ROOT}/tools/python_packets/amd64/lib ${HOME}/.local/
 export PYTHONPATH=$PYTHONPATH:${PSDIAG_ROOT}/diag/mfg:${PSDIAG_ROOT}/diag/mfg/lib
 cd ${PSDIAG_ROOT}/diag/mfg
 
+echo ""
+echo "Mfg script release step: rename diag images with release name"
+echo ""
+AMD64_DIAG_IMAGE=$(basename -s .tar ${DIAG_AMD64_IMAGE_PATH})
+ARM64_DIAG_IMAGE=$(basename -s .tar ${DIAG_ARM64_IMAGE_PATH})
+sed -i "s/MTP_ARM64_IMAGE = \".*\.tar\"/MTP_ARM64_IMAGE = \"${ARM64_DIAG_IMAGE}.tar\"/g" ${PSDIAG_ROOT}/diag/mfg/lib/libmfg_cfg.py
+sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"${AMD64_DIAG_IMAGE}.tar\"/g" ${PSDIAG_ROOT}/diag/mfg/lib/libmfg_cfg.py
 
 if [[ "${JOB_TYPE}" == "MFG_DIAG" ]];
 then
