@@ -2423,6 +2423,18 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot] = 1
                                 loopback_fail_list[mtp_id][slot] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot] = 1
+                                    loopback_fail_list[mtp_id][slot] += 1
+                                    failure_detected = True
 
                         # QSFP/SFP port 2
                         read_data = [0]
@@ -2442,6 +2454,18 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot+length] = 1
                                 loopback_fail_list[mtp_id][slot+length] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot+length] = 1
+                                    loopback_fail_list[mtp_id][slot+length] += 1
+                                    failure_detected = True
 
         display_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length)
 
