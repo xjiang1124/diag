@@ -527,6 +527,8 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        test = "GET_NIC_TYPE_BY_PN"
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if nic_prsnt_list[slot]:
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
@@ -534,17 +536,21 @@ def main():
                 continue
             pn = nic_fru_cfg[mtp_id][key]["PN"]
             sn = nic_fru_cfg[mtp_id][key]["SN"]
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
             mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
             nic_type = libmfg_utils.get_nic_type_by_part_number(pn)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
             if nic_type:
                 mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
             else:
                 if slot not in fail_nic_list:
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
