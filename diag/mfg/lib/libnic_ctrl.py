@@ -2561,7 +2561,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_alom_fru_init(self, factory_location):
+    def nic_alom_fru_init(self, factory_location, fpo=False):
         fru_buf = self.nic_read_fru(fpo, smb_fru=True, alom=True)
         if not fru_buf:
             self.nic_set_err_msg("Unable to read ALOM FRU")
@@ -2943,7 +2943,7 @@ class nic_ctrl():
             return self._assettagnumber
 
     def nic_get_hpe_version(self):
-        return self._nic_ctrl_list[slot]._hpe_prod_ver
+        return self._hpe_prod_ver
 
     def nic_get_naples_pn(self):
         if not self._pn:
