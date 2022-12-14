@@ -2561,7 +2561,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_alom_fru_init(self, factory_location):
+    def nic_alom_fru_init(self, factory_location, fpo=False):
         fru_buf = self.nic_read_fru(fpo, smb_fru=True, alom=True)
         if not fru_buf:
             self.nic_set_err_msg("Unable to read ALOM FRU")
@@ -2756,10 +2756,9 @@ class nic_ctrl():
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 
-        pn_regex_list = pn_table[self._nic_type]
-        if not pn_regex_list:
-            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
-            return False
+        pn_regex_list = []
+        for nic_type in pn_table:
+            pn_regex_list += pn_table[nic_type]
 
         for disp_field, pn_regex in pn_regex_list:
             pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
@@ -2944,7 +2943,7 @@ class nic_ctrl():
             return self._assettagnumber
 
     def nic_get_hpe_version(self):
-        return self._nic_ctrl_list[slot]._hpe_prod_ver
+        return self._hpe_prod_ver
 
     def nic_get_naples_pn(self):
         if not self._pn:
