@@ -2756,10 +2756,9 @@ class nic_ctrl():
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 
-        pn_regex_list = pn_table[self._nic_type]
-        if not pn_regex_list:
-            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
-            return False
+        pn_regex_list = []
+        for nic_type in pn_table:
+            pn_regex_list += pn_table[nic_type]
 
         for disp_field, pn_regex in pn_regex_list:
             pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
