@@ -26,6 +26,18 @@ apply_fix() {
     echo "====================================="
 }
 
+restore_fix() {
+    echo "=== Restoring TPS53705 Core OC Fix for Oracle==="
+    echo "Restore is on Page 0 only"
+    i2cset -yf 0 0x62 0 0
+    i2cset -yf 0 0x62 0xda 0xC855 w
+    i2cset -yf 0 0x62 0x46 0x006A w
+    i2cset -yf 0 0x62 0x4A 0x0055 w
+    i2cset -yf 0 0x62 0x11 c
+    echo "TPS53659 Core OC Restore done"
+    echo "====================================="
+}
+
 if [[ $# -eq 0 ]]
 then
     display
@@ -35,6 +47,12 @@ fi
 if [[ $1 = "apply" ]]
 then
     apply_fix
+    display
+fi
+
+if [[ $1 = "restore" ]]
+then
+    restore_fix
     display
 fi
 
