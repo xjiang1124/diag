@@ -41,18 +41,21 @@ import (
 
     "device/bcm/td3"
     "device/cpu/XeonD"
+    "device/fanctrl/adt7462"
     "device/fpga/taorfpga"
     "device/powermodule/sn1701022"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544c20"
     "device/powermodule/tps53681"
+    "device/powermodule/tps53659"
     "device/psu/dps800" 
-    "device/fanctrl/adt7462"
     "device/tempsensor/tmp451"
     "device/tempsensor/lm75a"
 
     "device/sfp"
     "device/qsfp"
+
+    "math/rand"
 
 )
 
@@ -73,8 +76,38 @@ const (
     ELBA1_PCIBUS = "05:00.0"
     ELBA0_ETH_PCIBUS = "0d:00.0"
     ELBA1_ETH_PCIBUS = "07:00.0"
-    
+
+    GB_LOOPBACK_LINE_SIDE = 0
+    GB_LOOPBACK_HOST_SIDE = 1
+
+    GB_DIGITAL_PMD_LOOPBACK = 1
+    GB_REMOTE_PMD_LOOPBACK = 2
+
+    GB_LOOPBACK_DISABLE = 0
+    GB_LOOPBACK_ENABLE = 1
+
+    SNAKE_GB_NO_LPBK = 0
+    SNAKE_GB_LINE_LPBK = 1
+    SNAKE_GB_HOST_LPBK = 2
+
+    SNAKE_RETIMER_NO_LPBK = 0
+    SNAKE_RETIMER_LINE_LPBK = 1
+    SNAKE_RETIMER_HOST_LPBK = 2
+
+    PRBS_GB_LPBK = 1
+    PRBS_RETIMER_LPBK = 2
 )
+
+var gbLoopbackLevel_map = map[int]string{
+    GB_LOOPBACK_LINE_SIDE : "Line",
+    GB_LOOPBACK_HOST_SIDE : "Host",
+}
+
+var gbLoopbackMode_map = map[int]string{
+    GB_DIGITAL_PMD_LOOPBACK : "Digital",
+    GB_REMOTE_PMD_LOOPBACK : "Remote",
+}
+
 
 
 var rpm_rear_MAP = map[int]int {
@@ -458,6 +491,100 @@ func Fan_RPM_test(tollerance int)(err int) {
     return
 }
 
+func TestTaorFruI2C(devName string) (err int) {
+    var errGo error = nil
+    var lastElement uint8
+    BackupData := []uint8{}
+    wrData := []uint8{}
+    rdData := []uint8{}
+    addr := []uint8{ 0x04, 0x00 }  //0x400 = 1K, nobody uses that section of the eeprom
+    randNum := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+    pattern := [][]uint8{
+    {0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55},
+    {0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA},
+    {0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00},
+    {0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF},
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} }
+
+    lastElement = uint8(len(pattern)-1)
+    for i:=0; i < len(pattern[lastElement]); i++ {
+        pattern[lastElement][i] = uint8(randNum.Uint32() & 0xFF)
+    }
+
+    iInfo, rc := i2cinfo.GetI2cInfo(devName)
+    if rc != errType.SUCCESS {
+        dcli.Println("e", "Failed to obtain I2C info of", devName)
+        err = rc
+        return
+    }
+
+    //Read Test byte to restore afte test
+    wrData = append(wrData, addr...)
+    BackupData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(len(pattern[0])) )
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+        err = errType.FAIL
+        return
+    }
+
+
+    for i:=0; i < len(pattern); i++ {
+        wrData = nil
+        rdData = nil
+
+        //WRITE ADDR + PATTERN
+        wrData = append(wrData, addr...)
+        wrData = append(wrData, pattern[i]...)
+        rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0 )
+        if errGo != nil {
+            dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+            err = errType.FAIL
+            return
+        }
+
+        misc.SleepInUSec(5000)    //atmel spec says max write time is 5ms
+
+        //READ BACK WRITE DATA
+        wrData = nil
+        wrData = append(wrData, addr...)
+        rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(len(pattern[i])))
+        if errGo != nil {
+            dcli.Println("e", "I2C Access (2) Failed to", devName)
+            err = errType.FAIL
+            return
+        }
+
+        if len(rdData) != len(pattern[i]) {
+            dcli.Printf("e", "I2C Read Lenght is incorrect.  Read Length=%d   Expect=%d   ", len(rdData), len(pattern[i]))
+            err = errType.FAIL
+            return
+        }
+
+        for j:=0; j<len(pattern[i]); j++ {
+            if rdData[j] != pattern[i][j] {
+                dcli.Printf("e", "I2C Read Data Compare Failed.  Addr=0x%.02x%.02xRead Length=%d   Expect=%d   ", addr[0], addr[1], rdData[j], pattern[i][j])
+                err = errType.FAIL
+                return
+            }
+
+        }
+    }
+
+    //RESTORE DATA
+    wrData = nil
+    wrData = append(wrData, addr...)
+    wrData = append(wrData, BackupData...)
+    rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 0)
+    if errGo != nil {
+        dcli.Println("e", "I2C Access (1) Failed to", devName, " ERROR=",errGo)
+        err = errType.FAIL
+        return
+    }
+
+    return
+}
+
 //Check for PSU and FAN MODULE PRESENCE
 func Presence_Test()(err int) {
 
@@ -727,6 +854,27 @@ func BIOS_Display_Version(useCLI int) (err int) {
     s := fmt.Sprintf("BIOS VERSION: %s", string(out))
     printf("i", s, useCLI)
 
+    return
+}
+
+func TPM_CHECK(useCLI int) (err int) {
+    var cmdStr string
+    cmdStr = "dmesg | grep -i tpm"
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+        err = errType.FAIL
+        return
+    }
+    out := strings.TrimSuffix(string(output), "\n")
+    if strings.Contains(out, "tpm_tis 00:08: 1.2 TPM (device-id 0x1B, rev-id 16)")==true {
+        s := fmt.Sprintf("TPM INFO --> %s\n", string(out[15:]))
+        printf("i", s, useCLI)
+    } else {
+        err = errType.FAIL
+        s := fmt.Sprintf(" ERROR: DMESG DOES NOT CONTAIN VALID TPM INFO")
+        printf("e", s, useCLI)
+    }
     return
 }
 
@@ -1079,7 +1227,7 @@ func X86_CPU_MemoryTest(threads uint32, percent_of_free_mem uint32, time uint32,
                 return
             }
             //Sleep.. give it a few extra seconds to finsih as the program needs time to setup/malloc memory
-            for i=0;i<(time + 7);i++ {
+            for i=0;i<(time + 10);i++ {
                 misc.SleepInSec(1)
                 if calledFromCLI > 0 { fmt.Printf(".") 
                 } else { dcli.Printf("i", ".") }
@@ -4285,6 +4433,480 @@ func TD3_Check_AVS_Programming(devName string) (err int) {
 }
 
 
+/* 
+ 
+ 
+ovs-appctl -t ops-switchd l1/phy_loopback
+
+this should dump the help for the other params
+
+         ds_put_format(ds,
+                       "Syntax: <phy_id> <lane_map> <lb_side> <lb_mode> "
+                       "<ena_dis>\n");
+         ds_put_format(ds, "<phy_id> Phy index 0..6\n");
+         ds_put_format(ds, "<lane_map> lane map\n");
+         ds_put_format(ds, "<lb_side>  0-line side, 1-host side\n");
+         ds_put_format(
+             ds, "<lb_mode>  1-digital PMD loopback, 2-remote PMD loopback\n");
+         ds_put_format(ds, "<ena_dis>  0-disable, 1-enable\n"); 
+ 
+ovs-appctl l1/phy_loopback 0 0x0F 0 1 1
+ovs-appctl l1/phy_loopback 0 0xF0 0 1 1
+ovs-appctl l1/phy_loopback 1 0x0F 0 1 1
+ovs-appctl l1/phy_loopback 1 0xF0 0 1 1
+ovs-appctl l1/phy_loopback 2 0x0F 0 1 1
+ovs-appctl l1/phy_loopback 2 0x0F 0 1 1
+ovs-appctl l1/phy_loopback 3 0xF0 0 1 1
+ovs-appctl l1/phy_loopback 3 0xF0 0 1 1
+
+ovs-appctl l1/phy_loopback 0 0x0F 1 2 1
+ovs-appctl l1/phy_loopback 0 0xF0 1 2 1
+ovs-appctl l1/phy_loopback 1 0x0F 1 2 1
+ovs-appctl l1/phy_loopback 1 0xF0 1 2 1
+ovs-appctl l1/phy_loopback 2 0x0F 1 2 1
+ovs-appctl l1/phy_loopback 2 0x0F 1 2 1
+ovs-appctl l1/phy_loopback 3 0xF0 1 2 1
+ovs-appctl l1/phy_loopback 3 0xF0 1 2 1 
+ 
+    GB_LOOPBACK_LINE_SIDE = 0
+    GB_LOOPBACK_HOST_SIDE = 1
+
+    GB_DIGITAL_PMD_LOOPBACK = 1
+    GB_REMOTE_PMD_LOOPBACK = 2
+
+    GB_LOOPBACK_DISABLE = 0
+    GB_LOOPBACK_ENABLE = 1
+ 
+    HOST SIDE IS TD3
+    LINE SIDE IS ELBA
+*/
+func BCM_GearBox_Set_Loopback(loopbackLevel int, loopbackmode int, enable int) (err int) {
+
+    phymask := [][]byte { {0, 0x0F},
+                          {0, 0xF0},
+                          {1, 0x0F},
+                          {1, 0xF0},
+                          {2, 0x0F},
+                          {2, 0xF0},
+                          {3, 0x0F},
+                          {3, 0xF0}}
+
+    if ( loopbackLevel > GB_LOOPBACK_HOST_SIDE ) {
+        cli.Printf("e", " ERROR BCM_GearBox_Set_Loopback: LOOPBACK LEVEL PASSED (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_LINE_SIDE=%d.  GB_LOOPBACK_HOST_SIDE=%d  ", loopbackLevel, GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_HOST_SIDE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( loopbackmode != GB_DIGITAL_PMD_LOOPBACK ) && (loopbackmode != GB_REMOTE_PMD_LOOPBACK) {
+        cli.Printf("e", " ERROR BCM_GearBox_Set_Loopback: loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_DIGITAL_PMD_LOOPBACK=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", loopbackmode, GB_DIGITAL_PMD_LOOPBACK, GB_REMOTE_PMD_LOOPBACK)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable != GB_LOOPBACK_DISABLE ) && (enable != GB_LOOPBACK_ENABLE) {
+        cli.Printf("e", " ERROR BCM_GearBox_Set_Loopback: loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_DISABLE=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", enable, GB_LOOPBACK_DISABLE, GB_LOOPBACK_ENABLE)
+        err = errType.FAIL
+        return
+    }
+
+    if (enable == GB_LOOPBACK_DISABLE) {
+        cli.Printf("i", "Clearing %s %s Loopback Level for all GB.\n", gbLoopbackLevel_map[loopbackLevel],  gbLoopbackMode_map[loopbackmode])
+    } else {
+        cli.Printf("i", "Setting %s %s Loopback Level for all GB.\n", gbLoopbackLevel_map[loopbackLevel],  gbLoopbackMode_map[loopbackmode])
+    }
+                          
+    for _, pair := range(phymask) {
+        cmdStr := fmt.Sprintf("ovs-appctl l1/phy_loopback %d 0x%x %d %d %d\n", pair[0], pair[1], loopbackLevel, loopbackmode, enable)
+        //fmt.Printf("'%s'\n", cmdStr)
+
+        _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        time.Sleep(time.Duration(1500) * time.Millisecond)
+    }
+
+    return
+}
+
+
+/************************************************************************************* 
+* 
+* NOTE: Uses the same defines as BCM_GearBox_Set_Loopback. 
+*       The only difference is the phy number passed to ovs-appctl
+*  
+*       HOST = TD3
+*       LINE = QSFP
+*
+*      //RETIMER.   LINE SIDE DIGITAL WORKS (0 1 1)
+*      //RETIMER.   HOST REMOTEL WORKS (1 2 1)
+*
+* 
+**************************************************************************************/ 
+func BCM_Retimer_Set_Loopback(loopbackLevel int, loopbackmode int, enable int) (err int) {
+
+    phymask := [][]byte { {4, 0x0F},
+                          {4, 0xF0},
+                          {5, 0x0F},
+                          {5, 0xF0},
+                          {6, 0x0F},
+                          {6, 0xF0}}
+
+    if ( loopbackLevel > GB_LOOPBACK_HOST_SIDE ) {
+        cli.Printf("e", " ERROR BCM_Retimer_Set_Loopback: LOOPBACK LEVEL PASSED (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_LINE_SIDE=%d.  GB_LOOPBACK_HOST_SIDE=%d  ", loopbackLevel, GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_HOST_SIDE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( loopbackmode != GB_DIGITAL_PMD_LOOPBACK ) && (loopbackmode != GB_REMOTE_PMD_LOOPBACK) {
+        cli.Printf("e", " ERROR BCM_Retimer_Set_Loopback: loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_DIGITAL_PMD_LOOPBACK=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", loopbackmode, GB_DIGITAL_PMD_LOOPBACK, GB_REMOTE_PMD_LOOPBACK)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable != GB_LOOPBACK_DISABLE ) && (enable != GB_LOOPBACK_ENABLE) {
+        cli.Printf("e", " ERROR BCM_Retimer_Set_Loopback: loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_DISABLE=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", enable, GB_LOOPBACK_DISABLE, GB_LOOPBACK_ENABLE)
+        err = errType.FAIL
+        return
+    }
+
+    if (enable == GB_LOOPBACK_DISABLE) {
+        cli.Printf("i", "Clearing %s %s Loopback Level for all Retimers.\n", gbLoopbackLevel_map[loopbackLevel],  gbLoopbackMode_map[loopbackmode])
+    } else {
+        cli.Printf("i", "Setting %s %s Loopback Level for all Retimers.\n", gbLoopbackLevel_map[loopbackLevel],  gbLoopbackMode_map[loopbackmode])
+    }
+                          
+    for _, pair := range(phymask) {
+        cmdStr := fmt.Sprintf("ovs-appctl l1/phy_loopback %d 0x%x %d %d %d\n", pair[0], pair[1], loopbackLevel, loopbackmode, enable)
+        //fmt.Printf("'%s'\n", cmdStr)
+
+        _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+        time.Sleep(time.Duration(1500) * time.Millisecond)
+    }
+
+    return
+}
+
+
+/*************************************************************************************** 
+* 
+* NOTE: This is for the snake and prbs test.   So it only check GB Loopback back to TD3.
+*       It does not check for loopback in Elba's direction
+* 
+* ovs-appctl l1/phy_status 0 0xF0 
+*  
+*  HOST SIDE IS TD3
+*  LINE SIDE IS ELBA
+*  
+*  ovs-appctl l1/phy_status %d | grep 'Digital Loopbac'
+*        Digital Loopback status   disabled        **LINE PORT0 0x3
+*        Digital Loopback status   disabled        **HOST PORT0 0x0F
+*        Digital Loopback status   disabled        **LINE PORT1 0xC
+*        Digital Loopback status   disabled        **HOST PORT1 0xF0
+*
+* 
+****************************************************************************************/ 
+func BCM_GearBox_Check_Loopback(loopbackLevel int, enable int) (err int) {
+    var cmdStr string
+    var searchStr string
+    var failSearchStr string
+    var PortNumber int = 0
+
+    phymask := []byte {0, 1, 2, 3}
+
+    cli.Printf("i", "Checking Loopback Level for all GB\n")
+
+    if ( loopbackLevel > GB_LOOPBACK_HOST_SIDE ) {
+        cli.Printf("e", " ERROR BCM_GearBox_Check_Loopback(): LOOPBACK LEVEL PASSED (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_LINE_SIDE=%d.  GB_LOOPBACK_HOST_SIDE=%d  ", loopbackLevel, GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_HOST_SIDE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable != GB_LOOPBACK_DISABLE ) && (enable != GB_LOOPBACK_ENABLE) {
+        cli.Printf("e", " ERROR BCM_GearBox_Check_Loopback(): loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_DISABLE=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", enable, GB_LOOPBACK_DISABLE, GB_LOOPBACK_ENABLE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable == GB_LOOPBACK_DISABLE ) {
+        searchStr = "disabled"
+        failSearchStr = "enabled"
+    } else {
+        searchStr = "enabled"
+        failSearchStr = "disabled"
+    }
+
+    for gbNumber, phy := range(phymask) {
+        if (loopbackLevel == GB_LOOPBACK_LINE_SIDE) {
+            cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Digital Loopbac'\n", phy)
+        } else {
+            cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Remote Loopbac'\n", phy)
+        }
+
+        out, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        split_ps_command := strings.Split(string(out),"\n")
+        split_ps_command = split_ps_command[:4]         //strip out extra \n entry with nothing
+        PortNumber = 0
+        for cnt, status := range(split_ps_command) {    //0,2 are LINE.    1,3 are HOST
+            if ( loopbackLevel == GB_LOOPBACK_LINE_SIDE ) {
+                if (cnt % 2) == 0 {
+                    if strings.Contains(string(status), searchStr) {
+                        cli.Printf("i", "GB-%d Port-%d Line Digital Loopback %s\n", gbNumber, PortNumber, searchStr)
+                    } else {
+                        cli.Printf("e", "ERROR: GB-%d Port-%d Line Digital Loopback %s.  Expecting %s\n", gbNumber, PortNumber, failSearchStr, searchStr)
+                        err = errType.FAIL
+                    }
+                    PortNumber++
+                }
+            } else {
+                if (cnt % 2) != 0 {
+                    if strings.Contains(string(status), searchStr) {
+                        cli.Printf("i", "GB-%d Port-%d Host Remote Loopback %s\n", gbNumber, PortNumber, searchStr)
+                    } else {
+                        cli.Printf("e", "ERROR: GB-%d Port-%d Host Remote Loopback %s.  Expecting %s\n", gbNumber, PortNumber, failSearchStr, searchStr)
+                        err = errType.FAIL
+                    }
+                    PortNumber++
+                }
+            }
+            //fmt.Println(cnt,"---- ", string(status))
+            
+        }
+    }
+    return
+}
+
+
+/*************************************************************************************** 
+* 
+* ovs-appctl l1/phy_status 0 0xF0 
+*  
+*  HOST SIDE IS TD3
+*  LINE SIDE IS ELBA
+*  
+*    10000:/fs/nos/eeupdate# ovs-appctl l1/phy_status 0 | grep "Link status"
+*            Line side Link status     1
+*            Host side Link status     1
+*            Line side Link status     1
+*            Host side Link status     1
+*
+*
+* 
+****************************************************************************************/ 
+func BCM_GearBox_Check_Link(host int, line int) (err int) {
+    var cmdStr string
+    var PortNumber int = 0
+
+    phymask := []byte {0, 1, 2, 3}
+
+    cli.Printf("i", "Checking Link for all GB\n")
+
+    for gbNumber, phy := range(phymask) {
+        cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Link status'\n", phy)
+
+        out, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        split_ps_command := strings.Split(string(out),"\n")
+        split_ps_command = split_ps_command[:4]         //strip out extra \n entry with nothing
+        PortNumber = 0
+        for cnt, status := range(split_ps_command) {    //0,2 are LINE.    1,3 are HOST
+            if ((cnt % 2) == 0) && (line > 0) {
+                if strings.Contains(string(status), "1") {
+                    cli.Printf("i", "GB-%d Port-%d Line Side Link Up\n", gbNumber, PortNumber)
+                } else {
+                    cli.Printf("e", "GB-%d Port-%d Line Side Link Down\n", gbNumber, PortNumber)
+                    err = errType.FAIL
+                }
+            }
+            if ((cnt % 2) != 0) && (host > 0) {
+                if strings.Contains(string(status), "1") {
+                    cli.Printf("i", "GB-%d Port-%d Host Side Link Up\n", gbNumber, PortNumber)
+                } else {
+                    cli.Printf("e", "GB-%d Port-%d Host Side Link Down\n", gbNumber, PortNumber)
+                    err = errType.FAIL
+                }
+                PortNumber++
+            }
+        }
+    }
+    return
+}
+
+
+/*************************************************************************************** 
+* 
+* ovs-appctl l1/phy_status 0 0xF0 
+*  
+*  HOST SIDE IS TD3
+*  LINE SIDE IS ELBA
+*  
+*  ovs-appctl l1/phy_status %d | grep 'Digital Loopbac'
+*        Digital Loopback status   disabled        **LINE PORT0 0x3
+*        Digital Loopback status   disabled        **HOST PORT0 0x0F
+*        Digital Loopback status   disabled        **LINE PORT1 0xC
+*        Digital Loopback status   disabled        **HOST PORT1 0xF0
+*
+* 
+****************************************************************************************/ 
+func BCM_Retimer_Check_Loopback(loopbackLevel int, enable int) (err int) {
+    var cmdStr string
+    var searchStr string
+    var failSearchStr string
+    var PortNumber int = 0
+
+    phymask := []byte {4, 5, 6}
+
+    cli.Printf("i", "Checking Loopback Level for all Retimers\n")
+
+    if ( loopbackLevel > GB_LOOPBACK_HOST_SIDE ) {
+        cli.Printf("e", " ERROR BCM_Retimer_Check_Loopback(): LOOPBACK LEVEL PASSED (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_LINE_SIDE=%d.  GB_LOOPBACK_HOST_SIDE=%d  ", loopbackLevel, GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_HOST_SIDE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable != GB_LOOPBACK_DISABLE ) && (enable != GB_LOOPBACK_ENABLE) {
+        cli.Printf("e", " ERROR BCM_Retimer_Check_Loopback(): loopbackmode (%d), IS NOT VALID. ARG MUST BE GB_LOOPBACK_DISABLE=%d.  GB_REMOTE_PMD_LOOPBACK=%d  ", enable, GB_LOOPBACK_DISABLE, GB_LOOPBACK_ENABLE)
+        err = errType.FAIL
+        return
+    }
+
+    if ( enable == GB_LOOPBACK_DISABLE ) {
+        searchStr = "disabled"
+        failSearchStr = "enabled"
+    } else {
+        searchStr = "enabled"
+        failSearchStr = "disabled"
+    }
+
+    for gbNumber, phy := range(phymask) {
+        if (loopbackLevel == GB_LOOPBACK_LINE_SIDE) {
+            cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Digital Loopbac'\n", phy)
+        } else {
+            cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Remote Loopbac'\n", phy)
+        }
+
+        out, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        split_ps_command := strings.Split(string(out),"\n")
+        split_ps_command = split_ps_command[:4]         //strip out extra \n entry with nothing
+        PortNumber = 0
+        for cnt, status := range(split_ps_command) {    //0,2 are LINE.    1,3 are HOST
+            if ( loopbackLevel == GB_LOOPBACK_LINE_SIDE ) {
+                if (cnt % 2) == 0 {
+                    if strings.Contains(string(status), searchStr) {
+                        cli.Printf("i", "Retimer-%d Port-%d Line Digital Loopback %s\n", gbNumber, PortNumber, searchStr)
+                    } else {
+                        cli.Printf("e", "ERROR: Retimer-%d Port-%d Line Digital Loopback %s.  Expecting %s\n", gbNumber, PortNumber, failSearchStr, searchStr)
+                        err = errType.FAIL
+                    }
+                }
+            } else {
+                if (cnt % 2) != 0 {
+                    if strings.Contains(string(status), searchStr) {
+                        cli.Printf("i", "Retimer-%d Port-%d Host Remote Loopback %s\n", gbNumber, PortNumber, searchStr)
+                    } else {
+                        cli.Printf("e", "ERROR: Retimer-%d Port-%d Host Remote Loopback %s.  Expecting %s\n", gbNumber, PortNumber, failSearchStr, searchStr)
+                        err = errType.FAIL
+                    }
+                }
+            }
+            //fmt.Println(cnt,"---- ", string(status))
+            PortNumber++
+        }
+    }
+    return
+}
+
+
+/*************************************************************************************** 
+* 
+* ovs-appctl l1/phy_status 0 0xF0 
+*  
+*  HOST SIDE IS TD3
+*  LINE SIDE IS ELBA
+*  
+*
+* 10000:/fs/nos/eeupdate# ovs-appctl l1/phy_status 4 | grep "Link status"
+*       Line side Link status     1
+*       Host side Link status     1
+*       Line side Link status     1
+*       Host side Link status     1
+*
+*
+*
+* 
+****************************************************************************************/ 
+func BCM_Retimer_Check_Link(host int, line int) (err int) {
+    var cmdStr string
+    var PortNumber int = 0
+
+    phymask := []byte {4, 5, 6}
+
+    cli.Printf("i", "Checking Link for all Retimers\n")
+
+    for gbNumber, phy := range(phymask) {
+        cmdStr = fmt.Sprintf("ovs-appctl l1/phy_status %d | grep 'Link status'\n", phy)
+
+        out, errGo := exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+
+        split_ps_command := strings.Split(string(out),"\n")
+        split_ps_command = split_ps_command[:4]         //strip out extra \n entry with nothing
+        PortNumber = 0
+        for cnt, status := range(split_ps_command) {    //0,2 are LINE.    1,3 are HOST
+            if ((cnt % 2) == 0) && (line > 0) {
+                if strings.Contains(string(status), "1") {
+                    cli.Printf("i", "Retimer-%d Port-%d Line Side Link Up\n", gbNumber, PortNumber)
+                } else {
+                    cli.Printf("e", "Retimer-%d Port-%d Line Side Link Down\n", gbNumber, PortNumber)
+                    err = errType.FAIL
+                }
+            }
+            if ((cnt % 2) != 0) && (host > 0) {
+                if strings.Contains(string(status), "1") {
+                    cli.Printf("i", "Retimer-%d Port-%d Host Side Link Up\n", gbNumber, PortNumber)
+                } else {
+                    cli.Printf("e", "Retimer-%d Port-%d Host Side Link Down\n", gbNumber, PortNumber)
+                    err = errType.FAIL
+                }
+                PortNumber++
+            }
+        }
+    }
+    return
+}
+
+
+
+
+
 func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
     var errGo error
     i2cWrData := [][]byte{ {0x0B,0x55} , {0x0C, 0xAA} }
@@ -4350,6 +4972,121 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
         dcli.Printf("e", "%s Register-0x%.02x  Wrote 0x%.02x.   Read 0x%.02x", devName, i2cWrData[1][0], i2cWrData[1][1],  rdData[0] )
         err = errType.FAIL
         return
+    }
+
+    return
+}
+
+/****************************************************************************************************** 
+* 
+* This is just a copy of the dsp test so it can be run from a cli without the diag engine
+* 
+*******************************************************************************************************/ 
+func TaorI2cTest() (err int) {
+    var ret int = errType.SUCCESS
+    ret = errType.SUCCESS
+    var i2cTestList []string
+
+    for _, i2cEntry := range(i2cinfo.CurI2cTbl) {
+        if (i2cEntry.Flag & i2cinfo.I2C_TEST_ENABLE) == i2cinfo.I2C_TEST_ENABLE {
+            i2cTestList = append(i2cTestList, i2cEntry.Name)
+        }
+    }
+    if len(i2cTestList) == 0 {
+        cli.Println("f", "Variable i2cTestList is empty.  No tests to run")
+        err = errType.INVALID_TEST    
+        return
+    }
+
+    for _, devName := range(i2cTestList) {
+        i2cInfo, err1 := i2cinfo.GetI2cInfo(devName)
+        if err1 != errType.SUCCESS {
+            cli.Println("e", "I2cI2cHdl: GetI2cInfo failed for device --> ", devName)
+            err = errType.FAIL
+            return
+        }
+
+
+        taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+        if running, _ := Process_Is_Running("fand"); running == true {
+            cli.Printf("i", "fand is running.. killing it\n")
+            Process_Kill("fand")
+        }
+        if running, _ := Process_Is_Running("powerd"); running == true {
+            cli.Printf("i", "powerd is running.. killing it\n")
+            Process_Kill("powerd")
+        }
+
+        dcli.Println("i", "Starting I2C test on", devName, " / Component", i2cInfo.Comp)
+        switch i2cInfo.Comp {
+            case "MACHXO3":
+                err = Elba_CPLD_I2C_Sanity_Test(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TMP451": 
+                err = tmp451.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "ADT7462": 
+                err = adt7462.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "DPS-800": 
+                err = dps800.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "SN1701022": 
+                err = sn1701022.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS53681": 
+                err = tps53681.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS544C20": 
+                err = tps544c20.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "LM75":
+                err = lm75a.I2cTest(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS53659":
+                err = tps53659.TestTps53659(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS549A20":
+                err = tps549a20.TestTps549a20(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "AT24C02C":
+                err = TestTaorFruI2C(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            default:
+                {
+                    dcli.Println("f", "Unsupported device: ", devName)
+                    ret = errType.INVALID_PARAM
+                }
+        } //end switch
+    }  //end for loop
+
+    if ret == errType.SUCCESS {
+        dcli.Printf("i","I2C I2C TEST PASSED\n")
+    } else {
+        dcli.Printf("e","I2C I2C TEST FAILED\n")
+        err = ret
     }
 
     return
@@ -4476,6 +5213,8 @@ func ShowInventory(useCLI int) (err int) {
     s = fmt.Sprintf("FPGA    REVISION: 0x%.08x\n", data32)
     printf("i", s, useCLI)
     printf("i", "\n", useCLI)
+    err = TPM_CHECK(useCLI)
+    if err != errType.SUCCESS { rc = -1 }
     err = SSD_Display_Info(useCLI)
     if err != errType.SUCCESS { rc = -1 }
     err = X86_DDR_Display_Info(useCLI)
@@ -4548,35 +5287,6 @@ func ShowInventory(useCLI int) (err int) {
     return
 }
 
-
-/*    
-    I2cInfo {"P0V8AVDD_GB_A",  "TPS549A20",   1,   0x1C,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8AVDD_GB_B",  "TPS549A20",   1,   0x1b,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8RT_B",       "TPS549A20",   1,   0x1e,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    //ON P0 BOARDS, 0x4C TEMP SENSOR IS LOCATED HERE AT 0x48
-    //I2cInfo {"TSENSOR-1",      "LM75",        3,   0x48,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-1",      "TMP451",      3,   0x4C,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-2",      "LM75",        3,   0x49,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TSENSOR-3",      "LM75",        3,   0x4A,    0x0,    "FPGA_HUB_2_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"P0V8RT_A",       "TPS544C20",   1,   0x04,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"P3V3",           "TPS544C20",   1,   0x08,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"P3V3S",          "TPS544C20",   1,   0x09,    0x0,    "FPGA_HUB_0_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TDNT_PDVDD",     "TPS53681",    1,   0x60,    0x0,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
-    I2cInfo {"TDNT_P0V8_AVDD", "TPS53681",    1,   0x60,    0x1,    "FPGA_HUB_0_3",  3,    I2C_TEST_ENABLE},
-    I2cInfo {"CPU_P1V2_VDDQ",     "SN1701022", 1,  0x77,    0x0,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"CPU_P1V05_COMBINED","SN1701022", 1,  0x77,    0x1,    "FPGA_HUB_0_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"CPU_PVCCIN",        "SN1701022", 1,  0x6B,    0x0,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"CPU_P1V05_VCCSCSUS","SN1701022", 1,  0x6B,    0x1,    "FPGA_HUB_0_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"PSU_1",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"PSU_2",           "DPS-800",    2,   0x58,    0x0,    "FPGA_HUB_1_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"FAN_1",           "ADT7462",    2,   0x58,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"FAN_2",           "ADT7462",    2,   0x5C,    0x0,    "FPGA_HUB_1_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"TD3",             "TRIDENT3",   2,   0x44,    0x0,    "FPGA_HUB_1_3",  3,    0},
-    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"CPLD_ELBA0",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
-*/
 
 
 
@@ -4739,6 +5449,697 @@ func ShowTemperature ()  (err int)  {
 
 
 
+/*********************************************************************
+*  
+*  Mainly used to check link status from the cli.
+*  Ports need to be enabled first.  By default they are disabled
+*  
+**********************************************************************/
+func Enable_Trident3_Ports() (err int) {
+    //var rc int
+    var errGo error
+    var data32 uint32
+    var addr uint64
+    var port25G_s string
+    var port100G_s string
+    var portGearBox_s string
+    var tmp_s string
+    var cmdString, command string
+    output1 := []byte{}
+    
+
+    cli.Printf("i", "Enabling all TD3 Ports\n")
+    cmdString = "echo \"conf\nint 1/1/1-1/1/54\nshutdown\nend\n\" | vtysh"
+    output1, errGo = exec.Command("bash", "-c", cmdString).Output()
+    if errGo != nil {
+        cli.Println("e", "Failed to exec command:",cmdString," GoERR=",errGo)
+        cli.Printf("e", "OUTPUT='%s'\n", output1)
+        err = errType.FAIL
+        return
+    }
+    time.Sleep(time.Duration(2) * time.Second)
+    
+    err = td3.Set_Pre_Main_Post_25G_EXT(0)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on TD3 25G Ports\n")
+        return
+    }
+
+    err = td3.RetimerSetSI(0)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        return
+    }
+
+    /* Enable SFP's */
+    cli.Printf("i", "Enabling SFP's\n")
+    addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    for i:=0;i<taorfpga.MAXSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        errGo = taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, 0x06060606)
+        if errGo != nil {
+            err = errType.FAIL
+            return
+        }
+    }
+
+    /* Enable QSFP's */
+    cli.Printf("i", "Enabling QSFP's\n")
+    addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+    for i:=0;i<taorfpga.MAXQSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+        taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
+    }
+
+    for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
+        if i == (td3.TAOR_EXTERNAL_25G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        port25G_s = port25G_s + tmp_s
+    }
+    for i:=td3.TAOR_EXTERNAL_25G_PORTS; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
+        if i == (td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        port100G_s = port100G_s + tmp_s
+    }
+
+    for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+        if i == (td3.TAOR_INTERNAL_PORT_START + td3.TAOR_INTERNAL_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        portGearBox_s = portGearBox_s + tmp_s
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 25G Ports\n")
+    command = "port " + port25G_s +" enable=true"
+    _ , err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 100G Ports\n")
+    command = "port " + port100G_s +" enable=true"
+    _ , err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+
+}
+
+
+/********************************************************** 
+  *    @param prbs_mode          User specified polynomial
+ *                              0 - PRBS7
+ *                              1 - PRBS9
+ *                              2 - PRBS11
+ *                              3 - PRBS15
+ *                              4 - PRBS23
+ *                              5 - PRBS31
+ *                              6 - PRBS58
+***********************************************************/
+func Prbs(sleep int, prbs string, LoopbackType int) (err int) {
+    var rc int
+    var errGo error
+    var data32 uint32
+    var addr uint64
+    var SFPnumber, QSFPnumber, bitcompare uint32
+    var port25G_s string
+    var port100G_s string
+    var portGearBox_s string
+    var tmp_s string
+    var prbsType string
+    var cmdString, command, output string
+    output1 := []byte{}
+    
+
+    if prbs == "prbs7" {
+        prbsType = "0"
+    } else if prbs == "prbs9" {
+        prbsType = "1"
+    } else if prbs == "prbs11" {
+        prbsType = "2"
+    } else if prbs == "prbs15" {
+        prbsType = "3"
+    } else if prbs == "prbs23" {
+        prbsType = "4"
+    } else if prbs == "prbs31" {
+        prbsType = "5"
+    } else if prbs == "prbs58" {
+        prbsType = "6"
+    } else {
+        cli.Printf("e", "PRBS Parameter passed is not valid. You passed '%s'\n", prbs)
+        err = errType.FAIL
+        goto endBCMprbs
+    }
+
+    /* Check SFP's are present */
+    cli.Printf("i", "Checking for SFP Presence\n")
+    addr = taorfpga.D0_FP_SFP_STAT_3_0_REG;
+    for SFPnumber=0;SFPnumber<taorfpga.MAXSFP;SFPnumber++ {
+        addr = addr + ((uint64(SFPnumber)/4) * 4)
+        bitcompare = (1 << ((SFPnumber%4)*8))
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        if errGo != nil {
+            err = errType.FAIL
+            goto endBCMprbs
+        }
+
+        //1 = NOT PRESENT
+        if (data32 & bitcompare) == bitcompare {
+            cli.Printf("e", "SFP-%d is not detecting presence.  Check SFP-%d is present\n", SFPnumber+1, SFPnumber+1)
+            err = errType.FAIL
+            goto endBCMprbs
+        } 
+    }
+
+
+    /* Check QSFP's are present */
+    cli.Printf("i", "Checking for QSFP Presence\n")
+    addr = taorfpga.D0_FP_QSFP_STAT_51_48_REG;
+    for QSFPnumber=0;QSFPnumber<taorfpga.MAXSFP;QSFPnumber++ {
+        addr = addr + ((uint64(QSFPnumber)/4) * 4)
+        bitcompare = (1 << ((QSFPnumber%4)*8))
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        if errGo != nil {
+            err = errType.FAIL
+            goto endBCMprbs
+        }
+
+        //1 = NOT PRESENT
+        if (data32 & bitcompare) == bitcompare {
+            cli.Printf("e", "QSFP-%d is not detecting presence.  Check QSFP-%d is present\n", QSFPnumber+1, QSFPnumber+1)
+            err = errType.FAIL
+            goto endBCMprbs
+        } 
+    }
+
+    cli.Printf("i", "Disabling Ports in VTYSH\n")
+    cmdString = "echo \"conf\nint 1/1/1-1/1/54\nshutdown\nend\n\" | vtysh"
+    output1, errGo = exec.Command("bash", "-c", cmdString).Output()
+    if errGo != nil {
+        cli.Println("e", "Failed to exec command:",cmdString," GoERR=",errGo)
+        cli.Printf("e", "OUTPUT='%s'\n", output1)
+        err = errType.FAIL
+        goto endBCMprbs
+    }
+    time.Sleep(time.Duration(2) * time.Second)
+    
+    err = td3.Set_Pre_Main_Post_25G_EXT(1)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on TD3 25G Ports\n")
+        goto endBCMprbs
+    }
+
+    err = td3.RetimerSetSI(1)
+    if err != errType.SUCCESS {
+        cli.Printf("e", "ERROR, Failed to set Pre Post Main on Retimer 100G Ports\n")
+        goto endBCMprbs
+    }
+
+    /* Enable SFP's */
+    cli.Printf("i", "Enabling SFP's\n")
+    addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
+    for i:=0;i<taorfpga.MAXSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        errGo = taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, 0x06060606)
+        if errGo != nil {
+            err = errType.FAIL
+            goto endBCMprbs
+        }
+    }
+
+    /* Enable QSFP's */
+    cli.Printf("i", "Enabling QSFP's\n")
+    addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
+    for i:=0;i<taorfpga.MAXQSFP;i++ {
+        addr = addr + ((uint64(i)/4) * 4)
+        data32, errGo = taorfpga.TaorReadU32(taorfpga.DEVREGION0, addr)
+        data32 = (data32 & 0xFEFEFEFE)  //mask out reset bit
+        taorfpga.TaorWriteU32( taorfpga.DEVREGION0, addr, data32)
+    }
+
+    for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
+        if i == (td3.TAOR_EXTERNAL_25G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        port25G_s = port25G_s + tmp_s
+    }
+    for i:=td3.TAOR_EXTERNAL_25G_PORTS; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
+        if i == (td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        port100G_s = port100G_s + tmp_s
+    }
+
+    for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+        if i == (td3.TAOR_INTERNAL_PORT_START + td3.TAOR_INTERNAL_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", td3.TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", td3.TaorPortMap[i].Name)
+        }
+        portGearBox_s = portGearBox_s + tmp_s
+    }
+
+    //set gearbox loopback 
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        err = BCM_GearBox_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+        err = BCM_GearBox_Check_Loopback(GB_LOOPBACK_HOST_SIDE, GB_LOOPBACK_ENABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+    if (( LoopbackType & PRBS_RETIMER_LPBK) == PRBS_RETIMER_LPBK) {
+        err = BCM_Retimer_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+        err = BCM_Retimer_Check_Loopback(GB_LOOPBACK_HOST_SIDE, GB_LOOPBACK_ENABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+
+
+    
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 25G Ports\n")
+    command = "port " + port25G_s +" enable=true"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Enabling all 100G Ports\n")
+    command = "port " + port100G_s +" enable=true"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    //Check Link
+    {
+        var link_rc, link_retry int
+        var ps_output string
+prbslinkcheckretry:
+        cli.Printf("i", "Checking Link\n")
+        time.Sleep(time.Duration(2) * time.Second)
+        ps_output, err = td3.ExecBCMshellCMD("ps", 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+        for i:=0; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
+            link_rc = td3.LinkCheck(td3.TaorPortMap[i].Name, ps_output) 
+            if link_rc == errType.LINK_UP {
+                dcli.Printf("i", "Port-%.02d  %4s: LINK UP\n", i+1, td3.TaorPortMap[i].Name)
+            } else if link_rc == errType.LINK_DOWN {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DOWN\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
+            } else if link_rc == errType.LINK_DISABLED {
+                dcli.Printf("e", "Port-%.02d  %4s: LINK DISABLED\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
+            } else {
+                dcli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, td3.TaorPortMap[i].Name)
+                rc = -1
+            }
+        }
+        if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+            for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+                link_rc = td3.LinkCheck(td3.TaorPortMap[i].Name, ps_output) 
+                if link_rc == errType.LINK_UP {
+                    dcli.Printf("i", "GB Facing Port-%.02d  %4s: LINK UP\n", i+1, td3.TaorPortMap[i].Name)
+                } else if link_rc == errType.LINK_DOWN {
+                    dcli.Printf("e", "GB Facing Port-%.02d  %4s: LINK DOWN\n", i+1, td3.TaorPortMap[i].Name)
+                    rc = -1
+                } else if link_rc == errType.LINK_DISABLED {
+                    dcli.Printf("e", "GB Facing Port-%.02d  %4s: LINK DISABLED\n", i+1, td3.TaorPortMap[i].Name)
+                    rc = -1
+                } else {
+                    dcli.Printf("e", "Port-%.02d  %4s: ERROR READING LINK STATUS\n", i+1, td3.TaorPortMap[i].Name)
+                    rc = -1
+                }
+            }
+        }
+
+        fmt.Printf("\n")
+        if rc != 0 {
+            if link_retry < 2 {
+                link_retry = link_retry + 1
+                rc = 0
+                goto prbslinkcheckretry
+            }
+            err = errType.FAIL
+            goto endBCMprbs
+        }
+    }
+
+
+
+    //No return output to check on this command
+    cli.Printf("i", "Disabling BCM LinkScan\n")
+    command = "LINKscan off"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+
+
+    //No return output to check on this command
+    cli.Printf("i", "Starting PRBS on all 25G Ports\n")
+    command = "phy diag " + port25G_s +" prbs set unit=0 p="+prbsType
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    //No return output to check on this command
+    cli.Printf("i", "Starting PRBS on all 100G Ports\n")
+    command = "phy diag " + port100G_s +" prbs set unit=0 p="+prbsType
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    //No return output to check on this command
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        cli.Printf("i", "Starting PRBS on all Internal Ports to Gearbox\n")
+        command = "phy diag " + portGearBox_s +" prbs set unit=0 p="+prbsType
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+    time.Sleep(time.Duration(2) * (time.Second))
+    
+
+    //First time you read status it will show an error, have to read it again later after sleep
+    cli.Printf("i", "Read Status to clear errors\n")
+    command = "phy diag " + port25G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        command = "phy diag " + portGearBox_s +" prbs get unit=0"
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+    time.Sleep(time.Duration(1) * (time.Second))
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    time.Sleep(time.Duration(1) * (time.Second))
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        command = "phy diag " + portGearBox_s +" prbs get unit=0"
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+
+
+    //cli.Printf("i", "Check 25G Ports Status\n")
+    command = "phy diag " + port25G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    //cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+    if err == errType.FAIL {
+        rc = -1
+    }
+
+    //cli.Printf("i", "Check 100G Ports Status\n")
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    for i:=td3.TAOR_EXTERNAL_25G_PORTS; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    //cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        command = "phy diag " + portGearBox_s +" prbs get unit=0"
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+        for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+            scanner := bufio.NewScanner(strings.NewReader(output))
+            for scanner.Scan() {
+                if  strings.Contains(scanner.Text(), "phy diag")==true {
+                    continue
+                }
+                if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                    if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                        //cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                    } else {
+                        cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                        err = errType.FAIL
+                    }
+                }
+            }
+        }
+    }
+
+    //sleep
+    cli.Printf("i", "Sleeping for %d seconds to let the test run\n", sleep)
+    time.Sleep(time.Duration(sleep/2) * (time.Second))
+    _, _, err = td3.CheckTemperatures("TD3", td3.TD3_MAX_TEMP)
+    if err != errType.SUCCESS {
+        rc = -1
+    }
+    time.Sleep(time.Duration(sleep/2) * (time.Second))
+
+    /*
+    t1 := time.Now()
+    for
+    {
+        t2 := time.Now()
+        diff := t2.Sub(t1)
+        data32, rc = ReadReg("TD3", "TOP_AVS_SEL_REG")
+        //fmt.Printf("AVS REG=%x\n", data32)
+        if rc != errType.SUCCESS {
+            cli.Printf("e", "ERROR FAILED TO READ TOP_AVS_SEL_REG")
+            break
+        }
+        //fmt.Println(" Elapsed Time=",diff," Duration=",duration," High Temp=", TD3highTemp )
+        if uint32(diff.Seconds()) > uint32(sleep) {
+            break
+        }
+    } 
+    */ 
+
+
+    //Check output
+    //xe6 (21):  PRBS OK!
+    //xe6 (21):  PRBS has -2 errors!
+    cli.Printf("i", "Check 25G Ports Status\n")
+    command = "phy diag " + port25G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+    if err == errType.FAIL {
+        rc = -1
+    }
+    
+    cli.Printf("i", "Check 100G Ports Status\n")
+    command = "phy diag " + port100G_s +" prbs get unit=0"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+    for i:=td3.TAOR_EXTERNAL_25G_PORTS; i<(td3.TAOR_EXTERNAL_25G_PORTS+td3.TAOR_EXTERNAL_100G_PORTS); i++ {
+        scanner := bufio.NewScanner(strings.NewReader(output))
+        for scanner.Scan() {
+            if  strings.Contains(scanner.Text(), "phy diag")==true {
+                continue
+            }
+            if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                if strings.Contains(scanner.Text(), "PRBS has -2 errors!")==true {
+                    cli.Printf("i", "[WARN] Port-%d seeing 2 errors\n", i+1)
+                } else if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                    cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                } else {
+                    cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                    err = errType.FAIL
+                }
+            }
+        }
+    }
+    if err == errType.FAIL {
+        rc = -1
+    }
+
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        cli.Printf("i", "Check Internal Gearbox Facing Port Status\n")
+        command = "phy diag " + portGearBox_s +" prbs get unit=0"
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+        for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+            scanner := bufio.NewScanner(strings.NewReader(output))
+            for scanner.Scan() {
+                if  strings.Contains(scanner.Text(), "phy diag")==true {
+                    continue
+                }
+                if strings.Contains(scanner.Text(), td3.TaorPortMap[i].Name)==true {
+                    if strings.Contains(scanner.Text(), "PRBS OK!")==true {
+                        cli.Printf("i", "Port-%d PRBS Passed\n", i+1)
+                    } else {
+                        cli.Printf("e", "Port-%d PRBS Failed --> %s \n", i+1, scanner.Text())
+                        err = errType.FAIL
+                    }
+                }
+            }
+        }
+        if err == errType.FAIL {
+            rc = -1
+        }
+    }
+
+    cli.Printf("i", "Disable 25G PRBS\n")
+    command = "phy diag " + port25G_s +" prbs clear"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    cli.Printf("i", "Disable 100G PRBS\n")
+    command = "phy diag " + port100G_s +" prbs clear"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        cli.Printf("i", "Disable Internal Facting Gearbox Port PRBS\n")
+        command = "phy diag " + portGearBox_s +" prbs clear"
+        output, err = td3.ExecBCMshellCMD(command, 5)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+
+
+    time.Sleep(time.Duration(3) * (time.Second))
+    //No return output to check on this command
+    cli.Printf("i", "Enabling BCM LinkScan\n")
+    command = "LINKscan on"
+    output, err = td3.ExecBCMshellCMD(command, 5)
+    if err != errType.SUCCESS {
+        goto endBCMprbs
+    }
+
+endBCMprbs:
+
+    //disable gearbox loopback 
+    if (( LoopbackType & PRBS_GB_LPBK) == PRBS_GB_LPBK){
+        err = BCM_GearBox_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+    if (( LoopbackType & PRBS_RETIMER_LPBK) == PRBS_RETIMER_LPBK) {
+        err = BCM_Retimer_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+        if err != errType.SUCCESS {
+            goto endBCMprbs
+        }
+    }
+
+    if rc != 0 {
+        err = errType.FAIL
+    }
+    if err == errType.SUCCESS {
+        dcli.Printf("i", "BCM PRBS TEST PASSED\n")
+    } else {
+        dcli.Printf("e", "BCM PRBS TEST FAILED\n")
+    }
+    return
+}
 
 
 
@@ -4764,7 +6165,7 @@ func ShowTemperature ()  (err int)  {
 *  
 *  
 ***********************************************************************************************************/ 
-func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32, TD3MaxTemp int, ElbaMaxTemp int, Fanspeed int) (err int) {
+func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32, TD3MaxTemp int, ElbaMaxTemp int, Fanspeed int, GBloopback int, Retimerloopback int) (err int) {
     var pwm_backup [MAXFANMODULES]byte
     var rc int = errType.SUCCESS
     var errGo error
@@ -4797,6 +6198,16 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
     }
     if (Fanspeed < 0 || Fanspeed > 100) {
         cli.Printf("e", "ERROR: INVALID FAN SPPED.  PWM MUST BE 0-100.  PWM PASSED=%d\n", Fanspeed)
+        err = errType.FAIL
+        return
+    }
+    if (GBloopback > SNAKE_GB_HOST_LPBK) {
+        cli.Printf("e", "ERROR: GB Loopback Level is not Valid.  Level passed to snake test is =%d\n", GBloopback)
+        err = errType.FAIL
+        return
+    }
+    if (Retimerloopback > SNAKE_RETIMER_HOST_LPBK) {
+        cli.Printf("e", "ERROR: RETIMER Loopback Level is not Valid.  Level passed to snake test is =%d\n", Retimerloopback)
         err = errType.FAIL
         return
     }
@@ -4936,6 +6347,50 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
         if err != errType.SUCCESS {
             return
         }
+    }
+
+
+
+    if (GBloopback == SNAKE_GB_LINE_LPBK  ) {      //ELBA Side
+        rc = BCM_GearBox_Set_Loopback(GB_LOOPBACK_LINE_SIDE, GB_DIGITAL_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        misc.SleepInSec(1)
+        if ( rc == errType.SUCCESS ) {
+            rc = BCM_GearBox_Check_Loopback(GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_ENABLE) 
+        }
+        
+    }
+    if (GBloopback == SNAKE_GB_HOST_LPBK  ) {   //TD3 Side
+        rc = BCM_GearBox_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        misc.SleepInSec(1)
+        if ( rc == errType.SUCCESS ) {
+            rc = BCM_GearBox_Check_Loopback(GB_LOOPBACK_HOST_SIDE, GB_LOOPBACK_ENABLE) 
+        }
+    }
+    // If GB Loopback failed, return 
+    if rc != errType.SUCCESS {
+        err = errType.FAIL
+        return
+    }
+
+    if (Retimerloopback == SNAKE_RETIMER_LINE_LPBK  ) {      //Port Side
+        rc = BCM_Retimer_Set_Loopback(GB_LOOPBACK_LINE_SIDE, GB_DIGITAL_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        misc.SleepInSec(1)
+        if ( rc == errType.SUCCESS ) {
+            rc = BCM_Retimer_Check_Loopback(GB_LOOPBACK_LINE_SIDE, GB_LOOPBACK_ENABLE) 
+        }
+        
+    }
+    if (Retimerloopback == SNAKE_RETIMER_HOST_LPBK  ) {   //TD3 Side
+        rc = BCM_Retimer_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_ENABLE)
+        misc.SleepInSec(1)
+        if ( rc == errType.SUCCESS ) {
+            rc = BCM_Retimer_Check_Loopback(GB_LOOPBACK_HOST_SIDE, GB_LOOPBACK_ENABLE) 
+        }
+    }
+    // If GB Loopback failed, return 
+    if rc != errType.SUCCESS {
+        err = errType.FAIL
+        return
     }
 
     for i:=0; i<td3.TAOR_EXTERNAL_25G_PORTS; i++ {
@@ -5236,8 +6691,33 @@ snakelinkcheckretry:
                 goto snakelinkcheckretry
             }
             err = errType.FAIL
-            return
+            //return
         }
+    }
+
+    {
+        checkLineLB := 1
+        if (GBloopback == SNAKE_GB_HOST_LPBK  ) {
+            checkLineLB = 0
+        }
+        rc = BCM_GearBox_Check_Link(1, checkLineLB)
+        if rc != 0 {
+            err = errType.FAIL
+        }
+    }
+    if loopbackPhy == 0 {
+        checkLineLB := 1
+        if (Retimerloopback == SNAKE_RETIMER_HOST_LPBK) {
+            checkLineLB = 0
+        }
+        rc = BCM_Retimer_Check_Link(1, checkLineLB)
+        if rc != 0 {
+            err = errType.FAIL
+        }
+    }
+    // if we see link failures, exit the test
+    if err == errType.FAIL {
+        goto snaketestend
     }
 
 
@@ -5733,12 +7213,27 @@ snaketestend:
         err = errType.FAIL
     } 
 
+    //CLEANUP AFTER TEST IS DONE
     //restore rpm values
     if Fanspeed > 60 {
         for j:=0; j<MAXFANMODULES; j++ {
             hwdev.FanWriteReg(fan_MAP[j].dev, uint32(0xAA + fan_MAP[j].fanNum), pwm_backup[j])
         }
     }
+    //disable GB Loopback if it was set
+    if (GBloopback == SNAKE_GB_LINE_LPBK  ) {      //ELBA Side
+        rc = BCM_GearBox_Set_Loopback(GB_LOOPBACK_LINE_SIDE, GB_DIGITAL_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+    }
+    if (GBloopback == SNAKE_GB_HOST_LPBK  ) {      //TD3 Side
+        rc = BCM_GearBox_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+    } 
+    //disable Retimer Loopback if it was set
+    if (Retimerloopback == SNAKE_GB_LINE_LPBK  ) {      //Port Side
+        rc = BCM_Retimer_Set_Loopback(GB_LOOPBACK_LINE_SIDE, GB_DIGITAL_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+    }
+    if (Retimerloopback == SNAKE_GB_HOST_LPBK  ) {      //TD3 Side
+        rc = BCM_Retimer_Set_Loopback(GB_LOOPBACK_HOST_SIDE, GB_REMOTE_PMD_LOOPBACK, GB_LOOPBACK_DISABLE)
+    } 
 
     /* For compile error that var is not used */
     if td3.TaorPortMap[0].ElbaNumber > 100000 {
