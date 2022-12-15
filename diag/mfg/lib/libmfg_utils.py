@@ -296,6 +296,14 @@ def part_number_validate(tmp):
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
 
+def get_nic_type_by_part_number(pn):
+    for nic_type, pn_regex_arr in PN_FORMAT_TABLE.items():
+        for pn_regex in pn_regex_arr:
+            if re.match(pn_regex, pn):
+                return nic_type
+
+    return None
+
 def mac_address_format(tmp):
     return "-".join(re.findall("..", tmp))
 
@@ -765,7 +773,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None):
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None, skip_nic_pn_init=False):
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
@@ -797,7 +805,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         return False
 
     # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init(stage):
+    if not mtp_mgmt_ctrl.mtp_nic_init(stage, skip_nic_pn_init=skip_nic_pn_init):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -2415,6 +2423,18 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot] = 1
                                 loopback_fail_list[mtp_id][slot] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot] = 1
+                                    loopback_fail_list[mtp_id][slot] += 1
+                                    failure_detected = True
 
                         # QSFP/SFP port 2
                         read_data = [0]
@@ -2434,6 +2454,18 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                                 cur_fail_list[mtp_id][slot+length] = 1
                                 loopback_fail_list[mtp_id][slot+length] += 1
                                 failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot+length] = 1
+                                    loopback_fail_list[mtp_id][slot+length] += 1
+                                    failure_detected = True
 
         display_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length)
 
@@ -2473,8 +2505,16 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         cur_fail_list[mtp_id] = [0] * length
 
     skip_check_list = dict() # dont test slots that have already failed before sanity
-    for mtp_id in mtpid_list:
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         skip_check_list[mtp_id] = fail_nic_list[mtp_id][:]
+        # Skip RJ45 check for slots populated with NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type in [NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR]:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip RJ45 Sanity Check For This Slot")
+                    skip_check_list[mtp_id].append(slot)
 
     start_ts = timestamp_snapshot()
 
@@ -2488,6 +2528,8 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                    if nic_type in [NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR]:
+                        continue
                     if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                     elif nic_type in ELBA_NIC_TYPE_LIST:

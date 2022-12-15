@@ -2561,7 +2561,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_alom_fru_init(self, factory_location):
+    def nic_alom_fru_init(self, factory_location, fpo=False):
         fru_buf = self.nic_read_fru(fpo, smb_fru=True, alom=True)
         if not fru_buf:
             self.nic_set_err_msg("Unable to read ALOM FRU")
@@ -2735,7 +2735,12 @@ class nic_ctrl():
             NIC_Type.ORTANO2INTERP: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT)             #68-0029-01 XX    ORTANO2 Interposer
                 ],
-
+            NIC_Type.ORTANO2SOLO: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
+                ],
+            NIC_Type.ORTANO2ADICR: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
+                ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
                 ],
@@ -2745,15 +2750,15 @@ class nic_ctrl():
             NIC_Type.LACONA32: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32_PN_FMT)                      #P47930-001       LACONA32 HPE
                 ]
+
         }
         if self._nic_type not in pn_table.keys():
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 
-        pn_regex_list = pn_table[self._nic_type]
-        if not pn_regex_list:
-            self.nic_set_err_msg("Script error: rules for this part number are not defined correctly")
-            return False
+        pn_regex_list = []
+        for nic_type in pn_table:
+            pn_regex_list += pn_table[nic_type]
 
         for disp_field, pn_regex in pn_regex_list:
             pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
@@ -2938,7 +2943,7 @@ class nic_ctrl():
             return self._assettagnumber
 
     def nic_get_hpe_version(self):
-        return self._nic_ctrl_list[slot]._hpe_prod_ver
+        return self._hpe_prod_ver
 
     def nic_get_naples_pn(self):
         if not self._pn:
@@ -5082,7 +5087,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
-        if port != "1" and port != "2":
+        if port not in ("0","1","2"):
+            self.nic_set_err_msg("Script error: invalid port specified")
             return False
 
         nic_cmd_list = list()
