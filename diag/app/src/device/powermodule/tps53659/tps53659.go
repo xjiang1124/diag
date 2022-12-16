@@ -11,6 +11,7 @@ import (
     "strings"
 
     "common/cli"
+    "common/dcli"
     "common/errType"
     "common/misc"
     "hardware/i2cinfo"
@@ -615,6 +616,25 @@ func TriggerVrFault(devName string) (err int) {
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to set IIN OC fault limit")
         return
+    }
+    return
+}
+
+/*
+    Read Device ID and compare with expected one
+ */
+func TestTps53659(devName string) (err int) {
+    devID, err := ReadDeviceID(devName)
+
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+        return
+    }
+
+    /* hack for now. Probably need to based on device rev */
+    if ((devID != DEVICE_ID) && (devID != DEVICE_ID)) {
+        dcli.Println("F", devName, " Invalid Device ID: expected", DEVICE_ID, "read", devID)
+        return errType.FAIL
     }
     return
 }
