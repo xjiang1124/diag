@@ -475,7 +475,8 @@ class MFG_DIAG_CMDS:
     LACONA32DELL_AVS_SET_FMT = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
     LACONA32_AVS_SET_FMT     = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
     #Ortano MSFT
-    ORTANO2_VRM_FIX_OC_FMT = "/data/nic_util/fix_o2_vrm_oc.sh apply"
+    # fix_o2_vrm_oc.sh apply or restore command format,  display only if no argument
+    ORTANO2_VRM_FIX_OC_FMT = "/data/nic_util/fix_o2_vrm_oc.sh {:s}"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
