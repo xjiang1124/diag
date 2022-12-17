@@ -5924,13 +5924,8 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
             if self.mtp_is_nic_ortano_microsoft(slot):
-                if not self._nic_ctrl_list[slot].nic_fix_vrm_oc("apply"):
-                    self.cli_log_slot_err_lock(slot, "{:s} failed".format((MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT).format("apply")))
-                    self.mtp_dump_nic_err_msg(slot)
-                    return False
-            elif self.mtp_is_nic_ortano_oracle(slot):
-                if not self._nic_ctrl_list[slot].nic_fix_vrm_oc("restore"):
-                    self.cli_log_slot_err_lock(slot, "{:s} failed".format((MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT).format("restore")))
+                if not self._nic_ctrl_list[slot].nic_fix_vrm_oc():
+                    self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
             else:

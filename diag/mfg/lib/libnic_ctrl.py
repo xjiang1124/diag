@@ -4001,45 +4001,8 @@ class nic_ctrl():
 
         return True
 
-    def nic_fix_vrm_oc(self, operation="apply"):
-        """
-        Run /data/nic_util/fix_o2_vrm_oc.sh apply or restore, which is the pass in operation
-        Sample output of this command:
-        # /data/nic_util/fix_o2_vrm_oc.sh restore
-        === Restoring TPS53705 Core OC Fix for Oracle===
-        Restore is on Page 0 only
-        TPS53659 Core OC Restore done
-        =====================================
-        === TPS53695 Core OC Current Setting ===
-        Setting on Page 0
-        0xDA: 0xc855
-        0x46: 0x006a
-        0x4A: 0x0055
-        ========================================
-        FIX O2 VRM OC DONE
-        FIX O2 VRM OC DONE
-        # /data/nic_util/fix_o2_vrm_oc.sh
-        === TPS53695 Core OC Current Setting ===
-        Setting on Page 0
-        0xDA: 0xc855
-        0x46: 0x006a
-        0x4A: 0x0055
-        ========================================
-        # /data/nic_util/fix_o2_vrm_oc.sh apply
-        === Applying TPS53705 Core OC Fix ===
-        Fix is on Page 0 only
-        TPS53659 Core OC fix done
-        =====================================
-        === TPS53695 Core OC Current Setting ===
-        Setting on Page 0
-        0xDA: 0xc864
-        0x46: 0x007d
-        0x4A: 0x0064
-        ========================================
-        FIX O2 VRM OC DONE
-        FIX O2 VRM OC DONE
-        """
-        cmd_buf = self.nic_get_info((MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT).format(operation))
+    def nic_fix_vrm_oc(self):
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_OC_FMT)
         if "FIX O2 VRM OC DONE" not in cmd_buf:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
