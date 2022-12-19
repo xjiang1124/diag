@@ -288,7 +288,7 @@ PRIVEK <ek.sk>"""
             return pn
 
         # Some cards does not have Assembly Number, they use Part Number instead
-        ma = re.compile(r".*Part Number[ ]{8,}([\d]{2}-[\d]{4}-[\d]{2}|[A-Z0-9]{6}-[0-9]{3}|[A-Z0-9]{6}[X|A][A-Z0-9]{2}|[\d]{3}-[\d]{5}) .*")
+        ma = re.compile(r".*Part Number[ ]{8,}([\d]{2}-[\d]{4}-[\d]{2}|[A-Z0-9]{6}-[0-9]{3}|[A-Z0-9]{6}[X|A][A-Z0-9]{2}|[\d]{3}-[\d]{5}).*")
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
