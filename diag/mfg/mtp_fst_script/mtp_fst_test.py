@@ -25,6 +25,7 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import CAPRI_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmtp_db import mtp_db
@@ -155,18 +156,34 @@ def get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus):
     return "169.254.{:d}.1".format(bus_int)
 
 def get_eth_mnic_new(mtp_mgmt_ctrl, card_type, slot, bus):
+    #### FIND CORRESPONDING ETH INTF NAME
+    cmd = "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent | grep \"{:s}\" | cut -d'/' -f5".format(bus)
+    cmd_buf = mtp_mgmt_ctrl._nic_ctrl_list[slot].mtp_get_info(cmd)
+    eth = cmd_buf.splitlines()[-1].strip()
+    if not cmd_buf or "grep" in eth:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to find ethernet interface for PCI device {:s}".format(bus))
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "#############= FA DUMP =#############")
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent")
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "lshw -c network -businfo")
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "#############= END FA DUMP =#############")
+        return ""
+    mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_eth_mnic = eth
+
+    #### DECODE IP ADDRESS
     bus_str = bus.split(":", 1)[0]
-    bus_int = int(bus_str, 16)+4
-    eth = "enp"+str(bus_int)+"s0"
+    bus_int = int(bus_str, 16)
+    if card_type == "GENERAL_OLD":
+        intf_ip_addr = "169.254.0.2/24"
+        ssh_ip_addr  = "169.254.0.1"
+    else:
+        intf_ip_addr = "169.254.{:d}.2/24".format(bus_int)
+        ssh_ip_addr  = "169.254.{:d}.1".format(bus_int)
 
+    #### ASSIGN IP ADDRESS TO ETH INTF
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Enable NIC mnic {:s}".format(eth))
-
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth))
     time.sleep(1)
-    if card_type == "GENERAL_OLD":
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} 169.254.0.2/24".format(eth))
-    else:
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} 169.254.{:d}.2/24".format(eth, bus_int))
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} {:s}".format(eth, intf_ip_addr))
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} up".format(eth))
     time.sleep(1)
     if eth+": ERROR" in mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot):
@@ -174,19 +191,10 @@ def get_eth_mnic_new(mtp_mgmt_ctrl, card_type, slot, bus):
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth))
         time.sleep(1)
         return ""
-    if card_type == "GENERAL_OLD":
-        return "169.254.0.1"
-    else:
-        return "169.254.{:d}.1".format(bus_int)
+    return ssh_ip_addr
 
-def disable_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus=""):
-    if not bus:
-        bus = mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus
-    bus_str = bus.split(":", 1)[0]
-    bus_int = int(bus_str, 16)+4
-    eth = "enp"+str(bus_int)+"s0"
-
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(eth)):
+def disable_eth_mnic(mtp_mgmt_ctrl, card_type, slot):
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "ifconfig {:s} down".format(mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_eth_mnic)):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to turn off eth interface {:s}".format(eth))
         return False
     return True
@@ -690,6 +698,54 @@ def fst_init_nic(mtp_mgmt_ctrl):
                 mtp_mgmt_ctrl._nic_prsnt_list[slot] = True
                 mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus = bus
                 mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type = "elba"
+
+    return True
+
+def fst_init_nic(mtp_mgmt_ctrl):
+    """
+     Search lspci for DSCs
+     And assign slot # in the order it appears in lspci
+    """
+
+    mtp_mgmt_ctrl.cli_log_inf("Init NIC Connections", level = 0)
+    if not mtp_mgmt_ctrl.mtp_nic_para_session_init():
+        mtp_mgmt_ctrl.cli_log_err("Init NIC Connections Failed", level = 0)
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Init NIC Present")
+
+    cmd = "lspci -d 1dd8:1004"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
+
+    if len(bus_list_match) == 0:
+        mtp_mgmt_ctrl.cli_log_err("No devices found")
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
+    for slot, bus in enumerate(bus_list_match):
+        if not mtp_mgmt_ctrl._slots_to_skip[slot]:
+            mtp_mgmt_ctrl._nic_prsnt_list[slot] = True
+            mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus = bus
+
+            cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd)
+            cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
+            sn_match = re.search("Serial number: *([A-Z0-9]*)", cmd_buf)
+            if sn_match:
+                mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn_match.group(1))
+
+            cmd = "lspci -vvv -s {:s} | grep \"Part number\" --color=never".format(bus)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd)
+            cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
+            pn_match = re.search("Part number: *([A-Z0-9\-]*)", cmd_buf)
+            if pn_match:
+                nic_type = get_product_name_from_pn(pn_match.group(1))
+                if nic_type in CAPRI_NIC_TYPE_LIST:
+                    mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type = "capri"
+                if nic_type in ELBA_NIC_TYPE_LIST:
+                    mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type = "elba"
 
     return True
 

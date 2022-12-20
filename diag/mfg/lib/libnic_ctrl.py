@@ -64,6 +64,7 @@ class nic_ctrl():
         self._asic_type = None
         self._ip_addr = None
         self._fst_pcie_bus = None
+        self._fst_eth_mnic = None
         self._emmc_mfr_id = ""
 
         self._refresh_required = True
