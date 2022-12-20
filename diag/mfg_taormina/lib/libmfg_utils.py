@@ -704,22 +704,25 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file, logfilep=
     session.sendline(passwd)
     session.expect_exact(get_linux_prompt_list())
 
-    # need sudo with new CXOS
-    cmd = "sudo md5sum " + remote_file
-    session.sendline(cmd)
-    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
-    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
-    session.close()
-    # md5sum match
-    if match:
-        if match.group(1) == local_md5sum:
-            return True
+    if "*" not in remote_file: #skip md5sum checksum for wildcard/multifile copies
+        # need sudo with new CXOS
+        cmd = "sudo md5sum " + remote_file
+        session.sendline(cmd)
+        session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+        session.close()
+        # md5sum match
+        if match:
+            if match.group(1) == local_md5sum:
+                return True
+            else:
+                cli_err("File {:s} md5sum mismatch".format(local_file))
+                return False
         else:
-            cli_err("File md5sum mismatch")
+            cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
             return False
-    else:
-        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
-        return False
+
+    return True
 
 def console_copy_file(mtp_mgmt_ctrl, ip_addr, local_dir, remote_file):
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("ping -c 4 {:s}".format(ip_addr), timeout=MTP_Const.TOR_SVOS_CMD_DELAY)

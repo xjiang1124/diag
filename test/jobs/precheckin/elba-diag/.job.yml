@@ -21,23 +21,18 @@ e2e-targets:
     deployment:
       skip-pxe-install: true
     resources:
-      - bm:
-        - vendor: Pensando
+      - generic:
+        - type: MTP
+          vendor: Pensando
           count: 1
-          image: build-17
           props:
-          - name: sanity-group
-            value: diag-mtp
           - name: mtp-nic-processor
             value: elba
-          nics:
-          - vendor: Intel
     provision:
       username: diag
       password: lab123
       vars:
         BmOs: linux
-
 
 logfiles:
  - /psdiag/diag_detailed_log.tgz
