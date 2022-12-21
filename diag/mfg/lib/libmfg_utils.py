@@ -285,13 +285,25 @@ def mac_address_validate(tmp):
 
 
 def part_number_validate(tmp):
+    match, _ = part_number_lookup(tmp)
+    if match is None:
+        return None
+
+    if match == tmp:
+        # check no truncation happened during regex match
+        return tmp
+    else:
+        return None
+
+def part_number_lookup(pn):
     all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
 
     for pn_regex in all_pn_regexes:
-        if re.match(pn_regex, tmp):
-            return tmp
+        match = re.match(pn_regex, pn)
+        if match:
+            return match.group(0), pn_regex
 
-    return None
+    return None, None
 
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
