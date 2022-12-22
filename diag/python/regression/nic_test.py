@@ -815,6 +815,7 @@ class nic_test:
 
     def vrd_fault_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -842,18 +843,21 @@ class nic_test:
             else:
                 print "Failed to read CPLD addr=0x50 for slot {}".format(slot)
 
+        nic_list_copy = nic_list[:]
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
-                nic_list.remove(slot)
+                nic_list_copy.remove(slot)
+                nic_pass_list.append(slot)
 
-        if len(nic_list) != 0:
-            print "=== vrd_fault_line failed; failed slots: ", ",".join(nic_list)
+        if len(nic_list_copy) != 0:
+            print "=== vrd_fault_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== vrd_fault_line passed ==="
         print "=== vrd_fault_line done ==="
 
     def therm_alert_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -905,18 +909,21 @@ class nic_test:
                 if intr_set == 1 and intr_cleared == 1:
                     ret_list[int(slot)-1] = 1
 
+        nic_list_copy = nic_list[:]
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
-                nic_list.remove(slot)
+                nic_list_copy.remove(slot)
+                nic_pass_list.append(slot)
 
-        if len(nic_list) != 0:
-            print "=== therm_alert_line failed; failed slots: ", ",".join(nic_list)
+        if len(nic_list_copy) != 0:
+            print "=== therm_alert_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== therm_alert_line passed ==="
         print "=== therm_alert_line done ==="
 
     def therm_trip_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
 
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -944,12 +951,14 @@ class nic_test:
             else:
                 print "Failed to read CPLD addr=0x50 for slot {}".format(slot)
 
+        nic_list_copy = nic_list[:]
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
-                nic_list.remove(slot)
+                nic_list_copy.remove(slot)
+                nic_pass_list.append(slot)
 
-        if len(nic_list) != 0:
-            print "=== therm_trip_line failed; failed slots: ", ",".join(nic_list)
+        if len(nic_list_copy) != 0:
+            print "=== therm_trip_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== therm_trip_line passed ==="
         print "=== therm_trip_line done ==="
@@ -997,13 +1006,14 @@ class nic_test:
             common.session_cmd(session, cmd)
             common.session_stop(session)
 
+        nic_list_copy = nic_list[:]
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
-                nic_list.remove(slot)
+                nic_list_copy.remove(slot)
                 nic_pass_list.append(slot)
 
-        if len(nic_list) != 0:
-            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
+        if len(nic_list_copy) != 0:
+            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== uart_loopback_test passed ==="
         print "=== uart_loopback_test done ==="
@@ -1025,11 +1035,13 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
                 if session.before.splitlines()[1] != "0xe":
                     print "slot", slot, "Reg 0x9C, expect: 0xe, actual:", session.before.splitlines()[1]
+                    self.nic_con.uart_session_stop(session)
                     continue
                 self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 1")
                 self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
                 if session.before.splitlines()[1] != "0xf":
                     print "slot", slot, "Reg 0x9C, expect: 0xf, actual:", session.before.splitlines()[1]
+                    self.nic_con.uart_session_stop(session)
                     continue
                 self.nic_con.uart_session_cmd(session, "halctl show port internal")
                 if "BMC                      UP             100M" in session.before:
@@ -1038,13 +1050,14 @@ class nic_test:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
+        nic_list_copy = nic_list[:]
         for slot in nic_list:
             if ret_list[int(slot)-1] == 1:
-                nic_list.remove(slot)
+                nic_list_copy.remove(slot)
                 nic_pass_list.append(slot)
 
-        if len(nic_list) != 0:
-            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
+        if len(nic_list_copy) != 0:
+            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
         else:
             print "=== rmii_linkup_test passed ==="
         print "=== rmii_linkup_test done ==="
