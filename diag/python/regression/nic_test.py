@@ -163,8 +163,7 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False):
-        numRetry = 2
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2):
         nic_list_remain = nic_list[:]
         timeout = 60
         for retry in range(numRetry):
