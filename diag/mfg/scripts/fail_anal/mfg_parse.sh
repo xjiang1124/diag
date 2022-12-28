@@ -187,8 +187,14 @@ rm -f $missing_log_file $existing_log_file $passing_log_file
 
 function run_parse {
     local sn=$1
+    local type=$2
     echo "In run_parse"
-    cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
+    if [[ $type =~ "NAPLES" ]]; then
+        echo "Capri card"
+        cp $to_loc_top/mfg_parse_capri.pl $to_loc/$card_type/mfg_parse.pl
+    else
+        cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
+    fi
     cd $to_loc/$card_type
     ./mfg_parse.pl $fa_opt $card_type $test_name $mfg_err_code
 }
@@ -238,6 +244,12 @@ while read -r sn; do
             ;;
             "4C-H")
             from_loc="/${src_log_dir}/$card_type/4C/4C-H/${sn}"
+            ;;
+            "2C-L")
+            from_loc="/${src_log_dir}/$card_type/2C/2C-L/${sn}"
+            ;;
+            "2C-H")
+            from_loc="/${src_log_dir}/$card_type/2C/2C-H/${sn}"
             ;;
             *)
             echo "Invalid stage $i"
@@ -294,7 +306,7 @@ while read -r sn; do
         fi
     done
     #cat $to_loc/$card_type/testresult.txt
-    run_parse $sn
+    run_parse $sn $card_type
     #cat $to_loc/$card_type/logs_fail.txt
 
     for stage in "${stages[@]}";
