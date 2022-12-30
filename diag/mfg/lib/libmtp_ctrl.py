@@ -3100,8 +3100,8 @@ class mtp_ctrl():
             if software_pn != "90-0001-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
-        elif naples_pn[0:9] == "111-04635": #NAPLES 100 NETAPP
-            if software_pn != "90-0001-0001":
+        elif naples_pn[0:9] == "111-05363": #NAPLES 100 NETAPP
+            if software_pn != "90-0001-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0013":   #NAPLES100 IBM
@@ -3217,7 +3217,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
-            if software_pn != "90-9999-0001":
+            if software_pn != "90-0020-0001":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR

@@ -2258,23 +2258,32 @@ class mtp_ctrl():
         pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
         logfile_exp = r"(cap|elb)_l1_screen_board_{:s}.*log".format(sn)
-        for filename in os.listdir(path):
+
+        cmd = "ls --color=never {:s}".format(path)
+        self.mtp_mgmt_exec_cmd(cmd)
+        file_list = self.mtp_get_cmd_buf().split()
+        for filename in file_list:
             if re.match(logfile_exp, filename):
-                with open(os.path.join(path, filename), 'r') as f:
-                    for line in f:
-                        #if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
-                        #    err_msg = line.replace('\n', '')
-                        #    err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
-                        #    err_msg_list.append(err_msg)
-                        #if MFG_DIAG_SIG.MFG_ASIC_CTC_ERR_MSG_SIG in line:
-                        #    err_msg = line.replace('\n', '')
-                        #    err_msg_list.append(err_msg)
-                        #if MFG_DIAG_SIG.MFG_ASIC_PCIE_MAPPING_MSG_SIG in line:
-                        #    err_msg = line.replace('\n', '')
-                        #    err_msg_list.append(err_msg)
+                cmd = "grep '{:s}' {:s}".format(MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG_SIG, os.path.join(path,filename))
+                self.mtp_mgmt_exec_cmd(cmd)
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf:
+                    for line in cmd_buf.splitlines():
+                        if cmd in line:
+                            # skip first line where command is part of buffer
+                            continue
                         if MFG_DIAG_SIG.MFG_ASIC_FAIL_MSG_SIG in line:
                             err_msg = line.replace('\n', '')
                             err_msg_list.append(err_msg)
+
+                cmd = "grep '{:s}' {:s}".format(MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG, os.path.join(path,filename))
+                self.mtp_mgmt_exec_cmd(cmd)
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf:
+                    for line in cmd_buf.splitlines():
+                        if cmd in line:
+                            # skip first line where command is part of buffer
+                            continue
                         if MFG_DIAG_SIG.MFG_ASIC_PASS_MSG_SIG in line:
                             pass_count += 1
 
@@ -2286,7 +2295,11 @@ class mtp_ctrl():
         pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
         logfile_exp = r"{:s}_elba_arm_l1_test\.log".format(sn)
-        for filename in os.listdir(path):
+
+        cmd = "ls --color=never {:s}".format(path)
+        self.mtp_mgmt_exec_cmd(cmd)
+        file_list = self.mtp_get_cmd_buf().splitlines()
+        for filename in file_list:
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
                     for line in f:
@@ -4426,6 +4439,56 @@ class mtp_ctrl():
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return nic_list[:]
 
+    def tor_diag_test_binary(self, test, vmarg):
+        cmd = "cd /home/diag/diag/util"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return False
+
+        if test == "SNAKE_TOR":
+            snake_port_mask = "0xff"
+            snake_duration = "150"
+            snake_loopback = "ext"
+            cmd = "./switch td3 snake {:s} {:s} {:s}".format(snake_port_mask, snake_duration, snake_loopback)
+            sig_list = ["SWITCH SNAKE TEST "]
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=test_timeout+int(snake_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return False
+            if "PASSED" not in self.mtp_get_cmd_buf():
+                return False
+            else:
+                return True
+        elif test == "PRBS_TOR":
+            #switch td3 prbs <time> <prbs7/prbs9/prbs11/prbs15/prbs23/prbs31/prbs58>
+            prbs_type = "prbs58"
+            prbs_duration = "60"
+            cmd = "./switch td3 prbs {:s} {:s}".format(prbs_duration, prbs_type)
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PRBS PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return False
+            else:
+                return True
+        elif test == "PCI_TOR":
+            cmd = "./switch cpu pciscan"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
+                self.cli_log_err("{:s} failed".format(cmd))
+                return nic_list[:]
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "PCISCAN TEST PASSED" not in cmd_buf:
+                self.mtp_dump_err_msg(cmd_buf)
+                return False
+            else:
+                return True
+        else:
+            self.cli_log_err("Unknown Diag Bash Test {:s}".format(test))
+            return False
 
     def mtp_mgmt_get_test_result(self, cmd, test):
         if not self.mtp_mgmt_exec_cmd(cmd):

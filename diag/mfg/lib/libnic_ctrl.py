@@ -3107,7 +3107,7 @@ class nic_ctrl():
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            self._cpld_timestamp = "0x{:02d}".format(read_data[0])
+            self._cpld_timestamp = "0x{:02X}".format(read_data[0])
             return True
         elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
             # no timestamp, minor revision at 0x22 only
@@ -3120,7 +3120,7 @@ class nic_ctrl():
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            self._cpld_timestamp = "{:02d}".format(read_data[0])
+            self._cpld_timestamp = "{:02}".format(read_data[0])
             return True
         else:
             # get the month timestamp
@@ -4043,7 +4043,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to set board config")
             return False
-        if "Mode successfully set" in cmd_buf:
+        if "Mode successfully set" in cmd_buf or "Config successfully set" in cmd_buf:
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)

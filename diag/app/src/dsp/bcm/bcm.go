@@ -9,6 +9,7 @@ import (
     "config"
 
     "device/bcm/td3"
+    "platform/taormina"
 )
 
 //========================================================
@@ -35,7 +36,7 @@ func BcmPrbsExtHdl(argList []string) {
     // Need to remove after implementing DSP handler
     dcli.Println("i", "duration", *durationPtr, "poly", *polyPtr)
 
-    err := td3.Prbs(duration, poly)
+    err := taormina.Prbs(duration, poly, 0)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -46,25 +47,19 @@ func BcmPrbsExtHdl(argList []string) {
 
 func BcmTd3DiagHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-    durationPtr := fs.Int("duration", 900, "test time")
-
-    duration := *durationPtr
-
-    // To avoid compile error: variable not used
-    // Need to remove after implementing DSP handler
-    dcli.Println("i", "duration", *durationPtr)
-    dcli.Println("i", "duration", duration)
 
     errFs := fs.Parse(argList)
     if errFs != nil {
         dcli.Println("e", "Parse failed", errFs)
     }
 
-    // To avoid compile error: variable not used
-    // Need to remove after implementing DSP handler
-    dcli.Println("i", "duration", *durationPtr)
-
-    err := td3.TD3_Run_Diags()
+    err := td3.BCMShell_Test_Init() 
+    if err != 0 {
+        dcli.Println("e", "td3.BCMShell_Test_Init Failed with err = ", err)
+        diagEngine.FuncMsgChan <- err
+        return
+    }
+    err = td3.TD3_Run_Diags()
 
     // Inform diag engine that test handler is done
     // Use chan to return error code

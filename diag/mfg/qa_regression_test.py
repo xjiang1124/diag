@@ -397,10 +397,11 @@ def main():
 
         if not libmfg_utils.mtp_update_asic_image(mtp_mgmt_ctrl, mtp_asic_image, nic_asic_image, onboard_image_files, force_update=True):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis ASIC image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
+            # mtpid_list.remove(mtp_id)
+            # mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            # mtpid_fail_list.append(mtp_id)
+            # continue
+            mtp_mgmt_ctrl.cli_log_err("Skipping update of ASIC image")
         mtp_mgmt_ctrl.cli_log_inf("MTP ASIC Image is updated", level=0)
 
     regression_start_ts = libmfg_utils.timestamp_snapshot()

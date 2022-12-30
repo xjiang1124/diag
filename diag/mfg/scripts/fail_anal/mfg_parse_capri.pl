@@ -293,7 +293,7 @@ while(my $line = <TR2>)
             my $l1_failed = find_failure_code($fulllogpath, $sn2, $toppath, $stage, $ts, $slot);
             if ($stage ne "FST") {
                 parse_fpga_and_ecc($summaryfile, $slotlogfile, $sn2, $ts, $l1_failed);
-                parse_mtp_diag_file($mtpdiagfile);
+                parse_mtp_diag_file($mtpdiagfile, 0 + $slot);
             }
 
             my $diag_fa_code_str = "";
@@ -338,146 +338,21 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"DDR_ECC_FAILURE"}) {
-        $top_diag_fa_code = "DDR_ECC_FAILURE";
-        delete $diag_fa_code{"DDR_ECC_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"}) {
-        $top_diag_fa_code = "DDR_ECC_FAILURE_AFTER_C92_UPGRADED";
-        delete $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"DDR_INIT_FAILURE"}) {
-        $top_diag_fa_code = "DDR_INIT_FAILURE";
-        delete $diag_fa_code{"DDR_INIT_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
-        $top_diag_fa_code = "RETEST_NEEDED";
-        delete $diag_fa_code{"RETEST_NEEDED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_OTHER"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
-        $top_diag_fa_code = "RETEST_NEEDED";
-        delete $diag_fa_code{"RETEST_NEEDED"};
-        return;
-    }
-
     if (exists $diag_fa_code{"TEST_IGNORED"}) {
         $top_diag_fa_code = "TEST_IGNORED";
         delete $diag_fa_code{"TEST_IGNORED"};
         return;
     }
 
-    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
-        $top_diag_fa_code = "L1_DDR_BIST";
-        delete $diag_fa_code{"L1_DDR_BIST"};
+    if (exists $diag_fa_code{"EMMC_FAILURE"}) {
+        $top_diag_fa_code = "EMMC_FAILURE";
+        delete $diag_fa_code{"EMMC_FAILURE"};
         return;
     }
 
-    if (exists $diag_fa_code{"ARM_DDR_BIST"}) {
-        $top_diag_fa_code = "ARM_DDR_BIST";
-        delete $diag_fa_code{"ARM_DDR_BIST"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
-        $top_diag_fa_code = "EDMA_FAILURE";
-        delete $diag_fa_code{"EDMA_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
-        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
-            delete $diag_fa_code{"HV_EDMA_FAILURE"};
-            delete $diag_fa_code{"LV_EDMA_FAILURE"};
-            return;
-        } else {
-            $top_diag_fa_code = "HV_EDMA_FAILURE";
-            delete $diag_fa_code{"HV_EDMA_FAILURE"};
-            return;
-        }
-    }
-
-    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
-        $top_diag_fa_code = "LV_EDMA_FAILURE";
-        delete $diag_fa_code{"LV_EDMA_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SW_BOOT"}) {
-        $top_diag_fa_code = "SW_BOOT";
-        delete $diag_fa_code{"SW_BOOT"};
-        return;
-    }
-    if (exists $diag_fa_code{"EFUSE_PROG"}) {
-        $top_diag_fa_code = "EFUSE_PROG";
-        delete $diag_fa_code{"EFUSE_PROG"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_L_VOLT_LOW"}) {
-        $top_diag_fa_code = "VMARG_L_VOLT_LOW";
-        delete $diag_fa_code{"VMARG_L_VOLT_LOW"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_L_BOOT_UBOOT"}) {
-        $top_diag_fa_code = "VMARG_L_BOOT_UBOOT";
-        delete $diag_fa_code{"VMARG_L_BOOT_UBOOT"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_H_BOOT_UBOOT"}) {
-        $top_diag_fa_code = "VMARG_H_BOOT_UBOOT";
-        delete $diag_fa_code{"VMARG_H_BOOT_UBOOT"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_L_CARD_REBOOTED"}) {
-        $top_diag_fa_code = "VMARG_L_CARD_REBOOTED";
-        delete $diag_fa_code{"VMARG_L_CARD_REBOOTED"};
-        return;
-    }
-    if (exists $diag_fa_code{"VMARG_H_CARD_REBOOTED"}) {
-        $top_diag_fa_code = "VMARG_H_CARD_REBOOTED";
-        delete $diag_fa_code{"VMARG_H_CARD_REBOOTED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_L_SSH_HUNG"}) {
-        $top_diag_fa_code = "VMARG_L_SSH_HUNG";
-        delete $diag_fa_code{"VMARG_L_SSH_HUNG"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"VMARG_H_SSH_HUNG"}) {
-        $top_diag_fa_code = "VMARG_H_SSH_HUNG";
-        delete $diag_fa_code{"VMARG_H_SSH_HUNG"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
-        $top_diag_fa_code = "CARD_REBOOTED";
-        delete $diag_fa_code{"CARD_REBOOTED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"NIC_UNRESP_SSH_HUNG"}) {
-        $top_diag_fa_code = "NIC_UNRESP_SSH_HUNG";
-        delete $diag_fa_code{"NIC_UNRESP_SSH_HUNG"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"CONSOLE_UNRESP"}) {
-        $top_diag_fa_code = "CONSOLE_UNRESP";
-        delete $diag_fa_code{"CONSOLE_UNRESP"};
+    if (exists $diag_fa_code{"NO_EMMC_PARTITION"}) {
+        $top_diag_fa_code = "NO_EMMC_PARTITION";
+        delete $diag_fa_code{"NO_EMMC_PARTITION"};
         return;
     }
 
@@ -525,75 +400,27 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
-        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
-        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"}) {
-        $top_diag_fa_code = "SNAKE_PCIe_TXDETECTRX";
-        delete $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_PBM_ECC_FAILURE";
-        delete $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_RAM_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_RAM_FAILURE";
-        delete $diag_fa_code{"SNAKE_RAM_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"RETEST_NEEDED"}) {
-        $top_diag_fa_code = "RETEST_NEEDED";
-        delete $diag_fa_code{"RETEST_NEEDED"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"}) {
-        $top_diag_fa_code = "TEMP_TRIP_FAILURE(0x50)";
-        delete $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"}) {
-        $top_diag_fa_code = "ASIC_PIN_STATUS_2_FAILURE(0x28)";
-        delete $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"};
-        return;
-    }
-
     if (exists $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"}) {
         $top_diag_fa_code = "CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR";
         delete $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"};
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_MX_LINKUP"}) {
-        $top_diag_fa_code = "SNAKE_MX_LINKUP";
-        delete $diag_fa_code{"SNAKE_MX_LINKUP"};
+    if (exists $diag_fa_code{"SNAKE_PP_INTR"}) {
+        $top_diag_fa_code = "SNAKE_PP_INTR";
+        delete $diag_fa_code{"SNAKE_PP_INTR"};
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_THROUGHPUT_LOW"}) {
-        $top_diag_fa_code = "SNAKE_THROUGHPUT_LOW";
-        delete $diag_fa_code{"SNAKE_THROUGHPUT_LOW"};
+    if (exists $diag_fa_code{"L1_ESEC_FAILURE"}) {
+        $top_diag_fa_code = "L1_ESEC_FAILURE";
+        delete $diag_fa_code{"L1_ESEC_FAILURE"};
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_CNT_MISCOMPARE"}) {
-        $top_diag_fa_code = "SNAKE_CNT_MISCOMPARE";
-        delete $diag_fa_code{"SNAKE_CNT_MISCOMPARE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_CRC_ERROR"}) {
-        $top_diag_fa_code = "SNAKE_CRC_ERROR";
-        delete $diag_fa_code{"SNAKE_CRC_ERROR"};
+    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
+        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
         return;
     }
 
@@ -618,7 +445,16 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"BOOT_UBOOT"};
         return;
     }
-
+    if (exists $diag_fa_code{"CARD_REBOOTED"}) {
+        $top_diag_fa_code = "CARD_REBOOTED";
+        delete $diag_fa_code{"CARD_REBOOTED"};
+        return;
+    }
+    if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
+        $top_diag_fa_code = "MISSING_ENV_VAR";
+        delete $diag_fa_code{"MISSING_ENV_VAR"};
+        return;
+    }
     if (exists $diag_fa_code{"INCORRECT_PN"}) {
         $top_diag_fa_code = "INCORRECT_PN";
         delete $diag_fa_code{"INCORRECT_PN"};
@@ -649,19 +485,34 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_RESET"};
         return;
     }
-    if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
-        $top_diag_fa_code = "SNAKE_LOG_INCOMPLETE";
-        delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
+    if (exists $diag_fa_code{"SNAKE_HBM_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "SNAKE_HBM_LOG_INCOMPLETE";
+        delete $diag_fa_code{"SNAKE_HBM_LOG_INCOMPLETE"};
         return;
     }
-    if (exists $diag_fa_code{"SNAKE_LOG_EMPTY"}) {
-        $top_diag_fa_code = "SNAKE_LOG_EMPTY";
-        delete $diag_fa_code{"SNAKE_LOG_EMPTY"};
+    if (exists $diag_fa_code{"SNAKE_HBM_LOG_EMPTY"}) {
+        $top_diag_fa_code = "SNAKE_HBM_LOG_EMPTY";
+        delete $diag_fa_code{"SNAKE_HBM_LOG_EMPTY"};
         return;
     }
-    if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"}) {
-        $top_diag_fa_code = "SNAKE_LOGFILE_NOT_EXIST";
-        delete $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"};
+    if (exists $diag_fa_code{"SNAKE_HBM_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "SNAKE_HBM_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"SNAKE_HBM_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"SNAKE_PCIE_LOG_INCOMPLETE"}) {
+        $top_diag_fa_code = "SNAKE_PCIE_LOG_INCOMPLETE";
+        delete $diag_fa_code{"SNAKE_PCIE_LOG_INCOMPLETE"};
+        return;
+    }
+    if (exists $diag_fa_code{"SNAKE_PCIE_LOG_EMPTY"}) {
+        $top_diag_fa_code = "SNAKE_PCIE_LOG_EMPTY";
+        delete $diag_fa_code{"SNAKE_PCIE_LOG_EMPTY"};
+        return;
+    }
+    if (exists $diag_fa_code{"SNAKE_PCIE_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "SNAKE_PCIE_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"SNAKE_PCIE_LOGFILE_NOT_EXIST"};
         return;
     }
     if (exists $diag_fa_code{"L1_LOG_INCOMPLETE"}) {
@@ -719,11 +570,6 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"Bad_J2C_L1"};
         return;
     }
-    if (exists $diag_fa_code{"Bad_J2C_ECC"}) {
-        $top_diag_fa_code = "Bad_J2C_ECC";
-        delete $diag_fa_code{"Bad_J2C_ECC"};
-        return;
-    }
     if (exists $diag_fa_code{"Bad_J2C"}) {
         $top_diag_fa_code = "Bad_J2C";
         delete $diag_fa_code{"Bad_J2C"};
@@ -734,7 +580,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_SPACE_FULL"};
         return;
     }
-
+    if (exists $diag_fa_code{"NIC_UNRESPONSIVE"}) {
+        $top_diag_fa_code = "NIC_UNRESPONSIVE";
+        delete $diag_fa_code{"NIC_UNRESPONSIVE"};
+        return;
+    }
     if (exists $diag_fa_code{"PS48_ERROR"}) {
         $top_diag_fa_code = "PS48_ERROR";
         delete $diag_fa_code{"PS48_ERROR"};
@@ -808,89 +658,107 @@ sub pick_top_diag_fa {
     }
 }
 
-sub parse_snake_log {
+sub parse_snake_hbm_log {
     my ($logfile, $sn, $test_and_failure_code) = @_;
     my $log_complete = 0;
     if (!open(TR3, '<', $logfile)) {
-        $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"} = 1;
+        $diag_fa_code{"SNAKE_HBM_LOGFILE_NOT_EXIST"} = 1;
         return;
     }
     my $test_err_msg = "";
     my $test_name = substr($test_and_failure_code, 0, index($test_and_failure_code, ' '));
 
-    my $err_found = 0;
+    my $linkup_err_found = 0;
+    my $intr_err_found = 0;
     while(my $line = <TR3>)
     {
-        if($err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.pp\.pp\.int_pp\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_PP_INTR"} = 1;
+            $intr_err_found = 1;
+        }
+        if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             my $line2 = <TR3>;
             $test_err_msg .= $line2;
             $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
-            $err_found = 1;
+            $linkup_err_found = 1;
         }
-        if($line =~ m/MSG ::  PCIE: txdetectrx failed for lane/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"} = 1;
-        }
-        if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_ecc_|correctable|uncorrectable)(.*)interrupt/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_RAM_FAILURE"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/ERROR :: elb(.*)(_mc)(.*)interrupt/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/ERROR :: elb_mx_sync_rst :(.*)sync failed/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_MX_LINKUP"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/At \w+ interface :: current BW : (\d+) is less than min expected BW/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_THROUGHPUT_LOW"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/ERROR :: elb_top_dump_cntrs_compare: (.*)!=expected/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_CNT_MISCOMPARE"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/ERROR :: CRC ERROR HAPPENED!/) {
-            if ($debug_msgs) { print "line: $line"};
-            $test_err_msg .= $line;
-            $diag_fa_code{"SNAKE_CRC_ERROR"} = 1;
-            $err_found = 1;
-        }
-        if ($err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
+        if ($linkup_err_found == 0 && $intr_err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_OTHER"} = 1;
-            $err_found = 1;
         }
         if ($line =~ m/MSG :: Snake Done/) {
             $log_complete = 1;
         }
     }
     if (-e -z $logfile) {
-        $diag_fa_code{"SNAKE_LOG_EMPTY"} = 1;
+        $diag_fa_code{"SNAKE_HBM_LOG_EMPTY"} = 1;
     } elsif ($log_complete == 0) {
-        $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} = 1;
+        $diag_fa_code{"SNAKE_HBM_LOG_INCOMPLETE"} = 1;
     }
     $all_test_msg .= "############### $test_and_failure_code ###############\n"."log file: ".$log_path."/".$logfile."\n\n";
     if ($test_err_msg ne "") {
         $all_test_msg .= $test_err_msg;
     } else {
-        if (! exists $diag_fa_code{"SNAKE_LOG_EMPTY"}) {
-            $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} = 1;
+        if (! exists $diag_fa_code{"SNAKE_HBMLOG_EMPTY"}) {
+            $diag_fa_code{"NO_ERR_IN_SNAKE_HBM_LOG"} = 1;
+        }
+    }
+    close(TR3);
+}
+
+sub parse_snake_pcie_log {
+    my ($logfile, $sn, $test_and_failure_code) = @_;
+    my $log_complete = 0;
+    if (!open(TR3, '<', $logfile)) {
+        $diag_fa_code{"SNAKE_PCIE_LOGFILE_NOT_EXIST"} = 1;
+        return;
+    }
+    my $test_err_msg = "";
+    my $test_name = substr($test_and_failure_code, 0, index($test_and_failure_code, ' '));
+
+    my $linkup_err_found = 0;
+    my $intr_err_found = 0;
+    while(my $line = <TR3>)
+    {
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.pp\.pp\.int_pp\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_PP_INTR"} = 1;
+            $intr_err_found = 1;
+        }
+        if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            my $line2 = <TR3>;
+            $test_err_msg .= $line2;
+            $diag_fa_code{"SNAKE_PCIe_LINKUP"} = 1;
+            $linkup_err_found = 1;
+        }
+        if ($linkup_err_found == 0 && $intr_err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_OTHER"} = 1;
+        }
+        if ($line =~ m/MSG :: Snake Done/) {
+            $log_complete = 1;
+        }
+    }
+    if (-e -z $logfile) {
+        $diag_fa_code{"SNAKE_PCIE_LOG_EMPTY"} = 1;
+    } elsif ($log_complete == 0) {
+        $diag_fa_code{"SNAKE_PCIE_LOG_INCOMPLETE"} = 1;
+    }
+    $all_test_msg .= "############### $test_and_failure_code ###############\n"."log file: ".$log_path."/".$logfile."\n\n";
+    if ($test_err_msg ne "") {
+        $all_test_msg .= $test_err_msg;
+    } else {
+        if (! exists $diag_fa_code{"SNAKE_PCIE_LOG_EMPTY"}) {
+            $diag_fa_code{"NO_ERR_IN_SNAKE_PCIE_LOG"} = 1;
         }
     }
     close(TR3);
@@ -903,6 +771,7 @@ sub parse_l1_log {
     my @lines_saved;
     my $j2c_err_logged = 0;
     my $health_check_test = 0;
+    my $puf_error = 0;
 
     if (!open(TR3, '<', $logfile)) {
         $diag_fa_code{"L1_LOGFILE_NOT_EXIST"} = 1;
@@ -936,20 +805,38 @@ sub parse_l1_log {
         if($line =~ m/(.*)MSG ::.*Done===/) {
             $subtest_start = 0;
         }
+        if($line =~ m/ERROR :: cap_show_esec_pins : Puf Error Mitigation failed after \w+ attempts/) {
+            $test_err_msg .= $line;
+            $puf_error = 1;
+        }
+
+        if(($line =~ m/ERROR :: -> cap_esec_l1_test.*failed with \d+ errors/)) {
+            $test_err_msg .= $line;
+            if ($puf_error == 1) {
+                $diag_fa_code{"L1_ESEC_FAILURE"} = 1;
+            }
+        }
+
         if ($subtest_start && ($line =~ m/ERROR ::/)) {
             if ($health_check_test && ($line =~ m/ERROR ::.*FAILED:/)) {
                 $test_err_msg .= $lines_saved[-4].$lines_saved[-3].$lines_saved[-2].$lines_saved[-1];
-            } else {
-                $test_err_msg .= $line;
             }
         }
-        if($line =~ m/(.*)MSG ::\s+L1_SCREEN (PASSED|FAILED)/) {
+        if($line =~ m/(.*)MSG :: ===>\s+L1_SCREEN (PASSED|FAILED)/) {
             $log_complete = 1;
         }
-        if(($j2c_err_logged == 0) && ($line =~ m/MSG :: j2c : write req error/)) {
+        if(($j2c_err_logged == 0) && ($line =~ m/ERROR :: JTAG chip reset FAILED/)) {
             $test_err_msg .= join("", @lines_saved);
             $j2c_err_logged = 1;
             $diag_fa_code{"Bad_J2C_L1"} = 1;
+        }
+        if(($j2c_err_logged == 0) && ($line =~ m/MSG :: j2c : write req error/)) {
+            my $line2 = <TR3>;
+            if ($line2 !~ m/MSG :: j2c : write done : status 0x3/) {
+                $test_err_msg .= join("", @lines_saved);
+                $j2c_err_logged = 1;
+                $diag_fa_code{"Bad_J2C_L1"} = 1;
+            }
         }
         if(($j2c_err_logged == 0) && ($line =~ m/S2I Operation timed out/)) {
             $test_err_msg .= join("", @lines_saved);
@@ -1226,10 +1113,14 @@ sub find_failure_code {
             $asic_log_dir = "/asic_logs/";
         }
 
-        if ($asic_log_dir ne "" && $failure_code =~ "SNAKE_ELBA") {
-            my $snake_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_elba.log";
-            print "#### snake_log_file: $snake_log_file\n";
-            parse_snake_log($snake_log_file, $sn, $test_and_failure_code);
+        if ($asic_log_dir ne "" && $failure_code =~ "SNAKE_HBM") {
+            my $snake_hbm_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_hbm.log";
+            print "#### snake_hbm_log_file: $snake_hbm_log_file\n";
+            parse_snake_hbm_log($snake_hbm_log_file, $sn, $test_and_failure_code);
+        } elsif ($asic_log_dir ne "" && $failure_code =~ "SNAKE_PCIE") {
+            my $snake_pcie_log_file=$toppath."/".$sn."/".$stage."_".$mtp."_".$ts.$asic_log_dir.$sn."_snake_pcie.log";
+            print "#### snake_pcie_log_file: $snake_pcie_log_file\n";
+            parse_snake_hbm_log($snake_pcie_log_file, $sn, $test_and_failure_code);
         } elsif ($asic_log_dir ne "" && $failure_code =~ "L1" && $failure_code !~ "ARM_L1") {
             if (index($test_name, "NIC") == -1) {
                 $asic_l1_failed = 1;
@@ -1320,19 +1211,13 @@ sub find_failure_code {
         if ($test_name eq "QSFP" && $failure_code eq "I2C") {
             $diag_fa_code{"QSFP_I2C"} = 1;
         }
+        if ($failure_code =~ "NIC_JTAG") {
+            $diag_fa_code{"NIC_JTAG_FAILURE"} = 1;
+        }
         if ($failure_code eq "CONSOLE_BOOT") {
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
             }
-        }
-        if (($failure_code eq "DDR_BIST") || ($failure_code eq "LV_DDR_BIST") || ($failure_code eq "HV_DDR_BIST")) {
-            $diag_fa_code{"ARM_DDR_BIST"} = 1;
-        }
-        if ($test_name eq "SWI" && $failure_code eq "EFUSE_PROG") {
-            $diag_fa_code{"EFUSE_PROG"} = 1;
-        }
-        if ($test_name eq "SWI" && $failure_code eq "SW_BOOT") {
-            $diag_fa_code{"SW_BOOT"} = 1;
         }
     }
     if ($stage ne "FST") {
@@ -1380,7 +1265,6 @@ sub parse_fst_rot {
     my $fail_linenum = 0;
     my @fa_code;
     my $fa_code_str = "";
-    my $cable_connected = 0;
 
     if (!open(TR3, '<', $fstlogfile)) {
         print "Cannot open file $fstlogfile\n";
@@ -1392,7 +1276,6 @@ sub parse_fst_rot {
             my $usbport = $1;
             my $rotfile = $fulllogpath."/"."rot_$usbport.log";
             $test_err_msg .= $line;
-            $cable_connected = 1;
             if (!open(TR, '<', $rotfile)) {
                 print "Cannot open file $rotfile\n";
                 next;
@@ -1448,15 +1331,11 @@ sub parse_fst_rot {
             close(TR);
         }
     }
-    if ($cable_connected == 0) {
-        $diag_fa_code{"CABLE_NOT_CONNECTED"} = 1;
-    } else {
-        foreach (@fa_code) {
-            print "fa code is: $_\n";
-            $fa_code_str .= $_."\n";
-        }
-        $diag_fa_code{$fa_code_str} = 1;
+    foreach (@fa_code) {
+        print "fa code is: $_\n";
+        $fa_code_str .= $_."\n";
     }
+    $diag_fa_code{$fa_code_str} = 1;
     if ($test_err_msg ne "") {
         $all_test_msg .= "log path: ".$fulllogpath."\n";
         $all_test_msg .= $test_err_msg;
@@ -1522,10 +1401,6 @@ sub parse_mtp_and_slot_log {
     my $err_msg_dump = 0;
     my $nic_status_dump = 0;
     my $slotnum = 0 + $slot;
-    my $vmarg_low_start = 0;
-    my $vmarg_low_start_linenum = 0;
-    my $vmarg_high_start = 0;
-    my $vmarg_high_start_linenum = 0;
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
@@ -1533,7 +1408,7 @@ sub parse_mtp_and_slot_log {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: CPLD_ADAP/ && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at/ && $line !~ m/elb_mc_mr_/) {
+        if($line =~ m/\[ERROR\]/ && $line !~ m/Unsupported device: / && $line !~ m/smbus\.go/ && $line !~ m/Failed to read device CPLD at/ && $line !~ m/elb_mc_mr_/) {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
@@ -1556,7 +1431,7 @@ sub parse_mtp_and_slot_log {
         }
         if ($line =~ m/DSC# fwupdate -s diagfw/) {
             $diag_fa_code{"BOOT_UBOOT"} = 1;
-            $slot_err_msg .= $line;
+                $slot_err_msg .= $line;
         }
         if (index($failure_code_list, "NIC_JTAG") != -1) {
             if ($line =~ m/NIC_JTAG Started/) {
@@ -1569,86 +1444,18 @@ sub parse_mtp_and_slot_log {
 	            $slot_err_msg .= $line;
             }
         }
-        if ($line =~ m/\/home\/diag\/diag\/scripts\/vmarg\.sh low/) {
-            $vmarg_low_start = 1;
-            $vmarg_low_start_linenum = $.;
-        }
-        if ($line =~ m/=== Vmarg is at low ===/) {
-            my $line2 = <TR3>;
-            if ($line2 =~ /sync/) {
-                my $line3 = <TR3>;
-                if ($line3 =~ /exit/) {
-                    my $line4 = <TR3>;
-                    if ($line4 =~ /Connection to .* closed./) {
-                        if ($vmarg_low_start == 1) {
-                            $vmarg_low_start = 0;
-                        }
-                    }
-                }
-            }
-        }
-        if ($line =~ m/\/home\/diag\/diag\/scripts\/vmarg\.sh high/) {
-            $vmarg_high_start = 1;
-            $vmarg_high_start_linenum = $.;
-        }
-        if ($line =~ m/=== Vmarg is at high ===/) {
-            my $line2 = <TR3>;
-            if ($line2 =~ /sync/) {
-                my $line3 = <TR3>;
-                if ($line3 =~ /exit/) {
-                    my $line4 = <TR3>;
-                    if ($line4 =~ /Connection to .* closed./) {
-                        if ($vmarg_high_start == 1) {
-                            $vmarg_high_start = 0;
-                        }
-                    }
-                }
-            }
-        }
         if ($line =~ m/Timeout, server .* not responding/) {
             $slot_err_msg .= $line;
-            if (($vmarg_low_start == 1) && ($. - $vmarg_low_start_linenum  < 30)) {
-                $diag_fa_code{"VMARG_L_SSH_HUNG"} = 1;
-            } elsif (($vmarg_high_start == 1) && ($. - $vmarg_high_start_linenum  < 30)) {
-                $diag_fa_code{"VMARG_H_SSH_HUNG"} = 1;
-            } else {
-                $diag_fa_code{"NIC_UNRESP_SSH_HUNG"} = 1;
-            }
+            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
-        if ($line =~ m/VRM_ARM        VBOOT/) {
-            if ($. - $vmarg_low_start_linenum  < 800) {
-                my $line2 = <TR3>;
-                if ($line2 =~ /.*MSG ::\s+(\d\.\d+)\s+(\d\.\d+)\s+.*/) {
-                    my $vboot = $1 * 1000;
-                    my $vout = $2 * 1000;
-                    if ($vout < $vboot * 0.95) {
-                        $slot_err_msg .= $line;
-                        $slot_err_msg .= $line2;
-                        $diag_fa_code{"VMARG_L_VOLT_LOW"} = 1;
-                    }
-                }
-            }
-        }
-        if ($line =~ m/DSC# uptime/) {
-            if ($. - $vmarg_low_start_linenum  < 100) {
-                $slot_err_msg .= $line;
-                $diag_fa_code{"VMARG_L_BOOT_UBOOT"} = 1;
-            }
-            if ($. - $vmarg_high_start_linenum  < 100) {
-                $slot_err_msg .= $line;
-                $diag_fa_code{"VMARG_H_BOOT_UBOOT"} = 1;
-            }
-        }
-        if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H") {
-            if (($line =~ m/env \| grep -v PS1/) && ($line !~ m /DSC#/)) {
+        if ($stage eq "NT" || $stage eq "4C-L" || $stage eq "4C-H" || $stage eq "2C-L" || $stage eq "2C-H") {
+            if ($line =~ m/env \| grep -v PS1/) {
                 my $line2 = <TR3>;
                 if ($line2 !~ m/ASIC_LIB=/) {
-                    if (($. - $vmarg_low_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_L_SSH_HUNG"})) {
-                        $diag_fa_code{"VMARG_L_CARD_REBOOTED"} = 1;
-                    } elsif (($. - $vmarg_high_start_linenum  < 200) && (exists $diag_fa_code{"VMARG_H_SSH_HUNG"})) {
-                        $diag_fa_code{"VMARG_H_CARD_REBOOTED"} = 1;
+                    if ((index($failure_code_list, "NIC_PARA_MGMT_AAPL_INIT") != -1) || (index($failure_code_list, "NIC_PARA_MGMT_INIT") != -1)) {
+                        $diag_fa_code{"MGMT_NIC_REBOOTED"} = 1;
                     } else {
-                        $diag_fa_code{"CARD_REBOOTED"} = 1;
+                        $diag_fa_code{"MISSING_ENV_VAR"} = 1;
                     }
                 }
             }
@@ -1686,6 +1493,18 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/ERROR :: mc\d initialization failed w/) {
             $slot_err_msg .= $line;
             $diag_fa_code{"DDR_INIT_FAILURE"} = 1;
+        }
+        if ($line =~ m/mmcblk0: error/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"EMMC_FAILURE"} = 1;
+        }
+        if ($line =~ m/status = StatusCode\.UNAVAILABLE/) {
+            my $line2 = <TR3>;
+            if ($line2 =~ m/failed to connect to all addresses/) {
+                $slot_err_msg .= $line;
+                $slot_err_msg .= $line2;
+                $diag_fa_code{"HSM_UNAVAILABLE"} = 1;
+            }
         }
     }
     if ($slot_err_msg ne "") {
@@ -1779,10 +1598,9 @@ sub parse_mtp_and_slot_log {
         }
         if ($line =~ m/\[NIC-$slot\].*Timeout connecting to UART console/) {
             $mtp_test_msg .= $line;
-            $diag_fa_code{"CONSOLE_UNRESP"} = 1;
+            $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
-        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
-            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/)) {
+        if ($line =~ m/\[NIC-$slot\].*Pre-Post \[\w+\] result to webserver failed/) {
             $mtp_test_msg .= $line;
             $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
         }
@@ -1813,35 +1631,18 @@ sub parse_fpga_and_ecc {
     print "#### parse_fpga_and_ecc logfile: $logfile, l1_failed: $l1_failed\n";
 
     my $sts_dump_exist = 0;
-    my $old_ecc_dump_exist = 0;
-    my $new_ecc_dump_exist = 0;
-    #my $corr_syn = 0;
-    #my $multi_corr_syn = 0;
-    #my $uncorr_syn = 0;
-    #my $multi_uncorr_syn = 0;
+    my $corr_syn = 0;
+    my $multi_corr_syn = 0;
+    my $uncorr_syn = 0;
+    my $multi_uncorr_syn = 0;
     my $cpld_sts = "";
     my $num_cpld_sts_errors = 0;
-    my $ecc_sts = "";
-    my $num_ecc_sts_errors = 0;
     my $smbus_err = 0;
     my $j2c_error_linenum = 0;
-    my $ecc_reg_linenum = 0;
-    my $ecc_start_linenum = 0;
-    my $ecc_result_linenum = 0;
-    my $ecc_not_valid = 0;
-    my $ecc_result_exist = 0;
-    my $ecc_result_exist_current = 0;
-    my $ecc_result_err = 0;
-    my $ecc_result_err_current = 0;
     my $c92_upgrade = 0;
     my $mtp_failed_slots = 0x0;
     my $mtp_loaded_slots = 0x0;
-    my $ecc_disp_start = 0;
-    my $ecc_j2c_s2i_timeout = 0;
-    my $ecc_j2c_error = 0;
-    my $ecc_j2c_error_current = 0;
     my $mc_info;
-    my $mc_int_status = "";
 
     if (!open(TR3, '<', $mtpfile)) {
         print "Cannot open file $mtpfile\n";
@@ -1876,54 +1677,18 @@ sub parse_fpga_and_ecc {
     }
     while(my $line = <TR3>)
     {
-        if ($line =~ m/START post dsp NIC_POWER fail debug/) {
-            my $line2;
-            do {
-                $line2 = <TR3>;
-            } while ($line2 !~ m/END post dsp NIC_POWER fail debug/);
-        }
         if ($sts_dump_exist == 0) {
-            if($line =~ m/(.*)(Addr: 0x21; Value:)\s(\w+)/) {
+            if($line =~ m/(.*)(Addr: 0x2a; Value:)\s(\w+)/) {
                 my $line2 = <TR3>;
                 if ($line2 =~ m/smbus\.go/) {
                     $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"} = 1;
                     $smbus_err = 1;
                 } else {
-                    if (($3 ne "0x2d") && ($3 ne "0x35")) {
-                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x21, expected: 0x2d, actual: $3\n";
+                    if ($3 ne "0x00") {
+                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x2a, expected: 0x00, actual: $3\n";
                         $num_cpld_sts_errors++;
-                        $diag_fa_code{"CON_REDIR_FAILURE(0x21)"} = 1;
+                        $diag_fa_code{"PUF_ERRORS(0x2a)"} = 1;
                     }
-                }
-            }
-            if($line =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
-            #if($line =~ m/(.*)(0x26; Value:)\s(\w+)/) { ##?? not work
-                print "##### line: $line";
-                if ($smbus_err == 0 && ((hex($3) | 0x20) != 0x27)) {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27 or 0x07, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"ASIC_PIN_STATUS_0_FAILURE(0x26)"} = 1;
-                }
-            }
-            if($line =~ m/(.*)(Addr: 0x27; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0xee") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x27, expected: 0xee, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"ASIC_PIN_STATUS_1_FAILURE(0x27)"} = 1;
-                }
-            }
-            if($line =~ m/(.*)(Addr: 0x28; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0xdf") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x28, expected: 0xdf, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"} = 1;
-                }
-            }
-            if($line =~ m/(.*)(Addr: 0x2a; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x00") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x2a, expected: 0x00, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"PUF_ERRORS(0x2a)"} = 1;
                 }
             }
             if($line =~ m/(.*)(Addr: 0x2b; Value:)\s(\w+)/) {
@@ -1954,40 +1719,18 @@ sub parse_fpga_and_ecc {
                     $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"} = 1;
                 }
             }
-            if($line =~ m/(.*)(Addr: 0x30; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x00") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x30, expected: 0x00, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"NIC_POWER_FAILURE"} = 1;
-                }
-            }
             if($line =~ m/(.*)(Addr: 0x31; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x00") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x31, expected: 0x00, actual: $3\n";
+                if ($smbus_err == 0 && $3 ne "0xff") {
+                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x31, expected: 0xff, actual: $3\n";
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"NIC_POWER_FAILURE"} = 1;
                 }
             }
             if($line =~ m/(.*)(Addr: 0x32; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x00") {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x32, expected: 0x00, actual: $3\n";
+                if ($smbus_err == 0 && $3 ne "0x0f") {
+                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x32, expected: 0x0f, actual: $3\n";
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"NIC_POWER_FAILURE"} = 1;
-                }
-            }
-            if($line =~ m/(.*)(Addr: 0x50; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x80") {
-                    if (!($l1_failed && ($3 eq "0x81"))) { #expected
-                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x50, expected: 0x80, actual: $3\n";
-                        $num_cpld_sts_errors++;
-                        if (hex($3) & 0x8) {
-                            $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"} = 1;
-                        } elsif (hex($3) & 0x1) {
-                            $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
-                        } else {
-                            $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
-                        }
-                    }
                 }
                 $sts_dump_exist = 1;
             }
@@ -1995,268 +1738,9 @@ sub parse_fpga_and_ecc {
                 $test_err_msg .= $line;
             }
         }
-        if ($ecc_result_err == 0) {
-            if($line =~ m/=== Dumping ECC info ===/) {
-                $ecc_start_linenum = $.;
-            }
-            if($line =~ m/=== Collect ECC info ===/) {
-                $ecc_disp_start = 1;
-                $ecc_j2c_error_current = 0;
-            }
-            #if ($old_ecc_dump_exist == 0) {
-                if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
-                    $j2c_error_linenum = $.;
-                    print "j2c_error_linenum: $j2c_error_linenum\n";
-                }
-                if($line =~ m/(.*)(Reg 0x305305e4; value:)\s(\w+)/) {
-                    $ecc_reg_linenum = $.;
-                    print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                    if ($3 eq "0xffffffff") {
-                        if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
-                            $ecc_j2c_error_current = 1;
-                        }
-                    } elsif ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
-                        $ecc_j2c_error_current = 1;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530454; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530458; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530464; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530468; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x3053046c; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line =~ m/(.*)(Reg 0x30530470; value:)\s(\w+)/)) {
-                    if ($3 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $3\n";
-                        $num_ecc_sts_errors++;
-                    }
-                    $old_ecc_dump_exist = 1;
-                }
-            #}
-
-            #if ($new_ecc_dump_exist == 0) {
-                if($line =~ m/j2c : read req error.*addr: 0x305305e4/) {
-                    $j2c_error_linenum = $.;
-                    print "j2c_error_linenum: $j2c_error_linenum\n";
-                }
-                if($line !~ m/P000/ && $line =~ m/Reg 0x305305e4:\s+(\w+)/) {
-                    $ecc_reg_linenum = $.;
-                    print "ecc_reg_linenum: $ecc_reg_linenum\n";
-                    if ($1 eq "0xffffffff") {
-                        if ($ecc_reg_linenum - $j2c_error_linenum == 3) {
-                            $ecc_j2c_error_current = 1;
-                        }
-                    } elsif ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x305305e4, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    } elsif ($ecc_reg_linenum - $j2c_error_linenum == 2) {
-                        $ecc_j2c_error_current = 1;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530454:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530454, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530458:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530458, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530464:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530464, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530468:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530468, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x3053046c:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x3053046c, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                }
-                if(($ecc_j2c_error_current == 0) && ($line !~ m/P000/ && $line =~ m/Reg 0x30530470:\s+(\w+)/)) {
-                    if ($1 ne "0x00000000") {
-                        $ecc_sts = $ecc_sts."Unexpected ECC: Reg 0x30530470, value: $1\n";
-                        $num_ecc_sts_errors++;
-                    }
-                    $new_ecc_dump_exist = 1;
-                }
-            #}
-
-            if ($ecc_j2c_error_current == 0) {
-                if ($line =~ m/MSG :: (MC\d: CORE\d: read syndrome).*/) {
-                    $mc_info .= $1."\r\n";
-                }
-                #if ($ecc_result_err == 0) {
-                    if($line =~ m/(Correctable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                        if ($mc_info ne "") {
-                            $ecc_sts .= $mc_info;
-                            $mc_info = "";
-                        }
-                        $ecc_sts = $ecc_sts.$1."\r\n";
-                        $num_ecc_sts_errors++;
-                        #$corr_syn = 1;
-                    }
-                #}
-                #if ($ecc_result_err == 0) {
-                    if($line =~ m/(Multi-bit Correctable ECC Syndrome:.*)/) {
-                        if ($mc_info ne "") {
-                            $ecc_sts .= $mc_info;
-                            $mc_info = "";
-                        }
-                        $ecc_sts = $ecc_sts.$1."\r\n";
-                        $num_ecc_sts_errors++;
-                        #$multi_corr_syn = 1;
-                    }
-                #}
-                #if ($ecc_result_err == 0) {
-                    if($line =~ m/(UnCorrectable ECC Syndrome:.*Incorrect Bit:.*)/) {
-                        if ($mc_info ne "") {
-                            $ecc_sts .= $mc_info;
-                            $mc_info = "";
-                        }
-                        $ecc_sts = $ecc_sts.$1."\r\n";
-                        $num_ecc_sts_errors++;
-                        #$uncorr_syn = 1;
-                    }
-                #}
-                #if ($ecc_result_err == 0) {
-                    if($line =~ m/(Multi-bit Uncorrectable ECC Syndrome:.*)/) {
-                        if ($mc_info ne "") {
-                            $ecc_sts .= $mc_info;
-                            $mc_info = "";
-                        }
-                        $ecc_sts = $ecc_sts.$1."\r\n";
-                        $num_ecc_sts_errors++;
-                        #$multi_uncorr_syn = 1;
-                    }
-                #}
-                #if(($ecc_result_err == 0) && ($line =~ m/FAIL: ECC_EN:/)) {
-                if($line =~ m/FAIL: ECC_EN:/) {
-                    $ecc_result_linenum = $.;
-                    if ($ecc_result_linenum - $ecc_start_linenum < 300) {
-                        $ecc_result_exist_current = 1;
-                        $ecc_result_err_current = 1;
-                        print $ecc_sts;
-                        $ecc_sts = $ecc_sts.$line;
-                    }
-                }
-                if($line =~ m/MSG :: ECC_EN:0x\d+ ECC_INTERRUPT:0x0 ECC_INTERRUPT_COUNTER:0x0/) {
-                    $ecc_result_linenum = $.;
-                    if ($ecc_result_linenum - $ecc_start_linenum < 300) {
-                        $ecc_result_exist_current = 1;
-                        $ecc_result_err_current = 0;
-                    }
-                }
-            }
-
-            if($line =~ m/ECC COLLECTION DONE/) {
-                $ecc_disp_start = 0;
-                if (($j2c_error_linenum != 0) && ($ecc_reg_linenum == 0)) {
-                    $ecc_j2c_error_current = 1;
-                }
-                $ecc_j2c_error |= $ecc_j2c_error_current;
-                $ecc_result_exist |= $ecc_result_exist_current;
-                $ecc_result_err |= $ecc_result_err_current;
-            }
-        }
-
-        if($line =~ m/MC.*(elb_mc_phy_int_status|elb_mc_controller_int_status)/) {
-            $mc_int_status = $line;
-        }
-        if($line =~ m/(PARITY|PARITY_ERR)=1/) {
-            $ecc_sts = $ecc_sts.$mc_int_status.$line;
-        }
-        if($line =~ m/S2I Operation timed out/) {
-            if ($ecc_disp_start) {
-                #$diag_fa_code{"Bad_J2C_ECC"} = 1;
-                $ecc_j2c_s2i_timeout = 1;
-            } else {
-                $diag_fa_code{"Bad_J2C"} = 1;
-            }
-        }
-        if($line =~ m/ERROR:i2c_read_count: 1001/) {
-            #print "$line";
-            $diag_fa_code{"Bad_I2C"} = 1;
-        }
-        if($line =~ m/fwupdate -p .*-C-92_/) {
-            $c92_upgrade = 1;
-        }
     }
     close(TR3);
-    # When ECC error is not detected, check if there's J2C error when dumping ECC
-    if (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
-        if (($ecc_j2c_s2i_timeout == 1) || ($ecc_j2c_error == 1)) {
-            $ecc_not_valid = 1;
-        }
-    }
-    if ($ecc_not_valid == 1) {
-        $diag_fa_code{"Bad_J2C_ECC"} = 1;
-        print "ECC not valid due to bad J2C\n";
-        $fa_row[$curr_row]{"ECC Reg"} = "ECC not valid due to bad J2C";
-    } elsif (($old_ecc_dump_exist == 0) && ($new_ecc_dump_exist == 0) && ($ecc_result_exist == 0)) {
-        print "ECC not dumped\n";
-        $fa_row[$curr_row]{"ECC Reg"} = "ECC not dumped";
-        my $retest_ts = "2021-11-23_00-00-00";
-        my $unixts = convert_ts($ts);
-        my $unixts_retest = convert_ts($retest_ts);
-        if ($unixts < $unixts_retest) {
-            $diag_fa_code{"RETEST_NEEDED"} = 1;
-        }
-        if (exists $diag_fa_code{"SNAKE_LOGFILE_NOT_EXIST"} ||
-            exists $diag_fa_code{"NO_ERR_IN_SNAKE_LOG"} ||
-            exists $diag_fa_code{"SNAKE_LOG_EMPTY"} ||
-            exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
-            $diag_fa_code{"RETEST_NEEDED"} = 1;
-        }
-    } elsif (($num_ecc_sts_errors == 0) && ($ecc_result_err == 0)) {
-        print "ECC status OK\n";
-        $fa_row[$curr_row]{"ECC Reg"} = "ECC status OK";
-    } else {
-        chomp($ecc_sts);
-        $fa_row[$curr_row]{"ECC Reg"} = $ecc_sts;
-        if ($c92_upgrade == 1) {
-            $diag_fa_code{"DDR_ECC_FAILURE_AFTER_C92_UPGRADED"} = 1;
-        } else {
-            $diag_fa_code{"DDR_ECC_FAILURE"} = 1;
-        }
-    }
+    $fa_row[$curr_row]{"ECC Reg"} = "Not Applicable";
 
     if ($sts_dump_exist == 0) {
         print "CPLD registers not dumped\n";
@@ -2275,10 +1759,12 @@ sub parse_fpga_and_ecc {
 }
 
 sub parse_mtp_diag_file {
-    my ($mtpdiagfile) = @_;
+    my ($mtpdiagfile, $slot) = @_;
+    my $test_err_msg = "";
     my $mfr_id_linenum = 0;
     my $failed_psu1_linenum = 0;
     my $failed_psu2_linenum = 0;
+    my $start_setup = 0;
 
     if (!open(TR3, '<', $mtpdiagfile)) {
         print "Cannot open file $mtpdiagfile\n";
@@ -2286,6 +1772,22 @@ sub parse_mtp_diag_file {
     }
     while(my $line = <TR3>)
     {
+        if ($line =~ m/Starting setup env on slot $slot/) {
+            $start_setup = 1;
+        }
+        if ($line =~ m/Setup env on slot $slot env setup done/) {
+            $start_setup = 0;
+        }
+        if ($start_setup == 1 && $line =~ m/fsck\.ext2: No such file or directory while trying to open \/dev\/mmcblk0p10/) {
+            $test_err_msg .= $line;
+            $diag_fa_code{"NO_EMMC_PARTITION"} = 1;
+            $start_setup = 0;
+        }
+        if ($start_setup == 1 && $line =~ m/mmcblk0: error/) {
+            $test_err_msg .= $line;
+            $diag_fa_code{"EMMC_FAILURE"} = 1;
+            $start_setup = 0;
+        }
         if ($line =~ m/MFR_ID: FSP GROUP/) {
             $mfr_id_linenum = $.;
         }
@@ -2315,4 +1817,7 @@ sub parse_mtp_diag_file {
         }
     }
     close(TR3);
+    if ($test_err_msg ne "") {
+        $all_test_msg .= $test_err_msg;
+    }
 }

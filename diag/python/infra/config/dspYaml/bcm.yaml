@@ -80,11 +80,7 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 360
+                    ALL: 370
                 INFO: Test timeout setting
-            duration:
-                VALUE:
-                    ALL: 900
-                INFO: test time
 
 ...

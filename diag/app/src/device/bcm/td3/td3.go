@@ -358,6 +358,21 @@ func PrintBCMShellVLANcmd() (err int){
     return
 }
 
+
+/***********************************************************************************************************
+*
+*  Execute a broadcom command using HPE's broadcom shell.
+*  NOTE: There is a bug where when diags exit the bcm shell, it leaves on open file descriptor on HPE's
+*  switchd process.   We need to monitor how many times we run bcm commands and exit the shell.
+* 
+*  There is another bug if we just let Python close the telnet connection without inputting 'exit' at the bcm
+*  shell prompt, it can cause the bcm shell prompt to get stuck thinking it still has a telnet connection open,
+*  and it will no longer accept telnet connections to the bcm shell which locks the diags out of accessing
+*  the bcm shell.
+* 
+*  Messy!
+*
+***********************************************************************************************************/
 func ExecBCMshellCMD(commands string, cmdWaitTime int) (command_output string, err int) {
     var cmdString string
     var retry int = 2
@@ -450,6 +465,85 @@ func ExecBCMshellCMD(commands string, cmdWaitTime int) (command_output string, e
             return
         }
     }
+    return
+}
+
+
+/***********************************************************************************************************
+*
+*  Execute a broadcom command using the diagnostics built broadcom shell. 
+*  NOTE: This means we have to shut down HPE's switchd process and traffic testing cannot be done 
+* 
+* 
+*  /fs/nos/home_diag/diag/bcmshell
+***********************************************************************************************************/
+func Exec_DIAG_BUILT_BCMshellCMD(commands string, cmdWaitTime int) (command_output string, err int) {
+    var cmdString string
+    var path_start_bcm_sh_script string = "/fs/nos/home_diag/diag/bcmshell/start_bcm_sh.sh"
+    var path_script_executable string = "/fs/nos/home_diag/diag/bcmshell/bcm_diag_shell_execute_cmd.py"
+    var path_bcm_shell string = "/fs/nos/home_diag/diag/bcmshell/bcm.user"
+    var path_bcm_config string = "/fs/nos/home_diag/diag/bcmshell/config.bcm"
+   
+    err = errType.SUCCESS
+
+    fmt.Printf("Exec_DIAG_BUILT_BCMshellCMD\n");
+    exists, _ := taorfpga.Path_exists(path_bcm_shell)
+    if exists == false {
+        cli.Printf("e", "BCM files misisng --> %s.   Check Diag Package has the needed files\n",path_bcm_shell)
+        err = errType.FAIL
+        return
+    }
+
+    exists, _ = taorfpga.Path_exists(path_bcm_config)
+    if exists == false {
+        cli.Printf("e", "BCM files misisng --> %s.   Check Diag Package has the needed files\n",path_bcm_config)
+        err = errType.FAIL
+        return
+    }
+
+    exists, _ = taorfpga.Path_exists(path_start_bcm_sh_script)
+    if exists == false {
+        cli.Printf("e", "BCM files misisng --> %s.   Check Diag Package has the needed files\n",path_start_bcm_sh_script)
+        err = errType.FAIL
+        return
+    }
+    
+    exists, _ = taorfpga.Path_exists(path_script_executable)
+    if exists == false {
+        cli.Printf("e", "BCM files misisng --> %s.   Check Diag Package has the needed files\n",path_script_executable)
+        err = errType.FAIL
+        return
+    }
+    cmdStr := fmt.Sprintf("sed -i 's/.*timeout =.*/timeout = %d/' %s ", cmdWaitTime, path_script_executable)
+    _ , _ = exec.Command("sh", "-c", cmdStr).Output()
+
+
+    //stop switchd if it's running and start the DIAG compile bcm shell
+    {
+        cmd := exec.Command("sh", "-c", path_start_bcm_sh_script)
+        errGo := cmd.Start()
+        if errGo != nil {
+            dcli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+            return
+        }
+    }
+    time.Sleep(time.Duration(3) * time.Second)
+        
+
+    //Execute Command in diag bcm shell
+    cmdString = path_script_executable + " " + "\"" + commands + "\""           //" \"show temp\""
+    output, errGo := exec.Command("bash", "-c", cmdString).Output()
+    if errGo != nil {
+            cli.Println("e", "Failed to exec bcm shell command:",cmdString," GoERR=",errGo)
+            cli.Printf("e", "Script output returned =%s\n",string(output))
+            err = errType.FAIL
+            return
+    } else {
+        command_output = string(output)
+        return
+    }
+
     return
 }
 
@@ -828,7 +922,8 @@ func DumpRxTxCounters() (err int) {
  *                              5 - PRBS31
  *                              6 - PRBS58
 ***********************************************************/
-func Prbs(sleep int, prbs string) (err int) {
+/*
+func Prbs(sleep int, prbs string, testGBinterface int) (err int) {
     var rc int
     var errGo error
     var data32 uint32
@@ -836,6 +931,7 @@ func Prbs(sleep int, prbs string) (err int) {
     var SFPnumber, QSFPnumber, bitcompare uint32
     var port25G_s string
     var port100G_s string
+    var portGearBox_s string
     var tmp_s string
     var prbsType string
     var cmdString, command, output string
@@ -862,7 +958,7 @@ func Prbs(sleep int, prbs string) (err int) {
         goto endBCMprbs
     }
 
-    /* Check SFP's are present */
+    // Check SFP's are present 
     cli.Printf("i", "Checking for SFP Presence\n")
     addr = taorfpga.D0_FP_SFP_STAT_3_0_REG;
     for SFPnumber=0;SFPnumber<taorfpga.MAXSFP;SFPnumber++ {
@@ -883,7 +979,7 @@ func Prbs(sleep int, prbs string) (err int) {
     }
 
 
-    /* Check QSFP's are present */
+    // Check QSFP's are present 
     cli.Printf("i", "Checking for QSFP Presence\n")
     addr = taorfpga.D0_FP_QSFP_STAT_51_48_REG;
     for QSFPnumber=0;QSFPnumber<taorfpga.MAXSFP;QSFPnumber++ {
@@ -926,7 +1022,7 @@ func Prbs(sleep int, prbs string) (err int) {
         goto endBCMprbs
     }
 
-    /* Enable SFP's */
+    // Enable SFP's 
     cli.Printf("i", "Enabling SFP's\n")
     addr = taorfpga.D0_FP_SFP_CTRL_3_0_REG;
     for i:=0;i<taorfpga.MAXSFP;i++ {
@@ -938,7 +1034,7 @@ func Prbs(sleep int, prbs string) (err int) {
         }
     }
 
-    /* Enable QSFP's */
+    // Enable QSFP's 
     cli.Printf("i", "Enabling QSFP's\n")
     addr = taorfpga.D0_FP_QSFP_CTRL_51_48_REG;
     for i:=0;i<taorfpga.MAXQSFP;i++ {
@@ -964,7 +1060,16 @@ func Prbs(sleep int, prbs string) (err int) {
         }
         port100G_s = port100G_s + tmp_s
     }
-    
+
+    for i:=TAOR_INTERNAL_PORT_START; i<(TAOR_INTERNAL_PORT_START+TAOR_INTERNAL_PORTS); i++ {
+        if i == (TAOR_INTERNAL_PORT_START + TAOR_INTERNAL_PORTS - 1) {
+            tmp_s = fmt.Sprintf("%s", TaorPortMap[i].Name)
+        } else {
+            tmp_s = fmt.Sprintf("%s,", TaorPortMap[i].Name)
+        }
+        portGearBox_s = portGearBox_s + tmp_s
+    }
+
 
     //No return output to check on this command
     cli.Printf("i", "Enabling all 25G Ports\n")
@@ -1126,25 +1231,6 @@ prbslinkcheckretry:
     }
     time.Sleep(time.Duration(sleep/2) * (time.Second))
 
-    /*
-    t1 := time.Now()
-    for
-    {
-        t2 := time.Now()
-        diff := t2.Sub(t1)
-        data32, rc = ReadReg("TD3", "TOP_AVS_SEL_REG")
-        //fmt.Printf("AVS REG=%x\n", data32)
-        if rc != errType.SUCCESS {
-            cli.Printf("e", "ERROR FAILED TO READ TOP_AVS_SEL_REG")
-            break
-        }
-        //fmt.Println(" Elapsed Time=",diff," Duration=",duration," High Temp=", TD3highTemp )
-        if uint32(diff.Seconds()) > uint32(sleep) {
-            break
-        }
-    } 
-    */ 
-
 
     //Check output
     //xe6 (21):  PRBS OK!
@@ -1238,7 +1324,8 @@ endBCMprbs:
         dcli.Printf("e", "BCM PRBS TEST FAILED\n")
     }
     return
-}
+} 
+*/ 
 
 
 func LinkFlap() (err int) {
@@ -2758,25 +2845,50 @@ func BCMShell_Test_Init() (err int) {
     exec.Command("bash", "-c", "echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove").Output()
     time.Sleep(time.Duration(1) * time.Second)
     exec.Command("bash", "-c", "echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove").Output()
+    time.Sleep(time.Duration(2) * time.Second)
+
+    currDir, _ := os.Getwd()
+    os.Chdir("/fs/nos/home_diag/diag/bcmshell")
 
     //copy over some needed filesswi
-    cli.Printf("i","Copying Files\n");
-    execOutput, errGo = exec.Command("sh", "-c", "cp /fs/nos/home_diag/diag/scripts/taormina/bcm/* /run/openvswitch").Output()
-    if errGo != nil {
-        cli.Println("e", string(execOutput))
-        cli.Println("e", errGo)
-        err = errType.FAIL
-    }
+    //cli.Printf("i","Copying Files\n");
+    //execOutput, errGo = exec.Command("sh", "-c", "cp /fs/nos/home_diag/diag/scripts/taormina/bcm/* /run/openvswitch").Output()
+    //if errGo != nil {
+    //    cli.Println("e", string(execOutput))
+    //    cli.Println("e", errGo)
+    //    err = errType.FAIL
+    //}
 
     cli.Printf("i","BCM Shell, Running init code\n");
-    command = fmt.Sprintf("rcload rc.soc;counter off;l2mode off;linkscan off;memscan off;sramscan off")
-    output, err = ExecBCMshellCMD(command, 20)
+    command = fmt.Sprintf("rcload rc.soc")
+    output, err = Exec_DIAG_BUILT_BCMshellCMD(command, 20)
     if err != errType.SUCCESS {
         cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
         err = errType.FAIL
-        return
+        //return
+    } else {
+        cli.Printf("e","%s", output)
+        cli.Printf("i","BCM Shell, Running init code, phase 2\n");
+        command = fmt.Sprintf("counter off;l2mode off;linkscan off;memscan off;sramscan off")
+        output, err = Exec_DIAG_BUILT_BCMshellCMD(command, 20)
+        if err != errType.SUCCESS {
+            cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
+            err = errType.FAIL
+            //return
+        }
+        cli.Printf("e","%s", output)
+
     }
+
+    os.Chdir(currDir)
+
+
     cli.Printf("i", "'%s'\n", output)
+    if (err == errType.SUCCESS) {
+        cli.Printf("i", "'Trident3 Test Init PASSED\n")
+    } else {
+        cli.Printf("i", "'Trident3 Test Init FAILED\n")
+    }
     return
 }
 
@@ -2784,53 +2896,37 @@ func BCMShell_Test_Init() (err int) {
 /***************************************************************************************
 
 ****************************************************************************************/
-func BCMshell_Test_Run(testnumber int)(err int) {
+func BCMshell_Test_Run(testnumber int)(loopcnt int, runcnt int, passcnt int, failcnt int, err int) {
     var command string 
     var output string 
     var TestWaitLength int = 5
+    var nextline int = 0
+    i:=0
 
-    switch(testnumber){
-        case 1: 
-        case 2: 
-        case 3: 
-        case 4:
-        case 5:
-        case 21:
-        case 30:
-        case 31:
-        case 50:
-        //case 51:  <-- CAUSES CXOS TO CRASH AND REBOOT
-        case 52:
-        case 516:
-        default: {
-            cli.Printf("e", "Test ID %d is not a valid test\n", testnumber);
-            err = errType.FAIL
-            return
-        }
-    }
-
+    currDir, _ := os.Getwd()
+    os.Chdir("/fs/nos/home_diag/diag/bcmshell")
 
     switch(testnumber){
 
         case 1: 
             cli.Printf("i", "tr 1: Running Register reset defaults ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
         case 2: 
             cli.Printf("i", "tr 2: Running PCI Compliance ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
         case 3: 
             cli.Printf("i", "tr 3: Running Register read/write ...\n")
-            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;tc %d;tr %d mask64;tl %d", testnumber, testnumber, testnumber)
-            TestWaitLength = 20
+            command = fmt.Sprintf("tc %d;tr %d mask64;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 25
         case 4:
             cli.Printf("i", "tr 4: Running PCI S-Channel Buf ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
         case 5:
             cli.Printf("i", "tr 5: BIST ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
         case 21:
             cli.Printf("i", "tr 21: Running CPU Benchmarks ...\n")
@@ -2838,27 +2934,75 @@ func BCMshell_Test_Run(testnumber int)(err int) {
             TestWaitLength = 20
         case 30:
             cli.Printf("i", "tr 30: Running counter width verification test ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
-            TestWaitLength = 20
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 25
         case 31:
             cli.Printf("i", "tr 31: Running counter read/write test ...\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 25
+        case 32:
+            cli.Printf("i", "tr 32: Running XGS L2 Ins/Lookup/Del ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
+        case 33:
+            cli.Printf("i", "tr 33: XGS L2 Overflow Ins ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 20
+        case 34:
+            cli.Printf("i", "tr 34: XGS L2 Hashing ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 20
+        case 35:
+            cli.Printf("i", "tr 35: XGS L2 Delete by Port ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 20
+        case 36:
+            cli.Printf("i", "tr 36: XGS L2 Delete by VLAN ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 25
         case 50:
             cli.Printf("i", "tr 50: Memory Fill/Verify ...\n")
-            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload tr50_bcm56870_a0.soc;tl %d", testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload /fs/nos/home_diag/diag/bcmshell/tr50_bcm56870_a0.soc;tl %d", testnumber, testnumber)
             TestWaitLength = 240
-        //case 51:
-        //    cli.Printf("i", "tr 51: Memory Random Addr/Data\n")
-        //    command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload tr51_bcm56870_a0.soc;tl %d", testnumber, testnumber)
-        //    TestWaitLength = 240
+        case 51:
+            cli.Printf("i", "tr 51: Memory Random Addr/Data\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload /fs/nos/home_diag/diag/bcmshell/tr51_bcm56870_a0.soc;tl %d", testnumber, testnumber)
+            TestWaitLength = 240
         case 52:
             cli.Printf("i", "tr 52: Rand Mem Addr, write all\n")
-            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload tr52_bcm56870_a0.soc;tl %d", testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;rcload /fs/nos/home_diag/diag/bcmshell/tr52_bcm56870_a0.soc;tl %d", testnumber, testnumber)
             TestWaitLength = 240
+        case 54:
+            cli.Printf("i", "tr 54: TD3/MV2 Special Mem Test ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 25
+        case 85:
+            cli.Printf("i", "tr 85: L3 IPV6 Overflow Ins ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 60
+        case 86:
+            cli.Printf("i", "tr 86: L3 IPV6 Hashing ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 60
+        case 87:
+            cli.Printf("i", "tr 87: L3 IPV4 Overflow Ins ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 90
+        case 88:
+            cli.Printf("i", "tr 88: L3 IPV4 Hashing ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 60
+        case 90:
+            cli.Printf("i", "tr 90: TX Reload Test ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 60
+        case 91:
+            cli.Printf("i", "tr 91: RX Reload Test ...\n")
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            TestWaitLength = 60
         case 516:
             cli.Printf("i", "tr 516: TCAM BIST\n")
-            command = fmt.Sprintf("tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
+            command = fmt.Sprintf("init soc;cancun load cmh;cancun load cch;init misc;memscan off;sramscan off;tc %d;tr %d;tl %d", testnumber, testnumber, testnumber)
             TestWaitLength = 20
         default: {
             cli.Printf("e", "Test ID %d is not a valid test\n", testnumber);
@@ -2866,15 +3010,71 @@ func BCMshell_Test_Run(testnumber int)(err int) {
             return
         }
     }
-    output, err = ExecBCMshellCMD(command, TestWaitLength)
+    //output, err = ExecBCMshellCMD(command, TestWaitLength)
+    output, err = Exec_DIAG_BUILT_BCMshellCMD(command, TestWaitLength)
     if err != errType.SUCCESS {
         cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
         err = errType.FAIL
-        return
     }
-    cli.Printf("i", "'%s'\n", output)
+
+    if err == errType.SUCCESS {
+        cli.Printf("i", "'%s'\n", output)
+        s := strings.Split(string(output), "\n")
+        for _, temp := range s {
+            if nextline == 1 {
+                bars := strings.Split(string(temp), "|")
+                for _, temp1 := range bars {
+                    temp1 = strings.TrimSpace(temp1)
+                    stat, _ := strconv.ParseUint(temp1, 0, 64)
+                    if i==3 {
+                        loopcnt = int(stat)
+                    }
+                    if i==4 {
+                        runcnt = int(stat)
+                    }
+                    if i==5 {
+                        passcnt = int(stat)
+                    }
+                    if i==6 {
+                        failcnt = int(stat)
+                        break
+                    }
+                    i++
+                }
+                /*
+                
+                re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
+                submatchall := re.FindAllString(string(temp), -1)
+                //fmt.Println("submatch=", submatchall)
+                for _, element := range submatchall {
+                    stat, _ := strconv.ParseUint(strings.Replace(element, ",", "", -1), 0, 64)
+                    if i==1 {
+                        loopcnt = int(stat)
+                    }
+                    if i==2 {
+                        runcnt = int(stat)
+                    }
+                    if i==3 {
+                        passcnt = int(stat)
+                    }
+                    if i==4 {
+                        failcnt = int(stat)
+                        break
+                    }
+                    i++
+                } 
+                */
+                //  S |  50| Memory Fill/Verify        |    1| 2469| 2469|    0| (none) 
+                break
+            }
+            if strings.Contains(temp, "-----+----+---------------------------+-----+-----+-----+-----+-----------")==true {
+                nextline = 1
+            }
+        }
+    }
 
 
+    os.Chdir(currDir)
     return
 }
 
@@ -2883,7 +3083,8 @@ func BCMshell_Test_Run(testnumber int)(err int) {
 BCM.0> tl 50
 U/A/S|Test|            Test           |Loop | Run |Pass |Fail |  Arguments
      | #  |            Name           |Count|Count|Count|Count|
------+----+---------------------------+-----+-----+-----+-----+-----------
+-----+----+---------------------------+-----+-----+-----+-----+----------- 
+
    S |  50| Memory Fill/Verify        |    1| 2469| 2469|    0| (none)
 BCM.0>
 ****************************************************************************************/
@@ -2891,6 +3092,7 @@ func BCMshell_Test_Results(testnumber int)(loopcnt int, runcnt int, passcnt int,
     var i int = 0
     var output string
     command := fmt.Sprintf("tl %d", testnumber)
+
 
     output, err = ExecBCMshellCMD(command, 5)
     if err != errType.SUCCESS {
@@ -2926,47 +3128,80 @@ func BCMshell_Test_Results(testnumber int)(loopcnt int, runcnt int, passcnt int,
 }
 
 
+type TD3_Test_List_s struct {
+    testNumber int
+    testExpectedPassCnt int    //expected pass count
+    testName string
+    loopcnt int
+    runcnt int
+    passcnt int
+    failcnt int
+}
+
+
 func TD3_Run_Diags() (err int){
     var rc int
-    testList    := []int{  2,   4, 1, 3, 21, 30, 31, 516, 5,   /*52,*/   50}   
-    testPassCnt := []int{100, 100, 1, 1,  1,  1,  1,   1, 1, /*2023,*/ 2469}
-    testName    := []string{  "PCI Compliance",   "PCI S-Channel Buf", "Register reset defaults", "Register read/write", "CPU Benchmarks", "Counter widths", "Counter read/write", "CAMBIST", "BIST",   "Rand Mem Addr, write all",   "Memory Fill/Verify"}   
 
-    rc = BCMShell_Test_Init()
-    if rc != errType.SUCCESS {
-        cli.Printf("e", "BCM Shell Test Initialization FAiled\n")
-        err = errType.FAIL
-        goto endTD3test
+    TD3testList_s := []TD3_Test_List_s{
+        {2   ,  100, "PCI Compliance", 0, 0, 0, 0},             //5s
+        {4   ,  100, "PCI S-Channel Buf", 0, 0, 0, 0},          //4s
+        {1   ,    1, "Register reset defaults", 0, 0, 0, 0},    //6s
+        {3   ,    1, "Register read/write", 0, 0, 0, 0},        //6s
+        {21  ,    1, "CPU Benchmarks", 0, 0, 0, 0},             //12s
+        {30  ,    1, "Counter widths", 0, 0, 0, 0},             //8s
+        {31  ,    1, "Counter read/write", 0, 0, 0, 0},         //8s
+        {516  ,    1, "CAMBIST", 0, 0, 0, 0},                   //8s
+        //{52  ,    2023, "Rand Mem Addr, write all", 0, 0, 0, 0},//173s
+        //{51  ,    2023, "Memory Random Addr/Data", 0, 0, 0, 0}, //113s
+        {50  ,    2469, "Memory Fill/Verify", 0, 0, 0, 0},      //135s    2569
+        {32, 1, "XGS L2 Ins/Lookup/Del", 0, 0, 0, 0},           //11s
+        //{33, 1, "XGS L2 Overflow Ins", 0, 0, 0, 0},             //10s
+        //{34, 1, "XGS L2 Hashing", 0, 0, 0, 0},                  //20s
+        //{35, 1, "XGS L2 Delete by Port", 0, 0, 0, 0},           //7s
+        ////{36, 1, "XGS L2 Delete by VLAN", 0, 0, 0, 0}, haning?
+        {54, 1, "TD3/MV2 Special Mem Test", 0, 0, 0, 0},        //18s
+        //{85, 1, "L3 IPV6 Overflow Ins", 0, 0, 0, 0},            //47s
+        //{86, 1, "L3 IPV6 Hashing", 0, 0, 0, 0},                 //41s
+        //{87, 1, "L3 IPV4 Overflow Ins", 0, 0, 0, 0},            //56s
+        //{88, 1, "L3 IPV4 Hashing", 0, 0, 0, 0},                 //37s
+        //{90, 1, "TX Reload Test", 0, 0, 0, 0},                  //37s
+        {91, 1, "RX Reload Test", 0, 0, 0, 0},                  //18s
     }
 
-
-
-    for i:=0; i < len(testList); i++ {
-        err = BCMshell_Test_Run(testList[i])
+    for i, _ := range(TD3testList_s) {
+        TD3testList_s[i].loopcnt, TD3testList_s[i].runcnt, TD3testList_s[i].passcnt, TD3testList_s[i].failcnt, err = BCMshell_Test_Run(TD3testList_s[i].testNumber)
+        cli.Printf("i", "Test-%.04d (%.25s) LoopCnt=%d Runcnt=%d Passcnt=%d Failcnt=%d\n ", TD3testList_s[i].testNumber, TD3testList_s[i].testName, TD3testList_s[i].loopcnt, TD3testList_s[i].runcnt, TD3testList_s[i].passcnt, TD3testList_s[i].failcnt)
+        if (TD3testList_s[i].passcnt != TD3testList_s[i].testExpectedPassCnt) {
+            cli.Printf("e", "Test-%.04d Expected Passcount=%d    Read Passcount=%d\n ",TD3testList_s[i].testNumber, TD3testList_s[i].testExpectedPassCnt, TD3testList_s[i].passcnt)
+            rc = errType.FAIL
+        }
+        if (TD3testList_s[i].runcnt != TD3testList_s[i].testExpectedPassCnt) {
+            cli.Printf("e", "Test-%.04d Expected Runcount=%d    Read Runcount=%d\n ",TD3testList_s[i].testNumber, TD3testList_s[i].testExpectedPassCnt, TD3testList_s[i].runcnt)
+            rc = errType.FAIL
+        }
+        if (TD3testList_s[i].failcnt != 0) {
+            cli.Printf("e", "Test-%.04d Fail Count=%d\n ",TD3testList_s[i].testNumber, TD3testList_s[i].failcnt)
+            rc = errType.FAIL
+        }
         if err != errType.SUCCESS {
             goto endTD3test
         }
     }
 
-
-    for i:=0; i < len(testList); i++ {
-        loop, runcnt, passcnt, failcnt, _ := BCMshell_Test_Results(testList[i])
-        cli.Printf("i", "Test-%.04d (%.25s) LoopCnt=%d Runcnt=%d Passcnt=%d Failcnt=%d\n ", testList[i], testName[i], loop, runcnt, passcnt, failcnt)
-        if (passcnt != testPassCnt[i]) {
-            cli.Printf("e", "Test-%.04d Expected Passcount=%d    Read Passcount=%d\n ",testList[i], testPassCnt[i], passcnt)
-            rc = errType.FAIL
-        }
-        if (runcnt != testPassCnt[i]) {
-            cli.Printf("e", "Test-%.04d Expected Runcount=%d    Read Runcount=%d\n ",testList[i], testPassCnt[i], runcnt)
-            rc = errType.FAIL
-        }
-        if (failcnt != 0) {
-            cli.Printf("e", "Test-%.04d Fail Count=%d\n ",testList[i], failcnt)
-            rc = errType.FAIL
-        }
-    }
-
 endTD3test:
+    cli.Printf("i", "|Test|            Test           |Loop | Run |Pass |Fail |  Arguments\n")
+    cli.Printf("i", "| #  |            Name           |Count|Count|Count|Count|\n")
+    cli.Printf("i", "+----+---------------------------+-----+-----+-----+-----+-----------\n")
+    for i, _ := range(TD3testList_s) {
+        stestnum := fmt.Sprintf("%4v", strconv.Itoa(TD3testList_s[i].testNumber))
+        stestname := fmt.Sprintf("%27v", TD3testList_s[i].testName)
+        stestloopcnt := fmt.Sprintf("%5v", strconv.Itoa(TD3testList_s[i].loopcnt))
+        stestruncnt := fmt.Sprintf("%5v", strconv.Itoa(TD3testList_s[i].runcnt))
+        stestpasscnt := fmt.Sprintf("%5v", strconv.Itoa(TD3testList_s[i].passcnt))
+        stestfailcnt := fmt.Sprintf("%5v", strconv.Itoa(TD3testList_s[i].failcnt))
+        cli.Printf("i","|%s|%s|%s|%s|%s|%s\n",stestnum,stestname,stestloopcnt,stestruncnt,stestpasscnt,stestfailcnt)
+    }
+        cli.Printf("i", "+----+---------------------------+-----+-----+-----+-----+-----------\n")
     if rc != errType.SUCCESS {
         err = errType.FAIL
     }
@@ -2976,6 +3211,10 @@ endTD3test:
         dcli.Printf("e", "BCM TD3DIAG TEST FAILED\n")
     }
 
+//U/A/S|Test|            Test           |Loop | Run |Pass |Fail |  Arguments
+//     | #  |            Name           |Count|Count|Count|Count|
+//-----+----+---------------------------+-----+-----+-----+-----+----------- 
+//   S |  50| Memory Fill/Verify        |    1| 2469| 2469|    0| (none)
 
     return
 }
