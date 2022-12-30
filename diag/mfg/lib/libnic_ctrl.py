@@ -4043,7 +4043,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to set board config")
             return False
-        if "Mode successfully set" in cmd_buf:
+        if "Mode successfully set" in cmd_buf or "Config successfully set" in cmd_buf:
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
