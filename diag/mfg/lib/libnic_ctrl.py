@@ -2807,7 +2807,7 @@ class nic_ctrl():
         PROD_NUM_FIELD = r"HPE Product Number"
         pn_table = {
             NIC_Type.NAPLES25SWM: [
-                (PROD_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                (PROD_NUM_FIELD, "P26969\-B21")
                 ]
         }
         if self._nic_type not in pn_table.keys():
