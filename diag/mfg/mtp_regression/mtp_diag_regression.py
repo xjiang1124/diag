@@ -1248,6 +1248,7 @@ def single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list,
 
     if nic_type not in FPGA_TYPE_LIST:
         testlist = []
+        return True
 
     if test_fpga:
         testlist = ["TEST_FPGA_PROG"]
