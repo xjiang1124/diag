@@ -90,6 +90,10 @@ class nic_ctrl():
 
     def nic_set_pn(self, new_pn):
         self._pn = new_pn
+        # needed for capri:
+        pn, pn_regex = libmfg_utils.part_number_lookup(new_pn)
+        if pn:
+            self._pn_format = pn_regex
 
     def nic_set_err_msg(self, err_msg):
         if not self._err_msg:
