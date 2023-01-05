@@ -4407,7 +4407,7 @@ class nic_ctrl():
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
-        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
+        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1), timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()

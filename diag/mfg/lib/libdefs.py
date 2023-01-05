@@ -233,6 +233,7 @@ class MTP_DIAG_Logfile:
     NIC_ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
+    ONBOARD_ASIC_DUMP_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*tar"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_SRN_TEST_LOG_FILES = "/home/diag/mtp_srn_script/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
