@@ -523,6 +523,8 @@ class MFG_DIAG_CMDS:
     MTP_PARA_PCIE_PRBS_FMT    = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
     MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX   -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
     MTP_PARA_DDR_BIST_ELBA_FMT = "ddr_bist.py -arm_ddrbist -slot_list '{:s}' -wtime=780 -vmarg {:s}"
+    MTP_NCSI_RMII_LINKUP_FMT = "nic_test.py -rmii_linkup_test   -slot_list='{:s}' -vmarg {:s}"
+    MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"

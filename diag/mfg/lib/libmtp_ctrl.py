@@ -3395,7 +3395,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_program_nic_fpga(self, slot, main_only=False):
+    def mtp_program_nic_fpga(self, slot, partition_list=None, alternate_image_list=None):
         """
         This sequence has to be followed:
         # cpldapp -writeflash ./lac2_dell_golden_2_3.bin cfg1
@@ -3450,10 +3450,14 @@ class mtp_ctrl():
             "cfg2": NIC_IMAGES.timer1_img[nic_type],
             "cfg3": NIC_IMAGES.timer2_img[nic_type]
         }
-        if not main_only:
-            program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
-        else:
-            program_sequence = ["cfg0"]
+        program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
+        
+        if partition_list is not None:
+            program_sequence = partition_list
+            if alternate_image_list is not None:
+                for prt, img in zip(partition_list, alternate_image_list):
+                    partition_img_dict[prt] = img
+
         for partition in program_sequence:
             img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + partition_img_dict[partition]
             if not self._nic_ctrl_list[slot].nic_program_cpld(img, partition):
@@ -5634,6 +5638,45 @@ class mtp_ctrl():
 
         return [ret, nic_fail_list]
 
+    def mtp_mgmt_run_test_mtp_para_with_oneline_summary(self, test, nic_list, vmarg):
+        if not nic_list:
+            return [True, nic_list[:]]
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return ["TIMEOUT", nic_list[:]]
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+
+        if test == "RMII_LINKUP":
+            cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, vmarg)
+            sig_list = "rmii_linkup_test done"
+        elif test == "UART_LPBACK":
+            cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, vmarg)
+            sig_list = "uart_loopback_test done"
+        else:
+            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
+            return ["FAIL", nic_list[:]]
+
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_TIMEOUT):
+            self.cli_log_err("Execute command {:s} failed".format(cmd))
+            return ["FAIL", nic_list[:]]
+
+        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
+
+        nic_fail_list = list()
+        ret = "SUCCESS"
+        if "failed;" in self.mtp_get_cmd_buf():
+            match = re.search("failed slots: *([0-9,]+)", self.mtp_get_cmd_buf())
+            if match:
+                for slot_base_1 in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
+                    slot = slot_base_1 - 1
+                    if slot not in nic_fail_list:
+                        nic_fail_list.append(slot)
+                        ret = "FAIL"
+
+        return [ret, nic_fail_list]
 
     def mtp_mgmt_get_test_result(self, cmd, test):
         if not self.mtp_mgmt_exec_cmd(cmd):
