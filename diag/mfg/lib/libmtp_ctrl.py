@@ -1522,7 +1522,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False):
+    def mtp_diag_pre_init_start(self, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, skip_nic_pn_init=False):
         if not self.mtp_mgmt_connect():
             self.cli_log_err("Unable to connect MTP chassis", level=0)
             return False
@@ -1542,10 +1542,15 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
-        if not self.get_mtp_factory_location():
-            self.cli_log_err("Unable to get MTP factory location")
+        # PSU/FAN absent, powerdown MTP
+        if not self.mtp_hw_init(fan_spd, None):
+            self.cli_log_err("MTP HW Init Fail", level=0)
             return False
-        self.cli_log_report_inf("MTP Location: {:s}".format(self.get_mtp_factory_location()))
+
+        # get the mtp system info
+        if not self.mtp_sys_info_disp():
+            self.cli_log_err("Unable to retrieve MTP system info", level=0)
+            return False
 
         if not self.mtp_nic_init(skip_nic_pn_init=skip_nic_pn_init):
             self.cli_log_err("Initialize NIC type, present failed", level=0)
