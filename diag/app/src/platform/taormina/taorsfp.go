@@ -77,7 +77,7 @@ func Sfp_i2c_test(argList []string) (ret int) {
     }
     
     if ret != 0 {
-        goto ReturnI2Chdl
+        goto taor_sfp_i2c_test_end
     }
 
     //for _, devName := range(sfpTestList) {
@@ -115,7 +115,7 @@ func Sfp_i2c_test(argList []string) (ret int) {
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
-ReturnI2Chdl:
+taor_sfp_i2c_test_end:
     if ret != 0 {
         dcli.Printf("e", "SFP I2C TEST FAILED\n")
     } else {
@@ -134,6 +134,8 @@ func Sfp_signal_test(argList []string) (err int) {
     errFs := fs.Parse(argList)
     if errFs != nil {
         dcli.Println("e", "Parse failed", errFs)
+        err = errType.INVALID_PARAM
+        return
     }
 
     // Iterate over SFP table

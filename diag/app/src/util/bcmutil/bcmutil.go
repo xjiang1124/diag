@@ -180,6 +180,16 @@ func main() {
             fmt.Printf("\n")
             return
         }
+        if os.Args[2] == "diagbcmshelltest" {
+            out, rc := td3.Exec_DIAG_BUILT_BCMshellCMD(os.Args[3], 10) 
+            if rc != errType.SUCCESS {
+                fmt.Printf("ERROR: command failed\n");
+                os.Exit(-1)
+            } else {
+                fmt.Printf("\n%s\n", out);
+                os.Exit(0)
+            }
+        }
         if os.Args[2] == "testinit" {
             rc := td3.BCMShell_Test_Init()
             if rc != errType.SUCCESS {
@@ -200,7 +210,7 @@ func main() {
                 return
             }
             testnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
-            rc := td3.BCMshell_Test_Run(int(testnumber))
+            _,_,_,_,rc := td3.BCMshell_Test_Run(int(testnumber))
             if rc != errType.SUCCESS {
                 os.Exit(-1)
             } else {

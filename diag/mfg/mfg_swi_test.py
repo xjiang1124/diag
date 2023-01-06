@@ -90,6 +90,15 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
+    # save the ecc dump files
+    asic_sub_dir = "/asic_logs/"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_swi_script_dir + asic_sub_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    # cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_swi_script_dir + asic_sub_dir)
+    # mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_swi_script_dir + asic_sub_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect SW Install Test result failed", level=0)

@@ -4,88 +4,62 @@ import sys
 import os
 import time
 import pexpect
-import re
-import argparse
 import threading
+import argparse
+import re
+import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
-from libdefs import Swm_Test_Mode
-from libdefs import FF_Stage
 from libdefs import MTP_Const
+from libdefs import FF_Stage
+from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
 from libdefs import Env_Cond
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
+from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_IMAGES
 from libmfg_cfg import TOR_IMAGES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 
+def logfile_close(filep_list):
+    os.system("sync")
+    os.system("sync")
+    for fp in filep_list:
+        fp.close()
+    os.system("sync")
+
+
+def logfile_cleanup(file_list):
+    os.system("sync")
+    for _file in file_list:
+        os.system("rm -rf {:s}".format(_file))
+    os.system("sync")
+
+def exit_fail(mtp_mgmt_ctrl, log_filep_list, err_msg=""):
+    mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+    # logfile_close(log_filep_list)
+    mtp_mgmt_ctrl.mtp_console_disconnect()
+
+def exit_pass(mtp_mgmt_ctrl, log_filep_list):
+    logfile_close(log_filep_list)
+    mtp_mgmt_ctrl.mtp_console_disconnect()
 
 def load_mtp_cfg():
+    # Same station as DL/P2C right now
     mtp_chassis_cfg_file_list = list()
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_tor_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
-def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
-    os.system("sync")
-
-def save_logfile(mtp_id, mtp_mgmt_ctrl, log_dir, logfile_list, stage):
-    # Package this UUT's logfile
-    log_sub_dir = os.path.basename(os.path.dirname(log_dir)) # aka MFG_STAGE_LOG_DIR
-
-    # extract log timestamp from one of the filenames
-    if logfile_list:
-        timestamp_length = 19
-        log_timestamp = log_sub_dir[-19:]
-    else:
-        log_timestamp = libmfg_utils.get_timestamp()
-
-    # pkg the logfile
-    # MFG_DL_LOG_PKG_FILE = "NT_{:s}_{:s}.tar.gz"
-    # MFG_DL_LOG_DIR = "NT_{:s}_{:s}/"
-    # MFG_LOG_PKG_FMT = "tar czf {:s} -C {:s} {:s}"
-    log_dir = "log/"
-    log_pkg_file = MTP_DIAG_Logfile.MFG_STAGE_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
-
-    # move the logs to the log root dir
-    sn = mtp_mgmt_ctrl._sn
-    nic_type = mtp_mgmt_ctrl._uut_type
-    if GLB_CFG_MFG_TEST_MODE:
-        mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, sn)
-    else:
-        mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, sn)
-    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-    libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-    os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-    os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
-
-    # cleanup the log dir
-    for _file in [log_dir+log_sub_dir, log_dir+log_pkg_file]:
-        os.system("rm -rf {:s}".format(_file))
-
-def mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, mtp_test_summary, stage=FF_Stage.FF_2C):
-    sn = mtp_mgmt_ctrl._sn
-    slot = 0
-    key = libmfg_utils.nic_key(slot)
-    nic_type = NIC_Type.TAORMINA
-    mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-    mtp_test_summary.append((slot+1, sn, nic_type, False))
-    save_logfile(mtp_id, mtp_mgmt_ctrl, logfile_dir, open_file_mtp, stage)
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=False):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -108,7 +82,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
     return mtp_mgmt_ctrl
 
-def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
+def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
     mtp_mgmt_ctrl.print_script_version()
 
     for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "SSH_SETUP", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
@@ -162,12 +136,12 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
 
         if test == "USB_PRESENT_CHECK":
             if ret:
-                pass_uut_list = [mtp_id]
+                pass_uut_list = [uut_id]
                 fail_uut_list = []
             else:
                 pass_uut_list = []
-                fail_uut_list = [mtp_id]
-            libmfg_utils.cli_log_rslt("{:s} Sanity Check complete".format(mtp_id), pass_uut_list, fail_uut_list, mtp_mgmt_ctrl._filep)
+                fail_uut_list = [uut_id]
+            libmfg_utils.cli_log_rslt("{:s} Sanity Check complete".format(uut_id), pass_uut_list, fail_uut_list, mtp_mgmt_ctrl._filep)
 
     if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="2C-SSH"):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
@@ -176,7 +150,7 @@ def single_tor_setup(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
 
     return True
 
-def single_tor_diag_update(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
+def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
     for test in ["TIME_SET", "DIAG_UPDATE", "PYPKG_UPDATE"]:
         if test in skip_test:
             continue
@@ -212,185 +186,577 @@ def single_tor_diag_update(mtp_mgmt_ctrl, mtp_id, dsp, skip_test):
 
     return True
 
-def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, logfile_dir_list, open_file_track_mtp_list, skip_test=[]):
-    for idx, (corner, stage) in enumerate([(Env_Cond.MFG_2C_HV, FF_Stage.FF_2C_HV), (Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV)]):
-        if corner in skip_test or stage in skip_test:
-            continue
+def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
+    mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List:".format(card_type), level = 0)
+    cmd_list = naples_test_db.get_init_cmd_list()
+    mtp_mgmt_ctrl.cli_log_inf("Init Command List:")
+    for item in cmd_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        if idx > 0:
-            # start new logfile
-            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+    skip_list = naples_test_db.get_skip_test_list()
+    mtp_mgmt_ctrl.cli_log_inf("Skip Test List:")
+    for item in skip_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        # only do sanity check on first-time setup
-        if idx > 0:
-            if "PRESENT_CHECK" not in skip_test:
-                skip_test.append("PRESENT_CHECK")
-            if "LINK_CHECK" not in skip_test:
-                skip_test.append("LINK_CHECK")
-            if "USB_PRESENT_CHECK" not in skip_test:
-                skip_test.append("USB_PRESENT_CHECK")
+    param_list = naples_test_db.get_test_param_list()
+    mtp_mgmt_ctrl.cli_log_inf("Parameter List:")
+    for item in param_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        if not single_tor_setup(mtp_mgmt_ctrl, mtp_id, stage, skip_test):
-            mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id], mtp_test_summary, stage) # save logfile a different way (from log/)
-            return
+    pre_test_check_list = naples_test_db.get_pre_diag_test_intf_list()
+    mtp_mgmt_ctrl.cli_log_inf("Pre Diag Test Check List:")
+    for item in pre_test_check_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        if idx == 0:
-            if not single_tor_diag_update(mtp_mgmt_ctrl, mtp_id, stage, skip_test):
-                mtp_fail_process(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id], mtp_test_summary, stage) # save logfile a different way (from log/)
-                return
+    post_test_check_list = naples_test_db.get_post_diag_test_intf_list()
+    mtp_mgmt_ctrl.cli_log_inf("Post Diag Test Check List:")
+    for item in post_test_check_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        # close file handles
-        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+    mtp_para_test_list = naples_test_db.get_mtp_para_test_list()
+    mtp_mgmt_ctrl.cli_log_inf("MTP Parallel Test List:")
+    for item in mtp_para_test_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-        # Copy script, config files, setup log
-        mtp_2c_script_dir = "mtp_regression/"
-        mtp_2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP 2C Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_2c_script_dir, mtp_2c_script_pkg, logfile_dir_list[mtp_id]):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP 2C Test script failed", level=0)
+    if card_type == NIC_Type.TAORMINA:
+        seq_test_list = naples_test_db.get_tor_dsp_test_list()
+        mtp_mgmt_ctrl.cli_log_inf("TOR DSP Test List:")
+    else:
+        seq_test_list = naples_test_db.get_diag_seq_test_list()
+        mtp_mgmt_ctrl.cli_log_inf("MTP Sequential Test List:")
+    for item in seq_test_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-            # cannot use mtp_fail_process here, since logfile already moved to mtp/uut
-            sn = mtp_mgmt_ctrl._sn
-            slot = 0
-            key = libmfg_utils.nic_key(slot)
-            nic_type = NIC_Type.TAORMINA
-            mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-            mtp_test_summary.append((slot+1, sn, nic_type, False))
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP 2C Test script complete", level=0)
+    para_test_list = naples_test_db.get_diag_para_test_list()
+    mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Test List:")
+    for item in para_test_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-            # go to mtp_regression and start the test
-            cmd = "cd {:s}".format(mtp_script_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    if card_type == NIC_Type.ORTANO2:
+        para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
+        mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Additional Test List:")
+        for item in para_test_list:
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-            mtp_start_ts = libmfg_utils.timestamp_snapshot()
-            mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Start", level=0)
-            mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-            cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s}".format(mtp_id, corner)
-            if skip_test:
-                skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
-                cmd += skipped_testlist
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_2C_TEST_TIMEOUT)
-            mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-            mtp_mgmt_ctrl.cli_log_inf("MFG 2C Test Complete", level=0)
-            mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-            mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Duration: {:s}".format(stage, mtp_stop_ts - mtp_start_ts), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List End\n".format(card_type), level = 0)
+    return
 
-        # save logfile normally, scp from uut
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-        if not test_log_file:
-            mtp_mgmt_ctrl.cli_log_err("MTP Collect 2C Test result failed", level=0)
-            return
-        cmd = "rm -rf {:s}".format(test_log_file)
-        os.system(cmd)
-    
-    # shut down system if passed
-    for slot, sn, nic_type, rc in mtp_test_summary:
-        if rc:
-            mtp_mgmt_ctrl.uut_chassis_shutdown()
-            break
+def naples_exec_init_cmd(naples_test_db, mtp_mgmt_ctrl):
+    cmd_list = naples_test_db.get_init_cmd_list()
+    mtp_mgmt_ctrl.cli_log_inf("Execute Command in Init Command List:", level = 0)
+    for cmd in cmd_list:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    return
 
+def naples_exec_skip_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
+    cmd_list = naples_test_db.get_skip_test_cmd_list(nic_list)
+    mtp_mgmt_ctrl.cli_log_inf("Execute Command in Skip Command List:", level = 0)
+    for cmd in cmd_list:
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    return
+
+def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
+    cmd_list = naples_test_db.get_test_param_cmd_list()
+    mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters:", level = 0)
+    for cmd in cmd_list:
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(cmd))
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    mtp_mgmt_ctrl.cli_log_inf("Set Diag Test Parameters complete\n", level = 0)
     return
 
 
+
+
+def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
+    test_rslt = True
+    if vmarg > 0:
+        dsp = "HV_PRE_CHECK"
+    elif vmarg < 0:
+        dsp = "LV_PRE_CHECK"
+    else:
+        dsp = "PRE_CHECK"
+
+    for test in test_list:
+        sn = mtp_mgmt_ctrl._sn
+        mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = mtp_mgmt_ctrl.log_test_start(test)
+        ret = mtp_mgmt_ctrl.mtp_mgmt_pre_post_diag_check(test, 0, vmarg)
+        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+        if ret == "SUCCESS":
+            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+        else:
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
+            test_rslt &= False
+
+    return test_rslt
+
+def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
+    test_rslt = True
+    if vmarg > 0:
+        dsp = "HV_ASIC"
+    elif vmarg < 0:
+        dsp = "LV_ASIC"
+    else:
+        dsp = "ASIC"
+
+    for test in test_list:
+        sn = mtp_mgmt_ctrl._sn
+        mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+        start_ts = mtp_mgmt_ctrl.log_test_start(test)
+        ret = mtp_mgmt_ctrl.tor_diag_test_binary(test, vmarg)
+        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+
+        if ret:
+            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
+        else:
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
+            test_rslt &= False
+
+    return test_rslt
+
+def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testlist):
+    test_rslt = True
+    sn = mtp_mgmt_ctrl._sn
+    for dsp, test in test_list:
+        if vmarg > 0:
+            dsp_disp = "HV_" + dsp
+        elif vmarg < 0:
+            dsp_disp = "LV_" + dsp
+        else:
+            dsp_disp = dsp
+
+        test_cfg = diag_test_db.get_tor_dsp_test(dsp, test)
+        init_cmd = None
+        post_cmd = None
+        if test_cfg["INIT"] != "":
+            init_cmd = test_cfg["INIT"]
+        if test_cfg["POST"] != "":
+            post_cmd = test_cfg["POST"]
+        opts = test_cfg["OPTS"]
+        mode = ""
+        diag_cmd = diag_test_db.get_diag_tor_test_run_cmd(dsp, test, opts, sn, vmarg, mode)
+        rslt_cmd = diag_test_db.get_diag_tor_test_errcode_cmd(dsp, opts)
+        mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test), level=0)
+
+        if test == "L1":
+            mtp_mgmt_ctrl.cli_log_inf("Do not login to the system during this test!")
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("echo $ELBA0_J2C_ID")
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("echo $ELBA1_J2C_ID")
+
+        start_ts = libmfg_utils.timestamp_snapshot()
+        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_tor(diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        stop_ts = libmfg_utils.timestamp_snapshot()
+        duration = str(stop_ts - start_ts)
+
+        # double check the L1 test even it pass
+        if dsp == "ASIC" and test == "L1":
+            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+            # Fixed L1 sub test count + err_msg_list should be empty
+            number_of_l1_tests = 8
+            if mtp_mgmt_ctrl._uut_type == UUT_Type.TOR:
+                number_of_l1_tests = 8 * 2
+            if pass_count != number_of_l1_tests:
+                err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
+                if ret == "SUCCESS":
+                    ret = "FAIL"
+            if log_err_msg_list:
+                err_msg_list += log_err_msg_list
+
+        if ret == "SUCCESS":
+            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration), level=0)
+        else:
+            test_rslt = False
+            if dsp == "ASIC" and test == "L1":
+                mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("echo $ELBA0_J2C_ID")
+                mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+                mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("echo $ELBA1_J2C_ID")
+                mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
+            # only display first 3 and last 3 error messages
+            if len(err_msg_list) < 6:
+                err_msg_disp_list = err_msg_list
+            else:
+                err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+            for err_msg in err_msg_disp_list:
+                mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
+
+    return test_rslt
+
+
+
+
+def single_uut_2c_test(stage,
+                       uut_id,
+                       uut_test_rslt_list,
+                       uut_sn_list,
+                       log_file_list,
+                       verbosity,
+                       skip_testlist = []):
+    dsp = stage
+    if verbosity:
+        test_log_filep = None
+        diag_log_filep = sys.stdout
+        diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
+    else:
+        test_log_filep = None
+        diag_log_filep = None
+        diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+
+    open_file_track_list = list()
+    log_dir = list()
+
+    # Begin test
+    mtp_cfg_db = load_mtp_cfg()
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=True)
+
+    # hardcode all these for now
+    card_type = NIC_Type.TAORMINA
+    uut_type = UUT_Type.TOR
+    asic_type = MTP_ASIC_SUPPORT.ELBA
+    x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
+    arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
+    mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
+    mtp_mgmt_ctrl._slots = 2
+
+    try:
+        for idx, (corner, stage) in enumerate([(Env_Cond.MFG_2C_HV, FF_Stage.FF_2C_HV), (Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV)]):
+            if corner in skip_testlist:
+                continue
+
+            # start new logfile
+            log_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+
+            # only do sanity check on first-time setup
+            if idx > 0:
+                if "PRESENT_CHECK" not in skip_testlist:
+                    skip_testlist.append("PRESENT_CHECK")
+                if "LINK_CHECK" not in skip_testlist:
+                    skip_testlist.append("LINK_CHECK")
+                if "USB_PRESENT_CHECK" not in skip_testlist:
+                    skip_testlist.append("USB_PRESENT_CHECK")
+
+            if not single_tor_setup(mtp_mgmt_ctrl, uut_id, stage, skip_testlist):
+                uut_test_rslt_list[uut_id] = False
+                uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
+                return
+            uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
+
+            if idx == 0:
+                if not single_tor_diag_update(mtp_mgmt_ctrl, uut_id, stage, skip_testlist):
+                    uut_test_rslt_list[uut_id] = False
+                    return
+
+            sn = mtp_mgmt_ctrl._sn
+            mtp_mgmt_ctrl.cli_log_inf("2C Test Started", level=0)
+            mfg_2c_start_ts = libmfg_utils.timestamp_snapshot()
+
+            if not mtp_mgmt_ctrl.tor_diag_init(stage, fpo=True):
+                uut_test_rslt_list[uut_id] = False
+                return
+
+            # reapply the mainfw flag after nic_init
+            for slot in range(mtp_mgmt_ctrl._slots):
+                mtp_mgmt_ctrl._nic_ctrl_list[slot]._in_mainfw = True
+            mtp_mgmt_ctrl._svos_boot = False ###############################NZ: needed?
+
+
+
+            # load the diag test config
+            taormina_test_cfg_file = "config/taormina_uut_test_cfg.yaml"
+            taormina_test_db = diag_db(corner, taormina_test_cfg_file)
+            taormina_pre_test_check_list = taormina_test_db.get_pre_diag_test_intf_list()
+            taormina_mtp_para_test_list = taormina_test_db.get_mtp_para_test_list()
+            taormina_seq_test_list = taormina_test_db.get_tor_dsp_test_list()
+            taormina_para_test_list = taormina_test_db.get_diag_para_test_list()
+            taormina_post_test_check_list = taormina_test_db.get_post_diag_test_intf_list()
+            nic_type_full_list = [NIC_Type.TAORMINA]
+            nic_test_full_list = [range(mtp_mgmt_ctrl._slots)]
+            test_db = taormina_test_db
+            for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                naples_diag_cfg_show(nic_type, test_db, mtp_mgmt_ctrl)
+                naples_exec_init_cmd(test_db, mtp_mgmt_ctrl)
+                naples_exec_skip_cmd(nic_list, test_db, mtp_mgmt_ctrl)
+                naples_exec_param_cmd(nic_list, test_db, mtp_mgmt_ctrl)
+
+            if corner == Env_Cond.MFG_2C_HV:
+                vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
+            elif corner == Env_Cond.MFG_2C_LV:
+                vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
+
+            fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
+            inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)
+            mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
+            if vmarg > 0:
+                mtp_mgmt_ctrl.cli_log_report_inf("******* HV Corner *******")
+            elif vmarg < 0:
+                mtp_mgmt_ctrl.cli_log_report_inf("******* LV Corner *******")
+            else:
+                mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
+            mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
+            if mtp_mgmt_ctrl._uut_type == UUT_Type.TOR:
+                mtp_mgmt_ctrl.cli_log_report_inf("UUT temp = {:2.2f}".format(inlet))
+            else:
+                mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
+            mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
+            mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
+
+            for slot in range(mtp_mgmt_ctrl._slots):
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Initialize NIC info")
+                mtp_mgmt_ctrl.mtp_set_nic_sn(slot, mtp_mgmt_ctrl._sn)
+                mtp_mgmt_ctrl.mtp_set_nic_pn(slot, mtp_mgmt_ctrl._pn)
+                mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
+
+            if not mtp_mgmt_ctrl.tor_set_vmarg(vmarg):
+                mtp_mgmt_ctrl.cli_log_err("Failed to voltage margin UUT", level=0)
+                uut_test_rslt_list[uut_id] = False
+                continue
+
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, nic_util=True):
+                mtp_mgmt_ctrl.cli_log_err("Initialized NIC Diag Environment failed", level=0)
+                uut_test_rslt_list[uut_id] = False
+                continue
+
+            test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "PASSMARK"]
+            # test_section_list = ["TD3"]
+
+            for skipped_test in skip_testlist:
+                if skipped_test in test_section_list:
+                    test_section_list.remove(skipped_test)
+
+            for test_section in test_section_list:
+                if test_section == "PRE_CHECK":
+                    if not tor_precheck_test(mtp_mgmt_ctrl, vmarg, taormina_pre_test_check_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+                        continue
+
+                elif test_section == "SNAKE":
+                    bash_test_list = taormina_mtp_para_test_list[:]
+                    if not tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, bash_test_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+
+                elif test_section == "DSP":
+                    dsp_test_list = taormina_seq_test_list[:]
+                    test_db = taormina_test_db
+                    if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
+                        dsp_test_list.remove(("SWITCH", "ELBA_EDMA_TEST"))
+                    if ("ASIC", "L1") in dsp_test_list:
+                        dsp_test_list.remove(("ASIC", "L1"))
+                    if ("BCM", "TD3DIAG") in dsp_test_list:
+                        dsp_test_list.remove(("BCM", "TD3DIAG"))
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, dsp_test_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+
+                elif test_section == "EDMA":
+                    dsp_test_list = taormina_seq_test_list[:]
+                    test_db = taormina_test_db
+                    new_dsp_test_list = list()
+                    if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
+                        dsp_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+
+                elif test_section == "J2C_L1":
+                    dsp_test_list = taormina_seq_test_list[:]
+                    test_db = taormina_test_db
+                    new_dsp_test_list = list()
+                    if ("ASIC", "L1") in dsp_test_list:
+                        new_dsp_test_list.append(("ASIC", "L1"))
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+
+                elif test_section == "TD3":
+                    dsp_test_list = taormina_seq_test_list[:]
+                    test_db = taormina_test_db
+                    new_dsp_test_list = list()
+                    if ("BCM", "TD3DIAG") in dsp_test_list:
+                        new_dsp_test_list.append(("BCM", "TD3DIAG"))
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                        uut_test_rslt_list[uut_id] = False
+
+                elif test_section == "PASSMARK":
+                    if uut_test_rslt_list[uut_id]:
+                        if not mtp_mgmt_ctrl.tor_fru_passmark(corner):
+                            uut_test_rslt_list[uut_id] = False
+
+                else:
+                    mtp_mgmt_ctrl.cli_log_err("Unknown 2C Test: {:s}, Ignore".format(test_section))
+                    continue
+
+
+
+            # log the diag test history
+            mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
+            # clear the diag test history
+            mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
+            if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+                diag_sub_dir = "/lv_diag_logs/"
+                nic_sub_dir = "/lv_nic_logs/"
+                asic_sub_dir = "/lv_asic_logs/"
+            elif vmarg == MTP_Const.MFG_EDVT_HIGH_VOLT:
+                diag_sub_dir = "/hv_diag_logs/"
+                nic_sub_dir = "/hv_nic_logs/"
+                asic_sub_dir = "/hv_asic_logs/"
+            else:
+                diag_sub_dir = "/diag_logs/"
+                nic_sub_dir = "/nic_logs/"
+                asic_sub_dir = "/asic_logs/"
+            # create log dir
+            mtp_script_dir = log_dir
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
+            os.system(cmd)
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
+            os.system(cmd)
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
+            os.system(cmd)
+            # save the asic/diag log files
+            mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+            if not mtp_mgmt_cfg:
+                mtp_mgmt_ctrl.cli_log_err("Lost IP - cant connect to UUT", level=0)
+                uut_test_rslt_list[uut_id] = False
+                return
+
+            ipaddr = mtp_mgmt_cfg[0]
+            userid = mtp_mgmt_cfg[1]
+            passwd = mtp_mgmt_cfg[2]
+            libmfg_utils.network_get_file(ipaddr, userid, passwd, mtp_script_dir + diag_sub_dir, MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_mgmt_ctrl._diag_filep)
+            libmfg_utils.network_get_file(ipaddr, userid, passwd, mtp_script_dir + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_mgmt_ctrl._diag_filep)
+            libmfg_utils.network_get_file(ipaddr, userid, passwd, mtp_script_dir + nic_sub_dir, MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_mgmt_ctrl._diag_filep)
+            # save the x86 system logs
+            mtp_mgmt_ctrl.tor_copy_sys_log(mtp_script_dir, local_copy=False)
+            # clean up logfiles for the next run
+            cmd = "cleanup.sh"
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
+
+            # Package this UUT's logfile
+            log_sub_dir = os.path.basename(os.path.dirname(log_dir))
+            log_pkg_file = "{:s}.tar.gz".format(log_sub_dir)
+            cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format("log/"+log_pkg_file, "log/", log_sub_dir)
+            os.system(cmd)
+
+            # move the logs to the log root dir
+            sn = mtp_mgmt_ctrl._sn
+            nic_type = mtp_mgmt_ctrl._uut_type
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, sn)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("cp {:s} {:s}".format("log/"+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
+
+            # cleanup the log dir
+            logfile_cleanup([log_dir, "log/"+log_pkg_file])
+    
+        mtp_mgmt_ctrl.cli_log_inf("2C Test Process Complete", level=0)
+        # shut down system
+        if not uut_test_rslt_list[uut_id]:
+            mtp_mgmt_ctrl.uut_chassis_shutdown()
+
+        mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
+
+        if uut_test_rslt_list[uut_id]:
+            sn = mtp_mgmt_ctrl.get_mtp_sn()
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+
+        if not uut_test_rslt_list[uut_id]:
+            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+    except Exception as e:
+        print("Exception happened and caught")
+        uut_test_rslt_list[uut_id] = False
+        exit_fail(mtp_mgmt_ctrl, open_file_track_list, traceback.print_exc())
+
 def main():
-    parser = argparse.ArgumentParser(description="MFG 2C Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser = argparse.ArgumentParser(description="MFG SWI Test", formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
 
-    verbosity = False
-    swmtestmode = Swm_Test_Mode.SW_DETECT
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
-    if args.swm:
-        swmtestmode = args.swm
+    else:
+        verbosity = False
 
-    TAORMINA_TEST = True
-
+    ######################################
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
-    mtp_mgmt_ctrl_list = list()
-    fail_nic_list = dict()
 
-    # init mtp_ctrl list
-    for mtp_id in mtpid_list:
-        if verbosity:
-            diag_log_filep = sys.stdout
-            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
-        else:
-            diag_log_filep = None
-            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+    pass_rslt_list = list()
+    fail_rslt_list = list()
+    log_dir = "log/"
+    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir))
 
-        if TAORMINA_TEST:
-            mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list, telnet=True)
-        else:
-            mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
-        mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
-        fail_nic_list[mtp_id] = list()
+    stage = FF_Stage.FF_2C
 
-    # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_2C_HV)
+    uut_id_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
 
-    mfg_2c_start_ts = libmfg_utils.timestamp_snapshot()
-    dsp = FF_Stage.FF_2C_HV
+    ######################################
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
-        mtp_mgmt_ctrl._slots = 2
+    pass_uut_list = list()
+    fail_uut_list = list()
+    uut_test_rslt_list = dict()
+    uut_sn_list = dict()
+    uut_thread_list = list()
+    logfile_dict = dict()
 
-    mtp_2c_script_dir = "mtp_regression/"
+    for uut_id in uut_id_list:
+        pass_uut_list.append(uut_id)
+        uut_test_rslt_list[uut_id] = True
+        uut_sn_list[uut_id] = ""
 
-    mtp_thread_list = list()
-    mfg_2c_summary = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mfg_2c_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_2c_test, args = (mtp_mgmt_ctrl.get_homedir()+mtp_2c_script_dir,
-                                                                            mtp_mgmt_ctrl,
-                                                                            mtp_id,
-                                                                            fail_nic_list[mtp_id],
-                                                                            mfg_2c_summary[mtp_id],
-                                                                            logfile_dir_list,
-                                                                            open_file_track_mtp_list,
-                                                                            args.skip_test))
-        mtp_thread.daemon = True
-        mtp_thread.start()
-        mtp_thread_list.append(mtp_thread)
+    for uut_id in uut_id_list:
+        if uut_id in fail_uut_list:
+            continue
+
+        logfile_dict[uut_id] = list()
+        uut_thread = threading.Thread(target = single_uut_2c_test, args = (stage,
+                                                                           uut_id,
+                                                                           uut_test_rslt_list,
+                                                                           uut_sn_list,
+                                                                           logfile_dict[uut_id],
+                                                                           verbosity,
+                                                                           args.skip_test))
+        uut_thread.daemon = True
+        uut_thread.start()
+        uut_thread_list.append(uut_thread)
         time.sleep(2)
 
     # monitor all the thread
     while True:
-        if len(mtp_thread_list) == 0:
+        if len(uut_thread_list) == 0:
             break
-        for mtp_thread in mtp_thread_list[:]:
-            if not mtp_thread.is_alive():
-                mtp_thread.join()
-                mtp_thread_list.remove(mtp_thread)
+        for uut_thread in uut_thread_list[:]:
+            if not uut_thread.is_alive():
+                uut_thread.join()
+                uut_thread_list.remove(uut_thread)
         time.sleep(5)
 
-    mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
+    for uut_id in uut_id_list:
+        if not uut_test_rslt_list[uut_id]:
+            if uut_id not in fail_uut_list:
+                fail_uut_list.append(uut_id)
+            if uut_id in pass_uut_list:
+                pass_uut_list.remove(uut_id)
 
-    # Fill in SN if missing from mfg_2c_summary
-    temp_summary = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        temp_summary[mtp_id] = list()
-        for slot, sn, nic_type, rc in mfg_2c_summary[mtp_id]:
-            if sn is None or sn == 'None':
-                real_sn = mtp_mgmt_ctrl._sn
-            else:
-                real_sn = sn
-            temp_summary[mtp_id].append((slot, real_sn, nic_type, rc))
-    mfg_2c_summary = temp_summary
+    ######## TEST SUMMARY ########
+    test_summary_dict = dict()
+    for uut_id in pass_uut_list:
+        sn = uut_sn_list[uut_id]
+        card_type = NIC_Type.TAORMINA
+        test_summary_dict[uut_id] = [(uut_id, sn, card_type, True)]
+    
+    for uut_id in fail_uut_list:
+        sn = uut_sn_list[uut_id]
+        card_type = NIC_Type.TAORMINA
+        test_summary_dict[uut_id] = [(uut_id, sn, card_type, False)]
 
-    # dump the summary
-    libmfg_utils.mfg_summary_disp(FF_Stage.FF_2C, mfg_2c_summary, [])
+    libmfg_utils.mfg_summary_disp(stage, test_summary_dict, [])
 
+    return
 
 if __name__ == "__main__":
     main()
+

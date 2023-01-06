@@ -5,6 +5,7 @@ import (
     "testing"
 )
 
+
 func TestReadVout(t *testing.T) {
     var tps TPS53659
     integer, dec, _ := tps.ReadVout("VRM_CAPRI_AVDD")

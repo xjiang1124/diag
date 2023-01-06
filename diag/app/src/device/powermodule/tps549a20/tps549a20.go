@@ -6,6 +6,7 @@ import (
     "fmt"
 
     "common/cli"
+    "common/dcli"
     "common/errType"
     "protocol/pmbus"
     "protocol/smbus"
@@ -127,6 +128,14 @@ func GetVoutMarginPct (devName string) (data float64, err int) {
         data = voutMarginHighPct[(regVal>>4) & 0xF]
     }
 
+    return
+}
+
+func TestTps549a20(devName string) (err int) {
+    _, err = ReadStatus(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read status failed!")
+    }
     return
 }
 

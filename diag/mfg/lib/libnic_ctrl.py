@@ -90,6 +90,10 @@ class nic_ctrl():
 
     def nic_set_pn(self, new_pn):
         self._pn = new_pn
+        # needed for capri:
+        pn, pn_regex = libmfg_utils.part_number_lookup(new_pn)
+        if pn:
+            self._pn_format = pn_regex
 
     def nic_set_err_msg(self, err_msg):
         if not self._err_msg:
@@ -3107,7 +3111,7 @@ class nic_ctrl():
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            self._cpld_timestamp = "0x{:02d}".format(read_data[0])
+            self._cpld_timestamp = "0x{:02X}".format(read_data[0])
             return True
         elif self._nic_type == NIC_Type.NAPLES25SWMDELL:
             # no timestamp, minor revision at 0x22 only
@@ -3120,7 +3124,7 @@ class nic_ctrl():
             if not rc:
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                 return False
-            self._cpld_timestamp = "{:02d}".format(read_data[0])
+            self._cpld_timestamp = "{:02}".format(read_data[0])
             return True
         else:
             # get the month timestamp
@@ -4043,7 +4047,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to set board config")
             return False
-        if "Mode successfully set" in cmd_buf:
+        if "Mode successfully set" in cmd_buf or "Config successfully set" in cmd_buf:
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
@@ -4403,7 +4407,7 @@ class nic_ctrl():
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
-        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
+        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1), timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()
