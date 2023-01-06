@@ -1542,6 +1542,10 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
+        if not self.mtp_sys_info_init():
+            self.cli_log_err("Failed to Init MTP system information", level=0)
+            return False
+
         # PSU/FAN absent, powerdown MTP
         if not self.mtp_hw_init(fan_spd, None):
             self.cli_log_err("MTP HW Init Fail", level=0)
