@@ -1020,6 +1020,14 @@ def main():
                 if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
+    # save the avs and ecc dump log files
+    log_location = log_dir+log_sub_dir
+    asic_sub_dir = "/asic_logs/"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_location + asic_sub_dir)
+    os.system(cmd)
+    ipaddr, userid, passwd = mtp_mgmt_ctrl._mgmt_cfg
+    libmfg_utils.network_get_file(ipaddr, userid, passwd, log_location + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
+    libmfg_utils.network_get_file(ipaddr, userid, passwd, log_location + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES)
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic

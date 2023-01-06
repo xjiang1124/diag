@@ -233,6 +233,7 @@ class MTP_DIAG_Logfile:
     NIC_ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
+    ONBOARD_ASIC_DUMP_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*tar"
     ONBOARD_TEST_LOG_FILES = "/home/diag/mtp_regression/*log"
     ONBOARD_SRN_TEST_LOG_FILES = "/home/diag/mtp_srn_script/*log"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
@@ -523,6 +524,8 @@ class MFG_DIAG_CMDS:
     MTP_PARA_PCIE_PRBS_FMT    = "arm_prbs.py -arm_prbs -mode=PCIE -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
     MTP_PARA_ETH_PRBS_FMT     = "arm_prbs.py -arm_prbs -mode=MX   -slot_list='{:s}' -wtime=360 -vmarg {:s} -dura=60 -poly={:s}"
     MTP_PARA_DDR_BIST_ELBA_FMT = "ddr_bist.py -arm_ddrbist -slot_list '{:s}' -wtime=780 -vmarg {:s}"
+    MTP_NCSI_RMII_LINKUP_FMT = "nic_test.py -rmii_linkup_test   -slot_list='{:s}' -vmarg {:s}"
+    MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"

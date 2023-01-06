@@ -90,6 +90,10 @@ class nic_ctrl():
 
     def nic_set_pn(self, new_pn):
         self._pn = new_pn
+        # needed for capri:
+        pn, pn_regex = libmfg_utils.part_number_lookup(new_pn)
+        if pn:
+            self._pn_format = pn_regex
 
     def nic_set_err_msg(self, err_msg):
         if not self._err_msg:
@@ -4403,7 +4407,7 @@ class nic_ctrl():
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
-        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:d}".format(self._slot+1), timeout=180):
+        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1), timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()

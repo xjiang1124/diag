@@ -5,7 +5,8 @@ proc test_proc {input} {
     return $input
 }
 
-set slot     [lindex $argv 0]
+set sn      [lindex $argv 0]
+set slot    [lindex $argv 1]
 set port 10
 
 set err_cnt 0
@@ -17,7 +18,7 @@ set ASIC_GEN "$ASIC_SRC"
 
 set MTP_TYPE $::env(MTP_TYPE)
 
-puts "Getting ASIC status - slot: $slot"
+puts "Getting ASIC status - sn: $sn; slot: $slot"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -62,14 +63,63 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
 
 diag_open_j2c_if $port $slot
 
+set val [_msrd]
+if { $val != 0x00000001 } {
+    plog_msg "J2C sanity test failed!"
+    exit 0
+}
+
+plog_msg "=================="
+plog_msg "MC intr"
+plog_msg "=================="
 mc_int
-check_ecc_intr
+
+set val [_msrd]
+if { $val != 0x00000001 } {
+    plog_msg "J2C sanity test failed!"
+    exit 0
+}
+plog_msg "\n\n\n"
+plog_msg "=================="
+plog_msg "ECC intr"
+plog_msg "=================="
+set output [check_ecc_intr]
+set substring "ECC_EN:0x33 ECC_INTERRUPT:0x0"
+if {[string first $substring $output] == -1} {
+    plog_msg "ECC happened! Dumping training config"
+    exec rm -rf ${sn}_dump 
+    exec mkdir ${sn}_dump 
+    cd ${sn}_dump
+    dump_all
+    cd ..
+    exec tar cf ${sn}_dump.tar ${sn}_dump/
+}
 elb_ddr_rst_ecc_intr_counter
 
-#rst_arm0_set 0
+set val [_msrd]
+if { $val != 0x00000001 } {
+    plog_msg "J2C sanity test failed!"
+    exit 0
+}
+plog_msg "\n\n\n"
+plog_msg "=================="
+plog_msg "ARM status"
+plog_msg "=================="
+arm_hang_dbg_display
+
+set val [_msrd]
+if { $val != 0x00000001 } {
+    plog_msg "J2C sanity test failed!"
+    exit 0
+}
+plog_msg "\n\n\n"
+plog_msg "=================="
+plog_msg "Get volt info via J2C"
+plog_msg "=================="
+
 elb_assert_arm_rst 0 0xf
 ssi_cpld_write 0x20 0x0
 elb_print_voltage_temp
 
-puts "Getting ASIC status - Done"
+plog_msg "Getting ASIC status - Done"
 

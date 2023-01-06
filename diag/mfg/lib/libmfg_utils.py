@@ -285,13 +285,25 @@ def mac_address_validate(tmp):
 
 
 def part_number_validate(tmp):
+    match, _ = part_number_lookup(tmp)
+    if match is None:
+        return None
+
+    if match == tmp:
+        # check no truncation happened during regex match
+        return tmp
+    else:
+        return None
+
+def part_number_lookup(pn):
     all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
 
     for pn_regex in all_pn_regexes:
-        if re.match(pn_regex, tmp):
-            return tmp
+        match = re.match(pn_regex, pn)
+        if match:
+            return match.group(0), pn_regex
 
-    return None
+    return None, None
 
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
@@ -792,16 +804,8 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
-    # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # get the mtp system info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    if not mtp_mgmt_ctrl.get_mtp_factory_location():
+        mtp_mgmt_ctrl.cli_log_err("Unable to get MTP factory location")
         return False
 
     # init all the nic.
@@ -1576,7 +1580,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         return None
 
     # for DL/P2C/4C test, extra logfiles are needed
-    if stage == FF_Stage.FF_DL:
+    if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
         asic_log_dir = log_dir + "asic_logs/"
         cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):

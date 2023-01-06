@@ -6,8 +6,25 @@ VMARG="normal"
 OFFLOAD=1
 ESEC_EN=1
 SIMPLIFY=0
-HC=1
+HC=0
 DDR=1
+
+usage () {
+    echo "=========================="
+    echo "./run_l1.sh -sn <> -slot <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <>"
+    echo "sn:   SN"
+    echo "slot: Slot number"
+    echo "m:    Mode hod/hod_1100/nod/nod_525"
+    echo "i:    0: external loopback; 1 internal loopback; default: 0"
+    echo "v:    Voltage margin: normal/low/high; default: normal"
+    echo "o:    0: offload diabled; 1: offload PCIe/ETH PRBS, TCAM, efuse tests to ARM; default: 1"
+    echo "e:    0: esecure test disabled; 1: esecure test enabled; default: 1"
+    echo "s:    0: simplified test disabled; 1: simlified test enabled; default: 0"
+    echo "hc:   0: Soft training; 1: hardcoded DDR training; default: 0"
+    echo "ddr:  0: DDR test skipped; 1: DDR test enabled"
+    echo "=========================="
+}
+
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -74,11 +91,15 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-
+    #-------------
+    -h)
+    usage
+    exit 0
+    ;;
     #-------------
     *)    # unknown option
-    POSITIONAL+=("$1") # save it in an array for later
-    shift # past argument
+    usage
+    exit 0
     ;;
 esac
 done

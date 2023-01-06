@@ -83,6 +83,8 @@ MTP_PARA:
     SNAKE_ELBA: True
     ARM_L1: True
     PCIE_PRBS: True
+    RMII_LINKUP: True
+    UART_LPBACK: True
 
 MTP_SEQ:
     ASIC:
