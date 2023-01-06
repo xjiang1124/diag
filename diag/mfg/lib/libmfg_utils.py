@@ -1588,7 +1588,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         return None
 
     # for DL/P2C/4C test, extra logfiles are needed
-    if stage == FF_Stage.FF_DL:
+    if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
         asic_log_dir = log_dir + "asic_logs/"
         cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):

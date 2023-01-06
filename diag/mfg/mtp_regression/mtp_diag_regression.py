@@ -2233,6 +2233,8 @@ def main():
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_script_dir + asic_sub_dir)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             # clean up logfiles for the next run

@@ -6879,7 +6879,7 @@ class mtp_ctrl():
                 errors_found = True
                 err_msg_list += ecc_intr[:]
 
-            ecc_errs = re.findall(r"(^.*orrectable.*$)", slot_buf)
+            ecc_errs = re.findall(r"(.*orrectable.*)", slot_buf)
             if ecc_errs:
                 errors_found = True
                 err_msg_list += ecc_errs[:]
