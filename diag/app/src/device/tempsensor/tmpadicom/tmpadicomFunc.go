@@ -4,6 +4,7 @@ import (
     "common/errType"
     "protocol/smbus"
     "device/tempsensor/max6657"
+    "device/tempsensor/adm1032"
 )
 
 func ReadMfgId(devName string) (id byte, err int) {
@@ -39,10 +40,11 @@ func ReadTemp(devName string, channel byte) (integer int64, dec int64, err int) 
         integer, dec, err = max6657.ReadTemp(devName, channel)
     } else if id == max6657.MFG_ID_V_1 {
         integer, dec, err = max6657.ReadTemp(devName, channel)
+    } else if id == adm1032.MFG_ID_V {
+        integer, dec, err = adm1032.ReadTemp(devName, channel)
     } else {
         err = errType.INVALID_PARAM
     }
-    integer, dec, err = max6657.ReadTemp(devName, channel)
     return
 }
 
@@ -57,6 +59,8 @@ func DispStatus(devName string) (err int) {
         err = max6657.DispStatus(devName)
     } else if id == max6657.MFG_ID_V_1 {
         err = max6657.DispStatus(devName)
+    } else if id == adm1032.MFG_ID_V {
+        err = adm1032.DispStatus(devName)
     } else {
         err = errType.INVALID_PARAM
     }

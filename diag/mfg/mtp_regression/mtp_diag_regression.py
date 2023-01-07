@@ -438,6 +438,80 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Bash Test Complete\n".format(nic_type), level=0)
     return fail_list
 
+def naples_diag_ncsi_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, para_test_list, vmarg, stop_on_err, skip_testlist):
+    if nic_type in FPGA_TYPE_LIST:
+        para_test_list = ["RMII_LINKUP", "UART_LPBACK"]
+    else:
+        para_test_list = []
+
+    for skipped_test in skip_testlist:
+        if skipped_test in para_test_list:
+            para_test_list.remove(skipped_test)
+
+    dsp = "NC-SI"
+    fail_list = list()
+    nic_test_list = nic_list[:]
+    if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(nic_test_list, False, stop_on_err=stop_on_err):
+        mtp_mgmt_ctrl.cli_log_err("Failed to initialize NICs", level=0)
+    for slot in nic_test_list:
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            nic_test_list.remove(slot)
+            if slot not in fail_nic_list:
+                fail_list.append(slot)
+
+    for test in para_test_list:
+        for slot in nic_test_list[:]:
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                nic_test_list.remove(slot)
+                if slot not in fail_list:
+                    fail_list.append(slot)
+
+        if not nic_test_list:
+            continue
+
+        for slot in nic_test_list[:]:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+
+        mtp_start_ts = mtp_mgmt_ctrl.log_test_start(test)
+
+        ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para_with_oneline_summary(test, nic_test_list, vmarg)
+        
+        duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
+        for slot in nic_test_list[:]:
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, mtp_start_ts)
+
+        # failed nic display
+        for slot in test_fail_list:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if not stop_on_err:
+                mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [])
+            if stop_on_err:
+                nic_test_list.remove(slot)
+            if slot not in fail_list:
+                fail_list.append(slot)
+
+        # passed nic display
+        for slot in nic_test_list:
+            if slot not in test_fail_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    # stop on error, don't collect logfile
+    if fail_list and stop_on_err:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+        raise Exception
+
+    if GLB_CFG_MFG_TEST_MODE:
+        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+
+    return fail_list
+
 def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
 
@@ -1162,6 +1236,50 @@ def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+def single_nic_test_fpga_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp):
+    return single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp, test_fpga=True)
+
+def single_nic_prod_fpga_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp):
+    return single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp, test_fpga=False)
+
+def single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp, test_fpga):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+
+    if nic_type not in FPGA_TYPE_LIST:
+        testlist = []
+        return True
+
+    if test_fpga:
+        testlist = ["TEST_FPGA_PROG"]
+        cpld_img_file = NIC_IMAGES.test_fpga_img[nic_type]
+    else:
+        testlist = ["PROD_FPGA_PROG"]
+        cpld_img_file = NIC_IMAGES.cpld_img[nic_type]
+
+    for skip_test in skip_testlist:
+        if skip_test in testlist:
+            testlist.remove(skip_test)
+
+    for test in testlist:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        if test == "TEST_FPGA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot, ["cfg0"], [cpld_img_file])
+        elif test == "PROD_FPGA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot, ["cfg0"], [cpld_img_file])
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown Test: {:s}, Ignore".format(test))
+            continue
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_test_rslt_list[slot] = False
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -1409,7 +1527,7 @@ def main():
 
         nic_type_full_list = MFG_VALID_NIC_TYPE_LIST
         nic_test_full_list = list() # list of lists, NOT dict. order of insertion matters
-
+        nic_type_prsnt_list = list() # list of types present
         for nic_type in nic_type_full_list:
             nic_type_list = list()
             # make a list for all NICs of this type in MTP
@@ -1421,12 +1539,16 @@ def main():
                 if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == nic_type:
                     nic_type_list.append(slot)
                     pass_nic_list.append(slot)
+                    if nic_type not in nic_type_prsnt_list:
+                        nic_type_prsnt_list.append(nic_type)
             nic_test_full_list.append(nic_type_list)
 
         nic_skipped_list = mtp_mgmt_ctrl.mtp_get_nic_skip_list()
         for slot in range(len(nic_skipped_list)):
             if nic_skipped_list[slot]:
                 skip_nic_list.append(slot)
+
+        nic_type_prsnt_list = [type_present for type_present,nic_present in zip(nic_type_full_list, nic_test_full_list) if nic_present]
 
         # if CI/CD run:
         if args.mtpcfg:
@@ -1559,13 +1681,15 @@ def main():
                                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                     return
 
-
-            if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.ELBA, MTP_ASIC_SUPPORT.TURBO_ELBA):
-                ### ELBA TEST ORDER
-                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
-            else:
-                ### CAPRI TEST ORDER
+            ### CAPRI TEST ORDER
+            if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.CAPRI, MTP_ASIC_SUPPORT.TURBO_CAPRI):
                 test_section_list = ["ALOM_LP_MODE", "PRE_CHECK", "ARM_DSP", "NIC_DIAG_INIT_AAPL", "ARM_PRBS", "SNAKE", "J2C_SEQ"]
+            ### ELBA TEST ORDER
+            if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.ELBA, MTP_ASIC_SUPPORT.TURBO_ELBA):
+                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
+            ### ELBA TEST ORDER WITH SPECIAL NC-SI IMAGE
+            if corner == Env_Cond.MFG_NT and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
+                test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
 
                 if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA, Env_Cond.MFG_ORT_HT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
@@ -1639,6 +1763,39 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
+                elif test_section == "NC-SI":
+                    ######################################################################
+                    #
+                    #  NIC Parallel test for NC-SI loopback only
+                    #
+                    ######################################################################
+                    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                            continue
+
+                        nic_para_test_list = para_test_list[nic_type]
+                        nic_test_db = test_db[nic_type]
+
+                        if corner in (Env_Cond.MFG_LT, Env_Cond.MFG_HT):
+                            loopback = False
+                        else:
+                            loopback = True
+                        if nic_list:
+                            diag_para_fail_list = naples_diag_ncsi_test(mtp_mgmt_ctrl,
+                                                                       nic_type,
+                                                                       nic_list,
+                                                                       nic_test_db,
+                                                                       nic_para_test_list,
+                                                                       vmarg,
+                                                                       stop_on_err,
+                                                                       args.skip_test)
+                            for slot in diag_para_fail_list:
+                                if slot in nic_list and stop_on_err:
+                                    nic_list.remove(slot)
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                if slot in pass_nic_list:
+                                    pass_nic_list.remove(slot)
 
                 elif test_section == "SNAKE":
                     ######################################################################
@@ -1651,6 +1808,11 @@ def main():
                             if swmtestmode == Swm_Test_Mode.ALOM:
                                 continue
                         nic_mtp_para_test_list = mtp_para_test_list[nic_type]
+
+                        if ("RMII_LINKUP") in nic_mtp_para_test_list:
+                            nic_mtp_para_test_list.remove("RMII_LINKUP")
+                        if ("UART_LPBACK") in nic_mtp_para_test_list:
+                            nic_mtp_para_test_list.remove("UART_LPBACK")
 
                         fstl = list()
                         if nic_list:
@@ -1958,6 +2120,87 @@ def main():
                                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                         return
 
+                elif test_section == "TEST_FPGA_PROG":
+                    ######################################################################
+                    #
+                    #  Program NC-SI specific FPGA image
+                    #
+                    ######################################################################
+                    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+                    nic_thread_list = list()
+                    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                        for slot in nic_list:
+                            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                continue
+
+                            nic_thread = threading.Thread(target = single_nic_test_fpga_program, args = (mtp_mgmt_ctrl,
+                                                                                                  slot,
+                                                                                                  args.skip_test,
+                                                                                                  nic_test_rslt_list,
+                                                                                                  dsp))
+                            nic_thread.daemon = True
+                            nic_thread.start()
+                            nic_thread_list.append(nic_thread)
+                            time.sleep(2)
+
+                    # monitor all the thread
+                    while True:
+                        if len(nic_thread_list) == 0:
+                            break
+                        for nic_thread in nic_thread_list[:]:
+                            if not nic_thread.is_alive():
+                                nic_thread.join()
+                                nic_thread_list.remove(nic_thread)
+                        time.sleep(5)
+
+                    for slot in range(MTP_Const.MTP_SLOT_NUM):
+                        if not nic_test_rslt_list[slot]:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+
+
+                elif test_section == "PROD_FPGA_PROG":
+                    ######################################################################
+                    #
+                    #  Program production FPGA image
+                    #
+                    ######################################################################
+                    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+                    nic_thread_list = list()
+                    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+                        for slot in nic_list:
+                            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                continue
+
+                            nic_thread = threading.Thread(target = single_nic_prod_fpga_program, args = (mtp_mgmt_ctrl,
+                                                                                                  slot,
+                                                                                                  args.skip_test,
+                                                                                                  nic_test_rslt_list,
+                                                                                                  dsp))
+                            nic_thread.daemon = True
+                            nic_thread.start()
+                            nic_thread_list.append(nic_thread)
+                            time.sleep(2)
+
+                    # monitor all the thread
+                    while True:
+                        if len(nic_thread_list) == 0:
+                            break
+                        for nic_thread in nic_thread_list[:]:
+                            if not nic_thread.is_alive():
+                                nic_thread.join()
+                                nic_thread_list.remove(nic_thread)
+                        time.sleep(5)
+
+                    for slot in range(MTP_Const.MTP_SLOT_NUM):
+                        if not nic_test_rslt_list[slot]:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
@@ -1989,6 +2232,8 @@ def main():
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_script_dir + diag_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_script_dir + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
