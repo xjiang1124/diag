@@ -163,14 +163,14 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True):
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2):
         nic_list_remain = nic_list[:]
         timeout = 60
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
-            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port, env=env)
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port)
             timeout += retry*10
             if ret == 0:
                 break
@@ -228,7 +228,7 @@ class nic_test:
         return ret, nic_list_remain
 
 
-    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, env=True):
+    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -241,10 +241,9 @@ class nic_test:
         if pwr_cycle == True:
             self.nic_con.power_cycle_multi(self.baud_rate, slot_list, timeout, swm_lp)
 
-        if env == True:
-            for slot in nic_list:
-                ret = self.setup_env(int(slot), False, timeout, False, False, False)
-                ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
+        for slot in nic_list:
+            ret = self.setup_env(int(slot), False, timeout, False, False, False)
+            ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
         for slot in nic_list:
             if ret_list[int(slot)-1] != 0:
@@ -812,6 +811,30 @@ class nic_test:
         else:
             print "=== ena_dis_esec_wp passed ==="
         print "=== ena_dis_esec_wp done #", retry, "==="
+
+    def verify_esec_qspi_wp(self, nic_list=[], enable=True):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for slot in nic_list:
+            ret = self.nic_con.verify_esec_qspi_wp(int(slot), enable)
+            ret_list[int(slot)-1] = ret
+
+        nic_list_copy = nic_list[:]
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 0:
+                nic_list_copy.remove(slot)
+                nic_pass_list.append(slot)
+
+        if len(nic_list_copy) != 0:
+            print "=== verify_esec_qspi_wp failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+        else:
+            print "=== verify_esec_qspi_wp passed ==="
+        print "=== verify_esec_qspi_wp done ==="
 
     def vrd_fault_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1519,6 +1542,14 @@ if __name__ == "__main__":
                        "--dis_esec_wp",
                        help="Disable QSPI WP for mutiple cards",
                        action='store_true')
+    group.add_argument("-verify_ena_esec_qspi_wp",
+                       "--verify_ena_esec_qspi_wp",
+                       help="Verify enable QSPI WP for mutiple cards",
+                       action='store_true')
+    group.add_argument("-verify_dis_esec_qspi_wp",
+                       "--verify_dis_esec_qspi_wp",
+                       help="Verify disable QSPI WP for mutiple cards",
+                       action='store_true')
     group.add_argument("-setup_uboot_env", 
                        "--setup_uboot_env", 
                        help="Setup uboot evn variable for mutiple cards", 
@@ -1540,7 +1571,6 @@ if __name__ == "__main__":
     parser.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser.add_argument("-wtime", "--wait_time", help="Wait time", type=int, default=180)
     parser.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
-    parser.add_argument("-skip_env", "--skip_env", help="Set up env", action='store_false')
     parser.add_argument("-mode", "--mode", help="Test mode: pcie/hbm; prbs: pcie/eth", type=str, default="hbm")
     parser.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default="normal")
     parser.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback", action='store_true')
@@ -1612,7 +1642,7 @@ if __name__ == "__main__":
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port, env=args.skip_env)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port)
         sys.exit()
 
     if args.pwr_cycle_test == True:
@@ -1642,6 +1672,16 @@ if __name__ == "__main__":
         else:
             ena_dis = False
         test.ena_dis_esec_wp(slot_list, ena_dis)
+        sys.exit()
+
+    if args.verify_ena_esec_qspi_wp == True or args.verify_dis_esec_qspi_wp == True:
+        slot_list = args.slot_list.split(',')
+
+        if args.verify_ena_esec_qspi_wp == True:
+            ena_dis = True
+        else:
+            ena_dis = False
+        test.verify_esec_qspi_wp(slot_list, ena_dis)
         sys.exit()
 
     if args.config_ddr == True:
