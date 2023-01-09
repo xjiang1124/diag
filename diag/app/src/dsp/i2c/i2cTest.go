@@ -106,7 +106,7 @@ func testTmpAdiCom(devName string) (err int) {
         dcli.Println("f", devName, " Read status failed!")
         return
     }
-    if (mfgId != max6657.MFG_ID_V) && (mfgId != max6657.MFG_ID_V_1) {
+    if (mfgId != max6657.MFG_ID_V) && (mfgId != max6657.MFG_ID_V_1) && (mfgId != adm1032.MFG_ID_V) {
         dcli.Println("F", devName, " Invalid MFG ID: expected", tmpadicom.MFG_ID_V, "read", mfgId)
         return errType.FAIL
     }
