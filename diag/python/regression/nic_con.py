@@ -1031,6 +1031,75 @@ class nic_con:
             print "Failed to", str, "WP in uboot"
         return ret
 
+    def file_compare(self, fn1, fn2):
+        ret = 0
+        f1 = open(fn1, "r")
+        f2 = open(fn2, "r")
+        f1_lines = f1.readlines()
+        f2_lines = f2.readlines()
+        for i in range(len(f1_lines)):
+            if f1_lines[i] != f2_lines[i]:
+                print("line " + str(i) + " not match, " + fn1 + ": " + f1_lines[i] + ", " + fn2 + ": " + f2_lines[i])
+                ret = 1
+                break
+        f1.close()
+        f2.close()
+        return ret
+
+    def verify_esec_qspi_wp(self, slot, enable):
+        ret = 0
+        if enable == True:
+            str = "enable"
+        else:
+            str = "disable"
+        try:
+            j2c_session = common.session_start()
+            common.session_cmd(j2c_session, "cd /home/diag/diag/asic/asic_src/ip/cosim/tclsh")
+
+            # TCL command
+            common.session_cmd(j2c_session, "tclsh", 40, False, ending=["%", "tclsh]"])
+            common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
+
+            common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
+            common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
+            common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
+            common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
+            common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
+            common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
+            # save
+            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/save.txt", 300, False, "tclsh]")
+            common.session_cmd(j2c_session, "exec awk {print $2} /home/diag/save.txt > /home/diag/restore.txt", 300, False, "tclsh]")
+            # program
+            common.session_cmd(j2c_session, "exec awk {{print \"5A5A5A5A\"}} /home/diag/save.txt > /home/diag/prog.txt", 300, False, "tclsh]")
+            common.session_cmd(j2c_session, "elb_prog_qspi /home/diag/prog.txt 0x70000000", 300, False, "tclsh]")
+            # dump after program
+            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/after_prog.txt", 300, False, "tclsh]")
+            common.session_cmd(j2c_session, "exec awk {{print $2}} /home/diag/after_prog.txt > /home/diag/after_prog_wo_addr.txt", 300, False, "tclsh]")
+            if enable == True:
+                # compare with saved
+                if self.file_compare("/home/diag/after_prog.txt", "/home/diag/save.txt") == 0:
+                    ret = 0
+                else:
+                    # WP not working, restore
+                    common.session_cmd(j2c_session, "elb_prog_qspi /home/diag/restore.txt 0x70000000", 300, False, "tclsh]")
+                    ret = -1
+            else:
+                # compare with programmed
+                if self.file_compare("/home/diag/after_prog_wo_addr.txt", "/home/diag/prog.txt") == 0:
+                    ret = 0
+                else:
+                    ret = -1
+                # restore
+                common.session_cmd(j2c_session, "elb_prog_qspi /home/diag/restore.txt 0x70000000", 300, False, "tclsh]")
+            common.session_cmd(j2c_session, "exit", 10)
+            common.session_stop(j2c_session)
+        except pexpect.TIMEOUT:
+            print "=== TIMEOUT: Failed to verify WP ", str
+            common.session_stop(j2c_session)
+            return -1
+        return ret
+
+
     # enable = True:  enable WP
     # enable = False: disable WP
     def ena_dis_esec_wp(self, slot, enable):
@@ -1068,6 +1137,10 @@ class nic_con:
             return ret
         self.uart_session_stop(session)
         common.session_stop(session)
+        # verify WP functionality
+        ret = self.verify_esec_qspi_wp(slot, enable)
+        if ret != 0:
+            print "Failed to verify esec qspi WP for slot", slot
         if ret == 0:
             if enable == True:
                 print "Succeeded to set QSPI WP enable for slot", slot
