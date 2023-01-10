@@ -412,6 +412,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SNAKE_EMMC_INTR"}) {
+        $top_diag_fa_code = "SNAKE_EMMC_INTR";
+        delete $diag_fa_code{"SNAKE_EMMC_INTR"};
+        return;
+    }
+
     if (exists $diag_fa_code{"L1_ESEC_FAILURE"}) {
         $top_diag_fa_code = "L1_ESEC_FAILURE";
         delete $diag_fa_code{"L1_ESEC_FAILURE"};
@@ -678,6 +684,12 @@ sub parse_snake_hbm_log {
             $diag_fa_code{"SNAKE_PP_INTR"} = 1;
             $intr_err_found = 1;
         }
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.ms\.em\.int_groups\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_EMMC_INTR"} = 1;
+            $intr_err_found = 1;
+        }
         if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
@@ -729,6 +741,12 @@ sub parse_snake_pcie_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_PP_INTR"} = 1;
+            $intr_err_found = 1;
+        }
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.ms\.em\.int_groups\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_EMMC_INTR"} = 1;
             $intr_err_found = 1;
         }
         if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
