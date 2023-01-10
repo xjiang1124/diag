@@ -1384,7 +1384,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         if rs:
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
+            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)

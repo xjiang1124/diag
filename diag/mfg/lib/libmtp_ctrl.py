@@ -1522,7 +1522,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init_start(self, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, skip_nic_pn_init=False):
+    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False):
         if not self.mtp_mgmt_connect():
             self.cli_log_err("Unable to connect MTP chassis", level=0)
             return False
@@ -1547,7 +1547,7 @@ class mtp_ctrl():
             return False
 
         # PSU/FAN absent, powerdown MTP
-        if not self.mtp_hw_init(fan_spd, None):
+        if not self.mtp_hw_init(None):
             self.cli_log_err("MTP HW Init Fail", level=0)
             return False
 
@@ -2240,8 +2240,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_hw_init(self, fan_spd, stage=None):
+    # make sure mtp_hw_init is always done after mtp_sys_info_init, as it needs info collected from it
+    def mtp_hw_init(self, stage=None):
         rc = True
+
+        fan_spd = libmfg_utils.pick_fan_speed(stage)
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # mtp cpld test

@@ -786,7 +786,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None, skip_nic_pn_init=False):
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, skip_nic_pn_init=False):
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
@@ -805,7 +805,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
+    if not mtp_mgmt_ctrl.mtp_hw_init(stage):
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
