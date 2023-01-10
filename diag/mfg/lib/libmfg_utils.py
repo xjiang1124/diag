@@ -804,8 +804,15 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
-    if not mtp_mgmt_ctrl.get_mtp_factory_location():
-        mtp_mgmt_ctrl.cli_log_err("Unable to get MTP factory location")
+    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
+        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
+        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
+        return False
+
+    # get the mtp system info
+    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
+        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
+        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
     # init all the nic.
