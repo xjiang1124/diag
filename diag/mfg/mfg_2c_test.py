@@ -11,7 +11,6 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_Type
 from libdefs import FF_Stage
@@ -76,10 +75,7 @@ def single_mtp_2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if stage == FF_Stage.FF_2C_H:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
-    else:
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
+    cmd = "./mtp_diag_regression.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, stage, swm_test_mode)
     if skip_test:
         cmd += skipped_testlist
     if only_test:

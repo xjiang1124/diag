@@ -19,7 +19,6 @@ from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
@@ -793,7 +792,7 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.MFG_NT)
+    parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("-cfg", "--cfgyaml", help="Test case config file for DDR test suite, default to %(default)s", default="config/ddr_test_suite.yaml")
@@ -810,45 +809,14 @@ def main():
     stop_on_err = args.stop_on_error
     verbosity = args.verbosity
     l1_sequence = args.l1_seq
-    corner = args.corner
+    stage = args.stage
     swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:
         swmtestmode = args.swm
 
-    stage = None
-    # Normal temperature, no voltage corner
-    if corner == Env_Cond.MFG_NT:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = None
-        vmarg_list = [Voltage_Margin.normal]
-        stage = FF_Stage.FF_P2C
-    # Low temperature, two voltage corner
-    # this is changed to single voltage corner after mtp setup step
-    elif corner == Env_Cond.MFG_LT:
-        if GLB_CFG_MFG_TEST_MODE:
-            fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-            low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
-        else:
-            fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
-            low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
-        high_temp_threshold = None
-        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
-        stage = FF_Stage.FF_2C_L
-    # High temperature, two voltage corner
-    # this is changed to single voltage corner after mtp setup step
-    elif corner == Env_Cond.MFG_HT:
-        if GLB_CFG_MFG_TEST_MODE:
-            fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-            high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-        else:
-            fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-            high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
-        low_temp_threshold = None
-        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
-        stage = FF_Stage.FF_2C_H
-    else:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
+    high_temp_threshold, low_temp_threshold = libmfg_utils.pick_temperature_thresholds(stage)
+    fanspd = libmfg_utils.pick_fan_speed(stage)
+    vmarg_list = libmfg_utils.pick_voltage_margin(stage)
 
     # overwrite the varg_list if specified from command line arguments
     if args.vmarg:
@@ -907,7 +875,7 @@ def main():
 
     test_db = dict()
     for nic_type in test_cfg_file.keys():
-        test_db[nic_type] = diag_db(corner, test_cfg_file[nic_type])
+        test_db[nic_type] = diag_db(stage, test_cfg_file[nic_type])
 
     mtp_para_test_list = dict()
     for nic_type in test_db.keys():
@@ -948,15 +916,6 @@ def main():
         # Set Naples25SWM test mode
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
 
-        # Readjust the voltage corners
-        # capri = LTHV, HTLV
-        # elba  = LTHV, LTLV, HTLV, HTHV
-        if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
-            if corner == Env_Cond.MFG_LT:
-                vmarg_list = [Voltage_Margin.high]
-            elif corner == Env_Cond.MFG_HT:
-                vmarg_list = [Voltage_Margin.low]
-
         # Wait the Chamber temperature, if HT or LT is set
         mtp_mgmt_ctrl.cli_log_inf("Diag DDR Test Ambient Temperature Check", level=0)
         rdy = mtp_mgmt_ctrl.mtp_wait_temp_ready(low_temp_threshold, high_temp_threshold)
@@ -968,7 +927,7 @@ def main():
             diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
             return
         # only MFG HT/LT need soaking process
-        if corner == Env_Cond.MFG_HT or corner == Env_Cond.MFG_LT:
+        if stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H):
             mtp_mgmt_ctrl.mtp_wait_soaking()
         mtp_mgmt_ctrl.cli_log_inf("Diag DDR Test Ambient Temperature Check Complete\n", level=0)
 
@@ -1026,7 +985,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA):    #Skip SWM Low Power Test for 4C
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -1066,11 +1025,11 @@ def main():
                 ######################################################################
                 #  One-time steps
                 ######################################################################
-                if not programmables_checked and (corner == Env_Cond.MFG_NT or corner == Env_Cond.MFG_LT):
+                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L):
                     mtp_mgmt_ctrl.mtp_power_off_nic()
                     mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
-                    dsp = diag_reg.get_test_stage_name(mtp_mgmt_ctrl, corner)
+                    dsp = stage
 
                     # Update programmables if necessary
                     dl_check_fail_list = diag_reg.naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
@@ -1089,7 +1048,7 @@ def main():
                 if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
                     mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                     libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
-                    diag_pre_fail_list = diag_reg.mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, [], corner)
+                    diag_pre_fail_list = diag_reg.mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, [], stage)
 
                 if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
                     for nic_list in nic_test_full_list:
@@ -1297,7 +1256,7 @@ def main():
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
-                diag_post_fail_list = diag_reg.mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, corner)
+                diag_post_fail_list = diag_reg.mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stage)
                 # failed enable pcie poll, fail the card
                 for slot in diag_post_fail_list:
                     if slot not in fail_nic_list:
