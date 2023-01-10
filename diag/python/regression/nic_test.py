@@ -813,6 +813,30 @@ class nic_test:
             print "=== ena_dis_esec_wp passed ==="
         print "=== ena_dis_esec_wp done #", retry, "==="
 
+    def verify_esec_qspi_wp(self, nic_list=[], enable=True):
+        ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        nic_pass_list = []
+
+        if len(nic_list) == 0:
+            print "No nic specified -- Exit"
+            sys.exit(0)
+
+        for slot in nic_list:
+            ret = self.nic_con.verify_esec_qspi_wp(int(slot), enable)
+            ret_list[int(slot)-1] = ret
+
+        nic_list_copy = nic_list[:]
+        for slot in nic_list:
+            if ret_list[int(slot)-1] == 0:
+                nic_list_copy.remove(slot)
+                nic_pass_list.append(slot)
+
+        if len(nic_list_copy) != 0:
+            print "=== verify_esec_qspi_wp failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+        else:
+            print "=== verify_esec_qspi_wp passed ==="
+        print "=== verify_esec_qspi_wp done ==="
+
     def vrd_fault_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
@@ -1519,6 +1543,14 @@ if __name__ == "__main__":
                        "--dis_esec_wp",
                        help="Disable QSPI WP for mutiple cards",
                        action='store_true')
+    group.add_argument("-verify_ena_esec_qspi_wp",
+                       "--verify_ena_esec_qspi_wp",
+                       help="Verify enable QSPI WP for mutiple cards",
+                       action='store_true')
+    group.add_argument("-verify_dis_esec_qspi_wp",
+                       "--verify_dis_esec_qspi_wp",
+                       help="Verify disable QSPI WP for mutiple cards",
+                       action='store_true')
     group.add_argument("-setup_uboot_env", 
                        "--setup_uboot_env", 
                        help="Setup uboot evn variable for mutiple cards", 
@@ -1642,6 +1674,16 @@ if __name__ == "__main__":
         else:
             ena_dis = False
         test.ena_dis_esec_wp(slot_list, ena_dis)
+        sys.exit()
+
+    if args.verify_ena_esec_qspi_wp == True or args.verify_dis_esec_qspi_wp == True:
+        slot_list = args.slot_list.split(',')
+
+        if args.verify_ena_esec_qspi_wp == True:
+            ena_dis = True
+        else:
+            ena_dis = False
+        test.verify_esec_qspi_wp(slot_list, ena_dis)
         sys.exit()
 
     if args.config_ddr == True:
