@@ -1069,28 +1069,6 @@ class nic_con:
             # save
             common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/save.txt", 300, False, "tclsh]")
             #common.session_cmd(j2c_session, "exec awk {print $2} /home/diag/save.txt > /home/diag/restore.txt", 300, False, "tclsh]")
-            # erase
-            common.session_cmd(j2c_session, "elb_erase_qspi 0x10000 0x70000000", 100, False, "tclsh]")
-            # dump after erase
-            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/after_erase.txt", 300, False, "tclsh]")
-            if enable == True:
-                # compare with saved
-                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/save.txt") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-            else:
-                # should be erased
-                common.session_cmd(j2c_session, "exec awk {$2=\"FFFFFFFF\"} /home/diag/save.txt > /home/diag/expected_after_erase.txt", 30, False, "tclsh]")
-                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/expected_after_erase.txt") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-            if ret != 0:
-                common.session_cmd(j2c_session, "exit", 10)
-                common.session_stop(j2c_session)
-                return ret
-
             # program random
             common.session_cmd(j2c_session, "head -c 64k /dev/urandom > /home/diag/random.txt", 30, False, "tclsh]")
             common.session_cmd(j2c_session, "bin2hex /home/diag/random.txt > /home/diag/random.hex", 30, False, "tclsh]")
@@ -1110,6 +1088,29 @@ class nic_con:
                     ret = 0
                 else:
                     ret = -1
+            if ret != 0:
+                common.session_cmd(j2c_session, "exit", 10)
+                common.session_stop(j2c_session)
+                return ret
+
+            # erase
+            common.session_cmd(j2c_session, "elb_erase_qspi 0x10000 0x70000000", 100, False, "tclsh]")
+            # dump after erase
+            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/after_erase.txt", 300, False, "tclsh]")
+            if enable == True:
+                # compare with saved
+                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/save.txt") == 0:
+                    ret = 0
+                else:
+                    ret = -1
+            else:
+                # should be erased
+                common.session_cmd(j2c_session, "exec awk {$2=\"FFFFFFFF\"} /home/diag/save.txt > /home/diag/expected_after_erase.txt", 30, False, "tclsh]")
+                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/expected_after_erase.txt") == 0:
+                    ret = 0
+                else:
+                    ret = -1
+
             common.session_cmd(j2c_session, "exit", 10)
             common.session_stop(j2c_session)
         except pexpect.TIMEOUT:
