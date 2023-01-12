@@ -21,7 +21,6 @@ from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
 from libdefs import MFG_DIAG_CMDS
-from libdefs import Env_Cond
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_IMAGES
@@ -419,8 +418,8 @@ def single_uut_2c_test(stage,
     mtp_mgmt_ctrl._slots = 2
 
     try:
-        for idx, (corner, stage) in enumerate([(Env_Cond.MFG_2C_HV, FF_Stage.FF_2C_HV), (Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV)]):
-            if corner in skip_testlist:
+        for idx, stage in enumerate([FF_Stage.FF_2C_HV, FF_Stage.FF_2C_LV]):
+            if stage in skip_testlist:
                 continue
 
             # start new logfile
@@ -463,7 +462,7 @@ def single_uut_2c_test(stage,
 
             # load the diag test config
             taormina_test_cfg_file = "config/taormina_uut_test_cfg.yaml"
-            taormina_test_db = diag_db(corner, taormina_test_cfg_file)
+            taormina_test_db = diag_db(stage, taormina_test_cfg_file)
             taormina_pre_test_check_list = taormina_test_db.get_pre_diag_test_intf_list()
             taormina_mtp_para_test_list = taormina_test_db.get_mtp_para_test_list()
             taormina_seq_test_list = taormina_test_db.get_tor_dsp_test_list()
@@ -478,9 +477,9 @@ def single_uut_2c_test(stage,
                 naples_exec_skip_cmd(nic_list, test_db, mtp_mgmt_ctrl)
                 naples_exec_param_cmd(nic_list, test_db, mtp_mgmt_ctrl)
 
-            if corner == Env_Cond.MFG_2C_HV:
+            if stage == FF_Stage.FF_2C_HV:
                 vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
-            elif corner == Env_Cond.MFG_2C_LV:
+            elif stage == FF_Stage.FF_2C_LV:
                 vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
 
             fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
@@ -575,7 +574,7 @@ def single_uut_2c_test(stage,
 
                 elif test_section == "PASSMARK":
                     if uut_test_rslt_list[uut_id]:
-                        if not mtp_mgmt_ctrl.tor_fru_passmark(corner):
+                        if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
                             uut_test_rslt_list[uut_id] = False
 
                 else:

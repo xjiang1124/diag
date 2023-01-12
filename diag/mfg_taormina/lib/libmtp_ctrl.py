@@ -23,7 +23,6 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_IP_Address
 
@@ -6338,7 +6337,7 @@ class mtp_ctrl():
             prog_val = "passmark_loc 6 pass_mark DL2:"+pass_timestamp
         elif stage == "LED":
             prog_val = "passmark_loc 7 pass_mark LED:"+pass_timestamp
-        elif stage in ("2C-LV", "2C_LV", Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV):
+        elif stage in ("2C-LV", "2C_LV", FF_Stage.FF_2C_LV):
             prog_val = "passmark_loc 8 pass_mark 2C:"+pass_timestamp
         elif stage in ("SWI", FF_Stage.FF_SWI):
             prog_val = "passmark_loc 9 pass_mark SWI:"+pass_timestamp
