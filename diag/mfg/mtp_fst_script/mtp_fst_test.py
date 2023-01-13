@@ -96,7 +96,7 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.NAPLES100):
         expected_width = "16"
     else:
         expected_width = "8"
@@ -625,7 +625,7 @@ def fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot):
     mtp_mgmt_ctrl._nic_ctrl_list[slot]._ip_addr = nic_mgmt_ip
 
     if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri" and card_type != "GENERAL_OLD":
-        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, nic_mgmt_ip):
+        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type):
             return False
 
     return True
@@ -720,7 +720,7 @@ def check_nic_pcie(mtp_mgmt_ctrl, slot):
         expected_speed = "16"
     else:
         expected_speed = "8"
-    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+    if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.NAPLES100):
         expected_width = "16"
     else:
         expected_width = "8"
