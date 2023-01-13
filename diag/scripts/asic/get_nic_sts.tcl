@@ -7,6 +7,7 @@ proc test_proc {input} {
 
 set sn      [lindex $argv 0]
 set slot    [lindex $argv 1]
+set check_vrm    [lindex $argv 2]
 set port 10
 
 set err_cnt 0
@@ -18,7 +19,7 @@ set ASIC_GEN "$ASIC_SRC"
 
 set MTP_TYPE $::env(MTP_TYPE)
 
-puts "Getting ASIC status - sn: $sn; slot: $slot"
+puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -112,14 +113,16 @@ if { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
     exit 0
 }
-plog_msg "\n\n\n"
-plog_msg "=================="
-plog_msg "Get volt info via J2C"
-plog_msg "=================="
 
-elb_assert_arm_rst 0 0xf
-ssi_cpld_write 0x20 0x0
-elb_print_voltage_temp
-
+if { $check_vrm != 0 } {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg "Get volt info via J2C"
+    plog_msg "=================="
+    
+    elb_assert_arm_rst 0 0xf
+    ssi_cpld_write 0x20 0x0
+    elb_print_voltage_temp
+}
 plog_msg "Getting ASIC status - Done"
 
