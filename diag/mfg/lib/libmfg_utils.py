@@ -805,11 +805,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, skip_nic_pn_init
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
-<<<<<<< HEAD
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
-=======
     if not mtp_mgmt_ctrl.mtp_hw_init(stage):
->>>>>>> upstream/master
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
