@@ -10,7 +10,6 @@ import threading
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from ddr_test_parameters import test2args
-from libdefs import Env_Cond
 from libdefs import NIC_Type
 from libdefs import Voltage_Margin
 from libdefs import MTP_Const
@@ -96,13 +95,13 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
         if stage == FF_Stage.FF_2C_H:
             env_temp = "High Temperature"
-            cmd = "./diag_screening_ddr.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_HT, swm_test_mode)
+            cmd = "./diag_screening_ddr.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, FF_Stage.FF_2C_H, swm_test_mode)
         elif stage == FF_Stage.FF_2C_L:
             env_temp = "High Temperature"
-            cmd = "./diag_screening_ddr.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_LT, swm_test_mode)
+            cmd = "./diag_screening_ddr.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, FF_Stage.FF_2C_L, swm_test_mode)
         else:
             env_temp = "Room Temperature"
-            cmd = "./diag_screening_ddr.py --mtpid {:s} --corner {:s} --swm {:s}".format(mtp_id, Env_Cond.MFG_NT, swm_test_mode)
+            cmd = "./diag_screening_ddr.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, FF_Stage.FF_P2C, swm_test_mode)
         if fail_slots:
             cmd += fail_slots
         if test_suite_cfg:
