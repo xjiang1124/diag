@@ -44,7 +44,7 @@ class FLEX_TWO_WAY_COMM:
     PRE_POST_RETRY = 2
     POST_RETRY = 2
 
-class FF_Stage:
+class FF_Stage(Enum):
     FF_DL = "DL"
     FF_P2C = "P2C"
     FF_2C_H = "2C-H"
@@ -56,7 +56,10 @@ class FF_Stage:
     FF_CFG = "CFG"
     FF_SRN = "SRN"
     FF_ORT = "ORT"
+    QA = "CI/CD"
 
+    def __str__(self):
+        return self.value
 
 class FPN_FF_Stage:
     FF_CFG = "CFG"
@@ -68,20 +71,6 @@ class FPN_FF_Stage:
     FF_4C_L = "PSO-4C-L_AUTO"
     FF_SWI = "PSO-SWI_AUTO"
     FF_FST = "PSO-FST_AUTO"
-
-
-class Env_Cond(Enum):
-    MFG_QA = "QA"
-    MFG_LT = "LT"
-    MFG_NT = "NT"
-    MFG_HT = "HT"
-    MFG_RDT = "RDT"
-    MFG_EDVT_HT = "EDVT_HT"
-    MFG_EDVT_LT = "EDVT_LT"
-    MFG_ORT_HT = "ORT_HT"
-
-    def __str__(self):
-        return self.value
 
 #NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
 class Swm_Test_Mode(Enum):

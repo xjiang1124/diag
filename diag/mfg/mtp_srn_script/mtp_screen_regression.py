@@ -20,7 +20,6 @@ from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
@@ -1131,7 +1130,7 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.MFG_NT)
+    parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
@@ -1142,7 +1141,7 @@ def main():
     mtp_sn = ""
     stop_on_err = False
     verbosity = False
-    corner = Env_Cond.MFG_NT
+    stage = FF_Stage.FF_P2C
     swm_lp_boot_mode = False
     if args.mtpid:
         mtp_id = args.mtpid
@@ -1151,8 +1150,8 @@ def main():
         stop_on_err = True
     if args.verbosity:
         verbosity = True
-    if args.corner:
-        corner = args.corner
+    if args.stage:
+        stage = args.stage
     if args.swm:
         swmtestmode = args.swm
         print(" SWMTESTMODE=" + str(swmtestmode))
@@ -1162,60 +1161,9 @@ def main():
     fail_step = ""
     fail_desc = ""
 
-    # Normal temperature, no voltage corner
-    if corner == Env_Cond.MFG_NT:
-        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = None
-        vmarg_list = [0]
-    # QA test, normal temperature, two voltage corner
-    elif corner == Env_Cond.MFG_QA:
-        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
-    # Low temperature, two voltage corner
-    # this is changed to single voltage corner after mtp setup step
-    elif corner == Env_Cond.MFG_LT:
-        if GLB_CFG_MFG_TEST_MODE:
-            fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-            low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
-        else:
-            fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
-            low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
-        high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
-    # High temperature, two voltage corner
-    # this is changed to single voltage corner after mtp setup step
-    elif corner == Env_Cond.MFG_HT:
-        if GLB_CFG_MFG_TEST_MODE:
-            fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-            high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-        else:
-            fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
-            high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
-        low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
-    # RDT runs @high temperature, no voltage corner
-    elif corner == Env_Cond.MFG_RDT:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-        low_temp_threshold = None
-        vmarg_list = [0]
-    # EDVT, high temperature, two voltage corner
-    elif corner == Env_Cond.MFG_EDVT_HT:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-        low_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT, MTP_Const.MFG_EDVT_HIGH_VOLT]
-    # EDVT, low temperature, two voltage corner
-    elif corner == Env_Cond.MFG_EDVT_LT:
-        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
-        high_temp_threshold = None
-        vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT, MTP_Const.MFG_EDVT_LOW_VOLT]
-    else:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
+    high_temp_threshold, low_temp_threshold = libmfg_utils.pick_temperature_thresholds(stage)
+    fanspd = libmfg_utils.pick_fan_speed(stage)
+    vmarg_list = libmfg_utils.pick_voltage_margin(stage)
 
     # load the mtp config
     mtp_chassis_cfg_file_list = list()
@@ -1260,23 +1208,23 @@ def main():
     lacona32_test_cfg_file = "config/lacona32_mtp_test_cfg.yaml"
     mtp_screen_test_cfg_file = "config/mtp_screen_test_cfg.yaml"
     
-    naples100_test_db = diag_db(corner, naples100_test_cfg_file)
-    naples100ibm_test_db = diag_db(corner, naples100ibm_test_cfg_file)
-    naples100hpe_test_db = diag_db(corner, naples100hpe_test_cfg_file)
-    naples100dell_test_db = diag_db(corner, naples100dell_test_cfg_file)
-    naples25_test_db = diag_db(corner, naples25_test_cfg_file)
-    forio_test_db = diag_db(corner, forio_test_cfg_file)
-    vomero_test_db = diag_db(corner, vomero_test_cfg_file)
-    vomero2_test_db = diag_db(corner, vomero2_test_cfg_file)
-    naples25swm_test_db = diag_db(corner, naples25swm_test_cfg_file)
-    naples25ocp_test_db = diag_db(corner, naples25ocp_test_cfg_file)
-    naples25swmdell_test_db = diag_db(corner, naples25swmdell_test_cfg_file)
-    naples25swm833_test_db = diag_db(corner, naples25swm833_test_cfg_file)
-    ortano_test_db = diag_db(corner, ortano_test_cfg_file)
-    pomontedell_test_db = diag_db(corner, pomontedell_test_cfg_file)
-    lacona32dell_test_db = diag_db(corner, lacona32dell_test_cfg_file)
-    lacona32_test_db = diag_db(corner, lacona32_test_cfg_file)
-    mtp_screen_test_db = diag_db(corner, mtp_screen_test_cfg_file)
+    naples100_test_db = diag_db(stage, naples100_test_cfg_file)
+    naples100ibm_test_db = diag_db(stage, naples100ibm_test_cfg_file)
+    naples100hpe_test_db = diag_db(stage, naples100hpe_test_cfg_file)
+    naples100dell_test_db = diag_db(stage, naples100dell_test_cfg_file)
+    naples25_test_db = diag_db(stage, naples25_test_cfg_file)
+    forio_test_db = diag_db(stage, forio_test_cfg_file)
+    vomero_test_db = diag_db(stage, vomero_test_cfg_file)
+    vomero2_test_db = diag_db(stage, vomero2_test_cfg_file)
+    naples25swm_test_db = diag_db(stage, naples25swm_test_cfg_file)
+    naples25ocp_test_db = diag_db(stage, naples25ocp_test_cfg_file)
+    naples25swmdell_test_db = diag_db(stage, naples25swmdell_test_cfg_file)
+    naples25swm833_test_db = diag_db(stage, naples25swm833_test_cfg_file)
+    ortano_test_db = diag_db(stage, ortano_test_cfg_file)
+    pomontedell_test_db = diag_db(stage, pomontedell_test_cfg_file)
+    lacona32dell_test_db = diag_db(stage, lacona32dell_test_cfg_file)
+    lacona32_test_db = diag_db(stage, lacona32_test_cfg_file)
+    mtp_screen_test_db = diag_db(stage, mtp_screen_test_cfg_file)
 
     naples100_seq_test_list = naples100_test_db.get_diag_seq_test_list()
     naples100_mtp_para_test_list = naples100_test_db.get_mtp_para_test_list()
@@ -1436,7 +1384,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         if rs:
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd):
+            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -1570,15 +1518,6 @@ def main():
 
         # Set Naples25SWM test mode
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
-         
-        # Readjust the voltage corners
-        # capri = LTHV, HTLV
-        # elba  = LTHV, LTLV, HTLV, HTHV
-        if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
-            if corner == Env_Cond.MFG_LT:
-                vmarg_list = [MTP_Const.MFG_EDVT_HIGH_VOLT]
-            elif corner == Env_Cond.MFG_HT:
-                vmarg_list = [MTP_Const.MFG_EDVT_LOW_VOLT]
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 

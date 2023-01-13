@@ -29,6 +29,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
+from libdefs import Voltage_Margin
 from libmfg_cfg import *
 from libsku_utils import *
 
@@ -709,7 +710,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     if logfile_dir:
         cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
         os.system(cmd)
-        if FF_Stage.FF_DL in logfile_dir or FF_Stage.FF_SWI in logfile_dir:
+        if str(FF_Stage.FF_DL) in logfile_dir or str(FF_Stage.FF_SWI) in logfile_dir:
             cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
             os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
@@ -785,7 +786,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None, skip_nic_pn_init=False):
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, skip_nic_pn_init=False):
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect():
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
@@ -804,7 +805,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_N
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
 
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
+    if not mtp_mgmt_ctrl.mtp_hw_init(stage):
         mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -2523,7 +2524,7 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR]:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip RJ45 Sanity Check For This Slot")
                     skip_check_list[mtp_id].append(slot)
 
@@ -2539,7 +2540,7 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in [NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR]:
+                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR]:
                         continue
                     if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
@@ -2873,4 +2874,120 @@ def get_fst_nic_ssh_cmd_penctl(ip, username):
     ssh_cmd_fmt = "ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' -i  ~/.ssh/id_rsa {}@{}"
     ssh_cmd = ssh_cmd_fmt.format(username, ip)
     return ssh_cmd
+
+"""
++--------+----------------+-----------------+------------+------------------+
+| Stage  | Low Threshold  | High Threshold  | Fan Speed  | Voltage Margins  |
++--------+----------------+-----------------+------------+------------------+
+| P2C    | None           | None            | NORM       | normal           |
+| CI/CD  | None           | None            | NORM       | high, low        |
+| 2C_L   | LOW            | None            | LOW        | high, low        |
+| 2C_H   | None           | HIGH            | HIGH       | low, high        |
+| 4C_H   | None           | HIGH            | HIGH       | low, high        |
+| 4C_L   | LOW            | None            | LOW        | high, low        |
+| ORT    | None           | None            | HIGH       | normal           |
++--------+----------------+-----------------+------------+------------------+
+"""
+
+def pick_temperature_thresholds(stage):
+    if stage == FF_Stage.FF_P2C:
+        low_temp_threshold = None
+        high_temp_threshold = None
+
+    elif stage == FF_Stage.FF_2C_L:
+        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
+        high_temp_threshold = None
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
+
+    elif stage == FF_Stage.FF_4C_L:
+        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
+        high_temp_threshold = None
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            low_temp_threshold = MTP_Const.MFG_MODEL_EDVT_LOW_TEMP
+
+    elif stage == FF_Stage.FF_2C_H:
+        low_temp_threshold = None
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
+
+    elif stage == FF_Stage.FF_4C_H:
+        low_temp_threshold = None
+        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            high_temp_threshold = MTP_Const.MFG_MODEL_EDVT_HIGH_TEMP
+
+    else:
+        low_temp_threshold = None
+        high_temp_threshold = None
+
+    return low_temp_threshold, high_temp_threshold
+
+def pick_fan_speed(stage):
+    if stage == FF_Stage.FF_P2C:
+        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+
+    elif stage == FF_Stage.FF_2C_L:
+        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
+
+    elif stage == FF_Stage.FF_4C_L:
+        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
+
+    elif stage == FF_Stage.FF_2C_H:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
+
+    elif stage == FF_Stage.FF_4C_H:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
+        if not GLB_CFG_MFG_TEST_MODE:
+            fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
+
+    elif stage == FF_Stage.FF_ORT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
+    else:
+        fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+
+    return fanspd
+
+def pick_voltage_margin(stage):
+    if stage == FF_Stage.FF_P2C:
+        vmarg_list = [Voltage_Margin.normal]
+
+    elif stage == FF_Stage.QA:
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
+
+    elif stage == FF_Stage.FF_2C_L:
+        vmarg_list = [Voltage_Margin.high]
+
+    elif stage == FF_Stage.FF_2C_H:
+        vmarg_list = [Voltage_Margin.low]
+
+    elif stage == FF_Stage.FF_4C_L:
+        vmarg_list = [Voltage_Margin.high, Voltage_Margin.low]
+
+    elif stage == FF_Stage.FF_4C_H:
+        vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
+
+    elif stage == FF_Stage.ORT:
+        vmarg_list = [Voltage_Margin.normal]
+
+    else:
+        vmarg_list = [Voltage_Margin.normal]
+
+    return vmarg_list
 
