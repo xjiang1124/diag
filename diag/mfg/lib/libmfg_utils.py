@@ -1125,7 +1125,6 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
 
         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_single_j2c_lock()
-            mtp_mgmt_ctrl.mtp_nic_disp_ecc(slot) # needed separately in case j2c is unavailable
             mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
                 mtp_mgmt_ctrl.mtp_nic_l1_health_check(slot) # for a CONSOLE_BOOT failure ONLY: do a mini L1

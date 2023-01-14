@@ -4017,7 +4017,7 @@ class mtp_ctrl():
             else:
                 self.mtp_single_j2c_lock()
                 self.mtp_nic_console_lock()
-                ret, _ = self.mtp_nic_disp_ecc(slot)
+                self.mtp_get_nic_sts(slot)
                 self.mtp_nic_console_unlock()
                 self.mtp_single_j2c_unlock()
 
@@ -6604,6 +6604,24 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "No ECC errors found")
             else:
                 self.cli_log_slot_err(slot, "ECC errors found")
+
+        return True
+
+    def mtp_get_nic_sts(self, slot):
+        """
+         Read board and die temp via j2c
+         WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in ELBA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=True):
+            self.cli_log_slot_err(slot, "Unable to dump NIC sts")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            return False
+
+        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
 
         return True
 
