@@ -77,6 +77,10 @@ def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
     bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
     mtp_mgmt_ctrl.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
 
+    # extra info dump
+    cmd = "lspci -d 1dd8: -vvv"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     slot_bus_list = []
     if len(bus_list_match):
         bus_list = list()
