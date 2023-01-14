@@ -1727,6 +1727,19 @@ class nic_ctrl():
 
         return True
 
+    def nic_dump_esec_qspi(self, mode):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_QSPI_DUMP_FMT.format(self._slot+1, mode)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
@@ -2807,7 +2820,7 @@ class nic_ctrl():
         PROD_NUM_FIELD = r"HPE Product Number"
         pn_table = {
             NIC_Type.NAPLES25SWM: [
-                (PROD_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                (PROD_NUM_FIELD, "P26969\-B21")
                 ]
         }
         if self._nic_type not in pn_table.keys():
@@ -4402,12 +4415,16 @@ class nic_ctrl():
         self.nic_console_detach()
         return ret
 
-    def read_nic_temp(self):
+    def read_nic_temp(self, skip_reboot=False):
         if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
-        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1), timeout=180):
+
+        cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1)
+        if skip_reboot:
+            cmd += " 0" #skips VRM
+        if not self.mtp_exec_cmd(cmd, timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()

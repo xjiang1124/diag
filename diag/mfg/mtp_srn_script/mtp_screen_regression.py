@@ -1161,7 +1161,7 @@ def main():
     fail_step = ""
     fail_desc = ""
 
-    high_temp_threshold, low_temp_threshold = libmfg_utils.pick_temperature_thresholds(stage)
+    low_temp_threshold, high_temp_threshold = libmfg_utils.pick_temperature_thresholds(stage)
     fanspd = libmfg_utils.pick_fan_speed(stage)
     vmarg_list = libmfg_utils.pick_voltage_margin(stage)
 
