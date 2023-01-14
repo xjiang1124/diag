@@ -125,35 +125,6 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
     return
 
-def get_mode_param(mtp_mgmt_ctrl, slot, test):
-    """
-    For NIC_ASIC L1 test parameter.
-    """
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.ORTANO2 and test == "L1":
-        if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
-            mode = "hod"
-        else:
-            mode = "hod_1100"
-    elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR) and test == "L1":
-        mode = "hod"
-    elif nic_type == NIC_Type.ORTANO2ADIMSFT and test == "L1":
-        mode = "hod_1100"
-    elif nic_type == NIC_Type.ORTANO2INTERP:
-        mode = "hod"
-    elif nic_type == NIC_Type.ORTANO2SOLO:
-        mode = "hod"
-    elif nic_type == NIC_Type.POMONTEDELL:
-        mode = "nod"
-    elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        mode = "nod_550"
-    elif nic_type in CAPRI_NIC_TYPE_LIST:
-        mode = "hod"
-    else:
-        mode = ""
-
-    return mode
-
 def mtp_nic_poll_set(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, skip_testlist, testlist, stage):
     fail_nic_list = list()
 
@@ -764,7 +735,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         alom_sn = None
         if card_type == NIC_Type.NAPLES25SWM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
-        mode = get_mode_param(mtp_mgmt_ctrl, slot, test)
+        mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
         diag_cmd = diag_test_db.get_diag_para_test_run_cmd(dsp, test, slot, opts, sn, mode)
         rslt_cmd = diag_test_db.get_diag_para_test_errcode_cmd(dsp, slot, opts)
 
@@ -925,7 +896,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         opts = test_cfg["OPTS"]
-        mode = get_mode_param(mtp_mgmt_ctrl, slot, test)
+        mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
         diag_cmd = diag_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg, mode)
         rslt_cmd = diag_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
@@ -1634,7 +1605,7 @@ def main():
                 elif test_section == "MVL":
                     ######################################################################
                     #
-                    #  NIC Parallel test for MVL only
+                    #  NIC Sequential test for MVL only
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):

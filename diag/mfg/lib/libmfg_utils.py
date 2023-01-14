@@ -2990,3 +2990,32 @@ def pick_voltage_margin(stage):
 
     return vmarg_list
 
+def get_mode_param(mtp_mgmt_ctrl, slot, test):
+    """
+    For NIC_ASIC L1 test parameter.
+    """
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.ORTANO2 and test in ("L1", "SEC_PROG_VERIFY"):
+        if mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            mode = "hod"
+        else:
+            mode = "hod_1100"
+    elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR) and test in ("L1", "SEC_PROG_VERIFY"):
+        mode = "hod"
+    elif nic_type == NIC_Type.ORTANO2ADIMSFT and test in ("L1", "SEC_PROG_VERIFY"):
+        mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2INTERP:
+        mode = "hod"
+    elif nic_type == NIC_Type.ORTANO2SOLO:
+        mode = "hod"
+    elif nic_type == NIC_Type.POMONTEDELL:
+        mode = "nod"
+    elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
+        mode = "nod_550"
+    elif nic_type in CAPRI_NIC_TYPE_LIST:
+        mode = "hod"
+    else:
+        mode = ""
+
+    return mode
+
