@@ -240,6 +240,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.NAPLES25SWM
     elif "111-05363" in pn:
         product_name = NIC_Type.NAPLES100
+    elif "68-0003" in pn:
+        product_name = NIC_Type.NAPLES100
     else:
         product_name = NIC_Type.UNKNOWN
         print("Unknown PN:", pn)
