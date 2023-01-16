@@ -154,7 +154,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # program feature row
         elif test == "FEA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, "/home/diag/"+NIC_IMAGES.fea_cpld_img["ORTANO2"]) # just for temporary lab use
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, fea_cpld_img_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
