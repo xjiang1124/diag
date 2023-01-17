@@ -675,22 +675,24 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
     session.sendline(passwd)
     session.expect_exact(get_linux_prompt_list())
 
-    cmd = "md5sum " + remote_file
-    session.sendline(cmd)
-    session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
-    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
-    session.close()
-    # md5sum match
-    if match:
-        if match.group(1) == local_md5sum:
-            return True
+    if "*" not in remote_file: #skip md5sum checksum for wildcard/multifile copies
+        cmd = "md5sum " + remote_file
+        session.sendline(cmd)
+        session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+        session.close()
+        # md5sum match
+        if match:
+            if match.group(1) == local_md5sum:
+                return True
+            else:
+                cli_err("File {:s} md5sum mismatch".format(local_file))
+                return False
         else:
-            cli_err("File md5sum mismatch")
+            cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
             return False
-    else:
-        cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
-        return False
 
+    return True
 
 def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None):
     shared_script_dir = os.path.dirname(mtp_script_dir)

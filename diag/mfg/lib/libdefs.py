@@ -56,7 +56,7 @@ class FF_Stage(Enum):
     FF_CFG = "CFG"
     FF_SRN = "SRN"
     FF_ORT = "ORT"
-    QA = "CI/CD"
+    QA = "CI-CD"
 
     def __str__(self):
         return self.value
