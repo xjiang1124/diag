@@ -574,6 +574,9 @@ class nic_con:
              card_type == "POMONTE"      or \
              card_type == "POMONTEDELL":
             asic_type = "ELBA_FPGA"
+        elif card_type == "GINESTRA_D4"  or \
+             card_type == "GINESTRA_D5":
+            asic_type = "GIGLIO_CPLD"
         else:
             asic_type = "CAPRI"
         print("asic_type:", asic_type)
@@ -605,6 +608,8 @@ class nic_con:
         asic_type = self.get_asic_type(slot)
         if asic_type == "ELBA_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
+        if asic_type == "GIGLIO_CPLD":
+            dummy_fru_json = fmt_dummy_fru_json.format("PART_NUM_TBD", slot)
         else:
             dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot)
 
