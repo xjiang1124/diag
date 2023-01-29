@@ -38,7 +38,7 @@ class Factory:
     MILPITAS = "Milpitas"
     FSP = "Penang FSP"
     P1 = "Penang P1"
-    LAB = "HW lab"
+    LAB = "MTP lab or HW lab"
 
 class FLEX_TWO_WAY_COMM:
     PRE_POST_RETRY = 2

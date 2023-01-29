@@ -445,10 +445,10 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2SOLO"] = "0x1"
     fail_cpld_dat["ORTANO2SOLO"] = "0x04"
     fea_cpld_img["ORTANO2SOLO"] = "naples200_ortano2S_fea_rev1_0_1_10252022.bin"
-    diagfw_img["ORTANO2SOLO"] = "naples_diagfw_elba_1.15.9-C-123_2022.12.16.tar"
-    diagfw_dat["ORTANO2SOLO"] = "12-16-2022"
-    goldfw_img["ORTANO2SOLO"] = "naples_goldfw_elba_1.15.9-C-123_2022.12.16.tar"
-    goldfw_dat["ORTANO2SOLO"] = "12-16-2022"
+    diagfw_img["ORTANO2SOLO"] = "naples_diagfw_elba_1.15.9-C-131_2023.01.18.tar"
+    diagfw_dat["ORTANO2SOLO"] = "01-17-2023"
+    goldfw_img["ORTANO2SOLO"] = "naples_goldfw_elba_1.15.9-C-131_2023.01.18.tar"
+    goldfw_dat["ORTANO2SOLO"] = "01-17-2023"
 
     cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["ORTANO2ADICR"] = "0x1"
@@ -460,10 +460,10 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2ADICR"] = "0x1"
     fail_cpld_dat["ORTANO2ADICR"] = "0x04"
     fea_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_fea_11162022.bin"
-    diagfw_img["ORTANO2ADICR"] = "naples_diagfw_elba_1.58.0-20_2022.11.22.tar"
-    diagfw_dat["ORTANO2ADICR"] = "11-22-2022"
-    goldfw_img["ORTANO2ADICR"] = "naples_goldfw_elba_1.58.0-20_2022.11.22.tar"
-    goldfw_dat["ORTANO2ADICR"] = "11-21-2022"
+    diagfw_img["ORTANO2ADICR"] = "naples_diagfw_elba_1.15.9-C-131_2023.01.18.tar"
+    diagfw_dat["ORTANO2ADICR"] = "01-17-2023"
+    goldfw_img["ORTANO2ADICR"] = "naples_goldfw_elba_1.15.9-C-131_2023.01.18.tar"
+    goldfw_dat["ORTANO2ADICR"] = "01-17-2023"
     uboot_img["ORTANO2ADICR"] = "boot0.rev14.img"
     cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0049"] = "0x1"
@@ -474,8 +474,8 @@ class NIC_IMAGES:
     fail_cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_failsafe_12112022.bin"
     fail_cpld_ver["68-0049"] = "0x1"
     fail_cpld_dat["68-0049"] = "0x04"
-    goldfw_img["68-0049"] = "naples_goldfw_elba_1.58.0-20_2022.11.22.tar"
-    goldfw_dat["68-0049"] = "11-21-2022"
+    goldfw_img["68-0049"] = "naples_goldfw_elba_1.15.9-C-131_2023.01.18.tar"
+    goldfw_dat["68-0049"] = "01-17-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -809,7 +809,7 @@ Factory_network_config = {
         "Flexflow": "10.192.39.48"
     },
     Factory.LAB: {
-        "Networks": [u"192.168.68.0/22"],
+        "Networks": [u"10.9.0.0/16"],
         "Flexflow": ""
     }
 }
