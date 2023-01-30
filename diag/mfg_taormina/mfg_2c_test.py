@@ -516,8 +516,8 @@ def single_uut_2c_test(stage,
                 uut_test_rslt_list[uut_id] = False
                 continue
 
-            test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "PASSMARK"]
-            # test_section_list = ["TD3"]
+            test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "TD3", "PASSMARK"]
+            #test_section_list = ["TD3"]
 
             for skipped_test in skip_testlist:
                 if skipped_test in test_section_list:
@@ -551,7 +551,7 @@ def single_uut_2c_test(stage,
                     test_db = taormina_test_db
                     new_dsp_test_list = list()
                     if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
-                        dsp_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
+                        new_dsp_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
                     if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
                         uut_test_rslt_list[uut_id] = False
 
@@ -628,6 +628,13 @@ def single_uut_2c_test(stage,
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
+            if uut_test_rslt_list[uut_id]:
+                sn = mtp_mgmt_ctrl.get_mtp_sn()
+                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+
+            if not uut_test_rslt_list[uut_id]:
+                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
             # Package this UUT's logfile
             log_sub_dir = os.path.basename(os.path.dirname(log_dir))
             log_pkg_file = "{:s}.tar.gz".format(log_sub_dir)
@@ -641,6 +648,7 @@ def single_uut_2c_test(stage,
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, sn)
+
             os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
             libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             os.system("cp {:s} {:s}".format("log/"+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
@@ -648,21 +656,14 @@ def single_uut_2c_test(stage,
 
             # cleanup the log dir
             logfile_cleanup([log_dir, "log/"+log_pkg_file])
+
+            mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
+            libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
     
         mtp_mgmt_ctrl.cli_log_inf("2C Test Process Complete", level=0)
         # shut down system
         if not uut_test_rslt_list[uut_id]:
             mtp_mgmt_ctrl.uut_chassis_shutdown()
-
-        mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
-        libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
-
-        if uut_test_rslt_list[uut_id]:
-            sn = mtp_mgmt_ctrl.get_mtp_sn()
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-
-        if not uut_test_rslt_list[uut_id]:
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
     except Exception as e:
         print("Exception happened and caught")
