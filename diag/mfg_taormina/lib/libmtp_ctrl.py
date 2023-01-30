@@ -4525,7 +4525,9 @@ class mtp_ctrl():
         elif test in ("ELBA_EDMA_TEST"):
             return 360
         elif test in ("PCI_TOR"):
-            return 30        
+            return 30    
+        elif test in ("TD3DIAG"):
+            return 360
         elif test in ("L1"):
             return 40*60
         else:
