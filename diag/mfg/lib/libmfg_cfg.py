@@ -448,7 +448,7 @@ class NIC_IMAGES:
     diagfw_img["ORTANO2SOLO"] = "elba_diagfw_1.15.9-C-132_2023.01.26.tar"
     diagfw_dat["ORTANO2SOLO"] = "01-26-2023"
     goldfw_img["ORTANO2SOLO"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
-    goldfw_dat["ORTANO2SOLO"] = "01-26-2023"
+    goldfw_dat["ORTANO2SOLO"] = "01-25-2023"
 
     cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["ORTANO2ADICR"] = "0x1"
@@ -463,7 +463,7 @@ class NIC_IMAGES:
     diagfw_img["ORTANO2ADICR"] = "elba_diagfw_1.15.9-C-132_2023.01.26.tar"
     diagfw_dat["ORTANO2ADICR"] = "01-26-2023"
     goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
-    goldfw_dat["ORTANO2ADICR"] = "01-26-2023"
+    goldfw_dat["ORTANO2ADICR"] = "01-25-2023"
     uboot_img["ORTANO2ADICR"] = "boot0.rev14.img"
     cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0049"] = "0x1"
@@ -475,7 +475,7 @@ class NIC_IMAGES:
     fail_cpld_ver["68-0049"] = "0x1"
     fail_cpld_dat["68-0049"] = "0x04"
     goldfw_img["68-0049"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
-    goldfw_dat["68-0049"] = "01-26-2023"
+    goldfw_dat["68-0049"] = "01-25-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
