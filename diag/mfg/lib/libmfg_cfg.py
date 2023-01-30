@@ -809,7 +809,7 @@ Factory_network_config = {
         "Flexflow": "10.192.39.48"
     },
     Factory.LAB: {
-        "Networks": [u"192.168.68.0/22"],
+        "Networks": [u"10.9.0.0/16"],
         "Flexflow": ""
     }
 }

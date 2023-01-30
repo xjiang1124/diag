@@ -1489,13 +1489,30 @@ class nic_ctrl():
         if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
             return False
 
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
-        profile_sig = MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG
-        nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=profile_sig):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
+        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        if MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG in cmd_buf:
+            self.nic_set_err_msg("Failed to apply profile")
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
         return True
 
 
