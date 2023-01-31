@@ -466,6 +466,7 @@ def main():
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
+                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0015"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
             if nic_type in ELBA_NIC_TYPE_LIST:
@@ -629,6 +630,8 @@ def main():
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+        if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0015"]
         if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
         if nic_type == NIC_Type.NAPLES25SWM:

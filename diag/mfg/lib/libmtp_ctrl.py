@@ -3824,6 +3824,8 @@ class mtp_ctrl():
 
         try:
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
+            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
+                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
             if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
                 expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
             if nic_type == NIC_Type.NAPLES25SWM:
