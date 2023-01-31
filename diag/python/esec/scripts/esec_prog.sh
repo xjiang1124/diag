@@ -225,7 +225,7 @@ efuse_test () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "elba" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         echo "Skip efuse test for Elba cards"
     else

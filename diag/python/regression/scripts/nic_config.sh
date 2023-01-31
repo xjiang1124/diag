@@ -20,7 +20,8 @@ if [[ $cpld_id == "0x0" ]]
 then
     echo "Capri CPLD"
     cpld_id="$(cpld -r 0x80)"
-else if [[ $cpld_id -ge 0x60 ]]
+elif [[ $cpld_id == "0x60" || $cpld_id == "0x61" ]]
+then
     echo "Giglio CPLD"
 else
     echo "Elba CPLD"
