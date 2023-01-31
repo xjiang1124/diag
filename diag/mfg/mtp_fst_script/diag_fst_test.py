@@ -30,7 +30,7 @@ def get_bus_list(card_type="CAPRI"):
     print("Found", len(bus_list), "devices", "\n")
 
     # dump extra info
-    subprocess.call(["lspci","-d","1dd8:","-vvv"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    tmp = subprocess.call(["lspci","-d","1dd8:","-vvv"])
     return bus_list
 
 def get_product_name_from_pn(pn):
