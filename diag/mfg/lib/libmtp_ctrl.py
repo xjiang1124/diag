@@ -2879,6 +2879,16 @@ class mtp_ctrl():
     def mtp_get_nic_cmd_buf(self, slot):
         return self._nic_ctrl_list[slot].nic_get_cmd_buf()
 
+    def mtp_exec_nic_cmd_get_info(self, slot, cmd, timeout=None):
+        return self._nic_ctrl_list[slot].nic_get_info(cmd, timeout)
+
+    def mtp_exec_nic_cmds_get_lastcmd_info(self, slot, cmds, timeout=None):
+        rc = self._nic_ctrl_list[slot].nic_exec_cmds(cmds, timeout)
+        if not rc:
+            return False
+        if self._nic_ctrl_list[slot].nic_get_cmd_buf():
+            return self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        return True
 
     def mtp_get_nic_err_msg(self, slot):
         err_msg_str = self._nic_ctrl_list[slot].nic_get_err_msg()
