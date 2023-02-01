@@ -29,7 +29,7 @@ then
         ASIC_IMG="/vol/dump/$USER/workspace/capri_arm64/ip/cosim/diag/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
-else
+else if [[ $ASIC_TYPE == "elba" ]]
     if [[ $ARCH == "amd64" ]]
     then
         DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
@@ -44,6 +44,24 @@ else
         ASIC_IMG="/vol/dump/$USER/workspace/elba_arm64/ip/cosim/diag_elb/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
+else if [[ $ASIC_TYPE == "giglio" ]]
+    if [[ $ARCH == "amd64" ]]
+    then
+        DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
+        #DIAG_REPO="/vol/hw/diag/diag_repo/asic/elba/amd64/"
+        #ASIC_GEN="/vol/dump/$USER/workspace/asic/ip/cosim/diag/nic/"
+        ASIC_IMG="/vol/dump/$USER/workspace/giglio_amd64/ip/cosim/diag_gig/nic.tar.gz"
+        ASIC_TMP_NIC=$ASIC_TMP/nic
+    else
+        DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
+        #DIAG_REPO="/vol/hw/diag/diag_repo/asic/elba/arm64"
+        #ASIC_GEN="/vol/dump/$USER/workspace/asic/ip/cosim/diag/nic/fake_root_target/nic/"
+        ASIC_IMG="/vol/dump/$USER/workspace/giglio_arm64/ip/cosim/diag_gig/nic.tar.gz"
+        ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
+    fi
+else
+    echo "Invalid asic_type $ASIC_TYPE"
+    exit
 fi
 
 mkdir -p $DIAG_REPO
