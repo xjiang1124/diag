@@ -8,6 +8,8 @@ import os
 import re
 import sys
 import time
+import random
+import string
 from collections import OrderedDict
 from time import sleep
 
@@ -999,36 +1001,54 @@ class nic_test:
         self.setup_env_multi_top(slot_list, True, 30, False, True, False)
 
         for slot in nic_list:
-            session = common.session_start()
+            session_tx = common.session_start()
+            session_rx = common.session_start()
             cmd = "turn_on_hub.sh {}".format(slot)
-            common.session_cmd_no_rc(session, cmd)
+            common.session_cmd_no_rc(session_tx, cmd)
             sleep(0.5)
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x6d".format(slot)
-            common.session_cmd(session, cmd)
+            common.session_cmd(session_tx, cmd)
             try:
                 cmd = "ssh_s.sh {}".format(slot)
-                session.sendline(cmd)
-                session.expect("\#")
-                session.sendline("cat /dev/ttyS0 &")
-                session.expect("\#")
-                teststr = "Testing external UART loopback 12345"
-                session.sendline("echo \"{}\" > /dev/ttyS0".format(teststr))
-                session.expect("\# " + teststr)
-                ret_list[int(slot)-1] = 1
+                session_tx.sendline(cmd)
+                session_tx.expect("\#")
+                session_rx.sendline(cmd)
+                session_rx.expect("\#")
+                session_tx.sendline("stty -F /dev/ttyS0 clocal cread icanon -echo -echoe -echok -echonl -echoctl -echoprt -isig -opost")
+                session_tx.expect("\#")
+                # try to drain the buffer of the serial port
+                session_tx.sendline("cat /dev/ttyS0 &")
+                session_tx.expect("\#")
+                time.sleep(0.5)
+                session_tx.sendline("killall cat")
+                session_tx.expect("\#")
+                session_rx.sendline("cat /dev/ttyS0")
+                time.sleep(0.5)
+                teststr = "1" + ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
+                print "teststr is: ", teststr
+                for element in teststr:
+                    session_tx.sendline("echo \"{}\" > /dev/ttyS0".format(element))
+                    session_tx.expect("\#")
+                    session_rx.expect(element)
+                    ret_list[int(slot)-1] = 1
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
                 ret_list[int(slot)-1] = 0
-            # kill the background cat /dev/ttyS0 process
+            # kill the cat /dev/ttyS0 process
             try:
-                session.sendline("killall cat")
-                session.expect("\#")
-                session.sendline("exit")
-                session.expect("\$")
+                session_tx.sendline("killall cat")
+                session_tx.expect("\#")
+                session_rx.expect("\#")
+                session_tx.sendline("exit")
+                session_tx.expect("\$")
+                session_rx.sendline("exit")
+                session_rx.expect("\$")
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x2d".format(slot)
-            common.session_cmd(session, cmd)
-            common.session_stop(session)
+            common.session_cmd(session_tx, cmd)
+            common.session_stop(session_tx)
+            common.session_stop(session_rx)
 
         nic_list_copy = nic_list[:]
         for slot in nic_list:
