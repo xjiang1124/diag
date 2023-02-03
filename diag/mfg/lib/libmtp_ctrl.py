@@ -1542,6 +1542,13 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
+        # config the prompt
+        userid = self._mgmt_cfg[1]
+        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
+            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
             return False
