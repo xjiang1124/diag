@@ -274,7 +274,8 @@ class nic_ctrl():
         return ret
 
 
-    def nic_get_info(self, nic_cmd):
+    def nic_get_info(self, nic_cmd, timeout=None):
+        tout = MTP_Const.NIC_CON_CMD_DELAY if timeout is None else timeout
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
@@ -292,7 +293,7 @@ class nic_ctrl():
                 break
 
         self._nic_handle.sendline(nic_cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], tout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
