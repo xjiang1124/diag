@@ -256,6 +256,8 @@ proc asic_snake { {asic_type CAPRI} {board_id SN000001} {j2c_slot 1} {mode pcie_
         set cmd_die_id elb_print_die_id
         set cmd_rst "elb_card_rst $j2c_port $j2c_slot "nod" 3200 1600 0 $use_zmq $zmq_conn 1 1"
         set cmd_snake "elb_snake_test_mtp $snake_num 4096 $mac_serdes_int_lpbk 1 $core_freq 1 $duration $fan_ctrl $tgt_temp"
+    } elseif {$asic_type == GIGLIO} {
+        set cmd_snake ""
     } else {
         set cmd_die_id cap_print_die_id
         set cmd_rst "cap_jtag_chip_rst $j2c_port $j2c_slot $use_zmq $zmq_conn 1 1 0 $core_freq"

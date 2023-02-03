@@ -20,6 +20,9 @@ if [[ $cpld_id == "0x0" ]]
 then
     echo "Capri CPLD"
     cpld_id="$(cpld -r 0x80)"
+elif [[ $cpld_id == "0x60" || $cpld_id == "0x61" ]]
+then
+    echo "Giglio CPLD"
 else
     echo "Elba CPLD"
 fi
@@ -144,6 +147,14 @@ elif [[ $cpld_id == "0x50" ]]
 then
     type="ORTANO2AC"
     asic_type="ELBA"
+elif [[ $cpld_id == "0x60" ]]
+then
+    type="GINESTRA_D4"
+    asic_type="GIGLIO"
+elif [[ $cpld_id == "0x61" ]]
+then
+    type="GINESTRA_D5"
+    asic_type="GIGLIO"
 else
     type="UNKNOW"
     asic_type="UNKNOW"
