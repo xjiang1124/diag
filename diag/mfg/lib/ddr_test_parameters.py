@@ -25,7 +25,7 @@ test2args = {
         "IS_SUITE_COMMON_ARGS_APPLY" : True, # Flag to indicate if using the comman test suite and test case arguments, if this key is not show up in this dict, means default to True
         "IS_CASE_COMMON_ARGS_APPLY"  : True,
         "ARGUMENT_SPEC"              : "--sn         --slot          --int_lpbk          --vmarg         --offload       --esec_en       --simplify          -hc         -ddr",
-        "DEFAULT"                    : "XYZ          N/A             0                   normal          1               1               0                   1           1",
+        "DEFAULT"                    : "XYZ          N/A             0                   normal          1               0               0                   1           1",
         "68-0015"                    : "N/A          N/A             -                   N/A             -               0               -                   N/A         0",
         "P47930-001"                 : "N/A          N/A             -                   normal          N/A             0               N/A                 1           1",
         "0X322FX06"                  : "N/A          N/A             -                   normal          N/A             1               N/A                 0           1",
