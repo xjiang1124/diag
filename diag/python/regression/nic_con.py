@@ -608,7 +608,7 @@ class nic_con:
         asic_type = self.get_asic_type(slot)
         if asic_type == "ELBA_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
-        if asic_type == "GIGLIO_CPLD":
+        elif asic_type == "GIGLIO_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("PART_NUM_TBD", slot)
         else:
             dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot)
