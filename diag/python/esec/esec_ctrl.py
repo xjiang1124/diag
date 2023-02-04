@@ -415,6 +415,9 @@ PRIVEK <ek.sk>"""
            card_type == "POMONTEDELL"   or \
            card_type == "PENSANDO":      # dummy condition
             asic_type =  "ELBA"
+        if card_type == "GINESTRA_D4"       or \
+           card_type == "GINESTRA_D5":
+            asic_type = "GIGLIO"
         print("ASIC_TYPE:", asic_type)
         return asic_type
 
@@ -431,7 +434,7 @@ PRIVEK <ek.sk>"""
     def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA":
+        if asic_type == "ELBA" or asic_type == "GIGLIO":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
@@ -453,7 +456,7 @@ PRIVEK <ek.sk>"""
         os.chdir("/home/diag/diag/scripts/asic/")
 
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA":
+        if asic_type == "ELBA" or asic_type == "GIGLIO":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all_pac\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
@@ -577,7 +580,7 @@ PRIVEK <ek.sk>"""
             return -1
 
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA":
+        if asic_type == "ELBA" or asic_type == "GIGLIO":
             print("Skip sys reset test")
         else:
             ret = self.sysrst_test(int(slot))
@@ -792,7 +795,7 @@ PRIVEK <ek.sk>"""
 
     def efuse_test(self, slot, card_type):
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA":
+        if asic_type == "ELBA" or asic_type == "GIGLIO":
             print("Skip efuse test for Elba cards")
             print("EFUSE TEST PASSED")
             return 0

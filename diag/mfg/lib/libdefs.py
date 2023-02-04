@@ -38,7 +38,7 @@ class Factory:
     MILPITAS = "Milpitas"
     FSP = "Penang FSP"
     P1 = "Penang P1"
-    LAB = "HW lab"
+    LAB = "MTP lab or HW lab"
 
 class FLEX_TWO_WAY_COMM:
     PRE_POST_RETRY = 2
@@ -56,7 +56,7 @@ class FF_Stage(Enum):
     FF_CFG = "CFG"
     FF_SRN = "SRN"
     FF_ORT = "ORT"
-    QA = "CI/CD"
+    QA = "CI-CD"
 
     def __str__(self):
         return self.value
@@ -418,6 +418,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_FMT             = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
     NIC_ESEC_PROG_ELBA_FMT        = "./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s} -fast"
     NIC_ESEC_PROG_DUMP_FMT        = "./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
+    NIC_ESEC_PROG_QSPI_DUMP_FMT   = "tclsh qspi_esec_data_dump.tcl -slot {:d} -mode {:s}"
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"

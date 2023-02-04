@@ -2879,6 +2879,16 @@ class mtp_ctrl():
     def mtp_get_nic_cmd_buf(self, slot):
         return self._nic_ctrl_list[slot].nic_get_cmd_buf()
 
+    def mtp_exec_nic_cmd_get_info(self, slot, cmd, timeout=None):
+        return self._nic_ctrl_list[slot].nic_get_info(cmd, timeout)
+
+    def mtp_exec_nic_cmds_get_lastcmd_info(self, slot, cmds, timeout=None):
+        rc = self._nic_ctrl_list[slot].nic_exec_cmds(cmds, timeout)
+        if not rc:
+            return False
+        if self._nic_ctrl_list[slot].nic_get_cmd_buf():
+            return self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        return True
 
     def mtp_get_nic_err_msg(self, slot):
         err_msg_str = self._nic_ctrl_list[slot].nic_get_err_msg()
@@ -3229,11 +3239,11 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
-            if software_pn != "90-0020-0001":
+            if software_pn != "90-0020-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
-            if software_pn != "90-0020-0001":
+            if software_pn != "90-0020-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -3569,6 +3579,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD verify for Proto NIC")
             return True
 
+        if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
+            self.cli_log_slot_err(slot, "Dumping esec failed")
+            return False
+
         if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
             self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
             return False
@@ -3820,6 +3834,8 @@ class mtp_ctrl():
 
         try:
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
+            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
+                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
             if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
                 expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
             if nic_type == NIC_Type.NAPLES25SWM:
@@ -4017,7 +4033,7 @@ class mtp_ctrl():
             else:
                 self.mtp_single_j2c_lock()
                 self.mtp_nic_console_lock()
-                ret, _ = self.mtp_nic_disp_ecc(slot)
+                self.mtp_get_nic_sts(slot)
                 self.mtp_nic_console_unlock()
                 self.mtp_single_j2c_unlock()
 
@@ -6604,6 +6620,24 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "No ECC errors found")
             else:
                 self.cli_log_slot_err(slot, "ECC errors found")
+
+        return True
+
+    def mtp_get_nic_sts(self, slot):
+        """
+         Read board and die temp via j2c
+         WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in ELBA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=True):
+            self.cli_log_slot_err(slot, "Unable to dump NIC sts")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            return False
+
+        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
 
         return True
 

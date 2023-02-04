@@ -1,0 +1,27 @@
+# This Yaml File is to define test suite with test case
+
+TEST_SUITE_NAME: "EMMC TEST SUITE"
+# Power cycle all cards in one shot every iteration, then run following test cases continuously without power cycle under both high voltage and low voltage
+ITER: 5
+TEST_CASE:
+  ########################################## Format Specification ##########################################
+  # - NAME: FIO_RANDOM-WRITE-BS4K-1G  # Test case name
+  # Using Test case name(in upper case) below as dict key to mapping the command parameters defined in emmc_test_parameters.py
+  ########################################## Real Instance Below ##########################################
+  - NAME: FIO_RANDOM-WRITE-BS4K-1G
+  - NAME: FIO_RANDOM-WRITE-BS4K-512M
+  - NAME: FIO_RANDOM-WRITE-BS4K-256M
+  - NAME: FIO_RANDOM-WRITE-BS4K-128M
+  - NAME: FIO_RANDOM-READ-BS4K-1G
+  - NAME: FIO_RANDOM-READ-BS4K-512M
+  - NAME: FIO_RANDOM-READ-BS4K-256M
+  - NAME: FIO_RANDOM-READ-BS4K-128M
+  - NAME: FIO_SEQUENTIAL-WRITE-BS4K-1G
+  - NAME: FIO_SEQUENTIAL-WRITE-BS4K-512M
+  - NAME: FIO_SEQUENTIAL-WRITE-BS4K-256M
+  - NAME: FIO_SEQUENTIAL-WRITE-BS4K-128M
+  - NAME: FIO_SEQUENTIAL-READ-BS4K-1G
+  - NAME: FIO_SEQUENTIAL-READ-BS4K-512M
+  - NAME: FIO_SEQUENTIAL-READ-BS4K-256M
+  - NAME: FIO_SEQUENTIAL-READ-BS4K-128M
+  - NAME: STRESSAPPTEST

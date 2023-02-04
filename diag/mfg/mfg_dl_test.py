@@ -277,11 +277,14 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
                     if card_type == NIC_Type.ORTANO2ADIMSFT:
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
+                    if card_type == NIC_Type.ORTANO2ADICR:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
+                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                 if card_type in ELBA_NIC_TYPE_LIST:
