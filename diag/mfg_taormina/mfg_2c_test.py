@@ -515,8 +515,9 @@ def single_uut_2c_test(stage,
                 uut_test_rslt_list[uut_id] = False
                 continue
 
-            test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "TD3", "PASSMARK"]
-            #test_section_list = ["TD3"]
+            test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "TD3"]
+            if stage == FF_Stage.FF_2C_LV:
+                test_section_list.append("PASSMARK")
 
             for skipped_test in skip_testlist:
                 if skipped_test in test_section_list:
