@@ -308,7 +308,7 @@ def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
         if ret:
             mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
         else:
-            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
             test_rslt &= False
 
             mtp_mgmt_ctrl.tor_dsp_failure_dump()
@@ -508,6 +508,11 @@ def single_uut_2c_test(stage,
             if stage in skip_testlist:
                 continue
 
+            if stage == FF_Stage.FF_2C_HV:
+                vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
+            elif stage == FF_Stage.FF_2C_LV:
+                vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
+
             # start new logfile
             log_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
@@ -566,11 +571,6 @@ def single_uut_2c_test(stage,
                 naples_exec_skip_cmd(nic_list, test_db, mtp_mgmt_ctrl)
                 naples_exec_param_cmd(nic_list, test_db, mtp_mgmt_ctrl)
 
-            if stage == FF_Stage.FF_2C_HV:
-                vmarg = MTP_Const.MFG_EDVT_HIGH_VOLT
-            elif stage == FF_Stage.FF_2C_LV:
-                vmarg = MTP_Const.MFG_EDVT_LOW_VOLT
-
             fanspd = mtp_mgmt_ctrl.mtp_get_fanspd()
             inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment:", level=0)
@@ -581,10 +581,8 @@ def single_uut_2c_test(stage,
             else:
                 mtp_mgmt_ctrl.cli_log_report_inf("******* NV Corner *******")
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Fan Speed = {:3d}%".format(fanspd))
-            if mtp_mgmt_ctrl._uut_type == UUT_Type.TOR:
+            if inlet is not None and isinstance(inlet, float):
                 mtp_mgmt_ctrl.cli_log_report_inf("UUT temp = {:2.2f}".format(inlet))
-            else:
-                mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
             mtp_mgmt_ctrl.cli_log_report_inf("NIC Voltage Margin = {:d}%".format(vmarg))
             mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Environment End\n", level=0)
 

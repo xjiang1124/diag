@@ -4481,7 +4481,7 @@ class mtp_ctrl():
             test_timeout = self.get_test_timeout(cmd, test)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
                 self.cli_log_err("{:s} failed".format(cmd))
-                return nic_list[:]
+                return False
             cmd_buf = self.mtp_get_cmd_buf()
             if "PRBS PASSED" not in cmd_buf:
                 self.mtp_dump_err_msg(cmd_buf)
@@ -4493,7 +4493,7 @@ class mtp_ctrl():
             test_timeout = self.get_test_timeout(cmd, test)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
                 self.cli_log_err("{:s} failed".format(cmd))
-                return nic_list[:]
+                return False
             cmd_buf = self.mtp_get_cmd_buf()
             if "PCISCAN TEST PASSED" not in cmd_buf:
                 self.mtp_dump_err_msg(cmd_buf)
