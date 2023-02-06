@@ -5248,6 +5248,12 @@ class mtp_ctrl():
 
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
+                # read FRU as soon as console is ready, to have an SN to save logs to.
+                if not self.tor_fru_init():
+                    return False
+                if selection > 0:
+                    if not self.tor_boot_devices_ready():
+                        return False
                 return True
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
@@ -5344,6 +5350,8 @@ class mtp_ctrl():
             return False
 
         if selection > 0:
+            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
+
             # get IP
             if not self.tor_get_ip():
                 self.cli_log_err("Failed to obtain IP", level=0)
@@ -5354,19 +5362,21 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to connect UUT chassis", level=0)
                 return False
 
-            start=datetime.now()
-            # if stopreboot and not self._secure_login:
-            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
-            self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
-            elba0_ready, elba1_ready = False, False
-            while not elba0_ready or not elba1_ready:
-                # self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
-                # if self._secure_login:
-                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
-                #     sig = "ready"
-                # else:
-                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show module\"", sig_list=["#"], timeout=10)
-                #     sig = "Ready"
+        if selection == 0:
+            if not self.mtp_console_enter_shell("sh"):
+                self.cli_log_err("Unable to init bash shell", level=0)
+                return False
+
+        return True
+
+    def tor_boot_devices_ready(self):
+        start=datetime.now()
+        # if stopreboot and not self._secure_login:
+        self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
+        self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
+        elba0_ready, elba1_ready, gearbox_ready = False, False, False
+        while False in (elba0_ready, elba1_ready, gearbox_ready):
+            if False in (elba0_ready, elba1_ready):
                 self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 sig1 = "ready"
                 sig2 = "down"
@@ -5379,24 +5389,39 @@ class mtp_ctrl():
                             if "1/2" in line:
                                 elba1_ready = True
                     if elba0_ready and elba1_ready:
-                        self.cli_log_inf("LAGs Ready")
-                        break
+                        self.cli_log_inf("LAGs ready")
                     if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
                         return False
-                difftime = datetime.now()-start
-                seconds = difftime.total_seconds()
-                if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
-                    break
-                sys.stdout.write("Time left: {:03d} seconds....\r".format(int(MTP_Const.TOR_LAGS_POWER_ON_DELAY - seconds)))
-                sys.stdout.flush()
-                time.sleep(5)
 
-            self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+            if not gearbox_ready:
+                self.mtp_mgmt_exec_cmd("vtysh -c \"show module 1/1\"", timeout=10)
+                gearbox_sig = "Line module 1/1 is ready"
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf is not None:
+                    for line in cmd_buf.splitlines():
+                        if gearbox_sig in line:
+                            gearbox_ready = True
+                            self.cli_log_inf("TD3/GB/retimer module ready")
 
-        if selection == 0:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
+            difftime = datetime.now()-start
+            seconds = difftime.total_seconds()
+            if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
+                break
+            sys.stdout.write("Time left: {:03d} seconds....\r".format(int(MTP_Const.TOR_LAGS_POWER_ON_DELAY - seconds)))
+            sys.stdout.flush()
+            time.sleep(5)
+
+        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+
+        if not elba0_ready:
+            self.cli_log_slot_err(0, "Elba0 initialization timed out")
+            return False
+        if not elba1_ready:
+            self.cli_log_slot_err(1, "Elba1 initialization timed out")
+            return False
+        if not gearbox_ready:
+            self.cli_log_err("TD3/GB/retimer initialization timed out", level=0)
+            return False
 
         return True
 

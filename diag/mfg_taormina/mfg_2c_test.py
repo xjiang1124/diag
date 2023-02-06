@@ -84,7 +84,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
 def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
     mtp_mgmt_ctrl.print_script_version()
 
-    for test in ["OS_BOOT", "FRU_INIT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "SSH_SETUP", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+    for test in ["OS_BOOT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "SSH_SETUP", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
         if test in skip_test:
             continue
 
@@ -109,9 +109,6 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
         # Sanity check USB
         elif test == "USB_PRESENT_CHECK":
             ret = mtp_mgmt_ctrl.tor_usb_sanity_check()
-        # read FRU the first time
-        elif test == "FRU_INIT":
-            ret = mtp_mgmt_ctrl.tor_fru_init()
         elif test == "NIC_INIT":
             ret = mtp_mgmt_ctrl.tor_nic_init()
         elif test == "NIC_MAINFW_SET":
