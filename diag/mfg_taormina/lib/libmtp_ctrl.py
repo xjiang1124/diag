@@ -102,6 +102,8 @@ class mtp_ctrl():
         self._svos_boot = True # set to False once OS is installed
         # self._secure_login = False  #set to True when using signed OS
 
+        self._hard_failure = False
+
         # name is defined by its name in diag fpgautil
         # None/"" = not present
         self.sys_modules = {
@@ -453,6 +455,12 @@ class mtp_ctrl():
 
     def get_homedir(self):
         return self._homedir
+
+    def set_hard_failure(self):
+        self._hard_failure = True
+
+    def hard_failure(self):
+        return self._hard_failure
 
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
         retry = 0
@@ -8192,6 +8200,57 @@ class mtp_ctrl():
 
         return True
 
+    def tor_ping_test(self):
+        # cmd = "#== Testing connection to UUT"
+        # cmd_buf = libmfg_utils.host_shell_cmd(self, cmd)
+        # if cmd_buf is None:
+        #     self.cli_log_err("Command {:s} failed".format(cmd))
+        #     return False
+
+        ip = self._mgmt_cfg[0]
+        cmd = "ping -c 4 {:s}".format(ip)
+        cmd_buf = libmfg_utils.host_shell_cmd(self, cmd, timeout=10)
+        if cmd_buf is None:
+            self.cli_log_err("Command {:s} failed".format(cmd))
+            return False
+        match = re.findall(r" 0% packet loss", cmd_buf)
+        if not match:
+            return False
+
+        return True
+
+    def tor_dsp_failure_dump(self):
+        """
+            - check IP is pingable
+            - dont create new session
+        """
+        if self._svos_boot:
+            self.cli_log_err("Script error: this function is only for 2C")
+            return False
+
+        if not self._mgmt_cfg:
+            return False
+
+        if not self.tor_ping_test():
+            self.cli_log_err("Ping to UUT failed")
+            self.set_hard_failure()
+            return False
+
+        if not self.tor_get_ip():
+            self.cli_log_err("UUT chassis lost IP")
+            self.set_hard_failure()
+            return False
+
+        if not self.mtp_mgmt_exec_cmd("uptime"):
+            self.set_hard_failure()
+            return False
+
+        if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
+            self.set_hard_failure()
+            return False
+
+        return True
+
     def tor_sys_failure_dump(self):
         """
             At any test failure on x86 side:
@@ -8218,7 +8277,6 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
             return False
-
 
         return True
 

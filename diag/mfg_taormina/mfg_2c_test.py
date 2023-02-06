@@ -311,6 +311,11 @@ def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
             test_rslt &= False
 
+            mtp_mgmt_ctrl.tor_dsp_failure_dump()
+            if mtp_mgmt_ctrl.hard_failure():
+                # stop further testing
+                return False
+
     return test_rslt
 
 def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testlist):
@@ -378,6 +383,11 @@ def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testli
                 err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
             for err_msg in err_msg_disp_list:
                 mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg), level=0)
+
+            mtp_mgmt_ctrl.tor_dsp_failure_dump()
+            if mtp_mgmt_ctrl.hard_failure():
+                # stop further testing
+                return False
 
     return test_rslt
 
@@ -662,6 +672,10 @@ def single_uut_2c_test(stage,
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown 2C Test: {:s}, Ignore".format(test_section))
                     continue
+
+                if mtp_mgmt_ctrl.hard_failure():
+                    # stop further testing
+                    break
 
 
 
