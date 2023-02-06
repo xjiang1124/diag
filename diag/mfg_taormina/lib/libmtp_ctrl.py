@@ -8151,15 +8151,6 @@ class mtp_ctrl():
     def tor_copy_sys_log(self, dest_folder, local_copy=False):
         self.cli_log_inf("Copying system logs", level=0)
 
-        mtp_mgmt_cfg = self.get_mgmt_cfg()
-        if not mtp_mgmt_cfg:
-            self.cli_log_err("Lost IP - cant connect to UUT", level=0)
-            return False
-
-        ipaddr = mtp_mgmt_cfg[0]
-        userid = mtp_mgmt_cfg[1]
-        passwd = mtp_mgmt_cfg[2]
-
         logfiles = (
             "/var/log/messages",
             "/var/log/critical.log",
@@ -8189,7 +8180,7 @@ class mtp_ctrl():
                     self.cli_log_err("Unable to copy UUT system log file {:} locally".format(filename), level=0)
                     continue
             else:
-                if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
+                if not libmfg_utils.network_get_file(self, dest_name, filename): #open("scp.log", "w+")):
                     self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
                     continue
 
