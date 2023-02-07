@@ -6529,11 +6529,13 @@ class mtp_ctrl():
         return frureadata
 
 
-    def tor_fru_verify(self):
+    def tor_fru_verify(self, expected_sn, expected_mac, expected_pn, expected_prog_date):
         # if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT, sig_list=['TPM Serial Number:']):
         #     self.cli_log_err("Unable to display fru", level=0)
         #     return False
 
+        self.clear_buffer()
+        time.sleep(3)
         self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT)
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["TPM Serial Number:"])
         cmd_buf = self._mgmt_handle.before
@@ -6544,7 +6546,7 @@ class mtp_ctrl():
         # Verify SN
         sn_match = re.search("Serial Number: '(.*)'", cmd_buf)
         if sn_match:
-            if sn_match.group(1) != self._sn:
+            if sn_match.group(1) != expected_sn:
                 self.cli_log_err("Incorrect SN programmed: {:s}".format(sn_match.group(1)), level=0)
                 return False
         else:
@@ -6554,10 +6556,10 @@ class mtp_ctrl():
         # Verify MAC
         mac_match = re.search("MAC Address: '(.*)'", cmd_buf)
         if mac_match:
-            if ":" in self._mac:
-                mac = self._mac
+            if ":" in expected_mac:
+                mac = expected_mac
             else:
-                mac = libmfg_utils.mac_address_format(self._mac, delimiter=":")
+                mac = libmfg_utils.mac_address_format(expected_mac, delimiter=":")
             if mac_match.group(1) != mac:
                 self.cli_log_err("Incorrect MAC programmed: {:s}".format(mac_match.group(1)), level=0)
                 return False
@@ -6568,7 +6570,7 @@ class mtp_ctrl():
         # Verify PN
         pn_match = re.search("Part Number: '(.*)'", cmd_buf)
         if pn_match:
-            if pn_match.group(1) != self._pn:
+            if pn_match.group(1) != expected_pn:
                 self.cli_log_err("Incorrect PN programmed: {:s}".format(pn_match.group(1)), level=0)
                 return False
         else:
@@ -6643,6 +6645,9 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Unable to read PCBA SN", level=0)
             return False
+
+        self.clear_buffer()
+        time.sleep(1)
 
         return True
 

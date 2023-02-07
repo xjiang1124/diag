@@ -312,7 +312,7 @@ def single_uut_fw_program(stage,
             elif test == "FRU_TPM_SN_PROG":
                 ret = mtp_mgmt_ctrl.tor_fru_prog_tpm_pcbasn(pcbasn)
             elif test == "FRU_VERIFY":
-                ret = mtp_mgmt_ctrl.tor_fru_verify()
+                ret = mtp_mgmt_ctrl.tor_fru_verify(sn, mac, pn, prog_date)
             elif test == "UL_FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_mfg_fru_verify()
             elif test == "GET_PCBA_SN":
