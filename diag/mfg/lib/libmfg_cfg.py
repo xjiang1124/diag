@@ -460,7 +460,7 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO2ADICR"] = "01-26-2023"
     goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
     goldfw_dat["ORTANO2ADICR"] = "01-25-2023"
-    uboot_img["ORTANO2ADICR"] = "boot0.rev14.img"
+    uboot_img["ORTANO2ADICR"] = "boot0.1.15.9-C-132.img"
     cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0049"] = "0x1"
     cpld_dat["68-0049"] = "0x04"
