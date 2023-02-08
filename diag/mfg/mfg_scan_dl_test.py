@@ -859,6 +859,8 @@ def main():
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     nic_thread_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_prsnt_list[slot]:
+            continue
         if slot in fail_nic_list:
             continue
         key = libmfg_utils.nic_key(slot)
