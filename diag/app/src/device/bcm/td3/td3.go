@@ -528,12 +528,28 @@ func Exec_DIAG_BUILT_BCMshellCMD(commands string, cmdWaitTime int) (command_outp
             return
         }
     }
-    time.Sleep(time.Duration(3) * time.Second)
+
+    //check 127.0.0.1 1943 is up and listening for the bcm shell.
+    for i:=0; i<11; i++ {
+        errTemp := Check_BCM_Shell_Port_Is_Online()
+        if i == 10 {
+            cli.Printf("e", "Not seeing bcm shell connection up on port 1943\n")
+            err = errType.FAIL
+            return
+        }
+        if errTemp == errType.FAIL {
+            time.Sleep(time.Duration(1) * time.Second)
+        } else {
+            break
+        }
+    }
+    
+    
         
 
     //Execute Command in diag bcm shell
     cmdString = path_script_executable + " " + "\"" + commands + "\""           //" \"show temp\""
-    output, errGo := exec.Command("bash", "-c", cmdString).Output()
+    output, errGo := exec.Command("sh", "-c", cmdString).Output()
     if errGo != nil {
             cli.Println("e", "Failed to exec bcm shell command:",cmdString," GoERR=",errGo)
             cli.Printf("e", "Script output returned =%s\n",string(output))
@@ -544,6 +560,31 @@ func Exec_DIAG_BUILT_BCMshellCMD(commands string, cmdWaitTime int) (command_outp
         return
     }
 
+    return
+}
+
+/****************************************************************************************************** 
+* 
+* check for port 127.0.0.1 1943 
+*  
+* command should see --> tcp        0      0 0.0.0.0:1943            0.0.0.0:*               LISTEN      15277/netserve 
+*  
+******************************************************************************************************/ 
+func Check_BCM_Shell_Port_Is_Online() (err int) {
+    var cmdStr string
+    cmdStr = "/sbin/ip netns exec swns netstat -plunt | grep netserve | grep 1943"
+    output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo != nil {
+        dcli.Printf("e","Cmd %s failed! %v", cmdStr, errGo)
+        err = errType.FAIL
+        return
+    }
+    cli.Printf("i", " Check if bcm shell online --> %s\n", string(output))
+    if strings.Contains(string(output), "1943")==true {
+        err = errType.SUCCESS
+    } else {
+        err = errType.FAIL
+    }
     return
 }
 
@@ -2859,8 +2900,8 @@ func BCMShell_Test_Init() (err int) {
     //    err = errType.FAIL
     //}
 
-    cli.Printf("i","BCM Shell, Running init code\n");
-    command = fmt.Sprintf("rcload rc.soc")
+    cli.Printf("i","BCM Shell, Running init code (ADD PASS1)\n");
+    command = fmt.Sprintf("rcload /fs/nos/home_diag/diag/bcmshell/rc.soc")
     output, err = Exec_DIAG_BUILT_BCMshellCMD(command, 20)
     if err != errType.SUCCESS {
         cli.Printf("e", "BCM SHELL ACCESS FAILED!  OUTPUT ='%s'", string(output))
