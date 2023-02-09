@@ -288,13 +288,16 @@ class mtp_ctrl():
         if err_msg:
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
-                self.cli_log_err(top_err_msg)
+                for line in top_err_msg.splitlines():
+                    self.cli_log_err(line)
                 self.cli_log_err("<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
-                self.cli_log_err(bottom_err_msg)
+                for line in bottom_err_msg.splitlines():
+                    self.cli_log_err(line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
-                self.cli_log_err(err_msg)
+                for line in err_msg.splitlines():
+                    self.cli_log_err(line)
         self.cli_log_err("==== Error Message End: ====")
 
     def mtp_dump_nic_err_msg(self, slot):
@@ -305,13 +308,16 @@ class mtp_ctrl():
         if err_msg:
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
-                self.cli_log_slot_err(slot, top_err_msg)
+                for line in top_err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
                 self.cli_log_slot_err(slot, "<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
-                self.cli_log_slot_err(slot, bottom_err_msg)
+                for line in bottom_err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
-                self.cli_log_slot_err(slot, err_msg)
+                for line in err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
         self.cli_log_slot_err(slot, "==== Error Message End: ====")
 
 
@@ -1541,6 +1547,13 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
+
+        # config the prompt
+        userid = self._mgmt_cfg[1]
+        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
+            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
 
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
