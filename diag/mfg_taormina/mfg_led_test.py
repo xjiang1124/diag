@@ -181,7 +181,7 @@ def single_uut_led_checks(stage,
 
         if stage == "LED":
             # read FRU
-            mtp_mgmt_ctrl.tor_fru_init()
+            # mtp_mgmt_ctrl.tor_fru_init()
             sn = mtp_mgmt_ctrl._sn
             fru_cfg["SN"] = sn
 

@@ -191,7 +191,7 @@ def single_uut_fw_program(stage,
 
         if stage == "DL2":
             # read FRU
-            mtp_mgmt_ctrl.tor_fru_init()
+            # mtp_mgmt_ctrl.tor_fru_init()
             sn = mtp_mgmt_ctrl._sn
             fru_cfg["SN"] = sn
 
