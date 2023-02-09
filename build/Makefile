@@ -6,7 +6,7 @@ TOP_DIR = "$(shell dirname $(BUILD_DIR))"
 MKDIR_P = mkdir -p
 .PHONY: all
 
-all: amd64 arm64 arm
+all: amd64 arm64
 
 c_amd64:
 	$(MKDIR_P) $(GOPATH)/pkg/linux_amd64/clib
