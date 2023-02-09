@@ -612,6 +612,29 @@ def mfg_expect_re(session, exp_list, timeout=None):
     else:
         return idx
 
+def expect_sendline(handle, cmd, timeout=None):
+    # send something to a session that doesnt have defined prompt, just wait for EOF
+    handle.sendline(cmd)
+    idx = mfg_expect_new(handle, [pexpect.EOF], timeout=timeout)
+    if idx < 0:
+        return False
+    return True
+
+def host_shell_cmd(mtp_mgmt_ctrl, cmd, timeout=None):
+    # host session doesnt have defined prompt, just wait for EOF. Thats why each command needs new session
+    if timeout is None:
+        timeout = MTP_Const.OS_CMD_DELAY
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("### HOST CMD: ### {:s}".format(cmd)) # log the command otherwise pexpect eats it up
+    session = pexpect.spawn(cmd, timeout=timeout, logfile=mtp_mgmt_ctrl._diag_filep)
+    session.setecho(False)
+    idx = mfg_expect_new(session, [pexpect.EOF], timeout=timeout)
+    cmd_buf = session.before
+    session.close()
+    if idx < 0:
+        return None
+    else:
+        return cmd_buf
+
 def get_userid(proj):
     if proj == "t":
         return "root"
@@ -673,7 +696,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=
         return False
 
 
-def network_get_file(ip_addr, userid, passwd, local_file, remote_file, logfilep=""):
+def network_get_file_old(ip_addr, userid, passwd, local_file, remote_file, logfilep=""):
     if logfilep == "":
         logfilep = open("/tmp/{:s}_ng".format(ip_addr), "w+")
     session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file), logfile=logfilep)
@@ -720,6 +743,66 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file, logfilep=
                 return False
         else:
             cli_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
+            return False
+
+    return True
+
+def network_get_file(mtp_mgmt_ctrl, local_file, remote_file):
+    """ scp userid@UUT:remote_file local_file """
+
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    if not mtp_mgmt_cfg:
+        mtp_mgmt_ctrl.cli_log_err("Lost IP - cant connect to UUT", level=0)
+        return False
+    ip_addr = mtp_mgmt_cfg[0]
+    userid = mtp_mgmt_cfg[1]
+    passwd = mtp_mgmt_cfg[2]
+
+    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file), logfile=mtp_mgmt_ctrl._diag_filep)
+    session.setecho(False)
+    if mfg_expect(session, ["ssword:"]) < 0:
+        mtp_mgmt_ctrl.cli_log_err("File copy: could not get password prompt")
+        return False
+    if not expect_sendline(session, passwd, timeout=MTP_Const.MTP_NETCOPY_DELAY):
+        mtp_mgmt_ctrl.cli_log_err("File copy {:s} failed".format(remote_file))
+        return False
+    session.close()
+
+    cmd = "sync"
+    cmd_buf = host_shell_cmd(mtp_mgmt_ctrl, cmd)
+    if cmd_buf is None:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd))
+        return False
+
+    cmd = "md5sum " + local_file
+    cmd_buf = host_shell_cmd(mtp_mgmt_ctrl, cmd, timeout=10)
+    if cmd_buf is None:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd))
+        return False
+    match = re.search(r"([0-9a-fA-F]+) +.*", str(cmd_buf))
+    session.close()
+    if match:
+        local_md5sum = match.group(1)
+    else:
+        mtp_mgmt_ctrl.cli_log_err("Execute command {:s} failed".format(cmd))
+        return False
+
+    if "*" not in remote_file: #skip md5sum checksum for wildcard/multifile copies
+        cmd = "md5sum " + remote_file
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if not cmd_buf:
+            mtp_mgmt_ctrl.cli_log_err("No result from command {:s}".format(cmd))
+            return False
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(cmd_buf))
+        if match:
+            if match.group(1) == local_md5sum:
+                return True
+            else:
+                mtp_mgmt_ctrl.cli_log_err("File {:s} md5sum mismatch".format(local_file))
+                return False
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Execute command {:s} on {:s} failed".format(cmd, ip_addr))
             return False
 
     return True
