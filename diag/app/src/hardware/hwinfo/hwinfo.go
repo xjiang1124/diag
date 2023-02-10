@@ -16,6 +16,8 @@ import (
     "device/powermodule/tps544c20"
     "device/powermodule/tps53681"
     "device/powermodule/sn1701022"
+    "device/powermodule/tps53688"
+    "device/powermodule/tps53830"
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/tempsensor/tmp42123"
@@ -158,6 +160,10 @@ var ortanoiPODDispStaList = [8](map[string]DispStaFunc) {
 // Lacona
 // Status display list
 var laconaDispStaList map[string]DispStaFunc
+// Ginestra D4
+//var ginestraD4DispStaList map[string]DispStaFunc
+// Ginestra D5
+var ginestraD5DispStaList map[string]DispStaFunc
 
 //===============================
 // MTP
@@ -431,6 +437,15 @@ func init() {
     laconaDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
     laconaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
 
+    //GinestraD5
+    ginestraD5DispStaList = make(map[string]DispStaFunc)
+    ginestraD5DispStaList["CORE"] = tps53688.DispStatus
+    ginestraD5DispStaList["ARM"]  = tps53688.DispStatus
+    ginestraD5DispStaList["DDR_VDD"]  = tps53830.DispStatus
+    ginestraD5DispStaList["DDR_VDDQ"]  = tps53830.DispStatus
+    ginestraD5DispStaList["DDR_VPP"]  = tps53830.DispStatus
+    ginestraD5DispStaList["VDD_DDR"]  = tps549a20.DispStatus
+    ginestraD5DispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
@@ -555,6 +570,10 @@ func init() {
     dispMap["POMONTEDELL"]  = ortanoDispStaList
     dispMap["POMONTE"]      = ortanoDispStaList
     //===============================
+    // Giglio
+    //dispMap["GINESTRA_D4"]   = ginestraD4DispStaList
+    dispMap["GINESTRA_D5"]   = ginestraD5DispStaList
+    //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
@@ -594,6 +613,10 @@ func init() {
     eepromMap["LACONA32"]     =  naplesEepList
     eepromMap["POMONTEDELL"]  =  naplesEepList
     eepromMap["POMONTE"]      =  naplesEepList
+    //===============================
+    // Giglio
+    eepromMap["GINESTRA_D4"]   = naplesEepList
+    eepromMap["GINESTRA_D5"]   = naplesEepList
 
     //===============================
     eepromMap["MTP"]           = mtpEepList
@@ -674,6 +697,10 @@ func init() {
     i2cHubListMap["LACONA32"]      = forioI2cHubList
     i2cHubListMap["POMONTEDELL"]   = forioI2cHubList
     i2cHubListMap["POMONTE"]       = forioI2cHubList
+    //===============================
+    // Giglio
+    i2cHubListMap["GINESTRA_D4"]    = forioI2cHubList
+    i2cHubListMap["GINESTRA_D5"]    = forioI2cHubList
 
     //===============================
     // Taormina
@@ -712,6 +739,10 @@ func init() {
     psuListMap["LACONA32"]      = nicPsuList
     psuListMap["POMONTEDELL"]   = nicPsuList
     psuListMap["POMONTE"]       = nicPsuList
+    //===============================
+    // Giglio
+    psuListMap["GINESTRA_D4"]    = nicPsuList
+    psuListMap["GINESTRA_D5"]    = nicPsuList
 
     //===============================
     // Taormina
@@ -742,7 +773,8 @@ func init() {
         var t boardinfo.Naples25Cpld_T
         yaml.Unmarshal([]byte(boardinfo.Naples25Cpld), &t)
         CpldInfo = &t
-    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "ORTANO2A", "ORTANO2AC", "ORTANO2I", "ORTANO2S", "POMONTE", "POMONTEDELL":
+    case "FORIO", "VOMERO", "VOMERO2", "ORTANO", "ORTANO2", "ORTANO2A", "ORTANO2AC", "ORTANO2I", "ORTANO2S", "POMONTE", "POMONTEDELL",
+         "GINESTRA_D4", "GINESTRA_D5":
         QsfpTbl = forioQsfpTbl
         var t boardinfo.ForioCpld_T
         yaml.Unmarshal([]byte(boardinfo.ForioCpld), &t)
