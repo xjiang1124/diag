@@ -24,8 +24,8 @@ typedef unsigned int            ULONG;
 typedef ULONG                   *PULONG;
 typedef unsigned long long int  ULONGLONG;
 
-typedef ULONG   FT_HANDLE;
-typedef ULONG   FT_STATUS;
+typedef ULONGLONG   FT_HANDLE;
+typedef ULONG       FT_STATUS;
 
 //
 // Device status

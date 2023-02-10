@@ -2,7 +2,7 @@
 #include <time.h>
 
 int verbosity = 0;
-ULONG bar_addr = 0x40000000;
+ULONGLONG bar_addr = 0x40000000;
 FT_HANDLE ftHandle = 0;
 
 void set_verbosity(int level)
@@ -11,26 +11,28 @@ void set_verbosity(int level)
     return;
 }
 
-void set_bar(ULONG addr)
+void set_bar(ULONGLONG addr)
 {
     bar_addr = addr;
     return;
 }
 
-ULONG show_bar(void)
+ULONGLONG show_bar(void)
 {
     if ( verbosity != 0 )
-        printf("FPGA PCIe BAR address = %x\n", bar_addr);
+        printf("FPGA PCIe BAR address = %llx\n", bar_addr);
     return bar_addr;
 }
 
-int read_fpga_mem32(ULONG ftHandle, DWORD reg, DWORD *data)
+int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
 {
-    ULONG *addr;
+    DWORD *addr;
 
+    /*
     size_t pagesize = sysconf(_SC_PAGE_SIZE);
     off_t page_base = ((ftHandle + reg) / pagesize) * pagesize;
     off_t page_offset = ftHandle + reg - page_base;
+    */
 
     if ( verbosity )
         printf("read_fpag_mem32\n");
@@ -42,27 +44,29 @@ int read_fpga_mem32(ULONG ftHandle, DWORD reg, DWORD *data)
     }
 
     /* unsigned char *mem = mmap(NULL, page_offset + 256, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, page_base); */
-    unsigned char *mem = mmap((void *)0xfb400000, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    DWORD *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (DWORD *)(ftHandle + reg);
+    addr = (DWORD *)(mem + ftHandle - bar_addr + (ULONGLONG)reg);
     *data = *addr;
 
     close(fd);
     return FT_OK;
 }
 
-int write_fpga_mem32(ULONG ftHandle, DWORD reg, ULONG value)
+int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
 {
     DWORD *addr;
 
+    /*
     size_t pagesize = sysconf(_SC_PAGE_SIZE);
     off_t page_base = ((ftHandle + reg) / pagesize) * pagesize;
     off_t page_offset = ftHandle + reg - page_base;
+    */
 
     if ( verbosity )
         printf("write_fpag_mem32\n");
@@ -72,16 +76,15 @@ int write_fpga_mem32(ULONG ftHandle, DWORD reg, ULONG value)
         printf("Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
-
     
-    unsigned char *mem = mmap((void *)0xfb400000, 1024 *1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    DWORD *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd); 
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (DWORD *)(mem + reg);
+    addr = (DWORD *)(mem + ftHandle - bar_addr + (ULONGLONG)reg);
     if ( verbosity ) {
         printf("reg address %x\n", reg);
         printf("addr address %x\n", (DWORD)addr);
@@ -116,7 +119,7 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         return -1;
     }
 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffff);
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address lower 32 bit\n");
@@ -265,7 +268,7 @@ FT_STATUS jtag_init(DWORD portNum)
 {
     time_t rawtime;
     struct tm *timeinfo;
-    ULONG j2c_mem_addr;
+    ULONGLONG j2c_mem_addr;
     DWORD magic;
     int rc;
 
@@ -382,7 +385,6 @@ int main(void)
 {
     DWORD data;
 
-    printf("size of ULONG = %d\n", sizeof(ULONG));
     set_verbosity(1);
     set_bar(0xfb400000);
     jtag_init(1);
