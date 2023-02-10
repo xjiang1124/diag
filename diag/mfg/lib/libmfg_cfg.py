@@ -155,9 +155,9 @@ class NIC_IMAGES:
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
     cpld_ver["NAPLES100"] = "0x9"
     cpld_dat["NAPLES100"] = "05-31"
-    sec_cpld_img["NAPLES100"] = "naples100_cpld_rev89_06032019.bin"
+    sec_cpld_img["NAPLES100"] = "naples100_02_rv89_06032019.bin"
     sec_cpld_ver["NAPLES100"] = "0x89"
-    sec_cpld_dat["NAPLES100"] = "05-23"
+    sec_cpld_dat["NAPLES100"] = "06-03"
     diagfw_img["NAPLES100"] = "capri_diagfw_uboot_1.3.1-E-68_2022.11.22.tar"
     diagfw_dat["NAPLES100"] = "11-21-2022"
     goldfw_img["NAPLES100"] = "capri_goldfw_1.3.1-E-68_2022.11.22.tar"
@@ -251,10 +251,6 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2"] = "0x3"
     fail_cpld_dat["ORTANO2"] = "0x0A"
     fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
-    # diagfw_img["ORTANO2"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
-    # diagfw_dat["ORTANO2"] = "06-16-2022"
-    # goldfw_img["ORTANO2"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
-    # goldfw_dat["ORTANO2"] = "06-16-2022"
     diagfw_img["ORTANO2"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
     diagfw_dat["ORTANO2"] = "10-27-2022"
     goldfw_img["ORTANO2"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
@@ -271,8 +267,8 @@ class NIC_IMAGES:
     # fail_cpld_ver["68-0015"] = "0x3"
     # fail_cpld_dat["68-0015"] = "0x09"
     # fea_cpld_img["ORTANO2"] = "naples200_ortano2_fea_04272021.bin"
-    # diagfw_img["ORTANO2"] = "elba_diagfw-uboot_1.15.9-C-30_2021.08.20.tar"
-    # diagfw_dat["ORTANO2"] = "08-20-2021"
+    diagfw_img["68-0015"] = "elba_diagfw_1.15.9-C-100_2022.06.22.tar"
+    diagfw_dat["68-0015"] = "06-16-2022"
     goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
     goldfw_dat["68-0015"] = "06-16-2022"
 
@@ -445,37 +441,37 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2SOLO"] = "0x1"
     fail_cpld_dat["ORTANO2SOLO"] = "0x04"
     fea_cpld_img["ORTANO2SOLO"] = "naples200_ortano2S_fea_rev1_0_1_10252022.bin"
-    diagfw_img["ORTANO2SOLO"] = "naples_diagfw_elba_1.15.9-C-123_2022.12.16.tar"
-    diagfw_dat["ORTANO2SOLO"] = "12-16-2022"
-    goldfw_img["ORTANO2SOLO"] = "naples_goldfw_elba_1.15.9-C-123_2022.12.16.tar"
-    goldfw_dat["ORTANO2SOLO"] = "12-16-2022"
+    diagfw_img["ORTANO2SOLO"] = "elba_diagfw_1.15.9-C-132_2023.01.26.tar"
+    diagfw_dat["ORTANO2SOLO"] = "01-26-2023"
+    goldfw_img["ORTANO2SOLO"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
+    goldfw_dat["ORTANO2SOLO"] = "01-25-2023"
 
-    cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_working_11162022.bin"
+    cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["ORTANO2ADICR"] = "0x1"
-    cpld_dat["ORTANO2ADICR"] = "0x02"
-    sec_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_working_11162022.bin"
+    cpld_dat["ORTANO2ADICR"] = "0x04"
+    sec_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     sec_cpld_ver["ORTANO2ADICR"] = "0x1"
-    sec_cpld_dat["ORTANO2ADICR"] = "0x02"
-    fail_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_failsafe_11162022.bin"
+    sec_cpld_dat["ORTANO2ADICR"] = "0x04"
+    fail_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_failsafe_12112022.bin"
     fail_cpld_ver["ORTANO2ADICR"] = "0x1"
-    fail_cpld_dat["ORTANO2ADICR"] = "0x02"
+    fail_cpld_dat["ORTANO2ADICR"] = "0x04"
     fea_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_fea_11162022.bin"
-    diagfw_img["ORTANO2ADICR"] = "naples_diagfw_elba_1.58.0-20_2022.11.22.tar"
-    diagfw_dat["ORTANO2ADICR"] = "11-22-2022"
-    goldfw_img["ORTANO2ADICR"] = "naples_goldfw_elba_1.58.0-20_2022.11.22.tar"
-    goldfw_dat["ORTANO2ADICR"] = "11-21-2022"
-    uboot_img["ORTANO2ADICR"] = "boot0.rev14.img"
-    cpld_img["68-0049"] = "ortano_adi_cr_rev1.2_working_11162022.bin"
+    diagfw_img["ORTANO2ADICR"] = "elba_diagfw_1.15.9-C-132_2023.01.26.tar"
+    diagfw_dat["ORTANO2ADICR"] = "01-26-2023"
+    goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
+    goldfw_dat["ORTANO2ADICR"] = "01-25-2023"
+    uboot_img["ORTANO2ADICR"] = "boot0.1.15.9-C-132.img"
+    cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0049"] = "0x1"
-    cpld_dat["68-0049"] = "0x02"
-    sec_cpld_img["68-0049"] = "ortano_adi_cr_rev1.2_working_11162022.bin"
+    cpld_dat["68-0049"] = "0x04"
+    sec_cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     sec_cpld_ver["68-0049"] = "0x1"
-    sec_cpld_dat["68-0049"] = "0x02"
-    fail_cpld_img["68-0049"] = "ortano_adi_cr_rev1.2_failsafe_11162022.bin"
+    sec_cpld_dat["68-0049"] = "0x04"
+    fail_cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_failsafe_12112022.bin"
     fail_cpld_ver["68-0049"] = "0x1"
-    fail_cpld_dat["68-0049"] = "0x02"
-    goldfw_img["68-0049"] = "naples_goldfw_elba_1.58.0-20_2022.11.22.tar"
-    goldfw_dat["68-0049"] = "11-21-2022"
+    fail_cpld_dat["68-0049"] = "0x04"
+    goldfw_img["68-0049"] = "elba_goldfw_1.15.9-C-132_2023.01.26.tar"
+    goldfw_dat["68-0049"] = "01-25-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -787,6 +783,7 @@ FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32
 TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]
 CONSOLE_DDR_BIST_NIC_LIST = [NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
 DDR_HARCODED_TRAINING_NIC_LIST = []
+NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR]
 
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
@@ -809,7 +806,7 @@ Factory_network_config = {
         "Flexflow": "10.192.39.48"
     },
     Factory.LAB: {
-        "Networks": [u"192.168.68.0/22"],
+        "Networks": [u"10.9.0.0/16"],
         "Flexflow": ""
     }
 }

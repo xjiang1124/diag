@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.10.12222022";
+my $rev = "1.11.02022023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -412,6 +412,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SNAKE_EMMC_INTR"}) {
+        $top_diag_fa_code = "SNAKE_EMMC_INTR";
+        delete $diag_fa_code{"SNAKE_EMMC_INTR"};
+        return;
+    }
+
     if (exists $diag_fa_code{"L1_ESEC_FAILURE"}) {
         $top_diag_fa_code = "L1_ESEC_FAILURE";
         delete $diag_fa_code{"L1_ESEC_FAILURE"};
@@ -453,6 +459,11 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"MISSING_ENV_VAR"}) {
         $top_diag_fa_code = "MISSING_ENV_VAR";
         delete $diag_fa_code{"MISSING_ENV_VAR"};
+        return;
+    }
+    if (exists $diag_fa_code{"SET_AVS_ARM_VDD_FAILURE"}) {
+        $top_diag_fa_code = "SET_AVS_ARM_VDD_FAILURE";
+        delete $diag_fa_code{"SET_AVS_ARM_VDD_FAILURE"};
         return;
     }
     if (exists $diag_fa_code{"INCORRECT_PN"}) {
@@ -678,6 +689,12 @@ sub parse_snake_hbm_log {
             $diag_fa_code{"SNAKE_PP_INTR"} = 1;
             $intr_err_found = 1;
         }
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.ms\.em\.int_groups\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_EMMC_INTR"} = 1;
+            $intr_err_found = 1;
+        }
         if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
@@ -729,6 +746,12 @@ sub parse_snake_pcie_log {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
             $diag_fa_code{"SNAKE_PP_INTR"} = 1;
+            $intr_err_found = 1;
+        }
+        if($intr_err_found == 0 && $line =~ m/ERROR :: cap0\.ms\.em\.int_groups\.intreg:/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_EMMC_INTR"} = 1;
             $intr_err_found = 1;
         }
         if($linkup_err_found == 0 && $line =~ m/ERROR :: Link should be up with \w+, it is \w+/) {
@@ -1400,6 +1423,8 @@ sub parse_mtp_and_slot_log {
     my $jtag_log = 0;
     my $err_msg_dump = 0;
     my $nic_status_dump = 0;
+    my $console_boot_linenum = 0;
+    my $pwr_failure_linenum = 0;
     my $slotnum = 0 + $slot;
 
     if (!open(TR3, '<', $slotlogfile)) {
@@ -1506,6 +1531,19 @@ sub parse_mtp_and_slot_log {
                 $diag_fa_code{"HSM_UNAVAILABLE"} = 1;
             }
         }
+        if ($line =~ m/CONSOLE_BOOT Stopped/) {
+            $console_boot_linenum = $.;
+	    }
+        if ($line =~ m/power failure/) {
+            $pwr_failure_linenum = $.;
+            if ($pwr_failure_linenum - $console_boot_linenum < 10) {
+                $diag_fa_code{"NIC_POWER_FAILURE"} = 1;
+            }
+        }
+        if ($line =~ m/Invalid arm vdd offset/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"SET_AVS_ARM_VDD_FAILURE"} = 1;
+	    }
     }
     if ($slot_err_msg ne "") {
         $test_err_msg .= "\n--------slot log--------: ".$slotlogfile."\n";

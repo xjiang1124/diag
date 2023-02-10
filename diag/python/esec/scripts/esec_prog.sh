@@ -17,6 +17,11 @@ get_asic_type () {
         ]]
     then
         echo "ELBA"
+    else if [[ $c_type == "GINESTRA_D4"        || \
+               $c_type == "GINESTRA_D5"
+        ]]
+    then
+        echo "GIGLIO"
     else
         echo "CAPRI"
     fi
@@ -29,7 +34,7 @@ enroll_puf () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "elba" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     else
@@ -46,7 +51,7 @@ hsm_sign_ek () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         id="elba.v1"
     else
@@ -94,7 +99,7 @@ otp_init () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     else
@@ -108,7 +113,7 @@ post_check () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     else
@@ -122,7 +127,7 @@ show_status () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     else
@@ -146,7 +151,7 @@ img_prog () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
@@ -177,7 +182,7 @@ efuse_prog () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         id="elba.v1"
     else
@@ -192,7 +197,7 @@ efuse_prog () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
@@ -220,7 +225,7 @@ efuse_test () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "elba" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         echo "Skip efuse test for Elba cards"
     else

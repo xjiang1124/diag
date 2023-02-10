@@ -53,12 +53,14 @@ const (
     AREA_TYPE_MRA_C1        int = 0xC6
 
     //Supported board PNs
-    PN_IBM          string = "68-0028"
-    PN_ADI_MSFT     string = "68-0034"
-    PN_NETAPP_R2    string = "111-05363"
-    PN_SOLO_ORACLE  string = "68-0077-01"
-    PN_ADICR_ORACLE string = "68-0049-03"
-    PN_LIPARI_ELBA  string = "68-0032"
+    PN_IBM           string = "68-0028"
+    PN_ADI_MSFT      string = "68-0034"
+    PN_NETAPP_R2     string = "111-05363"
+    PN_SOLO_ORACLE   string = "68-0077-01"
+    PN_ADICR_ORACLE  string = "68-0049-03"
+    PN_LIPARI_ELBA   string = "68-0032"
+    PN_GIN_D4_ORACLE string = "68-0074-01"
+    PN_GIN_D5_ORACLE string = "68-0075-01"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -66,6 +68,7 @@ const (
     PROD_NAME_NETAPP_R2     string = "NAPLES 100, NetApp, R2"
     PROD_NAME_ORACLE        string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_LIPARI_ELBA   string = "AMD DSS-28800"
+    PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -74,6 +77,8 @@ const (
     SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"
     SKU_ADICR_ORACLE    string = "DSC2-2Q200-32R32F64P-R5"
     SKU_LIPARI_ELBA     string = "DSS-28800"
+    SKU_GIN_D4          string = "DSC2A-2Q200-32R32F64P-R"
+    SKU_GIN_D5          string = "DSC2A-2Q200-32S32F64P-R"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -82,6 +87,11 @@ const (
     FRU_ID_ADICR_ORACLE  string = "11/18/22"
     FRU_ID_SOLO_ORACLE   string = "11/18/22"
     FRU_ID_LIPARI_ELBA   string = "12/01/22"
+    FRU_ID_GIN_D4        string = "01/24/23"
+    FRU_ID_GIN_D5        string = "01/24/23"
+
+    // Byte offset
+    BYTE_OFFSET_SN_ORACLE      int = 5
 )
 
 type progInfo struct {
@@ -122,6 +132,16 @@ var soloOracleExt = []fieldInfo {
 // Ortano ADI CR PCIe subsystem ID
 var adicrOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0e}, },
+}
+
+// Ginestra_D4 PCIe subsystem ID
+var ginestraD4OracleExt = []fieldInfo {
+    fieldInfo { 94, []byte{0x00, 0x51}, },
+}
+
+// Ginestra_D5 PCIe subsystem ID
+var ginestraD5OracleExt = []fieldInfo {
+    fieldInfo { 94, []byte{0x01, 0x51}, },
 }
 
 // Lipari Elba number of MAC address
@@ -284,6 +304,64 @@ var CardDataInfo = map[string]updateInfo {
         },
         lipariElbaExt,
     },
+    PN_GIN_D4_ORACLE: updateInfo {
+        OrtanoOracleTbl,
+        PROD_NAME_GIG_ORACLE,
+        SKU_GIN_D4,
+        FRU_ID_GIN_D4,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+            progInfo {
+                FIELD_TYPE_BYTE,
+                AREA_TYPE_PRDT_INFO,
+                BYTE_OFFSET_SN_ORACLE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        ginestraD4OracleExt,
+    },
+    PN_GIN_D5_ORACLE: updateInfo {
+        OrtanoOracleTbl,
+        PROD_NAME_GIG_ORACLE,
+        SKU_GIN_D5,
+        FRU_ID_GIN_D5,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+            progInfo {
+                FIELD_TYPE_BYTE,
+                AREA_TYPE_PRDT_INFO,
+                BYTE_OFFSET_SN_ORACLE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        ginestraD5OracleExt,
+    },
 
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
@@ -299,11 +377,12 @@ var CardDataInfo = map[string]updateInfo {
 
 //Add PNs to table of accepted cards
 var CardTypes = []card{
-    card{"ORTANO-IBM",      PN_IBM},
-    card{"ORTANO-ADI-MSFT", PN_ADI_MSFT},
-    card{"NETAPP-R2",       PN_NETAPP_R2},
-    card{"ORTANO-SOLO_ORACLE", PN_SOLO_ORACLE},
-    card{"ORTANO-ADICR_ORACLE", PN_ADICR_ORACLE},
+    card{"ORTANO-IBM",              PN_IBM},
+    card{"ORTANO-ADI-MSFT",         PN_ADI_MSFT},
+    card{"NETAPP-R2",               PN_NETAPP_R2},
+    card{"ORTANO-SOLO_ORACLE",      PN_SOLO_ORACLE},
+    card{"ORTANO-ADICR_ORACLE",     PN_ADICR_ORACLE},
+    card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
                       }
 
 //Data structure slices

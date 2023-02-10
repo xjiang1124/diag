@@ -23,7 +23,6 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MFG_DIAG_RE
 from libdefs import FF_Stage
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import NIC_IP_Address
 
@@ -102,6 +101,8 @@ class mtp_ctrl():
 
         self._svos_boot = True # set to False once OS is installed
         # self._secure_login = False  #set to True when using signed OS
+
+        self._hard_failure = False
 
         # name is defined by its name in diag fpgautil
         # None/"" = not present
@@ -265,7 +266,7 @@ class mtp_ctrl():
         return duration
 
     def log_test_start(self, testname):
-        # log the timestamp in NIC log
+        # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
         ts_record = "{:s} Started - at {:s}".format(testname, str(start))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
@@ -273,7 +274,7 @@ class mtp_ctrl():
         return start
 
     def log_test_stop(self, testname, start):
-        # log the timestamp in NIC log
+        # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
         ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
@@ -454,6 +455,12 @@ class mtp_ctrl():
 
     def get_homedir(self):
         return self._homedir
+
+    def set_hard_failure(self):
+        self._hard_failure = True
+
+    def hard_failure(self):
+        return self._hard_failure
 
     def _mtp_single_apc_pwr_off(self, apc, userid, passwd, port_list):
         retry = 0
@@ -2358,7 +2365,7 @@ class mtp_ctrl():
     def mtp_nic_boot_info_init(self, slot):
         self.cli_log_slot_inf(slot, "Init NIC boot info")
         if not self._nic_ctrl_list[slot].nic_boot_info_init():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             return False
 
@@ -2457,7 +2464,7 @@ class mtp_ctrl():
             time.sleep(MTP_Const.NIC_MGMT_IP_SET_DELAY)
             self.cli_log_slot_inf(slot, "Reinit NIC MGMT port <{:d}> try".format(loop))
             if self._nic_ctrl_list[slot].nic_mgmt_config():
-                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                self.mtp_get_nic_err_msg(slot)
                 break
             time.sleep(10)
         if loop >= MTP_Const.NIC_MGMT_IP_INIT_RETRY:
@@ -2575,8 +2582,7 @@ class mtp_ctrl():
     def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
         rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
         if not rc:
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_get_nic_err_msg(slot)
         return rc
 
 
@@ -2585,6 +2591,15 @@ class mtp_ctrl():
 
 
     def mtp_get_nic_err_msg(self, slot):
+        err_msg_str = self._nic_ctrl_list[slot].nic_get_err_msg()
+        if err_msg_str:
+            err_msg_list = err_msg_str.splitlines()
+            for err_msg in err_msg_list:
+                if err_msg:
+                    self.cli_log_slot_err(slot, err_msg)
+        return
+
+    def mtp_clear_nic_err_msg(self, slot):
         return self._nic_ctrl_list[slot].nic_get_err_msg()
 
 
@@ -2853,28 +2868,30 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Failed to copy emmc util")
             return False
         if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
-            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            self.mtp_clear_nic_err_msg(slot)
             if not self._nic_ctrl_list[slot].nic_emmc_bkops_en(): 
                 self.cli_log_slot_err_lock(slot, "Failed to enable eMMC bkops")
+                self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
             if not self._nic_ctrl_list[slot].nic_emmc_bkops_verify():
                 self.cli_log_slot_err_lock(slot, "Incorrect eMMC bkops value reflected")
-                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                self.mtp_get_nic_err_msg(slot)
                 return False
         return True
 
     @single_slot_test("DL", "EMMC_HWRESET_SET")
     def tor_nic_emmc_hwreset_set(self, slot):
         if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
-            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            self.mtp_clear_nic_err_msg(slot)
             if not self._nic_ctrl_list[slot].nic_emmc_hwreset_set(): 
                 self.cli_log_slot_err_lock(slot, "Failed to enable eMMC hwreset setting")
+                self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
             if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
                 self.cli_log_slot_err_lock(slot, "Incorrect eMMC hwreset setting reflected")
-                self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+                self.mtp_get_nic_err_msg(slot)
                 return False
         return True
 
@@ -2999,14 +3016,12 @@ class mtp_ctrl():
         fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
 
         if not self._nic_ctrl_list[slot].nic_dump_cpld("fea"):
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_get_nic_err_msg(slot)
             return False
         
         fea_nic_hex = self._nic_ctrl_list[slot].nic_get_info("hexdump -C /home/diag/cplddump")
         if not fea_nic_hex:
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_get_nic_err_msg(slot)
             return False
         fea_nic_match = re.search(fea_regex,fea_nic_hex)
 
@@ -3025,8 +3040,7 @@ class mtp_ctrl():
             return False
 
         if not self._nic_ctrl_list[slot].nic_check_cpld_partition():
-            err_msg = self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_err_msg(err_msg)
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         return True
@@ -3112,7 +3126,7 @@ class mtp_ctrl():
     def mtp_program_nic_qspi(self, slot, qspi_img):
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             return False
         return True
         
@@ -3126,7 +3140,7 @@ class mtp_ctrl():
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         if not self.mtp_mgmt_set_nic_gold_boot(slot):
@@ -3191,7 +3205,7 @@ class mtp_ctrl():
     def mtp_program_nic_emmc(self, slot, emmc_img):
         if not self._nic_ctrl_list[slot].nic_program_emmc(emmc_img):
             self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         return True
@@ -3265,8 +3279,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_copy_diag_img(nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
-            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
@@ -3402,7 +3416,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
         if not self._nic_ctrl_list[slot].nic_fru_init(init_date, self._swmtestmode[slot]):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         return True
@@ -3412,7 +3426,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Init NIC CPLD info")
         if not self._nic_ctrl_list[slot].nic_cpld_init():
             self.cli_log_slot_err_lock(slot, "Init NIC CPLD failed")
-            self.mtp_dump_err_msg(self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             return False
 
         return True
@@ -4222,7 +4236,7 @@ class mtp_ctrl():
         
     def mtp_mgmt_set_nic_mainfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_mainfw_boot():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Set NIC default boot with mainfw failed")
             return False
 
@@ -4467,7 +4481,7 @@ class mtp_ctrl():
             test_timeout = self.get_test_timeout(cmd, test)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(prbs_duration)):
                 self.cli_log_err("{:s} failed".format(cmd))
-                return nic_list[:]
+                return False
             cmd_buf = self.mtp_get_cmd_buf()
             if "PRBS PASSED" not in cmd_buf:
                 self.mtp_dump_err_msg(cmd_buf)
@@ -4479,7 +4493,7 @@ class mtp_ctrl():
             test_timeout = self.get_test_timeout(cmd, test)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout+int(test_timeout)):
                 self.cli_log_err("{:s} failed".format(cmd))
-                return nic_list[:]
+                return False
             cmd_buf = self.mtp_get_cmd_buf()
             if "PCISCAN TEST PASSED" not in cmd_buf:
                 self.mtp_dump_err_msg(cmd_buf)
@@ -4525,7 +4539,9 @@ class mtp_ctrl():
         elif test in ("ELBA_EDMA_TEST"):
             return 360
         elif test in ("PCI_TOR"):
-            return 30        
+            return 30    
+        elif test in ("TD3DIAG"):
+            return 360
         elif test in ("L1"):
             return 40*60
         else:
@@ -4874,7 +4890,7 @@ class mtp_ctrl():
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, init_cmd):
-                err_msg = self.mtp_get_nic_err_msg(slot)
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # log the timestamp in diag log
@@ -4885,7 +4901,7 @@ class mtp_ctrl():
 
         # run diag test
         if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_TEST_TIMEOUT):
-            err_msg = self.mtp_get_nic_err_msg(slot)
+            err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
             return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # diag test error ouput
@@ -4907,7 +4923,7 @@ class mtp_ctrl():
         # post command
         if post_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, post_cmd):
-                err_msg = self.mtp_get_nic_err_msg(slot)
+                err_msg = self._nic_ctrl_list[slot].nic_get_err_msg()
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
@@ -5232,6 +5248,12 @@ class mtp_ctrl():
 
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
+                # read FRU as soon as console is ready, to have an SN to save logs to.
+                if not self.tor_fru_init():
+                    return False
+                if selection > 0:
+                    if not self.tor_boot_devices_ready():
+                        return False
                 return True
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
@@ -5328,6 +5350,8 @@ class mtp_ctrl():
             return False
 
         if selection > 0:
+            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
+
             # get IP
             if not self.tor_get_ip():
                 self.cli_log_err("Failed to obtain IP", level=0)
@@ -5338,19 +5362,21 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to connect UUT chassis", level=0)
                 return False
 
-            start=datetime.now()
-            # if stopreboot and not self._secure_login:
-            self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
-            self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
-            elba0_ready, elba1_ready = False, False
-            while not elba0_ready or not elba1_ready:
-                # self.mtp_mgmt_exec_cmd("ifconfig", sig_list=["#"], timeout=10)
-                # if self._secure_login:
-                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
-                #     sig = "ready"
-                # else:
-                #     self.mtp_mgmt_exec_cmd("vtysh -c \"show module\"", sig_list=["#"], timeout=10)
-                #     sig = "Ready"
+        if selection == 0:
+            if not self.mtp_console_enter_shell("sh"):
+                self.cli_log_err("Unable to init bash shell", level=0)
+                return False
+
+        return True
+
+    def tor_boot_devices_ready(self):
+        start=datetime.now()
+        # if stopreboot and not self._secure_login:
+        self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
+        self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
+        elba0_ready, elba1_ready, gearbox_ready = False, False, False
+        while False in (elba0_ready, elba1_ready, gearbox_ready):
+            if False in (elba0_ready, elba1_ready):
                 self.mtp_mgmt_exec_cmd("vtysh -c \"show dsm\"", timeout=10)
                 sig1 = "ready"
                 sig2 = "down"
@@ -5363,24 +5389,39 @@ class mtp_ctrl():
                             if "1/2" in line:
                                 elba1_ready = True
                     if elba0_ready and elba1_ready:
-                        self.cli_log_inf("LAGs Ready")
-                        break
+                        self.cli_log_inf("LAGs ready")
                     if not self.mtp_mgmt_exec_cmd("date", sig_list=["UTC"], timeout=10):
                         return False
-                difftime = datetime.now()-start
-                seconds = difftime.total_seconds()
-                if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
-                    break
-                sys.stdout.write("Time left: {:03d} seconds....\r".format(int(MTP_Const.TOR_LAGS_POWER_ON_DELAY - seconds)))
-                sys.stdout.flush()
-                time.sleep(5)
 
-            self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+            if not gearbox_ready:
+                self.mtp_mgmt_exec_cmd("vtysh -c \"show module 1/1\"", timeout=10)
+                gearbox_sig = "Line module 1/1 is ready"
+                cmd_buf = self.mtp_get_cmd_buf()
+                if cmd_buf is not None:
+                    for line in cmd_buf.splitlines():
+                        if gearbox_sig in line:
+                            gearbox_ready = True
+                            self.cli_log_inf("TD3/GB/retimer module ready")
 
-        if selection == 0:
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
+            difftime = datetime.now()-start
+            seconds = difftime.total_seconds()
+            if seconds > MTP_Const.TOR_LAGS_POWER_ON_DELAY:
+                break
+            sys.stdout.write("Time left: {:03d} seconds....\r".format(int(MTP_Const.TOR_LAGS_POWER_ON_DELAY - seconds)))
+            sys.stdout.flush()
+            time.sleep(5)
+
+        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+
+        if not elba0_ready:
+            self.cli_log_slot_err(0, "Elba0 initialization timed out")
+            return False
+        if not elba1_ready:
+            self.cli_log_slot_err(1, "Elba1 initialization timed out")
+            return False
+        if not gearbox_ready:
+            self.cli_log_err("TD3/GB/retimer initialization timed out", level=0)
+            return False
 
         return True
 
@@ -6329,7 +6370,7 @@ class mtp_ctrl():
             prog_val = "passmark_loc 6 pass_mark DL2:"+pass_timestamp
         elif stage == "LED":
             prog_val = "passmark_loc 7 pass_mark LED:"+pass_timestamp
-        elif stage in ("2C-LV", "2C_LV", Env_Cond.MFG_2C_LV, FF_Stage.FF_2C_LV):
+        elif stage in ("2C-LV", "2C_LV", FF_Stage.FF_2C_LV):
             prog_val = "passmark_loc 8 pass_mark 2C:"+pass_timestamp
         elif stage in ("SWI", FF_Stage.FF_SWI):
             prog_val = "passmark_loc 9 pass_mark SWI:"+pass_timestamp
@@ -7244,7 +7285,7 @@ class mtp_ctrl():
     def tor_nic_gold_boot(self, slot):
         self.cli_log_slot_inf(slot, "Set goldfw boot")
         if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Failed to set goldfw")
             return False
         return True
@@ -7454,13 +7495,13 @@ class mtp_ctrl():
 
         self.cli_log_slot_inf(slot, "Writing device.conf to NIC")
         if not self._nic_ctrl_list[slot].nic_setup_device_config():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.cli_log_slot_err(slot, "Failed to save device.conf")
             return False
 
         # # Uboot env step removed for OS newer than Nov1 2021
         # if not self._nic_ctrl_list[slot].nic_console_uboot_env():
-        #     self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+        #     self.mtp_get_nic_err_msg(slot)
         #     self.cli_log_slot_err(slot, "Failed to write env to uboot")
         #     return False
 
@@ -7921,28 +7962,28 @@ class mtp_ctrl():
 
     def tor_nic_config_erase(self, slot):
         if not self._nic_ctrl_list[slot].nic_config_erase():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
     def tor_nic_fwenv_erase(self, slot):
         if not self._nic_ctrl_list[slot].nic_fwenv_erase():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
     def tor_nic_config_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_config_verify():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
     def tor_nic_fw_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_fw_verify():
-            self.cli_log_slot_err(slot, self.mtp_get_nic_err_msg(slot))
+            self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
@@ -8143,15 +8184,6 @@ class mtp_ctrl():
     def tor_copy_sys_log(self, dest_folder, local_copy=False):
         self.cli_log_inf("Copying system logs", level=0)
 
-        mtp_mgmt_cfg = self.get_mgmt_cfg()
-        if not mtp_mgmt_cfg:
-            self.cli_log_err("Lost IP - cant connect to UUT", level=0)
-            return False
-
-        ipaddr = mtp_mgmt_cfg[0]
-        userid = mtp_mgmt_cfg[1]
-        passwd = mtp_mgmt_cfg[2]
-
         logfiles = (
             "/var/log/messages",
             "/var/log/critical.log",
@@ -8181,7 +8213,7 @@ class mtp_ctrl():
                     self.cli_log_err("Unable to copy UUT system log file {:} locally".format(filename), level=0)
                     continue
             else:
-                if not libmfg_utils.network_get_file(ipaddr, userid, passwd, dest_name, filename, self._diag_filep): #open("scp.log", "w+")):
+                if not libmfg_utils.network_get_file(self, dest_name, filename): #open("scp.log", "w+")):
                     self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
                     continue
 
@@ -8190,6 +8222,57 @@ class mtp_ctrl():
         handle.sendline("ls {:s}".format(dest_folder))
         handle.expect("$")
         handle.close()
+
+        return True
+
+    def tor_ping_test(self):
+        # cmd = "#== Testing connection to UUT"
+        # cmd_buf = libmfg_utils.host_shell_cmd(self, cmd)
+        # if cmd_buf is None:
+        #     self.cli_log_err("Command {:s} failed".format(cmd))
+        #     return False
+
+        ip = self._mgmt_cfg[0]
+        cmd = "ping -c 4 {:s}".format(ip)
+        cmd_buf = libmfg_utils.host_shell_cmd(self, cmd, timeout=10)
+        if cmd_buf is None:
+            self.cli_log_err("Command {:s} failed".format(cmd))
+            return False
+        match = re.findall(r" 0% packet loss", cmd_buf)
+        if not match:
+            return False
+
+        return True
+
+    def tor_dsp_failure_dump(self):
+        """
+            - check IP is pingable
+            - dont create new session
+        """
+        if self._svos_boot:
+            self.cli_log_err("Script error: this function is only for 2C")
+            return False
+
+        if not self._mgmt_cfg:
+            return False
+
+        if not self.tor_ping_test():
+            self.cli_log_err("Ping to UUT failed")
+            self.set_hard_failure()
+            return False
+
+        if not self.tor_get_ip():
+            self.cli_log_err("UUT chassis lost IP")
+            self.set_hard_failure()
+            return False
+
+        if not self.mtp_mgmt_exec_cmd("uptime"):
+            self.set_hard_failure()
+            return False
+
+        if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
+            self.set_hard_failure()
+            return False
 
         return True
 
@@ -8219,7 +8302,6 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
             return False
-
 
         return True
 
@@ -8464,9 +8546,10 @@ class mtp_ctrl():
     def mtp_mgmt_clear_nic_ssh(self, slot):
         if not self._nic_ctrl_list[slot].nic_console_check_ssh_folder():
             self.cli_log_slot_inf(slot, "Required SSH files missing on NIC... clearing folder to reset")
-            self.mtp_get_nic_err_msg(slot) # clear out the error message
+            self.mtp_clear_nic_err_msg() # clear out the error message
             if not self._nic_ctrl_list[slot].nic_console_clear_ssh_folder():
                 self.cli_log_slot_err(slot, "Failed to setup NIC ssh folder")
+                self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
 

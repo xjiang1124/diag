@@ -288,13 +288,16 @@ class mtp_ctrl():
         if err_msg:
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
-                self.cli_log_err(top_err_msg)
+                for line in top_err_msg.splitlines():
+                    self.cli_log_err(line)
                 self.cli_log_err("<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
-                self.cli_log_err(bottom_err_msg)
+                for line in bottom_err_msg.splitlines():
+                    self.cli_log_err(line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
-                self.cli_log_err(err_msg)
+                for line in err_msg.splitlines():
+                    self.cli_log_err(line)
         self.cli_log_err("==== Error Message End: ====")
 
     def mtp_dump_nic_err_msg(self, slot):
@@ -305,13 +308,16 @@ class mtp_ctrl():
         if err_msg:
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
-                self.cli_log_slot_err(slot, top_err_msg)
+                for line in top_err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
                 self.cli_log_slot_err(slot, "<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
-                self.cli_log_slot_err(slot, bottom_err_msg)
+                for line in bottom_err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
-                self.cli_log_slot_err(slot, err_msg)
+                for line in err_msg.splitlines():
+                    self.cli_log_slot_err(slot, line)
         self.cli_log_slot_err(slot, "==== Error Message End: ====")
 
 
@@ -1522,7 +1528,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init_start(self, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, skip_nic_pn_init=False):
+    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False):
         if not self.mtp_mgmt_connect():
             self.cli_log_err("Unable to connect MTP chassis", level=0)
             return False
@@ -1542,12 +1548,19 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
+        # config the prompt
+        userid = self._mgmt_cfg[1]
+        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
+            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            return False
+        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
             return False
 
         # PSU/FAN absent, powerdown MTP
-        if not self.mtp_hw_init(fan_spd, None):
+        if not self.mtp_hw_init(None):
             self.cli_log_err("MTP HW Init Fail", level=0)
             return False
 
@@ -2240,8 +2253,11 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_hw_init(self, fan_spd, stage=None):
+    # make sure mtp_hw_init is always done after mtp_sys_info_init, as it needs info collected from it
+    def mtp_hw_init(self, stage=None):
         rc = True
+
+        fan_spd = libmfg_utils.pick_fan_speed(stage)
 
         self.cli_log_inf("Start MTP chassis sanity check", level = 0)
         # mtp cpld test
@@ -2876,6 +2892,16 @@ class mtp_ctrl():
     def mtp_get_nic_cmd_buf(self, slot):
         return self._nic_ctrl_list[slot].nic_get_cmd_buf()
 
+    def mtp_exec_nic_cmd_get_info(self, slot, cmd, timeout=None):
+        return self._nic_ctrl_list[slot].nic_get_info(cmd, timeout)
+
+    def mtp_exec_nic_cmds_get_lastcmd_info(self, slot, cmds, timeout=None):
+        rc = self._nic_ctrl_list[slot].nic_exec_cmds(cmds, timeout)
+        if not rc:
+            return False
+        if self._nic_ctrl_list[slot].nic_get_cmd_buf():
+            return self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        return True
 
     def mtp_get_nic_err_msg(self, slot):
         err_msg_str = self._nic_ctrl_list[slot].nic_get_err_msg()
@@ -3106,7 +3132,7 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf_lock(slot, "==> Check SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))   
         if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
-            if software_pn != "90-0001-0001":
+            if software_pn != "90-0001-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:9] == "111-05363": #NAPLES 100 NETAPP
@@ -3226,11 +3252,11 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
-            if software_pn != "90-0020-0001":
+            if software_pn != "90-0020-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
-            if software_pn != "90-8888-0001":
+            if software_pn != "90-0020-0002":
                 self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
@@ -3566,6 +3592,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD verify for Proto NIC")
             return True
 
+        if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
+            self.cli_log_slot_err(slot, "Dumping esec failed")
+            return False
+
         if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
             self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
             return False
@@ -3817,6 +3847,8 @@ class mtp_ctrl():
 
         try:
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
+            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
+                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
             if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
                 expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
             if nic_type == NIC_Type.NAPLES25SWM:
@@ -4014,7 +4046,7 @@ class mtp_ctrl():
             else:
                 self.mtp_single_j2c_lock()
                 self.mtp_nic_console_lock()
-                ret, _ = self.mtp_nic_disp_ecc(slot)
+                self.mtp_get_nic_sts(slot)
                 self.mtp_nic_console_unlock()
                 self.mtp_single_j2c_unlock()
 
@@ -6601,6 +6633,24 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "No ECC errors found")
             else:
                 self.cli_log_slot_err(slot, "ECC errors found")
+
+        return True
+
+    def mtp_get_nic_sts(self, slot):
+        """
+         Read board and die temp via j2c
+         WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in ELBA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=True):
+            self.cli_log_slot_err(slot, "Unable to dump NIC sts")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            return False
+
+        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
 
         return True
 

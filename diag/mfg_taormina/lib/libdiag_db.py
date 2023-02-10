@@ -1,9 +1,9 @@
 import libmfg_utils
-from libdefs import Env_Cond
+from libdefs import FF_Stage
 from libdefs import MFG_DIAG_CMDS
 
 class diag_db():
-    def __init__(self, corner, diag_cfg_file):
+    def __init__(self, stage, diag_cfg_file):
         diag_test_cfg = libmfg_utils.load_cfg_from_yaml(diag_cfg_file)
         self._init_cmd_list = list()
         self._skip_test_list = list()
@@ -45,9 +45,9 @@ class diag_db():
                     self._skip_test_list.append(skip_cmd)
 
         # build parameter list
-        if corner == Env_Cond.MFG_NT:
+        if stage == FF_Stage.FF_P2C:
             param_list = diag_test_cfg["PARAMS"]["P2C"]
-        elif corner == Env_Cond.MFG_2C_HV or corner == Env_Cond.MFG_2C_LV:
+        elif stage == FF_Stage.FF_2C_HV or stage == FF_Stage.FF_2C_LV:
             param_list = diag_test_cfg["PARAMS"]["2C"]
         else:
             param_list = diag_test_cfg["PARAMS"]["4C"]

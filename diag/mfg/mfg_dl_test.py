@@ -29,6 +29,7 @@ from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import NEED_UBOOT_IMG_CARD_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
@@ -277,11 +278,14 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
                     if card_type == NIC_Type.ORTANO2ADIMSFT:
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
+                    if card_type == NIC_Type.ORTANO2ADICR:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
                     mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
+                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                 if card_type in ELBA_NIC_TYPE_LIST:
@@ -308,10 +312,17 @@ def main():
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
+            for card_type in NEED_UBOOT_IMG_CARD_TYPE_LIST:
+                try:
+                    mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                except KeyError:
+                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+
         if not GLB_CFG_MFG_TEST_MODE:
             mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img["ORTANO2"])
         mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
-        
+
+        mtp_dl_image_list = list(set(mtp_dl_image_list))
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)

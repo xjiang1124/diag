@@ -274,7 +274,8 @@ class nic_ctrl():
         return ret
 
 
-    def nic_get_info(self, nic_cmd):
+    def nic_get_info(self, nic_cmd, timeout=None):
+        tout = MTP_Const.NIC_CON_CMD_DELAY if timeout is None else timeout
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
         self._nic_handle.sendline(cmd)
@@ -292,7 +293,7 @@ class nic_ctrl():
                 break
 
         self._nic_handle.sendline(nic_cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], MTP_Const.NIC_CON_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], tout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1489,13 +1490,30 @@ class nic_ctrl():
         if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
             return False
 
-        nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
-        profile_sig = MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG
-        nic_cmd_list.append(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, fail_sig=profile_sig):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
+        nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_console_detach()
+            return False
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_console_detach()
+            return False
+        if MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG in cmd_buf:
+            self.nic_set_err_msg("Failed to apply profile")
+            self.nic_console_detach()
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        self.nic_console_detach()
         return True
 
 
@@ -1723,6 +1741,19 @@ class nic_ctrl():
         nic_cmd_list.append(nic_cmd)
         if not self.nic_exec_cmds(nic_cmd_list):
             self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
+            return False
+
+        return True
+
+    def nic_dump_esec_qspi(self, mode):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_QSPI_DUMP_FMT.format(self._slot+1, mode)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         return True
@@ -2807,7 +2838,7 @@ class nic_ctrl():
         PROD_NUM_FIELD = r"HPE Product Number"
         pn_table = {
             NIC_Type.NAPLES25SWM: [
-                (PROD_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+                (PROD_NUM_FIELD, "P26969\-B21")
                 ]
         }
         if self._nic_type not in pn_table.keys():
@@ -4402,12 +4433,16 @@ class nic_ctrl():
         self.nic_console_detach()
         return ret
 
-    def read_nic_temp(self):
+    def read_nic_temp(self, skip_reboot=False):
         if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):
             return False
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
-        if not self.mtp_exec_cmd("tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1), timeout=180):
+
+        cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1)
+        if skip_reboot:
+            cmd += " 0" #skips VRM
+        if not self.mtp_exec_cmd(cmd, timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()

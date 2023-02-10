@@ -21,6 +21,7 @@ set parameters {
     {ddr_freq.arg    3200            "DDR frequency"}
     {ddr5.arg        0               "DDR5 option"}
     {vmarg.arg       "normal"        "Voltage margin: normal/high/low"}
+    {pc.arg          1               "Power cycle"}
 }
 
 set usage "- Usage:"
@@ -42,8 +43,10 @@ set dual_rank   $options(dual_rank)
 set ddr_freq    $options(ddr_freq)
 set ddr5        $options(ddr5)
 set vmarg       $options(vmarg)
+set pc          $options(pc)
 
-puts "sn: $sn; slot: $slot; mode $mode; hc: $hc; ctrl_pi: $ctrl_pi; addr_space: $addr_space; dual_rank: $dual_rank; ddr5: $ddr5; vmarg: $vmarg"
+
+puts "sn: $sn; slot: $slot; mode $mode; hc: $hc; ctrl_pi: $ctrl_pi; addr_space: $addr_space; dual_rank: $dual_rank; ddr5: $ddr5; vmarg: $vmarg; pc: $pc"
 
 if { $slot == "" } {
     error "Need slot arg"
@@ -57,14 +60,16 @@ set port [mtp_get_j2c_port $slot]
 set slot1 [mtp_get_j2c_slot $slot]
 diag_close_j2c_if $port $slot1
 
-puts "Slot $slot off"
-catch {set output [exec /home/diag/diag/scripts/turn_on_slot.sh off $slot]}
-puts $output
-after 3000
-puts "Slot $slot on"
-catch {set output [exec /home/diag/diag/scripts/turn_on_slot.sh on $slot]}
-puts $output
-after 1000
+if { $pc != 0 } {
+    puts "Slot $slot off"
+    catch {set output [exec /home/diag/diag/scripts/turn_on_slot.sh off $slot]}
+    puts $output
+    after 3000
+    puts "Slot $slot on"
+    catch {set output [exec /home/diag/diag/scripts/turn_on_slot.sh on $slot]}
+    puts $output
+    after 1000
+}
 
 diag_open_j2c_if $port $slot1
 _msrd

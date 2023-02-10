@@ -28,6 +28,7 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import NEED_UBOOT_IMG_CARD_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -154,7 +155,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
             ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
         # program feature row
         elif test == "FEA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, "/home/diag/"+NIC_IMAGES.fea_cpld_img["ORTANO2"]) # just for temporary lab use
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, fea_cpld_img_file)
         # refresh CPLD
         elif test == "CPLD_REF":
             ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
@@ -459,11 +460,14 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIIBM"])
                 if nic_type == NIC_Type.ORTANO2ADIMSFT:
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
+                if nic_type == NIC_Type.ORTANO2ADICR:
+                    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(nic_type))
             try:
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[nic_type])
                 mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0010"])
+                mtp_dl_image_list.append(NIC_IMAGES.diagfw_img["68-0015"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(nic_type))
             if nic_type in ELBA_NIC_TYPE_LIST:
@@ -489,10 +493,16 @@ def main():
                 mtp_dl_image_list.append(NIC_IMAGES.uboot_img[nic_type])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(nic_type))
+        for card_type in NEED_UBOOT_IMG_CARD_TYPE_LIST:
+            try:
+                mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+            except KeyError:
+                mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 
     mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     
     onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+    mtp_dl_image_list = list(set(mtp_dl_image_list))
     if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
         mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
         mtpid_list.remove(mtp_id)
@@ -551,6 +561,9 @@ def main():
                     pass_nic_list.remove(slot)
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+
+    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
+    mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -624,6 +637,8 @@ def main():
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
+        if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0015"]
         if nic_type == NIC_Type.NAPLES25OCP and mtp_mgmt_ctrl.mtp_is_nic_ocp_dell(slot):
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0010"]
         if nic_type == NIC_Type.NAPLES25SWM:
@@ -725,9 +740,6 @@ def main():
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
 
-
-    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
-    mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -854,6 +866,8 @@ def main():
     nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
     nic_thread_list = list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_prsnt_list[slot]:
+            continue
         if slot in fail_nic_list:
             continue
         key = libmfg_utils.nic_key(slot)

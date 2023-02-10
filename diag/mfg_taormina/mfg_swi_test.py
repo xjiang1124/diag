@@ -190,7 +190,7 @@ def single_uut_fw_program(stage,
         #     mtp_mgmt_ctrl.cli_log_inf("UUT Chassis timestamp sync'd", level=0)
 
         # read FRU
-        mtp_mgmt_ctrl.tor_fru_init()
+        # mtp_mgmt_ctrl.tor_fru_init()
         sn = mtp_mgmt_ctrl._sn
         fru_cfg["SN"] = sn
 

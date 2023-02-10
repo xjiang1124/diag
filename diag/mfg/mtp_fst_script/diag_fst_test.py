@@ -28,6 +28,9 @@ def get_bus_list(card_type="CAPRI"):
     new_str = result.decode("utf-8")
     bus_list = [y for y in (x.strip() for x in new_str.splitlines()) if y]
     print("Found", len(bus_list), "devices", "\n")
+
+    # dump extra info
+    tmp = subprocess.call(["lspci","-d","1dd8:","-vvv"])
     return bus_list
 
 def get_product_name_from_pn(pn):

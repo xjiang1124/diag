@@ -11,7 +11,6 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import Env_Cond
 from libdefs import NIC_Type
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
@@ -83,7 +82,7 @@ def single_mtp_ort_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG ORT Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s} --corner {:s}".format(mtp_id, swm_test_mode, Env_Cond.MFG_ORT_HT)
+    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s} --stage {:s}".format(mtp_id, swm_test_mode, FF_Stage.FF_ORT)
     if skip_test:
         cmd += skipped_testlist
     if only_test:
