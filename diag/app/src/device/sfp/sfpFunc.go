@@ -40,28 +40,13 @@ func ReadBytes(devName string, offset uint64, numBytes uint64) (data []byte, err
 
 func ReadEepromAll(devName string) (data []byte, err int) {
     var i uint64
-    //var bytecnt int
-
+    
     data = make([]byte, 128)
 
-    err = smbus.Open(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer smbus.Close()
-
-    //func ReadBlock(devName string, regAddr uint64, buf []byte) (byteCnt int, err int) {
-
-    //for i = 0; i < 128; i=i+16 {
-    //    bytecnt, err = smbus.ReadBlock(devName, i, buf)
-    //    if err != errType.SUCCESS {
-    //        return
-    //    }
-    //    fmt.Printf(" Bytecnt=%d\n", bytecnt);
-    //    data = append(data, buf...)
-    //}
     for i = 0; i < 128; i++ {
-        data[i], err = smbus.ReadByte(devName, i)
+        data8 := []uint8{}
+        data8, err = ReadBytes(devName, i, 1)
+        data[i] = data8[0]
         if err != errType.SUCCESS {
             cli.Printf("e", "Error:  I2C Read failed on Device %s from byte %d", devName, i)
             return

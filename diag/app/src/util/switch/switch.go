@@ -12,9 +12,9 @@ func main() {
 
     cardType := os.Getenv("CARD_TYPE")
     if cardType == "LIPARI" {
-        lipari_cli()
+        lipari_switch_cli()
     } else {
-        taormina_cli()
+        taormina_switch_cli()
     }
     return
 }

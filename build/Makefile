@@ -32,6 +32,19 @@ c_arm64:
 		$(MAKE) -e ARCH=arm64 CC=$(CC_ARM_64) -C $(TOP_DIR)/diag/$$p || exit 1; \
 	done
 
+c_arm:
+	$(MKDIR_P) -p $(GOPATH)/pkg/linux_arm/clib/
+	$(MKDIR_P) -p $(GOPATH)/bin/linux_arm/cbin/
+	@for p in $(COMMON_C_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        $(MAKE) -e ARCH=arm CC=$(CC_ARM) -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+	@for p in $(ARM64_C_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        $(MAKE) -e ARCH=arm CC=$(CC_ARM) -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+
+
 go_amd64:
 	@for p in $(COMMON_SRC_DIR); do \
 		echo "==> Build $$p ..."; \
@@ -55,6 +68,19 @@ go_arm64:
 		cd $(TOP_DIR)/diag/app/src/$$p; \
 		$(MAKE) ARCH=arm64  || exit 1; \
 	done
+
+go_arm:
+	@for p in $(COMMON_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        cd $(TOP_DIR)/diag/app/src/$$p; \
+        $(MAKE) ARCH=arm  || exit 1; \
+    done
+	@for p in $(ARM_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        cd $(TOP_DIR)/diag/app/src/$$p; \
+        $(MAKE) ARCH=arm  || exit 1; \
+    done
+
 
 amd64:
 	$(MKDIR_P) $(GOPATH)/pkg/linux_amd64/clib
@@ -104,6 +130,30 @@ arm64:
 	cd $(BUILD_DIR)
 	scripts/packaging.sh arm64 ${asic}
 
+arm:
+	$(MKDIR_P) -p $(GOPATH)/pkg/linux_arm/clib/
+	$(MKDIR_P) -p $(GOPATH)/bin/linux_arm/cbin/
+	@for p in $(COMMON_C_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        $(MAKE) -e ARCH=arm CC=$(CC_ARM) -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+	@for p in $(ARM_C_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        $(MAKE) -e ARCH=arm CC=$(CC_ARM) -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+	@for p in $(COMMON_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        cd $(TOP_DIR)/diag/app/src/$$p; \
+        $(MAKE) ARCH=arm  || exit 1; \
+    done
+	@for p in $(ARM_SRC_DIR); do \
+        echo "==> Build $$p ..."; \
+        cd $(TOP_DIR)/diag/app/src/$$p; \
+        $(MAKE) ARCH=arm  || exit 1; \
+    done
+	cd $(BUILD_DIR)
+	scripts/packaging.sh arm ${asic}
+
 test:
 	@for p in $(GO_TEST_DIR); do \
 		echo "==> Build $$p ..."; \
@@ -134,12 +184,29 @@ c_arm64-clean:
 		$(MAKE) clean -e ARCH=arm64 -C $(TOP_DIR)/diag/$$p || exit 1; \
 	done
 
+c_arm-clean:
+	rm -f $(GOPATH)/pkg/linux_arm/clib/*
+	rm -f $(GOPATH)/bin/linux_arm/cbin/*
+	@for p in $(COMMON_C_SRC_DIR); do \
+        echo "==> Clean $$p ..."; \
+        $(MAKE) clean -e ARCH=arm -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+	@for p in $(ARM_C_SRC_DIR); do \
+        echo "==> Clean $$p ..."; \
+        $(MAKE) clean -e ARCH=arm -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+
+
 go_amd64-clean:
 	rm -rf $(GOPATH)/bin/linux_amd64/*
 
 go_arm64-clean:
 	rm -rf $(GOPATH)/bin/linux_arm64/*
-	
+
+go_arm-clean:
+	rm -rf $(GOPATH)/bin/linux_arm/*
+
+
 amd64-clean:
 	rm -rf $(GOPATH)/pkg/linux_amd64/clib/*
 	rm -rf $(GOPATH)/bin/linux_amd64/*
@@ -165,4 +232,17 @@ arm64-clean:
 		echo "==> Clean $$p ..."; \
 		$(MAKE) clean -e ARCH=arm64 -C $(TOP_DIR)/diag/$$p || exit 1; \
 	done
-									
+arm-clean:
+	rm -rf $(GOPATH)/pkg/linux_arm/*
+	rm -rf $(GOPATH)/bin/linux_arm/*
+	rm -rf $(BUILD_DIR)/images/*arm*
+	@for p in $(COMMON_C_SRC_DIR); do \
+        echo "==> Clean $$p ..."; \
+        $(MAKE) clean -e ARCH=arm -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+	@for p in $(ARM64_C_SRC_DIR); do \
+        echo "==> Clean $$p ..."; \
+        $(MAKE) clean -e ARCH=arm -C $(TOP_DIR)/diag/$$p || exit 1; \
+    done
+				
+
