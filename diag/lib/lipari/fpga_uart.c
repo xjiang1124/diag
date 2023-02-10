@@ -26,7 +26,7 @@ ULONGLONG show_bar(void)
 
 int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
 {
-    ULONGLONG *addr;
+    DWORD *addr;
 
     if ( verbosity )
         printf("read_fpag_mem32\n");
@@ -38,15 +38,15 @@ int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
     }
 
     /* unsigned char *mem = mmap(NULL, page_offset + 256, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, page_base); */
-    unsigned char *mem = mmap((void *)ftHandle, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (ULONGLONG *)(ftHandle + reg);
-    *data = (DWORD)(*addr);
+    addr = (DWORD *)(mem + ftHandle + reg);
+    *data = *addr;
 
     close(fd);
     return FT_OK;
@@ -54,7 +54,7 @@ int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
 
 int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
 {
-    ULONGLONG *addr;
+    DWORD *addr;
 
     if ( verbosity )
         printf("write_fpag_mem32\n");
@@ -65,20 +65,20 @@ int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
         return FT_ERROR_OPEN_MEM;
     }
     
-    unsigned char *mem = mmap((void *)ftHandle, 1024 *1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    unsigned char *mem = mmap((void *)bar_addr, 1024 *1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd); 
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (ULONGLONG *)(mem + reg);
+    addr = (DWORD *)(mem + ftHandle + reg);
     if ( verbosity ) {
         printf("reg address %x\n", reg);
         printf("addr address %llx\n", (ULONGLONG)addr);
         printf("data %x\n", value);
     }
-    *((DWORD *)addr) = value;
+    *addr = (DWORD)value;
 
     close(fd); 
     return FT_OK;
@@ -86,10 +86,12 @@ int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
 
 void send_tx_input(int port)
 {
-    unsigned char ch;
+    int ch;
 
-    while ( (ch = getchar()) != EOF ) {
-        write_fpga_mem32(bar_addr + UART_0_RXDATA_REG + port * 0x100, UART_0_TXDATA_REG, (DWORD)ch);
+    ch = getchar();
+    while ( ch != EOF ) {
+        write_fpga_mem32(port * 0x100, UART_0_TXDATA_REG, (DWORD)ch);
+        ch = getchar();
     };
 }
 
@@ -97,11 +99,11 @@ void get_rx_buffer(int port)
 {
     DWORD data;
 
-    read_fpga_mem32(bar_addr + UART_0_RXDATA_REG + port * 0x100, UART_0_STAT_REG, &data);
+    read_fpga_mem32(port * 0x100, UART_0_STAT_REG, &data);
     while ( data & 0x1 ) {
-        read_fpga_mem32(bar_addr + UART_0_RXDATA_REG + port * 0x100, UART_0_RXDATA_REG, &data);
+        read_fpga_mem32(port * 0x100, UART_0_RXDATA_REG, &data);
         printf("%c", (unsigned char)(data & 0xff));
-        read_fpga_mem32(bar_addr + UART_0_RXDATA_REG + port * 0x100, UART_0_STAT_REG, &data);
+        read_fpga_mem32(port * 0x100, UART_0_STAT_REG, &data);
     }
     return;
 }
