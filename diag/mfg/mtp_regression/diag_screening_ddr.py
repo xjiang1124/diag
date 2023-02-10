@@ -11,7 +11,7 @@ import copy
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from ddr_test_parameters import test2args
+from ddr_test_parameters import test2args as ddrtest2args
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
 from libdefs import NIC_Type
@@ -30,7 +30,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import *
 
-def get_test_arguments(test_case_name=None, part_number=None):
+def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2args):
 
     if test_case_name is None:
         return None
@@ -159,32 +159,32 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
 
     return [ret, nic_fail_list]
 
-def mtp_run_run_l1_sh(mtp_mgmt_ctrl, slot=None, run_l1_cmdline_args_str=None):
+def mtp_run_ddr_bist(mtp_mgmt_ctrl, slot=None, ddr_bist_cmdline_args_str=None):
     """
     cd ~diag/scripts/asic/
-    ./run_l1.sh run_l1_cmdline_args_str
+    tclsh ddr_bist.tcl cmdline_args_str
     """
 
-    rs = False
+    rs = True
     cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Command {:s} failed")
         rs = False
 
-    cmd = "./run_l1.sh {:s}".format(run_l1_cmdline_args_str)
+    cmd = "tclsh ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
         rs = False
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, cmd_buf)
         # kill the process in case it's hung/timed out
         # ctrl-c doesnt work
         # needs to be killed from separate session
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"): # notify in log
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, "## killall tclsh"): # notify in log
             pass
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("killall run_l1.sh"): # use mtp session to kill it
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("killall tclsh"): # use mtp session to kill it
             pass
-
     cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
-    if MFG_DIAG_SIG.NIC_PARA_ASIC_L1_OK_SIG in cmd_buf:
-        rs = True
+    if MFG_DIAG_SIG.NIC_PARA_DDR_BIST_OK_SIG not in cmd_buf:
+        rs = False
 
     return rs
 
@@ -210,8 +210,8 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
         vmar_arg_name = "-vmarg" if "-vmarg" in argsdict else "--vmarg"
         if vmarg is not None:
             argsdict[vmar_arg_name] = vmarg
-        run_l1_cmdline_args_str =  args2optionstring(argsdict)
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "run_l1 args string: {:s}".format(run_l1_cmdline_args_str))
+        ddr_bist_cmdline_args_str =  args2optionstring(argsdict)
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "ddr_bist args string: {:s}".format(ddr_bist_cmdline_args_str))
         dsp = "DDR_SUITE"
         if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
@@ -227,30 +227,31 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
                 nic_test_rslt_list[slot] = False
                 break
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, "DDR_BIST")
-            if not mtp_run_run_l1_sh(mtp_mgmt_ctrl, slot, run_l1_cmdline_args_str):
+            if not mtp_run_ddr_bist(mtp_mgmt_ctrl, slot, ddr_bist_cmdline_args_str):
                 ret = "FAIL"
+                err_msg_list.append("DDR_BIST Failed at {:d} Iteration".format(iter))
             else:
                 ret = "SUCCESS"
             duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, "DDR_BIST", start_ts)
             # double check the L1 test even it pass
-            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            single_run_expect_pass_count = 9
-            esec_arg_name = "-e" if "-e" in argsdict else "--esec_en"
-            if argsdict[esec_arg_name] == "0":
-                single_run_expect_pass_count -= 1
-            ddr_arg_name = "-ddr" if "-ddr" in argsdict else "--ddr"
-            if argsdict[ddr_arg_name] == "0":
-                single_run_expect_pass_count -= 1
-            number_of_l1_tests = single_run_expect_pass_count * iter + (single_run_expect_pass_count * iteration) * (power_cycle_count -1)
+            # pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+            # single_run_expect_pass_count = 9
+            # esec_arg_name = "-e" if "-e" in argsdict else "--esec_en"
+            # if argsdict[esec_arg_name] == "0":
+            #     single_run_expect_pass_count -= 1
+            # ddr_arg_name = "-ddr" if "-ddr" in argsdict else "--ddr"
+            # if argsdict[ddr_arg_name] == "0":
+            #     single_run_expect_pass_count -= 1
+            # number_of_l1_tests = single_run_expect_pass_count * iter + (single_run_expect_pass_count * iteration) * (power_cycle_count -1)
 
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "number_of_l1_tests {:d}".format(number_of_l1_tests))
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "pass_count {:d}".format(pass_count))
-            if pass_count != number_of_l1_tests:
-                err_msg_list.append("Some L1 Sub Test Failed, current passed_count: {:d}".format(pass_count))
-                if ret == "SUCCESS":
-                    ret = "FAIL"
-            if log_err_msg_list:
-                err_msg_list += log_err_msg_list
+            # mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "number_of_l1_tests {:d}".format(number_of_l1_tests))
+            # mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "pass_count {:d}".format(pass_count))
+            # if pass_count != number_of_l1_tests:
+            #     err_msg_list.append("Some L1 Sub Test Failed, current passed_count: {:d}".format(pass_count))
+            #     if ret == "SUCCESS":
+            #         ret = "FAIL"
+            # if log_err_msg_list:
+            #     err_msg_list += log_err_msg_list
 
             if ret == "SUCCESS":
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, "DDR_BIST", duration))
