@@ -239,7 +239,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
             printf("response command time out\n");
         return FT_RESP_TIMEOUT;
     }
-    if ( resp & J2C_VALID_BIT ) {
+    if ( (resp & J2C_VALID_BIT) == 0 ) {
         if ( verbosity )
             printf("invalid response\n");
         return FT_INVALID_RESP;
