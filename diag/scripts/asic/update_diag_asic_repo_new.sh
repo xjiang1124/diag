@@ -29,7 +29,8 @@ then
         ASIC_IMG="/vol/dump/$USER/workspace/capri_arm64/ip/cosim/diag/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
-else if [[ $ASIC_TYPE == "elba" ]]
+elif [[ $ASIC_TYPE == "elba" ]]
+then
     if [[ $ARCH == "amd64" ]]
     then
         DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
@@ -44,7 +45,8 @@ else if [[ $ASIC_TYPE == "elba" ]]
         ASIC_IMG="/vol/dump/$USER/workspace/elba_arm64/ip/cosim/diag_elb/nic.tar.gz"
         ASIC_TMP_NIC=$ASIC_TMP/nic/fake_root_target/nic/
     fi
-else if [[ $ASIC_TYPE == "giglio" ]]
+elif [[ $ASIC_TYPE == "giglio" ]]
+then
     if [[ $ARCH == "amd64" ]]
     then
         DIAG_REPO="$DIAG_REPO_TOP/$ASIC_TYPE/$ARCH/"
