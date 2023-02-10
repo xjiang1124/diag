@@ -275,7 +275,7 @@ FT_STATUS jtag_init(DWORD portNum)
     time(&rawtime);
     timeinfo = localtime(&rawtime);
 
-    j2c_mem_addr = bar_addr + J2C_0_CMD_REG + (portNum - 1) * 32;
+    j2c_mem_addr = bar_addr + (portNum - 1) * 32;
     read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
     printf("01-17-2023 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     printf("magic number %x\n", magic);
