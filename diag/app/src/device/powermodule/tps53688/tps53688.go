@@ -9,16 +9,16 @@ import (
     "common/errType"
     "hardware/i2cinfo"
     "protocol/pmbus"
-    "protocol/smbus"
+    //"protocol/smbus"
 )
 
 func ReadStatus(devName string) (status uint16, err int) {
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -55,12 +55,12 @@ func ReadDeviceID(devName string) (devID uint64, err int) {
 func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
     var VCMD uint16
     var dacStepRegVal uint8
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -90,12 +90,12 @@ func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadVin(devName string) (integer uint64, dec uint64, err int) {
     var VIN uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -116,12 +116,12 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
 func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     var VOUT uint16
     var dacStepRegVal uint8
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -153,12 +153,12 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
 func ReadVout_Linear(devName string) (integer uint64, dec uint64, err int) {
     //var VMODE byte
     var VOUT uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -179,12 +179,12 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     var voutcmd uint16
     var dacStepRegVal uint8
 
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -216,12 +216,12 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
 }
 
 func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -238,12 +238,12 @@ func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
 
 func ReadIin(devName string) (integer uint64, dec uint64, err int) {
     var IIN uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -262,12 +262,12 @@ func ReadIin(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var IOUT uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -294,12 +294,12 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     var PIN uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -319,12 +319,12 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     var POUT uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -342,12 +342,12 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
 
 func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
     var TEMP uint16
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
@@ -446,12 +446,12 @@ func SetVMargin(devName string, pct int) (err int) {
         return
     }
 
-    err = smbus.Open(devName)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)
         return
     }
-    defer smbus.Close()
+    defer pmbus.Close()
 
     def_volt = .25 + (float64(voutcmd-1) * .005)//vr13
     marg_tics = (def_volt * float64(pct)) / 100;

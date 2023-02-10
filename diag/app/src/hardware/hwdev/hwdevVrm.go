@@ -521,3 +521,4 @@ func TriggerVrFault(devName string, lockFlag bool) (err int){
     }
     return
 }
+
