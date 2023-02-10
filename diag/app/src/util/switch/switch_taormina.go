@@ -88,7 +88,7 @@ L1                  idle
 
                                
 
-func taormina_cli() {
+func taormina_switch_cli() {
     argc := len(os.Args[0:])
 
     if argc < 2 {

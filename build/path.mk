@@ -67,5 +67,26 @@ ARM64_C_SRC_DIR=		\
 	lib/capricpld		\
 	lib/xo3dcpld
 
+ARM_SRC_DIR=            \
+    util/asicutil       \
+    util/ledutil        \
+    util/emmcutil       \
+    dsp/i2c             \
+    dsp/emmc            \
+    dsp/led             \
+    dsp/mvl             \
+    dsp/nic_asic        \
+    dsp/qsfp            \
+    dsp/rtc             \
+    dsp/sfp             \
+    dsp/mem             \
+    dsp/sys
 
+ARM_C_SRC_DIR=          \
+    lib/spi_userspace   \
+    util/capricpld      \
+    util/xo3dcpld       \
+    util/artix7fpgaNew  \
+    lib/capricpld       \
+    lib/xo3dcpld
 

@@ -8,9 +8,12 @@ then
     arch=amd64
     asic=all
 else
-    if [[ $1 == "arm" || $1 == "arm64" ]]
+    if [[ $1 == "arm64" ]]
     then
         arch=arm64
+    elif [[ $1 == "arm" ]]
+    then
+        arch=arm
     else
         arch=amd64
     fi
@@ -74,16 +77,23 @@ do
     cp -r $TOP_DIR/diag/app/bin/linux_$arch/dsp/ $TEMP_DIR/
     cp -r $TOP_DIR/diag/app/bin/linux_$arch/util/ $TEMP_DIR/
     [ "$(ls -A $TOP_DIR/diag/app/bin/linux_$arch/cbin)" ] && cp -r $TOP_DIR/diag/app/bin/linux_$arch/cbin/* $TEMP_DIR/util/
-    cp -r -L $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/scripts
+    if [[ $arch != "arm" ]]
+    then    
+        cp -r -L $TOP_DIR/diag/scripts/$arch/* $TEMP_DIR/scripts
+    fi
     cp -r $TOP_DIR/diag/scripts/* $TEMP_DIR/scripts/
     cp $TOP_DIR/diag/scripts/version* $TEMP_DIR/scripts/
     cp -r $TOP_DIR/diag/scripts/asic/ $TEMP_DIR/scripts/
     
     cp -r $TOP_DIR/diag/python/ $TEMP_DIR/
     
-    cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
-    cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
-    
+    if [[ $arch != "arm" ]]
+    then    
+
+        cp -r $TOP_DIR/tools/bin/$arch/* $TEMP_DIR/tools/
+        cp -r $TOP_DIR/diag/util/bin/$arch/* $TEMP_DIR/util/
+    fi
+
     if [[ $arch == "amd64" ]]
     then
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
@@ -94,6 +104,10 @@ do
         cp -r $TOP_DIR/tools/barco/ $TEMP_DIR/tools/
         # Copy this for Taormina.  Need it in amd64 pkgt. Bringup doesn't pull in the arm64 pkg.  
         cp $TOP_DIR/tools/bin/arm64/stressapptest_arm           $TEMP_DIR/tools/
+    elif [[ $arch == "arm" ]]
+    then
+        # nothing right now     
+        echo "Nothing to do for arm32 right now"    
     else
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.arm64.sh $TEMP_DIR/..
         cp $TOP_DIR/tools/bin/arm64/mmc.latest           $TEMP_DIR/tools/
