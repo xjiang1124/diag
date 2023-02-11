@@ -54,6 +54,7 @@ int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
     addr = (DWORD *)(mem + ftHandle - bar_addr + (ULONGLONG)reg);
     *data = *addr;
 
+    munmap((void *)mem, 1024*1024);
     close(fd);
     return FT_OK;
 }
@@ -92,6 +93,7 @@ int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
     }
     *addr = (DWORD)value;
 
+    munmap((void *)mem, 1024*1024);
     close(fd); 
     return FT_OK;
 }
