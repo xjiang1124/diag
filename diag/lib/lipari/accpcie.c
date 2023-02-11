@@ -180,7 +180,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         return -1;
     }
 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffff);
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address lower 32 bit\n");
