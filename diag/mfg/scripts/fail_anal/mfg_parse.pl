@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.11.02022023";
+my $rev = "1.12.02132023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -1996,7 +1996,7 @@ sub parse_fpga_and_ecc {
             }
         }
         if ($ecc_result_err == 0) {
-            if($line =~ m/=== Dumping ECC info ===/) {
+            if($line =~ m/=== Dumping ECC info ===/ || $line =~ m/ECC intr/) {
                 $ecc_start_linenum = $.;
             }
             if($line =~ m/=== Collect ECC info ===/) {
@@ -2186,7 +2186,7 @@ sub parse_fpga_and_ecc {
                 }
             }
 
-            if($line =~ m/ECC COLLECTION DONE/) {
+            if($line =~ m/ECC COLLECTION DONE/ || $line =~ m/ARM status/) {
                 $ecc_disp_start = 0;
                 if (($j2c_error_linenum != 0) && ($ecc_reg_linenum == 0)) {
                     $ecc_j2c_error_current = 1;
