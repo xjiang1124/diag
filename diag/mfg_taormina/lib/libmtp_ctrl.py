@@ -5240,7 +5240,7 @@ class mtp_ctrl():
 
         return True
 
-    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False):
+    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False, fru_valid=True):
 
         # if selection > 0:
         #     secure_login = True
@@ -5249,8 +5249,9 @@ class mtp_ctrl():
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
                 # read FRU as soon as console is ready, to have an SN to save logs to.
-                if not self.tor_fru_init():
-                    return False
+                if fru_valid:
+                    if not self.tor_fru_init():
+                        return False
                 if selection > 0:
                     if not self.tor_boot_devices_ready():
                         return False
