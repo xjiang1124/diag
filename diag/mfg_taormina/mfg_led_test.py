@@ -236,9 +236,13 @@ def single_uut_led_checks(stage,
             else:
                 mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+            if test == "TEST_LED_ORANGE":
+                mtp_mgmt_ctrl.cli_log_inf("Question Process Complete", level=0)
+
         mtp_mgmt_ctrl.cli_log_inf("Host tests completed\n", level=0)
 
-        mtp_mgmt_ctrl.cli_log_inf("Question Process Complete", level=0)
+        # copy additional logs
+        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
 
         if uut_id not in fail_uut_list and stage == "LED":
             if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
@@ -273,7 +277,7 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--LED", "-LED", "--led", "-led", "-1", help="station to LED test", action="store_true")
-    parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", help="pre-select UUTs", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.verbosity:
