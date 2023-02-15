@@ -123,10 +123,10 @@ class LaunchApp(object):
                     data[f'APC{idx+1}_USERID'] =  "apc"
                     data[f'APC{idx+1}_PASSWORD'] =  "apc"
 
-        # change SKIP_SLOTS to skip none or use outermost 2 slots
+        # change SKIP_SLOTS to skip none or use outermost 2 even slots
         test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
         if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
-            data['SKIP_SLOTS'] = "2-9"
+            data['SKIP_SLOTS'] = "1,3-9"
 
         testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
         mtp_yaml_data = {
