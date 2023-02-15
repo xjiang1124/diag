@@ -183,7 +183,9 @@ var GinestraD5Tbl = []I2cInfo {
     I2cInfo {"CLK_BUFFER",      "RC19008A",  0x2,   0x6C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CORE",            "TPS53688",  0x2,   0x62,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ARM",             "TPS53688",  0x2,   0x62,    0x1,    "HUB_NONE",  0,    0},
-    I2cInfo {"PMIC",            "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VDD",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VDDQ",        "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VPP",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDD_DDR",         "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},
 
     I2cInfo {"QSFP_1",          "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},

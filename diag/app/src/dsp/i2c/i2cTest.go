@@ -18,6 +18,8 @@ import (
     "device/powermodule/tps544c20"
     "device/powermodule/tps53681"
     "device/powermodule/sn1701022"
+    "device/powermodule/tps53688"
+    "device/powermodule/tps53830"
     "device/rtc/pcf85263a"
     "device/tempsensor/adm1032"
     "device/tempsensor/tmp42123"
@@ -73,6 +75,36 @@ func testLTC3888(devName string) (err int) {
     return
 }
 
+func testTps53688(devName string) (err int) {
+    devID, err := tps53688.ReadDeviceID(devName)
+
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read device ID failed!")
+        return
+    }
+
+    if (devID != tps53688.IC_DEVICE_ID_VALUE) {
+        dcli.Println("F", devName, " Invalid Device ID: expected", tps53688.IC_DEVICE_ID_VALUE, "read", devID)
+        return errType.FAIL
+    }
+    return
+}
+
+
+func testTps53830(devName string) (err int) {
+    vendorID, err := tps53830.ReadVendorID(devName)
+
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read vendor ID failed!")
+        return
+    }
+
+    if (vendorID != tps53830.VENDOR_ID) {
+        dcli.Println("F", devName, " Invalid Vendor ID: expected", tps53830.VENDOR_ID, "read", vendorID)
+        return errType.FAIL
+    }
+    return
+}
 
 func testTmp422(devName string) (err int) {
     mfgId, err := tmp42123.ReadMfgId(devName)
@@ -248,6 +280,16 @@ func I2cI2cHdl(argList []string) {
                 }
             case "TPS549A20":
                 err = tps549a20.TestTps549a20(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS53688":
+                err = testTps53688(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "TPS53830":
+                err = testTps53830(devName)
                 if err != errType.SUCCESS {
                     ret = err
                 }

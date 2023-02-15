@@ -12,7 +12,7 @@ import csv
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import mtp_diag_regression as diag_reg
-from emmc_test_parameters import test2args
+from emmc_test_parameters import test2args as emmctest2args
 from diag_screening_ddr import get_test_arguments
 from diag_screening_ddr import args2optionstring
 from libdefs import MTP_Const
@@ -21,7 +21,6 @@ from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
-from libdefs import Env_Cond
 from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
@@ -377,7 +376,7 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
         for test in test_steps:
             cmds = ["cd /data/nic_util/", "rm -rf Random*", "rm -rf Sequen*"]
             tout = MTP_Const.NIC_CON_CMD_DELAY
-            argsdict = get_test_arguments(test, pn)
+            argsdict = get_test_arguments(test, pn, emmctest2args)
             if not argsdict:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Test Step {:s} Failed".format(sn, test))
                 nic_test_rslt_list[slot] = False
@@ -502,7 +501,7 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("--corner", type=Env_Cond, help="diagnostic environment condition", choices=list(Env_Cond), default=Env_Cond.MFG_NT)
+    parser.add_argument("-stage", "--stage", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("-cfg", "--cfgyaml", help="Test case config file for EMMC test suite, default to %(default)s", default="config/emmc_test_suite.yaml")
@@ -515,33 +514,15 @@ def main():
     swm_lp_boot_mode = False 
     stop_on_err = args.stop_on_error
     verbosity = args.verbosity
-    corner = args.corner
+    stage = args.stage
     swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:
         swmtestmode = args.swm
 
-    stage = None
     # two voltage margin for all Normal temperature, Low temperature and High temperature
     # Normal temperature
-    if corner == Env_Cond.MFG_NT:
-        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-        low_temp_threshold = None
-        high_temp_threshold = None
-        stage = FF_Stage.FF_P2C
-    # Low temperature
-    elif corner == Env_Cond.MFG_LT:
-        fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
-        low_temp_threshold = MTP_Const.MFG_EDVT_LOW_TEMP
-        high_temp_threshold = None
-        stage = FF_Stage.FF_2C_L
-    # High temperature
-    elif corner == Env_Cond.MFG_HT:
-        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
-        high_temp_threshold = MTP_Const.MFG_EDVT_HIGH_TEMP
-        low_temp_threshold = None
-        stage = FF_Stage.FF_2C_H
-    else:
-        libmfg_utils.sys_exit(mtp_cli_id_str + "Unknown Test Corner")
+    high_temp_threshold, low_temp_threshold = libmfg_utils.pick_temperature_thresholds(stage)
+    fanspd = libmfg_utils.pick_fan_speed(stage)
 
     # load the mtp config
     mtp_chassis_cfg_file_list = list()
@@ -583,7 +564,7 @@ def main():
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     try:
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fanspd, stage=stage):
+        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -603,7 +584,7 @@ def main():
             diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
             return
         # only MFG HT/LT need soaking process
-        if corner == Env_Cond.MFG_HT or corner == Env_Cond.MFG_LT:
+        if stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
             mtp_mgmt_ctrl.mtp_wait_soaking()
         mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test Ambient Temperature Check Complete\n", level=0)
 
@@ -660,7 +641,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if corner not in (Env_Cond.MFG_NT, Env_Cond.MFG_QA):    #Skip SWM Low Power Test for 4C
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -684,7 +665,7 @@ def main():
             mtp_mgmt_ctrl.mtp_power_off_nic()
             mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
-            dsp = diag_reg.get_test_stage_name(mtp_mgmt_ctrl, None)
+            dsp = stage
 
             # Update programmables if necessary
             dl_check_fail_list = diag_reg.naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
@@ -779,7 +760,7 @@ def main():
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
-                diag_post_fail_list = diag_reg.mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, [], corner)
+                diag_post_fail_list = diag_reg.mtp_nic_diag_init_post(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, [], stage)
                 # failed enable pcie poll, fail the card
                 for slot in diag_post_fail_list:
                     if slot not in fail_nic_list:
