@@ -1,0 +1,29 @@
+---
+meta:
+  name: mfg_p2c
+  description: Mfg P2C test
+
+config:
+  testbed       : MTP
+  job           : P2C
+
+test_types:
+  precheckin:
+    skip:
+      #- L1 
+      #- EDMA 
+      #- SNAKE_ELBA
+      #- SNAKE_PCIE
+      #- SNAKE_HBM
+      #- ARM_PRBS
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    iteration: 2
+    skip:
+    slots: 10
+

@@ -9,32 +9,34 @@ image:
   work_dir: "/psdiag"
 
 e2e-targets:
-  elba-mfg-diag-regression:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type regression --asic elba --testsuite /psdiag/test/spec/testsuites/diag.testsuite"]
+  monterey-P2C-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
-    max-duration: 12h
+    max-duration: 24h
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
+     - package-elba-mfg-script
     deployment:
       skip-pxe-install: true
     resources:
-     - generic:
+      - generic:
         - type: MTP
           vendor: Pensando
           count: 1
           props:
           - name: mtp-nic-processor
             value: elba
+          - name: nic1-board-name
+            value: lacona
     provision:
       username: diag
       password: lab123
       vars:
         BmOs: linux
-
 
 logfiles:
  - /psdiag/diag_detailed_log.tgz

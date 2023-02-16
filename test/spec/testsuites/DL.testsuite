@@ -1,0 +1,21 @@
+---
+meta:
+  name: mfg_dl
+  description: Mfg DL test
+
+config:
+  testbed       : MTP
+  job           : DL
+
+test_types:
+  precheckin:
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    skip:
+    slots: 10
+

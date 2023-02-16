@@ -1,7 +1,7 @@
 ---
 version: 2.0
 meta:
-  asic: capri
+  asic: elba
     
 queue_name: asic
 image:
@@ -9,26 +9,28 @@ image:
   work_dir: "/psdiag"
 
 e2e-targets:
-  capri-mfg-diag-sanity:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic capri --testsuite /psdiag/test/spec/testsuites/diag.testsuite"]
+  monterey-DL-precheckin:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
-    max-duration: 12h
     build-dependencies:
-     - build-amd64-capri
-     - build-arm64-capri
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
     deployment:
       skip-pxe-install: true
     resources:
-     - generic:
+      - generic:
         - type: MTP
           vendor: Pensando
           count: 1
           props:
           - name: mtp-nic-processor
-            value: capri
+            value: elba
+          - name: nic1-board-name
+            value: lacona
     provision:
       username: diag
       password: lab123

@@ -1276,7 +1276,7 @@ def main():
     if stage == FF_Stage.FF_ORT: 
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
     if args.mtpcfg:
-        mtp_chassis_cfg_file_list.append(os.path.abspath(args.mtpcfg))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
 
     # find the mtp management config based on the mtpid

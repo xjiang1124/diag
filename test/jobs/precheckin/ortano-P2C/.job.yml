@@ -9,8 +9,8 @@ image:
   work_dir: "/psdiag"
 
 e2e-targets:
-  elba-mfg-diag-precheckin:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/diag.testsuite"]
+  ortano-P2C-precheckin:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -18,16 +18,19 @@ e2e-targets:
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
+     - package-elba-mfg-script
     deployment:
       skip-pxe-install: true
     resources:
-      - generic:
-        - type: MTP
-          vendor: Pensando
-          count: 1
-          props:
-          - name: mtp-nic-processor
-            value: elba
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: nic1-board-name
+           value: ortano
     provision:
       username: diag
       password: lab123
