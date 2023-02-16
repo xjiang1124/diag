@@ -69,6 +69,15 @@ then
     cat ${NIC_BARCODE_FILE}
 fi
 
+SWI_INPUT_FILE=${PSDIAG_ROOT}/swi_input
+if [[ -f ${SWI_INPUT_FILE} ]];
+then
+    echo ""
+    echo "Contents of ${SWI_INPUT_FILE}"
+    cat ${SWI_INPUT_FILE}
+    echo ""
+fi
+
 echo "**************************************************"
 echo " Install python tool-set from ${PSDIAG_ROOT}/tools/python_packets/amd64/lib"
 echo "**************************************************"
@@ -189,6 +198,34 @@ then
     echo "STOP" > /tmp/4c_input
     python ./mfg_4c_test.py ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
     ret=$?
+fi
+
+if [[ "${JOB_TYPE}" == "SWI" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_swi_test.py"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE})
+    ret_SWI=$?
+    set +x
+
+    echo "**************************************************"
+    echo " Launching mfg_dl_test.py to restore card for next job"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret_DL=$?
+
+    (( ret = ret_SWI || ret_DL )) # both SWI and DL step should pass
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];

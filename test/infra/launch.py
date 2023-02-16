@@ -205,6 +205,53 @@ class LaunchApp(object):
 
         return defs.Result.SUCCESS
 
+    def __gen_mtp_sw_pn(self, testbed_json):
+        Logger.info(f"Loading {testbed_json} to generate SW PN scanning input")
+        try:
+            with open(testbed_json, 'r') as fh:
+                testbed_spec = json.load(fh)
+        except Exception as e:
+            Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
+        instances = testbed_spec.get('Instances', None)
+        if instances == None or len(instances) == 0:
+            return defs.Result.INFRA_FAILURE
+
+        mtp_instance = instances[0]
+        mtp_resource = mtp_instance.get('Resource', None)
+
+        if mtp_resource == None:
+            return defs.Result.INFRA_FAILURE
+
+        # data = dict()
+        # for slot in slot_range:
+        #     nic_slot = "NIC-{:02d}".format(slot)
+        #     data[nic_slot] = {
+        #         'SN': mtp_resource.get("nic{:d}-serial-number".format(slot)),
+        #         'MAC': mtp_resource.get("nic{:d}-mac-address".format(slot)),
+        #         'PN': mtp_resource.get("nic{:d}-part-number".format(slot))
+        #     }
+
+        # write to a file with all SW PNs in one line
+        swi_input = "swi_input"
+        testbed_id = testbed_spec.get('ID').split("-")[1]
+        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
+        Logger.info(f"Generating {testbed_id} SW PN in input file: {swi_input}")
+
+        sw_pn_test_args = ""
+        for swpn_idx in range(1,11):
+            if mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)):
+                sw_pn_test_args += mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)) + " "
+        try:
+            with open(os.path.join(GlobalOptions.topdir, swi_input), "w") as fh:
+                fh.write(sw_pn_test_args)
+        except Exception as e:
+            Logger.error("Failed to write {:s}".format(swi_input))
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS
+
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
         try:
@@ -296,6 +343,11 @@ class LaunchApp(object):
         ret = self.__gen_nic_barcodes(GlobalOptions.testbed_json)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract NIC SN, MAC, PN from {GlobalOptions.testbed_json} - ABORT")
+            return ret
+
+        ret = self.__gen_mtp_sw_pn(GlobalOptions.testbed_json)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract SW PNs from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
         ret =  self.__load_image_manifest()

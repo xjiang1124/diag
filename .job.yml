@@ -79,6 +79,12 @@ jobs:
     labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
   test/jobs/sanity/naples25-4C:
     labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
+  test/jobs/sanity/ortano-SWI:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
+  test/jobs/sanity/monterey-SWI:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
+  test/jobs/sanity/naples25-SWI:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
   test/jobs/sanity/ortano-fst:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
   # test/jobs/sanity/monterey-fst:
