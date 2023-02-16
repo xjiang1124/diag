@@ -145,6 +145,66 @@ class LaunchApp(object):
         self.__settings['MTP_ID'] = testbed_id
         return defs.Result.SUCCESS
 
+    def __gen_nic_barcodes(self, testbed_json):
+        Logger.info(f"Loading {testbed_json} to generate barcode scanning input")
+        try:
+            with open(testbed_json, 'r') as fh:
+                testbed_spec = json.load(fh)
+        except Exception as e:
+            Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
+        instances = testbed_spec.get('Instances', None)
+        if instances == None or len(instances) == 0:
+            return defs.Result.INFRA_FAILURE
+
+        mtp_instance = instances[0]
+        mtp_resource = mtp_instance.get('Resource', None)
+
+        if mtp_resource == None:
+            return defs.Result.INFRA_FAILURE
+
+        data = dict()
+
+        # scan all barcodes, or only 2, based on what test spec says
+        test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
+        if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
+            slot_range = [2,10]
+        else:
+            slot_range = range(1,11)
+
+        for slot in slot_range:
+            nic_slot = "NIC-{:02d}".format(slot)
+            data[nic_slot] = {
+                'SN': mtp_resource.get("nic{:d}-serial-number".format(slot)),
+                'MAC': mtp_resource.get("nic{:d}-mac-address".format(slot)),
+                'PN': mtp_resource.get("nic{:d}-part-number".format(slot))
+            }
+
+        # write to a file same as it is scanned into scan_dl...
+        scanDL_input = "nic_barcode_scan"
+        testbed_id = testbed_spec.get('ID').split("-")[1]
+        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
+        Logger.info(f"Generating {testbed_id} NIC barcodes in input file: {scanDL_input}")
+        try:
+            with open(os.path.join(GlobalOptions.topdir, scanDL_input), "w") as fh:
+                for slot in data.keys():
+                    if not data[slot]['SN'] or not data[slot]['MAC']:
+                        # skip empty slot
+                        continue
+
+                    fh.write(f'{slot}\n')
+                    fh.write(data[slot]['SN'] + "\n")
+                    fh.write(data[slot]['MAC'] + "\n")
+                    if data[slot]['PN']:
+                        fh.write(data[slot]['PN'] + "\n")
+                fh.write(f'STOP\n')
+        except Exception as e:
+            Logger.error("Failed to write {:s}".format(scanDL_input))
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS
+
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
         try:
@@ -231,6 +291,11 @@ class LaunchApp(object):
 
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract mtp-inventory from {GlobalOptions.testbed_json} - ABORT")
+            return ret
+
+        ret = self.__gen_nic_barcodes(GlobalOptions.testbed_json)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract NIC SN, MAC, PN from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
         ret =  self.__load_image_manifest()

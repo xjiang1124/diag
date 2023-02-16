@@ -1,0 +1,41 @@
+---
+version: 2.0
+meta:
+  asic: capri
+    
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+e2e-targets:
+  naples25-ScanDL-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic capri --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
+     - package-capri-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: capri
+         - name: nic1-board
+           value: naples25
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz

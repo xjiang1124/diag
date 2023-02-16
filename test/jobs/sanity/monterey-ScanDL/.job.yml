@@ -1,0 +1,41 @@
+---
+version: 2.0
+meta:
+  asic: elba
+    
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+e2e-targets:
+  monterey-ScanDL-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+      - generic:
+        - type: MTP
+          vendor: Pensando
+          count: 1
+          props:
+          - name: mtp-nic-processor
+            value: elba
+          - name: nic1-board-name
+            value: lacona
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz

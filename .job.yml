@@ -61,6 +61,12 @@ jobs:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
   test/jobs/sanity/naples25-DL:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
+  test/jobs/sanity/ortano-ScanDL:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
+  test/jobs/sanity/monterey-ScanDL:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
+  test/jobs/sanity/naples25-ScanDL:
+    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
   test/jobs/sanity/ortano-P2C:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
   test/jobs/sanity/monterey-P2C:

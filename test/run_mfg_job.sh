@@ -61,6 +61,14 @@ else
     exit 249
 fi
 
+NIC_BARCODE_FILE=${PSDIAG_ROOT}/nic_barcode_scan
+if [[ -f ${NIC_BARCODE_FILE} ]];
+then
+    echo ""
+    echo "Contents of ${NIC_BARCODE_FILE}"
+    cat ${NIC_BARCODE_FILE}
+fi
+
 echo "**************************************************"
 echo " Install python tool-set from ${PSDIAG_ROOT}/tools/python_packets/amd64/lib"
 echo "**************************************************"
@@ -128,6 +136,23 @@ then
 
     set -x
     python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret=$?
+fi
+
+if [[ "${JOB_TYPE}" == "ScanDL" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_scan_dl_test.py"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
