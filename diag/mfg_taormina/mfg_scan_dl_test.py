@@ -159,6 +159,11 @@ def single_uut_fw_program(stage,
     uboota_img_file = TOR_IMAGES.flash_uboot_primary[uut_type]
     kernela_img_file = TOR_IMAGES.flash_fw_primary[uut_type]
 
+    if stage == "DL1":
+        fru_valid = False
+    else:
+        fru_valid = True
+
     try:
         if not fru_cfg["SN"]:
             fru_cfg["SN"] = "UNKNOWN"
@@ -167,7 +172,7 @@ def single_uut_fw_program(stage,
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
-                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, fru_valid=fru_valid)
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
@@ -278,7 +283,7 @@ def single_uut_fw_program(stage,
             elif test == "USB_BOOT":
                 ret = mtp_mgmt_ctrl.tor_usb_boot()
             elif test.startswith("SVOS_BOOT"):
-                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, fru_valid=fru_valid)
             elif test.startswith("OS_BOOT"):
                 ret = mtp_mgmt_ctrl.tor_boot_select(1)
             elif test.startswith("BIOS_BOOT"):
@@ -312,7 +317,7 @@ def single_uut_fw_program(stage,
             elif test == "FRU_TPM_SN_PROG":
                 ret = mtp_mgmt_ctrl.tor_fru_prog_tpm_pcbasn(pcbasn)
             elif test == "FRU_VERIFY":
-                ret = mtp_mgmt_ctrl.tor_fru_verify()
+                ret = mtp_mgmt_ctrl.tor_fru_verify(sn, mac, pn, prog_date)
             elif test == "UL_FRU_VERIFY":
                 ret = mtp_mgmt_ctrl.tor_mfg_fru_verify()
             elif test == "GET_PCBA_SN":
