@@ -81,17 +81,17 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     data1 &= ADC_CURRENT_SEL
-    err = smbus.WriteByte(devName, ADC_CTL_REG, data1)
+    err = smbus.WriteByte(devName, OUTPUT_SELECT_REG, data1)
     if err != errType.SUCCESS {
         return
     }
 
     if devName == "DDR_VDD" {
-        output_reg = SWA_OUTPUT_SEL
+        output_reg = SWA_OUTPUT_REG
     } else if devName == "DDR_VDDQ" {
-        output_reg = SWC_OUTPUT_SEL
+        output_reg = SWC_OUTPUT_REG
     } else {
-        output_reg = SWD_OUTPUT_SEL
+        output_reg = SWD_OUTPUT_REG
     }
 
     data1, err = smbus.ReadByte(devName, output_reg)
@@ -135,11 +135,11 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     if devName == "DDR_VDD" {
-        output_reg = SWA_OUTPUT_SEL
+        output_reg = SWA_OUTPUT_REG
     } else if devName == "DDR_VDDQ" {
-        output_reg = SWC_OUTPUT_SEL
+        output_reg = SWC_OUTPUT_REG
     } else {
-        output_reg = SWD_OUTPUT_SEL
+        output_reg = SWD_OUTPUT_REG
     }
 
     data1, err = smbus.ReadByte(devName, output_reg)
