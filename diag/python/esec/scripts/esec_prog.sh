@@ -17,8 +17,8 @@ get_asic_type () {
         ]]
     then
         echo "ELBA"
-    else if [[ $c_type == "GINESTRA_D4"        || \
-               $c_type == "GINESTRA_D5"
+    elif [[ $c_type == "GINESTRA_D4"        || \
+            $c_type == "GINESTRA_D5"
         ]]
     then
         echo "GIGLIO"
