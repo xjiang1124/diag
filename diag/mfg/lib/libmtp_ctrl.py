@@ -4000,7 +4000,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list):
+    def mtp_post_dsp_fail_steps(self, slot, test, rslt, rslt_cmd_buf, err_msg_list, skip_vrm_check=None):
         """
         1. ping slot with 10 packets        <= whether management port is down
         2. connect console and do "env"     <= Check if card rebooted
@@ -4034,6 +4034,12 @@ class mtp_ctrl():
                 ret = False
             self.mtp_nic_console_unlock()
 
+        # VRM check in get_nic_sts causes a reboot. 
+        # so skip it for all dsp tests where we need to keep card state.
+        # can skip it for tests that have powercycle right after, such as all nic_test.py tests in mtp_para.
+        if skip_vrm_check is None:
+            skip_vrm_check = True
+
         nic_type = self.mtp_get_nic_type(slot)
         # check ECC for elba cards
         # dont check ECC after L1 test
@@ -4046,7 +4052,7 @@ class mtp_ctrl():
             else:
                 self.mtp_single_j2c_lock()
                 self.mtp_nic_console_lock()
-                self.mtp_get_nic_sts(slot)
+                self.mtp_get_nic_sts(slot, skip_vrm_check)
                 self.mtp_nic_console_unlock()
                 self.mtp_single_j2c_unlock()
 
@@ -6636,7 +6642,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_get_nic_sts(self, slot):
+    def mtp_get_nic_sts(self, slot, skip_vrm_check=True):
         """
          Read board and die temp via j2c
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
@@ -6644,7 +6650,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST:
             return True
-        if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=True):
+        if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=skip_vrm_check):
             self.cli_log_slot_err(slot, "Unable to dump NIC sts")
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
