@@ -5364,6 +5364,9 @@ class mtp_ctrl():
                 return False
 
         if selection == 0:
+            if not self.svos_usb_mount():
+                self.cli_log_err("Unable to mount usb", level=0)
+                return False
             if not self.mtp_console_enter_shell("sh"):
                 self.cli_log_err("Unable to init bash shell", level=0)
                 return False
@@ -5823,21 +5826,10 @@ class mtp_ctrl():
         return True
 
     def tor_ssd_format(self):
-        return self.tor_prepare_eeupdate(ssd_format=True)
+        return self.tor_prepare_eeupdate(ssd_format=True, usb_method=True)
 
-    def tor_prepare_eeupdate(self, ssd_format=False):
-        usb_method = False      # copying from USB vs copying from network
-
-        if usb_method:
-            self.cli_log_inf("Mounting USB")
-            if not self.mtp_console_enter_shell("svcli"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
-            self.mtp_mgmt_exec_cmd("mount usb")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
-        else:
+    def tor_prepare_eeupdate(self, ssd_format=False, usb_method=False):
+        if not usb_method: # copying from USB vs copying from network
             usb_tarball = TOR_IMAGES.usb_tarball[self.uut_type]
             self.cli_log_inf("Downloading USB tarball")
             if not self.mtp_mgmt_exec_cmd("tftp -g -r {:s}/{:s} {:s} -b 65000".format(TOR_IMAGES.TFTP_SERVER_DIR, usb_tarball, TOR_IMAGES.TFTP_SERVER_IP), sig_list=["100%"]):
@@ -5845,24 +5837,20 @@ class mtp_ctrl():
             self.mtp_mgmt_exec_cmd("tar xf /cli/fs/home/{:s} -C /".format(usb_tarball))
 
         if ssd_format:
-            # self.mtp_mgmt_exec_cmd("rm /fs/selftest/efi/boot/bootx64.efi /fs/nos/eeupdate/svos-030321.efi /fs/nos/secondary.swi /fs/nos/primary.swi")
             if not self.mtp_mgmt_exec_cmd("/usr/bin/storage_fdisk_format.sh", sig_list=["Removed /run"]):
                 self.cli_log_err("Unable to storage fdisk format", level=0)
                 return False
-            self.mtp_mgmt_exec_cmd("mkdir -p /fs/selftest/efi/boot")
         self.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         
         if usb_method:
-            self.mtp_mgmt_exec_cmd("mount /dev/sdb1 /mnt/usb")
-            self.mtp_mgmt_exec_cmd("cp /mnt/usb/svos-030321.efi /fs/selftest/efi/boot/bootx64.efi")
-            time.sleep(1)
+            self.cli_log_inf("Mounting USB")
+            self.mtp_mgmt_exec_cmd("mkdir -p /mnt/usb")
+            self.mtp_mgmt_exec_cmd("mount /dev/sdb2 /mnt/usb")
             self.mtp_mgmt_exec_cmd("cp /mnt/usb/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
             time.sleep(1)
             self.mtp_mgmt_exec_cmd("sync")
-            self.mtp_mgmt_exec_cmd("umount /dev/sdb1")
+            self.mtp_mgmt_exec_cmd("umount /dev/sdb2")
         else:
-            self.mtp_mgmt_exec_cmd("cp /Taormina-USB-small/svos-030321.efi /fs/selftest/efi/boot/bootx64.efi")
-            time.sleep(1)
             self.mtp_mgmt_exec_cmd("cp /Taormina-USB-small/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
             time.sleep(1)
             if "No such file" in self.mtp_get_cmd_buf():
@@ -5870,6 +5858,19 @@ class mtp_ctrl():
 
         self.mtp_mgmt_exec_cmd("sync")
         # self.mtp_mgmt_exec_cmd("exit")
+        return True
+
+    def svos_usb_mount(self):
+        """ 
+            Already need to be in svcli for this function
+            as mount usb needs to be done in original svos shell (fresh boot), not an svcli later down the stack
+        """
+        self.mtp_mgmt_exec_cmd("mount usb")
+        if not self.mtp_console_enter_shell("sh"):
+            self.cli_log_err("Unable to init bash shell", level=0)
+            return False
+        self.mtp_mgmt_exec_cmd("lsusb")
+
         return True
 
     def i210_nic_prog(self):

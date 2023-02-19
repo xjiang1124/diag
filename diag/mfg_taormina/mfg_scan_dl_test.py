@@ -227,7 +227,6 @@ def single_uut_fw_program(stage,
         ### X86 HOST TESTS
         if stage == "DL1":
             testlist = [
-                        "MGMT_INIT",
                         "GET_PCBA_SN",
                         "SSD_FORMAT",
                         "I210_NIC_PROG",
