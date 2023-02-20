@@ -5374,6 +5374,10 @@ class mtp_ctrl():
         return True
 
     def tor_boot_devices_ready(self):
+        """
+        Usually takes 2-3 minutes for Elbas to be 'ready' or 'down'
+        In case of the Elba ssh dir issue, it would take 10 minutes.
+        """
         start=datetime.now()
         # if stopreboot and not self._secure_login:
         self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
