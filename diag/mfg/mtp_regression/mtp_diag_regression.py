@@ -384,6 +384,9 @@ def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
     else:
         mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
 
+    # PHY test bug: previous nic_type's PHY-XCVR test leaves the phy in weird state for next nic_type's para_init. So power off the card to prevent it.
+    mtp_mgmt_ctrl.mtp_power_off_nic(nic_list)
+
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel Bash Test Complete\n".format(nic_type), level=0)
     return fail_list
 
