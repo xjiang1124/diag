@@ -227,7 +227,6 @@ def single_uut_fw_program(stage,
         ### X86 HOST TESTS
         if stage == "DL1":
             testlist = [
-                        "MGMT_INIT",
                         "GET_PCBA_SN",
                         "SSD_FORMAT",
                         "I210_NIC_PROG",
@@ -739,19 +738,18 @@ def main():
             os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
             # move the logs to the log root dir
-            for slot in fail_uut_list + pass_uut_list:
-                sn = fru_cfg[uut_id]["SN"]
-                nic_type = NIC_Type.TAORMINA
-                if not sn:
-                    continue
-                if GLB_CFG_MFG_TEST_MODE:
-                    mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-                else:
-                    mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-                os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-                libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-                os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-                os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
+            sn = fru_cfg[uut_id]["SN"]
+            nic_type = NIC_Type.TAORMINA
+            if not sn:
+                continue
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
 
             # cleanup the log dir
             logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
