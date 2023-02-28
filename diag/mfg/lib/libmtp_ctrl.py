@@ -1027,7 +1027,7 @@ class mtp_ctrl():
         match = re.findall(r"MemTotal:\s+(\d+)\s+kB", self.mtp_get_cmd_buf())
         if match:
             memorysize = match[0]
-            self.cli_log_inf("MTP Total Memory is {:s} KB".format(memorysize), level = 0)
+            self.cli_log_inf("MTP Total Memory is {:.2f} GB".format(memorysize / 1024.0 / 1024.0), level = 0)
         else:
             self.cli_log_err("Failed to locate MTP MAC info." + self.mtp_get_cmd_buf(), level = 0)
         return memorysize
@@ -1559,9 +1559,10 @@ class mtp_ctrl():
             self.cli_log_err("Failed to Init MTP system information", level=0)
             return False
 
-        # PSU/FAN absent, powerdown MTP
+        # PSU/FAN absent, power off all the cards
         if not self.mtp_hw_init(None):
-            self.cli_log_err("MTP HW Init Fail", level=0)
+            self.cli_log_err("MTP HW Init Fail, Power Off All Cards", level=0)
+            self.mtp_power_off_nic()
             return False
 
         # get the mtp system info

@@ -21,7 +21,7 @@ test2args = {
         "68-0077"                    : "-",
         "68-0049"                    : "-",
         # Pomonte: tclsh ddr_bist.tcl -sn <sn> -slot <slot> -mode nod
-        "0PCFPC"                     : "mod",
+        "0PCFPC"                     : "nod",
         # Lacona: tclsh ddr_bist.tcl -sn <sn> -slot <slot> -mode nod_525 -dual_rank 1 -ddr_freq 2400
         "P47930"                     : "nod_525",
         "0X322F"                     : "nod_525",
