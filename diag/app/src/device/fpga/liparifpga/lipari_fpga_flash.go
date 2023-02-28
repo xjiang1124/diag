@@ -266,6 +266,10 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
     }
 
     Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
     
     err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
     if err != nil {
@@ -350,6 +354,10 @@ func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     if err != nil {
         return
     }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
 
 
     ERASE_SECTOR_OP[1] = byte(addr >> 16)
@@ -363,7 +371,7 @@ func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := Spi_flash_PollBusyMicroSec(spiNumber,  ELB_SECTOR_ERASE_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
@@ -403,7 +411,14 @@ func Spi_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (err er
         return
     } 
 
-    Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_WriteEnable(spiNumber) 
+    if err != nil {
+        return
+    } 
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
      
 
     PAGE_PROGRAM_OP[1] = byte(addr >> 16)
@@ -418,7 +433,7 @@ func Spi_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (err er
        fmt.Printf("ERROR: Spi_flash_Write_N_Bytes.  lipari_spi_generic_transaction Failed\n")
     }
 
-    sr_reg, rc := Spi_flash_PollBusyMicroSec(spiNumber,  ELB_PAGE_WR_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
