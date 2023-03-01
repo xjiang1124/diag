@@ -509,11 +509,11 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         cli.Printf("e","%s", err)
         return
     }
-    if spiNumber!=1 && spiNumber!=2 {
-        err = fmt.Errorf("ERROR spi_cpldXO3_verify_flash_contents. Only supprots CPLd on spi 1 and 2.  You entered %d\n", spiNumber)
-        cli.Printf("e","%s", err)
-        return
-    }
+    //if spiNumber!=1 && spiNumber!=2 {
+    //    err = fmt.Errorf("ERROR spi_cpldXO3_verify_flash_contents. Only supprots CPLd on spi 1 and 2.  You entered %d\n", spiNumber)
+    //    cli.Printf("e","%s", err)
+    //    return
+    //}
 
 
     config, err = Spi_cpldX03_return_flash_space_from_cli_arg(image) 
@@ -681,11 +681,11 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
         cli.Printf("e", "%s", err)
         return
     }
-    if spiNumber!=1 && spiNumber!=2 {
-        err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Only supprots CPLD on spi 1 and 2.  You entered %d\n", spiNumber)
-        cli.Printf("e", "%s", err)
-        return
-    }
+    //if spiNumber!=1 && spiNumber!=2 {
+    //    err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Only supprots CPLD on spi 1 and 2.  You entered %d\n", spiNumber)
+    //    cli.Printf("e", "%s", err)
+    //    return
+    //}
     config, err = Spi_cpldX03_return_flash_space_from_cli_arg(image) 
     if err != nil {
         fmt.Printf("[ERROR] INVALID IMAGE TYPE  ERR=%s\n", err)
@@ -804,11 +804,11 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
         cli.Printf("e", "%s", err)
         return
     }
-    if spiNumber!=1 && spiNumber!=2 {
-        err = fmt.Errorf("ERROR Spi_cpldXO3_erase_flash. Only supprots CPLd on spi 1 or 2.  You entered %d\n", spiNumber)
-        cli.Printf("e", "%s", err)
-        return
-    }
+    //if spiNumber!=1 && spiNumber!=2 {
+    //    err = fmt.Errorf("ERROR Spi_cpldXO3_erase_flash. Only supprots CPLd on spi 1 or 2.  You entered %d\n", spiNumber)
+    //    cli.Printf("e", "%s", err)
+    //    return
+    //}
 
     fmt.Printf(" Erasing Flash Section %s\n", image)
 
@@ -900,11 +900,11 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         cli.Printf("e", "%s", err)
         return
     }
-    if spiNumber!=1 && spiNumber!=2 {
-        err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. Only supprots CPLd on spi 1 or 2.  You entered %d\n", spiNumber)
-        cli.Printf("e", "%s", err)
-        return
-    }
+    //if spiNumber!=1 && spiNumber!=2 {
+    //    err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. Only supprots CPLd on spi 1 or 2.  You entered %d\n", spiNumber)
+    //    cli.Printf("e", "%s", err)
+    //    return
+    //}
 
     config, err = Spi_cpldX03_return_flash_space_from_cli_arg(image) 
     if err != nil {

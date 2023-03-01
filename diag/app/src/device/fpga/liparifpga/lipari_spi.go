@@ -50,45 +50,44 @@ type spiDevMap struct{
 const SPI_FPGA0_FLASH      uint32 = 0
 const SPI_CPU_CPLD         uint32 = 1
 const SPI_FPGA1_FLASH      uint32 = 2
-const SPI_ELBA0_FLASH      uint32 = 3
-const SPI_ELBA1_FLASH      uint32 = 4
-const SPI_ELBA2_FLASH      uint32 = 5
-const SPI_ELBA3_FLASH      uint32 = 6
-const SPI_ELBA4_FLASH      uint32 = 7
-const SPI_ELBA5_FLASH      uint32 = 8
-const SPI_ELBA6_FLASH      uint32 = 9
-const SPI_ELBA7_FLASH      uint32 = 10
-const SPI_ELBA0_CPLD       uint32 = 11
-const SPI_ELBA1_CPLD       uint32 = 12
-const SPI_ELBA2_CPLD       uint32 = 13
-const SPI_ELBA3_CPLD       uint32 = 14
-const SPI_ELBA4_CPLD       uint32 = 15
-const SPI_ELBA5_CPLD       uint32 = 16
-const SPI_ELBA6_CPLD       uint32 = 17
-const SPI_ELBA7_CPLD       uint32 = 18
-
+const SPI_ELBA0_CPLD       uint32 = 3
+const SPI_ELBA1_CPLD       uint32 = 4
+const SPI_ELBA2_CPLD       uint32 = 5
+const SPI_ELBA3_CPLD       uint32 = 6
+const SPI_ELBA4_CPLD       uint32 = 7
+const SPI_ELBA5_CPLD       uint32 = 8
+const SPI_ELBA6_CPLD       uint32 = 9
+const SPI_ELBA7_CPLD       uint32 = 10
+const SPI_ELBA0_FLASH      uint32 = 11
+const SPI_ELBA1_FLASH      uint32 = 12
+const SPI_ELBA2_FLASH      uint32 = 13
+const SPI_ELBA3_FLASH      uint32 = 14
+const SPI_ELBA4_FLASH      uint32 = 15
+const SPI_ELBA5_FLASH      uint32 = 16
+const SPI_ELBA6_FLASH      uint32 = 17
+const SPI_ELBA7_FLASH      uint32 = 18
 const SPI_NUMB_BUSES       uint32 = 19
 
 var SpiTable = map[uint32]spiDevMap {
     SPI_FPGA0_FLASH : { fpgaNumber:LIPARI_FPGA0, spiMBaddr:FPGA0_SPI0_RXDATA_REG , devname:"FPGA0 FLASH", } , 
     SPI_CPU_CPLD    : { fpgaNumber:LIPARI_FPGA0, spiMBaddr:FPGA0_SPI1_RXDATA_REG , devname:"CPU CPLD",    } , 
-    SPI_FPGA1_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA0_SPI0_RXDATA_REG , devname:"FPGA1 FLASH", } , 
-    SPI_ELBA0_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI1_RXDATA_REG , devname:"ELBA0 FLASH", } , 
-    SPI_ELBA1_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI2_RXDATA_REG , devname:"ELBA1 FLASH", } , 
-    SPI_ELBA2_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI3_RXDATA_REG , devname:"ELBA2 FLASH", } , 
-    SPI_ELBA3_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI4_RXDATA_REG , devname:"ELBA3 FLASH", } , 
-    SPI_ELBA4_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI5_RXDATA_REG , devname:"ELBA4 FLASH", } , 
-    SPI_ELBA5_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI6_RXDATA_REG , devname:"ELBA5 FLASH", } , 
-    SPI_ELBA6_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI7_RXDATA_REG , devname:"ELBA6 FLASH", } , 
-    SPI_ELBA7_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI8_RXDATA_REG , devname:"ELBA7 FLASH", } , 
-    SPI_ELBA0_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI9_RXDATA_REG , devname:"ELBA0 CPLD",  } , 
-    SPI_ELBA1_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI10_RXDATA_REG , devname:"ELBA1 CPLD", } , 
-    SPI_ELBA2_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI11_RXDATA_REG , devname:"ELBA2 CPLD", } , 
-    SPI_ELBA3_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI12_RXDATA_REG , devname:"ELBA3 CPLD", } , 
-    SPI_ELBA4_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI13_RXDATA_REG , devname:"ELBA4 CPLD", } , 
-    SPI_ELBA5_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI14_RXDATA_REG , devname:"ELBA5 CPLD", } , 
-    SPI_ELBA6_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI15_RXDATA_REG , devname:"ELBA6 CPLD", } , 
-    SPI_ELBA7_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI16_RXDATA_REG , devname:"ELBA7 CPLD", } , 
+    SPI_FPGA1_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI0_RXDATA_REG , devname:"FPGA1 FLASH", } , 
+    SPI_ELBA0_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI1_RXDATA_REG , devname:"ELBA0 CPLD",  } , 
+    SPI_ELBA1_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI2_RXDATA_REG , devname:"ELBA1 CPLD", } , 
+    SPI_ELBA2_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI3_RXDATA_REG , devname:"ELBA2 CPLD", } , 
+    SPI_ELBA3_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI4_RXDATA_REG , devname:"ELBA3 CPLD", } , 
+    SPI_ELBA4_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI5_RXDATA_REG , devname:"ELBA4 CPLD", } , 
+    SPI_ELBA5_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI6_RXDATA_REG , devname:"ELBA5 CPLD", } , 
+    SPI_ELBA6_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI7_RXDATA_REG , devname:"ELBA6 CPLD", } , 
+    SPI_ELBA7_CPLD :  { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI8_RXDATA_REG , devname:"ELBA7 CPLD", } , 
+    SPI_ELBA0_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI9_RXDATA_REG , devname:"ELBA0 FLASH", } , 
+    SPI_ELBA1_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI10_RXDATA_REG , devname:"ELBA1 FLASH", } , 
+    SPI_ELBA2_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI11_RXDATA_REG , devname:"ELBA2 FLASH", } , 
+    SPI_ELBA3_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI12_RXDATA_REG , devname:"ELBA3 FLASH", } , 
+    SPI_ELBA4_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI13_RXDATA_REG , devname:"ELBA4 FLASH", } , 
+    SPI_ELBA5_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI14_RXDATA_REG , devname:"ELBA5 FLASH", } , 
+    SPI_ELBA6_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI15_RXDATA_REG , devname:"ELBA6 FLASH", } , 
+    SPI_ELBA7_FLASH : { fpgaNumber:LIPARI_FPGA1, spiMBaddr:FPGA1_SPI16_RXDATA_REG , devname:"ELBA7 FLASH", } , 
 }
 
 const SPI_RXDATA_OFFSET            uint64 = 0x00       //SPI0 = FPGA FLASH
@@ -104,7 +103,12 @@ const SPI_MUXSEL_OFFSET            uint64 = 0x24
 
 //SPI STATUS BITS
 const SPI_STA_FIFO_SUPPORT      uint32 = 0x80000000
-const SPI_STA_EOP               uint32 = 0x0200
+const SPI_STA_TXFIFO_FULL       uint32 = 0x8000  //TX FIFO FULL
+const SPI_STA_TXFIFO_EMPTY      uint32 = 0x4000  //TX FIFO EMPTY
+const SPI_STA_RXFIFO_FULL       uint32 = 0x2000  //RX FIFO FULL
+const SPI_STA_RXFIFO_EMPTY      uint32 = 0x1000  //RX FIFO EMPTY
+const SPI_STA_RXFIFO_HFULL      uint32 = 0x0400  //RXFIFO has more than 128 entries of vaild data. When this bit is 1, it is safe to read upto 128 Dwords of RXDATA without checking RRDY
+const SPI_STA_TXFIFO_HFULL      uint32 = 0x0200  //1: TXFIFO has less than 128 entries left for write operation.  When this bit is 0, it is safe to write upto 128 Dwords of TXDATA without checking TRDY
 const SPI_STA_ERROR             uint32 = 0x0100
 const SPI_STA_RCV_RDY           uint32 = 0x0080
 const SPI_STA_TMT_RDY           uint32 = 0x0040
@@ -118,6 +122,27 @@ func Spi_load_register_set(spiNumber uint32) (err error) {
     return
 }
 
+
+//Check TX FIFO EMPTY
+func Spi_check_tx_fifo_empty(spiNumber uint32) (err error) {
+    var data32 uint32 = 0
+    var timeout, x uint32 = 500, 0
+
+    //check status reg for status on tx data drain
+    for x=0; x<timeout; x++ {
+        data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
+        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
+        if (data32 & SPI_STA_TXFIFO_EMPTY) == SPI_STA_TXFIFO_EMPTY {
+            break;
+        }
+    }
+    if x == timeout {
+        err = fmt.Errorf("ERROR Spi_check_tx_complete. Spi-%d, not seeing transmit complete.  Status Reg = 0x%x\n", spiNumber, data32)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    return
+}
 
 //Check Tx/Rx Transaction is done
 func Spi_check_tx_complete(spiNumber uint32) (err error) {
@@ -201,7 +226,7 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
         //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_RXDATA_OFFSET)
         if ((data32 & 0xC0000000) > 0) {
-            time.Sleep(time.Duration(150) * time.Nanosecond)
+            //time.Sleep(time.Duration(150) * time.Nanosecond)
             return;
         }
         
@@ -228,6 +253,13 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
     var tmpRdLength uint32 = 0
     var ChkTxDrain uint32 = 0
 
+
+    //for i:=0; i<len(opCode);i++ {
+    //    fmt.Printf(" %.02x", opCode[i])
+    //}
+    //fmt.Printf("\n0x%.08x\n",  uint32(opCode[0] | (opCode[1]<<8) | (opCode[2]<<16) | (opCode[3]<<24)))
+    //fmt.Printf("Spi MB Address=0x%.08x\n", SpiTable[spiNumber].spiMBaddr)
+
     if spiNumber >= SPI_NUMB_BUSES {
         err = fmt.Errorf("ERROR lipari_spi_generic_transaction. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
         cli.Printf("e", "%s", err)
@@ -241,15 +273,10 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
         var wr_length int = len(opCode)
         //fmt.Printf("DEBUG: NEWER FIFO..RD LENGTH=%d\n", rdLength);
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00)   //turn off spi to reset fifo's in case it's on     
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x000)          //turn off spi to reset fifo's in case it's on
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_MUXSEL_OFFSET, 0x00)    //turn mux select to FPGA on     
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)            //turn mux select to FPGA on
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_SLAVESEL_OFFSET, 0x01)  //enable slave access
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_SLAVESEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)          //enable slave access
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x400)  //turn on spi output
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x400)          //turn on spi output
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET, 0x00)    //clear status
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)            //clear status
 
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
         //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
@@ -263,7 +290,9 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
 //const SPI_TXDATA4B_OFFSET          uint64 = 0x04
 //const SPI_TXDATA2B_OFFSET          uint64 = 0x08
 //const SPI_TXDATA1B_OFFSET          uint64 = 0x0C
+            //LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_TXDATA4B_OFFSET, uint32(opCode[0] | (opCode[i+1]<<8) | (opCode[i+2]<<16) | (opCode[i+3]<<24)) )    //clear status
             LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_TXDATA1B_OFFSET, uint32(opCode[i]))    //clear status
+            //time.Sleep(time.Duration(2) * time.Microsecond)
             //TaorWriteU8(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (opCode[i]))
             if (i!=0) && ((i%1024) == 0) {
                 ChkTxDrain = 1
@@ -303,6 +332,7 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
                 cli.Printf("e", "lipari_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
                 goto SPI_TRANSACTION_END
             }
+            //fmt.Printf("I=%d, data32=0x%.08x\n", i, data32)
             rdData = append(rdData, byte(data32))
             if ((data32 & 0xC0000000) == 0x80000000) {
                 rdData = append(rdData, byte((data32>>8)))
@@ -330,6 +360,11 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
         if err != nil {
             goto SPI_TRANSACTION_END
         }
+        err = Spi_check_tx_fifo_empty(spiNumber)
+        if err != nil {
+            goto SPI_TRANSACTION_END
+        }
+        
 SPI_TRANSACTION_END:
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00)
         //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn off spi output
