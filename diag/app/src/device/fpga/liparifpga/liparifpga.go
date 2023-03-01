@@ -88,11 +88,11 @@ const MEM_ACCESS_32  uint32 = 1
 const MEM_ACCESS_64  uint32 = 2
 
 //Base Address is static, so just skip getting it from linux to save time and use static base address for each FPGA region
-const FPGA0_BAR int64 = 0x183fff400000
-const FPGA1_BAR int64 = 0x183fff300000
+const FPGA0_BAR int64 = 0x10020300000
+const FPGA1_BAR int64 = 0x10020200000
 
-const DEV0_BAR int64 = 0x183fff400000
-const DEV1_BAR int64 = 0x183fff300000
+const DEV0_BAR int64 =  0x10020300000
+const DEV1_BAR int64 =  0x10020200000
 const MAP_SIZE int = 1048576
 
 
@@ -112,7 +112,6 @@ var Glob_mmap1 []byte
 
 
 func init () {
-
     var cardType string = "LIPARI"
     
     //quick hack to see if we are a Taormina since diag env is not setup yet
@@ -139,11 +138,8 @@ func init () {
             }
             file.Close()
         } else {
-            shcmds := []string{ "lspci -s 12:00.0 -v | grep Memory | awk '{print $3}'", 
-                                "lspci -s 12:00.1 -v | grep Memory | awk '{print $3}'"  }
-            fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
-            fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
-            fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
+            shcmds := []string{ "lspci -s 01:00.0 -v | grep 'Memory at' | awk '{print $3}'", 
+                                "lspci -s 02:00.0 -v | grep 'Memory at' | awk '{print $3}'"  }
             for i:=0;i<len(shcmds);i++ {
                 execOutput, errGo := exec.Command("sh", "-c", shcmds[i] ).Output()
                 if errGo != nil {
@@ -151,6 +147,8 @@ func init () {
                     return
                 }
                 tmp := "0x" + strings.TrimSuffix(string(execOutput), "\n")
+                fmt.Printf("%s\n", execOutput);
+                fmt.Printf("%s\n", tmp);
                 if i==0        { bar[0], _ = strconv.ParseUint(tmp, 0, 64) 
                 } else if i==1 { bar[1], _ = strconv.ParseUint(tmp, 0, 64) }
             }
@@ -169,6 +167,8 @@ func init () {
             file.Close() 
              
         }
+        //fmt.Printf("bar[0]=0x%x\n", bar[0]);
+        //fmt.Printf("bar[1]=0x%x\n", bar[1]);
         Glob_mmap0, Glob_fd0, _ = MMAP_Device(int64(bar[0]), MAP_SIZE)
         Glob_mmap1, Glob_fd1, _ = MMAP_Device(int64(bar[1]), MAP_SIZE)
         //How do we gracefully unmap?   OS should do it, but would be nice to do it in code 
@@ -180,7 +180,6 @@ func init () {
         //} () 
          
     }
-    
 } 
  
 
@@ -208,7 +207,7 @@ func FpgaDumpRegionRegisters(fpgaNumber uint32) (err error) {
     if fpgaNumber == 0 {
         lipari_reg_ptr = LIPARI_FPGA0_REGISTERS
     } else if fpgaNumber == 1 {
-        lipari_reg_ptr = LIPARI_FPGA0_REGISTERS
+        lipari_reg_ptr = LIPARI_FPGA1_REGISTERS
     } 
 
     fmt.Printf("FPGA-%d REGISTER DUMP---\n", fpgaNumber)
@@ -280,6 +279,7 @@ func LipariReadU32(fpgaNumber uint32, addr uint64) (value uint32, err error) {
     return
 }
 
+
 func ReadU32(addr uint64) (value uint32, err error) {
     pageSize := syscall.Getpagesize()
     pageSize64 := uint64(pageSize)
@@ -291,7 +291,6 @@ func ReadU32(addr uint64) (value uint32, err error) {
         cli.Printf("e", "os.Open /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
         return
     }
-
     defer file.Close()
     mmap, err := syscall.Mmap(int(file.Fd()), int64(pageAddr), pageSize, syscall.PROT_READ, syscall.MAP_SHARED)
     if err != nil {
@@ -306,6 +305,7 @@ func ReadU32(addr uint64) (value uint32, err error) {
     }
     return
 }
+
 
 func LipariWriteU8(fpgaNumber uint32, addr uint64, data uint8) (err error) {
     if uint32(fpgaNumber) >= LIPARI_NUMBER_FPGA {
@@ -397,6 +397,7 @@ func WriteU32(addr uint64, data uint32) (err error) {
     }
     return
 }
+
 
 func PCI_get_bar(pciDevID uint32, bar *uint64) (err error) {
     var s_devfn, vend_dev_Id, irq uint32 = 0,0,0

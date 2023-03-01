@@ -543,6 +543,12 @@ var TaorTbl = []I2cInfo {
 }
 
 
+var LipariTbl = []I2cInfo {
+    //       name              comp          Bus   devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+}
+
 func init() {
     CardType = os.Getenv("CARD_TYPE")
 
@@ -633,6 +639,8 @@ func init() {
         I2cTbl = TaorTbl
     } else if CardType == "TAORELBA" {
         I2cTbl = TaorElbaTbl
+    } else if CardType == "LIPARI" {
+        I2cTbl = LipariTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -768,6 +776,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LaconaMtpTbl
     } else if uutType == "TAORMINA" {
         CurI2cTbl = TaorTbl
+    } else if uutType == "LIPARI" {
+        CurI2cTbl = LipariTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
