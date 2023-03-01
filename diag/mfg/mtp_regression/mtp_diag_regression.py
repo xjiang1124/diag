@@ -828,12 +828,14 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
             logfile_list.append(path+"prbs_eth.log")
         if "SNAKE_ELBA" in mtp_para_test_list:
             logfile_list.append(path+"snake_elba.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "ETH_PRBS" in mtp_para_test_list:
             logfile_list.append(path+"elba_PRBS_MX.log")
         if "ARM_L1" in mtp_para_test_list:
             logfile_list.append(path+"elba_arm_l1_test.log")
         if "PCIE_PRBS" in mtp_para_test_list:
             logfile_list.append(path+"elba_PRBS_PCIE.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "DDR_BIST" in mtp_para_test_list:
             logfile_list.append(path+"arm_ddr_bist_0.log")
             logfile_list.append(path+"arm_ddr_bist_1.log")
