@@ -30,7 +30,7 @@ from libnic_ctrl import nic_ctrl
 from libtest_db import *
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, usb_ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
@@ -38,6 +38,7 @@ class mtp_ctrl():
         self._mgmt_timeout = MTP_Const.MTP_POWER_ON_TIMEOUT
         self._diagmgr_handle = None
         self._ts_cfg = ts_cfg
+        self._usb_ts_cfg = usb_ts_cfg
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
@@ -101,6 +102,7 @@ class mtp_ctrl():
 
         self._svos_boot = True # set to False once OS is installed
         # self._secure_login = False  #set to True when using signed OS
+        self._use_usb_console = False
 
         self._hard_failure = False
 
@@ -365,6 +367,14 @@ class mtp_ctrl():
     def get_ts_cfg(self):
         return self._ts_cfg
 
+    def get_usb_ts_cfg(self):
+        return self._usb_ts_cfg
+
+    def set_usb_console(self):
+        self._use_usb_console = True
+
+    def unset_usb_console(self):
+        self._use_usb_console = False
 
     def set_mtp_logfile(self, filep):
         self._filep = filep
@@ -1079,6 +1089,9 @@ class mtp_ctrl():
         return self._mgmt_prompt
     
     def mtp_get_telnet_command(self):
+        if self._use_usb_console:
+            return self.mtp_get_usb_console_command()
+
         if not self._ts_cfg:
             self.cli_log_err("telnet port config is empty")
             return None
@@ -1094,6 +1107,26 @@ class mtp_ctrl():
             port = "40" + self._ts_cfg[1][-2:]
         else:
             self.cli_log_err("Unable to decipher telnet port {:s}".format(self._ts_cfg[1]))
+            return None
+
+        return "telnet "+ip+" "+port
+
+    def mtp_get_usb_console_command(self):
+        if not self._usb_ts_cfg:
+            self.cli_log_err("USB console server config is empty")
+            return None
+        
+        ip = self._usb_ts_cfg[0]
+        if not libmfg_utils.ip_address_validate(ip):
+            self.cli_log_err("Invalid USB console server IP: {:s}".format(ip))
+            return None
+
+        if len(self._usb_ts_cfg[1]) == 2:
+            port = "20" + self._usb_ts_cfg[1]
+        elif len(self._usb_ts_cfg[1]) == 4:
+            port = "20" + self._usb_ts_cfg[1][-2:]
+        else:
+            self.cli_log_err("Unable to decipher USB console server port {:s}".format(self._usb_ts_cfg[1]))
             return None
 
         return "telnet "+ip+" "+port
@@ -1477,6 +1510,8 @@ class mtp_ctrl():
             return False
         else:
             self._cmd_buf = self._mgmt_handle.before
+            if self._use_usb_console:
+                self._mgmt_handle.sendline("") # extra newline for USB console server
             return True
 
     def mtp_mgmt_exec_cmd2(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
@@ -5277,6 +5312,11 @@ class mtp_ctrl():
         if not libmfg_utils.mtp_clear_console(self):
             return False
 
+        self.mtp_apc_pwr_on()
+        self.cli_log_inf("Power on APC", level=0)
+
+        # reconnect console after powerup instead of before; 
+        # SLC 8xxx console line disconnects when unit is powered on
         if self._mgmt_handle is not None:
             self.mtp_console_disconnect()
         telnet_cmd = self.mtp_get_telnet_command()
@@ -5284,6 +5324,8 @@ class mtp_ctrl():
         self._mgmt_handle = pexpect.spawn(telnet_cmd, logfile = self._diag_filep)
         countconnectrefusedissue = 10
         while libmfg_utils.mfg_expect(self._mgmt_handle, ["Connection refused"], timeout=1) == 0:
+            if not libmfg_utils.mtp_clear_console(self):
+                return False
             self._mgmt_handle.close()
             self._mgmt_handle = pexpect.spawn(telnet_cmd)
             countconnectrefusedissue -= 1
