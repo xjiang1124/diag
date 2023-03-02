@@ -917,8 +917,6 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             if nic_type in ELBA_NIC_TYPE_LIST:
                 number_of_l1_tests = 9
-                if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
-                    number_of_l1_tests = 8
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":

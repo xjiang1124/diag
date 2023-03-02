@@ -82,7 +82,7 @@ MTP_PARA:
     SNAKE_ELBA: True
     ARM_L1: True
     PCIE_PRBS: True
-    DDR_BIST: True
+    DDR_BIST: False
 
 MTP_SEQ:
     ASIC:
