@@ -172,7 +172,7 @@ def single_uut_fw_program(stage,
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
-                ret = mtp_mgmt_ctrl.tor_boot_select(0, fru_valid=fru_valid)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, fru_valid=fru_valid, console_sanity_check=True)
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":

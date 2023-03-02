@@ -101,7 +101,6 @@ class mtp_ctrl():
         self.uut_type = "TAORMINA"
 
         self._svos_boot = True # set to False once OS is installed
-        # self._secure_login = False  #set to True when using signed OS
         self._use_usb_console = False
 
         self._hard_failure = False
@@ -992,12 +991,10 @@ class mtp_ctrl():
 
         return successentersh
 
-    def mtp_console_connect(self, prompt_cfg=False, prompt_id=None, secure_login=False):
+    def mtp_console_connect(self, prompt_cfg=False, prompt_id=None):
         # if not self.mtp_console_disconnect():
         #     return None
         self.mtp_console_spawn()
-
-        # secure_login = secure_login or self._secure_login #set either by argument or class variable
 
         delay = MTP_Const.TOR_CONSOLE_CON_DELAY
         retries = 0
@@ -1005,7 +1002,6 @@ class mtp_ctrl():
         max_retries = 10
         prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "$", "#", ">"]
 
-        # secure_login = True #always
         fresh_login = False
         while True:
             time.sleep(1) # this is crucial so that the prompt is safely out of the console buffer (not pexpect buffer)
@@ -5275,14 +5271,9 @@ class mtp_ctrl():
 
         return True
 
-    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False, fru_valid=True):
-
-        # if selection > 0:
-        #     secure_login = True
-        #     self._secure_login = True
-
+    def tor_boot_select(self, selection=0, fru_valid=True, console_sanity_check=False):
         for x in range(3):
-            if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
+            if self.tor_boot_select_secondlevel(selection, console_sanity_check=console_sanity_check):
                 # read FRU as soon as console is ready, to have an SN to save logs to.
                 if fru_valid:
                     if not self.tor_fru_init():
@@ -5293,13 +5284,9 @@ class mtp_ctrl():
                 return True
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
-
-        # if secure_login:
-        #     self._secure_login = False
-
         return False
 
-    def tor_boot_select_secondlevel(self, selection=0, stopreboot=True, secure_login=False):
+    def tor_boot_select_secondlevel(self, selection=0, console_sanity_check=False):
         """ Stop at OS selection screen and choose """
 
         if isinstance(selection, str):
@@ -5333,18 +5320,12 @@ class mtp_ctrl():
                 return False
         self._mgmt_handle.setecho(True)
 
-        self.mtp_apc_pwr_on()
-        self.cli_log_inf("Power on APC", level=0)
-
         # Keep entering selection number
         idx = -1
-        start=datetime.now()
         starttosendselection = True
-        waittimetopowercycleretry = MTP_Const.TOR_POWER_ON_DELAY
-        # if secure_login:
-        #     waittimetopowercycleretry = 1800
-        #     self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
-        waittimetopowercycleretry = 1800
+        retry_wait_time = MTP_Const.CONSOLE_SANITY_CHECK_WAIT_TIME
+        retry_cnt = 3
+        retry_start_time = datetime.now()
         
         if selection == 0:
             self.cli_log_inf("Booting to SvOS", level=0)
@@ -5357,36 +5338,40 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["ServiceOS login:", " login:", "Select profile","Looking for SvOS.", "Starting update"], timeout=1)
-            difftime = datetime.now()-start
+            difftime = datetime.now() - retry_start_time
             seconds = difftime.total_seconds()
-            #print("{} vs {} : {} s".format(idx, selection, seconds))
-            if seconds > waittimetopowercycleretry:
-                self.cli_log_err("Failed to get UUT console Login or Select profile prompt in {} ({}) seconds".format(seconds,waittimetopowercycleretry) , level=0)
-                return False
+            if seconds > retry_wait_time:
+                retry_cnt -= 1
+                if retry_cnt >= 0:
+                    libmfg_utils.aruba_gui_clear_buffer2()
+                    self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
+                    raw_input("Please check that the console is connected then press any key to continue.\n")
+                    retry_start_time = datetime.now()
+                    continue
+                else:
+                    break
             if idx < 0:
                 continue
             elif idx == 2:
                 self._mgmt_handle.sendline(str(selection))
-                #start=datetime.now()
                 starttosendselection = False
             elif idx == 3:
                 start=datetime.now()
-                #pass
             elif idx == selection:
                 break
-            # elif idx == 4:
-            #     #start=datetime.now()
-            #     self.cli_log_inf("Get the \"Looking for SvOS\" begin Console message", level=0)
-            #     starttosendselection = True
-            #     continue
             elif idx == 4:
                 continue
             elif idx != selection:
+                self.cli_log_inf("Missed boot selection... retrying", level=0)
                 self.cli_log_inf("Power off APC", level=0)
                 self.mtp_apc_pwr_off()
                 libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
                 self.mtp_apc_pwr_on()
                 self.cli_log_inf("Power on APC", level=0)
+
+        if retry_cnt < 0:
+            self.cli_log_err("Failed to connect console in 3 retries", level=0)
+            return False
 
         if not self.mtp_console_connect():
             self.cli_log_err("Failed to connect console", level=0)
@@ -5421,7 +5406,6 @@ class mtp_ctrl():
         In case of the Elba ssh dir issue, it would take 10 minutes.
         """
         start=datetime.now()
-        # if stopreboot and not self._secure_login:
         self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
         self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
         elba0_ready, elba1_ready, gearbox_ready = False, False, False

@@ -164,7 +164,7 @@ def single_uut_led_checks(stage,
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
-                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, console_sanity_check=True)
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
