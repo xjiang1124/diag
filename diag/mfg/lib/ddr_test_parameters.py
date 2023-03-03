@@ -11,20 +11,21 @@ test2args = {
     # Test case level common arguments, if specified, it will apply to all test commands according to test case setting
     "TEST_CASE_COMMON"  : {
         "ARGUMENT_SPEC"              : "-mode",
-        "DEFAULT"                    : "-",
-        # Ortano: tclsh ddr_bist.tcl -sn <sn> -slot <slot>
-        "68-0021"                    : "-",
-        "68-0026"                    : "-",
-        "68-0028"                    : "-",
-        "68-0034"                    : "-",
-        "68-0029"                    : "-",
-        "68-0077"                    : "-",
-        "68-0049"                    : "-",
-        # Pomonte: tclsh ddr_bist.tcl -sn <sn> -slot <slot> -mode nod
-        "0PCFPC"                     : "nod",
-        # Lacona: tclsh ddr_bist.tcl -sn <sn> -slot <slot> -mode nod_525 -dual_rank 1 -ddr_freq 2400
-        "P47930"                     : "nod_525",
-        "0X322F"                     : "nod_525",
+        "DEFAULT"                    : "hod",
+        # Ortano section
+        "68-0021"                    : "hod_1100",              #68-0021-02 XX    ORTANO2 MICROSOFT
+        "68-0034"                    : "hod_1100",              #68-0034-01 XX    ORTANO2ADI MICROSOFT
+        "68-0015"                    : "hod",                   #68-0015-02 XX    ORTANO2 ORACLE
+        "68-0026"                    : "hod",                   #68-0026-01 XX    ORTANO2ADI ORACLE
+        "68-0028"                    : "hod",                   #68-0028-01 XX    ORTANO2ADI IBM
+        "68-0029"                    : "hod",                   #68-0029-01 XX    ORTANO2 Interposer
+        "68-0077"                    : "hod",                   #68-0077-01 XX    ORTANO2 SOLO
+        "68-0049"                    : "hod",                   #68-0049-03 XX    ORTANO2ADI CR
+        # Pomonte section
+        "0PCFPC"                     : "nod",                   #0PCFPC X/A       POMONTE DELL
+        # Lacona section
+        "P47930"                     : "nod_525",               #P47930-001       LACONA32 HPE
+        "0X322F"                     : "nod_525",               #0X322F X/A       LACONA32 DELL
     },
     "DDR_BIST"         : {
         ##### For DDR_BIST test, we call 'tclsh ddr_bist.tcl', so the args here are actually for the script ddr_bist.tcl
