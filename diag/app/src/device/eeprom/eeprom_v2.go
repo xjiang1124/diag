@@ -383,6 +383,7 @@ var CardTypes = []card{
     card{"ORTANO-SOLO_ORACLE",      PN_SOLO_ORACLE},
     card{"ORTANO-ADICR_ORACLE",     PN_ADICR_ORACLE},
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
+    card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
                       }
 
 //Data structure slices
