@@ -39,6 +39,8 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
         return None
     partnumber = part_number if part_number else "DEFAULT"
     no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
+    if partnumber != "DEFAULT" and partnumber == no_rev_partnumber:
+        no_rev_partnumber = partnumber[0:6]
 
     argdict = dict()
     # load test_case arguments
