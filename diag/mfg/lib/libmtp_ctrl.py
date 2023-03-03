@@ -6107,8 +6107,6 @@ class mtp_ctrl():
 
         # 0 = skip l1_ddr_bist; 1 = default
         skip_ddr_bist = "1"
-        if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
-            skip_ddr_bist = "0"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
