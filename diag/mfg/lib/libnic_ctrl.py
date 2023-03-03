@@ -2168,10 +2168,23 @@ class nic_ctrl():
         ret = True
 
         for logfile in logfile_list:
-            log = os.path.basename(logfile)
-            dst_logfile = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR + self._sn + "_" + log
+            if "*" in logfile:
+                # copy to one directory and then perform renames
+                temp_dir = "{:s}/{:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, self._sn)
+                self.mtp_exec_cmd("mkdir {:s}".format(temp_dir))
+                dst_logfile = temp_dir
+            else:
+                log = os.path.basename(logfile)
+                dst_logfile = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR + self._sn + "_" + log
+
             if not self.nic_copy_file_from_nic(logfile, dst_logfile):
                 ret &= False
+
+            if "*" in logfile:
+                # move out of temp dir
+                temp_dir = "{:s}/{:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, self._sn)
+                self.mtp_exec_cmd("for file in $(ls {:s}); do mv {:s}/$file {:s}/{:s}_$file ; done".format(temp_dir, temp_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, self._sn))
+                self.mtp_exec_cmd("rmdir {:s}".format(temp_dir))
 
         return ret
 
