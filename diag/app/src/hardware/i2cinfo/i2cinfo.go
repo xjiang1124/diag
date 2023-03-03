@@ -180,12 +180,30 @@ var GinestraD5Tbl = []I2cInfo {
     I2cInfo {"FRU",             "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"TSENSOR",         "TMP451AID", 0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"RTC",             "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"CLK_BUFFER",      "RC19008A",  0x2,   0x6C,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CORE",            "TPS53688",  0x2,   0x62,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"ARM",             "TPS53688",  0x2,   0x62,    0x1,    "HUB_NONE",  0,    0},
     I2cInfo {"DDR_VDD",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"DDR_VDDQ",        "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"DDR_VPP",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDD_DDR",         "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},
+
+    I2cInfo {"QSFP_1",          "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"QSFP_1_DOM",      "QSFP",      0x0,   0x51,    0x0,    "HUB_NONE",  0,    0},
+
+    I2cInfo {"QSFP_2",          "QSFP",      0x1,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"QSFP_2_DOM",      "QSFP",      0x1,   0x51,    0x0,    "HUB_NONE",  0,    0},
+}
+
+var GinestraD4Tbl = []I2cInfo {
+    //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"SMB_FRU",         "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+
+    I2cInfo {"FRU",             "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"TSENSOR",         "TMP451AID", 0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"RTC",             "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"CORE",            "TPS53688",  0x2,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ARM",             "TPS53688",  0x2,   0x62,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VDDQ",        "TPS549A20", 0x2,   0x1B,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDD_DDR",         "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},
 
     I2cInfo {"QSFP_1",          "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
@@ -525,6 +543,12 @@ var TaorTbl = []I2cInfo {
 }
 
 
+var LipariTbl = []I2cInfo {
+    //       name              comp          Bus   devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+}
+
 func init() {
     CardType = os.Getenv("CARD_TYPE")
 
@@ -601,6 +625,10 @@ func init() {
     } else if CardType == "POMONTEDELL"     ||
               CardType == "POMONTE"         {
         I2cTbl = PomonteTbl
+    } else if CardType == "GINESTRA_D4" {
+        I2cTbl = GinestraD4Tbl
+    } else if CardType == "GINESTRA_D5" {
+        I2cTbl = GinestraD5Tbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -611,6 +639,8 @@ func init() {
         I2cTbl = TaorTbl
     } else if CardType == "TAORELBA" {
         I2cTbl = TaorElbaTbl
+    } else if CardType == "LIPARI" {
+        I2cTbl = LipariTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -746,6 +776,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LaconaMtpTbl
     } else if uutType == "TAORMINA" {
         CurI2cTbl = TaorTbl
+    } else if uutType == "LIPARI" {
+        CurI2cTbl = LipariTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

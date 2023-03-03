@@ -5,6 +5,886 @@ package liparifpga
  * Registers offset
  */
 
+const FPGA1_FPGA_REV_ID_REG               uint64 = 0x0
+const FPGA1_FPGA_DATECODE_REG             uint64 = 0x4
+const FPGA1_FPGA_TIMECODE_REG             uint64 = 0x8
+const FPGA1_BOARD_REV_ID_REG              uint64 = 0xC
+const FPGA1_FUNC_CAP_0_REG                uint64 = 0x10
+const FPGA1_FUNC_CAP_1_REG                uint64 = 0x14
+const FPGA1_FUNC_CAP_2_REG                uint64 = 0x18
+const FPGA1_FUNC_CAP_3_REG                uint64 = 0x1C
+const FPGA1_FUNC_CAP_4_REG                uint64 = 0x20
+const FPGA1_FUNC_CAP_5_REG                uint64 = 0x24
+const FPGA1_FUNC_CAP_6_REG                uint64 = 0x28
+const FPGA1_FUNC_CAP_7_REG                uint64 = 0x2C
+const FPGA1_SCRATCH_0_REG                 uint64 = 0x30
+const FPGA1_SCRATCH_1_REG                 uint64 = 0x34
+const FPGA1_SCRATCH_2_REG                 uint64 = 0x38
+const FPGA1_SCRATCH_3_REG                 uint64 = 0x3C
+const FPGA1_LED_DEBUG_0_REG               uint64 = 0x40
+const FPGA1_LED_DEBUG_1_REG               uint64 = 0x44
+const FPGA1_LED_DEBUG_2_REG               uint64 = 0x48
+const FPGA1_LED_DEBUG_3_REG               uint64 = 0x4C
+const FPGA1_DEBUG_0_REG                   uint64 = 0x50
+const FPGA1_DEBUG_1_REG                   uint64 = 0x54
+const FPGA1_DEBUG_2_REG                   uint64 = 0x58
+const FPGA1_DEBUG_3_REG                   uint64 = 0x5C
+const FPGA1_INT0_EN_REG                   uint64 = 0x60
+const FPGA1_INT1_EN_REG                   uint64 = 0x64
+const FPGA1_INT2_EN_REG                   uint64 = 0x68
+const FPGA1_INT3_EN_REG                   uint64 = 0x6C
+const FPGA1_INT4_EN_REG                   uint64 = 0x70
+const FPGA1_INT5_EN_REG                   uint64 = 0x74
+const FPGA1_INT6_EN_REG                   uint64 = 0x78
+const FPGA1_INT7_EN_REG                   uint64 = 0x7C
+const FPGA1_INT8_EN_REG                   uint64 = 0x80
+const FPGA1_INT9_EN_REG                   uint64 = 0x84
+const FPGA1_INT10_EN_REG                  uint64 = 0x88
+const FPGA1_INT11_EN_REG                  uint64 = 0x8C
+const FPGA1_INT12_EN_REG                  uint64 = 0x90
+const FPGA1_INT13_EN_REG                  uint64 = 0x94
+const FPGA1_INT14_EN_REG                  uint64 = 0x98
+const FPGA1_INT15_EN_REG                  uint64 = 0x9C
+const FPGA1_INT0_PEND_REG                 uint64 = 0xA0
+const FPGA1_INT1_PEND_REG                 uint64 = 0xA4
+const FPGA1_INT2_PEND_REG                 uint64 = 0xA8
+const FPGA1_INT3_PEND_REG                 uint64 = 0xAC
+const FPGA1_INT4_PEND_REG                 uint64 = 0xB0
+const FPGA1_INT5_PEND_REG                 uint64 = 0xB4
+const FPGA1_INT6_PEND_REG                 uint64 = 0xB8
+const FPGA1_INT7_PEND_REG                 uint64 = 0xBC
+const FPGA1_INT8_PEND_REG                 uint64 = 0xC0
+const FPGA1_INT9_PEND_REG                 uint64 = 0xC4
+const FPGA1_INT10_PEND_REG                uint64 = 0xC8
+const FPGA1_INT11_PEND_REG                uint64 = 0xCC
+const FPGA1_INT12_PEND_REG                uint64 = 0xD0
+const FPGA1_INT13_PEND_REG                uint64 = 0xD4
+const FPGA1_INT14_PEND_REG                uint64 = 0xD8
+const FPGA1_INT15_PEND_REG                uint64 = 0xDC
+const FPGA1_BMC_INT0_EN_REG               uint64 = 0xE0
+const FPGA1_BMC_INT1_EN_REG               uint64 = 0xE4
+const FPGA1_BMC_INT2_EN_REG               uint64 = 0xE8
+const FPGA1_BMC_INT3_EN_REG               uint64 = 0xEC
+const FPGA1_BMC_INT4_EN_REG               uint64 = 0xF0
+const FPGA1_BMC_INT5_EN_REG               uint64 = 0xF4
+const FPGA1_BMC_INT6_EN_REG               uint64 = 0xF8
+const FPGA1_BMC_INT7_EN_REG               uint64 = 0xFC
+const FPGA1_BMC_INT8_EN_REG               uint64 = 0x100
+const FPGA1_BMC_INT9_EN_REG               uint64 = 0x104
+const FPGA1_BMC_INT10_EN_REG              uint64 = 0x108
+const FPGA1_BMC_INT11_EN_REG              uint64 = 0x10C
+const FPGA1_BMC_INT12_EN_REG              uint64 = 0x110
+const FPGA1_BMC_INT13_EN_REG              uint64 = 0x114
+const FPGA1_BMC_INT14_EN_REG              uint64 = 0x118
+const FPGA1_BMC_INT15_EN_REG              uint64 = 0x11C
+const FPGA1_BMC_INT0_PEND_REG             uint64 = 0x120
+const FPGA1_BMC_INT1_PEND_REG             uint64 = 0x124
+const FPGA1_BMC_INT2_PEND_REG             uint64 = 0x128
+const FPGA1_BMC_INT3_PEND_REG             uint64 = 0x12C
+const FPGA1_BMC_INT4_PEND_REG             uint64 = 0x130
+const FPGA1_BMC_INT5_PEND_REG             uint64 = 0x134
+const FPGA1_BMC_INT6_PEND_REG             uint64 = 0x138
+const FPGA1_BMC_INT7_PEND_REG             uint64 = 0x13C
+const FPGA1_BMC_INT8_PEND_REG             uint64 = 0x140
+const FPGA1_BMC_INT9_PEND_REG             uint64 = 0x144
+const FPGA1_BMC_INT10_PEND_REG            uint64 = 0x148
+const FPGA1_BMC_INT11_PEND_REG            uint64 = 0x14C
+const FPGA1_BMC_INT12_PEND_REG            uint64 = 0x150
+const FPGA1_BMC_INT13_PEND_REG            uint64 = 0x154
+const FPGA1_BMC_INT14_PEND_REG            uint64 = 0x158
+const FPGA1_BMC_INT15_PEND_REG            uint64 = 0x15C
+const FPGA1_ELBA_RESET_CAUSE_0_REG        uint64 = 0x200
+const FPGA1_ELBA_RESET_CAUSE_1_REG        uint64 = 0x204
+const FPGA1_ELBA_RESET_CAUSE_2_REG        uint64 = 0x208
+const FPGA1_ELBA_RESET_CAUSE_3_REG        uint64 = 0x20C
+const FPGA1_ELBA_RESET_CAUSE_4_REG        uint64 = 0x210
+const FPGA1_ELBA_RESET_CAUSE_5_REG        uint64 = 0x214
+const FPGA1_ELBA_RESET_CAUSE_6_REG        uint64 = 0x218
+const FPGA1_ELBA_RESET_CAUSE_7_REG        uint64 = 0x21C
+const FPGA1_MBOX_STAT_REG                 uint64 = 0x280
+const FPGA1_MBOX_STAT_PLRTY_REG           uint64 = 0x284
+const FPGA1_MBOX_STAT_EDG_LVL_REG         uint64 = 0x288
+const FPGA1_MBOX_STAT_INT_EN_REG          uint64 = 0x28C
+const FPGA1_MBOX_STAT_INT_STAT_REG        uint64 = 0x290
+const FPGA1_MBOX_STAT_INT_CLR_REG         uint64 = 0x294
+const FPGA1_MBOX_0_DATA_REG               uint64 = 0x298
+const FPGA1_MBOX_1_DATA_REG               uint64 = 0x29C
+const FPGA1_MBOX_2_DATA_REG               uint64 = 0x2A0
+const FPGA1_MBOX_3_DATA_REG               uint64 = 0x2A4
+const FPGA1_SOFT_RESET_REG                uint64 = 0x2A8
+const FPGA1_MISC_CTRL_REG                 uint64 = 0x2AC
+const FPGA1_MISC_STAT_REG                 uint64 = 0x2B0
+const FPGA1_FLSH_CTRL_REG                 uint64 = 0x2B4
+const FPGA1_ELBA0_CTRL_REG                uint64 = 0x300
+const FPGA1_ELBA0_STAT_REG                uint64 = 0x304
+const FPGA1_ELBA0_WDOG_CTRL_REG           uint64 = 0x308
+const FPGA1_ELBA0_WDOG_STAT_REG           uint64 = 0x30C
+const FPGA1_ELBA1_CTRL_REG                uint64 = 0x320
+const FPGA1_ELBA1_STAT_REG                uint64 = 0x324
+const FPGA1_ELBA1_WDOG_CTRL_REG           uint64 = 0x328
+const FPGA1_ELBA1_WDOG_STAT_REG           uint64 = 0x32C
+const FPGA1_ELBA2_CTRL_REG                uint64 = 0x340
+const FPGA1_ELBA2_STAT_REG                uint64 = 0x344
+const FPGA1_ELBA2_WDOG_CTRL_REG           uint64 = 0x348
+const FPGA1_ELBA2_WDOG_STAT_REG           uint64 = 0x34C
+const FPGA1_ELBA3_CTRL_REG                uint64 = 0x360
+const FPGA1_ELBA3_STAT_REG                uint64 = 0x364
+const FPGA1_ELBA3_WDOG_CTRL_REG           uint64 = 0x368
+const FPGA1_ELBA3_WDOG_STAT_REG           uint64 = 0x36C
+const FPGA1_ELBA4_CTRL_REG                uint64 = 0x380
+const FPGA1_ELBA4_STAT_REG                uint64 = 0x384
+const FPGA1_ELBA4_WDOG_CTRL_REG           uint64 = 0x388
+const FPGA1_ELBA4_WDOG_STAT_REG           uint64 = 0x38C
+const FPGA1_ELBA5_CTRL_REG                uint64 = 0x3A0
+const FPGA1_ELBA5_STAT_REG                uint64 = 0x3A4
+const FPGA1_ELBA5_WDOG_CTRL_REG           uint64 = 0x3A8
+const FPGA1_ELBA5_WDOG_STAT_REG           uint64 = 0x3AC
+const FPGA1_ELBA6_CTRL_REG                uint64 = 0x3C0
+const FPGA1_ELBA6_STAT_REG                uint64 = 0x3C4
+const FPGA1_ELBA6_WDOG_CTRL_REG           uint64 = 0x3C8
+const FPGA1_ELBA6_WDOG_STAT_REG           uint64 = 0x3CC
+const FPGA1_ELBA7_CTRL_REG                uint64 = 0x3E0
+const FPGA1_ELBA7_STAT_REG                uint64 = 0x3E4
+const FPGA1_ELBA7_WDOG_CTRL_REG           uint64 = 0x3E8
+const FPGA1_ELBA7_WDOG_STAT_REG           uint64 = 0x3EC
+const FPGA1_SPI0_RXDATA_REG               uint64 = 0x400
+const FPGA1_SPI0_TXDATA4B_REG             uint64 = 0x404
+const FPGA1_SPI0_TXDATA2B_REG             uint64 = 0x408
+const FPGA1_SPI0_TXDATA1B_REG             uint64 = 0x40C
+const FPGA1_SPI0_STATUS_REG               uint64 = 0x410
+const FPGA1_SPI0_CONTROL_REG              uint64 = 0x414
+const FPGA1_SPI0_SEM_REG                  uint64 = 0x418
+const FPGA1_SPI0_SLAVESEL_REG             uint64 = 0x41C
+const FPGA1_SPI0_EOP_VALUE_REG            uint64 = 0x420
+const FPGA1_SPI0_MUXSEL_REG               uint64 = 0x424
+const FPGA1_SPI1_RXDATA_REG               uint64 = 0x440
+const FPGA1_SPI1_TXDATA4B_REG             uint64 = 0x444
+const FPGA1_SPI1_TXDATA2B_REG             uint64 = 0x448
+const FPGA1_SPI1_TXDATA1B_REG             uint64 = 0x44C
+const FPGA1_SPI1_STATUS_REG               uint64 = 0x450
+const FPGA1_SPI1_CONTROL_REG              uint64 = 0x454
+const FPGA1_SPI1_SEM_REG                  uint64 = 0x458
+const FPGA1_SPI1_SLAVESEL_REG             uint64 = 0x45C
+const FPGA1_SPI1_EOP_VALUE_REG            uint64 = 0x460
+const FPGA1_SPI1_MUXSEL_REG               uint64 = 0x464
+const FPGA1_SPI2_RXDATA_REG               uint64 = 0x480
+const FPGA1_SPI2_TXDATA4B_REG             uint64 = 0x484
+const FPGA1_SPI2_TXDATA2B_REG             uint64 = 0x488
+const FPGA1_SPI2_TXDATA1B_REG             uint64 = 0x48C
+const FPGA1_SPI2_STATUS_REG               uint64 = 0x490
+const FPGA1_SPI2_CONTROL_REG              uint64 = 0x494
+const FPGA1_SPI2_SEM_REG                  uint64 = 0x498
+const FPGA1_SPI2_SLAVESEL_REG             uint64 = 0x49C
+const FPGA1_SPI2_EOP_VALUE_REG            uint64 = 0x4A0
+const FPGA1_SPI2_MUXSEL_REG               uint64 = 0x4A4
+const FPGA1_SPI3_RXDATA_REG               uint64 = 0x4C0
+const FPGA1_SPI3_TXDATA4B_REG             uint64 = 0x4C4
+const FPGA1_SPI3_TXDATA2B_REG             uint64 = 0x4C8
+const FPGA1_SPI3_TXDATA1B_REG             uint64 = 0x4CC
+const FPGA1_SPI3_STATUS_REG               uint64 = 0x4D0
+const FPGA1_SPI3_CONTROL_REG              uint64 = 0x4D4
+const FPGA1_SPI3_SEM_REG                  uint64 = 0x4D8
+const FPGA1_SPI3_SLAVESEL_REG             uint64 = 0x4DC
+const FPGA1_SPI3_EOP_VALUE_REG            uint64 = 0x4E0
+const FPGA1_SPI3_MUXSEL_REG               uint64 = 0x4E4
+const FPGA1_SPI4_RXDATA_REG               uint64 = 0x500
+const FPGA1_SPI4_TXDATA4B_REG             uint64 = 0x504
+const FPGA1_SPI4_TXDATA2B_REG             uint64 = 0x508
+const FPGA1_SPI4_TXDATA1B_REG             uint64 = 0x50C
+const FPGA1_SPI4_STATUS_REG               uint64 = 0x510
+const FPGA1_SPI4_CONTROL_REG              uint64 = 0x514
+const FPGA1_SPI4_SEM_REG                  uint64 = 0x518
+const FPGA1_SPI4_SLAVESEL_REG             uint64 = 0x51C
+const FPGA1_SPI4_EOP_VALUE_REG            uint64 = 0x520
+const FPGA1_SPI4_MUXSEL_REG               uint64 = 0x524
+const FPGA1_SPI5_RXDATA_REG               uint64 = 0x540
+const FPGA1_SPI5_TXDATA4B_REG             uint64 = 0x544
+const FPGA1_SPI5_TXDATA2B_REG             uint64 = 0x548
+const FPGA1_SPI5_TXDATA1B_REG             uint64 = 0x54C
+const FPGA1_SPI5_STATUS_REG               uint64 = 0x550
+const FPGA1_SPI5_CONTROL_REG              uint64 = 0x554
+const FPGA1_SPI5_SEM_REG                  uint64 = 0x558
+const FPGA1_SPI5_SLAVESEL_REG             uint64 = 0x55C
+const FPGA1_SPI5_EOP_VALUE_REG            uint64 = 0x560
+const FPGA1_SPI5_MUXSEL_REG               uint64 = 0x564
+const FPGA1_SPI6_RXDATA_REG               uint64 = 0x580
+const FPGA1_SPI6_TXDATA4B_REG             uint64 = 0x584
+const FPGA1_SPI6_TXDATA2B_REG             uint64 = 0x588
+const FPGA1_SPI6_TXDATA1B_REG             uint64 = 0x58C
+const FPGA1_SPI6_STATUS_REG               uint64 = 0x590
+const FPGA1_SPI6_CONTROL_REG              uint64 = 0x594
+const FPGA1_SPI6_SEM_REG                  uint64 = 0x598
+const FPGA1_SPI6_SLAVESEL_REG             uint64 = 0x59C
+const FPGA1_SPI6_EOP_VALUE_REG            uint64 = 0x5A0
+const FPGA1_SPI6_MUXSEL_REG               uint64 = 0x5A4
+const FPGA1_SPI7_RXDATA_REG               uint64 = 0x5C0
+const FPGA1_SPI7_TXDATA4B_REG             uint64 = 0x5C4
+const FPGA1_SPI7_TXDATA2B_REG             uint64 = 0x5C8
+const FPGA1_SPI7_TXDATA1B_REG             uint64 = 0x5CC
+const FPGA1_SPI7_STATUS_REG               uint64 = 0x5D0
+const FPGA1_SPI7_CONTROL_REG              uint64 = 0x5D4
+const FPGA1_SPI7_SEM_REG                  uint64 = 0x5D8
+const FPGA1_SPI7_SLAVESEL_REG             uint64 = 0x5DC
+const FPGA1_SPI7_EOP_VALUE_REG            uint64 = 0x5E0
+const FPGA1_SPI7_MUXSEL_REG               uint64 = 0x5E4
+const FPGA1_SPI8_RXDATA_REG               uint64 = 0x600
+const FPGA1_SPI8_TXDATA4B_REG             uint64 = 0x604
+const FPGA1_SPI8_TXDATA2B_REG             uint64 = 0x608
+const FPGA1_SPI8_TXDATA1B_REG             uint64 = 0x60C
+const FPGA1_SPI8_STATUS_REG               uint64 = 0x610
+const FPGA1_SPI8_CONTROL_REG              uint64 = 0x614
+const FPGA1_SPI8_SEM_REG                  uint64 = 0x618
+const FPGA1_SPI8_SLAVESEL_REG             uint64 = 0x61C
+const FPGA1_SPI8_EOP_VALUE_REG            uint64 = 0x620
+const FPGA1_SPI8_MUXSEL_REG               uint64 = 0x624
+const FPGA1_SPI9_RXDATA_REG               uint64 = 0x800
+const FPGA1_SPI9_TXDATA4B_REG             uint64 = 0x804
+const FPGA1_SPI9_TXDATA2B_REG             uint64 = 0x808
+const FPGA1_SPI9_TXDATA1B_REG             uint64 = 0x80C
+const FPGA1_SPI9_STATUS_REG               uint64 = 0x810
+const FPGA1_SPI9_CONTROL_REG              uint64 = 0x814
+const FPGA1_SPI9_SEM_REG                  uint64 = 0x818
+const FPGA1_SPI9_SLAVESEL_REG             uint64 = 0x81C
+const FPGA1_SPI9_EOP_VALUE_REG            uint64 = 0x820
+const FPGA1_SPI9_MUXSEL_REG               uint64 = 0x824
+const FPGA1_SPI10_RXDATA_REG              uint64 = 0x840
+const FPGA1_SPI10_TXDATA4B_REG            uint64 = 0x844
+const FPGA1_SPI10_TXDATA2B_REG            uint64 = 0x848
+const FPGA1_SPI10_TXDATA1B_REG            uint64 = 0x84C
+const FPGA1_SPI10_STATUS_REG              uint64 = 0x850
+const FPGA1_SPI10_CONTROL_REG             uint64 = 0x854
+const FPGA1_SPI10_SEM_REG                 uint64 = 0x858
+const FPGA1_SPI10_SLAVESEL_REG            uint64 = 0x85C
+const FPGA1_SPI10_EOP_VALUE_REG           uint64 = 0x860
+const FPGA1_SPI10_MUXSEL_REG              uint64 = 0x864
+const FPGA1_SPI11_RXDATA_REG              uint64 = 0x880
+const FPGA1_SPI11_TXDATA4B_REG            uint64 = 0x884
+const FPGA1_SPI11_TXDATA2B_REG            uint64 = 0x888
+const FPGA1_SPI11_TXDATA1B_REG            uint64 = 0x88C
+const FPGA1_SPI11_STATUS_REG              uint64 = 0x890
+const FPGA1_SPI11_CONTROL_REG             uint64 = 0x894
+const FPGA1_SPI11_SEM_REG                 uint64 = 0x898
+const FPGA1_SPI11_SLAVESEL_REG            uint64 = 0x89C
+const FPGA1_SPI11_EOP_VALUE_REG           uint64 = 0x8A0
+const FPGA1_SPI11_MUXSEL_REG              uint64 = 0x8A4
+const FPGA1_SPI12_RXDATA_REG              uint64 = 0x8C0
+const FPGA1_SPI12_TXDATA4B_REG            uint64 = 0x8C4
+const FPGA1_SPI12_TXDATA2B_REG            uint64 = 0x8C8
+const FPGA1_SPI12_TXDATA1B_REG            uint64 = 0x8CC
+const FPGA1_SPI12_STATUS_REG              uint64 = 0x8D0
+const FPGA1_SPI12_CONTROL_REG             uint64 = 0x8D4
+const FPGA1_SPI12_SEM_REG                 uint64 = 0x8D8
+const FPGA1_SPI12_SLAVESEL_REG            uint64 = 0x8DC
+const FPGA1_SPI12_EOP_VALUE_REG           uint64 = 0x8E0
+const FPGA1_SPI12_MUXSEL_REG              uint64 = 0x8E4
+const FPGA1_SPI13_RXDATA_REG              uint64 = 0x900
+const FPGA1_SPI13_TXDATA4B_REG            uint64 = 0x904
+const FPGA1_SPI13_TXDATA2B_REG            uint64 = 0x908
+const FPGA1_SPI13_TXDATA1B_REG            uint64 = 0x90C
+const FPGA1_SPI13_STATUS_REG              uint64 = 0x910
+const FPGA1_SPI13_CONTROL_REG             uint64 = 0x914
+const FPGA1_SPI13_SEM_REG                 uint64 = 0x918
+const FPGA1_SPI13_SLAVESEL_REG            uint64 = 0x91C
+const FPGA1_SPI13_EOP_VALUE_REG           uint64 = 0x920
+const FPGA1_SPI13_MUXSEL_REG              uint64 = 0x924
+const FPGA1_SPI14_RXDATA_REG              uint64 = 0x940
+const FPGA1_SPI14_TXDATA4B_REG            uint64 = 0x944
+const FPGA1_SPI14_TXDATA2B_REG            uint64 = 0x948
+const FPGA1_SPI14_TXDATA1B_REG            uint64 = 0x94C
+const FPGA1_SPI14_STATUS_REG              uint64 = 0x950
+const FPGA1_SPI14_CONTROL_REG             uint64 = 0x954
+const FPGA1_SPI14_SEM_REG                 uint64 = 0x958
+const FPGA1_SPI14_SLAVESEL_REG            uint64 = 0x95C
+const FPGA1_SPI14_EOP_VALUE_REG           uint64 = 0x960
+const FPGA1_SPI14_MUXSEL_REG              uint64 = 0x964
+const FPGA1_SPI15_RXDATA_REG              uint64 = 0x980
+const FPGA1_SPI15_TXDATA4B_REG            uint64 = 0x984
+const FPGA1_SPI15_TXDATA2B_REG            uint64 = 0x988
+const FPGA1_SPI15_TXDATA1B_REG            uint64 = 0x98C
+const FPGA1_SPI15_STATUS_REG              uint64 = 0x990
+const FPGA1_SPI15_CONTROL_REG             uint64 = 0x994
+const FPGA1_SPI15_SEM_REG                 uint64 = 0x998
+const FPGA1_SPI15_SLAVESEL_REG            uint64 = 0x99C
+const FPGA1_SPI15_EOP_VALUE_REG           uint64 = 0x9A0
+const FPGA1_SPI15_MUXSEL_REG              uint64 = 0x9A4
+const FPGA1_SPI16_RXDATA_REG              uint64 = 0x9C0
+const FPGA1_SPI16_TXDATA4B_REG            uint64 = 0x9C4
+const FPGA1_SPI16_TXDATA2B_REG            uint64 = 0x9C8
+const FPGA1_SPI16_TXDATA1B_REG            uint64 = 0x9CC
+const FPGA1_SPI16_STATUS_REG              uint64 = 0x9D0
+const FPGA1_SPI16_CONTROL_REG             uint64 = 0x9D4
+const FPGA1_SPI16_SEM_REG                 uint64 = 0x9D8
+const FPGA1_SPI16_SLAVESEL_REG            uint64 = 0x9DC
+const FPGA1_SPI16_EOP_VALUE_REG           uint64 = 0x9E0
+const FPGA1_SPI16_MUXSEL_REG              uint64 = 0x9E4
+const FPGA1_I2C_CH0_PRSCL_LO_REG          uint64 = 0xA00
+const FPGA1_I2C_CH0_PRSCL_HI_REG          uint64 = 0xA04
+const FPGA1_I2C_CH0_CTRL_REG              uint64 = 0xA08
+const FPGA1_I2C_CH0_TX_REG                uint64 = 0xA0C
+const FPGA1_I2C_CH0_RX_REG                uint64 = 0xA0C
+const FPGA1_I2C_CH0_CMD_REG               uint64 = 0xA10
+const FPGA1_I2C_CH0_STAT_REG              uint64 = 0xA10
+const FPGA1_I2C_CH0_MUX_SEL_REG           uint64 = 0xA14
+const FPGA1_I2C_CH0_RST_REG               uint64 = 0xA18
+const FPGA1_I2C_CH0_SEM_REG               uint64 = 0xA1C
+const FPGA1_I2C_CH1_PRSCL_LO_REG          uint64 = 0xA40
+const FPGA1_I2C_CH1_PRSCL_HI_REG          uint64 = 0xA44
+const FPGA1_I2C_CH1_CTRL_REG              uint64 = 0xA48
+const FPGA1_I2C_CH1_TX_REG                uint64 = 0xA4C
+const FPGA1_I2C_CH1_RX_REG                uint64 = 0xA4C
+const FPGA1_I2C_CH1_CMD_REG               uint64 = 0xA50
+const FPGA1_I2C_CH1_STAT_REG              uint64 = 0xA50
+const FPGA1_I2C_CH1_MUX_SEL_REG           uint64 = 0xA54
+const FPGA1_I2C_CH1_RST_REG               uint64 = 0xA58
+const FPGA1_I2C_CH1_SEM_REG               uint64 = 0xA5C
+const FPGA1_ELBA0_J2C_CMD_REG             uint64 = 0xB00
+const FPGA1_ELBA0_J2C_STAT_REG            uint64 = 0xB04
+const FPGA1_ELBA0_J2C_ADDR0_REG           uint64 = 0xB08
+const FPGA1_ELBA0_J2C_ADDR1_REG           uint64 = 0xB0C
+const FPGA1_ELBA0_J2C_TXDATA_REG          uint64 = 0xB10
+const FPGA1_ELBA0_J2C_RXDATA_REG          uint64 = 0xB14
+const FPGA1_ELBA0_J2C_SEM_REG             uint64 = 0xB18
+const FPGA1_ELBA0_J2C_MAGIC_REG           uint64 = 0xB1C
+const FPGA1_ELBA1_J2C_CMD_REG             uint64 = 0xB20
+const FPGA1_ELBA1_J2C_STAT_REG            uint64 = 0xB24
+const FPGA1_ELBA1_J2C_ADDR0_REG           uint64 = 0xB28
+const FPGA1_ELBA1_J2C_ADDR1_REG           uint64 = 0xB2C
+const FPGA1_ELBA1_J2C_TXDATA_REG          uint64 = 0xB30
+const FPGA1_ELBA1_J2C_RXDATA_REG          uint64 = 0xB34
+const FPGA1_ELBA1_J2C_SEM_REG             uint64 = 0xB38
+const FPGA1_ELBA1_J2C_MAGIC_REG           uint64 = 0xB3C
+const FPGA1_ELBA2_J2C_CMD_REG             uint64 = 0xB40
+const FPGA1_ELBA2_J2C_STAT_REG            uint64 = 0xB44
+const FPGA1_ELBA2_J2C_ADDR0_REG           uint64 = 0xB48
+const FPGA1_ELBA2_J2C_ADDR1_REG           uint64 = 0xB4C
+const FPGA1_ELBA2_J2C_TXDATA_REG          uint64 = 0xB50
+const FPGA1_ELBA2_J2C_RXDATA_REG          uint64 = 0xB54
+const FPGA1_ELBA2_J2C_SEM_REG             uint64 = 0xB58
+const FPGA1_ELBA2_J2C_MAGIC_REG           uint64 = 0xB5C
+const FPGA1_ELBA3_J2C_CMD_REG             uint64 = 0xB60
+const FPGA1_ELBA3_J2C_STAT_REG            uint64 = 0xB64
+const FPGA1_ELBA3_J2C_ADDR0_REG           uint64 = 0xB68
+const FPGA1_ELBA3_J2C_ADDR1_REG           uint64 = 0xB6C
+const FPGA1_ELBA3_J2C_TXDATA_REG          uint64 = 0xB70
+const FPGA1_ELBA3_J2C_RXDATA_REG          uint64 = 0xB74
+const FPGA1_ELBA3_J2C_SEM_REG             uint64 = 0xB78
+const FPGA1_ELBA3_J2C_MAGIC_REG           uint64 = 0xB7C
+const FPGA1_ELBA4_J2C_CMD_REG             uint64 = 0xB80
+const FPGA1_ELBA4_J2C_STAT_REG            uint64 = 0xB84
+const FPGA1_ELBA4_J2C_ADDR0_REG           uint64 = 0xB88
+const FPGA1_ELBA4_J2C_ADDR1_REG           uint64 = 0xB8C
+const FPGA1_ELBA4_J2C_TXDATA_REG          uint64 = 0xB90
+const FPGA1_ELBA4_J2C_RXDATA_REG          uint64 = 0xB94
+const FPGA1_ELBA4_J2C_SEM_REG             uint64 = 0xB98
+const FPGA1_ELBA4_J2C_MAGIC_REG           uint64 = 0xB9C
+const FPGA1_ELBA5_J2C_CMD_REG             uint64 = 0xBA0
+const FPGA1_ELBA5_J2C_STAT_REG            uint64 = 0xBA4
+const FPGA1_ELBA5_J2C_ADDR0_REG           uint64 = 0xBA8
+const FPGA1_ELBA5_J2C_ADDR1_REG           uint64 = 0xBAC
+const FPGA1_ELBA5_J2C_TXDATA_REG          uint64 = 0xBB0
+const FPGA1_ELBA5_J2C_RXDATA_REG          uint64 = 0xBB4
+const FPGA1_ELBA5_J2C_SEM_REG             uint64 = 0xBB8
+const FPGA1_ELBA5_J2C_MAGIC_REG           uint64 = 0xBBC
+const FPGA1_ELBA6_J2C_CMD_REG             uint64 = 0xBC0
+const FPGA1_ELBA6_J2C_STAT_REG            uint64 = 0xBC4
+const FPGA1_ELBA6_J2C_ADDR0_REG           uint64 = 0xBC8
+const FPGA1_ELBA6_J2C_ADDR1_REG           uint64 = 0xBCC
+const FPGA1_ELBA6_J2C_TXDATA_REG          uint64 = 0xBD0
+const FPGA1_ELBA6_J2C_RXDATA_REG          uint64 = 0xBD4
+const FPGA1_ELBA6_J2C_SEM_REG             uint64 = 0xBD8
+const FPGA1_ELBA6_J2C_MAGIC_REG           uint64 = 0xBDC
+const FPGA1_ELBA7_J2C_CMD_REG             uint64 = 0xBE0
+const FPGA1_ELBA7_J2C_STAT_REG            uint64 = 0xBE4
+const FPGA1_ELBA7_J2C_ADDR0_REG           uint64 = 0xBE8
+const FPGA1_ELBA7_J2C_ADDR1_REG           uint64 = 0xBEC
+const FPGA1_ELBA7_J2C_TXDATA_REG          uint64 = 0xBF0
+const FPGA1_ELBA7_J2C_RXDATA_REG          uint64 = 0xBF4
+const FPGA1_ELBA7_J2C_SEM_REG             uint64 = 0xBF8
+const FPGA1_ELBA7_J2C_MAGIC_REG           uint64 = 0xBFC
+const FPGA1_RTC_CLOCK_REG                 uint64 = 0xC00
+const FPGA1_RTC_TIMER_REG                 uint64 = 0xC04
+const FPGA1_RTC_STPWTCH_REG               uint64 = 0xC08
+const FPGA1_RTC_ALARM_REG                 uint64 = 0xC0C
+const FPGA1_RTC_CKSPEED_REG               uint64 = 0xC10
+const FPGA1_RTC_HACKTIME_REG              uint64 = 0xC14
+const FPGA1_RTC_HACKCNTHI_REG             uint64 = 0xC18
+const FPGA1_RTC_HACKCNTLO_REG             uint64 = 0xC1C
+const FPGA1_RTC_DATE_REG                  uint64 = 0xC20
+const FPGA1_ELBA0_UART_RXDATA_REG         uint64 = 0x1000
+const FPGA1_ELBA0_UART_TXDATA_REG         uint64 = 0x1004
+const FPGA1_ELBA0_UART_STAT_REG           uint64 = 0x1008
+const FPGA1_ELBA0_UART_CTRL_REG           uint64 = 0x100C
+const FPGA1_ELBA1_UART_RXDATA_REG         uint64 = 0x1100
+const FPGA1_ELBA1_UART_TXDATA_REG         uint64 = 0x1104
+const FPGA1_ELBA1_UART_STAT_REG           uint64 = 0x1108
+const FPGA1_ELBA1_UART_CTRL_REG           uint64 = 0x110C
+const FPGA1_ELBA2_UART_RXDATA_REG         uint64 = 0x1200
+const FPGA1_ELBA2_UART_TXDATA_REG         uint64 = 0x1204
+const FPGA1_ELBA2_UART_STAT_REG           uint64 = 0x1208
+const FPGA1_ELBA2_UART_CTRL_REG           uint64 = 0x120C
+const FPGA1_ELBA3_UART_RXDATA_REG         uint64 = 0x1300
+const FPGA1_ELBA3_UART_TXDATA_REG         uint64 = 0x1304
+const FPGA1_ELBA3_UART_STAT_REG           uint64 = 0x1308
+const FPGA1_ELBA3_UART_CTRL_REG           uint64 = 0x130C
+const FPGA1_ELBA4_UART_RXDATA_REG         uint64 = 0x1400
+const FPGA1_ELBA4_UART_TXDATA_REG         uint64 = 0x1404
+const FPGA1_ELBA4_UART_STAT_REG           uint64 = 0x1408
+const FPGA1_ELBA4_UART_CTRL_REG           uint64 = 0x140C
+const FPGA1_ELBA5_UART_RXDATA_REG         uint64 = 0x1500
+const FPGA1_ELBA5_UART_TXDATA_REG         uint64 = 0x1504
+const FPGA1_ELBA5_UART_STAT_REG           uint64 = 0x1508
+const FPGA1_ELBA5_UART_CTRL_REG           uint64 = 0x150C
+const FPGA1_ELBA6_UART_RXDATA_REG         uint64 = 0x1600
+const FPGA1_ELBA6_UART_TXDATA_REG         uint64 = 0x1604
+const FPGA1_ELBA6_UART_STAT_REG           uint64 = 0x1608
+const FPGA1_ELBA6_UART_CTRL_REG           uint64 = 0x160C
+const FPGA1_ELBA7_UART_RXDATA_REG         uint64 = 0x1700
+const FPGA1_ELBA7_UART_TXDATA_REG         uint64 = 0x1704
+const FPGA1_ELBA7_UART_STAT_REG           uint64 = 0x1708
+const FPGA1_ELBA7_UART_CTRL_REG           uint64 = 0x170C
+
+var LIPARI_FPGA1_REGISTERS = []LIPARI_FPGA_REGISTERS {
+    LIPARI_FPGA_REGISTERS{"FPGA1_FPGA_REV_ID_REG            ",             FPGA1_FPGA_REV_ID_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FPGA_DATECODE_REG          ",             FPGA1_FPGA_DATECODE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FPGA_TIMECODE_REG          ",             FPGA1_FPGA_TIMECODE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BOARD_REV_ID_REG           ",             FPGA1_BOARD_REV_ID_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_0_REG             ",             FPGA1_FUNC_CAP_0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_1_REG             ",             FPGA1_FUNC_CAP_1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_2_REG             ",             FPGA1_FUNC_CAP_2_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_3_REG             ",             FPGA1_FUNC_CAP_3_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_4_REG             ",             FPGA1_FUNC_CAP_4_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_5_REG             ",             FPGA1_FUNC_CAP_5_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_6_REG             ",             FPGA1_FUNC_CAP_6_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FUNC_CAP_7_REG             ",             FPGA1_FUNC_CAP_7_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SCRATCH_0_REG              ",             FPGA1_SCRATCH_0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SCRATCH_1_REG              ",             FPGA1_SCRATCH_1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SCRATCH_2_REG              ",             FPGA1_SCRATCH_2_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SCRATCH_3_REG              ",             FPGA1_SCRATCH_3_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_LED_DEBUG_0_REG            ",             FPGA1_LED_DEBUG_0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_LED_DEBUG_1_REG            ",             FPGA1_LED_DEBUG_1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_LED_DEBUG_2_REG            ",             FPGA1_LED_DEBUG_2_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_LED_DEBUG_3_REG            ",             FPGA1_LED_DEBUG_3_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_DEBUG_0_REG                ",             FPGA1_DEBUG_0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_DEBUG_1_REG                ",             FPGA1_DEBUG_1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_DEBUG_2_REG                ",             FPGA1_DEBUG_2_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_DEBUG_3_REG                ",             FPGA1_DEBUG_3_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT0_EN_REG                ",             FPGA1_INT0_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT1_EN_REG                ",             FPGA1_INT1_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT2_EN_REG                ",             FPGA1_INT2_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT3_EN_REG                ",             FPGA1_INT3_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT4_EN_REG                ",             FPGA1_INT4_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT5_EN_REG                ",             FPGA1_INT5_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT6_EN_REG                ",             FPGA1_INT6_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT7_EN_REG                ",             FPGA1_INT7_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT8_EN_REG                ",             FPGA1_INT8_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT9_EN_REG                ",             FPGA1_INT9_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT10_EN_REG               ",             FPGA1_INT10_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT11_EN_REG               ",             FPGA1_INT11_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT12_EN_REG               ",             FPGA1_INT12_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT13_EN_REG               ",             FPGA1_INT13_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT14_EN_REG               ",             FPGA1_INT14_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT15_EN_REG               ",             FPGA1_INT15_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT0_PEND_REG              ",             FPGA1_INT0_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT1_PEND_REG              ",             FPGA1_INT1_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT2_PEND_REG              ",             FPGA1_INT2_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT3_PEND_REG              ",             FPGA1_INT3_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT4_PEND_REG              ",             FPGA1_INT4_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT5_PEND_REG              ",             FPGA1_INT5_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT6_PEND_REG              ",             FPGA1_INT6_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT7_PEND_REG              ",             FPGA1_INT7_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT8_PEND_REG              ",             FPGA1_INT8_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT9_PEND_REG              ",             FPGA1_INT9_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT10_PEND_REG             ",             FPGA1_INT10_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT11_PEND_REG             ",             FPGA1_INT11_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT12_PEND_REG             ",             FPGA1_INT12_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT13_PEND_REG             ",             FPGA1_INT13_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT14_PEND_REG             ",             FPGA1_INT14_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT15_PEND_REG             ",             FPGA1_INT15_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT0_EN_REG            ",             FPGA1_BMC_INT0_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT1_EN_REG            ",             FPGA1_BMC_INT1_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT2_EN_REG            ",             FPGA1_BMC_INT2_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT3_EN_REG            ",             FPGA1_BMC_INT3_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT4_EN_REG            ",             FPGA1_BMC_INT4_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT5_EN_REG            ",             FPGA1_BMC_INT5_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT6_EN_REG            ",             FPGA1_BMC_INT6_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT7_EN_REG            ",             FPGA1_BMC_INT7_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT8_EN_REG            ",             FPGA1_BMC_INT8_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT9_EN_REG            ",             FPGA1_BMC_INT9_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT10_EN_REG           ",             FPGA1_BMC_INT10_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT11_EN_REG           ",             FPGA1_BMC_INT11_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT12_EN_REG           ",             FPGA1_BMC_INT12_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT13_EN_REG           ",             FPGA1_BMC_INT13_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT14_EN_REG           ",             FPGA1_BMC_INT14_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT15_EN_REG           ",             FPGA1_BMC_INT15_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT0_PEND_REG          ",             FPGA1_BMC_INT0_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT1_PEND_REG          ",             FPGA1_BMC_INT1_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT2_PEND_REG          ",             FPGA1_BMC_INT2_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT3_PEND_REG          ",             FPGA1_BMC_INT3_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT4_PEND_REG          ",             FPGA1_BMC_INT4_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT5_PEND_REG          ",             FPGA1_BMC_INT5_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT6_PEND_REG          ",             FPGA1_BMC_INT6_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT7_PEND_REG          ",             FPGA1_BMC_INT7_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT8_PEND_REG          ",             FPGA1_BMC_INT8_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT9_PEND_REG          ",             FPGA1_BMC_INT9_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT10_PEND_REG         ",             FPGA1_BMC_INT10_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT11_PEND_REG         ",             FPGA1_BMC_INT11_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT12_PEND_REG         ",             FPGA1_BMC_INT12_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT13_PEND_REG         ",             FPGA1_BMC_INT13_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT14_PEND_REG         ",             FPGA1_BMC_INT14_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT15_PEND_REG         ",             FPGA1_BMC_INT15_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_0_REG     ",             FPGA1_ELBA_RESET_CAUSE_0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_1_REG     ",             FPGA1_ELBA_RESET_CAUSE_1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_2_REG     ",             FPGA1_ELBA_RESET_CAUSE_2_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_3_REG     ",             FPGA1_ELBA_RESET_CAUSE_3_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_4_REG     ",             FPGA1_ELBA_RESET_CAUSE_4_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_5_REG     ",             FPGA1_ELBA_RESET_CAUSE_5_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_6_REG     ",             FPGA1_ELBA_RESET_CAUSE_6_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA_RESET_CAUSE_7_REG     ",             FPGA1_ELBA_RESET_CAUSE_7_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_REG              ",             FPGA1_MBOX_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_PLRTY_REG        ",             FPGA1_MBOX_STAT_PLRTY_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_EDG_LVL_REG      ",             FPGA1_MBOX_STAT_EDG_LVL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_INT_EN_REG       ",             FPGA1_MBOX_STAT_INT_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_INT_STAT_REG     ",             FPGA1_MBOX_STAT_INT_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_STAT_INT_CLR_REG      ",             FPGA1_MBOX_STAT_INT_CLR_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_0_DATA_REG            ",             FPGA1_MBOX_0_DATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_1_DATA_REG            ",             FPGA1_MBOX_1_DATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_2_DATA_REG            ",             FPGA1_MBOX_2_DATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MBOX_3_DATA_REG            ",             FPGA1_MBOX_3_DATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SOFT_RESET_REG             ",             FPGA1_SOFT_RESET_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MISC_CTRL_REG              ",             FPGA1_MISC_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_MISC_STAT_REG              ",             FPGA1_MISC_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_FLSH_CTRL_REG              ",             FPGA1_FLSH_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_CTRL_REG             ",             FPGA1_ELBA0_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_STAT_REG             ",             FPGA1_ELBA0_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_WDOG_CTRL_REG        ",             FPGA1_ELBA0_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_WDOG_STAT_REG        ",             FPGA1_ELBA0_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_CTRL_REG             ",             FPGA1_ELBA1_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_STAT_REG             ",             FPGA1_ELBA1_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_WDOG_CTRL_REG        ",             FPGA1_ELBA1_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_WDOG_STAT_REG        ",             FPGA1_ELBA1_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_CTRL_REG             ",             FPGA1_ELBA2_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_STAT_REG             ",             FPGA1_ELBA2_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_WDOG_CTRL_REG        ",             FPGA1_ELBA2_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_WDOG_STAT_REG        ",             FPGA1_ELBA2_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_CTRL_REG             ",             FPGA1_ELBA3_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_STAT_REG             ",             FPGA1_ELBA3_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_WDOG_CTRL_REG        ",             FPGA1_ELBA3_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_WDOG_STAT_REG        ",             FPGA1_ELBA3_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_CTRL_REG             ",             FPGA1_ELBA4_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_STAT_REG             ",             FPGA1_ELBA4_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_WDOG_CTRL_REG        ",             FPGA1_ELBA4_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_WDOG_STAT_REG        ",             FPGA1_ELBA4_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_CTRL_REG             ",             FPGA1_ELBA5_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_STAT_REG             ",             FPGA1_ELBA5_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_WDOG_CTRL_REG        ",             FPGA1_ELBA5_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_WDOG_STAT_REG        ",             FPGA1_ELBA5_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_CTRL_REG             ",             FPGA1_ELBA6_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_STAT_REG             ",             FPGA1_ELBA6_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_WDOG_CTRL_REG        ",             FPGA1_ELBA6_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_WDOG_STAT_REG        ",             FPGA1_ELBA6_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_CTRL_REG             ",             FPGA1_ELBA7_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_STAT_REG             ",             FPGA1_ELBA7_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_WDOG_CTRL_REG        ",             FPGA1_ELBA7_WDOG_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_WDOG_STAT_REG        ",             FPGA1_ELBA7_WDOG_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_RXDATA_REG            ",             FPGA1_SPI0_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_TXDATA4B_REG          ",             FPGA1_SPI0_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_TXDATA2B_REG          ",             FPGA1_SPI0_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_TXDATA1B_REG          ",             FPGA1_SPI0_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_STATUS_REG            ",             FPGA1_SPI0_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_CONTROL_REG           ",             FPGA1_SPI0_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_SEM_REG               ",             FPGA1_SPI0_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_SLAVESEL_REG          ",             FPGA1_SPI0_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_EOP_VALUE_REG         ",             FPGA1_SPI0_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI0_MUXSEL_REG            ",             FPGA1_SPI0_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_RXDATA_REG            ",             FPGA1_SPI1_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_TXDATA4B_REG          ",             FPGA1_SPI1_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_TXDATA2B_REG          ",             FPGA1_SPI1_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_TXDATA1B_REG          ",             FPGA1_SPI1_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_STATUS_REG            ",             FPGA1_SPI1_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_CONTROL_REG           ",             FPGA1_SPI1_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_SEM_REG               ",             FPGA1_SPI1_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_SLAVESEL_REG          ",             FPGA1_SPI1_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_EOP_VALUE_REG         ",             FPGA1_SPI1_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI1_MUXSEL_REG            ",             FPGA1_SPI1_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_RXDATA_REG            ",             FPGA1_SPI2_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_TXDATA4B_REG          ",             FPGA1_SPI2_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_TXDATA2B_REG          ",             FPGA1_SPI2_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_TXDATA1B_REG          ",             FPGA1_SPI2_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_STATUS_REG            ",             FPGA1_SPI2_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_CONTROL_REG           ",             FPGA1_SPI2_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_SEM_REG               ",             FPGA1_SPI2_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_SLAVESEL_REG          ",             FPGA1_SPI2_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_EOP_VALUE_REG         ",             FPGA1_SPI2_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI2_MUXSEL_REG            ",             FPGA1_SPI2_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_RXDATA_REG            ",             FPGA1_SPI3_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_TXDATA4B_REG          ",             FPGA1_SPI3_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_TXDATA2B_REG          ",             FPGA1_SPI3_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_TXDATA1B_REG          ",             FPGA1_SPI3_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_STATUS_REG            ",             FPGA1_SPI3_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_CONTROL_REG           ",             FPGA1_SPI3_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_SEM_REG               ",             FPGA1_SPI3_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_SLAVESEL_REG          ",             FPGA1_SPI3_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_EOP_VALUE_REG         ",             FPGA1_SPI3_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI3_MUXSEL_REG            ",             FPGA1_SPI3_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_RXDATA_REG            ",             FPGA1_SPI4_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_TXDATA4B_REG          ",             FPGA1_SPI4_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_TXDATA2B_REG          ",             FPGA1_SPI4_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_TXDATA1B_REG          ",             FPGA1_SPI4_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_STATUS_REG            ",             FPGA1_SPI4_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_CONTROL_REG           ",             FPGA1_SPI4_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_SEM_REG               ",             FPGA1_SPI4_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_SLAVESEL_REG          ",             FPGA1_SPI4_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_EOP_VALUE_REG         ",             FPGA1_SPI4_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI4_MUXSEL_REG            ",             FPGA1_SPI4_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_RXDATA_REG            ",             FPGA1_SPI5_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_TXDATA4B_REG          ",             FPGA1_SPI5_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_TXDATA2B_REG          ",             FPGA1_SPI5_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_TXDATA1B_REG          ",             FPGA1_SPI5_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_STATUS_REG            ",             FPGA1_SPI5_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_CONTROL_REG           ",             FPGA1_SPI5_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_SEM_REG               ",             FPGA1_SPI5_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_SLAVESEL_REG          ",             FPGA1_SPI5_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_EOP_VALUE_REG         ",             FPGA1_SPI5_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI5_MUXSEL_REG            ",             FPGA1_SPI5_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_RXDATA_REG            ",             FPGA1_SPI6_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_TXDATA4B_REG          ",             FPGA1_SPI6_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_TXDATA2B_REG          ",             FPGA1_SPI6_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_TXDATA1B_REG          ",             FPGA1_SPI6_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_STATUS_REG            ",             FPGA1_SPI6_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_CONTROL_REG           ",             FPGA1_SPI6_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_SEM_REG               ",             FPGA1_SPI6_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_SLAVESEL_REG          ",             FPGA1_SPI6_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_EOP_VALUE_REG         ",             FPGA1_SPI6_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI6_MUXSEL_REG            ",             FPGA1_SPI6_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_RXDATA_REG            ",             FPGA1_SPI7_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_TXDATA4B_REG          ",             FPGA1_SPI7_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_TXDATA2B_REG          ",             FPGA1_SPI7_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_TXDATA1B_REG          ",             FPGA1_SPI7_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_STATUS_REG            ",             FPGA1_SPI7_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_CONTROL_REG           ",             FPGA1_SPI7_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_SEM_REG               ",             FPGA1_SPI7_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_SLAVESEL_REG          ",             FPGA1_SPI7_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_EOP_VALUE_REG         ",             FPGA1_SPI7_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI7_MUXSEL_REG            ",             FPGA1_SPI7_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_RXDATA_REG            ",             FPGA1_SPI8_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_TXDATA4B_REG          ",             FPGA1_SPI8_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_TXDATA2B_REG          ",             FPGA1_SPI8_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_TXDATA1B_REG          ",             FPGA1_SPI8_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_STATUS_REG            ",             FPGA1_SPI8_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_CONTROL_REG           ",             FPGA1_SPI8_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_SEM_REG               ",             FPGA1_SPI8_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_SLAVESEL_REG          ",             FPGA1_SPI8_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_EOP_VALUE_REG         ",             FPGA1_SPI8_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI8_MUXSEL_REG            ",             FPGA1_SPI8_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_RXDATA_REG            ",             FPGA1_SPI9_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_TXDATA4B_REG          ",             FPGA1_SPI9_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_TXDATA2B_REG          ",             FPGA1_SPI9_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_TXDATA1B_REG          ",             FPGA1_SPI9_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_STATUS_REG            ",             FPGA1_SPI9_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_CONTROL_REG           ",             FPGA1_SPI9_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_SEM_REG               ",             FPGA1_SPI9_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_SLAVESEL_REG          ",             FPGA1_SPI9_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_EOP_VALUE_REG         ",             FPGA1_SPI9_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI9_MUXSEL_REG            ",             FPGA1_SPI9_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_RXDATA_REG           ",             FPGA1_SPI10_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_TXDATA4B_REG         ",             FPGA1_SPI10_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_TXDATA2B_REG         ",             FPGA1_SPI10_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_TXDATA1B_REG         ",             FPGA1_SPI10_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_STATUS_REG           ",             FPGA1_SPI10_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_CONTROL_REG          ",             FPGA1_SPI10_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_SEM_REG              ",             FPGA1_SPI10_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_SLAVESEL_REG         ",             FPGA1_SPI10_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_EOP_VALUE_REG        ",             FPGA1_SPI10_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI10_MUXSEL_REG           ",             FPGA1_SPI10_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_RXDATA_REG           ",             FPGA1_SPI11_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_TXDATA4B_REG         ",             FPGA1_SPI11_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_TXDATA2B_REG         ",             FPGA1_SPI11_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_TXDATA1B_REG         ",             FPGA1_SPI11_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_STATUS_REG           ",             FPGA1_SPI11_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_CONTROL_REG          ",             FPGA1_SPI11_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_SEM_REG              ",             FPGA1_SPI11_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_SLAVESEL_REG         ",             FPGA1_SPI11_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI11_EOP_VALUE_REG        ",             FPGA1_SPI11_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_MUXSEL_REG           ",             FPGA1_SPI12_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_RXDATA_REG           ",             FPGA1_SPI12_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_TXDATA4B_REG         ",             FPGA1_SPI12_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_TXDATA2B_REG         ",             FPGA1_SPI12_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_TXDATA1B_REG         ",             FPGA1_SPI12_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_STATUS_REG           ",             FPGA1_SPI12_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_CONTROL_REG          ",             FPGA1_SPI12_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_SEM_REG              ",             FPGA1_SPI12_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_SLAVESEL_REG         ",             FPGA1_SPI12_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_EOP_VALUE_REG        ",             FPGA1_SPI12_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI12_MUXSEL_REG           ",             FPGA1_SPI12_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_RXDATA_REG           ",             FPGA1_SPI13_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_TXDATA4B_REG         ",             FPGA1_SPI13_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_TXDATA2B_REG         ",             FPGA1_SPI13_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_TXDATA1B_REG         ",             FPGA1_SPI13_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_STATUS_REG           ",             FPGA1_SPI13_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_CONTROL_REG          ",             FPGA1_SPI13_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_SEM_REG              ",             FPGA1_SPI13_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_SLAVESEL_REG         ",             FPGA1_SPI13_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_EOP_VALUE_REG        ",             FPGA1_SPI13_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI13_MUXSEL_REG           ",             FPGA1_SPI13_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_RXDATA_REG           ",             FPGA1_SPI14_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_TXDATA4B_REG         ",             FPGA1_SPI14_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_TXDATA2B_REG         ",             FPGA1_SPI14_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_TXDATA1B_REG         ",             FPGA1_SPI14_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_STATUS_REG           ",             FPGA1_SPI14_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_CONTROL_REG          ",             FPGA1_SPI14_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_SEM_REG              ",             FPGA1_SPI14_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_SLAVESEL_REG         ",             FPGA1_SPI14_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_EOP_VALUE_REG        ",             FPGA1_SPI14_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI14_MUXSEL_REG           ",             FPGA1_SPI14_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_RXDATA_REG           ",             FPGA1_SPI15_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_TXDATA4B_REG         ",             FPGA1_SPI15_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_TXDATA2B_REG         ",             FPGA1_SPI15_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_TXDATA1B_REG         ",             FPGA1_SPI15_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_STATUS_REG           ",             FPGA1_SPI15_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_CONTROL_REG          ",             FPGA1_SPI15_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_SEM_REG              ",             FPGA1_SPI15_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_SLAVESEL_REG         ",             FPGA1_SPI15_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_EOP_VALUE_REG        ",             FPGA1_SPI15_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI15_MUXSEL_REG           ",             FPGA1_SPI15_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_RXDATA_REG           ",             FPGA1_SPI16_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_TXDATA4B_REG         ",             FPGA1_SPI16_TXDATA4B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_TXDATA2B_REG         ",             FPGA1_SPI16_TXDATA2B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_TXDATA1B_REG         ",             FPGA1_SPI16_TXDATA1B_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_STATUS_REG           ",             FPGA1_SPI16_STATUS_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_CONTROL_REG          ",             FPGA1_SPI16_CONTROL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_SEM_REG              ",             FPGA1_SPI16_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_SLAVESEL_REG         ",             FPGA1_SPI16_SLAVESEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_EOP_VALUE_REG        ",             FPGA1_SPI16_EOP_VALUE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_SPI16_MUXSEL_REG           ",             FPGA1_SPI16_MUXSEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_PRSCL_LO_REG       ",             FPGA1_I2C_CH0_PRSCL_LO_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_PRSCL_HI_REG       ",             FPGA1_I2C_CH0_PRSCL_HI_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_CTRL_REG           ",             FPGA1_I2C_CH0_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_TX_REG             ",             FPGA1_I2C_CH0_TX_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_RX_REG             ",             FPGA1_I2C_CH0_RX_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_CMD_REG            ",             FPGA1_I2C_CH0_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_STAT_REG           ",             FPGA1_I2C_CH0_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_MUX_SEL_REG        ",             FPGA1_I2C_CH0_MUX_SEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_RST_REG            ",             FPGA1_I2C_CH0_RST_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH0_SEM_REG            ",             FPGA1_I2C_CH0_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_PRSCL_LO_REG       ",             FPGA1_I2C_CH1_PRSCL_LO_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_PRSCL_HI_REG       ",             FPGA1_I2C_CH1_PRSCL_HI_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_CTRL_REG           ",             FPGA1_I2C_CH1_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_TX_REG             ",             FPGA1_I2C_CH1_TX_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_RX_REG             ",             FPGA1_I2C_CH1_RX_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_CMD_REG            ",             FPGA1_I2C_CH1_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_STAT_REG           ",             FPGA1_I2C_CH1_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_MUX_SEL_REG        ",             FPGA1_I2C_CH1_MUX_SEL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_RST_REG            ",             FPGA1_I2C_CH1_RST_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_I2C_CH1_SEM_REG            ",             FPGA1_I2C_CH1_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_CMD_REG          ",             FPGA1_ELBA0_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_STAT_REG         ",             FPGA1_ELBA0_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_ADDR0_REG        ",             FPGA1_ELBA0_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_ADDR1_REG        ",             FPGA1_ELBA0_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_TXDATA_REG       ",             FPGA1_ELBA0_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_RXDATA_REG       ",             FPGA1_ELBA0_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_SEM_REG          ",             FPGA1_ELBA0_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_J2C_MAGIC_REG        ",             FPGA1_ELBA0_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_CMD_REG          ",             FPGA1_ELBA1_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_STAT_REG         ",             FPGA1_ELBA1_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_ADDR0_REG        ",             FPGA1_ELBA1_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_ADDR1_REG        ",             FPGA1_ELBA1_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_TXDATA_REG       ",             FPGA1_ELBA1_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_RXDATA_REG       ",             FPGA1_ELBA1_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_SEM_REG          ",             FPGA1_ELBA1_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_J2C_MAGIC_REG        ",             FPGA1_ELBA1_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_CMD_REG          ",             FPGA1_ELBA2_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_STAT_REG         ",             FPGA1_ELBA2_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_ADDR0_REG        ",             FPGA1_ELBA2_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_ADDR1_REG        ",             FPGA1_ELBA2_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_TXDATA_REG       ",             FPGA1_ELBA2_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_RXDATA_REG       ",             FPGA1_ELBA2_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_SEM_REG          ",             FPGA1_ELBA2_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_J2C_MAGIC_REG        ",             FPGA1_ELBA2_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_CMD_REG          ",             FPGA1_ELBA3_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_STAT_REG         ",             FPGA1_ELBA3_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_ADDR0_REG        ",             FPGA1_ELBA3_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_ADDR1_REG        ",             FPGA1_ELBA3_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_TXDATA_REG       ",             FPGA1_ELBA3_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_RXDATA_REG       ",             FPGA1_ELBA3_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_SEM_REG          ",             FPGA1_ELBA3_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_J2C_MAGIC_REG        ",             FPGA1_ELBA3_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_CMD_REG          ",             FPGA1_ELBA4_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_STAT_REG         ",             FPGA1_ELBA4_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_ADDR0_REG        ",             FPGA1_ELBA4_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_ADDR1_REG        ",             FPGA1_ELBA4_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_TXDATA_REG       ",             FPGA1_ELBA4_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_RXDATA_REG       ",             FPGA1_ELBA4_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_SEM_REG          ",             FPGA1_ELBA4_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_J2C_MAGIC_REG        ",             FPGA1_ELBA4_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_CMD_REG          ",             FPGA1_ELBA5_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_STAT_REG         ",             FPGA1_ELBA5_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_ADDR0_REG        ",             FPGA1_ELBA5_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_ADDR1_REG        ",             FPGA1_ELBA5_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_TXDATA_REG       ",             FPGA1_ELBA5_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_RXDATA_REG       ",             FPGA1_ELBA5_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_SEM_REG          ",             FPGA1_ELBA5_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_J2C_MAGIC_REG        ",             FPGA1_ELBA5_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_CMD_REG          ",             FPGA1_ELBA6_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_STAT_REG         ",             FPGA1_ELBA6_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_ADDR0_REG        ",             FPGA1_ELBA6_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_ADDR1_REG        ",             FPGA1_ELBA6_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_TXDATA_REG       ",             FPGA1_ELBA6_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_RXDATA_REG       ",             FPGA1_ELBA6_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_SEM_REG          ",             FPGA1_ELBA6_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_J2C_MAGIC_REG        ",             FPGA1_ELBA6_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_CMD_REG          ",             FPGA1_ELBA7_J2C_CMD_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_STAT_REG         ",             FPGA1_ELBA7_J2C_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_ADDR0_REG        ",             FPGA1_ELBA7_J2C_ADDR0_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_ADDR1_REG        ",             FPGA1_ELBA7_J2C_ADDR1_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_TXDATA_REG       ",             FPGA1_ELBA7_J2C_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_RXDATA_REG       ",             FPGA1_ELBA7_J2C_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_SEM_REG          ",             FPGA1_ELBA7_J2C_SEM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_J2C_MAGIC_REG        ",             FPGA1_ELBA7_J2C_MAGIC_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_CLOCK_REG              ",             FPGA1_RTC_CLOCK_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_TIMER_REG              ",             FPGA1_RTC_TIMER_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_STPWTCH_REG            ",             FPGA1_RTC_STPWTCH_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_ALARM_REG              ",             FPGA1_RTC_ALARM_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_CKSPEED_REG            ",             FPGA1_RTC_CKSPEED_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_HACKTIME_REG           ",             FPGA1_RTC_HACKTIME_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_HACKCNTHI_REG          ",             FPGA1_RTC_HACKCNTHI_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_HACKCNTLO_REG          ",             FPGA1_RTC_HACKCNTLO_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_RTC_DATE_REG               ",             FPGA1_RTC_DATE_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_UART_RXDATA_REG      ",             FPGA1_ELBA0_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_UART_TXDATA_REG      ",             FPGA1_ELBA0_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_UART_STAT_REG        ",             FPGA1_ELBA0_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA0_UART_CTRL_REG        ",             FPGA1_ELBA0_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_UART_RXDATA_REG      ",             FPGA1_ELBA1_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_UART_TXDATA_REG      ",             FPGA1_ELBA1_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_UART_STAT_REG        ",             FPGA1_ELBA1_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA1_UART_CTRL_REG        ",             FPGA1_ELBA1_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_UART_RXDATA_REG      ",             FPGA1_ELBA2_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_UART_TXDATA_REG      ",             FPGA1_ELBA2_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_UART_STAT_REG        ",             FPGA1_ELBA2_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA2_UART_CTRL_REG        ",             FPGA1_ELBA2_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_UART_RXDATA_REG      ",             FPGA1_ELBA3_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_UART_TXDATA_REG      ",             FPGA1_ELBA3_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_UART_STAT_REG        ",             FPGA1_ELBA3_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA3_UART_CTRL_REG        ",             FPGA1_ELBA3_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_UART_RXDATA_REG      ",             FPGA1_ELBA4_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_UART_TXDATA_REG      ",             FPGA1_ELBA4_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_UART_STAT_REG        ",             FPGA1_ELBA4_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA4_UART_CTRL_REG        ",             FPGA1_ELBA4_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_UART_RXDATA_REG      ",             FPGA1_ELBA5_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_UART_TXDATA_REG      ",             FPGA1_ELBA5_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_UART_STAT_REG        ",             FPGA1_ELBA5_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA5_UART_CTRL_REG        ",             FPGA1_ELBA5_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_UART_RXDATA_REG      ",             FPGA1_ELBA6_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_UART_TXDATA_REG      ",             FPGA1_ELBA6_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_UART_STAT_REG        ",             FPGA1_ELBA6_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA6_UART_CTRL_REG        ",             FPGA1_ELBA6_UART_CTRL_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_UART_RXDATA_REG      ",             FPGA1_ELBA7_UART_RXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_UART_TXDATA_REG      ",             FPGA1_ELBA7_UART_TXDATA_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_UART_STAT_REG        ",             FPGA1_ELBA7_UART_STAT_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_ELBA7_UART_CTRL_REG        ",             FPGA1_ELBA7_UART_CTRL_REG},
+}
+
+/*
+
 const FPGA1_FPGA_REV_ID_REG            uint64 = 0x0
 const FPGA1_FPGA_DATECODE_REG          uint64 = 0x4
 const FPGA1_FPGA_TIMECODE_REG          uint64 = 0x8
@@ -37,14 +917,31 @@ const FPGA1_INT4_EN_REG                uint64 = 0x70
 const FPGA1_INT5_EN_REG                uint64 = 0x74
 const FPGA1_INT6_EN_REG                uint64 = 0x78
 const FPGA1_INT7_EN_REG                uint64 = 0x7C
-const FPGA1_INT0_PEND_REG              uint64 = 0x80
-const FPGA1_INT1_PEND_REG              uint64 = 0x84
-const FPGA1_INT2_PEND_REG              uint64 = 0x88
-const FPGA1_INT3_PEND_REG              uint64 = 0x8C
-const FPGA1_INT4_PEND_REG              uint64 = 0x90
-const FPGA1_INT5_PEND_REG              uint64 = 0x94
-const FPGA1_INT6_PEND_REG              uint64 = 0x98
-const FPGA1_INT7_PEND_REG              uint64 = 0x9C
+const FPGA1_INT8_EN_REG                uint64 = 0x80
+const FPGA1_INT9_EN_REG                uint64 = 0x84
+const FPGA1_INT10_EN_REG               uint64 = 0x88
+const FPGA1_INT11_EN_REG               uint64 = 0x8C
+const FPGA1_INT12_EN_REG               uint64 = 0x90
+const FPGA1_INT13_EN_REG               uint64 = 0x94
+const FPGA1_INT14_EN_REG               uint64 = 0x98
+const FPGA1_INT15_EN_REG               uint64 = 0x9C
+const FPGA1_INT0_PEND_REG              uint64 = 0xA0
+const FPGA1_INT1_PEND_REG              uint64 = 0xA4
+const FPGA1_INT2_PEND_REG              uint64 = 0xA8
+const FPGA1_INT3_PEND_REG              uint64 = 0xAC
+const FPGA1_INT4_PEND_REG              uint64 = 0xB0
+const FPGA1_INT5_PEND_REG              uint64 = 0xB4
+const FPGA1_INT6_PEND_REG              uint64 = 0xB8
+const FPGA1_INT7_PEND_REG              uint64 = 0xBC
+const FPGA1_INT8_PEND_REG              uint64 = 0xC0
+const FPGA1_INT9_PEND_REG              uint64 = 0xC4
+const FPGA1_INT10_PEND_REG             uint64 = 0xC8
+const FPGA1_INT11_PEND_REG             uint64 = 0xCC
+const FPGA1_INT12_PEND_REG             uint64 = 0xD0
+const FPGA1_INT13_PEND_REG             uint64 = 0xD4
+const FPGA1_INT14_PEND_REG             uint64 = 0xD8
+const FPGA1_INT15_PEND_REG             uint64 = 0xDC
+
 const FPGA1_BMC_INT0_EN_REG            uint64 = 0xA0
 const FPGA1_BMC_INT1_EN_REG            uint64 = 0xA4
 const FPGA1_BMC_INT2_EN_REG            uint64 = 0xA8
@@ -430,6 +1327,14 @@ var LIPARI_FPGA1_REGISTERS = []LIPARI_FPGA_REGISTERS {
     LIPARI_FPGA_REGISTERS{"FPGA1_INT5_EN_REG       ",             FPGA1_INT5_EN_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT6_EN_REG       ",             FPGA1_INT6_EN_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT7_EN_REG       ",             FPGA1_INT7_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT8_EN_REG       ",             FPGA1_INT8_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT9_EN_REG       ",             FPGA1_INT9_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT10_EN_REG      ",             FPGA1_INT10_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT11_EN_REG      ",             FPGA1_INT11_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT12_EN_REG      ",             FPGA1_INT12_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT13_EN_REG      ",             FPGA1_INT13_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT14_EN_REG      ",             FPGA1_INT14_EN_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT15_EN_REG      ",             FPGA1_INT15_EN_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT0_PEND_REG     ",             FPGA1_INT0_PEND_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT1_PEND_REG     ",             FPGA1_INT1_PEND_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT2_PEND_REG     ",             FPGA1_INT2_PEND_REG},
@@ -438,6 +1343,14 @@ var LIPARI_FPGA1_REGISTERS = []LIPARI_FPGA_REGISTERS {
     LIPARI_FPGA_REGISTERS{"FPGA1_INT5_PEND_REG     ",             FPGA1_INT5_PEND_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT6_PEND_REG     ",             FPGA1_INT6_PEND_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_INT7_PEND_REG     ",             FPGA1_INT7_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT8_PEND_REG     ",             FPGA1_INT8_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT9_PEND_REG     ",             FPGA1_INT9_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT10_PEND_REG    ",             FPGA1_INT10_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT11_PEND_REG    ",             FPGA1_INT11_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT12_PEND_REG    ",             FPGA1_INT12_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT13_PEND_REG    ",             FPGA1_INT13_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT14_PEND_REG    ",             FPGA1_INT14_PEND_REG},
+    LIPARI_FPGA_REGISTERS{"FPGA1_INT15_PEND_REG    ",             FPGA1_INT15_PEND_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT0_EN_REG   ",             FPGA1_BMC_INT0_EN_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT1_EN_REG   ",             FPGA1_BMC_INT1_EN_REG},
     LIPARI_FPGA_REGISTERS{"FPGA1_BMC_INT2_EN_REG   ",             FPGA1_BMC_INT2_EN_REG},
@@ -790,4 +1703,4 @@ var LIPARI_FPGA1_REGISTERS = []LIPARI_FPGA_REGISTERS {
     LIPARI_FPGA_REGISTERS{"FPGA_ELBA7_UART_STAT_REG     ",             FPGA_ELBA7_UART_STAT_REG},
     LIPARI_FPGA_REGISTERS{"FPGA_ELBA7_UART_CTRL_REG     ",             FPGA_ELBA7_UART_CTRL_REG},
 }
-
+*/

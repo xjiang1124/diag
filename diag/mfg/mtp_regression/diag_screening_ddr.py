@@ -39,6 +39,8 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
         return None
     partnumber = part_number if part_number else "DEFAULT"
     no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
+    if partnumber != "DEFAULT" and partnumber == no_rev_partnumber:
+        no_rev_partnumber = partnumber[0:6]
 
     argdict = dict()
     # load test_case arguments
@@ -619,7 +621,8 @@ def diag_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, v
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                 if not stop_on_err:
                     nic_test_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [])
+                    #for DDR validation test, set skip_vrm_check to False so that command 'nic_sts.tcl SN slotID skip_vrm_check' using the default
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], False)
                 if stop_on_err:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                     raise Exception

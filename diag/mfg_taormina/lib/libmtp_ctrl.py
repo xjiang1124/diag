@@ -5240,7 +5240,7 @@ class mtp_ctrl():
 
         return True
 
-    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False):
+    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False, fru_valid=True):
 
         # if selection > 0:
         #     secure_login = True
@@ -5249,8 +5249,9 @@ class mtp_ctrl():
         for x in range(3):
             if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
                 # read FRU as soon as console is ready, to have an SN to save logs to.
-                if not self.tor_fru_init():
-                    return False
+                if fru_valid:
+                    if not self.tor_fru_init():
+                        return False
                 if selection > 0:
                     if not self.tor_boot_devices_ready():
                         return False
@@ -5363,6 +5364,9 @@ class mtp_ctrl():
                 return False
 
         if selection == 0:
+            if not self.svos_usb_mount():
+                self.cli_log_err("Unable to mount usb", level=0)
+                return False
             if not self.mtp_console_enter_shell("sh"):
                 self.cli_log_err("Unable to init bash shell", level=0)
                 return False
@@ -5370,6 +5374,10 @@ class mtp_ctrl():
         return True
 
     def tor_boot_devices_ready(self):
+        """
+        Usually takes 2-3 minutes for Elbas to be 'ready' or 'down'
+        In case of the Elba ssh dir issue, it would take 10 minutes.
+        """
         start=datetime.now()
         # if stopreboot and not self._secure_login:
         self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
@@ -5822,21 +5830,10 @@ class mtp_ctrl():
         return True
 
     def tor_ssd_format(self):
-        return self.tor_prepare_eeupdate(ssd_format=True)
+        return self.tor_prepare_eeupdate(ssd_format=True, usb_method=True)
 
-    def tor_prepare_eeupdate(self, ssd_format=False):
-        usb_method = False      # copying from USB vs copying from network
-
-        if usb_method:
-            self.cli_log_inf("Mounting USB")
-            if not self.mtp_console_enter_shell("svcli"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
-            self.mtp_mgmt_exec_cmd("mount usb")
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
-        else:
+    def tor_prepare_eeupdate(self, ssd_format=False, usb_method=False):
+        if not usb_method: # copying from USB vs copying from network
             usb_tarball = TOR_IMAGES.usb_tarball[self.uut_type]
             self.cli_log_inf("Downloading USB tarball")
             if not self.mtp_mgmt_exec_cmd("tftp -g -r {:s}/{:s} {:s} -b 65000".format(TOR_IMAGES.TFTP_SERVER_DIR, usb_tarball, TOR_IMAGES.TFTP_SERVER_IP), sig_list=["100%"]):
@@ -5844,24 +5841,20 @@ class mtp_ctrl():
             self.mtp_mgmt_exec_cmd("tar xf /cli/fs/home/{:s} -C /".format(usb_tarball))
 
         if ssd_format:
-            # self.mtp_mgmt_exec_cmd("rm /fs/selftest/efi/boot/bootx64.efi /fs/nos/eeupdate/svos-030321.efi /fs/nos/secondary.swi /fs/nos/primary.swi")
             if not self.mtp_mgmt_exec_cmd("/usr/bin/storage_fdisk_format.sh", sig_list=["Removed /run"]):
                 self.cli_log_err("Unable to storage fdisk format", level=0)
                 return False
-            self.mtp_mgmt_exec_cmd("mkdir -p /fs/selftest/efi/boot")
         self.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         
         if usb_method:
-            self.mtp_mgmt_exec_cmd("mount /dev/sdb1 /mnt/usb")
-            self.mtp_mgmt_exec_cmd("cp /mnt/usb/svos-030321.efi /fs/selftest/efi/boot/bootx64.efi")
-            time.sleep(1)
+            self.cli_log_inf("Mounting USB")
+            self.mtp_mgmt_exec_cmd("mkdir -p /mnt/usb")
+            self.mtp_mgmt_exec_cmd("mount /dev/sdb2 /mnt/usb")
             self.mtp_mgmt_exec_cmd("cp /mnt/usb/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
             time.sleep(1)
             self.mtp_mgmt_exec_cmd("sync")
-            self.mtp_mgmt_exec_cmd("umount /dev/sdb1")
+            self.mtp_mgmt_exec_cmd("umount /dev/sdb2")
         else:
-            self.mtp_mgmt_exec_cmd("cp /Taormina-USB-small/svos-030321.efi /fs/selftest/efi/boot/bootx64.efi")
-            time.sleep(1)
             self.mtp_mgmt_exec_cmd("cp /Taormina-USB-small/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
             time.sleep(1)
             if "No such file" in self.mtp_get_cmd_buf():
@@ -5869,6 +5862,19 @@ class mtp_ctrl():
 
         self.mtp_mgmt_exec_cmd("sync")
         # self.mtp_mgmt_exec_cmd("exit")
+        return True
+
+    def svos_usb_mount(self):
+        """ 
+            Already need to be in svcli for this function
+            as mount usb needs to be done in original svos shell (fresh boot), not an svcli later down the stack
+        """
+        self.mtp_mgmt_exec_cmd("mount usb")
+        if not self.mtp_console_enter_shell("sh"):
+            self.cli_log_err("Unable to init bash shell", level=0)
+            return False
+        self.mtp_mgmt_exec_cmd("lsusb")
+
         return True
 
     def i210_nic_prog(self):
@@ -6529,11 +6535,13 @@ class mtp_ctrl():
         return frureadata
 
 
-    def tor_fru_verify(self):
+    def tor_fru_verify(self, expected_sn, expected_mac, expected_pn, expected_prog_date):
         # if not self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT, sig_list=['TPM Serial Number:']):
         #     self.cli_log_err("Unable to display fru", level=0)
         #     return False
 
+        self.clear_buffer()
+        time.sleep(3)
         self._mgmt_handle.sendline(MFG_DIAG_CMDS.TOR_FRU_DISP_FMT)
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["TPM Serial Number:"])
         cmd_buf = self._mgmt_handle.before
@@ -6544,7 +6552,7 @@ class mtp_ctrl():
         # Verify SN
         sn_match = re.search("Serial Number: '(.*)'", cmd_buf)
         if sn_match:
-            if sn_match.group(1) != self._sn:
+            if sn_match.group(1) != expected_sn:
                 self.cli_log_err("Incorrect SN programmed: {:s}".format(sn_match.group(1)), level=0)
                 return False
         else:
@@ -6554,10 +6562,10 @@ class mtp_ctrl():
         # Verify MAC
         mac_match = re.search("MAC Address: '(.*)'", cmd_buf)
         if mac_match:
-            if ":" in self._mac:
-                mac = self._mac
+            if ":" in expected_mac:
+                mac = expected_mac
             else:
-                mac = libmfg_utils.mac_address_format(self._mac, delimiter=":")
+                mac = libmfg_utils.mac_address_format(expected_mac, delimiter=":")
             if mac_match.group(1) != mac:
                 self.cli_log_err("Incorrect MAC programmed: {:s}".format(mac_match.group(1)), level=0)
                 return False
@@ -6568,7 +6576,7 @@ class mtp_ctrl():
         # Verify PN
         pn_match = re.search("Part Number: '(.*)'", cmd_buf)
         if pn_match:
-            if pn_match.group(1) != self._pn:
+            if pn_match.group(1) != expected_pn:
                 self.cli_log_err("Incorrect PN programmed: {:s}".format(pn_match.group(1)), level=0)
                 return False
         else:
@@ -6643,6 +6651,9 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Unable to read PCBA SN", level=0)
             return False
+
+        self.clear_buffer()
+        time.sleep(1)
 
         return True
 

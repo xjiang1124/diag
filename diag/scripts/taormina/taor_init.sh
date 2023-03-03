@@ -1,5 +1,13 @@
 #!/bin/sh
 
+Lipari=$(cat /proc/cpuinfo | grep AuthenticAMD | wc -l)
+if [[ $Lipari == "0" ]]
+then
+    echo "TAORMINA"
+else
+    echo "LIPARI"
+fi
+
 export DIAG_HOME=/home/diag/
 export DIAG_DIR=$DIAG_HOME/diag
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIAG_HOME/diag/asic/depend_libs/tool/lib64:$DIAG_HOME/diag/asic/depend_libs/mtp_hack:$DIAG_HOME/diag/asic/asic_lib:$DIAG_HOME/diag/asic/depend_libs/usr/local/lib
@@ -25,14 +33,18 @@ export PATH=$PATH:$DIAG_DIR/scripts
 export PATH=$PATH:$DIAG_DIR/scripts/asic
 export PATH=$PATH:$DIAG_DIR/tools
 
-cp /usr/lib/libstdc++.so.6 /fs/nos/home_diag/diag/asic_all/elba/depend_libs/tool/lib64/libstdc++.so.6
+if [[ $Lipari == "0" ]]
+then
+    cp /usr/lib/libstdc++.so.6 /fs/nos/home_diag/diag/asic_all/elba/depend_libs/tool/lib64/libstdc++.so.6
 
-# Elba J2C ID
-elba0_id=$(/home/diag/diag/tools/jtag_cpurd_v2 display | grep -A4 "Dev 0" | grep LocId | awk -F " " '{print $3}')
-elba1_id=$(/home/diag/diag/tools/jtag_cpurd_v2 display | grep -A4 "Dev 2" | grep LocId | awk -F " " '{print $3}')
-export ELBA0_J2C_ID=$elba0_id
-export ELBA1_J2C_ID=$elba1_id
+    # Elba J2C ID
+    elba0_id=$(/home/diag/diag/tools/jtag_cpurd_v2 display | grep -A4 "Dev 0" | grep LocId | awk -F " " '{print $3}')
+    elba1_id=$(/home/diag/diag/tools/jtag_cpurd_v2 display | grep -A4 "Dev 2" | grep LocId | awk -F " " '{print $3}')
+    export ELBA0_J2C_ID=$elba0_id
+    export ELBA1_J2C_ID=$elba1_id
 
-# Temporary fix
-cp $DIAG_HOME/diag/tools/jtag_cpurd_v2 $DIAG_HOME/diag/util/
-
+    # Temporary fix
+    cp $DIAG_HOME/diag/tools/jtag_cpurd_v2 $DIAG_HOME/diag/util/
+else
+    echo "LIPARI"
+fi

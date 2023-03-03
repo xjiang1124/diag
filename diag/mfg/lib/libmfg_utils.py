@@ -2420,12 +2420,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
 
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
                         if not rc:
-                            mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot)
-                            mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read port 1 loopback over i2c")
-                            if slot not in fail_nic_list[mtp_id]:
-                                fail_nic_list[mtp_id].append(slot)
-                            continue
+                            read_data = [0]
 
                         if read_data[0] & expected_val != expected_val:
                             if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
@@ -2453,10 +2448,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(1, 0x50, 0, read_data)
                         if not rc:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read port 2 loopback over i2c")
-                            if slot not in fail_nic_list[mtp_id]:
-                                fail_nic_list[mtp_id].append(slot)
-                            continue
+                            read_data = [0]
 
                         if read_data[0] & expected_val != expected_val:
                             if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:

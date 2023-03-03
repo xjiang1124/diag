@@ -26,8 +26,8 @@ var elba_flash_info flash_region
 const FLASH_SECTOR_SIZE    uint32 = 0x10000
 
 
-const STS_REG_BUSY  uint32 = 0x01
-const STS_REG_WE    uint32 = 0x02
+const STS_REG_WIP   uint32 = 0x01    //WRITE IN PROGRESS
+const STS_REG_WE    uint32 = 0x02    //WRITE ENABLE
 const STS_REG_BP0   uint32 = 0x04
 const STS_REG_BP1   uint32 = 0x08
 const STS_REG_BP2   uint32 = 0x10
@@ -170,6 +170,10 @@ func  Spi_flash_set_extended_addr_register(spiNumber uint32, addr uint32) (err e
     if err != nil {
         return
     }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
 
     _ , err = lipari_spi_generic_transaction(spiNumber, WRITE_EXTENDED_ADDR_REG_OP, WRITE_EXTENDED_ADDR_REG_RDLNG) 
     if err != nil {
@@ -220,6 +224,10 @@ func Spi_flash_write_volatile_config(spiNumber uint32, data uint32) (err error) 
     if err != nil {
         return
     }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
 
     WRITE_VOLATILE_CONFIG[1] = uint8(data & 0xff)
     fmt.Printf(" WR VOL CONFIG=0x%.02x%.02x\n", WRITE_VOLATILE_CONFIG[1], WRITE_VOLATILE_CONFIG[0])
@@ -242,6 +250,10 @@ func Spi_flash_read_volatile_config(spiNumber uint32) (config byte, err error) {
 
 func Spi_flash_write_enh_volatile_config(spiNumber uint32, data uint32) (err error) {
     err = Spi_flash_WriteEnable(spiNumber) 
+    if err != nil {
+        return
+    }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
     if err != nil {
         return
     }
@@ -295,6 +307,10 @@ func Spi_flash_write_status_register(spiNumber uint32, data uint32) (err error) 
     if err != nil {
         return
     }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
 
     WRITE_STATUS_REG_OP[1] = uint8(data & 0xff)
     fmt.Printf(" WRITE_STATUS_REG_OP=0x%.02x%.02x\n", WRITE_STATUS_REG_OP[1], WRITE_STATUS_REG_OP[0])
@@ -318,16 +334,16 @@ func Spi_flash_read_flag_status(spiNumber uint32) (flag uint32, err error) {
 }
 
 //Check if the flash is busy before executing erase or write
-func Spi_flash_PollBusyMicroSec(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
+func Spi_flash_Poll_STS_WIP(spiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
     var errGo error
     for i:=0; i<timeout_ms; i++ {
         sr_reg, errGo = Spi_flash_read_status_register(spiNumber)  
         if errGo != nil {
-            fmt.Printf("[ERROR] Spi_flash_PollBusyMicroSec-> Read Status Failed\n")
+            fmt.Printf("[ERROR] Spi_flash_Poll_STS_WIP-> Read Status Failed\n")
             err = 1
             return
         } 
-        if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
+        if sr_reg & STS_REG_WIP != STS_REG_WIP {
             return
         }
         time.Sleep(time.Duration(1) * time.Microsecond)
@@ -346,7 +362,7 @@ func Spi_flash_PollBusy(spiNumber uint32, timeout_ms int) (sr_reg uint32, err in
             err = 1
             return
         }
-        if sr_reg & STS_REG_BUSY != STS_REG_BUSY {
+        if sr_reg & STS_REG_WIP != STS_REG_WIP {
             return
         }
         time.Sleep(time.Duration(1) * time.Millisecond)
@@ -356,7 +372,7 @@ func Spi_flash_PollBusy(spiNumber uint32, timeout_ms int) (sr_reg uint32, err in
 }
 
 //Check if the flash is busy before executing erase or write
-func Spi_flash_CheckWriteEnable() (spiNumber uint32, err error) {
+func Spi_flash_CheckWriteEnable(spiNumber uint32) (err error) {
     var errGo error
     var sr_reg uint32
     for i:=0; i< 5000; i++ {
@@ -635,6 +651,10 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
     }
 
     Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
     
     err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
     if err != nil {
@@ -730,6 +750,10 @@ func Spi_elba_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     if err != nil {
         return
     }
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
 
 
     ERASE_SECTOR_OP[1] = byte(addr >> 16)
@@ -743,7 +767,7 @@ func Spi_elba_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
         return
     }
 
-    sr_reg, rc := Spi_flash_PollBusyMicroSec(spiNumber,  ELB_SECTOR_ERASE_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_elba_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
@@ -784,8 +808,11 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
     } 
 
     Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_CheckWriteEnable(spiNumber)
+    if err != nil {
+        return
+    }
      
-
     PAGE_PROGRAM_OP[1] = byte(addr >> 16)
     PAGE_PROGRAM_OP[2] = byte(addr >> 8)
     PAGE_PROGRAM_OP[3] = byte(addr)
@@ -798,7 +825,7 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
        fmt.Printf("ERROR: Spi_elba_flash_Write_N_Bytes.  lipari_spi_generic_transaction Failed\n")
     }
 
-    sr_reg, rc := Spi_flash_PollBusyMicroSec(spiNumber,  ELB_PAGE_WR_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)

@@ -188,17 +188,15 @@ func init () {
         Glob_mmap2, Glob_fd2, _ = MMAP_Device(int64(bar[2]), MAP_SIZE)
         Glob_mmap3, Glob_fd3, _ = MMAP_Device(int64(bar[3]), MAP_SIZE)
         //How do we gracefully unmap?   OS should do it, but would be nice to do it in code 
-        /*
-        defer func() {
-            MunMAP_Device(Glob_fd0, Glob_mmap0)
-            MunMAP_Device(Glob_fd1, Glob_mmap1)
-            MunMAP_Device(Glob_fd2, Glob_mmap2)
-            MunMAP_Device(Glob_fd3, Glob_mmap3)
-            fmt.Printf(" ADD DEBUG: Munmap\n")
-        } () 
-        */ 
+        
+        //defer func() {
+        //    MunMAP_Device(Glob_fd0, Glob_mmap0)
+        //    MunMAP_Device(Glob_fd1, Glob_mmap1)
+        //    MunMAP_Device(Glob_fd2, Glob_mmap2)
+        //    MunMAP_Device(Glob_fd3, Glob_mmap3)
+        //    fmt.Printf(" ADD DEBUG: Munmap\n")
+        //} () 
     }
-     
 } 
  
 

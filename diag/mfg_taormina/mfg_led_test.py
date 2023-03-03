@@ -236,9 +236,13 @@ def single_uut_led_checks(stage,
             else:
                 mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
 
+            if test == "TEST_LED_ORANGE":
+                mtp_mgmt_ctrl.cli_log_inf("Question Process Complete", level=0)
+
         mtp_mgmt_ctrl.cli_log_inf("Host tests completed\n", level=0)
 
-        mtp_mgmt_ctrl.cli_log_inf("Question Process Complete", level=0)
+        # copy additional logs
+        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
 
         if uut_id not in fail_uut_list and stage == "LED":
             if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
@@ -273,7 +277,7 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--LED", "-LED", "--led", "-led", "-1", help="station to LED test", action="store_true")
-    parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", help="pre-select UUTs", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
 
     args = parser.parse_args()
     if args.verbosity:
@@ -355,19 +359,18 @@ def main():
             os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
             # move the logs to the log root dir
-            for slot in fail_uut_list + pass_uut_list:
-                sn = fru_cfg[uut_id]["SN"]
-                nic_type = NIC_Type.TAORMINA
-                if not sn:
-                    continue
-                if GLB_CFG_MFG_TEST_MODE:
-                    mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-                else:
-                    mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-                os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-                libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-                os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-                os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
+            sn = fru_cfg[uut_id]["SN"]
+            nic_type = NIC_Type.TAORMINA
+            if not sn:
+                continue
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
+            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
+            os.system("./aruba-log.sh {:s}".format(mfg_log_dir+os.path.basename(log_pkg_file)))
 
             # cleanup the log dir
             logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])

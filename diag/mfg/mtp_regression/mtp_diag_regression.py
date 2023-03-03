@@ -539,7 +539,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                 if not stop_on_err:
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [])
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], skip_vrm_check=False)
                 if stop_on_err:
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
@@ -828,12 +828,14 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
             logfile_list.append(path+"prbs_eth.log")
         if "SNAKE_ELBA" in mtp_para_test_list:
             logfile_list.append(path+"snake_elba.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "ETH_PRBS" in mtp_para_test_list:
             logfile_list.append(path+"elba_PRBS_MX.log")
         if "ARM_L1" in mtp_para_test_list:
             logfile_list.append(path+"elba_arm_l1_test.log")
         if "PCIE_PRBS" in mtp_para_test_list:
             logfile_list.append(path+"elba_PRBS_PCIE.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "DDR_BIST" in mtp_para_test_list:
             logfile_list.append(path+"arm_ddr_bist_0.log")
             logfile_list.append(path+"arm_ddr_bist_1.log")
@@ -917,8 +919,6 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             number_of_l1_tests = 9
             if nic_type in ELBA_NIC_TYPE_LIST:
                 number_of_l1_tests = 9
-                if nic_type in CONSOLE_DDR_BIST_NIC_LIST:
-                    number_of_l1_tests = 8
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
