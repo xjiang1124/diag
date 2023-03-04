@@ -65,7 +65,7 @@ func DispStatus(devName string) (err int) {
     } else if id == adm1032.MFG_ID_V {
         err = adm1032.DispStatus(devName)
     } else if id == tmp451.MFG_ID_V {
-        err = tmp451.DispStatus(devName)
+        err = tmp451.DispStatusWithRemote(devName)
     } else {
         err = errType.INVALID_PARAM
     }
