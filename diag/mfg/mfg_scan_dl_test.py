@@ -1121,7 +1121,6 @@ def main():
                 dest = args.jobd_logdir + "/" + os.path.basename(qa_log_pkg_file)
                 cmd = "cp {:s} {:s}".format(qa_log_pkg_file, args.jobd_logdir)
                 os.system(cmd)
-                mtp_mgmt_ctrl.cli_log_inf("Log also stored to {:s}".format(dest))
         else:
             libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             chdir_cmd = "cd {:s}".format(mfg_log_dir)
