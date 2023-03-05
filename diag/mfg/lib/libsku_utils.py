@@ -24,9 +24,12 @@ DELL_PPID_SER_NUM_FMT = r"[0-9A-O][0-9A-Z]{3}"
 DELL_PPID_REV_FMT = r"[X|A][0-9]{2}"
 DELL_PPID_FMT = DELL_PPID_COUNTRY_FMT + DELL_PPID_PART_NUM_FMT + DELL_PPID_MFG_ID_FMT + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
 
-PEN_MAC_DASHES_FMT = r"00-[a,A][e,E]-[c,C][d,D]-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}-[a-fA-F0-9]{2}"
-PEN_MAC_NO_DASHES_FMT = r"00[a,A][e,E][c,C][d,D][a-fA-F0-9]{2}[a-fA-F0-9]{2}[a-fA-F0-9]{2}"
+MAC_OUI_1 = r"00%s[a,A][e,E]%s[c,C][d,D]%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
+MAC_OUI_2 = r"04%s90%s81%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
+PEN_MAC_DASHES_FMT = MAC_OUI_1 % tuple(["-"]*5) + "|" + MAC_OUI_2 % tuple(["-"]*5)
+PEN_MAC_NO_DASHES_FMT = MAC_OUI_1 % tuple([""]*5) + "|" + MAC_OUI_2 % tuple([""]*5)
 OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
+
 
 class PART_NUMBERS_MATCH:
     N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES100 PENSANDO
