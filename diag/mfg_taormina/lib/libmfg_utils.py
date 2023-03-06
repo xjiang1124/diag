@@ -918,6 +918,7 @@ def mtp_clear_console(mtp_mgmt_ctrl):
                  session.expect("Device Port settings successfully updated.")
                  session.sendline("logout")
                  session.sendline()
+                 break
             elif idx == 3:
                 session.sendline("en")
             elif idx == 4:

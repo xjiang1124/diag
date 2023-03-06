@@ -1496,6 +1496,10 @@ class mtp_ctrl():
                 rc = False
                 cmd_before = self._mgmt_handle.before
                 break
+
+        if self._use_usb_console:
+            self._mgmt_handle.sendline("") # extra newline for USB console server
+
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
         # signature match fails
         if not rc:
@@ -1506,8 +1510,6 @@ class mtp_ctrl():
             return False
         else:
             self._cmd_buf = self._mgmt_handle.before
-            if self._use_usb_console:
-                self._mgmt_handle.sendline("") # extra newline for USB console server
             return True
 
     def mtp_mgmt_exec_cmd2(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
@@ -5304,8 +5306,10 @@ class mtp_ctrl():
 
         # reconnect console after powerup instead of before; 
         # SLC 8xxx console line disconnects when unit is powered on
-        if self._mgmt_handle is not None:
-            self.mtp_console_disconnect()
+        if self._use_usb_console:
+            time.sleep(10)
+            self.cli_log_inf("Reconnect to SLC 8xxx console port", level=0)
+
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
         self._mgmt_handle = pexpect.spawn(telnet_cmd, logfile = self._diag_filep)

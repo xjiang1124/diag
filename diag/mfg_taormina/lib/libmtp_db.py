@@ -48,11 +48,11 @@ class mtp_db():
             self._ts_passwd[mtpid] = mtp_cfg[mtpid]["TS_PASSWORD"]
 
             if "USB_TS" in mtp_cfg[mtpid].keys():
-                self._usb_ts_type = ""
-                self._usb_ts = mtp_cfg[mtpid]["USB_TS"]
-                self._usb_ts_port = mtp_cfg[mtpid]["USB_TS_PORT"]
-                self._usb_ts_userid = mtp_cfg[mtpid]["USB_TS_USERID"]
-                self._usb_ts_passwd = mtp_cfg[mtpid]["USB_TS_PASSWORD"]
+                self._usb_ts_type[mtpid] = ""
+                self._usb_ts[mtpid] = mtp_cfg[mtpid]["USB_TS"]
+                self._usb_ts_port[mtpid] = mtp_cfg[mtpid]["USB_TS_PORT"]
+                self._usb_ts_userid[mtpid] = mtp_cfg[mtpid]["USB_TS_USERID"]
+                self._usb_ts_passwd[mtpid] = mtp_cfg[mtpid]["USB_TS_PASSWORD"]
             
             self._apc1[mtpid] = mtp_cfg[mtpid]["APC1"]
             self._apc1_port[mtpid] = mtp_cfg[mtpid]["APC1_PORT"]
@@ -108,11 +108,11 @@ class mtp_db():
         if not self.mtpid_valid(mtpid):
             libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
 
-        ts_cfg.append(self._usb_ts_type[mtpid])
         ts_cfg.append(self._usb_ts[mtpid])
         ts_cfg.append(self._usb_ts_port[mtpid])
         ts_cfg.append(self._usb_ts_userid[mtpid])
         ts_cfg.append(self._usb_ts_passwd[mtpid])
+        ts_cfg.append(self._usb_ts_type[mtpid])
 
         return ts_cfg
 
