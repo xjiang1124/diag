@@ -439,8 +439,8 @@ func init() {
 
     //GinestraD5
     ginestraD5DispStaList = make(map[string]DispStaFunc)
-    ginestraD5DispStaList["CORE"] = tps53688.DispStatus
-    ginestraD5DispStaList["ARM"]  = tps53688.DispStatus
+    ginestraD5DispStaList["GIG0_CORE"] = tps53688.DispStatus
+    ginestraD5DispStaList["GIG0_ARM"]  = tps53688.DispStatus
     ginestraD5DispStaList["DDR_VDD"]  = tps53830.DispStatus
     ginestraD5DispStaList["DDR_VDDQ"]  = tps53830.DispStatus
     ginestraD5DispStaList["DDR_VPP"]  = tps53830.DispStatus
