@@ -108,6 +108,9 @@ class mtp_db():
         if not self.mtpid_valid(mtpid):
             libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
 
+        if mtpid not in self._usb_ts.keys():
+            return list()
+
         ts_cfg.append(self._usb_ts[mtpid])
         ts_cfg.append(self._usb_ts_port[mtpid])
         ts_cfg.append(self._usb_ts_userid[mtpid])

@@ -1,6 +1,7 @@
 from libdefs import NIC_Type
 
 GLB_CFG_MFG_TEST_MODE = True
+ALLOW_TEST_FROM_TERMSERVER = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:

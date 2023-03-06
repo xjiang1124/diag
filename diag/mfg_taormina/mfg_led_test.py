@@ -66,8 +66,11 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
             return
         usb_ts_cfg = mtp_cfg_db.get_mtp_usb_console(mtp_id)
         if not usb_ts_cfg:
-            libmfg_utils.sys_exit(mtp_cli_id_str + "Missing USB console server config")
-            return
+            if ALLOW_TEST_FROM_TERMSERVER:
+                pass
+            else:
+                libmfg_utils.sys_exit(mtp_cli_id_str + "Missing USB console server config")
+                return
     else:
         mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
         if not mtp_mgmt_cfg:
@@ -81,7 +84,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     if telnet:
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
 
-    mtp_mgmt_ctrl.set_usb_console() # For LED test, access from USB console server instead of regular terminal server
+    if not ALLOW_TEST_FROM_TERMSERVER:
+        mtp_mgmt_ctrl.set_usb_console() # For LED test, access from USB console server instead of regular terminal server
 
     return mtp_mgmt_ctrl
 

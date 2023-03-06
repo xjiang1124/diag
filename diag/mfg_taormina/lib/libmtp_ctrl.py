@@ -5306,6 +5306,8 @@ class mtp_ctrl():
 
         # reconnect console after powerup instead of before; 
         # SLC 8xxx console line disconnects when unit is powered on
+        if self._mgmt_handle is not None:
+            self.mtp_console_disconnect()
         if self._use_usb_console:
             time.sleep(10)
             self.cli_log_inf("Reconnect to SLC 8xxx console port", level=0)
@@ -5351,6 +5353,7 @@ class mtp_ctrl():
                     self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
                     raw_input("Please check that the console is connected then press any key to continue.\n")
                     retry_start_time = datetime.now()
+                    self.cli_log_inf("Retrying console...")
                     continue
                 else:
                     break
