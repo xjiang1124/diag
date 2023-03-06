@@ -248,9 +248,6 @@ def single_uut_led_checks(stage,
 
         mtp_mgmt_ctrl.cli_log_inf("Host tests completed\n", level=0)
 
-        # copy additional logs
-        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
-
         if uut_id not in fail_uut_list and stage == "LED":
             if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
                 if uut_id in pass_uut_list:
@@ -258,7 +255,10 @@ def single_uut_led_checks(stage,
                 if uut_id not in fail_uut_list:
                     fail_uut_list.append(uut_id)
 
-        time.sleep(5)
+        # copy additional logs
+        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
+
+        time.sleep(5) #?
 
         # shut down system
         mtp_mgmt_ctrl.uut_chassis_shutdown()
