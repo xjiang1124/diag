@@ -28,7 +28,7 @@ parser.add_argument("--verbosity", help="increase output verbosity", action='sto
 parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
 parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
-parser.add_argument("--logdir", help="Log dir", default=MTP_DIAG_Logfile.DIAG_QA_LOG_DIR)
+parser.add_argument("--logdir", help="Log dir", default=None)
 
 args = parser.parse_args()
 
@@ -58,7 +58,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type, stage, cfgyml=None):
+def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type, stage, cfgyml=None, mirror_logdir=None):
     # go to mtp_fst_script and start the test
     cmd = "cd {:s}".format(mtp_fst_script_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
@@ -79,12 +79,12 @@ def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summ
         if stage == "FETCH_SN":
             return
     
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, args.logdir, mtp_id, mtp_test_summary, FF_Stage.FF_FST)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_FST, mirror_logdir=mirror_logdir)
     mtp_mgmt_ctrl.cli_log_inf("Collect MTP Logfile {:s}".format(test_log_file), level=0)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect FST Test result failed", level=0)
         return
-    cmd = "cp {:s} {:s}".format(test_log_file, args.logdir)
+    cmd = "cp {:s} {:s}".format(test_log_file, mirror_logdir)
     os.system(cmd)
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_FST, mtp_test_summary)
@@ -172,13 +172,16 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_fst_script_pkg = "mtp_fst_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP FST Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP FST Test script failed", level=1)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP FST Test script complete", level=0)
+    # now that file has been packaged into config/, discard full path
+    if mtpcfg_file:
+        mtpcfg_file = os.path.basename(mtpcfg_file)
 
     mtp_thread_list = list()
     mfg_fst_summary = dict()
@@ -190,7 +193,7 @@ def main():
                                                                             mtp_id,
                                                                             mfg_fst_summary[mtp_id], 
                                                                             card_type,
-                                                                            stage, mtpcfg_file))
+                                                                            stage, mtpcfg_file, args.logdir))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

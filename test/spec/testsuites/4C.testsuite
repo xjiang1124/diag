@@ -1,0 +1,29 @@
+---
+meta:
+  name: mfg_4c
+  description: Mfg 4C test at room temp
+
+config:
+  testbed       : MTP
+  job           : 4C
+
+test_types:
+  precheckin:
+    skip:
+      #- L1 
+      #- EDMA 
+      #- SNAKE_ELBA
+      #- SNAKE_PCIE
+      #- SNAKE_HBM
+      #- ARM_PRBS
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    iteration: 2
+    skip:
+    slots: 10
+
