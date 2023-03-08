@@ -728,7 +728,8 @@ PRIVEK <ek.sk>"""
         return [ret, crc32_ek]
 
     def img_prog(self, slot):
-        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -img_prog -slot {}".format(slot)
+        pn = self.get_pn(slot)
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -img_prog -slot {} -pn {}".format(slot,pn)
         ret = 0
         pass_sign = "ESEC PROG PASSED"
 
