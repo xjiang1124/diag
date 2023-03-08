@@ -25,9 +25,10 @@ DELL_PPID_REV_FMT = r"[X|A][0-9]{2}"
 DELL_PPID_FMT = DELL_PPID_COUNTRY_FMT + DELL_PPID_PART_NUM_FMT + DELL_PPID_MFG_ID_FMT + DELL_PPID_DATE_CODE_FMT + DELL_PPID_SER_NUM_FMT + DELL_PPID_REV_FMT
 
 MAC_OUI_1 = r"00%s[a,A][e,E]%s[c,C][d,D]%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
-MAC_OUI_2 = r"04%s90%s81%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
-PEN_MAC_DASHES_FMT = MAC_OUI_1 % tuple(["-"]*5) + "|" + MAC_OUI_2 % tuple(["-"]*5)
-PEN_MAC_NO_DASHES_FMT = MAC_OUI_1 % tuple([""]*5) + "|" + MAC_OUI_2 % tuple([""]*5)
+MAC_OUI_2 = r"04%s90%s81%s(?:0[a-fA-F1-9]|[a-fA-F1-9][a-fA-F0-9])%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
+MAC_OUI_3 = r"74%s27%s2C%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}%s[a-fA-F0-9]{2}"
+PEN_MAC_DASHES_FMT = MAC_OUI_1 % tuple(["-"]*5) + "|" + MAC_OUI_2 % tuple(["-"]*5) + "|" + MAC_OUI_3 % tuple(["-"]*5)
+PEN_MAC_NO_DASHES_FMT = MAC_OUI_1 % tuple([""]*5) + "|" + MAC_OUI_2 % tuple([""]*5) + "|" + MAC_OUI_3 % tuple([""]*5)
 OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
 
 
