@@ -32,8 +32,10 @@ from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml=None):
     mtp_chassis_cfg_file_list = list()
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
@@ -60,7 +62,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, iteration, skip_test=[], only_test=[]):
+def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, iteration, skip_test=[], only_test=[], mtpcfg_file=None, mirror_logdir=None):
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
     else:
@@ -97,12 +99,14 @@ def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_li
             cmd += fail_slots
         if l1_sequence:
             cmd += " --l1-seq "
+        if mtpcfg_file:
+            cmd += " --mtpcfg " + mtpcfg_file
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
+        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
         if not test_log_file:
             mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
             return
@@ -143,6 +147,8 @@ def main():
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
     verbosity = False
     l1_sequence = False
@@ -163,7 +169,12 @@ def main():
     if args.l1_seq:
         l1_sequence = True
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtp_mgmt_ctrl_list = list()
     mtpid_fail_list = list()
@@ -333,7 +344,7 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg, logfile_dir_list[mtp_id]):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg, logfile_dir_list[mtp_id], extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -341,6 +352,9 @@ def main():
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
 
+    # now that file has been packaged into config/, discard full path
+    if mtpcfg_file:
+        mtpcfg_file = os.path.basename(mtpcfg_file)
 
     mtp_thread_list = list()
     mfg_4c_summary = dict()
@@ -355,7 +369,10 @@ def main():
                                                                            swmtestmode,
                                                                            l1_sequence,
                                                                            args.iteration,
-                                                                           args.skip_test))
+                                                                           args.skip_test,
+                                                                           args.only_test,
+                                                                           mtpcfg_file,
+                                                                           args.jobd_logdir))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -370,6 +387,19 @@ def main():
                 mtp_thread.join()
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
+
+    # print return code for JobD to pick up
+    test_result = True
+    if len(mtpid_fail_list) > 0:
+        test_result = False
+    for mtp_id in mfg_4c_summary.keys():
+        for slot, sn, nic_type, rc, retest_blocked in mfg_4c_summary[mtp_id]:
+            if not rc:
+                test_result = False
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
