@@ -33,6 +33,8 @@ const (
     ID_ORTANO2I        = 0x4C
     ID_ORTANO2S        = 0x4E
     ID_ORTANO2AC       = 0x50
+    ID_GINESTRA_D4     = 0x60
+    ID_GINESTRA_D5     = 0x61
     ID_TAORMINA_ELBA   = 0x80
 )
 
