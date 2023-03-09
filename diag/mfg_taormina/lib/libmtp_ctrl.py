@@ -8373,12 +8373,12 @@ class mtp_ctrl():
         missing_list = list()
 
         module_regexp = {
-            "PSU": r'%s.*H/W Rev: *(.*) *S/N: *(.*) *F/W.*: *(.*)',
+            "PSU": r'%s.*H/W Rev: *(.*) *\r?\n? *S/N: *(.*) *\r?\n? *F/W.*: *(.*)',
             "FAN": r'%s: *PRESENT',
-            "SSD": r'%s MODEL: *(.*) *S/N: *(.*) *Capacity: *(.*[TGMK]B)',
-            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) SIZE: *(.*)',
-            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)',
-            "QSFP": r'%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)'
+            "SSD": r'%s MODEL: *(.*) *\r?\n? *S/N: *(.*) *\r?\n? *Capacity: *(.*[TGMK]B)',
+            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) *\r?\n? *SIZE: *(.*)',
+            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *\r?\n? *BITRATE: *([1-9][0-9\.]* [GMK]b/s)',
+            "QSFP": r'%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *\r?\n? *BITRATE: *([1-9][0-9\.]* [GMK]b/s)'
         }
 
         for module in self.sys_modules["PSU"].keys():
