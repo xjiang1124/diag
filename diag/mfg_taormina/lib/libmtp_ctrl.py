@@ -5301,16 +5301,16 @@ class mtp_ctrl():
         if not libmfg_utils.mtp_clear_console(self):
             return False
 
-        self.mtp_apc_pwr_on()
         self.cli_log_inf("Power on APC", level=0)
+        self.mtp_apc_pwr_on()
 
         # reconnect console after powerup instead of before; 
         # SLC 8xxx console line disconnects when unit is powered on
         if self._mgmt_handle is not None:
             self.mtp_console_disconnect()
         if self._use_usb_console:
-            time.sleep(10)
-            self.cli_log_inf("Reconnect to SLC 8xxx console port", level=0)
+            self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
+            libmfg_utils.count_down(10)
 
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
@@ -5349,11 +5349,13 @@ class mtp_ctrl():
             if seconds > retry_wait_time:
                 retry_cnt -= 1
                 if retry_cnt >= 0:
-                    libmfg_utils.aruba_gui_clear_buffer2()
-                    self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
-                    raw_input("Please check that the console is connected then press any key to continue.\n")
+                    if ENABLE_CONSOLE_SANITY_CHECK:
+                        libmfg_utils.aruba_gui_clear_buffer2()
+                        self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
+                        raw_input("Please check that the console is connected then press any key to continue.\n")
                     retry_start_time = datetime.now()
                     self.cli_log_inf("Retrying console...")
+                    self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
                     continue
                 else:
                     break
@@ -5362,6 +5364,7 @@ class mtp_ctrl():
             elif idx == 2:
                 self._mgmt_handle.sendline(str(selection))
                 starttosendselection = False
+                self.cli_log_inf("Boot profile {} selected".format(selection))
             elif idx == 3:
                 start=datetime.now()
             elif idx == selection:
@@ -5373,8 +5376,8 @@ class mtp_ctrl():
                 self.cli_log_inf("Power off APC", level=0)
                 self.mtp_apc_pwr_off()
                 libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-                self.mtp_apc_pwr_on()
                 self.cli_log_inf("Power on APC", level=0)
+                self.mtp_apc_pwr_on()
 
         if retry_cnt < 0:
             self.cli_log_err("Failed to connect console in 3 retries", level=0)
@@ -5400,9 +5403,6 @@ class mtp_ctrl():
         if selection == 0:
             if not self.svos_usb_mount():
                 self.cli_log_err("Unable to mount usb", level=0)
-                return False
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
                 return False
 
         return True
@@ -5880,7 +5880,7 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         
         if usb_method:
-            self.cli_log_inf("Mounting USB")
+            self.cli_log_inf("Mounting USB folder", level=0)
             self.mtp_mgmt_exec_cmd("mkdir -p /mnt/usb")
             self.mtp_mgmt_exec_cmd("mount /dev/sdb2 /mnt/usb")
             self.mtp_mgmt_exec_cmd("cp /mnt/usb/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
@@ -5902,11 +5902,13 @@ class mtp_ctrl():
             Already need to be in svcli for this function
             as mount usb needs to be done in original svos shell (fresh boot), not an svcli later down the stack
         """
+        self.cli_log_inf("Mount USB", level=0)
         self.mtp_mgmt_exec_cmd("mount usb")
+        self.cli_log_inf("Mount USB done", level=0)
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
             return False
-        self.mtp_mgmt_exec_cmd("lsusb")
+        self.mtp_mgmt_exec_cmd("lsusb", timeout=10)
 
         return True
 

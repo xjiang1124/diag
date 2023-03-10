@@ -889,8 +889,10 @@ def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
 def mtp_clear_console(mtp_mgmt_ctrl):
     if mtp_mgmt_ctrl._ts_cfg:
         if mtp_mgmt_ctrl._use_usb_console:
+            mtp_mgmt_ctrl.cli_log_inf("Clearing USB console line")
             ts_cfg = mtp_mgmt_ctrl._usb_ts_cfg
         else:
+            mtp_mgmt_ctrl.cli_log_inf("Clearing console line")
             ts_cfg = mtp_mgmt_ctrl._ts_cfg
         ts_ip = ts_cfg[0]
         ts_port = ts_cfg[1]
