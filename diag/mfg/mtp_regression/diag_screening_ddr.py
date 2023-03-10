@@ -115,7 +115,7 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
     pn_list= list()
     for slot in nic_list:
         pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot) # get the PN format like this 68-0015-02 01
-        pn = pn.split()[0]
+        pn = "".join(pn.split("-")[0:1])[0:6]   # Get first 6 digits of PN
         if pn not in pn_list:
             pn_list.append(pn)
     if len(pn_list) != 1:
@@ -176,6 +176,7 @@ def mtp_run_ddr_bist(mtp_mgmt_ctrl, slot=None, ddr_bist_cmdline_args_str=None):
     cmd = "tclsh ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
         rs = False
+        cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
         mtp_mgmt_ctrl.cli_log_slot_err(slot, cmd_buf)
         # kill the process in case it's hung/timed out
         # ctrl-c doesnt work
