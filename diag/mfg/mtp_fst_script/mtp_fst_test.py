@@ -761,7 +761,7 @@ def load_mtp_cfg(cfgyml = None):
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
     if cfgyml:
-        mtp_chassis_cfg_file_list.append(os.path.abspath(cfgyml))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+cfgyml))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 

@@ -694,7 +694,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
 
     return True
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None):
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None, extra_config=None):
     shared_script_dir = os.path.dirname(mtp_script_dir)
     mtp_script_dir = os.path.dirname(mtp_script_dir) + ".{:s}/".format(mtp_mgmt_ctrl._id)
     # remove previous copy to this MTP
@@ -706,6 +706,9 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     os.system("sync")
     if extra_script:
         cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
+        os.system(cmd)
+    if extra_config:
+        cmd = "cp {:s} config/".format(extra_config)
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
@@ -1457,7 +1460,7 @@ def flx_web_srv_get_uut_info(sn, stage=None):
     return resp
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[]):
+def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[], mirror_logdir=None):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -1819,6 +1822,13 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
             #log_hard_copy_flag = False
             # relative link is ../sn/log_pkg_file
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
+
+            if mirror_logdir:
+                dest = mirror_logdir + "/" + os.path.basename(qa_log_pkg_file)
+                cmd = "cp {:s} {:s}".format(qa_log_pkg_file, mirror_logdir)
+                os.system(cmd)
+                mtp_mgmt_ctrl.cli_log_inf("Log also stored to {:s}".format(dest))
+
         # create hard link
         else:
             mtp_mgmt_ctrl.cli_log_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))

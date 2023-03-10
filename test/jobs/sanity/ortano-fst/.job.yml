@@ -20,20 +20,17 @@ e2e-targets:
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
+     - package-elba-mfg-script
     deployment:
       skip-pxe-install: true
     resources:
-      - bm:
-        - vendor: Supermicro
-          count: 1
-          image: build-17
-          props:
-          - name: sanity-group
-            value: diag-fst
-          - name: mtp-nic-processor
-            value: elba
-          nics:
-          - vendor: Intel
+    - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-type
+           value: supermicro
     provision:
       username: diag
       password: lab123

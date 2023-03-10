@@ -10,6 +10,7 @@ import (
     "common/errType"
     "protocol/pmbus"
     "protocol/smbus"
+    "hardware/i2cinfo"
 )
 
 func ReadStatus(devName string) (status uint16, err int) {
@@ -140,7 +141,18 @@ func TestTps549a20(devName string) (err int) {
 }
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"FREQ", "VOUT_ADJ", "VOUT_VMG", "STATUS", "VOUT(850mv based)"}
+    var vrmTitle []string
+    var vBaseMv float64
+    if i2cinfo.CardType == "GINESTRA_D5" || (i2cinfo.CardType == "GINESTRA_D4" && devName == "VDD_DDR") {
+        vrmTitle = []string {"FREQ", "VOUT_ADJ", "VOUT_VMG", "STATUS", "VOUT(750mv based)"}
+        vBaseMv = 750.0
+    } else if i2cinfo.CardType == "GINESTRA_D4" && devName == "DDR_VDDQ" {
+        vrmTitle = []string {"FREQ", "VOUT_ADJ", "VOUT_VMG", "STATUS", "VOUT(1200mv based)"}
+        vBaseMv = 1200.0
+    } else {
+        vrmTitle = []string {"FREQ", "VOUT_ADJ", "VOUT_VMG", "STATUS", "VOUT(850mv based)"}
+        vBaseMv = 850.0
+    }
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
 
@@ -185,7 +197,7 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf("0x%X", status)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)//+"\n"
 
-    vout := int(850.0 * (1.0 + adj/100.0) * (1.0 + margin/100.0))
+    vout := int(vBaseMv * (1.0 + adj/100.0) * (1.0 + margin/100.0))
     outStrTemp = fmt.Sprintf("%d", vout)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

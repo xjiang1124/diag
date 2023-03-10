@@ -1,0 +1,21 @@
+---
+meta:
+  name: mfg_scandl
+  description: Mfg Scan DL test
+
+config:
+  testbed       : MTP
+  job           : ScanDL
+
+test_types:
+  precheckin:
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    skip:
+    slots: 10
+
