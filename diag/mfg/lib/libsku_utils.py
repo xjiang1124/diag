@@ -104,6 +104,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT:   "FPD" + FLX_SN_SUFFIX_FMT + "|" + "FPA" + FLX_SN_SUFFIX_FMT, # gold cards are from FSP, as FPA
         PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT:  "FPD" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT:   "FPD" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT:    "FPG" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                  "FPF" + FLX_SN_SUFFIX_FMT + "|" + "FPN" + FLX_SN_SUFFIX_FMT # FPN allowed until Q2, then change this to "N/A" to block all FPN
     },
     Factory.FSP: {
