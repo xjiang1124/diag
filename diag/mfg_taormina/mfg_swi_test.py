@@ -154,7 +154,7 @@ def single_uut_fw_program(stage,
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
-                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, console_sanity_check=True)
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
@@ -258,7 +258,7 @@ def single_uut_fw_program(stage,
             elif test.startswith("OS_BOOT"):
                 ret = mtp_mgmt_ctrl.tor_boot_select(1)
             elif test.startswith("OS_S_BOOT"):
-                ret = mtp_mgmt_ctrl.tor_boot_select(1, secure_login=True)
+                ret = mtp_mgmt_ctrl.tor_boot_select(1)
 
             elif test == "MGMT_INIT":
                 ret = mtp_mgmt_ctrl.tor_mgmt_init()
@@ -389,7 +389,7 @@ def single_uut_fw_program(stage,
                 mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
                 start_ts = mtp_mgmt_ctrl.log_test_start(test)
                 if test.startswith("OS_S_BOOT"):
-                    ret = mtp_mgmt_ctrl.tor_boot_select(1, secure_login=True)
+                    ret = mtp_mgmt_ctrl.tor_boot_select(1)
                 elif test == "MGMT_INIT_OS":
                     ret = mtp_mgmt_ctrl.tor_mgmt_init(False)
                 elif test == "DIAG_INIT":
