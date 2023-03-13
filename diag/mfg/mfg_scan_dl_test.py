@@ -46,9 +46,11 @@ def logfile_cleanup(file_list):
         os.system("rm -rf {:s}".format(_file))
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml=None):
     # DL/P2C MTP Chassis
     mtp_chassis_cfg_file_list = list()
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
@@ -192,6 +194,9 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--fru_mapping_file", "-f", help="Mapping file of allowed MACs, SNs, PNs", action="store_true")
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
     args = parser.parse_args()
     if args.verbosity:
@@ -213,8 +218,13 @@ def main():
 
     stage = FF_Stage.FF_DL
 
-    mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtp_id = mtpid_list[0]
     mtpid_fail_list = list()
 
@@ -1105,6 +1115,12 @@ def main():
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
             log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
             log_hard_copy_flag = False
+
+            qa_log_pkg_file = mfg_log_dir+os.path.basename(log_pkg_file)
+            if args.jobd_logdir:
+                dest = args.jobd_logdir + "/" + os.path.basename(qa_log_pkg_file)
+                cmd = "cp {:s} {:s}".format(qa_log_pkg_file, args.jobd_logdir)
+                os.system(cmd)
         else:
             libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             chdir_cmd = "cd {:s}".format(mfg_log_dir)
@@ -1130,7 +1146,7 @@ def main():
                 chdir_cmd = "cd {:s}".format(mfg_log_dir)
                 ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
                 cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
-                os.system(cmd)            
+                os.system(cmd)
 
     if GLB_CFG_MFG_TEST_MODE:
         libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage, mfg_dl_summary)
@@ -1141,9 +1157,13 @@ def main():
     mtp_dl_summary = dict()
     mtp_dl_summary[mtp_id] = mfg_dl_summary
     # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mtp_dl_summary, mtpid_fail_list)
+    test_result = libmfg_utils.mfg_summary_disp(stage, mtp_dl_summary, mtpid_fail_list)
 
-    return
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

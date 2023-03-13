@@ -185,6 +185,10 @@ func present() (err int) {
                 presentStr = "BIODONA_D4"
             case nicCpldCommon.ID_BIODONA_D5:
                 presentStr = "BIODONA_D5"
+            case nicCpldCommon.ID_GINESTRA_D4:
+                presentStr = "GINESTRA_D4"
+            case nicCpldCommon.ID_GINESTRA_D5:
+                presentStr = "GINESTRA_D5"
             case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
             default:
@@ -427,6 +431,10 @@ func sysDetect() (err int) {
                 presentStr = "POMONTEDELL"
             case nicCpldCommon.ID_POMONTE:
                 presentStr = "POMONTE"
+            case nicCpldCommon.ID_GINESTRA_D4:
+                presentStr = "GINESTRA_D4"
+            case nicCpldCommon.ID_GINESTRA_D5:
+                presentStr = "GINESTRA_D5"
             default:
                 presentStr = "Unknown"
             }

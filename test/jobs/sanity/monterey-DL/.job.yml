@@ -2,21 +2,19 @@
 version: 2.0
 meta:
   asic: elba
-
-
+    
 queue_name: asic
 image:
   bind_dir: "/psdiag"
   work_dir: "/psdiag"
 
 e2e-targets:
-  ortano-fst:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/ortano_fst.testsuite"]
+  monterey-DL-sanity:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
-    max-duration: 24h
     build-dependencies:
      - build-amd64-elba
      - build-arm64-elba
@@ -24,13 +22,15 @@ e2e-targets:
     deployment:
       skip-pxe-install: true
     resources:
-    - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-type
-           value: supermicro
+      - generic:
+        - type: MTP
+          vendor: Pensando
+          count: 1
+          props:
+          - name: mtp-nic-processor
+            value: elba
+          - name: nic1-board-name
+            value: lacona
     provision:
       username: diag
       password: lab123

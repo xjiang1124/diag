@@ -62,6 +62,7 @@ class mtp_ctrl():
         self._nic_scan_sn_list = [None] * self._slots
         self._nic_alom_sn_list = [None] * self._slots
         self._nic_status_before_hide_list = [NIC_Status.NIC_STA_OK] * self._slots
+        self._nic_sw_pn_list = [None] * self._slots
 
         self._nic_thread_list = [None] * self._slots
         # lock for printing
@@ -3131,90 +3132,68 @@ class mtp_ctrl():
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
             return False
-        self.cli_log_slot_inf_lock(slot, "==> Check SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))   
         if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
             if software_pn != "90-0001-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:9] == "111-05363": #NAPLES 100 NETAPP
             if software_pn != "90-0001-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0013":   #NAPLES100 IBM
             if software_pn != "90-0004-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37692":    #NAPLES100 HPE 
             if software_pn != "90-0002-0009":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False    
         elif naples_pn[0:6] == "P41854":    #NAPLES100 HPE CLOUD
             if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0024":    #NAPLES100 DELL 
             if software_pn != "90-0013-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0005":    #NAPLES25 PENSANDO
             if software_pn != "90-0002-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P18669":     #NAPLES25 HPE
             if software_pn != "90-0006-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:7] == "68-0008":    #NAPLES25 EQUINIX
             if software_pn != "90-0006-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
             if software_pn != "90-0002-0010":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
             if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P46653":    # NAPLES25 SWM HPE TAA
             if software_pn != "90-0014-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):    #NAPLES25 SWM PENSANDO & TAA
             if software_pn != "90-0002-0005":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
             if software_pn != "90-0007-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
             if software_pn != "90-0002-0007":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0023":     #NAPLES25 OCP PENSANDO
             if software_pn != "90-0002-0007":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
             if software_pn != "90-0002-0010":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
             if software_pn != "90-0006-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP DELL
             if software_pn != "90-0007-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
             if software_pn != "90-0003-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
             if software_pn != "90-0018-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
@@ -3222,69 +3201,55 @@ class mtp_ctrl():
                 return False
         elif naples_pn[0:7] == "68-0021":     #ORTANO PENSANDO
             if software_pn != "90-0019-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "0PCFPC":      #POMONTE DELL
             if software_pn != "90-0017-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] in ("0X322F","0W5WGK"):      #LACONA32 DELL
             if software_pn != "90-0017-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:6] == "P47930":      #LACONA32 HPE
             if software_pn != "90-0017-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
             if software_pn != "90-0018-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0028":     #ORTANO2 ADI IBM
             if software_pn != "90-0016-0002":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
             if software_pn != "90-0019-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
             if software_pn != "90-0018-0001":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
             if software_pn != "90-0020-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
             if software_pn != "90-0020-0003":
-                self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Software Image match to nic part number failed")
                 return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
-            return False             
-        '''
-        *** AS OF 11/30/2020.. 
-        90-0001-0001   netapp  PNSO-1.0.0-E-7-netapp-09162019-1911.tar
-        90-0002-0001   goldman  PNSO-1.1.1-E-15-goldman-10042019-1722.tar ??
-        90-0002-0002    PNSO-1.3.2-E-3-basicdsc-ga-022420202-1611
-        90-0002-0003   naples_fw_1.8.0-E-48_B-_0608.tar
-        90-0002-0004   naples_fw_iris_RELB_1.12.0-E-52_0728.tar
-        90-0002-0005   //standup swm naples_fw_iris_1.17.0-54_1120.tar
-        90-0002-0007   //RelB++ (SWM833, OCP). Updated 03/02/2021
-        90-0002-0008   //1.14.5 (All HPE Ent: SWM, 100, OCP). Updated 05/28/2021
-        90-0003-0001   //Oracle Capri cards.. dont care
-        90-0004-0001   //IBM  naples_fw_apulu_1.17.0-42_1117.tar
-        90-0005-0001   //OCP  naples_fw_iris_1.14.0-E-25_2020.08.31.tar
-        90-0006-0001   //CLOUD-A  naples_fw_apulu_1.10.3-C-26_CloudA_0806.tar
-        90-0006-0002   //HPE SWM AND NAPLES100 CLOUD naples_fw_apulu_1.16.2-C-10_2021.04.08.tar
-        90-0007-0001   //naples_fw_iris_1.14.4-E-12_20210408.tar. Updated 04/12/2021
-        90-0008-0001   //DELL SWM  dsc_fw_1.14.0-E-45.tar
-        90-0009-0002   //Ortano2-oracle dsc_fw_athena_elba_1.15.8-C-9_2021.05.22.tar
-        90-0010-0001   //1.14.5 (OCP). Updated 04/26/2021
-        90-0017-0001   naples_uefidiag_fw_elba_1.46.0-E-15_2022.04.27.tar (pomontedell & lacona32)
-        '''
+            return False
+
+        self.cli_log_slot_inf_lock(slot, "==> SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))
         return True
+
+    def mtp_nic_sw_pn_search(self, slot, sw_pn_list, check_naples_pn):
+        """ for each slot, match it to one of the SW PNs; fail slot if no match """
+        for sw_pn in sw_pn_list:
+            if not self.check_swi_software_image(slot, sw_pn, check_naples_pn):
+                continue
+            else:
+                self.mtp_set_nic_sw_pn(slot, sw_pn)
+                break
+        # search exhausted
+        if not self.mtp_get_nic_sw_pn(slot):
+            self.cli_log_slot_err(slot, "No correct SW PN supplied")
+            return False
+        else:
+            return True
 
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
@@ -5354,6 +5319,13 @@ class mtp_ctrl():
         else:
             return False
 
+    def mtp_get_nic_sw_pn(self, slot):
+        if self._nic_sw_pn_list[slot] is None:
+            return ""
+        return self._nic_sw_pn_list[slot]
+
+    def mtp_set_nic_sw_pn(self, slot, sw_pn):
+        self._nic_sw_pn_list[slot] = sw_pn
 
     def mtp_get_nic_type(self, slot):
         return self._nic_type_list[slot]

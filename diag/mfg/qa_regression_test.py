@@ -348,9 +348,7 @@ def main():
     if args.mtpid:
         mtpid_list = []
         mtpid_list.extend(args.mtpid)
-    else:
-        mtpid_list = get_mtpid_list(mtp_cfg_db)
-    #mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
 

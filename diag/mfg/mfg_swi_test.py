@@ -32,8 +32,10 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml=None):
     mtp_chassis_cfg_file_list = list()
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
@@ -60,8 +62,16 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, sw_pn, skip_testlist = []):
+def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file_list, profile_cfg_file_list, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, sw_pn_list, skip_testlist = [], mtpcfg_file=None, mirror_logdir=None):
     stage = FF_Stage.FF_SWI
+
+    img_opts = ""
+    for nic_sw_img_file in nic_sw_img_file_list:
+        img_opts += nic_sw_img_file + " "
+
+    sw_pn_opts = ""
+    for sw_pn in sw_pn_list:
+        sw_pn_opts += sw_pn + " "
 
     # go to mtp_swi_script and start the test
     cmd = "cd {:s}".format(mtp_swi_script_dir)
@@ -70,10 +80,12 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    if profile_cfg_file:
-        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, profile_cfg_file, mtp_id, sw_pn)
+
+    if profile_cfg_file_list:
+        profile_cfg_file = profile_cfg_file_list[0] # multiple profiles not supported
+        cmd = "./mtp_swi_test.py --image {:s} --profile {:s} --mtpid {:s} --swpn {:s}".format(img_opts, profile_cfg_file, mtp_id, sw_pn_opts)
     else:
-        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s} --swpn {:s}".format(nic_sw_img_file, mtp_id, sw_pn)
+        cmd = "./mtp_swi_test.py --image {:s} --mtpid {:s} --swpn {:s}".format(img_opts, mtp_id, sw_pn_opts)
     if skip_testlist:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
     else:
@@ -85,6 +97,8 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
         fail_slots_cmd = ""
     cmd += skipped_testlist
     cmd += fail_slots_cmd
+    if mtpcfg_file:
+        cmd += " --mtpcfg " + mtpcfg_file
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_SW_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_mgmt_ctrl.cli_log_inf("MFG SW Install Test Complete", level=0)
@@ -99,7 +113,7 @@ def single_mtp_swi_test(mtp_swi_script_dir, nic_sw_img_file, profile_cfg_file, m
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_swi_script_dir + asic_sub_dir)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, stage)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect SW Install Test result failed", level=0)
         return
@@ -116,7 +130,9 @@ def main():
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
-    parser.add_argument("--sw-pn", "-swpn", "--swpn", "-sw-pn", help="pre-select SW PN", default="")
+    parser.add_argument("--sw-pn", "-swpn", "--swpn", "-sw-pn", help="pre-select SW PN or list of SW PNs", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
 
     args = parser.parse_args()
@@ -126,7 +142,12 @@ def main():
         verbosity = False
     stage=FF_Stage.FF_SWI
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
@@ -156,23 +177,32 @@ def main():
 
     # get sw image name based on the sw pn
     if not args.sw_pn:
-        sw_pn = libmfg_utils.sw_pn_scan()
+        sw_pn_list = [libmfg_utils.sw_pn_scan()]
     else:
-        sw_pn = args.sw_pn
-    nic_sw_link_file = "release/{:s}".format(sw_pn)
-    if not libmfg_utils.file_exist(nic_sw_link_file):
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
-        return
-    nic_sw_img_file = os.readlink(nic_sw_link_file)
+        sw_pn_list = args.sw_pn
+    for sw_pn in sw_pn_list:
+        mtp_mgmt_ctrl.cli_log_inf("==> Scanned SW PN: {:s} <==".format(sw_pn))
+    nic_sw_img_file_list = list()
+    for sw_pn in sw_pn_list:
+        nic_sw_link_file = "release/{:s}".format(sw_pn)
+        if not libmfg_utils.file_exist(nic_sw_link_file):
+            for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+                mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
+            return
+        nic_sw_img_file = os.readlink(nic_sw_link_file)
+        nic_sw_img_file_list.append(nic_sw_img_file)
 
-    profile_link_cfg_file = "release/profile_{:s}.py".format(sw_pn)
-    if not libmfg_utils.file_exist(profile_link_cfg_file):
-        mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
-        profile_cfg_file = None
-    else:
-        profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
-        mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
+    # get path to profile, but doesnt work if multiple sw_pn supplied
+    profile_cfg_file_list = list()
+    for sw_pn in sw_pn_list:
+        profile_link_cfg_file = "release/profile_{:s}.py".format(sw_pn)
+        if not libmfg_utils.file_exist(profile_link_cfg_file):
+            mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
+            profile_cfg_file = None
+        else:
+            profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
+            mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
+            profile_cfg_file_list.append(profile_link_cfg_file)
 
     if not GLB_CFG_MFG_TEST_MODE:
         args.skip_test.append("SCAN_VERIFY")
@@ -251,7 +281,8 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_swi_image_list = list()
         mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        mtp_swi_image_list.append(nic_sw_img_file)
+        for nic_sw_img_file in nic_sw_img_file_list:
+            mtp_swi_image_list.append(nic_sw_img_file)
         if (mtp_capability & 0x1):
             for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 try:
@@ -370,27 +401,33 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_swi_script_pkg = "mtp_swi_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP SW Install Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_swi_script_pkg, logfile_dir_list[mtp_id], profile_cfg_file):
+        profile_cfg_file = " ".join(x for x in profile_cfg_file_list)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_swi_script_dir, mtp_swi_script_pkg, logfile_dir_list[mtp_id], profile_cfg_file, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP SW Install Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP SW Install Test script complete", level=0)
+    # now that file has been packaged into config/, discard full path
+    if mtpcfg_file:
+        mtpcfg_file = os.path.basename(mtpcfg_file)
 
     mtp_thread_list = list()
     mfg_swi_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_swi_summary[mtp_id] = list()
         mtp_thread = threading.Thread(target = single_mtp_swi_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_swi_script_dir,
-                                                                            nic_sw_img_file,
-                                                                            profile_cfg_file,
+                                                                            nic_sw_img_file_list,
+                                                                            profile_cfg_file_list,
                                                                             mtp_mgmt_ctrl,
                                                                             mtp_id,
                                                                             fail_nic_list[mtp_id],
                                                                             mfg_swi_summary[mtp_id],
-                                                                            sw_pn,
-                                                                            args.skip_test))
+                                                                            sw_pn_list,
+                                                                            args.skip_test,
+                                                                            mtpcfg_file,
+                                                                            args.jobd_logdir))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -413,9 +450,13 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mfg_swi_summary, mtpid_fail_list)
+    test_result = libmfg_utils.mfg_summary_disp(stage, mfg_swi_summary, mtpid_fail_list)
 
-    return
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

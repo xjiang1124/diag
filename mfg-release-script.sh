@@ -1,11 +1,14 @@
 top_dir=$PWD
 release_name=$(echo $branch_or_tag | awk -F'/' '{print $NF}')
 asic_type=$(echo $asic_type)
-jenkins_dir=/vol/hw/diag/mfg_release/jenkins
+jenkins_dir=$(echo $working_dir)
 mfg_folder="mfg"
 if [[ ${asic_type} == "taormina" ]]; then
 	asic_type="elba"
 	mfg_folder="mfg_taormina"
+fi
+if [[ -z ${jenkins_dir} ]]; then
+	jenkins_dir=/vol/hw/diag/mfg_release/jenkins
 fi
 mfg_script_dir=${jenkins_dir}/${release_name}/${mfg_folder}
 
@@ -26,7 +29,9 @@ fi
 sync
 
 ## COPY DIAG IMAGES
-if [[ -z ${alternate_diag_image} ]]; then
+if [[ ${release_name} == "jobd" ]]; then
+    echo "Using diag images from jobd build instead"
+elif [[ -z ${alternate_diag_image} ]]; then
     cp build/images/image_amd64_${asic_type}.tar $mfg_script_dir/release/image_amd64_${asic_type}_${release_name}.tar
     cp build/images/image_arm64_${asic_type}.tar $mfg_script_dir/release/image_arm64_${asic_type}_${release_name}.tar
 else
@@ -80,6 +85,11 @@ for swpn in $(grep -o "90-....-[0-9A-Za-z]*" ../lib/libmtp_ctrl.py); do
         fi
     fi
 done
+
+## TAR THE FW IMAGES
+cd ${mfg_script_dir}
+tar czf fw.tar.gz release/
+mv fw.tar.gz ../
 
 sync
 

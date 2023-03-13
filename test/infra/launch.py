@@ -42,51 +42,48 @@ class LaunchApp(object):
             return defs.Result.INFRA_FAILURE
         return defs.Result.SUCCESS
 
-    def __gen_mtp_inventory(self, testbed_json):
-        Logger.info(f"Loading {testbed_json} to generate MTP test-cfg yaml")
+    def __get_testbed_id(self, testbed_json):
         try:
             with open(testbed_json, 'r') as fh:
                 testbed_spec = json.load(fh)
         except Exception as e:
             Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
-            return defs.Result.INFRA_FAILURE
-        mtp_cfg_yaml_file = os.path.join(GlobalOptions.cfgfolder, 'jobd_mtp_cfg.yml')
+            return None
 
-        # Build specific details required for mfg test (example)
-        #MTP-002:
-        #    MODE: ""
-        #    TS: "192.168.74.208"
-        #    TS_PORT: "2008"
-        #    TS_USERID: "admin"
-        #    TS_PASSWORD: "N0isystem$"
-        #    APC1: ""
-        #    APC1_PORT: ""
-        #    APC1_USERID: ""
-        #    APC1_PASSWORD: ""
-        #    APC2: "192.168.70.161"
-        #    APC2_PORT: "12"
-        #    APC2_USERID: "apc"
-        #    APC2_PASSWORD: "apc"
-        #    IP: "192.168.68.182"
-        #    USERID: "diag"
-        #    PASSWORD: "lab123"
-        #    ALIAS: "mtp001"
-        #    SLOTS: 10
-        #    CAPABILITY: 0x2
+        testbed_id = testbed_spec.get('ID').split("-")[1]
+        return testbed_id
+
+    def __parse_warmd(self, testbed_json):
+        Logger.info(f"Loading {testbed_json} to parse MTP info")
+        try:
+            with open(testbed_json, 'r') as fh:
+                testbed_spec = json.load(fh)
+        except Exception as e:
+            Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
+            return defs.Result.INFRA_FAILURE, None
 
         instances = testbed_spec.get('Instances', None)
         if instances == None or len(instances) == 0:
-            return defs.Result.INFRA_FAILURE
+            return defs.Result.INFRA_FAILURE, None
 
         mtp_instance = instances[0]
         mtp_resource = mtp_instance.get('Resource', None)
-
         if mtp_resource == None:
-            return defs.Result.INFRA_FAILURE
+            Logger.error(f"Failed to extract MTP resource JSON from {GlobalOptions.testbed_json} - ABORT")
+            return defs.Result.INFRA_FAILURE, None
 
+        cleaned_mtp_resource = dict()
+        for key in mtp_resource.keys():
+            cleaned_mtp_resource[key.strip()] = mtp_resource[key]
+        mtp_resource = cleaned_mtp_resource
+        print(mtp_resource)
+
+        return defs.Result.SUCCESS, mtp_resource
+
+    def __gen_mtp_inventory(self, mtp_resource, testbed_id):
+        mtp_cfg_yaml_file = os.path.join(GlobalOptions.cfgfolder, 'jobd_mtp_cfg.yml')
         mtp_ip = mtp_resource.get("host-ip")
 
-        testbed_id = testbed_spec.get('ID').split("-")[1]
         data = {
             'MODE': "",
             'TS': "",
@@ -123,10 +120,10 @@ class LaunchApp(object):
                     data[f'APC{idx+1}_USERID'] =  "apc"
                     data[f'APC{idx+1}_PASSWORD'] =  "apc"
 
-        # change SKIP_SLOTS to skip none or use outermost 2 slots
+        # change SKIP_SLOTS to skip none or use outermost 2 even slots
         test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
         if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
-            data['SKIP_SLOTS'] = "2-9"
+            data['SKIP_SLOTS'] = "1,3-9"
 
         testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
         mtp_yaml_data = {
@@ -143,6 +140,66 @@ class LaunchApp(object):
 
         self.__settings['MTP_CFG_YML'] = mtp_cfg_yaml_file
         self.__settings['MTP_ID'] = testbed_id
+        return defs.Result.SUCCESS
+
+    def __gen_nic_barcodes(self, mtp_resource, testbed_id):
+        data = dict()
+
+        # scan all barcodes, or only 2, based on what test spec says
+        test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
+        if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
+            slot_range = [2,10]
+        else:
+            slot_range = range(1,11)
+
+        for slot in slot_range:
+            nic_slot = "NIC-{:02d}".format(slot)
+            data[nic_slot] = {
+                'SN': mtp_resource.get("nic{:d}-serial-number".format(slot)),
+                'MAC': mtp_resource.get("nic{:d}-mac-address".format(slot)),
+                'PN': mtp_resource.get("nic{:d}-part-number".format(slot))
+            }
+
+        # write to a file same as it is scanned into scan_dl...
+        scanDL_input = "nic_barcode_scan"
+        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
+        Logger.info(f"Generating {testbed_id} NIC barcodes in input file: {scanDL_input}")
+        try:
+            with open(os.path.join(GlobalOptions.topdir, scanDL_input), "w") as fh:
+                for slot in data.keys():
+                    if not data[slot]['SN'] or not data[slot]['MAC']:
+                        # skip empty slot
+                        continue
+
+                    fh.write(f'{slot}\n')
+                    fh.write(data[slot]['SN'] + "\n")
+                    fh.write(data[slot]['MAC'] + "\n")
+                    if data[slot]['PN']:
+                        fh.write(data[slot]['PN'] + "\n")
+                fh.write(f'STOP\n')
+        except Exception as e:
+            Logger.error("Failed to write {:s}".format(scanDL_input))
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS
+
+    def __gen_mtp_sw_pn(self, mtp_resource, testbed_id):
+        # write to a file with all SW PNs in one line
+        swi_input = "swi_input"
+        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
+        Logger.info(f"Generating {testbed_id} SW PN in input file: {swi_input}")
+
+        sw_pn_test_args = ""
+        for swpn_idx in range(1,11):
+            if mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)):
+                sw_pn_test_args += mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)) + " "
+        try:
+            with open(os.path.join(GlobalOptions.topdir, swi_input), "w") as fh:
+                fh.write(sw_pn_test_args)
+        except Exception as e:
+            Logger.error("Failed to write {:s}".format(swi_input))
+            return defs.Result.INFRA_FAILURE
+
         return defs.Result.SUCCESS
 
     def __gen_mtp_env(self):
@@ -227,10 +284,26 @@ class LaunchApp(object):
             Logger.error(f"Failed to lookup testsuite from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
-        ret = self.__gen_mtp_inventory(GlobalOptions.testbed_json)
+        ret, mtp_resource = self.__parse_warmd(GlobalOptions.testbed_json)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract MTP resource JSON from {GlobalOptions.testbed_json} - ABORT")
+            return ret
 
+        testbed_id = self.__get_testbed_id(GlobalOptions.testbed_json)
+
+        ret = self.__gen_mtp_inventory(mtp_resource, testbed_id)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract mtp-inventory from {GlobalOptions.testbed_json} - ABORT")
+            return ret
+
+        ret = self.__gen_nic_barcodes(mtp_resource, testbed_id)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract NIC SN, MAC, PN from {GlobalOptions.testbed_json} - ABORT")
+            return ret
+
+        ret = self.__gen_mtp_sw_pn(mtp_resource, testbed_id)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract SW PNs from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
         ret =  self.__load_image_manifest()
