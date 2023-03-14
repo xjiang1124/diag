@@ -115,12 +115,15 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
     pn_list= list()
     for slot in nic_list:
         pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot) # get the PN format like this 68-0015-02 01
-        pn = "".join(pn.split("-")[0:1])[0:6]   # Get first 6 digits of PN
+        pn = pn.split()[0]
         if pn not in pn_list:
             pn_list.append(pn)
     if len(pn_list) != 1:
-        mtp_mgmt_ctrl.cli_log_err("Not Support Mix NIC with Different Part Number")
-        return ["Not Support", nic_list[:]]
+        # Check if all cards share first 6 digits of part number
+        first6_pn = set([ mypn[0:6] for mypn in pn_list])
+        if len(first6_pn) != 1:
+            mtp_mgmt_ctrl.cli_log_err("Not Support Mix NIC with Different Part Number")
+            return ["Not Support", nic_list[:]]
     pn = pn_list[0]
     argsdict = get_test_arguments(test, pn)
     nic_list_param = ",".join(str(slot+1) for slot in nic_list)
