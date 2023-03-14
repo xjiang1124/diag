@@ -108,6 +108,8 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
            cardType == "LACONA32" ||
            cardType == "POMONTEDELL" ||
            cardType == "POMONTE" ||
+           cardType == "GINESTRA_D4" ||
+           cardType == "GINESTRA_D5" ||
            cardType == "NAPLES100DELL" ||
            cardType == "NAPLES100HPE" {
            eeprom.I2cAddr16 = true
@@ -189,6 +191,10 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
+        }
+        if (cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5") {
+            eeprom.CustType = "ORTANO"
+            eeprom.EepromTbl = eeprom.OrtanoOracleTbl
         }
         if (cardType == "VOMERO2") {
             eeprom.CustType = "ORACLE"

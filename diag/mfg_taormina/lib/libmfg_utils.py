@@ -888,7 +888,12 @@ def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
 
 def mtp_clear_console(mtp_mgmt_ctrl):
     if mtp_mgmt_ctrl._ts_cfg:
-        ts_cfg = mtp_mgmt_ctrl._ts_cfg
+        if mtp_mgmt_ctrl._use_usb_console:
+            mtp_mgmt_ctrl.cli_log_inf("Clearing USB console line")
+            ts_cfg = mtp_mgmt_ctrl._usb_ts_cfg
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("Clearing console line")
+            ts_cfg = mtp_mgmt_ctrl._ts_cfg
         ts_ip = ts_cfg[0]
         ts_port = ts_cfg[1]
         ts_user = ts_cfg[2]
@@ -896,7 +901,7 @@ def mtp_clear_console(mtp_mgmt_ctrl):
         telnet_cmd = mtp_mgmt_ctrl.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4] #remove port
         session = pexpect.spawn(telnet_cmd, logfile=mtp_mgmt_ctrl._diag_filep)
-        prompt_list = ["Login:","assword:", ">", "#"]
+        prompt_list = ["ogin:","assword:", "]>", ">", "#"]
         while True:
             idx = mfg_expect(session, prompt_list)
             if idx < 0:
@@ -910,8 +915,15 @@ def mtp_clear_console(mtp_mgmt_ctrl):
                 session.sendline(ts_pass)
                 # session.setecho(True)
             elif idx == 2:
-                session.sendline("en")
+                 session.sendline("set deviceport port {:s} reset".format(ts_port))
+                 session.sendline()
+                 session.expect("Device Port settings successfully updated.")
+                 session.sendline("logout")
+                 session.sendline()
+                 break
             elif idx == 3:
+                session.sendline("en")
+            elif idx == 4:
                 session.sendline("clear line {:s}".format(ts_port))
                 session.sendline()
                 session.sendline()
