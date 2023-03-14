@@ -47,9 +47,9 @@ test2args = {
         "ARGUMENT_SPEC"              : "--slot_list     -wtime              -vmarg         -snake_num        -dura         -int_lpbk",
         "DEFAULT"                    : "N/A             600                 normal         4                 3             +",
         "68-0015"                    : "N/A             N/A                 N/A            N/A               N/A           N/A",
-        "P47930-001"                 : "N/A             300                 N/A            6                 120           N/A",
-        "0X322FX06"                  : "N/A             300                 N/A            6                 120           N/A",
-        "0X322FA00"                  : "N/A             300                 N/A            6                 120           N/A",
+        "P47930"                     : "N/A             300                 N/A            6                 120           N/A",
+        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A",
+        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A",
         "68-0029"                    : "N/A             600                 N/A            4                 3             +",
     },
 }

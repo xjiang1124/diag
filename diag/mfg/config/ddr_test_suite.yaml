@@ -20,8 +20,8 @@ TEST_CASE:
   - NAME: POWER_CYCLE_ONLY
     ITER: 20
   - NAME: SNAKE
+    ITER: 1
+    ITER_PER_PC: 10
+  - NAME: EDMA#DDR_STRESS  #concatenate multiple test name with hashtag if they share the same iteration parameter, so we will run them together to save a nic re-initinal time
     ITER: 10
     ITER_PER_PC: 1
-  - NAME: EDMA#DDR_STRESS  #concatenate multiple test name with hashtag if they share the same iteration parameter, so we will run them together to save a nic re-initinal time
-    ITER: 1 # keep 1 for EDMA and DDR_STRESS
-    ITER_PER_PC: 10
