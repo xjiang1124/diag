@@ -1,28 +1,113 @@
+UUT-2029:
+    MODE: ""
+    TS: "10.9.17.249"
+    TS_PORT: "29"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "10.9.17.248"
+    APC1_PORT: "6"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: ""
+    USERID: "admin"
+    PASSWORD: ""
+    ALIAS: "Rack12 RU 46"
+    SLOTS: 2
+    CAPABILITY: 0x1
+
+UUT-2028:
+    MODE: ""
+    TS: "10.9.17.249"
+    TS_PORT: "28"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "10.9.17.248"
+    APC1_PORT: "5"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: ""
+    USERID: "admin"
+    PASSWORD: ""
+    ALIAS: "Rack12 RU 45"
+    SLOTS: 2
+    CAPABILITY: 0x1
+
+# Marco P0 system
+UUT-2027:
+    MODE: ""
+    TS: "10.9.17.249"
+    TS_PORT: "27"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "10.9.17.248"
+    APC1_PORT: "4"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: ""
+    USERID: "admin"
+    PASSWORD: ""
+    ALIAS: "Rack12 RU 43"
+    SLOTS: 2
+    CAPABILITY: 0x1
+
+UUT-2026:
+    MODE: ""
+    TS: "10.9.17.249"
+    TS_PORT: "26"
+    TS_USERID: "admin"
+    TS_PASSWORD: "N0isystem$"
+    APC1: "10.9.17.248"
+    APC1_PORT: "3"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: ""
+    USERID: "admin"
+    PASSWORD: ""
+    ALIAS: "Rack12 RU 42"
+    SLOTS: 2
+    CAPABILITY: 0x1
+
 #Bank 1 from 1-12 [Port8 is C19]
 #Bank 2 from 13-24 [Port 24 is C19]
 
 # gold unit
 #Bank 1
 UUT-001:
-        MODE: ""
-        TS: "192.168.100.8"
-        TS_PORT: "02"
-        TS_USERID: ""
-        TS_PASSWORD: "aruba"
-        APC1: "192.168.100.3"
-        APC1_PORT: "1"
-        APC1_USERID: "apc"
-        APC1_PASSWORD: "apc"
-        APC2: "192.168.100.3"
-        APC2_PORT: "2"
-        APC2_USERID: "apc"
-        APC2_PASSWORD: "apc"
-        IP: ""
-        USERID: "admin"
-        PASSWORD: ""
-        ALIAS: "uut001"
-        SLOTS: 2
-        CAPABILITY: 0x1 
+    MODE: ""
+    TS: "192.168.100.8"
+    TS_PORT: "02"
+    TS_USERID: ""
+    TS_PASSWORD: "aruba"
+    APC1: "192.168.100.3"
+    APC1_PORT: "1"
+    APC1_USERID: "apc"
+    APC1_PASSWORD: "apc"
+    APC2: "192.168.100.3"
+    APC2_PORT: "2"
+    APC2_USERID: "apc"
+    APC2_PASSWORD: "apc"
+    IP: ""
+    USERID: "admin"
+    PASSWORD: ""
+    ALIAS: "uut001"
+    SLOTS: 2
+    CAPABILITY: 0x1 
 UUT-002:
     MODE: ""
     TS: "192.168.100.8"
