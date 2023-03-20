@@ -135,15 +135,6 @@ TOR_DSP:
                 NIC_NAME: No
                 SN: No
                 SLOT: No
-    # Moved to console as "PRBS_TOR"
-    # BCM:
-    #     PRBSEXT:
-    #         INIT: ""
-    #         POST: ""
-    #         OPTS:
-    #             NIC_NAME: No
-    #             SN: No
-    #             SLOT: No
     CPU:
         USB:
             INIT: ""
@@ -159,14 +150,6 @@ TOR_DSP:
                 NIC_NAME: No
                 SN: No
                 SLOT: No
-        # Moved to SWI as "PCIE_SCAN"
-        # PCISCAN:
-        #     INIT: ""
-        #     POST: ""
-        #     OPTS:
-        #         NIC_NAME: No
-        #         SN: No
-        #         SLOT: No
         MEMORY:
             INIT: ""
             POST: ""
