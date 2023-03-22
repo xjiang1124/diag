@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import copy
 import math
 import pexpect
 import os
@@ -324,7 +325,100 @@ class nic_test_v2:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
+    def ddr_stress(self, args):
+        print(args)
+    
+        if args.slot_list == "":
+            print ("Invalide input slot_list:", slot_list)
+    
+        slot_list = args.slot_list.split(',')
+
+        for idx in range(args.ite):
+            print("=== Ite", idx, "===")
+
+            [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, mgmt=False, asic_type="elba", first_pwr_on=args.first_pwr_on)
+
+            for slot1 in nic_list_pass:
+                slot = int(slot1)
+
+                self.nic_con.switch_console(slot)
+                session = common.session_start()
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    return False
+
+                # Copy image file to NIC
+                try:
+                    cmd = "/data/nic_util/stressapptest_arm -M 20000 -s 60 -m 16 -l /data/nic_util/stressapptest.log"
+                    ret = common.session_cmd(session, cmd, timeout=120, ending="Status: PASS - please verify no corrected errors")
+                    if ret < 0:
+                        print("P000", ret)
+                        return False
+                except pexpect.TIMEOUT:
+                    return False
+
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
+    def check_edma_ready(self, args):
+        slot_list = args.slot_list.split(',')
+        num_retry = 16
+        slot_list_remain = copy.deepcopy(slot_list)
+        slot_list_pass = []
+
+        for idx in range(num_retry):
+            print('------------------')
+            print('EDMA checking #{}'.format(idx))
+            print('------------------')
+
+            for slot1 in slot_list:
+
+                if slot1 in slot_list_pass:
+                    continue
+
+                slot = int(slot1)
+
+                self.nic_con.switch_console(slot)
+                session = common.session_start()
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    common.session_stop(session)
+                    continue
+
+                try:
+                    cmd = "ls /nic/conf/gen/mpu_prog_info.json"
+                    [ret, output] = self.nic_con.uart_session_cmd_w_ot(session, cmd, timeout=10)
+                except pexpect.TIMEOUT:
+                    self.nic_con.uart_session_stop(session)
+                    common.session_stop(session)
+                    continue
+
+                if 'No such file or directory' in output:
+                    print('Json file not present')
+                else:
+                    print('Json file present')
+                    slot_list_remain.remove(slot1)
+                    slot_list_pass.append(slot1)
+
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
+            if len(slot_list_remain) == 0:
+                break
+
+            print('Wait for 15 sec before next checking')
+            time.sleep(15)
+
+        print("EDMA checking: PASS list:", slot_list_pass)
+        print("EDMA checking: FAIL list:", slot_list_remain)
+
     def setup_multi(self, args):
+        print(args)
+
+        slot_list = args.slot_list.split(',')
+        [ret, pass_list, fail_list] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=30, mgmt=args.mgmt, first_pwr_on=args.first_pwr_on, pwr_cycle=args.no_pc, asic_type=args.asic_type, uefi=args.uefi, dis_net_port=args.dis_net_port, env=args.skip_env)
+
+    def setup_multi_w_console(self, args):
         print(args)
     
         if args.slot_list == "":
@@ -403,8 +497,27 @@ if __name__ == "__main__":
 
     parser_fw_update.set_defaults(func=test.uboot_update)
 
+    # DDR stress
+    parser_fw_update = subparsers.add_parser('ddr_stress', help='DDR stressapptest', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_fw_update.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_fw_update.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_fw_update.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+
+    parser_fw_update.set_defaults(func=test.ddr_stress)
+
     # Chamber temp show/set
     parser_fw_update = subparsers.add_parser('chamber_ctrl', help='Chamber temperature control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_fw_update.add_argument("-show", "--show", help="Show temp", action='store_true')
+    parser_fw_update.add_argument("-set", "--set", help="Set temp", action='store_true')
+    parser_fw_update.add_argument("-ip", "--ip", help="IP address", type=str, default='10.9.6.249')
+    parser_fw_update.add_argument("-temp", "--temp", help="Target temp", type=str, default='25')
+
+    parser_fw_update.set_defaults(func=test.chamber_ctrl)
+
+    # PDU control
+    parser_fw_update = subparsers.add_parser('pdu_ctrl', help='PDU control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_fw_update.add_argument("-show", "--show", help="Show temp", action='store_true')
     parser_fw_update.add_argument("-set", "--set", help="Set temp", action='store_true')
@@ -426,11 +539,33 @@ if __name__ == "__main__":
 
     parser_fw_update.set_defaults(func=test.ddrmargin)
 
+    # Check EDMA readiness
+    parser_check_edma = subparsers.add_parser('check_edma', help='Check EDMA readiness', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_check_edma.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+
+    parser_check_edma.set_defaults(func=test.check_edma_ready)
+
+    # setup multi with console output
+    parser_setup_multi_w_console = subparsers.add_parser('setup_multi_w_console', help='Set up multiple cards', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_setup_multi_w_console.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_setup_multi_w_console.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+
+    parser_setup_multi_w_console.set_defaults(func=test.setup_multi_w_console)
+
     # setup multi
     parser_setup_multi = subparsers.add_parser('setup_multi', help='Set up multiple cards', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_setup_multi.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser_setup_multi.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser_setup_multi.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
+    parser_setup_multi.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
+    parser_setup_multi.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="elba")
+    parser_setup_multi.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
+    parser_setup_multi.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
+    parser_setup_multi.add_argument("-skip_env", "--skip_env", help="Set up env", action='store_false')
+    parser_setup_multi.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
     parser_setup_multi.set_defaults(func=test.setup_multi)
 
