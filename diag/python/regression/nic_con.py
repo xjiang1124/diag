@@ -1039,17 +1039,15 @@ class nic_con:
     def file_compare(self, fn1, fn2):
         ret = 0
         try:
-            f1 = open(fn1, "r")
-            f2 = open(fn2, "r")
-            f1_lines = f1.readlines()
-            f2_lines = f2.readlines()
+            with open(fn1, "r") as f1:
+                f1_lines = f1.readlines()
+            with open(fn2, "r") as f2:
+                f2_lines = f2.readlines()
             for i in range(len(f1_lines)):
                 if f1_lines[i] != f2_lines[i]:
                     print("line " + str(i) + " not match, " + fn1 + ": " + f1_lines[i] + ", " + fn2 + ": " + f2_lines[i])
                     ret = 1
                     break
-            f1.close()
-            f2.close()
         except (IOError, OSError) as e:
             print(e)
             ret = 1
