@@ -119,8 +119,11 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
         if pn not in pn_list:
             pn_list.append(pn)
     if len(pn_list) != 1:
-        mtp_mgmt_ctrl.cli_log_err("Not Support Mix NIC with Different Part Number")
-        return ["Not Support", nic_list[:]]
+        # Check if all cards share first 6 digits of part number
+        first6_pn = set([ mypn[0:6] for mypn in pn_list])
+        if len(first6_pn) != 1:
+            mtp_mgmt_ctrl.cli_log_err("Not Support Mix NIC with Different Part Number")
+            return ["Not Support", nic_list[:]]
     pn = pn_list[0]
     argsdict = get_test_arguments(test, pn)
     nic_list_param = ",".join(str(slot+1) for slot in nic_list)
@@ -176,6 +179,7 @@ def mtp_run_ddr_bist(mtp_mgmt_ctrl, slot=None, ddr_bist_cmdline_args_str=None):
     cmd = "tclsh ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
         rs = False
+        cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
         mtp_mgmt_ctrl.cli_log_slot_err(slot, cmd_buf)
         # kill the process in case it's hung/timed out
         # ctrl-c doesnt work

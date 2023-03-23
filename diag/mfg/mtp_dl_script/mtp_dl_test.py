@@ -43,9 +43,11 @@ def logfile_cleanup(file_list):
         os.system("rm -rf {:s}".format(_file))
 
 
-def load_mtp_cfg():
+def load_mtp_cfg(cfg_yaml=None):
     # DL/P2C MTP Chassis
     mtp_chassis_cfg_file_list = list()
+    if cfg_yaml:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+cfg_yaml))
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
@@ -181,12 +183,13 @@ def main():
     parser.add_argument("--fru-verify", "-v", "--verify", "-verify", help="Verify FRU mode", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
 
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
 
     swmtestmode = Swm_Test_Mode.SW_DETECT
     if args.swm:

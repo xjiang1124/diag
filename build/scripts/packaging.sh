@@ -97,6 +97,10 @@ do
     if [[ $arch == "amd64" ]]
     then
         cp $TOP_DIR/diag/python/regression/scripts/start_diag.sh $TEMP_DIR/..
+        if [[ $asic == "giglio" ]]
+        then
+            sed -i 's/ASIC_DIR_SUB_TOP=\$ASIC_DIR_TOP\/elba/ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP\/giglio/' $TEMP_DIR/../start_diag.sh
+        fi
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_mtp.so $TEMP_DIR/tools/.
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_turbo.so $TEMP_DIR/tools/.
         cp $TOP_DIR/diag/python/regression/scripts/start_diag_tor.sh $TEMP_DIR/..

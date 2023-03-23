@@ -64,6 +64,13 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
         if not mtp_ts_cfg:
             libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find termserver config")
             return
+        usb_ts_cfg = mtp_cfg_db.get_mtp_usb_console(mtp_id)
+        if not usb_ts_cfg:
+            if ALLOW_TEST_FROM_TERMSERVER:
+                pass
+            else:
+                libmfg_utils.sys_exit(mtp_cli_id_str + "Missing USB console server config")
+                return
     else:
         mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
         if not mtp_mgmt_cfg:
@@ -73,9 +80,13 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, usb_ts_cfg=usb_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
     if telnet:
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
+
+    if not ALLOW_TEST_FROM_TERMSERVER:
+        mtp_mgmt_ctrl.set_usb_console() # For LED test, access from USB console server instead of regular terminal server
+
     return mtp_mgmt_ctrl
 
 def single_uut_led_checks(stage,
@@ -157,7 +168,7 @@ def single_uut_led_checks(stage,
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
-                ret = mtp_mgmt_ctrl.tor_boot_select(0)
+                ret = mtp_mgmt_ctrl.tor_boot_select(0, console_sanity_check=True)
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
@@ -241,9 +252,6 @@ def single_uut_led_checks(stage,
 
         mtp_mgmt_ctrl.cli_log_inf("Host tests completed\n", level=0)
 
-        # copy additional logs
-        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
-
         if uut_id not in fail_uut_list and stage == "LED":
             if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
                 if uut_id in pass_uut_list:
@@ -251,7 +259,10 @@ def single_uut_led_checks(stage,
                 if uut_id not in fail_uut_list:
                     fail_uut_list.append(uut_id)
 
-        time.sleep(5)
+        # copy additional logs
+        mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
+
+        time.sleep(5) #?
 
         # shut down system
         mtp_mgmt_ctrl.uut_chassis_shutdown()

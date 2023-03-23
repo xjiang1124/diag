@@ -2,7 +2,7 @@ package tps53830
 
 import (
     "fmt"
-    "math"
+    //"math"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -23,15 +23,11 @@ func ReadStatus(devName string) (status uint8, err int) {
 }
 
 func ReadAdcOutput(devName string, adc_sel byte) (data byte, err int) {
+    err = smbus.WriteByte(devName, ADC_CTL_REG, ADC_ENABLE | adc_sel)
+    if err != errType.SUCCESS {
+        return
+    }
     data, err = smbus.ReadByte(devName, ADC_CTL_REG)
-    if err != errType.SUCCESS {
-        return
-    }
-    data &= ^adc_sel
-    err = smbus.WriteByte(devName, ADC_CTL_REG, data | ADC_ENABLE | adc_sel)
-    if err != errType.SUCCESS {
-        return
-    }
     data, err = smbus.ReadByte(devName, ADC_OUT_REG)
     return
 }
@@ -76,7 +72,8 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     }
     defer smbus.Close()
 
-    data1, err = smbus.ReadByte(devName, OUTPUT_SELECT_REG)
+    // cannot write R1B in secure mode, default is read current
+    /*data1, err = smbus.ReadByte(devName, OUTPUT_SELECT_REG)
     if err != errType.SUCCESS {
         return
     }
@@ -84,7 +81,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     err = smbus.WriteByte(devName, OUTPUT_SELECT_REG, data1)
     if err != errType.SUCCESS {
         return
-    }
+    }*/
 
     if devName == "DDR_VDD" {
         output_reg = SWA_OUTPUT_REG
@@ -98,7 +95,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    if (output_reg == SWA_OUTPUT_SEL) {
+    if (output_reg == SWA_OUTPUT_REG) {
         data2, err = smbus.ReadByte(devName, output_reg + 1) //read SWB_OUTPUT
         if err != errType.SUCCESS {
             return
@@ -114,48 +111,23 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    var data1, data2 byte
-    var pout uint64
-    var output_reg uint64
+func CalcPout(devName string) (integer uint64, dec uint64, err int) {
+    var pout, iout, vout uint64
+    var integer_i, integer_v uint64
+    var dec_i, dec_v uint64
 
-    err = smbus.Open(devName)
+    integer_i, dec_i, err = ReadIout(devName)
     if err != errType.SUCCESS {
         return
     }
-    defer smbus.Close()
-
-    data1, err = smbus.ReadByte(devName, OUTPUT_SELECT_REG)
+    iout = integer_i * 1000 + dec_i
+    integer_v, dec_v, err = ReadVout(devName)
     if err != errType.SUCCESS {
         return
     }
-    data1 |= ADC_POWER_SEL
-    err = smbus.WriteByte(devName, ADC_CTL_REG, data1)
-    if err != errType.SUCCESS {
-        return
-    }
-    if devName == "DDR_VDD" {
-        output_reg = SWA_OUTPUT_REG
-    } else if devName == "DDR_VDDQ" {
-        output_reg = SWC_OUTPUT_REG
-    } else {
-        output_reg = SWD_OUTPUT_REG
-    }
+    vout = integer_v * 1000 + dec_v
 
-    data1, err = smbus.ReadByte(devName, output_reg)
-    if err != errType.SUCCESS {
-        return
-    }
-    if (output_reg == SWA_OUTPUT_SEL) {
-        data2, err = smbus.ReadByte(devName, output_reg + 1) //read SWB_OUTPUT
-        if err != errType.SUCCESS {
-            return
-        }
-    } else {
-        data2 = 0
-    }
-
-    pout = 125 * uint64(data1 + data2)
+    pout = iout * vout / 1000
     integer = pout / 1000
     dec = pout % 1000
 
@@ -251,27 +223,50 @@ func ReadVendorID(devName string) (devID byte, err int) {
 func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var marginReg uint64
     var vmin, vmax uint64
-    var voutSetting uint64
+    var vBase uint64
+    var offset int8
+    var step uint64
 
     if devName == "DDR_VDD" {
-        marginReg = SWA_MARGIN_REG
-        vmin = VOUT_1P1_MIN
-        vmax = VOUT_1P1_MAX
+        marginReg = SWA_OFFSET_REG
+        vBase = 1100
+        offset = -9 //0xF7
+        vmin = 1100 - 63
+        vmax = 1100 + 63
+        step = 2
     } else if devName == "DDR_VDDQ" {
-        marginReg = SWC_MARGIN_REG
-        vmin = VOUT_1P1_MIN
-        vmax = VOUT_1P1_MAX
+        marginReg = SWC_OFFSET_REG
+        vBase = 1100
+        offset = -22 //0xEA
+        vmin = 1100 - 63
+        vmax = 1100 + 63
+        step = 2
     } else {
-        marginReg = SWD_MARGIN_REG
-        vmin = VOUT_1P8_MIN
-        vmax = VOUT_1P8_MAX
+        marginReg = SWD_OFFSET_REG
+        vBase = 1800
+        offset = -6 //0xFA
+        vmin = 1800 - 127
+        vmax = 1800 + 127
+        step = 1
     }
 
-    tgtVoutMv = uint64(math.Round(float64(tgtVoutMv) / 5)) * 5
     if (tgtVoutMv < vmin || tgtVoutMv > vmax) {
         return errType.INVALID_PARAM
     }
-    voutSetting = ((tgtVoutMv - 800) / 5) << 1
+
+    if tgtVoutMv < vBase {
+        if offset < -127 + int8((vBase - tgtVoutMv) * step) {
+            offset = -127
+        } else {
+            offset = offset - int8((vBase - tgtVoutMv) * step)
+        }
+    } else if tgtVoutMv > vBase {
+        if offset  > 127 - int8((tgtVoutMv - vBase) * step) {
+            offset = 127
+        } else {
+            offset = offset + int8((tgtVoutMv - vBase) * step)
+        }
+    }
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -279,18 +274,31 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     }
     defer smbus.Close()
 
-    err = smbus.WriteByte(devName, SECURE_MODE_REG, PROGRAMMABLE_MODE)
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x0)
     if err != errType.SUCCESS {
         return
     }
-    err = smbus.WriteByte(devName, marginReg, byte(voutSetting))
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x95)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x64)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //cli.Printf("i", "new offset: %d(0x%x)\n", offset, offset)
+    err = smbus.WriteByte(devName, marginReg, byte(offset))
     if err != errType.SUCCESS {
         cli.Println("e", "VMargin failed!")
         return
     } else {
         cli.Println("i", "New vmargin enabled")
     }
-    if (marginReg == SWA_MARGIN_REG) {
+    //data, err = smbus.ReadByte(devName, marginReg)
+    //cli.Printf("i", "read offset: %d(0x%x)\n", data, data)
+
+    /*if (marginReg == SWA_OFFSET_REG) {
         err = smbus.WriteByte(devName, SWB_MARGIN_REG, byte(voutSetting))
         if err != errType.SUCCESS {
             cli.Println("e", "VMargin failed!")
@@ -298,13 +306,13 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
         } else {
             cli.Println("i", "New vmargin enabled")
         }
-    }
+    }*/
     misc.SleepInSec(1)
     return
 }
 
 func SetVMargin(devName string, pct int) (err int) {
-    var vBase int
+/*    var vBase int
     var tgtVoutMv int
 
     if (pct > 10) || (pct < -10) {
@@ -322,11 +330,67 @@ func SetVMargin(devName string, pct int) (err int) {
     err = SetVMarginByValue(devName, uint64(tgtVoutMv))
 
     return
+*/
+    var data byte
+    var adc_sel uint8
+    var vout_mv uint64
+    var marginReg uint64
+    var wdata byte
+
+    if (pct > 5) || (pct < -5) {
+        return errType.INVALID_PARAM
+    }
+
+    if devName == "DDR_VDD" {
+        marginReg = SWA_OFFSET_REG
+        adc_sel = SWA_OUTPUT_SEL
+        wdata = swaMarginPct[pct]
+    } else if devName == "DDR_VDDQ" {
+        marginReg = SWC_OFFSET_REG
+        adc_sel = SWC_OUTPUT_SEL
+        wdata = swcMarginPct[pct]
+    } else {
+        marginReg = SWD_OFFSET_REG
+        adc_sel = SWD_OUTPUT_SEL
+        wdata = swdMarginPct[pct]
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x0)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x95)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x64)
+    if err != errType.SUCCESS {
+        return
+    }
+    //set
+    err = smbus.WriteByte(devName, marginReg, byte(wdata))
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
+    misc.SleepInSec(1)
+    //read
+    data, err = ReadAdcOutput(devName, adc_sel)
+
+    vout_mv = 15 * uint64(data)
+    cli.Printf("i", "write: 0x%02x(%d), read vout: %d mV\n", wdata, int8(wdata), vout_mv)
+
+    return
 }
 
-
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "VINBUIK", "VINMGMT", "VINBIAS", "TEMP", "STATUS"}
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "VINBULK", "VINMGMT", "VINBIAS", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -343,7 +407,7 @@ func DispStatus(devName string) (err int) {
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, _ := ReadPout(devName)
+    dig, frac, _ := CalcPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

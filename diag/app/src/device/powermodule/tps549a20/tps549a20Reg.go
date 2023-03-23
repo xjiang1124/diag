@@ -125,6 +125,6 @@ var voutMarginLowhPct = map [uint8] float64 {
     0x4: -4.2,
     0x3: -3.2,
     0x2: -2.1,
-    0x1: -2.1,
+    0x1: -1.1,
     0x0: -0,
 }

@@ -58,7 +58,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
 
-def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file = None):
+def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file=None, mirror_logdir=None):
     stage = FF_Stage.FF_P2C
 
     if skip_test:
@@ -90,8 +90,7 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     if fail_slots:
         cmd += fail_slots
     if mtp_cfg_file:
-        mtp_cfg_file_opt = " --mtpcfg " + mtp_cfg_file
-        cmd += mtp_cfg_file_opt
+        cmd += " --mtpcfg " + mtp_cfg_file
     if l1_sequence:
         cmd += " --l1-seq "
 
@@ -100,7 +99,7 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
+    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect P2C Test result failed", level=0)
         return
@@ -121,6 +120,7 @@ def main():
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
     verbosity = False
     l1_sequence = False
@@ -134,7 +134,12 @@ def main():
         l1_sequence = True
     stage = FF_Stage.FF_P2C
 
-    mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
@@ -142,8 +147,6 @@ def main():
     nic_sn_list = dict()
     invalid_nic_list = dict()
 
-    mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
-    nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
         if verbosity:
@@ -182,19 +185,21 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Sync timestamp to server
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            timestamp_str = str(libmfg_utils.timestamp_snapshot())
-            if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-                mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
     # Check if diag image updated is needed
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
+        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
+        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
         if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             mtpid_list.remove(mtp_id)
@@ -305,13 +310,16 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_p2c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP P2C Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg, logfile_dir_list[mtp_id]):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_p2c_script_dir, mtp_p2c_script_pkg, logfile_dir_list[mtp_id], extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP P2C Test script failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
         else:
             mtp_mgmt_ctrl.cli_log_inf("Deploy MTP P2C Test script complete", level=0)
+    # now that file has been packaged into config/, discard full path
+    if mtpcfg_file:
+        mtpcfg_file = os.path.basename(mtpcfg_file)
 
     mtp_thread_list = list()
     mfg_p2c_summary = dict()
@@ -326,7 +334,8 @@ def main():
                                                                             l1_sequence,
                                                                             args.skip_test,
                                                                             args.only_test,
-                                                                            args.mtpcfg))
+                                                                            mtpcfg_file,
+                                                                            args.jobd_logdir))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -349,6 +358,19 @@ def main():
 
     # dump the summary
     libmfg_utils.mfg_summary_disp(stage, mfg_p2c_summary, mtpid_fail_list)
+
+    # print return code for JobD to pick up
+    test_result = True
+    if len(mtpid_fail_list) > 0:
+        test_result = False
+    for mtp_id in mfg_p2c_summary.keys():
+        for slot, sn, nic_type, rc, retest_blocked in mfg_p2c_summary[mtp_id]:
+            if not rc:
+                test_result = False
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

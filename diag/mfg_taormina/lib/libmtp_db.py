@@ -8,6 +8,12 @@ class mtp_db():
         self._ts_port = dict()
         self._ts_userid = dict()
         self._ts_passwd = dict()
+        # usb terminal server info
+        self._usb_ts_type = dict()
+        self._usb_ts = dict()
+        self._usb_ts_port = dict()
+        self._usb_ts_userid = dict()
+        self._usb_ts_passwd = dict()
         # apc info
         self._apc1_type = dict()
         self._apc1 = dict()
@@ -40,6 +46,13 @@ class mtp_db():
             self._ts_port[mtpid] = mtp_cfg[mtpid]["TS_PORT"]
             self._ts_userid[mtpid] = mtp_cfg[mtpid]["TS_USERID"]
             self._ts_passwd[mtpid] = mtp_cfg[mtpid]["TS_PASSWORD"]
+
+            if "USB_TS" in mtp_cfg[mtpid].keys():
+                self._usb_ts_type[mtpid] = ""
+                self._usb_ts[mtpid] = mtp_cfg[mtpid]["USB_TS"]
+                self._usb_ts_port[mtpid] = mtp_cfg[mtpid]["USB_TS_PORT"]
+                self._usb_ts_userid[mtpid] = mtp_cfg[mtpid]["USB_TS_USERID"]
+                self._usb_ts_passwd[mtpid] = mtp_cfg[mtpid]["USB_TS_PASSWORD"]
             
             self._apc1[mtpid] = mtp_cfg[mtpid]["APC1"]
             self._apc1_port[mtpid] = mtp_cfg[mtpid]["APC1_PORT"]
@@ -86,6 +99,23 @@ class mtp_db():
         ts_cfg.append(self._ts_userid[mtpid])
         ts_cfg.append(self._ts_passwd[mtpid])
         ts_cfg.append(self._ts_type[mtpid])
+
+        return ts_cfg
+
+
+    def get_mtp_usb_console(self, mtpid):
+        ts_cfg = list()
+        if not self.mtpid_valid(mtpid):
+            libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
+
+        if mtpid not in self._usb_ts.keys():
+            return list()
+
+        ts_cfg.append(self._usb_ts[mtpid])
+        ts_cfg.append(self._usb_ts_port[mtpid])
+        ts_cfg.append(self._usb_ts_userid[mtpid])
+        ts_cfg.append(self._usb_ts_passwd[mtpid])
+        ts_cfg.append(self._usb_ts_type[mtpid])
 
         return ts_cfg
 

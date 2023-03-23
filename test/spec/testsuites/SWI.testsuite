@@ -1,0 +1,21 @@
+---
+meta:
+  name: mfg_swi
+  description: Mfg SWI test
+
+config:
+  testbed       : MTP
+  job           : SWI
+
+test_types:
+  precheckin:
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    skip:
+    slots: 10
+

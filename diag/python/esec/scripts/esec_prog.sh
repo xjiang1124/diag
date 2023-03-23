@@ -51,9 +51,12 @@ hsm_sign_ek () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         id="elba.v1"
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        id="giglio.v1"
     else
         id="v1"
     fi
@@ -144,6 +147,10 @@ img_prog () {
     generic_host_img="images/boot_nonsec_packed.hex"
     elba_esec_img="images/elba_esecure_firmware_m0_packed.hex"
     elba_host_img="images/elba_boot_nonsec_packed.hex"
+    elba_ibm_esec_img="images/elba_ibm_esecure_firmware_m0_packed.hex"
+    elba_ibm_host_img="images/elba_ibm_boot_nonsec_packed.hex"
+    giglio_esec_img="images/giglio_firmware_cortex_m0_20181121_packed.hex"
+    giglio_host_img="images/giglio_boot_nonsec_packed.hex"
 
     uut="UUT_$SLOT"
     card_type="${!uut}"
@@ -151,12 +158,23 @@ img_prog () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
-        esec_img=$elba_esec_img
-        host_img=$elba_host_img
+        if [[ $PN == *"68-0028"* ]];then
+            esec_img=$elba_ibm_esec_img
+            host_img=$elba_ibm_host_img
+        else 
+            esec_img=$elba_esec_img
+            host_img=$elba_host_img
+        fi
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        echo "GIGLIO"
+        tcl_file="./esec_prog_elba.tcl"
+        esec_img=$giglio_esec_img
+        host_img=$giglio_host_img
     else
         echo "CAPRI"
         tcl_file="./esec_prog.tcl"

@@ -30,7 +30,7 @@ from libnic_ctrl import nic_ctrl
 from libtest_db import *
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, usb_ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
@@ -38,6 +38,7 @@ class mtp_ctrl():
         self._mgmt_timeout = MTP_Const.MTP_POWER_ON_TIMEOUT
         self._diagmgr_handle = None
         self._ts_cfg = ts_cfg
+        self._usb_ts_cfg = usb_ts_cfg
         self._mgmt_cfg = mgmt_cfg
         self._apc_cfg = apc_cfg
         self._prompt_list = libmfg_utils.get_linux_prompt_list()
@@ -100,7 +101,7 @@ class mtp_ctrl():
         self.uut_type = "TAORMINA"
 
         self._svos_boot = True # set to False once OS is installed
-        # self._secure_login = False  #set to True when using signed OS
+        self._use_usb_console = False
 
         self._hard_failure = False
 
@@ -365,6 +366,14 @@ class mtp_ctrl():
     def get_ts_cfg(self):
         return self._ts_cfg
 
+    def get_usb_ts_cfg(self):
+        return self._usb_ts_cfg
+
+    def set_usb_console(self):
+        self._use_usb_console = True
+
+    def unset_usb_console(self):
+        self._use_usb_console = False
 
     def set_mtp_logfile(self, filep):
         self._filep = filep
@@ -982,12 +991,10 @@ class mtp_ctrl():
 
         return successentersh
 
-    def mtp_console_connect(self, prompt_cfg=False, prompt_id=None, secure_login=False):
+    def mtp_console_connect(self, prompt_cfg=False, prompt_id=None):
         # if not self.mtp_console_disconnect():
         #     return None
         self.mtp_console_spawn()
-
-        # secure_login = secure_login or self._secure_login #set either by argument or class variable
 
         delay = MTP_Const.TOR_CONSOLE_CON_DELAY
         retries = 0
@@ -995,7 +1002,6 @@ class mtp_ctrl():
         max_retries = 10
         prompt_list = ["Connection refused", "ServiceOS login:", "Last login:", " login:", "assword:", "$", "#", ">"]
 
-        # secure_login = True #always
         fresh_login = False
         while True:
             time.sleep(1) # this is crucial so that the prompt is safely out of the console buffer (not pexpect buffer)
@@ -1079,6 +1085,9 @@ class mtp_ctrl():
         return self._mgmt_prompt
     
     def mtp_get_telnet_command(self):
+        if self._use_usb_console:
+            return self.mtp_get_usb_console_command()
+
         if not self._ts_cfg:
             self.cli_log_err("telnet port config is empty")
             return None
@@ -1094,6 +1103,26 @@ class mtp_ctrl():
             port = "40" + self._ts_cfg[1][-2:]
         else:
             self.cli_log_err("Unable to decipher telnet port {:s}".format(self._ts_cfg[1]))
+            return None
+
+        return "telnet "+ip+" "+port
+
+    def mtp_get_usb_console_command(self):
+        if not self._usb_ts_cfg:
+            self.cli_log_err("USB console server config is empty")
+            return None
+        
+        ip = self._usb_ts_cfg[0]
+        if not libmfg_utils.ip_address_validate(ip):
+            self.cli_log_err("Invalid USB console server IP: {:s}".format(ip))
+            return None
+
+        if len(self._usb_ts_cfg[1]) == 2:
+            port = "20" + self._usb_ts_cfg[1]
+        elif len(self._usb_ts_cfg[1]) == 4:
+            port = "20" + self._usb_ts_cfg[1][-2:]
+        else:
+            self.cli_log_err("Unable to decipher USB console server port {:s}".format(self._usb_ts_cfg[1]))
             return None
 
         return "telnet "+ip+" "+port
@@ -1467,6 +1496,10 @@ class mtp_ctrl():
                 rc = False
                 cmd_before = self._mgmt_handle.before
                 break
+
+        if self._use_usb_console:
+            self._mgmt_handle.sendline("") # extra newline for USB console server
+
         idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
         # signature match fails
         if not rc:
@@ -5240,14 +5273,9 @@ class mtp_ctrl():
 
         return True
 
-    def tor_boot_select(self, selection=0, stopreboot=True, secure_login=False, fru_valid=True):
-
-        # if selection > 0:
-        #     secure_login = True
-        #     self._secure_login = True
-
+    def tor_boot_select(self, selection=0, fru_valid=True, console_sanity_check=False):
         for x in range(3):
-            if self.tor_boot_select_secondlevel(selection,stopreboot=stopreboot,secure_login=secure_login):
+            if self.tor_boot_select_secondlevel(selection, console_sanity_check=console_sanity_check):
                 # read FRU as soon as console is ready, to have an SN to save logs to.
                 if fru_valid:
                     if not self.tor_fru_init():
@@ -5258,13 +5286,9 @@ class mtp_ctrl():
                 return True
             else:
                 self.cli_log_inf("Cannot Get UUT console, will Power cycle", level=0)
-
-        # if secure_login:
-        #     self._secure_login = False
-
         return False
 
-    def tor_boot_select_secondlevel(self, selection=0, stopreboot=True, secure_login=False):
+    def tor_boot_select_secondlevel(self, selection=0, console_sanity_check=False):
         """ Stop at OS selection screen and choose """
 
         if isinstance(selection, str):
@@ -5277,13 +5301,24 @@ class mtp_ctrl():
         if not libmfg_utils.mtp_clear_console(self):
             return False
 
+        self.cli_log_inf("Power on APC", level=0)
+        self.mtp_apc_pwr_on()
+
+        # reconnect console after powerup instead of before; 
+        # SLC 8xxx console line disconnects when unit is powered on
         if self._mgmt_handle is not None:
             self.mtp_console_disconnect()
+        if self._use_usb_console:
+            self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
+            libmfg_utils.count_down(10)
+
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
         self._mgmt_handle = pexpect.spawn(telnet_cmd, logfile = self._diag_filep)
         countconnectrefusedissue = 10
         while libmfg_utils.mfg_expect(self._mgmt_handle, ["Connection refused"], timeout=1) == 0:
+            if not libmfg_utils.mtp_clear_console(self):
+                return False
             self._mgmt_handle.close()
             self._mgmt_handle = pexpect.spawn(telnet_cmd)
             countconnectrefusedissue -= 1
@@ -5291,18 +5326,12 @@ class mtp_ctrl():
                 return False
         self._mgmt_handle.setecho(True)
 
-        self.mtp_apc_pwr_on()
-        self.cli_log_inf("Power on APC", level=0)
-
         # Keep entering selection number
         idx = -1
-        start=datetime.now()
         starttosendselection = True
-        waittimetopowercycleretry = MTP_Const.TOR_POWER_ON_DELAY
-        # if secure_login:
-        #     waittimetopowercycleretry = 1800
-        #     self.cli_log_inf("OS UPGRADE IMAGE PROCESS, WILL TAKE LONG TIME.", level=0)
-        waittimetopowercycleretry = 1800
+        retry_wait_time = MTP_Const.CONSOLE_SANITY_CHECK_WAIT_TIME
+        retry_cnt = 3
+        retry_start_time = datetime.now()
         
         if selection == 0:
             self.cli_log_inf("Booting to SvOS", level=0)
@@ -5315,36 +5344,44 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["ServiceOS login:", " login:", "Select profile","Looking for SvOS.", "Starting update"], timeout=1)
-            difftime = datetime.now()-start
+            difftime = datetime.now() - retry_start_time
             seconds = difftime.total_seconds()
-            #print("{} vs {} : {} s".format(idx, selection, seconds))
-            if seconds > waittimetopowercycleretry:
-                self.cli_log_err("Failed to get UUT console Login or Select profile prompt in {} ({}) seconds".format(seconds,waittimetopowercycleretry) , level=0)
-                return False
+            if seconds > retry_wait_time:
+                retry_cnt -= 1
+                if retry_cnt >= 0:
+                    if ENABLE_CONSOLE_SANITY_CHECK:
+                        libmfg_utils.aruba_gui_clear_buffer2()
+                        self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
+                        raw_input("Please check that the console is connected then press any key to continue.\n")
+                    retry_start_time = datetime.now()
+                    self.cli_log_inf("Retrying console...")
+                    self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
+                    continue
+                else:
+                    break
             if idx < 0:
                 continue
             elif idx == 2:
                 self._mgmt_handle.sendline(str(selection))
-                #start=datetime.now()
                 starttosendselection = False
+                self.cli_log_inf("Boot profile {} selected".format(selection))
             elif idx == 3:
                 start=datetime.now()
-                #pass
             elif idx == selection:
                 break
-            # elif idx == 4:
-            #     #start=datetime.now()
-            #     self.cli_log_inf("Get the \"Looking for SvOS\" begin Console message", level=0)
-            #     starttosendselection = True
-            #     continue
             elif idx == 4:
                 continue
             elif idx != selection:
+                self.cli_log_inf("Missed boot selection... retrying", level=0)
                 self.cli_log_inf("Power off APC", level=0)
                 self.mtp_apc_pwr_off()
                 libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
-                self.mtp_apc_pwr_on()
                 self.cli_log_inf("Power on APC", level=0)
+                self.mtp_apc_pwr_on()
+
+        if retry_cnt < 0:
+            self.cli_log_err("Failed to connect console in 3 retries", level=0)
+            return False
 
         if not self.mtp_console_connect():
             self.cli_log_err("Failed to connect console", level=0)
@@ -5367,9 +5404,6 @@ class mtp_ctrl():
             if not self.svos_usb_mount():
                 self.cli_log_err("Unable to mount usb", level=0)
                 return False
-            if not self.mtp_console_enter_shell("sh"):
-                self.cli_log_err("Unable to init bash shell", level=0)
-                return False
 
         return True
 
@@ -5379,7 +5413,6 @@ class mtp_ctrl():
         In case of the Elba ssh dir issue, it would take 10 minutes.
         """
         start=datetime.now()
-        # if stopreboot and not self._secure_login:
         self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
         self.cli_log_inf("Wait for {} (s) for NIC boot up".format(MTP_Const.TOR_LAGS_POWER_ON_DELAY))
         elba0_ready, elba1_ready, gearbox_ready = False, False, False
@@ -5847,7 +5880,7 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd("mkdir -p {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
         
         if usb_method:
-            self.cli_log_inf("Mounting USB")
+            self.cli_log_inf("Mounting USB folder", level=0)
             self.mtp_mgmt_exec_cmd("mkdir -p /mnt/usb")
             self.mtp_mgmt_exec_cmd("mount /dev/sdb2 /mnt/usb")
             self.mtp_mgmt_exec_cmd("cp /mnt/usb/bin/* {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))
@@ -5869,11 +5902,13 @@ class mtp_ctrl():
             Already need to be in svcli for this function
             as mount usb needs to be done in original svos shell (fresh boot), not an svcli later down the stack
         """
+        self.cli_log_inf("Mount USB", level=0)
         self.mtp_mgmt_exec_cmd("mount usb")
+        self.cli_log_inf("Mount USB done", level=0)
         if not self.mtp_console_enter_shell("sh"):
             self.cli_log_err("Unable to init bash shell", level=0)
             return False
-        self.mtp_mgmt_exec_cmd("lsusb")
+        self.mtp_mgmt_exec_cmd("lsusb", timeout=10)
 
         return True
 
@@ -8340,12 +8375,12 @@ class mtp_ctrl():
         missing_list = list()
 
         module_regexp = {
-            "PSU": r'%s.*H/W Rev: *(.*) *S/N: *(.*) *F/W.*: *(.*)',
+            "PSU": r'%s.*H/W Rev: *(.*) *\r?\n? *S/N: *(.*) *\r?\n? *F/W.*: *(.*)',
             "FAN": r'%s: *PRESENT',
-            "SSD": r'%s MODEL: *(.*) *S/N: *(.*) *Capacity: *(.*[TGMK]B)',
-            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) SIZE: *(.*)',
-            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)',
-            "QSFP": r'%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *BITRATE: *([1-9][0-9\.]* [GMK]b/s)'
+            "SSD": r'%s MODEL: *(.*) *\r?\n? *S/N: *(.*) *\r?\n? *Capacity: *(.*[TGMK]B)',
+            "MEMORY": r'%s: *PN: *(.*) SN: *(.*) *\r?\n? *SIZE: *(.*)',
+            "SFP":  r'[^Q]%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *\r?\n? *BITRATE: *([1-9][0-9\.]* [GMK]b/s)',
+            "QSFP": r'%s *(.*)PN: *(.*)SN: *([A-Za-z0-9]*) *\r?\n? *BITRATE: *([1-9][0-9\.]* [GMK]b/s)'
         }
 
         for module in self.sys_modules["PSU"].keys():
