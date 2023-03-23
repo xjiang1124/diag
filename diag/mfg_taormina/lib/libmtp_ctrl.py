@@ -932,6 +932,19 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_send_ctrl_c(self):
+        self._mgmt_handle.sendcontrol('c')
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+
+        self._mgmt_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+
+        return True
+
     def mtp_nic_send_ctrl_c(self, slot):
         if self._nic_ctrl_list[slot] == None:
             # script not running anything.
@@ -8300,6 +8313,9 @@ class mtp_ctrl():
             return False
 
         if not self._mgmt_cfg:
+            return False
+
+        if not self.mtp_send_ctrl_c():
             return False
 
         if not self.tor_ping_test():
