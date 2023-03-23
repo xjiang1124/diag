@@ -411,6 +411,7 @@ class nic_test_v2:
 
         print("EDMA checking: PASS list:", slot_list_pass)
         print("EDMA checking: FAIL list:", slot_list_remain)
+        print('EDMA Checking Done')
 
     def setup_multi(self, args):
         print(args)
