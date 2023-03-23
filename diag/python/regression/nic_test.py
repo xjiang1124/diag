@@ -1030,7 +1030,7 @@ class nic_test:
                     session_tx.sendline("echo \"{}\" > /dev/ttyS0".format(element))
                     session_tx.expect("\#")
                     session_rx.expect(element)
-                    ret_list[int(slot)-1] = 1
+                ret_list[int(slot)-1] = 1
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
                 ret_list[int(slot)-1] = 0
