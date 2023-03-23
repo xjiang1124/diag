@@ -5323,7 +5323,7 @@ class mtp_ctrl():
             self.mtp_console_disconnect()
         if self._use_usb_console:
             self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
-            libmfg_utils.count_down(10)
+            libmfg_utils.count_down(MTP_Const.RECONNECT_LANTRONIX_AFTER_POWERUP)
 
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
@@ -5391,6 +5391,14 @@ class mtp_ctrl():
                 libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
                 self.cli_log_inf("Power on APC", level=0)
                 self.mtp_apc_pwr_on()
+
+                if self._use_usb_console:
+                    # reconnect console after powerup
+                    # SLC 8xxx console line disconnects when unit is powered on
+                    if self._mgmt_handle is not None:
+                        self.mtp_console_disconnect()
+                    self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
+                    libmfg_utils.count_down(MTP_Const.RECONNECT_LANTRONIX_AFTER_POWERUP)
 
         if retry_cnt < 0:
             self.cli_log_err("Failed to connect console in 3 retries", level=0)
