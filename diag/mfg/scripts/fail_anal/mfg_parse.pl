@@ -803,6 +803,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"}) {
+        $top_diag_fa_code = "MGMT_PORT_FAILURE_UNKNOWN";
+        delete $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"};
+        return;
+    }
+
     if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
         $top_diag_fa_code = "ALL_SLOTS_FAIL";
         delete $diag_fa_code{"ALL_SLOTS_FAIL"};
@@ -1329,7 +1335,7 @@ sub find_failure_code {
             parse_fst_rot($fulllogpath, $slot, $test_and_failure_code);
         }
 
-        if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
+        if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT") || ($failure_code =~ "NIC_PARA_MGMT_FPO_INIT")) {
             parse_mgmt_failure($fulllogpath, $slot);
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
