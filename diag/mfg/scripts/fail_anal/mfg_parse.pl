@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.12.02132023";
+my $rev = "1.15.03232023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -332,6 +332,18 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"NIC_POWER_FAILURE_12V_LOST"}) {
+        $top_diag_fa_code = "NIC_POWER_FAILURE_12V_LOST";
+        delete $diag_fa_code{"NIC_POWER_FAILURE_12V_LOST"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NIC_POWER_FAILURE_12V_NOT_UP"}) {
+        $top_diag_fa_code = "NIC_POWER_FAILURE_12V_NOT_UP";
+        delete $diag_fa_code{"NIC_POWER_FAILURE_12V_NOT_UP"};
+        return;
+    }
+
     if (exists $diag_fa_code{"NIC_POWER_FAILURE"}) {
         $top_diag_fa_code = "NIC_POWER_FAILURE";
         delete $diag_fa_code{"NIC_POWER_FAILURE"};
@@ -408,6 +420,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
         $top_diag_fa_code = "LV_EDMA_FAILURE";
         delete $diag_fa_code{"LV_EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NCSI_LOOPBACK_MISSING"}) {
+        $top_diag_fa_code = "NCSI_LOOPBACK_MISSING";
+        delete $diag_fa_code{"NCSI_LOOPBACK_MISSING"};
         return;
     }
 
@@ -649,6 +667,21 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"CARD_RESET"};
         return;
     }
+    if (exists $diag_fa_code{"Bad_J2C_L1"}) {
+        $top_diag_fa_code = "Bad_J2C_L1";
+        delete $diag_fa_code{"Bad_J2C_L1"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C_ECC"}) {
+        $top_diag_fa_code = "Bad_J2C_ECC";
+        delete $diag_fa_code{"Bad_J2C_ECC"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C"}) {
+        $top_diag_fa_code = "Bad_J2C";
+        delete $diag_fa_code{"Bad_J2C"};
+        return;
+    }
     if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"}) {
         $top_diag_fa_code = "SNAKE_LOG_INCOMPLETE";
         delete $diag_fa_code{"SNAKE_LOG_INCOMPLETE"};
@@ -714,21 +747,6 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"ARM_L1_LOG_EMPTY"};
         return;
     }
-    if (exists $diag_fa_code{"Bad_J2C_L1"}) {
-        $top_diag_fa_code = "Bad_J2C_L1";
-        delete $diag_fa_code{"Bad_J2C_L1"};
-        return;
-    }
-    if (exists $diag_fa_code{"Bad_J2C_ECC"}) {
-        $top_diag_fa_code = "Bad_J2C_ECC";
-        delete $diag_fa_code{"Bad_J2C_ECC"};
-        return;
-    }
-    if (exists $diag_fa_code{"Bad_J2C"}) {
-        $top_diag_fa_code = "Bad_J2C";
-        delete $diag_fa_code{"Bad_J2C"};
-        return;
-    }
     if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
         $top_diag_fa_code = "CARD_SPACE_FULL";
         delete $diag_fa_code{"CARD_SPACE_FULL"};
@@ -782,6 +800,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"SCAN_VERIFY"}) {
         $top_diag_fa_code = "SCAN_VERIFY";
         delete $diag_fa_code{"SCAN_VERIFY"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"}) {
+        $top_diag_fa_code = "MGMT_PORT_FAILURE_UNKNOWN";
+        delete $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"};
         return;
     }
 
@@ -1169,7 +1193,7 @@ sub find_failure_code {
     }
     while(my $line = <TR3>)
     {
-        if($line =~ m/(.*)(ERR:\s\[)([\w-]+)(\]:\s\[NIC-)(\d+)(]:\s)(\w+)(\sDIAG\sTEST\s)(\w+)(\s)(\w+)(\s)(FAIL|FAILED|FAILURE|TIMEOUT|SMB_READ_FAIL)/)
+        if($line =~ m/(.*)(ERR:\s\[)([\w-]+)(\]:\s\[NIC-)(\d+)(]:\s)(\w+)(\sDIAG\sTEST\s)([\w\-]+)(\s)(\w+)(\s)(FAIL|FAILED|FAILURE|TIMEOUT|SMB_READ_FAIL)/)
         {
             if ($debug_msgs) { print "line: $line"};
             $failuresn=$7;
@@ -1311,11 +1335,14 @@ sub find_failure_code {
             parse_fst_rot($fulllogpath, $slot, $test_and_failure_code);
         }
 
-        if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT")) {
+        if (($failure_code =~ "NIC_PARA_MGMT_INIT") || ($failure_code =~ "NIC_MGMT_INIT") || ($failure_code =~ "NIC_PARA_MGMT_FPO_INIT")) {
             parse_mgmt_failure($fulllogpath, $slot);
             if (%diag_fa_code == 0) {
                 $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"} = 1;
             }
+        }
+        if (($failure_code =~ "RMII_LINKUP") || ($failure_code =~ "UART_LPBACK")) {
+            parse_ncsi_failure($fulllogpath, $slot);
         }
         if ($test_name eq "QSFP" && $failure_code eq "I2C") {
             $diag_fa_code{"QSFP_I2C"} = 1;
@@ -1510,6 +1537,29 @@ sub parse_mgmt_failure {
     close(TR3);
 }
 
+sub parse_ncsi_failure {
+    my ($fulllogpath, $slot) = @_;
+    my $mtpdiagfile=$fulllogpath."/"."mtp_diag.log";
+    my $mtp_diag_msg = "";
+    my $slotnum = 0 + $slot;
+
+    if (!open(TR3, '<', $mtpdiagfile)) {
+        print "Cannot open file $mtpdiagfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        if ($line =~ m/slot $slotnum Reg 0x9C, expect: 0xe, actual: 0xc/) {
+            $mtp_diag_msg .= $line;
+            $diag_fa_code{"NCSI_LOOPBACK_MISSING"} = 1;
+        }
+    }
+    if ($mtp_diag_msg ne "") {
+        $all_test_msg .= "\n--------mtp_diag log--------: ".$mtpdiagfile."\n";
+        $all_test_msg .= $mtp_diag_msg;
+    }
+    close(TR3);
+}
 
 sub parse_mtp_and_slot_log {
     my ($fulllogpath, $slot, $stage, $failure_code_list) = @_;
@@ -1824,6 +1874,11 @@ sub parse_fpga_and_ecc {
     my $ecc_sts = "";
     my $num_ecc_sts_errors = 0;
     my $smbus_err = 0;
+    my $asic_pin_sts_0;
+    my $asic_pin_sts_1;
+    my $asic_pin_sts_2;
+    my $power_failure_12v = 0;
+    my $power_cycle_reason;
     my $j2c_error_linenum = 0;
     my $ecc_reg_linenum = 0;
     my $ecc_start_linenum = 0;
@@ -1894,23 +1949,24 @@ sub parse_fpga_and_ecc {
                         $num_cpld_sts_errors++;
                         $diag_fa_code{"CON_REDIR_FAILURE(0x21)"} = 1;
                     }
+                    if($line2 =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
+                        if ($smbus_err == 0 && ((hex($3) | 0x20) != 0x27)) {
+                            $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27 or 0x07, actual: $3\n";
+                            $num_cpld_sts_errors++;
+                            $diag_fa_code{"ASIC_PIN_STATUS_0_FAILURE(0x26)"} = 1;
+                        }
+                        $asic_pin_sts_0 = $3;
+                    }
                 }
             }
-            if($line =~ m/(.*)(Addr: 0x26; Value:)\s(\w+)/) {
-            #if($line =~ m/(.*)(0x26; Value:)\s(\w+)/) { ##?? not work
-                print "##### line: $line";
-                if ($smbus_err == 0 && ((hex($3) | 0x20) != 0x27)) {
-                    $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x26, expected: 0x27 or 0x07, actual: $3\n";
-                    $num_cpld_sts_errors++;
-                    $diag_fa_code{"ASIC_PIN_STATUS_0_FAILURE(0x26)"} = 1;
-                }
-            }
+
             if($line =~ m/(.*)(Addr: 0x27; Value:)\s(\w+)/) {
                 if ($smbus_err == 0 && $3 ne "0xee") {
                     $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x27, expected: 0xee, actual: $3\n";
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"ASIC_PIN_STATUS_1_FAILURE(0x27)"} = 1;
                 }
+                $asic_pin_sts_1 = $3;
             }
             if($line =~ m/(.*)(Addr: 0x28; Value:)\s(\w+)/) {
                 if ($smbus_err == 0 && $3 ne "0xdf") {
@@ -1918,6 +1974,7 @@ sub parse_fpga_and_ecc {
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"ASIC_PIN_STATUS_2_FAILURE(0x28)"} = 1;
                 }
+                $asic_pin_sts_2 = $3;
             }
             if($line =~ m/(.*)(Addr: 0x2a; Value:)\s(\w+)/) {
                 if ($smbus_err == 0 && $3 ne "0x00") {
@@ -1959,6 +2016,10 @@ sub parse_fpga_and_ecc {
                     $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x30, expected: 0x00, actual: $3\n";
                     $num_cpld_sts_errors++;
                     $diag_fa_code{"NIC_POWER_FAILURE"} = 1;
+                    if (hex($3) & 0x1 == 0x1) {
+                        $power_failure_12v = 1;
+                        print "asic_pin_sts_0: $asic_pin_sts_0, asic_pin_sts_1: $asic_pin_sts_1, asic_pin_sts_2: $asic_pin_sts_2\n"
+                    }
                 }
             }
             if($line =~ m/(.*)(Addr: 0x31; Value:)\s(\w+)/) {
@@ -1976,16 +2037,25 @@ sub parse_fpga_and_ecc {
                 }
             }
             if($line =~ m/(.*)(Addr: 0x50; Value:)\s(\w+)/) {
-                if ($smbus_err == 0 && $3 ne "0x80") {
-                    if (!($l1_failed && ($3 eq "0x81"))) { #expected
-                        $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x50, expected: 0x80, actual: $3\n";
-                        $num_cpld_sts_errors++;
-                        if (hex($3) & 0x8) {
-                            $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"} = 1;
-                        } elsif (hex($3) & 0x1) {
-                            $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
-                        } else {
-                            $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                if ($smbus_err == 0) {
+                    $power_cycle_reason = $3;
+                    if ($power_cycle_reason ne "0x80") {
+                        if (!($l1_failed && ($power_cycle_reason eq "0x81"))) { #expected
+                            $cpld_sts = $cpld_sts."Unexpected CPLD STS: Addr 0x50, expected: 0x80, actual: $power_cycle_reason\n";
+                            $num_cpld_sts_errors++;
+                            if (hex($power_cycle_reason) & 0x8) {
+                                $diag_fa_code{"TEMP_TRIP_FAILURE(0x50)"} = 1;
+                            } elsif (hex($power_cycle_reason) & 0x1) {
+                                $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"} = 1;
+                            } elsif ($power_cycle_reason eq "0x90" && $power_failure_12v == 1 && $asic_pin_sts_0 eq "0x00" && $asic_pin_sts_1 eq "0x00" && $asic_pin_sts_2 eq "0x00") {
+                                $diag_fa_code{"NIC_POWER_FAILURE_12V_LOST"} = 1;
+                            } else {
+                                $diag_fa_code{"OTHER_POWER_CYCLE_REASON_FAILURE(0x50)"} = 1;
+                            }
+                        }
+                    } else {
+                        if ($power_failure_12v == 1 && $asic_pin_sts_0 eq "0x00" && $asic_pin_sts_1 eq "0x00" && $asic_pin_sts_2 eq "0x00") {
+                            $diag_fa_code{"NIC_POWER_FAILURE_12V_NOT_UP"} = 1;
                         }
                     }
                 }
