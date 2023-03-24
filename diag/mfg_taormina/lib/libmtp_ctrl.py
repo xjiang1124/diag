@@ -7329,6 +7329,7 @@ class mtp_ctrl():
         if match: 
             avs_sel_reg = match.group(1)
         else:
+            self._mgmt_handle.sendline("exit")
             return False
         self._mgmt_handle.sendline("exit")
         if not self.mtp_console_enter_shell("sh"):
