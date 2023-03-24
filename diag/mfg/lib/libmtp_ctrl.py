@@ -4013,7 +4013,7 @@ class mtp_ctrl():
         if nic_type in ELBA_NIC_TYPE_LIST:
             if nic_type in CONSOLE_DDR_BIST_NIC_LIST and "DDR_BIST" in test:
                 pass
-            elif "L1" in test:
+            elif test in ("L1"):
                 pass
             else:
                 self.mtp_single_j2c_lock()
