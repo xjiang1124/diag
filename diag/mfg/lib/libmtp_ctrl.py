@@ -5146,7 +5146,7 @@ class mtp_ctrl():
 
             # set final nic_type
             for slot in range(self._slots):
-                if self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
                     pn = self.mtp_get_nic_pn(slot)
                     if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
                         final_nic_type = NIC_Type.ORTANO2ADI

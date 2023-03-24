@@ -4,7 +4,7 @@
 source ./cmdline.tcl
 set parameters {
     {slot_list.arg      ""      "Slot list"}
-    {mode.arg           "hod"   "ASIC mode: hod_1100/hod/nod/nod_515"}
+    {mode.arg           "hod"   "ASIC mode: hod_1100/hod/nod/nod_525"}
     {type.arg           "ubootd"   "Image type"}
     {img.arg            "/home/diag/diag/scripts/asic/ubootd.img.hex"      "uboot image"}
 }
@@ -50,6 +50,7 @@ foreach slot $slot_list {
     set slot1 [mtp_get_j2c_slot $slot]
     diag_close_j2c_if $port $slot1
 
+    plog_msg "Power cycling slot $slot"
     catch {exec /home/diag/diag/scripts/turn_on_slot.sh off $slot}
     exec sleep 2; 
     catch {exec /home/diag/diag/scripts/turn_on_slot.sh on $slot}
@@ -62,7 +63,7 @@ foreach slot $slot_list {
         continue
     }
 
-    elb_card_rst $port $slot1 hod 3200 3000 0 0 "127" 0 1 normal 0 0
+    elb_card_rst $port $slot1 $mode 3200 3000 0 0 "127" 0 1 normal 0 0
 
     set val [_msrd]
     if {$val != 0x1} {

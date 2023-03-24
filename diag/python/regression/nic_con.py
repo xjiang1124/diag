@@ -19,6 +19,37 @@ class nic_con:
         self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.fmt_change_rate = "stty speed {}"
 
+    def uart_session_start_login(self, session, baud=115200):
+        ret = 0
+        cmd = self.fmt_con_cmd.format(baud)
+        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        session.sendline(cmd)
+        for ite in range(3):
+            print "ite: ", ite
+            timeout = 15
+
+            try:
+                #session.expect("Terminal ready")
+                print("sending r")
+                session.send("\r")
+
+                i = session.expect(expstr, timeout)
+                if i != len(expstr)-1:
+                    session.sendline(self.usr)
+                    session.expect("assword:")
+                    session.sendline(self.pwd)
+                    session.expect("\#")
+                else:
+                    return -1
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                if ite != 0:
+                    print "=== TIMEOUT: Can not connect to NIC on UART!"
+                ret = -1
+            #time.sleep(15)
+        return ret
+
     def uart_session_start(self, session, baud=115200):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
@@ -1038,90 +1069,133 @@ class nic_con:
 
     def file_compare(self, fn1, fn2):
         ret = 0
-        f1 = open(fn1, "r")
-        f2 = open(fn2, "r")
-        f1_lines = f1.readlines()
-        f2_lines = f2.readlines()
-        for i in range(len(f1_lines)):
-            if f1_lines[i] != f2_lines[i]:
-                print("line " + str(i) + " not match, " + fn1 + ": " + f1_lines[i] + ", " + fn2 + ": " + f2_lines[i])
-                ret = 1
-                break
-        f1.close()
-        f2.close()
+        try:
+            with open(fn1, "r") as f1:
+                f1_lines = f1.readlines()
+            with open(fn2, "r") as f2:
+                f2_lines = f2.readlines()
+            for i in range(len(f1_lines)):
+                if f1_lines[i] != f2_lines[i]:
+                    print("line " + str(i) + " not match, " + fn1 + ": " + f1_lines[i] + ", " + fn2 + ": " + f2_lines[i])
+                    ret = 1
+                    break
+        except (IOError, OSError) as e:
+            print(e)
+            ret = 1
+        return ret
+
+    def qspi_wp_program_test(self, enable, j2c_session, start_addr):
+        ret = -1
+        common.session_cmd(j2c_session, "rm -f /home/diag/save.txt", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "rm -f /home/diag/after_prog.txt", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "rm -f /home/diag/after_prog_wo_addr.txt", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "rm -f /home/diag/random.hex", 30, False, "tclsh]")
+        # save
+        common.session_cmd(j2c_session, "elb_dump_qspi OTHER {} 0x10000 /home/diag/save.txt".format(start_addr), 300, False, "tclsh]")
+        #common.session_cmd(j2c_session, "exec awk {print $2} /home/diag/save.txt > /home/diag/restore.txt", 300, False, "tclsh]")
+        # program random
+        common.session_cmd(j2c_session, "head -c 64k /dev/urandom > /home/diag/random.txt", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "bin2hex /home/diag/random.txt > /home/diag/random.hex", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "elb_prog_qspi /home/diag/random.hex {}".format(start_addr), 300, False, "tclsh]")
+        # dump after program
+        common.session_cmd(j2c_session, "elb_dump_qspi OTHER {} 0x10000 /home/diag/after_prog.txt".format(start_addr), 300, False, "tclsh]")
+        common.session_cmd(j2c_session, "exec awk {{print $2}} /home/diag/after_prog.txt > /home/diag/after_prog_wo_addr.txt", 300, False, "tclsh]")
+        if enable == True:
+            # compare with saved
+            if self.file_compare("/home/diag/after_prog.txt", "/home/diag/save.txt") == 0:
+                ret = 0
+            else:
+                common.session_cmd(j2c_session, "exit", 10)
+                common.session_stop(j2c_session)
+                ret = -1
+        else:
+            # compare with programmed
+            if self.file_compare("/home/diag/after_prog_wo_addr.txt", "/home/diag/random.hex") == 0:
+                ret = 0
+            else:
+                common.session_cmd(j2c_session, "exit", 10)
+                common.session_stop(j2c_session)
+                ret = -1
+        return ret
+
+    def qspi_wp_erase_test(self, enable, j2c_session, start_addr):
+        ret = -1
+
+        common.session_cmd(j2c_session, "rm -f /home/diag/after_erase.txt", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "rm -f /home/diag/expected_after_erase.txt", 30, False, "tclsh]")
+        # erase
+        common.session_cmd(j2c_session, "elb_erase_qspi 0x10000 {}".format(start_addr), 100, False, "tclsh]")
+        # dump after erase
+        common.session_cmd(j2c_session, "elb_dump_qspi OTHER {} 0x10000 /home/diag/after_erase.txt".format(start_addr), 300, False, "tclsh]")
+        if enable == True:
+            # compare with saved
+            if self.file_compare("/home/diag/after_erase.txt", "/home/diag/save.txt") == 0:
+                ret = 0
+            else:
+                common.session_cmd(j2c_session, "exit", 10)
+                common.session_stop(j2c_session)
+                ret = -1
+        else:
+            # should be erased
+            common.session_cmd(j2c_session, "exec awk {$2=\"FFFFFFFF\"} /home/diag/save.txt > /home/diag/expected_after_erase.txt", 30, False, "tclsh]")
+            if self.file_compare("/home/diag/after_erase.txt", "/home/diag/expected_after_erase.txt") == 0:
+                ret = 0
+            else:
+                common.session_cmd(j2c_session, "exit", 10)
+                common.session_stop(j2c_session)
+                ret = -1
         return ret
 
     def verify_esec_qspi_wp(self, slot, enable):
-        ret = 0
+        ret = -1
         if enable == True:
             str = "enable"
         else:
             str = "disable"
-        try:
-            j2c_session = common.session_start()
-            common.session_cmd(j2c_session, "cd /home/diag/diag/asic/asic_src/ip/cosim/tclsh")
 
-            # TCL command
-            common.session_cmd(j2c_session, "tclsh", 40, False, ending=["%", "tclsh]"])
-            common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
+        j2c_session = common.session_start()
+        common.session_cmd(j2c_session, "cd /home/diag/diag/asic/asic_src/ip/cosim/tclsh")
 
-            common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
-            # save
-            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/save.txt", 300, False, "tclsh]")
-            #common.session_cmd(j2c_session, "exec awk {print $2} /home/diag/save.txt > /home/diag/restore.txt", 300, False, "tclsh]")
-            # program random
-            common.session_cmd(j2c_session, "head -c 64k /dev/urandom > /home/diag/random.txt", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "bin2hex /home/diag/random.txt > /home/diag/random.hex", 30, False, "tclsh]")
-            common.session_cmd(j2c_session, "elb_prog_qspi /home/diag/random.hex 0x70000000", 300, False, "tclsh]")
-            # dump after program
-            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/after_prog.txt", 300, False, "tclsh]")
-            common.session_cmd(j2c_session, "exec awk {{print $2}} /home/diag/after_prog.txt > /home/diag/after_prog_wo_addr.txt", 300, False, "tclsh]")
-            if enable == True:
-                # compare with saved
-                if self.file_compare("/home/diag/after_prog.txt", "/home/diag/save.txt") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-            else:
-                # compare with programmed
-                if self.file_compare("/home/diag/after_prog_wo_addr.txt", "/home/diag/random.hex") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-            if ret != 0:
-                common.session_cmd(j2c_session, "exit", 10)
-                common.session_stop(j2c_session)
-                return ret
+        # TCL command
+        common.session_cmd(j2c_session, "tclsh", 40, False, ending=["%", "tclsh]"])
+        common.session_cmd(j2c_session, "source .tclrc.diag.elb", 40, False, "tclsh]")
 
-            # erase
-            common.session_cmd(j2c_session, "elb_erase_qspi 0x10000 0x70000000", 100, False, "tclsh]")
-            # dump after erase
-            common.session_cmd(j2c_session, "elb_dump_qspi OTHER 0x70000000 0x10000 /home/diag/after_erase.txt", 300, False, "tclsh]")
-            if enable == True:
-                # compare with saved
-                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/save.txt") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-            else:
-                # should be erased
-                common.session_cmd(j2c_session, "exec awk {$2=\"FFFFFFFF\"} /home/diag/save.txt > /home/diag/expected_after_erase.txt", 30, False, "tclsh]")
-                if self.file_compare("/home/diag/after_erase.txt", "/home/diag/expected_after_erase.txt") == 0:
-                    ret = 0
-                else:
-                    ret = -1
-
+        common.session_cmd(j2c_session, "set slot {}".format(slot), 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "set port [mtp_get_j2c_port $slot]", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "set slot1 [mtp_get_j2c_slot $slot]", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "diag_close_j2c_if $port $slot1", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
+        common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
+        if "0x00000001" not in j2c_session.before:
+            print "ERROR: j2c failure"
             common.session_cmd(j2c_session, "exit", 10)
             common.session_stop(j2c_session)
-        except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Failed to verify WP ", str
-            common.session_stop(j2c_session)
             return -1
+
+        # only the bottom 64k is protected by WP
+        ret = self.qspi_wp_program_test(enable, j2c_session, "0x70000000")
+        if ret != 0:
+            return ret
+        ret = self.qspi_wp_erase_test(enable, j2c_session, "0x70000000")
+        if ret != 0:
+            return ret
+        # negative test: 64k from 0x70010000 is not affected by WP
+        ret = self.qspi_wp_program_test(False, j2c_session, "0x70010000")
+        if ret != 0:
+            return ret
+        ret = self.qspi_wp_erase_test(False, j2c_session, "0x70010000")
+        if ret != 0:
+            return ret
+        # negative test: 64k from 0x7fff0000 is not affected by WP
+        ret = self.qspi_wp_program_test(False, j2c_session, "0x7fff0000")
+        if ret != 0:
+            return ret
+        ret = self.qspi_wp_erase_test(False, j2c_session, "0x7fff0000")
+        if ret != 0:
+            return ret
+
+        common.session_cmd(j2c_session, "exit", 10)
+        common.session_stop(j2c_session)
         return ret
 
 

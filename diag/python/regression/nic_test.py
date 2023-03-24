@@ -183,7 +183,12 @@ class nic_test:
             print "=== Setup env top done #", retry, "==="
 
         print "timestamp", datetime.datetime.now().time()
-        return ret, nic_list_remain
+
+        nic_list_pass = [x for x in nic_list if x not in nic_list_remain]
+
+        print(ret, nic_list_pass, nic_list_remain)
+
+        return [ret, nic_list_pass, nic_list_remain]
 
     def setup_env_multi_mainfw(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, dis_net_port=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1030,7 +1035,7 @@ class nic_test:
                     session_tx.sendline("echo \"{}\" > /dev/ttyS0".format(element))
                     session_tx.expect("\#")
                     session_rx.expect(element)
-                    ret_list[int(slot)-1] = 1
+                ret_list[int(slot)-1] = 1
             except pexpect.TIMEOUT:
                 print "=== TIMEOUT: Can not connect to NIC on SSH!"
                 ret_list[int(slot)-1] = 0
