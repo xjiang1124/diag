@@ -5157,6 +5157,12 @@ class mtp_ctrl():
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
 
+        # populate OCP adapter info
+        for slot in range(self._slots):
+            if self.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+                if not self.mtp_get_nic_ocp_adapter_sn(slot):
+                    self.cli_log_slot_err(slot, "OCP Adapter FRU missing")
+
         return True
 
     def mtp_nic_check_prsnt(self, slot):
