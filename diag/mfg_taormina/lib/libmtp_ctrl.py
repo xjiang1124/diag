@@ -985,18 +985,18 @@ class mtp_ctrl():
             self._mgmt_handle.sendline(shell)
 
             time.sleep(2)
-            if self.mtp_console_connect():
+            if self.mtp_console_connect(): # calling this to change self._mgmt_prompt
                 time.sleep(2)
-                self.mtp_mgmt_exec_cmd("echo $SHELL")
+                self.mtp_mgmt_exec_cmd("echo $SHELL", timeout=60)
                 successentersh = True
             if shell == "sh":
                 successentersh = False
-                if self.mtp_mgmt_exec_cmd("stty rows 50 cols 160", sig_list=["#"]):
+                if self.mtp_mgmt_exec_cmd("stty rows 50 cols 160", sig_list=["#"], timeout=60):
                     successentersh = True
 
             if shell == "svcli":
                 successentersh = False
-                if self.mtp_mgmt_exec_cmd("", sig_list=[">"]):
+                if self.mtp_mgmt_exec_cmd("", sig_list=[">"], timeout=60):
                     successentersh = True
 
             if successentersh:
