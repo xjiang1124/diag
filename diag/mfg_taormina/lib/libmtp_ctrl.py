@@ -1029,7 +1029,6 @@ class mtp_ctrl():
                     retries += 1
                     # self.mtp_console_disconnect()
                     self.mtp_console_spawn()
-                    self._mgmt_handle.sendline()
                     continue
                 else:
                     self.cli_log_err("Console to uut failed\n", level = 0)
