@@ -181,7 +181,7 @@ class MTP_Const:
     TOR_NIC_POWER_OFF_DELAY = 10
     TOR_POWER_CYCLE_DELAY = 60
     TOR_POWER_ON_TIMEOUT = 300
-    TOR_LAGS_POWER_ON_DELAY = 11*60
+    TOR_LAGS_POWER_ON_DELAY = 60*60 # Need to wait for LAG to go to 'down' state: 10min for ssh issue; 15 min for mainfw corrupted per Elba; extra few min for safety; round up to 1hr
     TOR_CONSOLE_CON_DELAY = 1
     TOR_I210_PROG_DELAY = 600
     TOR_PCIE_SCAN_DELAY = 300
