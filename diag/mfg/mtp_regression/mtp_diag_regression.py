@@ -1583,7 +1583,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN Before Test Stage", level=0)
                 if not mtp_mgmt_ctrl.mtp_psu_init():
                     # Fail all cards
-                    mtp_mgmt_ctrl.cli_log_inf("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    mtp_mgmt_ctrl.cli_log_err("PSU PIN Check Failed, Fail All Card Out", level=0)
                     for nic_list in nic_test_full_list:
                         for slot in nic_list:
                             if slot not in fail_nic_list:
@@ -2084,7 +2084,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN After Test Stage", level=0)
                 if not mtp_mgmt_ctrl.mtp_psu_init():
                     # Fail all cards
-                    mtp_mgmt_ctrl.cli_log_inf("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    mtp_mgmt_ctrl.cli_log_err("PSU PIN Check Failed, Fail All Card Out", level=0)
                     for nic_list in nic_test_full_list:
                         for slot in nic_list:
                             if slot not in fail_nic_list:
@@ -2171,7 +2171,7 @@ def main():
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES25SWM and (swmtestmode == Swm_Test_Mode.ALOM):
                 alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
-                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+                mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
         for slot in skip_nic_list:
             key = libmfg_utils.nic_key(slot)
