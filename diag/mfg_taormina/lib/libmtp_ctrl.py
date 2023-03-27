@@ -5341,7 +5341,11 @@ class mtp_ctrl():
         # Keep entering selection number
         idx = -1
         starttosendselection = True
-        retry_wait_time = MTP_Const.CONSOLE_SANITY_CHECK_WAIT_TIME
+        # no console during this period will trigger message box for operator
+        if selection == 0:
+            retry_wait_time = MTP_Const.SVOS_CONSOLE_CHECK_WAIT_TIME
+        else:
+            retry_wait_time = MTP_Const.CXOS_CONSOLE_CHECK_WAIT_TIME
         retry_cnt = 3
         retry_start_time = datetime.now()
         
@@ -5356,21 +5360,23 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["ServiceOS login:", " login:", "Select profile","Looking for SvOS.", "Starting update"], timeout=1)
-            difftime = datetime.now() - retry_start_time
-            seconds = difftime.total_seconds()
-            if seconds > retry_wait_time:
-                retry_cnt -= 1
-                if retry_cnt >= 0:
-                    if ENABLE_CONSOLE_SANITY_CHECK:
-                        libmfg_utils.aruba_gui_clear_buffer2()
-                        self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
-                        raw_input("Please check that the console is connected then press any key to continue.\n")
-                    retry_start_time = datetime.now()
-                    self.cli_log_inf("Retrying console...")
-                    self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
-                    continue
-                else:
-                    break
+
+            if starttosendselection: # if we're still waiting for a console
+                difftime = datetime.now() - retry_start_time
+                seconds = difftime.total_seconds()
+                if seconds > retry_wait_time:
+                    retry_cnt -= 1
+                    if retry_cnt >= 0:
+                        if ENABLE_CONSOLE_SANITY_CHECK:
+                            libmfg_utils.aruba_gui_clear_buffer2()
+                            self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
+                            raw_input("Please check that the console is connected then press any key to continue.\n")
+                        retry_start_time = datetime.now()
+                        self.cli_log_inf("Retrying console...")
+                        self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
+                        continue
+                    else:
+                        break
             if idx < 0:
                 continue
             elif idx == 2:
