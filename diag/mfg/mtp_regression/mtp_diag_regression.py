@@ -1579,6 +1579,19 @@ def main():
                 test_section_list = libmfg_utils.list_intersection(test_section_list, args.only_test)
 
             for test_section in test_section_list:
+                # check MTP PSU PIN before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN Before Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_psu_init():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_inf("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+
                 if test_section == "PRE_CHECK":
                     ######################################################################
                     #
@@ -1603,7 +1616,6 @@ def main():
                                     fail_nic_list.append(slot)
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
-                
 
                 elif test_section == "MVL":
                     ######################################################################
@@ -1732,7 +1744,6 @@ def main():
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_unhide_nic_status(slot)
 
-
                 elif test_section == "ARM_PRBS":
                     ######################################################################
                     #
@@ -1778,7 +1789,6 @@ def main():
                                         fail_nic_list.append(slot)
                                     if slot in pass_nic_list:
                                         pass_nic_list.remove(slot)
-
 
                 elif test_section == "ARM_DSP":
                     ######################################################################
@@ -1828,7 +1838,6 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
-
                 elif test_section == "EDMA":
                     ######################################################################
                     #
@@ -1870,7 +1879,6 @@ def main():
                                     if slot in pass_nic_list:
                                         pass_nic_list.remove(slot)
 
-
                 elif test_section == "J2C_SEQ":
                     ######################################################################
                     #
@@ -1903,7 +1911,6 @@ def main():
                                     fail_nic_list.append(slot)
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
-
 
                 elif test_section == "ALOM_LP_MODE":
                     ######################################################################
@@ -1955,7 +1962,6 @@ def main():
                                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                             return
 
-
                 elif test_section == "NIC_DIAG_INIT":
                     ######################################################################
                     #
@@ -1974,7 +1980,6 @@ def main():
                                     if stop_on_err:
                                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                         return
-
 
                 elif test_section == "NIC_DIAG_INIT_AAPL":
                     ######################################################################
@@ -2035,7 +2040,6 @@ def main():
                             if slot in pass_nic_list:
                                 pass_nic_list.remove(slot)
 
-
                 elif test_section == "PROD_FPGA_PROG":
                     ######################################################################
                     #
@@ -2076,6 +2080,18 @@ def main():
                             if slot in pass_nic_list:
                                 pass_nic_list.remove(slot)
 
+                # check MTP PSU PIN after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN After Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_psu_init():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_inf("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
