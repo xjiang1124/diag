@@ -932,6 +932,19 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_send_ctrl_c(self):
+        self._mgmt_handle.sendcontrol('c')
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+
+        self._mgmt_handle.sendline()
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            return False
+
+        return True
+
     def mtp_nic_send_ctrl_c(self, slot):
         if self._nic_ctrl_list[slot] == None:
             # script not running anything.
@@ -972,18 +985,18 @@ class mtp_ctrl():
             self._mgmt_handle.sendline(shell)
 
             time.sleep(2)
-            if self.mtp_console_connect():
+            if self.mtp_console_connect(): # calling this to change self._mgmt_prompt
                 time.sleep(2)
-                self.mtp_mgmt_exec_cmd("echo $SHELL")
+                self.mtp_mgmt_exec_cmd("echo $SHELL", timeout=60)
                 successentersh = True
             if shell == "sh":
                 successentersh = False
-                if self.mtp_mgmt_exec_cmd("stty rows 50 cols 160", sig_list=["#"]):
+                if self.mtp_mgmt_exec_cmd("stty rows 50 cols 160", sig_list=["#"], timeout=60):
                     successentersh = True
 
             if shell == "svcli":
                 successentersh = False
-                if self.mtp_mgmt_exec_cmd("", sig_list=[">"]):
+                if self.mtp_mgmt_exec_cmd("", sig_list=[">"], timeout=60):
                     successentersh = True
 
             if successentersh:
@@ -1016,7 +1029,6 @@ class mtp_ctrl():
                     retries += 1
                     # self.mtp_console_disconnect()
                     self.mtp_console_spawn()
-                    self._mgmt_handle.sendline()
                     continue
                 else:
                     self.cli_log_err("Console to uut failed\n", level = 0)
@@ -5310,7 +5322,7 @@ class mtp_ctrl():
             self.mtp_console_disconnect()
         if self._use_usb_console:
             self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
-            libmfg_utils.count_down(10)
+            libmfg_utils.count_down(MTP_Const.RECONNECT_LANTRONIX_AFTER_POWERUP)
 
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
@@ -5329,7 +5341,11 @@ class mtp_ctrl():
         # Keep entering selection number
         idx = -1
         starttosendselection = True
-        retry_wait_time = MTP_Const.CONSOLE_SANITY_CHECK_WAIT_TIME
+        # no console during this period will trigger message box for operator
+        if selection == 0:
+            retry_wait_time = MTP_Const.SVOS_CONSOLE_CHECK_WAIT_TIME
+        else:
+            retry_wait_time = MTP_Const.CXOS_CONSOLE_CHECK_WAIT_TIME
         retry_cnt = 3
         retry_start_time = datetime.now()
         
@@ -5344,21 +5360,23 @@ class mtp_ctrl():
             else:
                 self._mgmt_handle.sendline()
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["ServiceOS login:", " login:", "Select profile","Looking for SvOS.", "Starting update"], timeout=1)
-            difftime = datetime.now() - retry_start_time
-            seconds = difftime.total_seconds()
-            if seconds > retry_wait_time:
-                retry_cnt -= 1
-                if retry_cnt >= 0:
-                    if ENABLE_CONSOLE_SANITY_CHECK:
-                        libmfg_utils.aruba_gui_clear_buffer2()
-                        self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
-                        raw_input("Please check that the console is connected then press any key to continue.\n")
-                    retry_start_time = datetime.now()
-                    self.cli_log_inf("Retrying console...")
-                    self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
-                    continue
-                else:
-                    break
+
+            if starttosendselection: # if we're still waiting for a console
+                difftime = datetime.now() - retry_start_time
+                seconds = difftime.total_seconds()
+                if seconds > retry_wait_time:
+                    retry_cnt -= 1
+                    if retry_cnt >= 0:
+                        if ENABLE_CONSOLE_SANITY_CHECK:
+                            libmfg_utils.aruba_gui_clear_buffer2()
+                            self.cli_log_err("Failed to get UUT console Login or Select profile prompt")
+                            raw_input("Please check that the console is connected then press any key to continue.\n")
+                        retry_start_time = datetime.now()
+                        self.cli_log_inf("Retrying console...")
+                        self._mgmt_handle.sendline() # send line to see if already reached login prompt while console was disconnected
+                        continue
+                    else:
+                        break
             if idx < 0:
                 continue
             elif idx == 2:
@@ -5378,6 +5396,14 @@ class mtp_ctrl():
                 libmfg_utils.count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
                 self.cli_log_inf("Power on APC", level=0)
                 self.mtp_apc_pwr_on()
+
+                if self._use_usb_console:
+                    # reconnect console after powerup
+                    # SLC 8xxx console line disconnects when unit is powered on
+                    if self._mgmt_handle is not None:
+                        self.mtp_console_disconnect()
+                    self.cli_log_inf("Reconnecting to SLC 8xxx console port", level=0)
+                    libmfg_utils.count_down(MTP_Const.RECONNECT_LANTRONIX_AFTER_POWERUP)
 
         if retry_cnt < 0:
             self.cli_log_err("Failed to connect console in 3 retries", level=0)
@@ -7309,6 +7335,7 @@ class mtp_ctrl():
         if match: 
             avs_sel_reg = match.group(1)
         else:
+            self._mgmt_handle.sendline("exit")
             return False
         self._mgmt_handle.sendline("exit")
         if not self.mtp_console_enter_shell("sh"):
@@ -8300,6 +8327,9 @@ class mtp_ctrl():
             return False
 
         if not self._mgmt_cfg:
+            return False
+
+        if not self.mtp_send_ctrl_c():
             return False
 
         if not self.tor_ping_test():
