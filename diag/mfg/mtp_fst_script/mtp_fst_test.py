@@ -35,7 +35,7 @@ def get_nic_ssh_cmd(ip, cmd):
     ssh_cmd = ssh_cmd_fmt.format(ip, cmd)
     return ssh_cmd
 
-def setup_penctrl_ssh(mtp_mgmt_ctrl, slot, ip):
+def setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, ip):
     cmd = "ls ~/.ssh/id_rsa"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Executing command {:s} failed".format(cmd), level=0)
@@ -631,7 +631,7 @@ def fst_setup_nic_ssh(mtp_mgmt_ctrl, card_type, slot):
     mtp_mgmt_ctrl._nic_ctrl_list[slot]._ip_addr = nic_mgmt_ip
 
     if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "capri" and card_type != "GENERAL_OLD":
-        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type):
+        if not setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, nic_mgmt_ip):
             return False
 
     return True

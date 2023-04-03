@@ -3067,7 +3067,7 @@ class mtp_ctrl():
         """ REWORK VERIFICATION FOR CAP CHANGE 
             For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42
         """
-        exp_prod_ver = "0B"
+        exp_prod_ver = "0C"
         if not self._nic_ctrl_list[slot].nic_fru_init_hpe_version():
             self.mtp_get_nic_err_msg(slot)
             return False
@@ -3078,7 +3078,7 @@ class mtp_ctrl():
             return False
 
         if got_prod_ver != exp_prod_ver:
-            self.nic_set_err_msg("Looking for Product Version/Revision Code = {:s}, got {}".format(exp_prod_ver, got_prod_ver))
+            self.cli_log_slot_err(slot, "Looking for Product Version/Revision Code = {:s}, got {}".format(exp_prod_ver, got_prod_ver))
             return False
 
         return True
@@ -5168,6 +5168,12 @@ class mtp_ctrl():
                         final_nic_type = NIC_Type.ORTANO2ADIMSFT
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+
+        # populate OCP adapter info
+        for slot in range(self._slots):
+            if self.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+                if not self.mtp_get_nic_ocp_adapter_sn(slot):
+                    self.cli_log_slot_err(slot, "OCP Adapter FRU missing")
 
         return True
 
