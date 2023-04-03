@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import libmtp_utils
 from libdefs import NIC_Type
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
@@ -234,29 +235,12 @@ def main():
 
     # i210
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):    
-        cmd = "cd {:s}{:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, "tools/i210")
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        
-        ret = True
-        cmd = "./eeupdate64e"
-        rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
-        if rs.startswith("[FAIL]:"):
-            ret = False
-            mtp_mgmt_ctrl.cli_log_err("MTP I210 command failed.{:s}".format(cmd), level=0)
-            mtpid_list.remove(mtp_id)
+        ret = libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl)
+        if not ret:
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
-        else:
-            if "8086-1537" in rs and "8086-1533" in rs: 
-                mtp_mgmt_ctrl.cli_log_inf("MTP I210 first command response Pass.", level=0)
-            else:
-                mtp_mgmt_ctrl.cli_log_err("MTP I210 first command response Fail.", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-                
+
         if ret:
             cmd = "./eeupdate64e /NIC=1 /D=Dev_Start_I210_SerdesBX_NOMNG_16Mb_A2.bin"
             rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
