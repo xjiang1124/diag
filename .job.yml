@@ -108,5 +108,6 @@ dependencies:
   - reference: test/jobs/precheckin/ortano-P2C
   - reference: test/jobs/precheckin/monterey-P2C
   - reference: test/jobs/precheckin/naples25-P2C
+    exclude_dirs: ["mfg/scripts"]
   diag/mfg/mtp_fst_test:
   - reference: test/jobs/sanity/ortano-fst
