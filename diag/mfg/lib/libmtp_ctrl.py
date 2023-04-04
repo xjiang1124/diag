@@ -290,10 +290,14 @@ class mtp_ctrl():
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
                 for line in top_err_msg.splitlines():
+                    if self._mgmt_prompt in line:
+                        continue # skip so it doesnt mess with pexpect
                     self.cli_log_err(line)
                 self.cli_log_err("<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
                 for line in bottom_err_msg.splitlines():
+                    if self._mgmt_prompt in line:
+                        continue # skip so it doesnt mess with pexpect
                     self.cli_log_err(line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
@@ -310,14 +314,20 @@ class mtp_ctrl():
             if (len(err_msg) > 512):
                 top_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[:256])
                 for line in top_err_msg.splitlines():
+                    if self._mgmt_prompt in line:
+                        continue # skip so it doesnt mess with pexpect
                     self.cli_log_slot_err(slot, line)
                 self.cli_log_slot_err(slot, "<============================>")
                 bottom_err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg[-256:])
                 for line in bottom_err_msg.splitlines():
+                    if self._mgmt_prompt in line:
+                        continue # skip so it doesnt mess with pexpect
                     self.cli_log_slot_err(slot, line)
             else:
                 err_msg = re.sub(r'[\x00-\x1F]+', '\n', err_msg)
                 for line in err_msg.splitlines():
+                    if self._mgmt_prompt in line:
+                        continue # skip so it doesnt mess with pexpect
                     self.cli_log_slot_err(slot, line)
         self.cli_log_slot_err(slot, "==== Error Message End: ====")
 
