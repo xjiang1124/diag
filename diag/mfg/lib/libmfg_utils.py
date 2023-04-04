@@ -2125,6 +2125,10 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     for mtp_id in summary_dict.keys():
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
+        if len(summary_dict[mtp_id]) == 0:
+            # test didnt finish properly
+            final_result = False
+            continue
         for slot, sn, nic_type, rc, retest_blocked in summary_dict[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
             if rc:

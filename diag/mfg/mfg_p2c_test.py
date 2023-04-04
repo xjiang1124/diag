@@ -357,16 +357,9 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_disp(stage, mfg_p2c_summary, mtpid_fail_list)
+    test_result = libmfg_utils.mfg_summary_disp(stage, mfg_p2c_summary, mtpid_fail_list)
 
     # print return code for JobD to pick up
-    test_result = True
-    if len(mtpid_fail_list) > 0:
-        test_result = False
-    for mtp_id in mfg_p2c_summary.keys():
-        for slot, sn, nic_type, rc, retest_blocked in mfg_p2c_summary[mtp_id]:
-            if not rc:
-                test_result = False
     if test_result:
         sys.exit(0)
     else:
