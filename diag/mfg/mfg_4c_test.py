@@ -393,6 +393,8 @@ def main():
     if len(mtpid_fail_list) > 0:
         test_result = False
     for mtp_id in mfg_4c_summary.keys():
+        if len(mfg_4c_summary[mtp_id]) == 0:
+            test_result = False
         for slot, sn, nic_type, rc, retest_blocked in mfg_4c_summary[mtp_id]:
             if not rc:
                 test_result = False
