@@ -7,6 +7,10 @@ if [[ ${asic_type} == "taormina" ]]; then
 	asic_type="elba"
 	mfg_folder="mfg_taormina"
 fi
+if [[ ${asic_type} == "lipari" ]]; then
+	asic_type="elba"
+	mfg_folder="mfg_lipari"
+fi
 if [[ -z ${jenkins_dir} ]]; then
 	jenkins_dir=/vol/hw/diag/mfg_release/jenkins
 fi
@@ -22,7 +26,7 @@ cp -r $top_dir/diag/${mfg_folder}/* $mfg_script_dir/
 sync
 mkdir -p $mfg_script_dir/release/
 chmod 777 $mfg_script_dir/release/
-if [[ ${mfg_folder} == "mfg_taormina" ]]; then
+if [[ ${mfg_folder} == "mfg_taormina" || ${mfg_folder} == "mfg_lipari" ]]; then
 	mkdir $mfg_script_dir/tftpboot/
 	chmod 777 $mfg_script_dir/tftpboot/
 fi
@@ -65,7 +69,7 @@ mv ${release_name}.tar.gz ${release_name}/
 ## COPY NIC IMAGES
 image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
 for f in $image_files; do
-    if [[ ${mfg_folder} == "mfg_taormina" ]]; then    
+    if [[ ${mfg_folder} == "mfg_taormina" || ${mfg_folder} == "mfg_lipari" ]]; then
         cp --preserve=timestamps /tftpboot/nabeel/$f $mfg_script_dir/tftpboot/
     else
         cp --preserve=timestamps /vol/hw/diag/mfg_release/prog/$f $mfg_script_dir/release
@@ -88,8 +92,12 @@ done
 
 ## TAR THE FW IMAGES
 cd ${mfg_script_dir}
-tar czf fw.tar.gz release/
+tar czf fw.tar.gz release/ --remove-files
 mv fw.tar.gz ../
+if [[ ${mfg_folder} == "mfg_taormina" || ${mfg_folder} == "mfg_lipari" ]]; then
+	tar czf tftpboot.tar.gz tftpboot/ --remove-files
+	mv tftpboot.tar.gz ../
+fi
 
 sync
 
