@@ -100,7 +100,8 @@ class arm_prbs:
         print "slot:", slot_list
         nic_list_remain = slot_list[:]
         nic_failed_setup = slot_list[:]
-        ret, nic_failed_setup = self.nic_test.setup_env_multi_top(slot_list, False, 30, False, no_pwr_cycle, False, False, "elba", False, False)
+        nic_passed_setup = slot_list[:]
+        ret, nic_passed_setup, nic_failed_setup = self.nic_test.setup_env_multi_top(slot_list, False, 30, False, no_pwr_cycle, False, False, "elba", False, False)
 
         # initialize all slots to FAIL
         test_result = OrderedDict()
