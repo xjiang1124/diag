@@ -1681,6 +1681,18 @@ class mtp_ctrl():
             self.cli_log_err("MTP get inlet temperature failed")
             return False
 
+        # Current Fan Speed display
+        ret = re.findall(r'NAME\s+FAN\d-Inlet\s+|FAN\d-Inlet\s+|FAN\d-Outlet\s', self.mtp_get_cmd_buf())
+        if not ret:
+            self.cli_log_err("MTP get fan name failed")
+            return False
+        self.cli_log_inf("".join(ret).strip('\n'))
+        ret = re.search(r'FAN(\s+\d{3,}){6}(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+        if not ret:
+            self.cli_log_err("MTP get fan speed failed")
+            return False
+        self.cli_log_inf(ret.group(0))
+
         # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
         # FAN                 23.50          25.50          21.75          21.75
         match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())

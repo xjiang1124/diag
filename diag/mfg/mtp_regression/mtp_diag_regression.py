@@ -13,6 +13,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import libmtp_utils
 from libdefs import MTP_Const
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -1591,6 +1592,30 @@ def main():
                             if slot in pass_nic_list:
                                 pass_nic_list.remove(slot)
                     break
+                # check MTP HOST NIC Device before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP HOST NIC Device Before Test Stage", level=0)
+                if not libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl):
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP HOST NIC Device Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP FAN SPEED before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP Fan Speed Before Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_inlet_temp_test():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP Fan Speed Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
 
                 if test_section == "PRE_CHECK":
                     ######################################################################
@@ -2085,6 +2110,30 @@ def main():
                 if not mtp_mgmt_ctrl.mtp_psu_init():
                     # Fail all cards
                     mtp_mgmt_ctrl.cli_log_err("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP HOST NIC Device after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP HOST NIC Device After Test Stage", level=0)
+                if not libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl):
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP HOST NIC Device Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP FAN SPEED after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP Fan Speed After Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_inlet_temp_test():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP Fan Speed Check Failed, Fail All Card Out", level=0)
                     for nic_list in nic_test_full_list:
                         for slot in nic_list:
                             if slot not in fail_nic_list:
