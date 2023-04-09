@@ -66,7 +66,7 @@ def setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, ip):
     return True
 
 def get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst):
-    if card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT":
+    if card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT" or card_type == "ORTANO2ADIIBM":
         # elba
         cmd = "lspci -d 1dd8:0002"
     else:
@@ -273,7 +273,10 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "Booted into diagfw", level=0)
 
 
-    cmd = "/nic/tools/fwupdate -l"
+    if nic_type == NIC_Type.ORTANO2ADIIBM:
+        cmd = "'export PATH=$PATH:/nic/bin; /nic/tools/fwupdate -l'"
+    else:
+        cmd = "/nic/tools/fwupdate -l"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to execute fwupdate -l")
         mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
@@ -287,7 +290,8 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
     if "boot0" in fwlist:
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} rev{:d}".format(fwlist["boot0"]["image"]["software_version"], fwlist["boot0"]["image"]["build_date"], fwlist["boot0"]["image"]["image_version"]))
     else:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
+        if nic_type != NIC_Type.ORTANO2ADIIBM:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing boot0 info")
     for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw", "extdiag"]:
         if nic_type in FPGA_TYPE_LIST and (partition == "mainfwa" or partition == "mainfwb"):
             continue
@@ -469,7 +473,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
             continue
 
         ### SET PEFORMANCE MODE
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
             # Ensure performance mode even though this step is not needed with newer mainfw anymore.
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
             cmd = "touch /sysconfig/config0/.perf_mode"
@@ -481,7 +485,7 @@ def fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst):
                 # continue
 
         ### SWITCH TO MAINFW
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
+        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
             cmd = "/nic/tools/fwupdate -s mainfwa"
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
@@ -525,6 +529,59 @@ def check_pcie_stage(mtp_mgmt_ctrl, card_type, fst):
             fail_list.append(slot)
             pass_list.remove(slot)
 
+    return pass_list, fail_list
+
+def set_board_config(mtp_mgmt_ctrl, card_type, fst):
+    pass_list, fail_list = [], []
+    slot_bus_list = get_slot_bus_list(mtp_mgmt_ctrl, card_type, fst)
+    if len(slot_bus_list) == 0:
+        return pass_list, fail_list
+
+    for slot, bus in slot_bus_list:
+        pass_list.append(slot)
+
+        ### DECODE ETH
+        nic_mgmt_ip = get_eth_mnic(mtp_mgmt_ctrl, card_type, slot, bus)
+        if not nic_mgmt_ip:
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+
+        ### SET BOARD CONFIG
+        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -G 1 -F 1 -O 1'"
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to set board config")
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            fail_list.append(slot)
+            pass_list.remove(slot)
+            continue
+            
+        ### DISPLAY BOARD CONFIG
+        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -r'"
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(get_nic_ssh_cmd(nic_mgmt_ip, cmd)):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "failed to set board config")
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            if slot not in fail_list:
+                fail_list.append(slot)
+            if slot in pass_list:
+                pass_list.remove(slot)
+            continue
+
+        ### VERIFY BOARD CONFIG
+        buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        match = re.findall(r"(gold_on_stop\s+1)", buf)
+        match1 = re.findall(r"(gold_no_hostif\s+1)", buf)
+        match2 = re.findall(r"(gold_oob\s+1)", buf)
+        if not match or not match1 or not match2:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "board config verify failed")
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            if slot not in fail_list:
+                fail_list.append(slot)
+            if slot in pass_list:
+                pass_list.remove(slot)
+            continue            
+
+            
     return pass_list, fail_list
 
 def check_rot(mtp_mgmt_ctrl, card_type, nic_list):
@@ -683,7 +740,7 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
         return False
 
     ### SET PEFORMANCE MODE
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
         # Ensure performance mode even though this step is not needed with newer mainfw anymore.
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Set performance mode")
         cmd = "touch /sysconfig/config0/.perf_mode"
@@ -693,7 +750,7 @@ def fetch_nic_info(mtp_mgmt_ctrl, slot):
             # return False
 
     ### SWITCH TO MAINFW
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADIIBM or nic_type == NIC_Type.ORTANO2ADICR:
+    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Switch to mainfw")
         cmd = "/nic/tools/fwupdate -s mainfwa"
         if not mtp_mgmt_ctrl.mtp_nic_fst_exec_cmd(slot, cmd):
@@ -811,14 +868,14 @@ def main():
     # local log files
     log_filep_list = list()
     test_log_file = "test_fst.log"
-    if ("CLOUD" in card_type or card_type == "ORTANO2ADIIBM") and stage != "FETCH_SN":
+    if ("CLOUD" in card_type) and stage != "FETCH_SN":
         test_log_filep = open(test_log_file, "a+", buffering=0)
     else:
         test_log_filep = open(test_log_file, "w+", buffering=0)
     log_filep_list.append(test_log_filep)
 
     diag_log_file = "diag_fst.log"
-    if ("CLOUD" in card_type or card_type == "ORTANO2ADIIBM") and stage != "FETCH_SN":
+    if ("CLOUD" in card_type) and stage != "FETCH_SN":
         diag_log_filep = open(diag_log_file, "a+", buffering=0)
     else:
         diag_log_filep = open(diag_log_file, "w+", buffering=0)
@@ -938,7 +995,7 @@ def main():
         fail_match = re.findall(fail_reg_exp, result)
         dsp = FF_Stage.FF_FST
         test = "PCIE_LINK"
-    elif "CLOUD" in card_type or card_type == "ORTANO2ADIIBM":
+    elif "CLOUD" in card_type:
         cmd = MFG_DIAG_CMDS.FST_DIAG_CMD_FMT_CLD.format(card_type, stage, fst)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("MTP Final Stage Test Failed", level=0)
@@ -962,10 +1019,12 @@ def main():
             test = "FETCH_SN"
         else:
             test = "PCIE_LINK"
-    elif card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT":
+    elif card_type == "ORTANO" or card_type == "ORTANO2ADIMSFT" or card_type == "ORTANO2ADIIBM":
         dsp = FF_Stage.FF_FST
 
         testlist = ["FETCH_SN", "PCIE_LINK", "ROT"]
+        if card_type == "ORTANO2ADIIBM":
+            testlist = ["FETCH_SN", "SET_BOARD_CONFIG", "PCIE_LINK"]
 
         for test in testlist:
 
@@ -981,6 +1040,8 @@ def main():
                 test_pass_list, test_fail_list = fetch_sn_cloud_stage(mtp_mgmt_ctrl, card_type, fst)
             elif test == "PCIE_LINK":
                 test_pass_list, test_fail_list = check_pcie_stage(mtp_mgmt_ctrl, card_type, fst)
+            elif test == "SET_BOARD_CONFIG":
+                test_pass_list, test_fail_list = set_board_config(mtp_mgmt_ctrl, card_type, fst)
             elif test == "ROT":
                 test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, card_type, pass_nic_list + fail_nic_list)
             else:
@@ -1016,7 +1077,7 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    if "CLOUD" in card_type or card_type == "ORTANO2ADIIBM":
+    if "CLOUD" in card_type:
         if stage == "FETCH_SN":
             cmd = "cp /home/diag/mtp_fst_script/diag_fst.log /home/diag/mtp_fst_script/diag_fst.log.0"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
@@ -1044,7 +1105,7 @@ def main():
                 #sort it based on slot number
                 fail_match.sort(key = lambda x: x[0])
 
-    if card_type not in ("AUTODETECT", "GENERAL_OLD") and ("ORTANO" not in card_type or card_type == "ORTANO2ADIIBM"):
+    if card_type not in ("AUTODETECT", "GENERAL_OLD") and ("ORTANO" not in card_type):
         for _slot, _sn, _nic_type in fail_match:
             slot = int(_slot)-1
             mtp_mgmt_ctrl.mtp_set_nic_type(slot, _nic_type.strip())

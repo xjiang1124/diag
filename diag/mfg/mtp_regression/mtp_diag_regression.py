@@ -1566,10 +1566,10 @@ def main():
                 test_section_list = ["ALOM_LP_MODE", "PRE_CHECK", "ARM_DSP", "NIC_DIAG_INIT_AAPL", "ARM_PRBS", "SNAKE", "J2C_SEQ"]
             ### ELBA TEST ORDER
             if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.ELBA, MTP_ASIC_SUPPORT.TURBO_ELBA):
-                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
+                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
             ### ELBA TEST ORDER WITH SPECIAL NC-SI IMAGE
             if stage == FF_Stage.FF_P2C and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
-                test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
+                test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
 
                 if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
@@ -2024,6 +2024,22 @@ def main():
                                     if stop_on_err:
                                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                         return
+                                        
+                elif test_section == "NIC_EDMA_ENV_INIT":
+                    ######################################################################
+                    #
+                    #  NIC EDMA Environment Setup
+                    #
+                    ######################################################################
+                    if not mtp_mgmt_ctrl.mtp_nic_edma_env_init(nic_test_full_list):
+                        for nic_list in nic_test_full_list:
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    if slot not in fail_nic_list:
+                                        fail_nic_list.append(slot)
+                                    if slot in pass_nic_list:
+                                        pass_nic_list.remove(slot)
+
 
                 elif test_section == "TEST_FPGA_PROG":
                     ######################################################################

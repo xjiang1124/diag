@@ -1596,6 +1596,25 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
     # for DL/P2C/4C test, extra logfiles are needed
     if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
         asic_log_dir = log_dir + "asic_logs/"
+
+        if stage == FF_Stage.FF_SWI:
+            cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp_*txt"
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+            listoffile = listoffileoutput.split()
+        
+            listcspfiletoupload = list()
+            for cspfile in listoffile:
+                if 'txt' in cspfile:
+                    listcspfiletoupload.append(cspfile)
+            for cspfilepath in listcspfiletoupload:
+                cmd = "cp {:s} {:s}".format(cspfilepath, asic_log_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                csp_log_file = os.path.basename(cspfilepath)
+                mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s} to asic folder".format(csp_log_file))
+
         cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
