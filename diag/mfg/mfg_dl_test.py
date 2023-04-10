@@ -326,6 +326,9 @@ def main():
             for card_type in NEED_UBOOT_IMG_CARD_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
+                    if card_type == NIC_Type.ORTANO2ADIIBM:
+                        mtp_dl_image_list.append(NIC_IMAGES.uboota_img[card_type])
+                        mtp_dl_image_list.append(NIC_IMAGES.ubootb_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
 

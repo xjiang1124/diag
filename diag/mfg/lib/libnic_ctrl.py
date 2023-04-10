@@ -571,6 +571,200 @@ class nic_ctrl():
 
         return True
 
+    def nic_console_access(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_erase_board_config(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # earse board config
+        self._nic_handle.sendline(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_cpld_update_request(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # get diag boot
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(goldfw)", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+
+        #self.nic_boot_info_reset()
+
+
+        # get cpld version
+        self._nic_handle.sendline("cpldapp -r 0")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(0x83)", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_set_board_config_cert(self, cert_img, directory="/data/"):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        img_name = os.path.basename(cert_img)
+        # set ibm board config
+        self._nic_handle.sendline(MFG_DIAG_CMDS.SET_IBM_BOARD_CONFIG_FMT.format(directory, img_name))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(Config successfully)", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+
+        # show cert info
+        self._nic_handle.sendline(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(cert 1 serial: 34:f7:c4:37:67:cf:39:e7:4a:a5:6d:80:b6:b1:66:bf:29:53:f9:7f)", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+
+        # show fwupdate -l info
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+    def nic_cfg_verify(self):
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # dump cfg0
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # dump cfg1
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # md5sum cfg0
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+        cfg0_md5sum = match[0]
+
+        # md5sum cfg1
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
+        if not match:
+            self.nic_console_detach()
+            return False
+        cfg1_md5sum = match[0]
+
+        if cfg0_md5sum != cfg1_md5sum:
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False            
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
+
     def nic_set_diag_boot(self):
         if not self.nic_console_attach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -758,7 +952,12 @@ class nic_ctrl():
                                  emmc_mount_cmd,
                                  "clear_nic_config.sh factory-default"]
 
-        if self._nic_type in ELBA_NIC_TYPE_LIST:
+        if self._nic_type == NIC_Type.ORTANO2ADIIBM:
+            nic_shutdown_cmd_list += [
+                                 "fwenv -n gold -E",
+                                 "fwenv -E"
+                                 ]
+        elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type != NIC_Type.ORTANO2ADIIBM:
             nic_shutdown_cmd_list += [
                                  "fwenv -n gold -E",
                                  "fwenv -n gold",
@@ -1548,6 +1747,13 @@ class nic_ctrl():
 
         return True
 
+    def set_nic_diagfw_boot(self):
+        nic_cmd_list = list()
+        nic_cmd_list.append(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FW_SET_DELAY):
+            return False
+
+        return True
 
     def nic_refresh_cpld(self, dontwait=False):
         # Capri-based:
@@ -1885,12 +2091,12 @@ class nic_ctrl():
                                                      self._pn,
                                                      self._mac.replace('-',':'),
                                                      self._nic_type)
-        if not GLB_CFG_MFG_TEST_MODE:
-            cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_MODEL_FMT.format(self._slot+1,
-                                                                     self._sn,
-                                                                     self._pn,
-                                                                     self._mac.replace('-',':'),
-                                                                     self._nic_type)
+        # if not GLB_CFG_MFG_TEST_MODE:
+        #     cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_MODEL_FMT.format(self._slot+1,
+        #                                                              self._sn,
+        #                                                              self._pn,
+        #                                                              self._mac.replace('-',':'),
+        #                                                              self._nic_type)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_EFUSE_PROG_DELAY):
             return False
 
@@ -1934,6 +2140,12 @@ class nic_ctrl():
             
         return True
 
+    def nic_copy_cert(self, cert_img, directory="/data/"):
+        if not self.nic_copy_image(cert_img, directory):
+            return False
+            
+        return True
+
     def nic_program_gold(self, gold_img):
 
         img_name = os.path.basename(gold_img)
@@ -1952,16 +2164,16 @@ class nic_ctrl():
 
         return True
 
-    def nic_program_uboot(self, boot0_img, installer, ubootg_img=""):
+    def nic_program_uboot(self, boot_img, installer, uboot_pat="boot0", ubootg_img=""):
         if not self.nic_copy_image(installer):
             return False
-        if not self.nic_copy_image(boot0_img):
+        if not self.nic_copy_image(boot_img):
             return False
         installer_path = os.path.basename(installer)
-        img_name = os.path.basename(boot0_img)
+        img_name = os.path.basename(boot_img)
 
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, "boot0", img_name)
+        nic_cmd = MFG_DIAG_CMDS.NIC_UBOOT_PROG_FMT.format(installer_path, uboot_pat, img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
 

@@ -316,6 +316,12 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
+                if card_type == NIC_Type.ORTANO2ADIIBM:
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.cert_img["68-0028"])
+                        mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0028"])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw & cert image for {:s}".format(card_type))
         if (mtp_capability & 0x2):
             for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
                 try:
@@ -368,6 +374,12 @@ def main():
                         mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
+                if card_type == NIC_Type.ORTANO2ADIIBM:
+                    try:
+                        mtp_swi_image_list.append(NIC_IMAGES.cert_img["68-0028"])
+                        mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0028"])
+                    except KeyError:
+                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw & cert image for {:s}".format(card_type))
 
         onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
         if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):

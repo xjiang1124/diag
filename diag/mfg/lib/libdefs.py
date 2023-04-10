@@ -153,6 +153,7 @@ class MTP_Const:
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
     NIC_ESEC_WRITE_PROT_DELAY = 15 * 60
     NIC_I2C_DETECT_DELAY = 60
+    NIC_EDMA_ENV_INIT_CMD_DELAY = 600
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -252,10 +253,9 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/2C/{:s}/{:s}/"
     DIAG_MFG_MODEL_SWI_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SWI/{:s}/"
     DIAG_MFG_MODEL_FST_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/FST/{:s}/"
-    DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"                                                                                                                             
+    DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_MODEL_SRN_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_MODEL_ORT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/ORT/{:s}/"
-
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -432,6 +432,11 @@ class MFG_DIAG_CMDS:
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
     SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
+    ERASE_BOARD_CONFIG_FMT = "board_config -e"
+    SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
+    NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
+    NIC_CFG_CHECKSUM_FMT = "md5sum cfg{:s}"
+
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -516,6 +521,7 @@ class MFG_DIAG_CMDS:
     MTP_PARA_DDR_BIST_ELBA_FMT = "ddr_bist.py -arm_ddrbist -slot_list '{:s}' -wtime=780 -vmarg {:s}"
     MTP_NCSI_RMII_LINKUP_FMT = "nic_test.py -rmii_linkup_test   -slot_list='{:s}' -vmarg {:s}"
     MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
+    MTP_PARA_EDMA_ENV_INIT_FMT  = "nic_test_v2.py check_edma -slot_list {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
@@ -607,6 +613,7 @@ class MFG_DIAG_SIG:
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_PARA_SIG = "=== Setup env top"
+    NIC_PARA_EDMA_ENV_INIT_SIG = "EDMA Checking Done"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
     NIC_POWER_OK_SIG = "power good"
