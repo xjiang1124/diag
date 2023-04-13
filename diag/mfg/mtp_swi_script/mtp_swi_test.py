@@ -1179,7 +1179,9 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
 
-            test_list = ["CFG_VERIFY","SET_MAINFW", "SW_CLEANUP"]
+            test_list = ["SET_MAINFW", "SW_CLEANUP"]
+            if nic_type in ELBA_NIC_TYPE_LIST:
+                test_list = ["CFG_VERIFY","SET_MAINFW", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
                 test_list = ["CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
