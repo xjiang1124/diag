@@ -298,10 +298,17 @@ def get_fw_info(mtp_mgmt_ctrl, slot, nic_mgmt_ip):
         if nic_type not in FPGA_TYPE_LIST and partition == "extdiag":
             continue
         try:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
+            if nic_type == NIC_Type.ORTANO2ADIIBM and partition in ["mainfwa","mainfwb"]:
+                if "fip" in fwlist[partition]:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fip"]["software_version"], fwlist[partition]["fip"]["build_date"]) )
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
+                    return False
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
         except KeyError as e:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, e.message)
             return False
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "")
 
@@ -389,7 +396,7 @@ def get_nic_fw_info(mtp_mgmt_ctrl, slot):
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
         except KeyError as e:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, e)
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, e.message)
             return False
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "")
 
