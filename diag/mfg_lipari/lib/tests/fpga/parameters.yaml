@@ -1,0 +1,4 @@
+  Name: FPGA_PROG
+  Description: 
+  FPGA_PROG_DELAY: 600
+  FORCE_UPDATE_FPGA: No

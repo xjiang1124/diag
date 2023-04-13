@@ -1,0 +1,4 @@
+  Name: bios
+  Description: 
+  BIOS_PROG_DELAY: 120
+  FORCE_UPDATE_BIOS: No

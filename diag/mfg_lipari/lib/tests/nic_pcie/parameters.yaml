@@ -1,0 +1,5 @@
+  Name: nic_pcie
+  Description: 
+  PCIE_RESCAN_DELAY: 900 # up to 15 min if one elba doesnt respond
+  ELBA_PCIE_LINK_WIDTH: x2
+  ELBA_PCIE_LINK_SPEED: 8

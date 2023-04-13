@@ -1,0 +1,84 @@
+Stage: DL
+### PROGRAM EVERYTHING BACK TO PRE-PROGRAMMED VERSIONS AT P0B BUILD AND ERASE SSD
+### - Not reverting the Elba feature rows, as they have limited prog lifetime
+### - Not wiping Elba QSPI, thats WIP
+UUT_Name: Lipari
+Parameters:
+
+Test list:
+    - OS_BOOT
+    - FRU_ERASE
+    - NIC_CPLD_PROG
+    - CPU_CPLD_PROG
+    - FPGA_PROG
+    - BIOS_UPDATE
+    - RT_NIC_PROG
+    - SSD_ERASE
+
+Images:
+    rt_img:  "8116SPI_input_ref_rxdebug_5xxx_20220706.bin"
+    rt_ver:  ""
+    rt_dat:  ""
+    rt_md5:  ""
+
+    bios_img:  "PspLipari.0006.022.FD"
+    bios_ver:  "0006.022"
+    bios_dat:  "03/17/2023"
+    bios_md5:  ""
+
+    os_img:  ""
+    os_ver:  ""
+    os_dat:  ""
+    os_md5:  ""
+
+    boot0_img:  ""
+    boot0_md5:  ""
+
+    ubootg_img:  ""
+    ubootg_dat:  ""
+    ubootg_md5:  ""
+
+    goldfw_img:  ""
+    goldfw_ver:  ""
+    goldfw_dat:  ""
+    goldfw_md5:  ""
+
+    uboota_img:  ""
+    uboota_dat:  ""
+    uboota_md5:  ""
+
+    mainfwa_img:  ""
+    mainfwa_ver:  ""
+    mainfwa_dat:  ""
+    mainfwa_md5:  ""
+
+    th4_img:  ""
+    th4_ver:  ""
+    th4_dat:  ""
+    th4_md5:  ""
+
+    fpga0_img:  "17-0097-02_top_f0-0317-1704.bin"
+    fpga0_ver:  "8003"
+    fpga0_dat:  "03172023-1704"
+    fpga0_md5:  ""
+
+    fpga1_img:  "17-0098-02_top_f1-0225-0853.bin"
+    fpga1_ver:  "8001"
+    fpga1_dat:  "02252023-0853"
+    fpga1_md5:  "3cf2729614097bd2c3dcd48c017b39d1"
+
+    cpu_cpld_img:  "ccpld_0317_8007.jed"
+    cpu_cpld_ver:  "8007"
+    cpu_cpld_dat:  "0317"
+    cpu_cpld_md5:  ""
+
+    nic_cpld_img:  "lipari_ecpld_8002-0322.bin"
+    nic_cpld_ver:  "8002"
+    nic_cpld_dat:  "0322"
+    nic_cpld_md5:  "0304c689dd970e3be43f4892ecbb6d9f"
+
+    nic_fea_cpld_img:  ""
+    nic_fea_cpld_ver:  "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+    nic_fea_cpld_md5:  ""
+
+    amd64_img:  "image_amd64_elba_lipari_v0.3.tar"

@@ -18,5 +18,5 @@ UUT-9001:
     APC2_PASSWORD: ""
     IP: ""
     USERID: "admin"
-    PASSWORD: "amd123" #"YourPaSsWoRd"
+    PASSWORD: "YourPaSsWoRd"
     ALIAS: "L013"
