@@ -1180,8 +1180,10 @@ def main():
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
 
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
+            if nic_type in ELBA_NIC_TYPE_LIST:
+                test_list = ["CFG_VERIFY","SET_MAINFW", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
-                test_list = ["SET_EXTDIAGFW", "SW_CLEANUP"]
+                test_list = ["CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["BOARD_CONFIG_CERT", "CFG_VERIFY", "SW_CLEANUP"]
                 cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
