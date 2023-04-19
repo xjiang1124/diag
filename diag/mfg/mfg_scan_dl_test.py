@@ -772,6 +772,10 @@ def main():
             continue
         if not nic_prsnt_list[slot]:
             continue
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
 
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
@@ -915,6 +919,8 @@ def main():
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot, pn)]
         if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
+        if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0015"]
         failsafe_cpld_img_file = ""
         if nic_type in ELBA_NIC_TYPE_LIST:
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
@@ -1200,6 +1206,10 @@ def main():
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
@@ -1212,6 +1222,9 @@ def main():
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not swmtestmode == Swm_Test_Mode.ALOM:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
@@ -1237,6 +1250,9 @@ def main():
     for slot in fail_nic_list + pass_nic_list:
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         key = libmfg_utils.nic_key(slot)
+        valid = nic_fru_cfg[mtp_id][key]["VALID"]
+        if str.upper(valid) != "YES":
+            continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if not sn:
             continue
