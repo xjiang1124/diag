@@ -2703,13 +2703,14 @@ class nic_ctrl():
             return False
 
         ### 1b. Validate HPE product number, if applicable
-        if self._pn_format in (
-            PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
-            ):
-            if not self.nic_fru_parse_hpe_prod_num(fru_buf):
-                self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
-                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                return False
+        if init_date:
+            if self._pn_format in (
+                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                ):
+                if not self.nic_fru_parse_hpe_prod_num(fru_buf):
+                    self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
 
         asic_sn = self._sn
         asic_pn = self._pn
@@ -2748,13 +2749,14 @@ class nic_ctrl():
                 return False
 
             ### 2b. Validate HPE product number, if applicable
-            if self._pn_format in (
-                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
-                ):
-                if not self.nic_fru_parse_hpe_prod_num(fru_buf):
-                    self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
-                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
-                    return False
+            if init_date:
+                if self._pn_format in (
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                    ):
+                    if not self.nic_fru_parse_hpe_prod_num(fru_buf):
+                        self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
+                        self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                        return False
 
             ### 3. COMPARE ASIC & SMBUS
             if self._sn != asic_sn or self._mac != asic_mac or self._pn != asic_pn or self._date != asic_date:
