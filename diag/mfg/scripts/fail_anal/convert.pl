@@ -89,6 +89,10 @@ my @colDefs = (
         header_format => $format,
     },
     {
+        header => 'EMMC Vendor',
+        header_format => $format,
+    },
+    {
         header => 'Err Msg',
         header_format => $format,
     },
@@ -102,7 +106,7 @@ my @colDefs = (
     },
 );
 my $num_failures = scalar(@fa_array) + scalar(@missing) + scalar(@passing);
-$worksheet->add_table(0, 0, $num_failures, 12, { columns     => \@colDefs,  } );
+$worksheet->add_table(0, 0, $num_failures, 13, { columns     => \@colDefs,  } );
 
 my $sn_col = 0;
 my $stage_col = 1;
@@ -114,9 +118,10 @@ my $failure_code_col = 6;
 my $top_diag_fa_col = 7;
 my $cpld_sts_col = 8;
 my $ecc_sts_col = 9;
-my $err_msg_col = 10;
-my $full_diag_fa_col = 11;
-my $rev_col = 12;
+my $emmc_vendor_col = 10;
+my $err_msg_col = 11;
+my $full_diag_fa_col = 12;
+my $rev_col = 13;
 
 my $default_fmt = $workbook->add_format();
 $default_fmt->set_align("top");
@@ -132,6 +137,7 @@ $worksheet->set_column($failure_code_col, $failure_code_col, 22, $default_fmt);
 $worksheet->set_column($top_diag_fa_col, $top_diag_fa_col, 32, $default_fmt);
 $worksheet->set_column($cpld_sts_col, $cpld_sts_col, 55, $default_fmt);
 $worksheet->set_column($ecc_sts_col, $ecc_sts_col, 48, $default_fmt);
+$worksheet->set_column($emmc_vendor_col, $emmc_vendor_col, 10, $default_fmt);
 $worksheet->set_column($err_msg_col, $err_msg_col, 60, $default_fmt);
 $worksheet->set_column($full_diag_fa_col, $full_diag_fa_col, 32, $default_fmt);
 $worksheet->set_column($rev_col, $rev_col, 16, $default_fmt);
@@ -151,6 +157,7 @@ foreach (@fa_array) {
     $worksheet->write($curr_row, $cpld_sts_col, $_->{"CPLD Reg"});
     $worksheet->write($curr_row, $full_diag_fa_col, $_->{"Detailed Diag FA Code"});
     $worksheet->write($curr_row, $rev_col, $_->{"Rev"});
+    $worksheet->write($curr_row, $emmc_vendor_col, $_->{"EMMC Vendor"});
     $curr_row++;
 }
 foreach (@passing) {

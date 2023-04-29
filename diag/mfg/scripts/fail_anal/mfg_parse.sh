@@ -18,6 +18,15 @@ Help()
    echo "-h, --help        Print this help"
    echo
 }
+
+scriptname=$(basename "$0")
+if [[ `pgrep -x $scriptname` != "$$" ]]; then
+    echo "The script $scriptname is currently running."
+    exit 1
+else
+    echo "The script $scriptname is not running."
+fi
+
 card_type=
 stage=
 fa_opt=
@@ -221,6 +230,16 @@ to_loc+=$dir_name
 # run parser for each SN
 while read -r sn; do
     echo "SN is $sn"
+    if [[ -z "$sn" ]]
+    then
+        echo "SN is empty"
+        continue
+    fi
+    if [[ $sn = *" "* ]]
+    then
+        echo "SN $sn contains space"
+        continue
+    fi
     #declare -A sn_paths
     sn_path_exists=0
     for i in "${stages[@]}"
