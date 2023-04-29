@@ -8,10 +8,11 @@ ESEC_EN=1
 SIMPLIFY=0
 HC=0
 DDR=1
+ITE=1
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <>"
+    echo "./run_l1.sh -sn <> -slot <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
     echo "m:    Mode hod/hod_1100/nod/nod_525"
@@ -22,6 +23,7 @@ usage () {
     echo "s:    0: simplified test disabled; 1: simlified test enabled; default: 0"
     echo "hc:   0: Soft training; 1: hardcoded DDR training; default: 0"
     echo "ddr:  0: DDR test skipped; 1: DDR test enabled"
+    echo "ite:  Number of iterations"
     echo "=========================="
 }
 
@@ -92,6 +94,12 @@ case $key in
     shift # past value
     ;;
     #-------------
+    -ite)
+    ITE=${2}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
     -h)
     usage
     exit 0
@@ -113,5 +121,17 @@ time_stamp=$(date "+%m%d%y_%H%M%S")
 fn="l1_screen_board_${SN}_${time_stamp}.log"
 echo $fn
 
-script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0"
+for (( idx=0; idx<$ITE; idx++ ))
+do
+    echo "L1 Iteration $idx"
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0"
+    sync
+    num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 SCREENING FAILED" | wc | awk -F " " '{print $1}')
+    if [[ $num_fail -ne 0 ]]
+    then
+        echo "L1 Iteration $idx failed"
+        #exit 0
+    fi
+
+done
 

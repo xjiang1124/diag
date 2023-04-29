@@ -80,6 +80,7 @@ var CpldInfo interface{}
 
 // EEPROM list
 var naplesEepList = []string {"FRU"}
+var GinestraEepList = []string {"FRU", "PCIE_FRU"}
 
 //===============================
 // Naples100 
@@ -161,7 +162,7 @@ var ortanoiPODDispStaList = [8](map[string]DispStaFunc) {
 // Status display list
 var laconaDispStaList map[string]DispStaFunc
 // Ginestra D4
-//var ginestraD4DispStaList map[string]DispStaFunc
+var ginestraD4DispStaList map[string]DispStaFunc
 // Ginestra D5
 var ginestraD5DispStaList map[string]DispStaFunc
 
@@ -437,6 +438,14 @@ func init() {
     laconaDispStaList["VDDQ_DDR"]  = tps544b25.DispStatus
     laconaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
 
+    //GinestraD4
+    ginestraD4DispStaList = make(map[string]DispStaFunc)
+    ginestraD4DispStaList["GIG0_CORE"] = tps53688.DispStatus
+    ginestraD4DispStaList["GIG0_ARM"]  = tps53688.DispStatus
+    ginestraD4DispStaList["DDR_VDDQ"]  = tps549a20.DispStatus
+    ginestraD4DispStaList["VDD_DDR"]  = tps549a20.DispStatus
+    ginestraD4DispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
+
     //GinestraD5
     ginestraD5DispStaList = make(map[string]DispStaFunc)
     ginestraD5DispStaList["GIG0_CORE"] = tps53688.DispStatus
@@ -571,7 +580,7 @@ func init() {
     dispMap["POMONTE"]      = ortanoDispStaList
     //===============================
     // Giglio
-    //dispMap["GINESTRA_D4"]   = ginestraD4DispStaList
+    dispMap["GINESTRA_D4"]   = ginestraD4DispStaList
     dispMap["GINESTRA_D5"]   = ginestraD5DispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
@@ -615,8 +624,8 @@ func init() {
     eepromMap["POMONTE"]      =  naplesEepList
     //===============================
     // Giglio
-    eepromMap["GINESTRA_D4"]   = naplesEepList
-    eepromMap["GINESTRA_D5"]   = naplesEepList
+    eepromMap["GINESTRA_D4"]   = GinestraEepList
+    eepromMap["GINESTRA_D5"]   = GinestraEepList
 
     //===============================
     eepromMap["MTP"]           = mtpEepList
