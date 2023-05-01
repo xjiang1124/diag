@@ -2995,6 +2995,12 @@ class nic_ctrl():
             NIC_Type.ORTANO2INTERP: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT)             #68-0029-01 XX    ORTANO2 Interposer
                 ],
+            NIC_Type.GINESTRA_D4: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_D4_PN_FMT)                   #68-0074-01 XX    GINESTRA_D4
+                ],
+            NIC_Type.GINESTRA_D5: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT)                   #68-0075-01 XX    GINESTRA_D5
+                ],
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
                 ],
