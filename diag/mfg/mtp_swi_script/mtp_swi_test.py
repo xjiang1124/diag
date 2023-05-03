@@ -503,6 +503,12 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, nic_util=True):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         if "SCAN_VERIFY" not in args.skip_test:
             # load the barcode config file made in toplevel
@@ -780,7 +786,12 @@ def main():
         if "EFUSE_PROG" not in args.skip_test:
             if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
                 mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+            for slot in range(MTP_Const.MTP_SLOT_NUM):
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
 
         # Efuse programming for Elba
         for slot in range(len(nic_prsnt_list)):
@@ -861,7 +872,12 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         # program the NIC Secure CPLD
         nic_thread_list = list()
@@ -959,7 +975,12 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
         # Copy the NIC Gold image
         nic_thread_list = list()
