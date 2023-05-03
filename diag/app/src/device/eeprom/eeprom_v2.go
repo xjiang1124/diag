@@ -54,17 +54,22 @@ const (
 
     //Supported board PNs
     PN_IBM           string = "68-0028"
-    PN_ADI_MSFT      string = "68-0034"
+    PN_ADI_MSFT      string = "68-0034-01"
+    PN_SOLO_MSFT     string = "68-0090-01"
+    PN_ADICR_MSFT    string = "68-0091-01"
+    PN_SOLO_SSDK     string = "68-0092-01"
     PN_NETAPP_R2     string = "111-05363"
     PN_SOLO_ORACLE   string = "68-0077-01"
     PN_ADICR_ORACLE  string = "68-0049-03"
+    PN_SR4T_ORACLE   string = "68-0089-01"
     PN_LIPARI_ELBA   string = "68-0032"
     PN_GIN_D4_ORACLE string = "68-0074-01"
     PN_GIN_D5_ORACLE string = "68-0075-01"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
-    PROD_NAME_ADI_MSFT      string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_MSFT          string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_SSDK          string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_NETAPP_R2     string = "NAPLES 100, NetApp, R2"
     PROD_NAME_ORACLE        string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_LIPARI_ELBA   string = "AMD DSS-28800"
@@ -73,9 +78,13 @@ const (
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
     SKU_ADI_MSFT        string = "DSC2-2Q200-32R32F64P-M2"
+    SKU_SOLO_MSFT       string = "DSC2-2Q200-32R32F64P-M4"
+    SKU_ADICR_MSFT      string = "DSC2-2Q200-32R32F64P-M4"
+    SKU_SOLO_SSDK       string = "DSC2-2Q200-32R32F64P-S4"
     SKU_NETAPP_R2       string = "NA"
     SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"
     SKU_ADICR_ORACLE    string = "DSC2-2Q200-32R32F64P-R5"
+    SKU_SR4T_ORACLE     string = "DSC2-2Q200-32R32F64P-R4-T"
     SKU_LIPARI_ELBA     string = "DSS-28800"
     SKU_GIN_D4          string = "DSC2A-2Q200-32R32F64P-R"
     SKU_GIN_D5          string = "DSC2A-2Q200-32S32F64P-R"
@@ -83,9 +92,13 @@ const (
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
     FRU_ID_ADI_MSFT      string = "09/29/22"
+    FRU_ID_SOLO_MSFT     string = "05/02/23"
+    FRU_ID_ADICR_MSFT    string = "05/02/23"
+    FRU_ID_SOLO_SSDK     string = "05/02/23"
     FRU_ID_NETAPP_R2     string = "09/30/22"
     FRU_ID_ADICR_ORACLE  string = "11/18/22"
     FRU_ID_SOLO_ORACLE   string = "11/18/22"
+    FRU_ID_SR4T_ORACLE   string = "05/02/23"
     FRU_ID_LIPARI_ELBA   string = "12/01/22"
     FRU_ID_GIN_D4        string = "01/24/23"
     FRU_ID_GIN_D5        string = "01/24/23"
@@ -134,6 +147,11 @@ var adicrOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0e}, },
 }
 
+// Ortano Solo R4T PCIe subsystem ID
+var sR4TOracleExt = []fieldInfo {
+    fieldInfo { 94, []byte{0x0f}, },
+}
+
 // Ginestra_D4 PCIe subsystem ID
 var ginestraD4OracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x00, 0x51}, },
@@ -179,9 +197,66 @@ var CardDataInfo = map[string]updateInfo {
     },
     PN_ADI_MSFT: updateInfo {
         OrtanoPenStandardTbl,
-        PROD_NAME_ADI_MSFT,
+        PROD_NAME_MSFT,
         SKU_ADI_MSFT,
         FRU_ID_ADI_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+    PN_SOLO_MSFT: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_MSFT,
+        SKU_SOLO_MSFT,
+        FRU_ID_SOLO_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+    PN_ADICR_MSFT: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_MSFT,
+        SKU_ADICR_MSFT,
+        FRU_ID_ADICR_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+    PN_SOLO_SSDK: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_SSDK,
+        SKU_SOLO_SSDK,
+        FRU_ID_SOLO_SSDK,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -285,6 +360,35 @@ var CardDataInfo = map[string]updateInfo {
         },
         adicrOracleExt,
     },
+    PN_SR4T_ORACLE: updateInfo {
+        OrtanoOracleTbl,
+        PROD_NAME_ORACLE,
+        SKU_SR4T_ORACLE,
+        FRU_ID_SR4T_ORACLE,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+            progInfo {
+                FIELD_TYPE_BYTE,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        sR4TOracleExt,
+    },
     PN_LIPARI_ELBA: updateInfo {
         OrtanoPenStandardTbl,
         PROD_NAME_LIPARI_ELBA,
@@ -379,9 +483,13 @@ var CardDataInfo = map[string]updateInfo {
 var CardTypes = []card{
     card{"ORTANO-IBM",              PN_IBM},
     card{"ORTANO-ADI-MSFT",         PN_ADI_MSFT},
+    card{"ORTANO-SOLO-MSFT",        PN_SOLO_MSFT},
+    card{"ORTANO-ADICR-MSFT",       PN_ADICR_MSFT},
     card{"NETAPP-R2",               PN_NETAPP_R2},
     card{"ORTANO-SOLO_ORACLE",      PN_SOLO_ORACLE},
     card{"ORTANO-ADICR_ORACLE",     PN_ADICR_ORACLE},
+    card{"ORTANO-SOLOR4T_ORACLE",   PN_SR4T_ORACLE},
+    card{"ORTANO-SOLO_SSDK",        PN_SOLO_SSDK},
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
                       }
