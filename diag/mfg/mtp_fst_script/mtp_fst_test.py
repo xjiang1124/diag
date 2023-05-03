@@ -216,6 +216,10 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2ADICR
     elif "68-0029-01" in pn:
         product_name = NIC_Type.ORTANO2INTERP
+    elif "68-0074-01" in pn:
+        product_name = NIC_Type.GINESTRA_D4
+    elif "68-0075-01" in pn:
+        product_name = NIC_Type.GINESTRA_D5
     elif "68-0077-01" in pn:
         product_name = NIC_Type.ORTANO2SOLO
     elif "68-0013-01" in pn:
