@@ -394,6 +394,7 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0028"] = "0x14"
     goldfw_img["68-0028"] = "naples_sec_goldfw_prod_1.51.0-G-30_2023.04.07.tar"
     goldfw_dat["68-0028"] = "04-07-2023"
+    
     #MSFT ADI
     cpld_img["ORTANO2ADIMSFT"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     cpld_ver["ORTANO2ADIMSFT"] = "0x1"
