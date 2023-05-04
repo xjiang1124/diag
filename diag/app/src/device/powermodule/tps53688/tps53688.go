@@ -494,9 +494,9 @@ func SetVMargin(devName string, pct int) (err int) {
     var dacStepRegVal byte
     var dacStep uint64
 
-    if pct > 10 || pct < -10 {
-        return errType.INVALID_PARAM
-    }
+    //if pct > 10 || pct < -10 {
+    //    return errType.INVALID_PARAM
+    //}
 
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {

@@ -55,7 +55,7 @@ class nic_con:
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
-        for ite in range(4):
+        for ite in range(10):
             print "ite: ", ite
             timeout = 1
 
@@ -626,7 +626,7 @@ class nic_con:
     "engineering-change-level": "0",
     "num-mac-address": "24",
     "mac-address": "00:ae:{:02}:f6:00:28",
-    "board-assembly-area": "68-0015-02 01"
+    "board-assembly-area": "{}"
 }}
 
         """
@@ -638,11 +638,11 @@ class nic_con:
 
         asic_type = self.get_asic_type(slot)
         if asic_type == "ELBA_CPLD":
-            dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot)
+            dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot, "68-0015-02 01")
         elif asic_type == "GIGLIO_CPLD":
-            dummy_fru_json = fmt_dummy_fru_json.format("PART_NUM_TBD", slot)
+            dummy_fru_json = fmt_dummy_fru_json.format("DSC2A-2Q200-32S32F64P-R", slot, "68-0075-01")
         else:
-            dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot)
+            dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot, "68-0015-02 01")
 
         session = common.session_start()
         self.uart_session_start(session, rate)
