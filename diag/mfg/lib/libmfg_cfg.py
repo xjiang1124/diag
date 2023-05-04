@@ -338,12 +338,12 @@ class NIC_IMAGES:
     uboot_img["LACONA32"] = "boot0.rev14.img"
     uboot_dat["LACONA32"] = "14"
 
-    cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    cpld_img["ORTANO2ADI"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     cpld_ver["ORTANO2ADI"] = "0x1"
-    cpld_dat["ORTANO2ADI"] = "0x05"
-    sec_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    cpld_dat["ORTANO2ADI"] = "0x14"
+    sec_cpld_img["ORTANO2ADI"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     sec_cpld_ver["ORTANO2ADI"] = "0x1"
-    sec_cpld_dat["ORTANO2ADI"] = "0x05"
+    sec_cpld_dat["ORTANO2ADI"] = "0x14"
     fail_cpld_img["ORTANO2ADI"] = "naples200_ortano2A_failsafe_rev3_D_06082022.bin"
     fail_cpld_ver["ORTANO2ADI"] = "0x3"
     fail_cpld_dat["ORTANO2ADI"] = "0x0D"
@@ -365,11 +365,11 @@ class NIC_IMAGES:
     goldfw_img["68-0026"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
     goldfw_dat["68-0026"] = "06-16-2022"
     #IBM ADI
-    cpld_img["ORTANO2ADIIBM"] = "ortano_adi_working_rev3.14_033023.bin"
-    cpld_ver["ORTANO2ADIIBM"] = "0x3"
+    cpld_img["ORTANO2ADIIBM"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
+    cpld_ver["ORTANO2ADIIBM"] = "0x1"
     cpld_dat["ORTANO2ADIIBM"] = "0x14"
-    sec_cpld_img["ORTANO2ADIIBM"] = "ortano_adi_working_rev3.14_033023.bin"
-    sec_cpld_ver["ORTANO2ADIIBM"] = "0x3"
+    sec_cpld_img["ORTANO2ADIIBM"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
+    sec_cpld_ver["ORTANO2ADIIBM"] = "0x1"
     sec_cpld_dat["ORTANO2ADIIBM"] = "0x14"
     fail_cpld_img["ORTANO2ADIIBM"] = "ortano_adi_failsafe_rev3.14_033023.bin"
     fail_cpld_ver["ORTANO2ADIIBM"] = "0x3"
@@ -394,13 +394,14 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0028"] = "0x14"
     goldfw_img["68-0028"] = "naples_sec_goldfw_prod_1.51.0-G-30_2023.04.07.tar"
     goldfw_dat["68-0028"] = "04-07-2023"
+    
     #MSFT ADI
-    cpld_img["ORTANO2ADIMSFT"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    cpld_img["ORTANO2ADIMSFT"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     cpld_ver["ORTANO2ADIMSFT"] = "0x1"
-    cpld_dat["ORTANO2ADIMSFT"] = "0x05"
-    sec_cpld_img["ORTANO2ADIMSFT"] = "naples200_ortano2A_rev1_5_02112022.bin"
+    cpld_dat["ORTANO2ADIMSFT"] = "0x14"
+    sec_cpld_img["ORTANO2ADIMSFT"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     sec_cpld_ver["ORTANO2ADIMSFT"] = "0x1"
-    sec_cpld_dat["ORTANO2ADIMSFT"] = "0x05"
+    sec_cpld_dat["ORTANO2ADIMSFT"] = "0x14"
     fail_cpld_img["ORTANO2ADIMSFT"] = "naples200_ortano2A_rev3_C_failsafe_04072022.bin"
     fail_cpld_ver["ORTANO2ADIMSFT"] = "0x3"
     fail_cpld_dat["ORTANO2ADIMSFT"] = "0x0C"
@@ -809,7 +810,7 @@ MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw", "extdiag"]
 MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
-    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR
+    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
     ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 

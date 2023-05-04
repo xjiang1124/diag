@@ -177,6 +177,8 @@ def mtp_run_ddr_bist(mtp_mgmt_ctrl, slot=None, ddr_bist_cmdline_args_str=None):
         rs = False
 
     cmd = "tclsh ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
+    if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "giglio":
+        cmd = "tclsh gig_ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
         rs = False
         cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
@@ -1114,7 +1116,7 @@ def main():
                         ######################################################################
                         # using a empty skip test list to leverage existing function 
                         skip_test = []
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
                         nic_test_db = test_db[nic_type]
                         if nic_list:
@@ -1202,7 +1204,7 @@ def main():
                         ######################################################################
                         # using a empty skip test list to leverage existing function 
                         skip_test = []
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
                         iterations = ddr_test_db["POWER_CYCLE_ONLY"].get("ITER", 1)
                         if nic_list:

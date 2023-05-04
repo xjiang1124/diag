@@ -2,7 +2,7 @@ package tps53830
 
 import (
     "fmt"
-    //"math"
+    "math"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -172,7 +172,7 @@ func ReadVinMgmt(devName string) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func ReadVinBias(devName string) (integer uint64, dec uint64, err int) {
+func ReadVoutBias(devName string) (integer uint64, dec uint64, err int) {
     var data byte
     var vout_mv uint64
 
@@ -182,7 +182,7 @@ func ReadVinBias(devName string) (integer uint64, dec uint64, err int) {
     }
     defer smbus.Close()
 
-    data, err = ReadAdcOutput(devName, VIN_BIAS_SEL)
+    data, err = ReadAdcOutput(devName, VOUT_BIAS_SEL)
 
     vout_mv = 25 * uint64(data)
     integer = vout_mv / 1000
@@ -220,6 +220,116 @@ func ReadVendorID(devName string) (devID byte, err int) {
     return vendorId, err
 }
 
+func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
+    var marginReg uint64
+    var vmin, vmax uint64
+    var voutSetting uint64
+    var vStart uint64
+    var data byte
+
+    if devName == "DDR_VDD" {
+        marginReg = SWA_VOL_SETTING_REG
+        vmin = VOUT_1P1_MIN
+        vmax = VOUT_1P1_MAX
+        vStart = 800
+    } else if devName == "DDR_VDDQ" {
+        marginReg = SWC_VOL_SETTING_REG
+        vmin = VOUT_1P1_MIN
+        vmax = VOUT_1P1_MAX
+        vStart = 800
+    } else {
+        marginReg = SWD_VOL_SETTING_REG
+        vmin = VOUT_1P8_MIN
+        vmax = VOUT_1P8_MAX
+        vStart = 1500
+    }
+    tgtVoutMv = uint64(math.Round(float64(tgtVoutMv) / 5)) * 5
+    if (tgtVoutMv < vmin || tgtVoutMv > vmax) {
+        return errType.INVALID_PARAM
+    }
+    voutSetting = ((tgtVoutMv - vStart) / 5) << 1
+
+    cli.Printf("d", "tgtVoutMv(mv): %d; voutSetting: 0x%x\n", tgtVoutMv, voutSetting)
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    // unlock vendor specific region
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x0)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x95)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x64)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // register R72[5] changes the dependency of the output voltage from relying on
+    // R31/23/25/27 to R45/47/49/4B
+    data, err = smbus.ReadByte(devName, 0x72)
+    data |= 0x20
+    err = smbus.WriteByte(devName, 0x72, data)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // unlock DIMM vendor region
+    err = smbus.WriteByte(devName, 0x37, 0x73)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, 0x38, 0x94)
+    if err != errType.SUCCESS {
+        return
+    }
+    err = smbus.WriteByte(devName, 0x39, 0x40)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // set R5D[0] to 1, R5D[4] to 1
+    data, err = smbus.ReadByte(devName, 0x5d)
+    data |= 0x11
+    err = smbus.WriteByte(devName, 0x5d, data)
+    if err != errType.SUCCESS {
+        return
+    }
+    // set R5E[0] to 1, R5E[4] to 1
+    data, err = smbus.ReadByte(devName, 0x5e)
+    data |= 0x11
+    err = smbus.WriteByte(devName, 0x5e, data)
+    if err != errType.SUCCESS {
+        return
+    }
+    // set voltage
+    err = smbus.WriteByte(devName, marginReg, byte(voutSetting))
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    } else {
+        cli.Println("i", "New vmargin enabled")
+    }
+    if (marginReg == SWA_VOL_SETTING_REG) {
+        err = smbus.WriteByte(devName, SWB_VOL_SETTING_REG, byte(voutSetting))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        } else {
+            cli.Println("i", "New vmargin enabled")
+        }
+    }
+    misc.SleepInSec(1)
+    return
+}
+
+/*
 func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var marginReg uint64
     var vmin, vmax uint64
@@ -298,26 +408,27 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     //data, err = smbus.ReadByte(devName, marginReg)
     //cli.Printf("i", "read offset: %d(0x%x)\n", data, data)
 
-    /*if (marginReg == SWA_OFFSET_REG) {
-        err = smbus.WriteByte(devName, SWB_MARGIN_REG, byte(voutSetting))
-        if err != errType.SUCCESS {
-            cli.Println("e", "VMargin failed!")
-            return
-        } else {
-            cli.Println("i", "New vmargin enabled")
-        }
-    }*/
+    // if (marginReg == SWA_OFFSET_REG) {
+    //     err = smbus.WriteByte(devName, SWB_MARGIN_REG, byte(voutSetting))
+    //     if err != errType.SUCCESS {
+    //         cli.Println("e", "VMargin failed!")
+    //         return
+    //     } else {
+    //         cli.Println("i", "New vmargin enabled")
+    //     }
+    // }
     misc.SleepInSec(1)
     return
 }
+*/
 
 func SetVMargin(devName string, pct int) (err int) {
-/*    var vBase int
+    var vBase int
     var tgtVoutMv int
 
-    if (pct > 10) || (pct < -10) {
-        return errType.INVALID_PARAM
-    }
+    //if (pct > 10) || (pct < -10) {
+    //    return errType.INVALID_PARAM
+    //}
 
     if devName == "DDR_VDD" {
         vBase = 1100
@@ -330,7 +441,8 @@ func SetVMargin(devName string, pct int) (err int) {
     err = SetVMarginByValue(devName, uint64(tgtVoutMv))
 
     return
-*/
+
+/*
     var data byte
     var adc_sel uint8
     var vout_mv uint64
@@ -387,10 +499,11 @@ func SetVMargin(devName string, pct int) (err int) {
     cli.Printf("i", "write: 0x%02x(%d), read vout: %d mV\n", wdata, int8(wdata), vout_mv)
 
     return
+*/
 }
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "VINBULK", "VINMGMT", "VINBIAS", "TEMP", "STATUS"}
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "VINBULK", "VINMGMT", "VOUTBIAS", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -427,7 +540,7 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVinBias(devName)
+    dig, frac, _ = ReadVoutBias(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

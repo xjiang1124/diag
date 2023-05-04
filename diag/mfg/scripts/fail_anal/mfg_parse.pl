@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.15.03232023";
+my $rev = "1.17.04282023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -1364,6 +1364,8 @@ sub find_failure_code {
     }
     if ($stage ne "FST") {
         parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
+    } else {
+        parse_fst_log($fulllogpath, $failedslot, $all_failure_codes);
     }
     if ($all_test_msg eq "") {
         $all_test_msg = "log path: ".$fulllogpath."\n";
@@ -1561,6 +1563,36 @@ sub parse_ncsi_failure {
     close(TR3);
 }
 
+sub parse_fst_log {
+    my ($fulllogpath, $slot, $failure_code_list) = @_;
+    my $fstfile=$fulllogpath."/"."test_fst.log";
+    my $fst_test_msg = "";
+    my $test_err_msg = "";
+
+    if (!open(TR3, '<', $fstfile)) {
+        print "Cannot open file $fstfile\n";
+        return;
+    }
+    while(my $line = <TR3>)
+    {
+        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
+            $fst_test_msg .= $line;
+            $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+        }
+    }
+    if ($fst_test_msg ne "") {
+        $test_err_msg .= "\n--------test_fst log--------: ".$fstfile."\n";
+        $test_err_msg .= $fst_test_msg;
+    }
+    close(TR3);
+
+    if ($test_err_msg ne "") {
+        $all_test_msg .= $test_err_msg;
+    }
+}
+
 sub parse_mtp_and_slot_log {
     my ($fulllogpath, $slot, $stage, $failure_code_list) = @_;
     my $mtpfile=$fulllogpath."/"."mtp_test.log";
@@ -1587,6 +1619,14 @@ sub parse_mtp_and_slot_log {
 	        if ($debug_msgs) { print "line: $line"};
 	        $slot_err_msg .= $line;
 	        #last;
+        }
+        if ($line =~ m/cat \/sys\/block\/mmcblk0\/device\/manfid/) {
+            my $line2 = <TR3>;
+	        if ($line2 =~ m/0x000013/) {
+                $fa_row[$curr_row]{"EMMC Vendor"} = "Micron";
+            } elsif ($line2 =~ m/0x000045/) {
+                $fa_row[$curr_row]{"EMMC Vendor"} = "WDC";
+            }
         }
         if ($line =~ m/No space left on device/) {
             $diag_fa_code{"CARD_SPACE_FULL"} = 1;
@@ -1832,7 +1872,8 @@ sub parse_mtp_and_slot_log {
             $diag_fa_code{"CONSOLE_UNRESP"} = 1;
         }
         if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
-            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/)) {
+            ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $mtp_test_msg .= $line;
             $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
         }

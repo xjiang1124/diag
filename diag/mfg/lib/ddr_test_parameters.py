@@ -37,6 +37,8 @@ test2args = {
         "DEFAULT"                    : "XYZ          N/A             -                   -               -               -               -                   -           normal         0",
         "P47930"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A",
         "0X322F"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A",
+        "68-0074"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             2400                N/A         N/A            -",
+        "68-0075"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             2400                N/A         N/A            -",
     },
     "SNAKE_ELBA"       : {
         ##### SNAKE_ELBA Test call nic_test.py script, so args here are actually for nic_test.py, example nic_test.py -snake -slot_list='6,8' -wtime=600 -vmarg normal -snake_num=4 -dura=3 -mode=hod

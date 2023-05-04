@@ -74,9 +74,16 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
              $card_type == "PENSANDO" } {
             set ddr_freq 2400
         }
-
-        set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
-        source .tclrc.diag.elb.new
+        if { $card_type == "GINESTRA_D4" } {
+            set l1_cmd "gig_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
+            source .tclrc.diag.gig
+        } elseif { $card_type == "GINESTRA_D5" } {
+            set l1_cmd "gig_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 5600 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
+            source .tclrc.diag.gig
+        } else {
+            set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
+            source .tclrc.diag.elb.new
+        }
     }
     if {$MTP_TYPE == "MTP_CAPRI"} {
         puts "Capri MTP"

@@ -26,6 +26,7 @@ from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -98,8 +99,11 @@ def check_pcie_link(mtp_mgmt_ctrl, slot, bus):
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type in ELBA_NIC_TYPE_LIST:
         expected_speed = "16"
+    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+        expected_speed = "16"
     else:
         expected_speed = "8"
+
     if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.NAPLES100):
         expected_width = "16"
     else:
@@ -792,8 +796,11 @@ def check_nic_pcie(mtp_mgmt_ctrl, slot):
     bus = mtp_mgmt_ctrl._nic_ctrl_list[slot]._fst_pcie_bus
     if nic_type in ELBA_NIC_TYPE_LIST:
         expected_speed = "16"
+    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+        expected_speed = "16"
     else:
         expected_speed = "8"
+
     if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.NAPLES100):
         expected_width = "16"
     else:
