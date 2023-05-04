@@ -651,14 +651,16 @@ def main():
 
     if len(adi_ibm_reset_slot) > 0 and not mtp_mgmt_ctrl.mtp_nic_diag_init(adi_ibm_reset_slot, emmc_format=True, emmc_check=True, fru_fpo=True):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                if slot in adi_ibm_reset_slot:
-                    adi_ibm_reset_slot.remove(slot)
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+            if slot in adi_ibm_reset_slot:
+                adi_ibm_reset_slot.remove(slot)
 
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -889,7 +891,14 @@ def main():
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, emmc_format=True, fru_valid=False, sn_tag=True, emmc_check=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -1083,7 +1092,14 @@ def main():
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
