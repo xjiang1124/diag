@@ -28,7 +28,6 @@ from libdefs import FF_Stage
 from libdefs import Swm_Test_Mode
 from libdefs import Voltage_Margin
 from libdefs import Factory
-
 from libnic_ctrl import nic_ctrl
 
 class mtp_ctrl():
