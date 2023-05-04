@@ -1,6 +1,6 @@
 
 /*
-4 * Copyright (c) 2018, Pensando Systems Inc.
+ * Copyright (c) 2018, Pensando Systems Inc.
  */
 
 #include <linux/gpio.h>
@@ -419,6 +419,7 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
+    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 16;
 
@@ -458,6 +459,7 @@ static int flash_read_fea(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
+    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 20;
 
@@ -470,6 +472,7 @@ static int flash_read_fea(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
+    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 4;
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
@@ -579,6 +582,7 @@ static int flash_id(uint32_t fd, char *id) {
     msg[0].tx_buf = (intptr_t)lsc_idcode_cmd;
     msg[0].len = 4;
     msg[0].speed_hz = 5000000; 
+    msg[1].speed_hz = 5000000; 
     /* msg[0].speed_hz = 12000000; */
 
     msg[1].rx_buf = (intptr_t)rxbuf;
