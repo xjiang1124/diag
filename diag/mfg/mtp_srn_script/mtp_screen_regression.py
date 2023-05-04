@@ -31,6 +31,7 @@ from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
@@ -87,7 +88,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in ELBA_NIC_TYPE_LIST:
+    if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Additional Test List:")
         for item in para_test_list:
@@ -255,7 +256,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     sub_test_list = test_list[:]
 
     if aapl:
-        if nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
             sub_test_list = [("NIC_ASIC","PCIE_PRBS"), ("NIC_ASIC","ETH_PRBS"), ("NIC_ASIC","L1")]
         else:
             sub_test_list = [("NIC_ASIC","PCIE_PRBS")]
@@ -332,7 +333,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
     
-    if nic_type in ELBA_NIC_TYPE_LIST:
+    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
         sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
     else:
         sub_test_list = [()]
@@ -732,7 +733,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         if dsp == "NIC_ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
-            if card_type in ELBA_NIC_TYPE_LIST:
+            if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                 number_of_arm_l1_tests = 2
             else:
                 number_of_arm_l1_tests = 0

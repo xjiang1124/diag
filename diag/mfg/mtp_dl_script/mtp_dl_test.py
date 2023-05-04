@@ -24,6 +24,7 @@ from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
 from libdefs import FF_Stage
@@ -74,7 +75,7 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
     dsp = FF_Stage.FF_DL
     testlist = ["QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
         testlist = ["QSPI_PROG", "UBOOT_PROG"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR):
         testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
@@ -494,7 +495,7 @@ def main():
             if nic_type == NIC_Type.NAPLES100HPE and mtp_mgmt_ctrl.mtp_is_nic_cloud(slot):
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
             failsafe_cpld_img_file = ""
-            if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
             uboot_img_file = ""
@@ -515,7 +516,7 @@ def main():
                 alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
                 alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(failsafe_cpld_img_file))
@@ -611,7 +612,7 @@ def main():
             uboota_img_file = ""
             ubootb_img_file = ""
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
+            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
                 uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboota_img[nic_type]
@@ -718,7 +719,7 @@ def main():
                 cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img["P41854"]
             failsafe_cpld_img_file = ""
             fea_cpld_img_file = ""
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
                 failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
                 fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fea_cpld_img[nic_type]
             elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
@@ -810,7 +811,7 @@ def main():
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
-            elif nic_type in ELBA_NIC_TYPE_LIST:
+            elif nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:

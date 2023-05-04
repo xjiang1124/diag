@@ -2032,7 +2032,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type in ELBA_NIC_TYPE_LIST:
+                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                             img = NIC_IMAGES.fail_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
@@ -2091,7 +2091,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
                         return False
                     try:
-                        if card_type in ELBA_NIC_TYPE_LIST:
+                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                             expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
                             if expected_timestamp.strip() == "":
                                 raise KeyError
@@ -2189,7 +2189,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
                         pass
                     try:
-                        if card_type in ELBA_NIC_TYPE_LIST:
+                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                             img = NIC_IMAGES.fail_cpld_img[card_type]
                             if img.strip() == "":
                                 raise KeyError
@@ -2235,7 +2235,7 @@ class mtp_ctrl():
                         self.cli_log_err("mfg_cfg is missing sec_cpld timestamp for {:s}".format(card_type))
                         return False
                     try:
-                        if card_type in ELBA_NIC_TYPE_LIST:
+                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                             expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
                             if expected_timestamp.strip() == "":
                                 raise KeyError
@@ -3437,7 +3437,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if not nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no failsafe CPLD for {:s}".format(nic_type))
             return False
         if nic_type in FPGA_TYPE_LIST:
@@ -3691,7 +3691,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_efuse(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_efuse():
@@ -3812,7 +3812,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "Expect Timestamp: {:s}, get: {:s}".format(expected_timestamp, cur_timestamp))
                 return False
 
-        if nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
             if not self._nic_ctrl_list[slot].nic_check_cpld_partition(console):
                 self.cli_log_slot_err(slot, "NIC not booted from cfg0 CPLD/FPGA")
                 self.mtp_dump_nic_err_msg(slot)
@@ -4080,7 +4080,7 @@ class mtp_ctrl():
         # check ECC for elba cards
         # dont check ECC after L1 test
         # or if ddr_bist is offloaded from L1, check ecc after L1 but dont check ecc after DDR_BIST
-        if nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
             if nic_type in CONSOLE_DDR_BIST_NIC_LIST and "DDR_BIST" in test:
                 pass
             elif test in ("L1"):
@@ -5792,7 +5792,7 @@ class mtp_ctrl():
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
 
-            if nic_type not in ELBA_NIC_TYPE_LIST:
+            if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                 self.cli_log_err("Incorrect test for this NIC TYPE")
                 return ["FAIL", nic_list[:]]
             elif nic_type == NIC_Type.ORTANO2:
@@ -5816,7 +5816,7 @@ class mtp_ctrl():
         elif test == "ETH_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
-            if nic_type not in ELBA_NIC_TYPE_LIST:
+            if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                 self.cli_log_err("Incorrect test for this NIC TYPE")
                 return ["FAIL", nic_list[:]]
             else:
@@ -5999,7 +5999,7 @@ class mtp_ctrl():
 
     def mtp_nic_board_config(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in ELBA_NIC_TYPE_LIST:
+        if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
             if nic_type == NIC_Type.ORTANO2:
                 if self.mtp_is_nic_ortano_oracle(slot):
                     preset_config = "5"
@@ -6021,6 +6021,8 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                preset_config = "8"
 
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -6764,7 +6766,7 @@ class mtp_ctrl():
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")
@@ -6820,7 +6822,7 @@ class mtp_ctrl():
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=skip_vrm_check):
             self.cli_log_slot_err(slot, "Unable to dump NIC sts")
@@ -7209,7 +7211,7 @@ class mtp_ctrl():
         nic_list = list()
         for slot in pass_nic_list:
             nic_type = self.mtp_get_nic_type(slot)
-            if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 nic_list.append(slot)
 
         if not nic_list:
