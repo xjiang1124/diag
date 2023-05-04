@@ -318,6 +318,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
             for slot in range(MTP_Const.MTP_SLOT_NUM):
                 if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if not nic_prsnt_list[slot]:
+                        continue
                     if slot not in fail_nic_list:
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
@@ -694,6 +696,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if not nic_prsnt_list[slot]:
+                    continue
                 if slot not in fail_nic_list:
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
@@ -771,6 +775,8 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if not nic_prsnt_list[slot]:
+                    continue
                 if slot not in fail_nic_list:
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:

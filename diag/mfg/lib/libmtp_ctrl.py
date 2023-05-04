@@ -4661,67 +4661,6 @@ class mtp_ctrl():
 
         return True
 
-    # def mtp_nic_mgmt_para_init(self, aapl, swm_lp=False, stop_on_err=False):
-    #     nic_list = list()
-    #     for slot in range(self._slots):
-    #         if self._nic_prsnt_list[slot]:
-    #             if not self.mtp_check_nic_status(slot):
-    #                 self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
-    #                 if stop_on_err:
-    #                     return False
-    #                 else:
-    #                     continue
-    #             if not self.mtp_nic_boot_info_init(slot):
-    #                 self.mtp_set_nic_status_fail(slot)
-    #                 if stop_on_err:
-    #                     return False
-    #                 else:
-    #                     continue
-    #             nic_list.append(slot)
-
-    #     if not nic_list:
-    #         self.cli_log_err("No NICs passed")
-    #         return False
-
-    #     # parallel init mgmt/aapl
-    #     cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-    #     if not self.mtp_mgmt_exec_cmd(cmd):
-    #         self.cli_log_err("Execute command {:s} failed".format(cmd))
-    #         return False
-
-    #     nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-    #     if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
-    #         asic_type = "elba"
-    #     else:
-    #         asic_type = "capri"
-    #     sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
-    #     if aapl:
-    #         for slot in nic_list:
-    #             self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
-    #         cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
-    #     else:
-    #         for slot in nic_list:
-    #             self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
-    #         cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-    #         if swm_lp:
-    #             cmd = "".join((cmd, " -swm_lp")) 
-
-    #     if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
-    #         self.cli_log_err("Execute command {:s} failed".format(cmd))
-    #         return False
-    #     if "failed" in self.mtp_get_cmd_buf():
-    #         match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
-    #         if match:
-    #             for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
-    #                 slot = slot-1
-    #                 self.cli_log_slot_err_lock(slot, "Para Init NIC MGMT failed")
-    #                 self.mtp_set_nic_status_fail(slot)
-
-    #     if not self.mtp_nic_mgmt_mac_refresh():
-    #         return False
-
-    #     return True
-
     def nic_semi_parallel_log(self, nic_list, buf):
         buf = buf[:] # make a copy
         capture = [True] * self._slots
