@@ -27,6 +27,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
+from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -356,7 +357,7 @@ def main():
                     mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                if card_type in ELBA_NIC_TYPE_LIST:
+                if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                     try:
                         mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:

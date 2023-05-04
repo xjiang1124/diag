@@ -1128,7 +1128,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
 
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_single_j2c_lock()
             mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
@@ -2339,6 +2339,7 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
                 not nic_prsnt_list[slot]
                 or slot in fail_nic_list[mtp_id]
                 or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST
+                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST
                 or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
                 ):
                 pre += "    "
@@ -2401,7 +2402,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                     cur_fail_list[mtp_id][slot] = 0
                     cur_fail_list[mtp_id][slot+length] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in ELBA_NIC_TYPE_LIST:
+                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
                         if not rc:
@@ -2588,8 +2589,10 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                     elif nic_type in ELBA_NIC_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
-                    if nic_type in ELBA_NIC_TYPE_LIST:
+                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                         if ret != "SUCCESS":
                             if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:

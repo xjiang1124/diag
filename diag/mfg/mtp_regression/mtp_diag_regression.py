@@ -82,7 +82,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST and card_type != NIC_Type.ORTANO2SOLO and card_type != NIC_Type.ORTANO2ADICR:
+    if card_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and card_type not in FPGA_TYPE_LIST and card_type != NIC_Type.ORTANO2SOLO and card_type != NIC_Type.ORTANO2ADICR:
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
@@ -295,7 +295,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
-    if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         if loopback:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
@@ -773,13 +773,20 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if dsp == "NIC_ASIC" and test == "L1" and card_type in ELBA_NIC_TYPE_LIST:
             asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
 
+        if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_PRBS_PCIE.log")
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
+        if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC onboard asic logfile for ({:s}, {:s}) test failed".format(dsp, test))
 
         if dsp == "NIC_ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
-            if card_type in ELBA_NIC_TYPE_LIST:
+            if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                 number_of_arm_l1_tests = 2
             else:
                 number_of_arm_l1_tests = 0
@@ -921,7 +928,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if dsp == "ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
             number_of_l1_tests = 9
-            if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
@@ -1651,7 +1658,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+                        if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]
@@ -1688,7 +1695,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]
@@ -1788,7 +1795,7 @@ def main():
                         if nic_list:
                             # aapl tests
                             new_nic_para_test_list = list()
-                            if nic_type in ELBA_NIC_TYPE_LIST:
+                            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                                 # no elba tests here
                                 pass
                             else:
@@ -1843,7 +1850,7 @@ def main():
                                 nic_para_test_list.remove(("MEM", "EDMA"))
 
                             # Remove QSFP loopbacks in chamber
-                            if vmarg != Voltage_Margin.normal and stage != FF_Stage.QA and (nic_type in ELBA_NIC_TYPE_LIST):
+                            if vmarg != Voltage_Margin.normal and stage != FF_Stage.QA and (nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
                                 if ("QSFP","I2C") in nic_para_test_list:
                                     nic_para_test_list.remove(("QSFP","I2C"))
 
@@ -1872,7 +1879,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
 
                         nic_para_test_list = para_test_list[nic_type][:]
@@ -1881,7 +1888,7 @@ def main():
                         if nic_list:
                             # skip all tests except edma in this loop
                             new_nic_para_test_list = list()
-                            if nic_type in ELBA_NIC_TYPE_LIST:
+                            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                                 if ("MEM", "EDMA") in nic_para_test_list:
                                     for loop in range(1,10+1):   # 10 iterations
                                         new_nic_para_test_list.append(("MEM", "EDMA"))
