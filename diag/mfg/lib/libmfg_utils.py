@@ -1572,6 +1572,17 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    elif stage == FF_Stage.FF_RDT:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_RDT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
@@ -1619,7 +1630,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT:
+    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT or stage == FF_Stage.FF_RDT:
         if not vmarg:
             diag_log_dir = log_dir + "diag_logs/"
             asic_log_dir = log_dir + "asic_logs/"
@@ -1807,6 +1818,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_ORT_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_ORT_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_RDT:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_RDT_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_RDT_LOG_DIR_FMT.format(nic_type, sn)
         else:
             pass
 
@@ -2720,6 +2736,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
             log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
         elif stage == FF_Stage.FF_ORT:
             log_sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_RDT:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
         else:
             print("Unknown stage!")
             return []
@@ -3004,6 +3022,9 @@ def pick_fan_speed(stage):
     elif stage == FF_Stage.FF_ORT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
 
+    elif stage == FF_Stage.FF_RDT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
     else:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
 
@@ -3028,7 +3049,10 @@ def pick_voltage_margin(stage):
     elif stage == FF_Stage.FF_4C_H:
         vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
 
-    elif stage == FF_Stage.ORT:
+    elif stage == FF_Stage.FF_ORT:
+        vmarg_list = [Voltage_Margin.normal]
+
+    elif stage == FF_Stage.FF_RDT:
         vmarg_list = [Voltage_Margin.normal]
 
     else:

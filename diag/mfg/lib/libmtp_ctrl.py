@@ -1878,7 +1878,8 @@ class mtp_ctrl():
                     FF_Stage.FF_4C_H,
                     FF_Stage.FF_2C_L,
                     FF_Stage.FF_2C_H,
-                    FF_Stage.FF_ORT):
+                    FF_Stage.FF_ORT,
+                    FF_Stage.FF_RDT):
                     # CPLD and diagfw images.
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
@@ -2104,7 +2105,8 @@ class mtp_ctrl():
                     FF_Stage.FF_4C_H,
                     FF_Stage.FF_2C_L,
                     FF_Stage.FF_2C_H,
-                    FF_Stage.FF_ORT):
+                    FF_Stage.FF_ORT,
+                    FF_Stage.FF_RDT):
                     # CPLD, failsafe, feature row and diagfw images
                     try:
                         img = NIC_IMAGES.cpld_img[card_type]
