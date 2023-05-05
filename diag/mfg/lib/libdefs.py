@@ -58,6 +58,7 @@ class FF_Stage(Enum):
     FF_CFG = "CFG"
     FF_SRN = "SRN"
     FF_ORT = "ORT"
+    FF_RDT = "RDT"
     QA = "CI-CD"
 
     def __str__(self):
@@ -175,6 +176,8 @@ class MTP_Const:
     MFG_P2C_TEST_TIMEOUT = 48000
     # more than 12 hours
     MFG_ORT_TEST_TIMEOUT = 48000
+    # more than 12 hours
+    MFG_RDT_TEST_TIMEOUT = 48000
     # more than 24 hours
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
@@ -187,6 +190,7 @@ class MTP_Const:
     MFG_CFG_TEST_TIMEOUT = 3600
 
     MFG_ORT_HIGH_FAN_SPD = 100
+    MFG_RDT_HIGH_FAN_SPD = 100
     MFG_EDVT_HIGH_FAN_SPD = 100
     MFG_EDVT_NORM_FAN_SPD = 60
     MFG_EDVT_LOW_FAN_SPD = 60
@@ -248,6 +252,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_CSP_LOG_DIR_FMT = "/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_SRN_LOG_DIR_FMT = "/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_ORT_LOG_DIR_FMT = "/mfg_log/{:s}/ORT/{:s}/"
+    DIAG_MFG_RDT_LOG_DIR_FMT = "/mfg_log/{:s}/RDT/{:s}/"
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
@@ -258,6 +263,8 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_MODEL_SRN_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_MODEL_ORT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/ORT/{:s}/"
+    DIAG_MFG_MODEL_RDT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/RDT/{:s}/"
+
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -277,6 +284,8 @@ class MTP_DIAG_Logfile:
     MFG_SRN_LOG_DIR = "SRN_{:s}_{:s}/"
     MFG_ORT_LOG_PKG_FILE = "ORT_{:s}_{:s}.tar.gz"
     MFG_ORT_LOG_DIR = "ORT_{:s}_{:s}/"
+    MFG_RDT_LOG_PKG_FILE = "RDT_{:s}_{:s}.tar.gz"
+    MFG_RDT_LOG_DIR = "RDT_{:s}_{:s}/"
 
     SCAN_BARCODE_FILE = "fru_barcode.yaml"
 

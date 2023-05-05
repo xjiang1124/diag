@@ -1286,6 +1286,8 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     if stage == FF_Stage.FF_ORT: 
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
+    if stage == FF_Stage.FF_RDT:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
     if args.mtpcfg:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -1397,7 +1399,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
-        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
+        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP temperature is over 60 degree")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
@@ -1466,7 +1468,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):    #Skip SWM Low Power Test for 4C
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -1519,7 +1521,7 @@ def main():
                 #
                 ######################################################################
 
-                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L, FF_Stage.FF_ORT):
+                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L):
                     mtp_mgmt_ctrl.mtp_power_off_nic()
                     mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
@@ -1580,7 +1582,7 @@ def main():
             if stage == FF_Stage.FF_P2C and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
                 test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):   #Skip SWM Low Power Test for 4 corner
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
 
             if args.skip_test:
