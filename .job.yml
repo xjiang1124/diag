@@ -65,8 +65,8 @@ jobs:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
   test/jobs/sanity/monterey-ScanDL:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  test/jobs/sanity/naples25-ScanDL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
+  # test/jobs/sanity/naples25-ScanDL:
+  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
   test/jobs/sanity/ortano-P2C:
     labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
   test/jobs/sanity/monterey-P2C:
@@ -108,5 +108,6 @@ dependencies:
   - reference: test/jobs/precheckin/ortano-P2C
   - reference: test/jobs/precheckin/monterey-P2C
   - reference: test/jobs/precheckin/naples25-P2C
+    exclude_dirs: ["mfg/scripts"]
   diag/mfg/mtp_fst_test:
   - reference: test/jobs/sanity/ortano-fst

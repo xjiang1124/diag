@@ -1128,7 +1128,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
 
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST:
             mtp_mgmt_ctrl.mtp_single_j2c_lock()
             mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
@@ -1160,7 +1160,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac=None, pn=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1172,12 +1172,14 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code)
 
     extra_info_xml = ""
-    if mtp_psu_sn_list or nic_loopback_sn_list:
+    if mtp_psu_sn_list or nic_loopback_sn_list or ocp_adap_sn:
         for psu, psu_sn in zip(mtp_psu_sn_list.keys(), mtp_psu_sn_list.values()):
             extra_info_xml += "PSU_{:s}=\"{:s}\" ".format(psu, psu_sn)
 
         for lpbk, lpbk_sn in zip(nic_loopback_sn_list.keys(), nic_loopback_sn_list.values()):
             extra_info_xml += "LOOPBACK_PORT{:s}=\"{:s}\" ".format(lpbk, lpbk_sn)
+
+        extra_info_xml += "OCP_ADAPTER=\"{:s}\" ".format(ocp_adap_sn)
 
         extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
 
@@ -1369,7 +1371,7 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
         print("Unable to connect to webserver")
         return "500"
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac=None, pn=None):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1385,7 +1387,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
     if not xml:
         return False
 
@@ -1418,7 +1420,7 @@ def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac=None, pn=None):
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1426,7 +1428,7 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
     if not xml:
         return -2
 
@@ -1570,6 +1572,17 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    elif stage == FF_Stage.FF_RDT:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_RDT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
@@ -1594,11 +1607,30 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
     # for DL/P2C/4C test, extra logfiles are needed
     if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
         asic_log_dir = log_dir + "asic_logs/"
+
+        if stage == FF_Stage.FF_SWI:
+            cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp_*txt"
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+            listoffile = listoffileoutput.split()
+        
+            listcspfiletoupload = list()
+            for cspfile in listoffile:
+                if 'txt' in cspfile:
+                    listcspfiletoupload.append(cspfile)
+            for cspfilepath in listcspfiletoupload:
+                cmd = "cp {:s} {:s}".format(cspfilepath, asic_log_dir)
+                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+                    return None
+                csp_log_file = os.path.basename(cspfilepath)
+                mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s} to asic folder".format(csp_log_file))
+
         cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT:
+    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT or stage == FF_Stage.FF_RDT:
         if not vmarg:
             diag_log_dir = log_dir + "diag_logs/"
             asic_log_dir = log_dir + "asic_logs/"
@@ -1786,6 +1818,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_ORT_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_ORT_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_RDT:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_RDT_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_RDT_LOG_DIR_FMT.format(nic_type, sn)
         else:
             pass
 
@@ -1930,6 +1967,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
         for slot, sn_type, sn in match:
             mtp_psu_sn_list = dict()
             nic_loopback_sn_list = dict()
+            ocp_adap_sn = ""
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -1946,6 +1984,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                 if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
                     if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
                         nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+
+                # save serial number of OCP adapter
+                if mtp_mgmt_ctrl.mtp_get_nic_type(int(slot)-1) == NIC_Type.NAPLES25OCP:
+                    riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(int(slot)-1)
+                    if riser_sn:
+                        ocp_adap_sn = riser_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -1991,7 +2035,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                 retry = FLEX_TWO_WAY_COMM.POST_RETRY
                 time.sleep(1)
                 while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
                     if rs == 0:
                         cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                         break
@@ -2008,7 +2052,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                     time.sleep(3)
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -2023,6 +2067,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
         for slot, sn_type, sn in match:
             mtp_psu_sn_list = dict()
             nic_loopback_sn_list = dict()
+            ocp_adap_sn = ""
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -2039,6 +2084,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                 if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
                     if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
                         nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
+
+                # save serial number of OCP adapter
+                if mtp_mgmt_ctrl.mtp_get_nic_type(int(slot)-1) == NIC_Type.NAPLES25OCP:
+                    riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(int(slot)-1)
+                    if riser_sn:
+                        ocp_adap_sn = riser_sn
 
             # find all test status
             nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
@@ -2072,7 +2123,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                 retry = FLEX_TWO_WAY_COMM.POST_RETRY
                 time.sleep(1)
                 while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
                     if rs == 0:
                         cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                         break
@@ -2097,7 +2148,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                             mtp_test_summary[idx][3] = False
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, factory, mac, pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -2109,6 +2160,10 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     for mtp_id in summary_dict.keys():
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
+        if len(summary_dict[mtp_id]) == 0:
+            # test didnt finish properly
+            final_result = False
+            continue
         for slot, sn, nic_type, rc, retest_blocked in summary_dict[mtp_id]:
             nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
             if rc:
@@ -2300,6 +2355,7 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
                 not nic_prsnt_list[slot]
                 or slot in fail_nic_list[mtp_id]
                 or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST
+                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST
                 or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
                 ):
                 pre += "    "
@@ -2362,7 +2418,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                     cur_fail_list[mtp_id][slot] = 0
                     cur_fail_list[mtp_id][slot+length] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in ELBA_NIC_TYPE_LIST:
+                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
                         if not rc:
@@ -2549,8 +2605,10 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                     elif nic_type in ELBA_NIC_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
-                    if nic_type in ELBA_NIC_TYPE_LIST:
+                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                         if ret != "SUCCESS":
                             if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list[mtp_id]:
@@ -2678,6 +2736,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
             log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
         elif stage == FF_Stage.FF_ORT:
             log_sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_RDT:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
         else:
             print("Unknown stage!")
             return []
@@ -2962,6 +3022,9 @@ def pick_fan_speed(stage):
     elif stage == FF_Stage.FF_ORT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
 
+    elif stage == FF_Stage.FF_RDT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
     else:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
 
@@ -2986,7 +3049,10 @@ def pick_voltage_margin(stage):
     elif stage == FF_Stage.FF_4C_H:
         vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
 
-    elif stage == FF_Stage.ORT:
+    elif stage == FF_Stage.FF_ORT:
+        vmarg_list = [Voltage_Margin.normal]
+
+    elif stage == FF_Stage.FF_RDT:
         vmarg_list = [Voltage_Margin.normal]
 
     else:

@@ -13,6 +13,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import libmtp_utils
 from libdefs import MTP_Const
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -81,7 +82,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST and card_type != NIC_Type.ORTANO2SOLO and card_type != NIC_Type.ORTANO2ADICR:
+    if card_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and card_type not in FPGA_TYPE_LIST and card_type != NIC_Type.ORTANO2SOLO and card_type != NIC_Type.ORTANO2ADICR:
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
@@ -294,7 +295,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
-    if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         if loopback:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
@@ -772,13 +773,20 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if dsp == "NIC_ASIC" and test == "L1" and card_type in ELBA_NIC_TYPE_LIST:
             asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
 
+        if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_PRBS_PCIE.log")
+        if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
+        if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
+            asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC onboard asic logfile for ({:s}, {:s}) test failed".format(dsp, test))
 
         if dsp == "NIC_ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
-            if card_type in ELBA_NIC_TYPE_LIST:
+            if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
                 number_of_arm_l1_tests = 2
             else:
                 number_of_arm_l1_tests = 0
@@ -920,7 +928,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         if dsp == "ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
             number_of_l1_tests = 9
-            if nic_type in ELBA_NIC_TYPE_LIST:
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
@@ -1278,6 +1286,8 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     if stage == FF_Stage.FF_ORT: 
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
+    if stage == FF_Stage.FF_RDT:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
     if args.mtpcfg:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -1323,6 +1333,8 @@ def main():
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.GINESTRA_D4] = "config/ginestra_d4_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.GINESTRA_D5] = "config/ginestra_d5_mtp_test_cfg.yaml"
     
     test_db = dict()
     for nic_type in test_cfg_file.keys():
@@ -1387,7 +1399,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
-        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
+        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP temperature is over 60 degree")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
@@ -1456,7 +1468,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):    #Skip SWM Low Power Test for 4C
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -1509,7 +1521,7 @@ def main():
                 #
                 ######################################################################
 
-                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L, FF_Stage.FF_ORT):
+                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L):
                     mtp_mgmt_ctrl.mtp_power_off_nic()
                     mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
@@ -1565,12 +1577,12 @@ def main():
                 test_section_list = ["ALOM_LP_MODE", "PRE_CHECK", "ARM_DSP", "NIC_DIAG_INIT_AAPL", "ARM_PRBS", "SNAKE", "J2C_SEQ"]
             ### ELBA TEST ORDER
             if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.ELBA, MTP_ASIC_SUPPORT.TURBO_ELBA):
-                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
+                test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
             ### ELBA TEST ORDER WITH SPECIAL NC-SI IMAGE
             if stage == FF_Stage.FF_P2C and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
-                test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "EDMA", "J2C_SEQ"]
+                test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):   #Skip SWM Low Power Test for 4 corner
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
 
             if args.skip_test:
@@ -1579,6 +1591,43 @@ def main():
                 test_section_list = libmfg_utils.list_intersection(test_section_list, args.only_test)
 
             for test_section in test_section_list:
+                # check MTP PSU PIN before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN Before Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_psu_init():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP HOST NIC Device before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP HOST NIC Device Before Test Stage", level=0)
+                if not libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl):
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP HOST NIC Device Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP FAN SPEED before each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP Fan Speed Before Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_inlet_temp_test():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP Fan Speed Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+
                 if test_section == "PRE_CHECK":
                     ######################################################################
                     #
@@ -1603,7 +1652,6 @@ def main():
                                     fail_nic_list.append(slot)
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
-                
 
                 elif test_section == "MVL":
                     ######################################################################
@@ -1612,7 +1660,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+                        if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]
@@ -1649,7 +1697,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]
@@ -1732,7 +1780,6 @@ def main():
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_unhide_nic_status(slot)
 
-
                 elif test_section == "ARM_PRBS":
                     ######################################################################
                     #
@@ -1750,7 +1797,7 @@ def main():
                         if nic_list:
                             # aapl tests
                             new_nic_para_test_list = list()
-                            if nic_type in ELBA_NIC_TYPE_LIST:
+                            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                                 # no elba tests here
                                 pass
                             else:
@@ -1779,7 +1826,6 @@ def main():
                                     if slot in pass_nic_list:
                                         pass_nic_list.remove(slot)
 
-
                 elif test_section == "ARM_DSP":
                     ######################################################################
                     #
@@ -1806,7 +1852,7 @@ def main():
                                 nic_para_test_list.remove(("MEM", "EDMA"))
 
                             # Remove QSFP loopbacks in chamber
-                            if vmarg != Voltage_Margin.normal and stage != FF_Stage.QA and (nic_type in ELBA_NIC_TYPE_LIST):
+                            if vmarg != Voltage_Margin.normal and stage != FF_Stage.QA and (nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
                                 if ("QSFP","I2C") in nic_para_test_list:
                                     nic_para_test_list.remove(("QSFP","I2C"))
 
@@ -1828,7 +1874,6 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
-
                 elif test_section == "EDMA":
                     ######################################################################
                     #
@@ -1836,7 +1881,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in ELBA_NIC_TYPE_LIST:
+                        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
 
                         nic_para_test_list = para_test_list[nic_type][:]
@@ -1845,7 +1890,7 @@ def main():
                         if nic_list:
                             # skip all tests except edma in this loop
                             new_nic_para_test_list = list()
-                            if nic_type in ELBA_NIC_TYPE_LIST:
+                            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                                 if ("MEM", "EDMA") in nic_para_test_list:
                                     for loop in range(1,10+1):   # 10 iterations
                                         new_nic_para_test_list.append(("MEM", "EDMA"))
@@ -1869,7 +1914,6 @@ def main():
                                         fail_nic_list.append(slot)
                                     if slot in pass_nic_list:
                                         pass_nic_list.remove(slot)
-
 
                 elif test_section == "J2C_SEQ":
                     ######################################################################
@@ -1903,7 +1947,6 @@ def main():
                                     fail_nic_list.append(slot)
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
-
 
                 elif test_section == "ALOM_LP_MODE":
                     ######################################################################
@@ -1955,7 +1998,6 @@ def main():
                                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                             return
 
-
                 elif test_section == "NIC_DIAG_INIT":
                     ######################################################################
                     #
@@ -1975,7 +2017,6 @@ def main():
                                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                         return
 
-
                 elif test_section == "NIC_DIAG_INIT_AAPL":
                     ######################################################################
                     #
@@ -1994,6 +2035,22 @@ def main():
                                     if stop_on_err:
                                         mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                                         return
+                                        
+                elif test_section == "NIC_EDMA_ENV_INIT":
+                    ######################################################################
+                    #
+                    #  NIC EDMA Environment Setup
+                    #
+                    ######################################################################
+                    if not mtp_mgmt_ctrl.mtp_nic_edma_env_init(nic_test_full_list):
+                        for nic_list in nic_test_full_list:
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    if slot not in fail_nic_list:
+                                        fail_nic_list.append(slot)
+                                    if slot in pass_nic_list:
+                                        pass_nic_list.remove(slot)
+
 
                 elif test_section == "TEST_FPGA_PROG":
                     ######################################################################
@@ -2035,7 +2092,6 @@ def main():
                             if slot in pass_nic_list:
                                 pass_nic_list.remove(slot)
 
-
                 elif test_section == "PROD_FPGA_PROG":
                     ######################################################################
                     #
@@ -2076,6 +2132,42 @@ def main():
                             if slot in pass_nic_list:
                                 pass_nic_list.remove(slot)
 
+                # check MTP PSU PIN after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP PSU PIN After Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_psu_init():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("PSU PIN Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP HOST NIC Device after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP HOST NIC Device After Test Stage", level=0)
+                if not libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl):
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP HOST NIC Device Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
+                # check MTP FAN SPEED after each test stage
+                mtp_mgmt_ctrl.cli_log_inf("Check MTP Fan Speed After Test Stage", level=0)
+                if not mtp_mgmt_ctrl.mtp_inlet_temp_test():
+                    # Fail all cards
+                    mtp_mgmt_ctrl.cli_log_err("MTP Fan Speed Check Failed, Fail All Card Out", level=0)
+                    for nic_list in nic_test_full_list:
+                        for slot in nic_list:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                    break
 
             # log the diag test history
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_disp()
@@ -2155,7 +2247,7 @@ def main():
             card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if card_type == NIC_Type.NAPLES25SWM and (swmtestmode == Swm_Test_Mode.ALOM):
                 alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
-                mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+                mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
         for slot in skip_nic_list:
             key = libmfg_utils.nic_key(slot)

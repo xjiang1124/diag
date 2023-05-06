@@ -7,6 +7,14 @@ declare -A ortanoA_high=([elb0_arm]=2 [elb0_core]=2)
 declare -A ortanoA_low=([elb0_arm]=-2 [elb0_core]=-2)
 declare -A ortanoA_normal=([elb0_arm]=0 [elb0_core]=0)
 ortanoA_vmarg=(ortanoA_normal ortanoA_low ortanoA_high)
+declare -A ginestra_d4_high=([gig0_arm]=5 [gig0_core]=5 [vdd_ddr]=2 [ddr_vddq]=2)
+declare -A ginestra_d4_low=([gig0_arm]=-10 [gig0_core]=-10 [vdd_ddr]=-2 [ddr_vddq]=-2)
+declare -A ginestra_d4_normal=([gig0_arm]=0 [gig0_core]=0 [vdd_ddr]=0 [ddr_vddq]=0)
+ginestra_d4_vmarg=(ginestra_d4_normal ginestra_d4_low ginestra_d4_high)
+declare -A ginestra_d5_high=([gig0_arm]=5 [gig0_core]=5 [vdd_ddr]=2 [ddr_vdd]=2 [ddr_vddq]=2 [ddr_vpp]=2)
+declare -A ginestra_d5_low=([gig0_arm]=-10 [gig0_core]=-10 [vdd_ddr]=-2 [ddr_vdd]=-2 [ddr_vddq]=-2 [ddr_vpp]=-2)
+declare -A ginestra_d5_normal=([gig0_arm]=0 [gig0_core]=0 [vdd_ddr]=0 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
+ginestra_d5_vmarg=(ginestra_d5_normal ginestra_d5_low ginestra_d5_high)
 
 set_vmarg_lacona()
 {
@@ -97,6 +105,30 @@ set_vmarg()
             set_vmarg_lacona arm 2 
             set_vmarg_lacona core 2
         fi
+    elif [[ $CARD_TYPE == "GINESTRA_D4"        || \
+            $CARD_TYPE == "GINESTRA_D5"    ]]
+    then
+        if [[ "$1" == "normal" ]]
+        then
+            index=0
+        elif [[ "$1" == "low" ]]
+        then
+            index=1
+        elif [[ "$1" == "high" ]]
+        then
+            index=2
+        fi
+        if [[ $CARD_TYPE == "GINESTRA_D4" ]]
+        then
+            tmp=(${ginestra_d4_vmarg[$index]})
+        else
+            tmp=(${ginestra_d5_vmarg[$index]})
+        fi
+        declare -n tgt_vmarg="$tmp"
+        for dev in "${!tgt_vmarg[@]}"
+        do
+            /data/nic_util/devmgr -dev=$dev -margin -pct=${tgt_vmarg[$dev]}
+        done
     else
         if [[ "$1" == "normal" ]]
         then
@@ -121,3 +153,4 @@ echo "=== Pre-Setting Vmarg to $1 ==="
 echo "=== Post Setting Vmarg to $1 ==="
 set_vmarg $1
 echo "=== Vmarg is at $1 ==="
+

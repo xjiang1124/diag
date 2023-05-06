@@ -32,7 +32,7 @@ def load_mtp_cfg(cfg_yaml = None):
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))
-    mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
+    mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
     if cfg_yaml:
         mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -58,8 +58,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
 
-def single_mtp_ort_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file = None):
-    stage = FF_Stage.FF_ORT
+def single_mtp_rdt_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file = None):
+    stage = FF_Stage.FF_RDT
 
     if skip_test:
         skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
@@ -80,9 +80,9 @@ def single_mtp_ort_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
     mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG ORT Test Start", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG RDT Test Start", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s} --stage {:s}".format(mtp_id, swm_test_mode, FF_Stage.FF_ORT)
+    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s} --stage {:s}".format(mtp_id, swm_test_mode, FF_Stage.FF_RDT)
     if skip_test:
         cmd += skipped_testlist
     if only_test:
@@ -95,15 +95,15 @@ def single_mtp_ort_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     if l1_sequence:
         cmd += " --l1-seq "
 
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_ORT_TEST_TIMEOUT)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_RDT_TEST_TIMEOUT)
     #mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG ORT Test Complete", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MFG RDT Test Complete", level=0)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
     test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect ORT Test result failed", level=0)
+        mtp_mgmt_ctrl.cli_log_err("MTP Collect RDT Test result failed", level=0)
         return
     libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
     if GLB_CFG_MFG_TEST_MODE:
@@ -139,7 +139,7 @@ def main():
         iteration = args.iteration
 
 
-    stage = FF_Stage.FF_ORT
+    stage = FF_Stage.FF_RDT
     mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
 
@@ -173,10 +173,10 @@ def main():
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
-        mfg_ort_start_ts = libmfg_utils.timestamp_snapshot()
+        mfg_rdt_start_ts = libmfg_utils.timestamp_snapshot()
 
         libmfg_utils.cli_inf("#" * 320)
-        mtp_mgmt_ctrl.cli_log_inf("ORT TEST ITERATION-{:06d} START".format(loop), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} START".format(loop), level=0)
 
         # power off all the test mtp
         libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -308,27 +308,27 @@ def main():
             mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
 
         # Copy script, config file on to each MTP Chassis
-        mtp_ort_script_dir = "mtp_regression/"
+        mtp_rdt_script_dir = "mtp_regression/"
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_ort_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-            mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP ORT Test script", level=0)
-            if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_ort_script_dir, mtp_ort_script_pkg, logfile_dir_list[mtp_id]):
-                mtp_mgmt_ctrl.cli_log_err("Deploy MTP ORT Test script failed", level=0)
+            mtp_rdt_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
+            mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP RDT Test script", level=0)
+            if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_rdt_script_dir, mtp_rdt_script_pkg, logfile_dir_list[mtp_id]):
+                mtp_mgmt_ctrl.cli_log_err("Deploy MTP RDT Test script failed", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)
             else:
-                mtp_mgmt_ctrl.cli_log_inf("Deploy MTP ORT Test script complete", level=0)
+                mtp_mgmt_ctrl.cli_log_inf("Deploy MTP RDT Test script complete", level=0)
 
         mtp_thread_list = list()
-        mfg_ort_summary = dict()
+        mfg_rdt_summary = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mfg_ort_summary[mtp_id] = list()
-            mtp_thread = threading.Thread(target = single_mtp_ort_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_ort_script_dir,
+            mfg_rdt_summary[mtp_id] = list()
+            mtp_thread = threading.Thread(target = single_mtp_rdt_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_rdt_script_dir,
                                                                                 mtp_mgmt_ctrl,
                                                                                 mtp_id,
                                                                                 fail_nic_list[mtp_id],
-                                                                                mfg_ort_summary[mtp_id],
+                                                                                mfg_rdt_summary[mtp_id],
                                                                                 swmtestmode,
                                                                                 l1_sequence,
                                                                                 args.skip_test,
@@ -348,18 +348,22 @@ def main():
                     mtp_thread.join()
                     mtp_thread_list.remove(mtp_thread)
             time.sleep(5)
-        mfg_ort_stop_ts = libmfg_utils.timestamp_snapshot()
-        libmfg_utils.cli_inf("MFG ORT Test Duration:{:s}".format(mfg_ort_stop_ts - mfg_ort_start_ts))
-
-        # power off all the test mtp
-        if loop == iteration:
-            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+        mfg_rdt_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG RDT Test Duration:{:s}".format(mfg_rdt_stop_ts - mfg_rdt_start_ts))
 
         # dump the summary
-        libmfg_utils.mfg_summary_disp("{:s} ITERATION-{:06d}".format(stage, loop), mfg_ort_summary, mtpid_fail_list)
+        result = libmfg_utils.mfg_summary_disp("{:s} ITERATION-{:06d}".format(stage, loop), mfg_rdt_summary, mtpid_fail_list)
 
-        mtp_mgmt_ctrl.cli_log_inf("ORT TEST ITERATION-{:06d} END".format(loop), level=0)
+        # power off all the test mtp
+        if loop == iteration or not result:
+            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+
+        mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} END".format(loop), level=0)
         libmfg_utils.cli_inf("#" * 320 + "\n" * 3)
+
+        if not result:
+            libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT ORT TEST******")
+            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
 
 if __name__ == "__main__":

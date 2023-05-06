@@ -175,7 +175,7 @@ var OrtanoTbl = []I2cInfo {
 
 var GinestraD5Tbl = []I2cInfo {
     //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"SMB_FRU",         "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"PCIE_FRU",        "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 
     I2cInfo {"FRU",             "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"TSENSOR",         "TMP451AID", 0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
@@ -196,7 +196,7 @@ var GinestraD5Tbl = []I2cInfo {
 
 var GinestraD4Tbl = []I2cInfo {
     //       name               comp         Bus    devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"SMB_FRU",         "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"PCIE_FRU",        "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 
     I2cInfo {"FRU",             "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"TSENSOR",         "TMP451AID", 0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
