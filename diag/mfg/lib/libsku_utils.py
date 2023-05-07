@@ -245,3 +245,78 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT                   #68-0075-01 01    GINESTRA_D5
         ]
 }
+
+
+def get_product_name_from_pn(pn):
+    if "DSC2-2Q200-32R32F64P-R3" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-R2" in pn:
+        product_name = NIC_Type.ORTANO2ADI
+    elif "DSC2-2Q200-32R32F64P-R4" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
+    elif "DSC2-2Q200-32R32F64P-R5" in pn:
+        product_name = NIC_Type.ORTANO2ADICR
+    elif "DSC2-2Q200-32R32F64P-R" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "DSC2-2Q200-32R32F64P" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "68-0015-02" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "68-0021-02" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "0X322F" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0W5WGK" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0PCFPC" in pn:
+        product_name = NIC_Type.POMONTEDELL
+    elif "P47930" in pn:
+        product_name = NIC_Type.LACONA32
+    elif "68-0026-01" in pn:
+        product_name = NIC_Type.ORTANO2ADI
+    elif "68-0028-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIIBM
+    elif "68-0034-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIMSFT
+    elif "68-0049-03" in pn:
+        product_name = NIC_Type.ORTANO2ADICR
+    elif "68-0029-01" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "68-0074-01" in pn:
+        product_name = NIC_Type.GINESTRA_D4
+    elif "68-0075-01" in pn:
+        product_name = NIC_Type.GINESTRA_D5
+    elif "68-0077-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
+    elif "68-0013-01" in pn:
+        product_name = NIC_Type.NAPLES100IBM
+    elif "P26968" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "P26966-B21" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "68-0014-01" in pn:
+        product_name = NIC_Type.NAPLES25SWMDELL
+    elif "P37689" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "P37687" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "68-0010" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "DSC1-2S25-4P8P-DS" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "DSC1-2S25-4H8P-DS" in pn:
+        product_name = NIC_Type.NAPLES25SWMDELL
+    elif "DSC1-2S25-4H8P-SL" in pn:
+        product_name = NIC_Type.UNKNOWN
+    elif "DSC1-2S25-4H8P-ST" in pn:
+        product_name = NIC_Type.UNKNOWN
+    elif "DSC1-2S25-4H8P-S" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "111-05363" in pn:
+        product_name = NIC_Type.NAPLES100
+    elif "68-0003" in pn:
+        product_name = NIC_Type.NAPLES100
+    else:
+        product_name = NIC_Type.UNKNOWN
+
+    return product_name
