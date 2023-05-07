@@ -3079,8 +3079,8 @@ class mtp_ctrl():
     def mtp_nic_hpe_rework_verify(self, slot):
         """ REWORK VERIFICATION FOR CAP CHANGE 
             For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42
+            With WDC flash/new heatsink/new FRU table, Product Version must be 0C
         """
-        exp_prod_ver = "0C"
         if not self._nic_ctrl_list[slot].nic_fru_init_hpe_version():
             self.mtp_get_nic_err_msg(slot)
             return False
@@ -3089,6 +3089,11 @@ class mtp_ctrl():
         if not got_prod_ver:
             self.cli_log_slot_err(slot, "Failed to parse Product Version/Revision Code")
             return False
+
+        if self._nic_ctrl_list[slot]._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:
+            exp_prod_ver = "0B"
+        else:
+            exp_prod_ver = "0C"
 
         if got_prod_ver != exp_prod_ver:
             self.cli_log_slot_err(slot, "Looking for Product Version/Revision Code = {:s}, got {}".format(exp_prod_ver, got_prod_ver))
@@ -3185,7 +3190,7 @@ class mtp_ctrl():
             if software_pn != "90-0006-0001":
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0010":
+            if software_pn != "90-0002-0011":
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
             if software_pn != "90-0006-0002":
@@ -3197,7 +3202,7 @@ class mtp_ctrl():
             if software_pn != "90-0002-0005":
                 return False
         elif naples_pn[0:7] == "68-0014":     #NAPLES25 SWM DELL
-            if software_pn != "90-0007-0003":
+            if software_pn != "90-0007-0004":
                 return False
         elif naples_pn[0:7] == "68-0019":     #NAPLES25 SWM 833
             if software_pn != "90-0002-0007":
@@ -3206,13 +3211,13 @@ class mtp_ctrl():
             if software_pn != "90-0002-0007":
                 return False
         elif naples_pn[0:6] == "P37689":      #NAPLES25 OCP HPE
-            if software_pn != "90-0002-0010":
+            if software_pn != "90-0002-0011":
                 return False
         elif naples_pn[0:6] == "P41857":      #NAPLES25 OCP HPE CLOUD
             if software_pn != "90-0006-0002":
                 return False
         elif naples_pn[0:7] == "68-0010":     #NAPLES25 OCP DELL
-            if software_pn != "90-0007-0003":
+            if software_pn != "90-0007-0004":
                 return False
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):      #FORIO/VOMERO/VOMERO2
             if software_pn != "90-0003-0001":
@@ -5564,7 +5569,7 @@ class mtp_ctrl():
 
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
-        isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003", "90-0019-0001") else False
+        isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003", "90-0019-0001", "90-0002-0011", "90-0007-0004") else False
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
             self.cli_log_slot_err(slot, "Graceful shut down NIC failed")
             self.mtp_dump_nic_err_msg(slot)

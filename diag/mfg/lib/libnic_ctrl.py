@@ -2708,7 +2708,8 @@ class nic_ctrl():
         ### 1b. Validate HPE product number, if applicable
         if init_date:
             if self._pn_format in (
-                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                 ):
                 if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                     self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
@@ -2754,7 +2755,8 @@ class nic_ctrl():
             ### 2b. Validate HPE product number, if applicable
             if init_date:
                 if self._pn_format in (
-                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                     ):
                     if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                         self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
@@ -2950,7 +2952,8 @@ class nic_ctrl():
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_EQI_PN_FMT)                       #68-0008-xx yy    NAPLES25 EQUINIX
                 ],
             NIC_Type.NAPLES25SWM: [
-                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT),              #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-002       NAPLES25 SWM HPE
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT),              #P41851-001       NAPLES25 SWM HPE CLOUD
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT),              #P46653-001       NAPLES25 SWM HPE TAA
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT),                  #68-0016-01 XX    NAPLES25 SWM PENSANDO
@@ -3149,6 +3152,8 @@ class nic_ctrl():
             disp_field = REVISION_FIELD
         elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:
             disp_field = PROD_VER_FIELD
+        elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:
+            disp_field = PROD_VER_FIELD
         else:
             # not applicable
             self.nic_set_err_msg("parse_hpe_version function not for this nic type")
@@ -3261,6 +3266,7 @@ class nic_ctrl():
             PART_NUMBERS_MATCH.N25_EQI_PN_FMT:          "eeutil -dev=fru -update",
 
             PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT:      "eeutil -dev=fru -update",
