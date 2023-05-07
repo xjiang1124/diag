@@ -547,7 +547,7 @@ class MTP_IMAGES:
     mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
     mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
 
-    penctl_img = "penctl.linux.02012021"
+    penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
     rotctrl_img = "rotctrl"
 
@@ -558,7 +558,7 @@ class MFG_IMAGE_FILES:
     ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
     ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
-    penctl_img = "penctl.linux.02012021"
+    penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
 
 class FLEX_ERR_CODE_MAP:

@@ -56,9 +56,9 @@ def setup_penctrl_ssh(mtp_mgmt_ctrl, slot, card_type, ip):
                 return False
 
     cmd_list = [
-            "export \"DSC_URL\"=\"http://{:s}\"".format(ip),                                                                                # set env variable used by penctl
-            "{:s} -a {:s} system enable-sshd".format("/home/diag/penctl.linux.02012021", "/home/diag/penctl.token"),                        # penctl enable-sshd
-            "{:s} -a {:s} update ssh-pub-key -f ~/.ssh/id_rsa.pub".format("/home/diag/penctl.linux.02012021", "/home/diag/penctl.token")    # penctl point to the pub key
+            "export \"DSC_URL\"=\"http://{:s}\"".format(ip),                                                                              # set env variable used by penctl
+            "{:s} -a {:s} system enable-sshd".format("/home/diag/penctl.linux.042021", "/home/diag/penctl.token"),                        # penctl enable-sshd
+            "{:s} -a {:s} update ssh-pub-key -f ~/.ssh/id_rsa.pub".format("/home/diag/penctl.linux.042021", "/home/diag/penctl.token")    # penctl point to the pub key
     ]
     for cmd in cmd_list:
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd):
@@ -238,9 +238,13 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.NAPLES100IBM
     elif "P26968" in pn:
         product_name = NIC_Type.NAPLES25SWM
+    elif "P26966-B21" in pn:
+        product_name = NIC_Type.NAPLES25SWM
     elif "68-0014-01" in pn:
         product_name = NIC_Type.NAPLES25SWMDELL
     elif "P37689" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "P37687" in pn:
         product_name = NIC_Type.NAPLES25OCP
     elif "68-0010" in pn:
         product_name = NIC_Type.NAPLES25OCP
@@ -719,6 +723,10 @@ def fst_init_nic(mtp_mgmt_ctrl):
     result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
     bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
 
+    # extra info dump
+    cmd = "lspci -d 1dd8: -vvv"
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     if len(bus_list_match) == 0:
         mtp_mgmt_ctrl.cli_log_err("No devices found")
         return False
@@ -742,6 +750,7 @@ def fst_init_nic(mtp_mgmt_ctrl):
             pn_match = re.search("Part number: *([A-Z0-9\-]*)", cmd_buf)
             if pn_match:
                 nic_type = get_product_name_from_pn(pn_match.group(1))
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Found NIC Type {:s}".format(str(nic_type)))
                 if nic_type in CAPRI_NIC_TYPE_LIST:
                     mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type = "capri"
                 if nic_type in ELBA_NIC_TYPE_LIST:
