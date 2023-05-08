@@ -2314,6 +2314,8 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name, img_name)
+        if self._nic_type == NIC_Type.NAPLES100:
+            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name) # 90-0001-0001 does not have fwupdate binary packaged
         nic_cmd_list.append(nic_cmd)
         if self._nic_type not in FPGA_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)

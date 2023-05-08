@@ -160,10 +160,10 @@ class NIC_IMAGES:
     sec_cpld_img["NAPLES100"] = "naples100_02_rv89_06032019.bin"
     sec_cpld_ver["NAPLES100"] = "0x89"
     sec_cpld_dat["NAPLES100"] = "06-03"
-    diagfw_img["NAPLES100"] = "capri_diagfw_uboot_1.3.1-E-68_2022.11.22.tar"
-    diagfw_dat["NAPLES100"] = "11-21-2022"
-    goldfw_img["NAPLES100"] = "capri_goldfw_1.3.1-E-68_2022.11.22.tar"
-    goldfw_dat["NAPLES100"] = "11-21-2022"
+    diagfw_img["NAPLES100"] = "naples_diagfw_05212020.tar"
+    diagfw_dat["NAPLES100"] = "05-21-2020"
+    goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
+    goldfw_dat["NAPLES100"] = "09-17-2019"
 
     # Enterprise release
     cpld_img["NAPLES100HPE"] = "naples100_hpe_rev4_03102021.bin"

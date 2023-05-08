@@ -3165,7 +3165,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
             return False
         if naples_pn[0:7] == "68-0003":        #NAPLES 100 PENSANDO
-            if software_pn != "90-0001-0002":
+            if software_pn != "90-0001-0001":
                 return False
         elif naples_pn[0:9] == "111-05363": #NAPLES 100 NETAPP
             if software_pn != "90-0001-0002":
