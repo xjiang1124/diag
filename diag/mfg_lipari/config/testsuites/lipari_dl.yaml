@@ -1,0 +1,98 @@
+Stage: DL
+UUT_Name: Lipari
+Parameters:
+
+Test list:
+    - OS_BOOT
+    - RT_MAC_VERIFY
+    - RT_NIC_VERIFY
+    - OS_BOOT
+    - SONIC_UPDATE
+    - BIOS_UPDATE
+    - FRU_PROG
+    - NIC_QSPI_PROG
+    - FPGA_PROG
+    - CPU_CPLD_PROG
+    - NIC_CPLD_PROG
+    - NIC_FEA_CPLD_PROG
+    - CPLD_REF
+    - OS_BOOT
+    - BIOS_VERIFY
+    - SONIC_VERIFY
+    - FPGA_VERIFY
+    - CPLD_VERIFY
+    - NIC_QSPI_VERIFY
+    - FRU_VERIFY
+    - NIC_PWRCYC
+    - NIC_GOLDFW_BOOT
+    - NIC_PWRCYC
+    - NIC_GOLDFW_VERIFY
+    - NIC_PCIE_VERIFY
+    - MEMTUN_INIT
+    - NIC_EMMC_FORMAT
+    - EMMC_HWRESET_SET
+    - EMMC_BKOPS_EN
+    - BOARD_ID
+
+Images:
+    rt_img:  "realtek-8116FL-5.1.23-0b53271e-amd-UI-2MB-release-beta.bin"
+    rt_ver:  "5.1.23"
+    rt_dat:  ""
+    rt_md5:  "6b818f648bb3e9012592024fc0e81e09"
+
+    bios_img:  "PspLipari.0006.024.FD"
+    bios_ver:  "0006.024"
+    bios_dat:  "04/21/2023"
+    bios_md5:  "f948d0e447073b6dfdd81e1d6eb3bfa9"
+
+    os_img:  "sonic-broadcom_1_20.bin"
+    os_ver:  "5.10.0-12-2-amd64"
+    os_dat:  "03-14-2023"
+    os_md5:  "20759289963b4ad94641028834b2e7b2"
+
+    boot0_img:  "boot0.bin"
+    boot0_md5:  ""
+
+    ubootg_img:  "ubootg_0328.img"
+    ubootg_dat:  "03-28-2023"
+    ubootg_md5:  "d298c5f2d35856fd0a812643ca061d74"
+
+    goldfw_img:  "elb0_goldfw.bin"
+    goldfw_ver:  "1.29.0-T-50"
+    goldfw_dat:  "09-20-2021"
+    goldfw_md5:  "5cdf91ca88dc9a147d6db778623b7554"
+
+    uboota_img:  "uboota_0328.img"
+    uboota_dat:  "03-28-2023"
+    uboota_md5:  "d115e98e3e1827f058e34244241b543f"
+
+    mainfwa_img:  ""
+    mainfwa_ver:  ""
+    mainfwa_dat:  ""
+    mainfwa_md5:  ""
+
+    fpga0_img:  "top_f0-0501-1116.bin"
+    fpga0_ver:  "8003"
+    fpga0_dat:  "05012023-1116"
+    fpga0_md5:  "588b17f7cc0357ec6040631484f92574"
+
+    fpga1_img:  "top_f1-0501-1344.bin"
+    fpga1_ver:  "8001"
+    fpga1_dat:  "05012023-1344"
+    fpga1_md5:  "6ff5fc6268e14544a41eac957c21c4cc"
+
+    cpu_cpld_img:  "ccpld_0412_800a.jed"
+    cpu_cpld_ver:  "800a"
+    cpu_cpld_dat:  "0412"
+    cpu_cpld_md5:  "28d2f8261835bef1880e4ed648c04e2c"
+
+    nic_cpld_img:  "lipari_ecpld_8002-0322.bin"
+    nic_cpld_ver:  "8002"
+    nic_cpld_dat:  "0322"
+    nic_cpld_md5:  "0304c689dd970e3be43f4892ecbb6d9f"
+
+    nic_fea_cpld_img:  "Lipari_ecpld_impl1.fea"
+    nic_fea_cpld_ver:  "14 01 00 00 00 00 00 00 00 00 00 00 00 00 18 00"
+    nic_fea_cpld_md5:  "129aee7bd09f60ce59f99dd2bf30e722"
+
+    amd64_img:  "image_amd64_elba_lipari_v0.3.tar"
