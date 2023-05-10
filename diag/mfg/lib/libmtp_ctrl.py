@@ -7440,8 +7440,6 @@ class mtp_ctrl():
             expected_speed = "16"
         elif nic_type in GIGLIO_NIC_TYPE_LIST:
             expected_speed = "16"
-        elif nic_type == NIC_Type.NAPLES100:
-            expected_speed = "16"
         else:
             expected_speed = "8"
 
