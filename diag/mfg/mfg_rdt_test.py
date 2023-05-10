@@ -364,6 +364,7 @@ def main():
         if not result:
             libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT ORT TEST******")
             libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+            break
 
 
 if __name__ == "__main__":
