@@ -393,6 +393,10 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
+        # Check if there is still got picocom process running
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         con_ts = libmfg_utils.timestamp_snapshot()
         ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)

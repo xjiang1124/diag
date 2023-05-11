@@ -554,7 +554,8 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_STOP_SYSMOND_FMT = "killall sysmond"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
-    NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"
+    NIC_DIAG_STOP_PICOCOM_FMT = "killall -9 picocom"
+    NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom"
     NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"
