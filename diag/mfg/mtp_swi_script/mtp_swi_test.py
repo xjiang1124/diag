@@ -1219,6 +1219,8 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["BOARD_CONFIG_CERT", "CFG_VERIFY", "SW_CLEANUP"]
                 cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2SOLOALI:
+                test_list = ["CFG_VERIFY", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
