@@ -1,0 +1,4 @@
+  Name: NIC_QSPI_PROG
+  Description: 
+  QSPI_PROG_DELAY: 3000
+  FORCE_UPDATE_QSPI: No

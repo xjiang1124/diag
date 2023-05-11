@@ -703,6 +703,7 @@ class nic_ctrl():
 
     def nic_cfg_verify(self):
         if not self.nic_console_attach():
+            self.nic_set_err_msg("Unable to connect to NIC console")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
@@ -710,6 +711,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -718,6 +720,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -726,6 +729,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -734,6 +738,7 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
             self.nic_console_detach()
             return False
         cfg0_md5sum = match[0]
@@ -742,6 +747,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -750,11 +756,13 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
             self.nic_console_detach()
             return False
         cfg1_md5sum = match[0]
 
         if cfg0_md5sum != cfg1_md5sum:
+            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False            

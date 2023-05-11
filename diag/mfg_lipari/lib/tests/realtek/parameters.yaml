@@ -1,0 +1,4 @@
+  Name: realtek
+  Description: 
+  RTNIC_PROG_DELAY: 300
+  FORCE_UPDATE_RTNIC: No
