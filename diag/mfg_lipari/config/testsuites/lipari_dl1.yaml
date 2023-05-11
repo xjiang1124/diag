@@ -1,0 +1,33 @@
+Stage: DL1
+UUT_Name: Lipari
+Parameters:
+
+Test list:
+    - ONIE_BOOT
+    - ONIE_UPDATE
+    - ONIE_BOOT
+    - ONIE_VERIFY
+    - OS_BOOT
+    - RT_NIC_PROG
+    - RT_MAC_PROG
+    - OS_BOOT
+    - RT_MAC_VERIFY
+    - RT_NIC_VERIFY
+
+Images:
+    rt_img:  "realtek-8116FL-5.1.23-0b53271e-amd-UI-2MB-release-beta.bin"
+    rt_ver:  "5.1.23"
+    rt_dat:  ""
+    rt_md5:  "6b818f648bb3e9012592024fc0e81e09"
+
+    onie_img:  "onie-updater-x86_64-amd_lipari-r0"
+    onie_ver:  "5.4.86-onie+"
+    onie_dat:  "02240905"
+    onie_md5:  "4bd732e85dffafba6f21bece0afd8206"
+
+    os_img:  "sonic-broadcom_56993_brcm_patch.bin"
+    os_ver:  ""
+    os_dat:  ""
+    os_md5:  "7832745cda5f52385f657920e2b380e4"
+
+    amd64_img:  "image_amd64_elba_lipari_v0.3.tar"
