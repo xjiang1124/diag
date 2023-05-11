@@ -9,6 +9,7 @@ import threading
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import libmtp_utils
 from ddr_test_parameters import test2args
 from libdefs import NIC_Type
 from libdefs import Voltage_Margin

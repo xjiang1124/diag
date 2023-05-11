@@ -33,57 +33,60 @@ OCP_ADAPTER_FIXED_MAC = "FFFFFFFFFFFF"
 
 
 class PART_NUMBERS_MATCH:
-    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"        #68-0003-01 01    NAPLES100 PENSANDO
-    N100_NET_PN_FMT = r"111-(?:04635|05363)"                  #111-05363        NAPLES100 NETAPP
+    N100_PEN_PN_FMT = r"68-0003-0[0-9]{1} [A-Z0-9]{2}"                                              #68-0003-01 01    NAPLES100 PENSANDO
+    N100_NET_PN_FMT = r"111-(?:04635|05363)"                                                        #111-05363        NAPLES100 NETAPP
 
-    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"        #68-0013-01 03    NAPLES100 IBM
+    N100_IBM_PN_FMT = r"68-0013-0[0-9]{1} [A-Z0-9]{2}"                                              #68-0013-01 03    NAPLES100 IBM
 
-    N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                #P37692-001       NAPLES100 HPE 
-    N100_HPE_CLD_PN_FMT = r"P41854-00[0-9]{1}"                #P41854-001       NAPLES100 HPE CLOUD
+    N100_HPE_PN_FMT     = r"P37692-00[0-9]{1}"                                                      #P37692-001       NAPLES100 HPE
+    N100_HPE_CLD_PN_FMT = r"P41854-00[0-9]{1}"                                                      #P41854-001       NAPLES100 HPE CLOUD
 
-    N100_DELL_PN_FMT  = r"68-0024-0[0-9]{1} [A-Z0-9]{2}"      #68-0024-01 XX    NAPLES100 DELL
+    N100_DELL_PN_FMT  = r"68-0024-0[0-9]{1} [A-Z0-9]{2}"                                            #68-0024-01 XX    NAPLES100 DELL
 
-    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}"         #68-0005-03 01    NAPLES25 PENSANDO
-    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                     #P18669-001       NAPLES25 HPE
-    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"            #68-0008-xx yy    NAPLES25 EQUINIX
+    N25_PEN_PN_FMT = r"68-0005-0[0-9]{1} [A-Z0-9]{2}"                                               #68-0005-03 01    NAPLES25 PENSANDO
+    N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                                                           #P18669-001       NAPLES25 HPE
+    N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"                                                  #68-0008-xx yy    NAPLES25 EQUINIX
 
-    N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"             #P26968-001       NAPLES25 SWM HPE 
-    N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"             #P41851-001       NAPLES25 SWM HPE CLOUD
-    N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"             #P46653-001       NAPLES25 SWM HPE TAA
-    N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}" #68-0016-01 01    NAPLES25 SWM PENSANDO 
-    N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}" #68-0017-01 01    NAPLES25 SWM PENSANDO TAA 
-    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"     #68-0014-01 00    NAPLES25 SWM DELL
-    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"     #68-0019-01 01    NAPLES25 SWM 833 PENSANDO
+    N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"                                                   #P26968-001       NAPLES25 SWM HPE
+    N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"                                                   #P41851-001       NAPLES25 SWM HPE CLOUD
+    N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"                                                   #P46653-001       NAPLES25 SWM HPE TAA
+    N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}"                                       #68-0016-01 01    NAPLES25 SWM PENSANDO
+    N25_SWM_PEN_TAA_PN_FMT = r"68-0017-0[0-9]{1} [A-Z0-9]{2}"                                       #68-0017-01 01    NAPLES25 SWM PENSANDO TAA
+    N25_SWM_DEL_PN_FMT = r"68-0014-0[0-9]{1} [A-Z0-9]{2}"                                           #68-0014-01 00    NAPLES25 SWM DELL
+    N25_SWM_833_PN_FMT = r"68-0019-0[0-9]{1} [A-Z0-9]{2}"                                           #68-0019-01 01    NAPLES25 SWM 833 PENSANDO
 
-    N25_OCP_PEN_PN_FMT = r"68-0023-0[0-9]{1} [A-Z0-9]{2}"     #68-00xx-xx       NAPLES25 OCP PENSANDO
-    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                 #P37689-001       NAPLES25 OCP HPE
-    N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"             #P41857-001       NAPLES25 OCP HPE CLOUD
-    N25_OCP_DEL_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"     #68-0010-01       NAPLES25 OCP DELL
+    N25_OCP_PEN_PN_FMT = r"68-0023-0[0-9]{1} [A-Z0-9]{2}"                                           #68-00xx-xx       NAPLES25 OCP PENSANDO
+    N25_OCP_HPE_PN_FMT = r"P37689-00[0-9]{1}"                                                       #P37689-001       NAPLES25 OCP HPE
+    N25_OCP_HPE_CLD_PN_FMT = r"P41857-00[0-9]{1}"                                                   #P41857-001       NAPLES25 OCP HPE CLOUD
+    N25_OCP_DEL_PN_FMT = r"68-0010-0[0-9]{1} [A-Z0-9]{2}"                                           #68-0010-01       NAPLES25 OCP DELL
     N25_OCP_ADAPTER_PN_FMT = r"73-0024-03"
 
-    ALOM_HPE_PN_FMT = r"P26971-00[0-9]{1}"                    #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
+    ALOM_HPE_PN_FMT = r"P26971-00[0-9]{1}"                                                          #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
 
-    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"              #68-0007-01 01    FORIO
-    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"             #68-0009-01 01    VOMERO
-    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"         #68-0011-01 01    VOMERO2
+    FORIO_PN_FMT = r"68-0007-0[0-9]{1} [0-9]{2}"                                                    #68-0007-01 01    FORIO
+    VOMERO_PN_FMT = r"68-0009-0[0-9]{1} [0-9]{2}"                                                   #68-0009-01 01    VOMERO
+    VOMERO2_PN_FMT = r"68-0011-0[0-9]{1} [A-Z0-9]{2}"                                               #68-0011-01 01    VOMERO2
 
-    ORTANO_PN_FMT = r"68-0015-01 [A-Z0-9]{2}"                 #68-0015-01 01    ORTANO
-    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"     #68-0015-02 01    ORTANO2 ORACLE
-    ORTANO2_PEN_PN_FMT= r"68-0021-0[2-9]{1} [A-Z0-9]{2}"      #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
+    ORTANO_PN_FMT = r"68-0015-01 [A-Z0-9]{2}"                                                       #68-0015-01 01    ORTANO
+    ORTANO2_ORC_PN_FMT = r"68-0015-0[2-9]{1} [A-Z0-9]{2}"                                           #68-0015-02 01    ORTANO2 ORACLE
+    ORTANO2_PEN_PN_FMT= r"68-0021-0[2-9]{1} [A-Z0-9]{2}"                                            #68-0021-02 01    ORTANO2 GENERIC (PENSANDO)
 
-    POMONTEDELL_PN_FMT = r"0PCFPC(?:X|A)[0-9]{2}"             #0PCFPC X/A       POMONTE DELL
-    LACONA32DELL_PN_FMT = r"(?:0X322F|0W5WGK)(?:X|A)[0-9]{2}" #0X322F X/A       LACONA32 DELL
-    LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                    #P47930-001       LACONA32 HPE
+    POMONTEDELL_PN_FMT = r"0PCFPC(?:X|A)[0-9]{2}"                                                   #0PCFPC X/A       POMONTE DELL
+    LACONA32DELL_PN_FMT = r"(?:0X322F|0W5WGK)(?:X|A)[0-9]{2}"                                       #0X322F X/A       LACONA32 DELL
+    LACONA32_PN_FMT = r"P47930-00[0-9]{1}"                                                          #P47930-001       LACONA32 HPE
 
-    ORTANO2ADI_ORC_PN_FMT = r"68-0026-0[1-9]{1} [A-Z0-9]{2}"     #68-0026-01 01    ORTANO2ADI ORACLE
-    ORTANO2ADI_IBM_PN_FMT = r"68-0028-0[1-9]{1} [A-Z0-9]{2}"     #68-0028-01 01    ORTANO2ADI IBM
-    ORTANO2ADI_MSFT_PN_FMT = r"68-0034-0[1-9]{1} [A-Z0-9]{2}"    #68-0034-01 01    ORTANO2ADI MICROSOFT
-    ORTANO2INTERP_ORC_PN_FMT = r"68-0029-0[1-9]{1} [A-Z0-9]{2}"  #68-0029-01 02    ORTANO2INTERP_ORC_PN_FMT ORACLE
-    ORTANO2SOLO_ORC_PN_FMT = r"68-0077-0[1-9]{1} [A-Z0-9]{2}"    #68-0077-01 A0    ORTANO2SOLO_ORC_PN_FMT ORACLE
-    ORTANO2ADI_CR_PN_FMT = r"68-0049-0[1-9]{1} [A-Z0-9]{2}"      #68-0049-03 A0    ORTANO2ADI CR
-    GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"        #68-0074-01 01    GINESTRA_D4
-    GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"        #68-0075-01 01    GINESTRA_D5
-
+    ORTANO2ADI_ORC_PN_FMT = r"68-0026-0[1-9]{1} [A-Z0-9]{2}"                                        #68-0026-01 01    ORTANO2ADI ORACLE
+    ORTANO2ADI_IBM_PN_FMT = r"68-0028-0[1-9]{1} [A-Z0-9]{2}"                                        #68-0028-01 01    ORTANO2ADI IBM
+    ORTANO2ADI_MSFT_PN_FMT = r"68-0034-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0034-01 01    ORTANO2ADI MICROSOFT
+    ORTANO2INTERP_ORC_PN_FMT = r"68-0029-0[1-9]{1} [A-Z0-9]{2}"                                     #68-0029-01 02    ORTANO2INTERP_ORC_PN_FMT ORACLE
+    ORTANO2SOLO_ORC_PN_FMT = r"68-0077-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0077-01 A0    ORTANO2SOLO_ORC_PN_FMT ORACLE
+    ORTANO2SOLO_ORC_THS_PN_FMT = r"68-0089-0[1-9]{1} [A-Z0-9]{2}"                                   #68-0089-01 A0    ORTANO2SOLO ORACLE Tall Heat Sink
+    ORTANO2SOLO_MSFT_PN_FMT = r"68-0090-0[1-9]{1} [A-Z0-9]{2}"                                      #68-0090-01 A0    ORTANO2SOLO MICROSOFT
+    ORTANO2SOLO_ALI_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0092-01 A0    ORTANO2SOLO Alibaba
+    ORTANO2ADI_CR_PN_FMT = r"68-0049-0[1-9]{1} [A-Z0-9]{2}"                                         #68-0049-03 A0    ORTANO2ADI CR
+    ORTANO2ADI_CR_MSFT_PN_FMT = r"68-0091-0[1-9]{1} [A-Z0-9]{2}"                                    #68-0091-01 A0    ORTANO2ADI CR MICROSOFT
+    GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
+    GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
@@ -228,10 +231,22 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LACONA32_PN_FMT                      #P47930-001       LACONA32 HPE
         ],
     NIC_Type.ORTANO2ADICR: [
-        PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT                 #68-0049-01 XX    ORTANO2ADI CR
+        PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT                 #68-0049-03 XX    ORTANO2ADI CR
+        ],
+    NIC_Type.ORTANO2ADICRMSFT: [
+        PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
         ],
     NIC_Type.ORTANO2SOLO: [
         PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT               #68-0077-01 A0    ORTANO2 SOLO
+        ],
+    NIC_Type.ORTANO2SOLOORCTHS: [
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT           #68-0089-01 A0    ORTANO2 SOLO Oracle Tall Heat Sink
+        ],
+    NIC_Type.ORTANO2SOLOMSFT: [
+        PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT              #68-0090-01 A0    ORTANO2 SOLO MICROSOFT
+        ],
+    NIC_Type.ORTANO2SOLOALI: [
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT               #68-0092-01 A0    ORTANO2 SOLO Alibaba
         ],
     NIC_Type.GINESTRA_D4: [
         PART_NUMBERS_MATCH.GINESTRA_D4_PN_FMT                   #68-0074-01 01    GINESTRA_D4

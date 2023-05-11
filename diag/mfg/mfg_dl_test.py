@@ -292,6 +292,8 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
                     if card_type == NIC_Type.ORTANO2ADICR:
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
+                    if card_type == NIC_Type.ORTANO2ADICRMSFT:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICRMSFT"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                 try:
