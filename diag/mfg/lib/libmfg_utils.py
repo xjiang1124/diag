@@ -1274,6 +1274,10 @@ def flx_stage_to_penang(stage):
         return FPN_FF_Stage.FF_SWI
     elif stage == FF_Stage.FF_FST:
         return FPN_FF_Stage.FF_FST
+    elif stage == FF_Stage.FF_ORT:
+        return FPN_FF_Stage.FF_ORT
+    elif stage == FF_Stage.FF_RDT:
+        return FPN_FF_Stage.FF_RDT
     else:
         print("Unknown Flex Flow Stage: {:s}".format(stage))
         return None

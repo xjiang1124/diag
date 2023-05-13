@@ -74,6 +74,8 @@ class FPN_FF_Stage:
     FF_4C_L = "PSO-4C-L_AUTO"
     FF_SWI = "PSO-SWI_AUTO"
     FF_FST = "PSO-FST_AUTO"
+    FF_ORT = "PSO-ORT_AUTO"
+    FF_RDT = "PSO-RDT_AUTO"
 
 #NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
 class Swm_Test_Mode(Enum):
