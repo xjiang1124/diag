@@ -22,6 +22,9 @@ set parameters {
     {ddr5.arg        0               "DDR5 option"}
     {vmarg.arg       "normal"        "Voltage margin: normal/high/low"}
     {pc.arg          1               "Power cycle"}
+    {vdd_margin_pct.arg  "0"             "Core margin pct"}
+    {arm_margin_pct.arg  "0"             "Arm margin pct"}
+    {margin_pct.arg      "0"             "ddr_vdd/ddr_vddq/ddr_vpp/vdd_ddr margin pct"}
 }
 
 set usage "- Usage:"
@@ -44,6 +47,9 @@ set ddr_freq    $options(ddr_freq)
 set ddr5        $options(ddr5)
 set vmarg       $options(vmarg)
 set pc          $options(pc)
+set vdd_margin_pct $options(vdd_margin_pct)
+set arm_margin_pct $options(arm_margin_pct)
+set margin_pct $options(margin_pct)
 
 
 puts "sn: $sn; slot: $slot; mode $mode; hc: $hc; ctrl_pi: $ctrl_pi; addr_space: $addr_space; dual_rank: $dual_rank; ddr5: $ddr5; vmarg: $vmarg; pc: $pc"
@@ -82,9 +88,9 @@ plog_start $log_fn
 
 set in_err [plog_get_err_count]
 
-gig_bringup_card_rst
-gig_ddr_init_ddr
+gig_card_rst $port $slot1 hod_1100 $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 1 $vdd_margin_pct $arm_margin_pct $margin_pct
 gig_platform
+gig_ddr_init_ddr $::ddr5 $ddr_freq
 gig_ddr_bist
 gig_platform
 gig_mc_check_ecc  -1  -1  $::ddr5  $::board_type

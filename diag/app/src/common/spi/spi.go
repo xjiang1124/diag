@@ -32,7 +32,7 @@ func CpldRead(offset uint32, data* uint32) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" || cardType == "ORTANO2S" || cardType == "ORTANO2AC" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" || cardType == "ORTANO2S" || cardType == "ORTANO2AC" || cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5" ) {
         rd = C.cpld_read(C.uchar(offset))
     } else {
         rd = C.Cpld_read(C.uchar(offset))
@@ -45,7 +45,7 @@ func CpldWrite(offset uint32, data uint32) (err int) {
     var cardType string
 
     cardType = os.Getenv("CARD_TYPE")
-    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" || cardType == "ORTANO2S" || cardType == "ORTANO2AC" ) {
+    if ( cardType == "ORTANO" || cardType == "ORTANO2" || cardType == "ORTANO2A" || cardType == "ORTANO2I" || cardType == "ORTANO2S" || cardType == "ORTANO2AC" || cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5" ) {
         retC = C.cpld_write(C.uchar(offset), C.uchar(data))
     } else {
         retC = C.Cpld_write(C.uchar(offset), C.uchar(data))
