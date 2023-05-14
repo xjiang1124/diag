@@ -348,6 +348,8 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.ORTANO2ADIIBM:
         test_list = []
+    if nic_type == NIC_Type.ORTANO2SOLOALI:
+        test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -663,7 +665,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Secure CPLD image: " + os.path.basename(sec_cpld_img_file))
                 if fail_cpld_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Failsafe CPLD image: " + os.path.basename(fail_cpld_img_file))
-            if nic_type != NIC_Type.ORTANO2ADIIBM:
+            if nic_type not in  (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOALI):
                 if emmc_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
@@ -1217,6 +1219,8 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["BOARD_CONFIG_CERT", "CFG_VERIFY", "SW_CLEANUP"]
                 cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2SOLOALI:
+                test_list = ["CFG_VERIFY", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -1276,9 +1280,9 @@ def main():
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
                 sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+            if nic_type == NIC_Type.ORTANO2ADIMSFT or nic_type == NIC_Type.ORTANO2ADICRMSFT:
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
+            if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOALI):
                 sw_test_list = []
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]

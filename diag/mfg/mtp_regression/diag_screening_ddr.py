@@ -367,7 +367,7 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
         if len(nic_top_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_top_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI or  mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -406,7 +406,7 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
         if len(nic_bottom_test_list) > 0:
             adi_nic_list = list()
             for slot in nic_bottom_test_list:
-                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI or mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
+                if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
                     adi_nic_list.append(slot)
             if len(adi_nic_list) > 0:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_nic_list, dl=True, count_down=False)
@@ -578,10 +578,10 @@ def diag_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, v
         nic_bot_test_list = pen_list[:]
 
     # separate lists for ORC ortano adi and IBM ortano adi 
-    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR):
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
         orc_list, ibm_list = [], []
         for slot in nic_list:
-            if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
+            if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
                 orc_list.append(slot)
             else:
                 ibm_list.append(slot)
@@ -877,8 +877,12 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2ADIIBM] = "config/ortanoadi_ibm_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADIMSFT] = "config/ortanoadi_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICR] = "config/ortanoadi_cr_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADICRMSFT] = "config/ortanoadi_cr_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLO] = "config/ortanos_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOORCTHS] = "config/ortanos_ths_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOMSFT] = "config/ortanos_msft_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOALI] = "config/ortanos_ali_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
