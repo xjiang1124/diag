@@ -64,6 +64,7 @@ class nic_ctrl():
         self._asic_type = None
         self._ip_addr = None
         self._fst_pcie_bus = None
+        self._fst_eth_mnic = None
         self._emmc_mfr_id = ""
 
         self._refresh_required = True
@@ -2325,6 +2326,8 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name, img_name)
+        if self._nic_type == NIC_Type.NAPLES100:
+            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name) # 90-0001-0001 does not have fwupdate binary packaged
         nic_cmd_list.append(nic_cmd)
         if self._nic_type not in FPGA_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)
@@ -2719,7 +2722,8 @@ class nic_ctrl():
         ### 1b. Validate HPE product number, if applicable
         if init_date:
             if self._pn_format in (
-                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                 ):
                 if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                     self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
@@ -2765,7 +2769,8 @@ class nic_ctrl():
             ### 2b. Validate HPE product number, if applicable
             if init_date:
                 if self._pn_format in (
-                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                     ):
                     if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                         self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
@@ -2961,7 +2966,8 @@ class nic_ctrl():
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_EQI_PN_FMT)                       #68-0008-xx yy    NAPLES25 EQUINIX
                 ],
             NIC_Type.NAPLES25SWM: [
-                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT),              #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-002       NAPLES25 SWM HPE
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT),              #P41851-001       NAPLES25 SWM HPE CLOUD
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT),              #P46653-001       NAPLES25 SWM HPE TAA
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT),                  #68-0016-01 XX    NAPLES25 SWM PENSANDO
@@ -3172,6 +3178,8 @@ class nic_ctrl():
             disp_field = REVISION_FIELD
         elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:
             disp_field = PROD_VER_FIELD
+        elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:
+            disp_field = PROD_VER_FIELD
         else:
             # not applicable
             self.nic_set_err_msg("parse_hpe_version function not for this nic type")
@@ -3284,6 +3292,7 @@ class nic_ctrl():
             PART_NUMBERS_MATCH.N25_EQI_PN_FMT:          "eeutil -dev=fru -update",
 
             PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT:      "eeutil -dev=fru -update",
