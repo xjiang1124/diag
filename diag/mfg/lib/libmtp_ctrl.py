@@ -1538,7 +1538,7 @@ class mtp_ctrl():
         return rc
 
 
-    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False):
+    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False, stage=None):
         if not self.mtp_mgmt_connect():
             self.cli_log_err("Unable to connect MTP chassis", level=0)
             return False
@@ -1570,7 +1570,7 @@ class mtp_ctrl():
             return False
 
         # PSU/FAN absent, power off all the cards
-        if not self.mtp_hw_init(None):
+        if not self.mtp_hw_init(stage):
             self.cli_log_err("MTP HW Init Fail, Power Off All Cards", level=0)
             self.mtp_power_off_nic()
             return False
