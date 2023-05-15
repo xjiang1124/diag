@@ -24,10 +24,6 @@ from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
-from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import CAPRI_NIC_TYPE_LIST
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 
@@ -215,7 +211,11 @@ def main():
                 NIC_Type.ORTANO2ADI,
                 NIC_Type.ORTANO2INTERP,
                 NIC_Type.ORTANO2SOLO,
-                NIC_Type.ORTANO2ADICR
+                NIC_Type.ORTANO2ADICR,
+                NIC_Type.ORTANO2SOLOORCTHS,
+                NIC_Type.ORTANO2SOLOMSFT,
+                NIC_Type.ORTANO2SOLOALI,
+                NIC_Type.ORTANO2ADICRMSFT
                 ):
                 test_ROT = True
 

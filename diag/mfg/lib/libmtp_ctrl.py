@@ -2677,6 +2677,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0034"]
             if nic_type == NIC_Type.ORTANO2ADICR:
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0049"]
+            if nic_type == NIC_Type.ORTANO2ADICRMSFT:
+                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0091"]
             if nic_type == NIC_Type.NAPLES25SWM:
                 expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
@@ -2889,7 +2891,7 @@ class mtp_ctrl():
         self.mtp_nic_unlock()
 
         self.mtp_nic_lock()
-        if self._nic_type_list[slot] in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR) and not dl:
+        if self._nic_type_list[slot] in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT) and not dl:
             if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
                 self.mtp_get_nic_err_msg(slot)
             else:
@@ -3258,7 +3260,19 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
             if software_pn != "90-0020-0003":
                 return False
+        elif naples_pn[0:7] == "68-0089":     #ORTANO2 SOLO Tall Heat Sink
+            if software_pn != "90-0020-0004":
+                return False
+        elif naples_pn[0:7] == "68-0090":     #ORTANO2 SOLO MICROSOFT
+            if software_pn != "90-0020-0003":
+                return False
+        elif naples_pn[0:7] == "68-0092":     #ORTANO2 SOLO Alibaba
+            if software_pn != "90-0020-0003":
+                return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
+            if software_pn != "90-0020-0003":
+                return False
+        elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
             if software_pn != "90-0020-0003":
                 return False
         else:
@@ -3405,6 +3419,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver["68-0034"]
             if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0049"]
+            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -3422,6 +3438,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
             if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
+            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3456,7 +3474,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip failsafe CPLD update for Proto NIC")
             return True
 
-        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type != NIC_Type.ORTANO2ADI and nic_type != NIC_Type.ORTANO2ADIIBM and nic_type != NIC_Type.ORTANO2ADIMSFT and nic_type != NIC_Type.ORTANO2ADICR:
+        if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]):
             # can't check the version without loading backup partition into the running partition
             self.cli_log_slot_inf(slot, "Skip checking failsafe CPLD version")
 
@@ -3759,6 +3777,8 @@ class mtp_ctrl():
                 expected_version = NIC_IMAGES.cpld_ver["68-0034"]
             if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0049"]
+            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
             return False
@@ -3776,6 +3796,8 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
             if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
+            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
             return False
@@ -3794,6 +3816,8 @@ class mtp_ctrl():
                     expected_version = NIC_IMAGES.sec_cpld_ver["68-0034"]
                 if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
                     expected_version = NIC_IMAGES.sec_cpld_ver["68-0049"]
+                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0091"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
                 return False
@@ -3811,6 +3835,8 @@ class mtp_ctrl():
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0034"]
                 if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0049"]
+                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
+                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0091"]
             except KeyError:
                 self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
                 return False
@@ -4216,7 +4242,8 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_set_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO,
+                        NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             msg = "Set NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_set_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
@@ -4228,7 +4255,8 @@ class mtp_ctrl():
 
     def mtp_nic_emmc_check_perf_mode(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+        if nic_type in (NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO,
+                        NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             msg = "NIC in performance mode"
             if not self._nic_ctrl_list[slot].nic_emmc_check_perf_mode():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
@@ -5146,7 +5174,7 @@ class mtp_ctrl():
             nic_list = slot_list[:]
 
         for slot in nic_list:
-            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR) and not dl:
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT) and not dl:
                 if not self._nic_ctrl_list[slot].nic_set_i2c_after_pw_cycle():
                     self.mtp_get_nic_err_msg(slot)
                 else:
@@ -5262,6 +5290,26 @@ class mtp_ctrl():
                         final_nic_type = NIC_Type.ORTANO2ADIIBM
                     elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
                         final_nic_type = NIC_Type.ORTANO2ADIMSFT
+                    self._nic_type_list[slot] = final_nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
+                    pn = self.mtp_get_nic_pn(slot)
+                    if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2SOLO
+                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
+                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2SOLOMSFT
+                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2SOLOALI
+                    self._nic_type_list[slot] = final_nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
+                    pn = self.mtp_get_nic_pn(slot)
+                    if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2ADICR
+                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
+                        final_nic_type = NIC_Type.ORTANO2ADICRMSFT
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
 
@@ -5838,9 +5886,9 @@ class mtp_ctrl():
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
                 else:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
-            elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+            elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR):
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
-            elif nic_type == NIC_Type.ORTANO2ADIMSFT:
+            elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2SOLOALI):
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
@@ -6053,8 +6101,16 @@ class mtp_ctrl():
                 preset_config = "5"
             elif nic_type == NIC_Type.ORTANO2SOLO:
                 preset_config = "5"
+            elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
+                preset_config = "5"
+            elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
+                preset_config = "8"
+            elif nic_type == NIC_Type.ORTANO2SOLOALI:
+                preset_config = "8"
             elif nic_type == NIC_Type.ORTANO2ADICR:
                 preset_config = "5"
+            elif nic_type == NIC_Type.ORTANO2ADICRMSFT:
+                preset_config = "8"
             elif nic_type == NIC_Type.POMONTEDELL:
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
@@ -6172,6 +6228,12 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.LACONA32_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLO:
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_ORC_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.ORTANO2SOLOALI:
+            vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -6237,7 +6299,7 @@ class mtp_ctrl():
                     self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-        elif nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO):
+        elif nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
             if not self._nic_ctrl_list[slot].nic_fix_vrm():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
                 self.mtp_dump_nic_err_msg(slot)
@@ -7178,11 +7240,11 @@ class mtp_ctrl():
 
         nic_type = self.mtp_get_nic_type(slot)
 
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
             self.cli_log_slot_err(slot, "This function is not applicable for this card type!")
             return False
 
-        if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO):
+        if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
             d3_val = "0xb7"
             d4_val = "0x10"
             vddq_prog = True
@@ -7443,7 +7505,11 @@ class mtp_ctrl():
         else:
             expected_speed = "8"
 
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.NAPLES100):
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.POMONTEDELL, NIC_Type.ORTANO2SOLO,
+                    NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT,
+                    NIC_Type.NAPLES100):
+            expected_width = "16"
+        elif nic_type in GIGLIO_NIC_TYPE_LIST:
             expected_width = "16"
         else:
             expected_width = "8"
@@ -7472,11 +7538,11 @@ class mtp_ctrl():
         if not self.fst_get_nic_fw_info(slot):
             return False
 
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             if not self.fst_nic_set_perf_mode(slot):
                 pass
 
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             if not self.fst_set_mainfw_boot(slot):
                 return False
         elif nic_type in FPGA_TYPE_LIST:

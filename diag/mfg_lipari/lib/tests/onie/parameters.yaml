@@ -1,0 +1,4 @@
+  Name: onie
+  Description: 
+  FORCE_UPDATE_ONIE: No
+  ONIE_PROG_DELAY: 60

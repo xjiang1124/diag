@@ -394,6 +394,10 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
+        # Check if there is still got picocom process running
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         con_ts = libmfg_utils.timestamp_snapshot()
         ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)
@@ -704,6 +708,7 @@ class nic_ctrl():
 
     def nic_cfg_verify(self):
         if not self.nic_console_attach():
+            self.nic_set_err_msg("Unable to connect to NIC console")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
@@ -711,6 +716,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -719,6 +725,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -727,6 +734,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -735,6 +743,7 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
             self.nic_console_detach()
             return False
         cfg0_md5sum = match[0]
@@ -743,6 +752,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -751,11 +761,13 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
             self.nic_console_detach()
             return False
         cfg1_md5sum = match[0]
 
         if cfg0_md5sum != cfg1_md5sum:
+            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False            
@@ -3014,8 +3026,20 @@ class nic_ctrl():
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
                 ],
+            NIC_Type.ORTANO2SOLOORCTHS: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT)           #68-0089-01 XX    ORTANO2 SOLO Tall Heat Sink
+                ],
+            NIC_Type.ORTANO2SOLOMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT)              #68-0090-01 XX    ORTANO2 SOLO MICROSOFT
+                ],
+            NIC_Type.ORTANO2SOLOALI: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT)               #68-0092-01 XX    ORTANO2 SOLO Alibaba
+                ],
             NIC_Type.ORTANO2ADICR: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
+                ],
+            NIC_Type.ORTANO2ADICRMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT)            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
                 ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
