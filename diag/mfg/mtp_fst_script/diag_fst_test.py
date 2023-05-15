@@ -84,6 +84,18 @@ def get_product_name_from_pn(pn):
         product_name = "ORTANO2ADIIBM"
     elif "68-0034-01" in pn:
         product_name = "ORTANO2ADIMSFT"
+    elif "68-0077-01" in pn:
+        product_name = "ORTANO2SOLO"
+    elif "68-0089-01" in pn:
+        product_name = "ORTANO2SOLOORCTHS"
+    elif "68-0092-01" in pn:
+        product_name = "ORTANO2SOLOALI"
+    elif "68-0090-01" in pn:
+        product_name = "ORTANO2SOLOMSFT"
+    elif "68-0049-03" in pn:
+        product_name = "ORTANO2ADICR"
+    elif "68-0091-01" in pn:
+        product_name = "ORTANO2ADICRMSFT"
     else:
         product_name = "UNKNOWN"
         print("Unknow PN:", pn)

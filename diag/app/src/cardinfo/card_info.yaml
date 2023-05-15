@@ -1,4 +1,8 @@
 cardinfo:
+    GINESTRA_D4:
+        ASIC: GIGLIO
+    GINESTRA_D5:
+        ASIC: GIGLIO
     ORTANO:
         ASIC: ELBA
     ORTANO2:

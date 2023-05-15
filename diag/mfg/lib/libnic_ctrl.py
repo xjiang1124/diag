@@ -393,6 +393,10 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
+        # Check if there is still got picocom process running
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         con_ts = libmfg_utils.timestamp_snapshot()
         ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)
@@ -3016,8 +3020,20 @@ class nic_ctrl():
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
                 ],
+            NIC_Type.ORTANO2SOLOORCTHS: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT)           #68-0089-01 XX    ORTANO2 SOLO Tall Heat Sink
+                ],
+            NIC_Type.ORTANO2SOLOMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT)              #68-0090-01 XX    ORTANO2 SOLO MICROSOFT
+                ],
+            NIC_Type.ORTANO2SOLOALI: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT)               #68-0092-01 XX    ORTANO2 SOLO Alibaba
+                ],
             NIC_Type.ORTANO2ADICR: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
+                ],
+            NIC_Type.ORTANO2ADICRMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT)            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
                 ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
