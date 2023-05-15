@@ -5692,21 +5692,6 @@ class mtp_ctrl():
             return False
         return True
 
-    def fst_verify_extos_boot(self, slot):
-        self.cli_log_slot_inf(slot, "Verify boot from extdiag")
-        cmd = "/nic/tools/fwupdate -r"
-        if not self.mtp_nic_fst_exec_cmd(slot, cmd):
-            self.cli_log_slot_err(slot, "failed for verify boot from extdiag")
-            return False
-        else:
-            cmd_buf = self.mtp_get_nic_cmd_buf(slot)
-            if "extdiag" in cmd_buf:
-                self.cli_log_slot_inf(slot, "Verify boot from extdiag Pass", level=0)
-            else:
-                self.cli_log_slot_err(slot, "Verify boot from extdiag Fail", level=0)
-                return False
-        return True
-
     def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
         isCloud =  self.check_is_cloud_software_image(slot, software_pn)
         isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003", "90-0019-0001", "90-0002-0011", "90-0007-0004") else False
@@ -7542,12 +7527,8 @@ class mtp_ctrl():
             if not self.fst_nic_set_perf_mode(slot):
                 pass
 
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-            if not self.fst_set_mainfw_boot(slot):
-                return False
-        elif nic_type in FPGA_TYPE_LIST:
-            if not self.fst_verify_extos_boot(slot):
-                return False
+        if not self.fst_check_boot_image(slot):
+            return False
 
         # if nic_type in ELBA_NIC_TYPE_LIST:
         #     if nic_type in FPGA_TYPE_LIST:
@@ -7625,26 +7606,6 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Retrieve FW info")
 
-        cmd = "/nic/tools/fwupdate -r"
-        if not self.mtp_nic_fst_exec_cmd(slot, cmd):
-            self.cli_log_slot_err(slot, "failed to execute fwupdate -r")
-            return False
-        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
-        if "mainfwa" in cmd_buf:
-            self.cli_log_slot_inf(slot, "Booted into mainfwa", level=0)
-        elif "mainfwb" in cmd_buf:
-            self.cli_log_slot_inf(slot, "Booted into mainfwb", level=0)
-        elif "goldfw" in cmd_buf:
-            self.cli_log_slot_inf(slot, "Booted into goldfw", level=0)
-        elif "extdiag" in cmd_buf:
-            if self.mtp_get_nic_type(slot) in FPGA_TYPE_LIST:
-                self.cli_log_slot_inf(slot, "Booted into extdiag", level=0)
-            else:
-                self.cli_log_slot_err(slot, "Booted into extdiag", level=0)
-        elif "diagfw" in cmd_buf:
-            self.cli_log_slot_err(slot, "Booted into diagfw", level=0)
-
-
         if nic_type == NIC_Type.ORTANO2ADIIBM:
             cmd = "'export PATH=$PATH:/nic/bin; /nic/tools/fwupdate -l'"
         else:
@@ -7685,9 +7646,40 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
                 err_msg = traceback.format_exc()
                 self._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
-                self.mtp_get_nic_err_msg(slot)(slot)
+                self.mtp_get_nic_err_msg(slot)
                 return False
         self.cli_log_slot_inf(slot, "")
+
+        return True
+
+    def fst_check_boot_image(self, slot):
+        cmd = "/nic/tools/fwupdate -r"
+        if not self.mtp_nic_fst_exec_cmd(slot, cmd):
+            self.cli_log_slot_err(slot, "failed to execute fwupdate -r")
+            return False
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        match = re.findall(r"(\w+fw\w?|extdiag)", cmd_buf)
+        if match:
+            self._nic_ctrl_list[slot]._boot_image = match[0]
+        else:
+            self.cli_log_slot_err(slot, "Unable to read current boot image")
+            return False
+
+        boot_image = self._nic_ctrl_list[slot]._boot_image
+        nic_type = self.mtp_get_nic_type(slot)
+
+        if nic_type in FPGA_TYPE_LIST:
+            if boot_image != "extdiag":
+                self.cli_log_slot_err(slot, "Booted from {:s}, expecting extdiag".format(boot_image))
+                return False
+        elif nic_type == NIC_Type.ORTANO2ADIIBM:
+            if boot_image != "goldfw":
+                self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
+                return False
+        else:
+            if boot_image != "mainfwa":
+                self.cli_log_slot_err(slot, "Booted from {:s}, expecting mainfwa".format(boot_image))
+                return False
 
         return True
 
