@@ -29,7 +29,7 @@ elif [[ $2 == "giglio" ]]
 then
     declare -a asic_list=("giglio")
 else
-    declare -a asic_list=("elba" "capri")
+    declare -a asic_list=("giglio" "elba" "capri")
 fi
 
 for asic in ${asic_list[@]}
