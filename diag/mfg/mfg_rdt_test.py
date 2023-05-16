@@ -178,14 +178,15 @@ def main():
         libmfg_utils.cli_inf("#" * 320)
         mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} START".format(loop), level=0)
 
-        # power off all the test mtp
-        libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+        if loop == 1:
+            # power off all the test mtp
+            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
         # power on the mtp chassis
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="ORT-SSH", retry_with_powercycle=True):
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="RDT-SSH", retry_with_powercycle=True):
                 mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -217,7 +218,7 @@ def main():
 
         # load SNs
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start(stage=stage):
                 mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -362,7 +363,7 @@ def main():
         libmfg_utils.cli_inf("#" * 320 + "\n" * 3)
 
         if not result:
-            libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT ORT TEST******")
+            libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT RDT TEST******")
             libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
             break
 
