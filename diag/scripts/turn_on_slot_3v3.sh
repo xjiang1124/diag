@@ -1,26 +1,129 @@
 #!/bin/bash
 
 
-#For and Naples25SWM.  set the SBMUS to the NIC (Not the ALOM)
-mtp_adapter_set_nic_smb() {
+#For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD.
+power_on_naples25_swm_ocp() {
     slot=$1
     CPLD25swm="0x1b"
-    turn_on_hub.sh $1
+    CPLD25ocp="0x1a"
+    #turn_on_hub.sh $1
     cpld_id=$(i2cget -y 0 0x4b 0x80)
     if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25swm ]] #If we get a valid return code, an alom card is there that we need to power up
     then
-        #set SMBUS master to nic
+        # Disable SGMII port on adaptor board
+        swm_dis_sgmii.sh $slot 
+
+        #power it up ASIC via CPLD
         reg1=$(i2cget -y 0 0x4b 0x01)
-        if [[ $(($reg1 & 0x04)) -ne 0x04  ]]
+
+        reg1=$(( $reg1 & 0x18 )) 
+        if [[ $reg1 -eq 0x18 ]]
         then
-            reg1=$(( $reg1 | 0x04))
-	        i2cset -y 0 0x4b 0x1 $reg1
+            echo "Already powered up"
+        else
+            i2cset -y 0 0x4b 0x1 0x14 #enable alom pwr (5V upconverted to 12V to card)
+            #sleep 0.2
+            if [[ $swm_lp_mode -ne 1 ]]
+            then
+                #enable high power mode on SWM CPLD
+                reg1=$(i2cget -y 0 0x4a 0x21)
+                reg1=$(( $reg1 | 0x6 ))
+                i2cset -y 0 0x4a 0x21 $reg1
+                #sleep 0.2
+                i2cset -y 0 0x4b 0x1 0x1C #enable alom + 12V PCIE Edge power
+                echo "Power on done (12V PCIe)"
+            else
+                echo "Power on done (Alom Power)"
+            fi
         fi
+    fi
+
+    if [ $? -eq 0 ] && [[ $cpld_id -eq $CPLD25ocp ]] 
+    then
+        #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
+        #reg1=$(i2cget -y 0 0x4b 0x40 2> /dev/null )
+        reg1=$(i2cget -y 0 0x4b 0x40)
+        reg1=$(( $reg1 | 0x1 ))
+        i2cset -y 0 0x4b 0x40 $reg1
+        #sleep 0.5
+        reg1=$(( $reg1 | 0x3 ))
+        i2cset -y 0 0x4b 0x40 $reg1
+    fi
+
+}
+
+# Enable Elba card JTAG
+elba_enable_jtag() {
+    slot=$1
+
+    if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
+    then
+        reg=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x22)
+        reg=$(expr match "$reg" '.*data=\(0x[0-9|a-f|A-F]*\)')
+        if [[ $reg = "" ]]
+        then
+            echo "Skip turn on Elba MTP JTAG $slot"
+            return
+        fi
+
+        reg=$(( $reg & 0xfc ))
+        smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x22 -data=$reg
     fi
 }
 
+elba_delay() {
+    if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
+    then
+        echo "Elba delay enabled"
+        #sleep 1
+    fi
+}
+
+# Enable NIC MTP Rev3 mode
+enable_nic_mtp_r3() {
+    slot=$1
+    #turn_on_hub.sh $slot
+    sleep 1
+
+    reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21)
+    echo $reg1
+    reg1=$(expr match "$reg1" '.*data=\(0x[0-9|a-f|A-F]*\)')
+    if [[ $reg1 = "" ]]
+    then
+        echo "Empty slot $slot"
+        return
+    fi
+
+    mtp_rev=$(echo $MTP_REV | awk -F"_" '{print $2}')
+    echo "Rev: $mtp_rev"
+    if [[ "$mtp_rev" -lt 3 ]]
+    then
+        echo "MTP Rev 2 detected, clear bit 0"
+        reg1=$(( $reg1 & 0xFE ))
+    else
+        echo "MTP Rev $mtp_rev detected, set bit 0"
+        reg1=$(( $reg1 | 0x1 ))
+    fi
+    reg1=$(( $reg1 | 0x25 ))
+    reg1=$(( $reg1 & 0xBF ))
+    smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
+}
+
+reset_hub() {
+    echo "Reset hub"
+    cpldutil -cpld-wr -addr=0x2 -data=0xf
+    #sleep 0.2
+    cpldutil -cpld-rd -addr=0x2
+    cpldutil -cpld-wr -addr=0x2 -data=0x0
+    #sleep 0.2
+    cpldutil -cpld-rd -addr=0x2
+    echo "Reset hub done"
+}
+
 control_slot() {
+    v12_addr="0x10"
     v3v3_addr="0x12"
+    perst_addr="0x16"
     
     if [[ $low_high == "high" ]]
     then
@@ -35,10 +138,10 @@ control_slot() {
     fi
 
     printf "Setting $low_high power control to $on_off with 0x%x\n" $wValue
-
+       
     cpldutil -cpld-rd -addr=$v3v3_addr
     v3v3=$?
-
+   
     if [[ $on_off == "on" ]]
     then
         wValue=$(( ~$wValue ))
@@ -46,16 +149,18 @@ control_slot() {
         v3v3=$(( $v3v3 & $wValue ))
     
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
-        sleep 0.2
-    
+ 
+        elba_delay
     else
+        v12=$(( $v12 | $wValue ))
         v3v3=$(( $v3v3 | $wValue ))
+        perst=$(( $perst | $wValue ))
+
         cpldutil -cpld-wr -addr=$v3v3_addr -data=$v3v3
         sleep 0.2
     fi
     
     cpldutil -cpld-rd -addr=$v3v3_addr
-
 }
 
 control_all() {
@@ -64,22 +169,27 @@ control_all() {
         echo "Turning on all slots"
         cpldutil -cpld-wr -addr=0x12 -data=0
         cpldutil -cpld-wr -addr=0x13 -data=0
-        sleep 0.5
+        
+        elba_delay
 
         for i in {1..10}
         do
-            mtp_adapter_set_nic_smb $i   #Enable Nic SMBUS master on naples25swm
+            reset_hub
+            turn_on_hub.sh $i
+            power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
+            enable_nic_mtp_r3 $i
+            elba_enable_jtag $i
         done
+
+        echo "All slots turned on"
     
     else
         echo "Turning off all slots"
         cpldutil -cpld-wr -addr=0x12 -data=0xff
         cpldutil -cpld-wr -addr=0x13 -data=0xff
-        sleep 0.5
     
         echo "All slots turned off"
     fi
-
     cpldutil -cpld-rd -addr=0x12
     cpldutil -cpld-rd -addr=0x13
 }
@@ -107,20 +217,28 @@ usage() {
 
 if [[ $1 == "show" ]]
 then
-    cpldutil -cpld-rd -addr=0x10
-    cpldutil -cpld-rd -addr=0x11
     cpldutil -cpld-rd -addr=0x12
     cpldutil -cpld-rd -addr=0x13
-    cpldutil -cpld-rd -addr=0x16
-    cpldutil -cpld-rd -addr=0x17
     exit
 fi
 
-if [[ $# -ne 2 ]] 
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
 then
     usage
     exit
 fi
+
+swm_lp_mode=0
+if [[ $# -eq 3 ]]
+then
+    echo "3rd arg = $3"
+    swm_lp_mode=$3
+    echo "swm_lp_mode = $swm_lp_mode"
+fi
+
+mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+mtp_id_str1=($mtp_id_str)
+mtp_id=${mtp_id_str1[-1]}
 
 if [[ $2 == "all" ]]
 then
@@ -160,8 +278,13 @@ else
 
     for slot in $slot_list
     do
-       mtp_adapter_set_nic_smb $slot   #Enable naples25swm SMBUS master
+        reset_hub
+        turn_on_hub.sh $slot
+        power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
+        enable_nic_mtp_r3 $slot
+        elba_enable_jtag $slot
     done
+
     
     #control_slot $1 $2
 fi

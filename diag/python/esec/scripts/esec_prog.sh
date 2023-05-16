@@ -34,9 +34,12 @@ enroll_puf () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        tclsh ./esec_prog_giglio.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     else
         tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     fi
@@ -45,6 +48,7 @@ enroll_puf () {
 hsm_sign_ek () {
     cd $DIAG_HOME/diag/tools/pki
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
+
 
     echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
 
@@ -60,6 +64,8 @@ hsm_sign_ek () {
     else
         id="v1"
     fi
+    CARD_TYPE=$(echo $CARD_TYPE | sed "s/_//")
+    echo "id: $id"
     python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id
 
 
@@ -102,9 +108,12 @@ otp_init () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        tclsh ./esec_prog_giglio.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     else
         tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     fi
@@ -116,9 +125,12 @@ post_check () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        tclsh ./esec_prog_giglio.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     else
         tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     fi
@@ -130,9 +142,12 @@ show_status () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         tclsh ./esec_prog_elba.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        tclsh ./esec_prog_giglio.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     else
         tclsh ./esec_prog.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     fi
@@ -172,7 +187,7 @@ img_prog () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         echo "GIGLIO"
-        tcl_file="./esec_prog_elba.tcl"
+        tcl_file="./esec_prog_giglio.tcl"
         esec_img=$giglio_esec_img
         host_img=$giglio_host_img
     else
@@ -215,10 +230,14 @@ efuse_prog () {
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" ]]
     then
         echo "ELBA"
         tcl_file="./esec_prog_elba.tcl"
+    elif [[ $asic_type == "GIGLIO" ]]
+    then
+        echo "GIGLIO"
+        tcl_file="./esec_prog_giglio.tcl"
     else
         echo "Unsupported card type $card_type"
         return 1
