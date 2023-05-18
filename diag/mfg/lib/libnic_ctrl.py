@@ -4,6 +4,7 @@ import libmfg_utils
 import re
 import json
 import traceback
+import pexpect
 
 from datetime import datetime
 from libdefs import NIC_Type
@@ -152,6 +153,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         info_buf = self._nic_handle.before
+        info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', info_buf)[0]
         self.nic_set_cmd_buf(self._nic_handle.before)
 
         return info_buf
@@ -340,7 +342,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             info_buf = None
         else:
-            info_buf = self._nic_handle.before
+            info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', self._nic_handle.before)[0]
 
         cmd = "exit"
         if not self.mtp_exec_cmd(cmd):
@@ -5001,7 +5003,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
 
                 if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
@@ -5075,7 +5077,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
 
                 if 'extosa' not in fw_info:
                     self.nic_set_err_msg("Missing extosa image")
