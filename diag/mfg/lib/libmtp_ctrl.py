@@ -933,7 +933,7 @@ class mtp_ctrl():
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
             prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1='{:s}'".format(prompt_str))
+        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}]"+ prompt_str + "'")
 
         # refresh
         handle.sendline("uname")
@@ -3261,7 +3261,7 @@ class mtp_ctrl():
             if software_pn != "90-0020-0003":
                 return False
         elif naples_pn[0:7] == "68-0089":     #ORTANO2 SOLO Tall Heat Sink
-            if software_pn != "90-0020-0004":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0090":     #ORTANO2 SOLO MICROSOFT
             if software_pn != "90-0020-0003":

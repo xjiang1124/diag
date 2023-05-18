@@ -175,6 +175,9 @@ class nic_ctrl():
                 break
         cmd_buf = self._nic_handle.before
 
+        if not self.nic_prompt_cfg():
+            return False
+
         self._nic_handle.sendline(nic_rst_cmd)
         # Here ssh should disconnected automatically, unless dontwait=True..in which case kill console ourselves and powercycle.
         if not dontwait:
@@ -212,7 +215,8 @@ class nic_ctrl():
             else:
                 break
         cmd_buf = self._nic_handle.before
-
+        if not self.nic_prompt_cfg():
+            return False
         self._nic_handle.sendline(nic_rst_cmd)
         nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
             
@@ -242,6 +246,9 @@ class nic_ctrl():
                 continue
             else:
                 break
+
+        if not self.nic_prompt_cfg():
+            return False
 
         ret = True
         cmd_list = nic_cmd_list[:]
@@ -294,6 +301,9 @@ class nic_ctrl():
                 continue
             else:
                 break
+
+        if not self.nic_prompt_cfg():
+            return False
 
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], tout)
@@ -480,6 +490,11 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach_fast()
                 return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
 
         return True
 
