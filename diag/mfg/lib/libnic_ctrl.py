@@ -156,6 +156,34 @@ class nic_ctrl():
 
         return info_buf
 
+    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """
+        try to set vaiable PS1 to '[$(date +%Y-%m-%d_%H:%M:%S)]\u# '
+        return False if timeout, otherwise return True
+        """
+
+        self._nic_handle.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u' + self._nic_con_prompt + '"')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [("root" + self._nic_con_prompt)], timeout)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        return True
+
+    def nic_sync_mtp_timestamp(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """
+        try to set nic system time
+        this function only called when console login, since for ssh login, nic system time will set by nic_test.py
+        return False if timeout, otherwise return True
+        """
+        currentTime = datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+        self._nic_handle.sendline("date -s " + currentTime)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        return True
 
     def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY, dontwait=False):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
@@ -442,6 +470,11 @@ class nic_ctrl():
                 self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
 
         return True
 
