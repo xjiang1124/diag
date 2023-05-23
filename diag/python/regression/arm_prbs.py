@@ -66,11 +66,15 @@ class arm_prbs:
             return -1
  
         ret = self.nic_con.uart_session_cmd(session, "sync")
+        if os.environ['ASIC_TYPE'] == "GIGLIO":
+            asic_name = "giglio"
+        else:
+            asic_name = "elba"
         if mode == "PCIE":
-            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_PRBS_PCIE.log"
+            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/{}_PRBS_PCIE.log".format(asic_name)
             ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["PCIE PRBS PASSED", "FAILED"], False)
         elif mode == "ETH":
-            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_PRBS_MX.log"
+            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/{}_PRBS_MX.log".format(asic_name)
             ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["MX PRBS PASSED", "FAILED"], False)
         else:
             print "Invalid test type for checking result!!!"

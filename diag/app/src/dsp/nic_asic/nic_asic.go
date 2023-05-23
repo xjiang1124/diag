@@ -40,8 +40,8 @@ func Nic_AsicPcie_PrbsHdl(argList []string) {
         return
     }
 
-    if ( asicType == "ELBA" ) {
-        err = elba.Prbs("PCIE", *polyPtr, *durationPtr, *intLpbkPtr)
+    if ( asicType != "CAPRI" ) {
+        err = elba.Prbs("PCIE", *polyPtr, *durationPtr, *intLpbkPtr, asicType)
     } else {
         err = capri.Prbs("PCIE", *polyPtr, *durationPtr)
     }
@@ -73,8 +73,8 @@ func Nic_AsicEth_PrbsHdl(argList []string) {
         return
     }
 
-    if ( asicType == "ELBA" ) {
-        err = elba.Prbs("ETH", *polyPtr, *durationPtr, *intLpbkPtr)
+    if ( asicType != "CAPRI" ) {
+        err = elba.Prbs("ETH", *polyPtr, *durationPtr, *intLpbkPtr, asicType)
     } else {
         err = capri.Prbs("ETH", *polyPtr, *durationPtr)
     }
@@ -105,7 +105,7 @@ func Nic_Asic_L1Hdl(argList []string) {
         return
     }
 
-    if ( asicType == "ELBA" ) {
+    if ( asicType != "CAPRI" ) {
         err = elba.L1(*modePtr, *snPtr)
     } else {
         dcli.Println("i", "Unsupported ASIC type", asicType)

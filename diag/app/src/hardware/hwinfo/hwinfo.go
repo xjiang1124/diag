@@ -668,6 +668,10 @@ func init() {
     i2cHubMap["LACONA32"]       = naples100I2cHubMap
     i2cHubMap["POMONTEDELL"]    = naples100I2cHubMap
     i2cHubMap["POMONTE"]        = naples100I2cHubMap
+    //===============================
+    // Giglio
+    i2cHubMap["GINESTRA_D4"]        = naples100I2cHubMap
+    i2cHubMap["GINESTRA_D5"]        = naples100I2cHubMap
 
     //===============================
     // Taormina

@@ -216,7 +216,7 @@ func ReadVendorID(devName string) (devID byte, err int) {
     }
     defer smbus.Close()
 
-    vendorId, err = smbus.ReadByte(devName, VENDOR_ID)
+    vendorId, err = smbus.ReadByte(devName, VENDOR_ID_REG)
     return vendorId, err
 }
 
