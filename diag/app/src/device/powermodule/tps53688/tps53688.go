@@ -116,6 +116,17 @@ func ReadDeviceID(devName string) (devID uint64, err int) {
     return devID, err
 }
 
+func ReadPmbusRev(devName string) (rev uint8, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    rev, err = pmbus.ReadByte(devName, PMBUS_REVISION)
+    return rev, err
+}
+
 //Read target voltage from VOUT COMMAND
 func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
     var VCMD uint16
