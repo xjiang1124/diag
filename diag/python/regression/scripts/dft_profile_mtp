@@ -18,7 +18,8 @@ if [ -n "$BASH_VERSION" ]; then
     # remove color after replacement
     sed -i "s#PS1=\s*'.*'#PS1='[\\\D{%Y-%m-%d}_\\\t]\$\{debian_chroot:+\(\$debian_chroot\)\}\\\u@\\\h:\\\w\\\\$ '#g" "$HOME/.bashrc"
     # xterm before replacement: PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    sed -i 's#PS1=\s*".*"#PS1="[\\\D{%Y-%m-%d}_\\t]\\[\\e]0;\$\{debian_chroot:+\(\$debian_chroot\)\}\\u@\\\h: \\\w\\a\\\]\$PS1"#g' "$HOME/.bashrc"
+    # no need to replace PS1 for xterm since it referenced PS1 env variable, revert it back.
+    sed -i 's#PS1=\s*".*"#PS1="\\[\\e]0;\$\{debian_chroot:+\(\$debian_chroot\)\}\\u@\\\h: \\\w\\a\\\]\$PS1"#g' "$HOME/.bashrc"
 	. "$HOME/.bashrc"
     fi
 fi
