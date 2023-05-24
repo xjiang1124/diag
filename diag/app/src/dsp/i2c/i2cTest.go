@@ -76,15 +76,15 @@ func testLTC3888(devName string) (err int) {
 }
 
 func testTps53688(devName string) (err int) {
-    devID, err := tps53688.ReadDeviceID(devName)
+    pmbusRev, err := tps53688.ReadPmbusRev(devName)
 
     if err != errType.SUCCESS {
-        dcli.Println("f", devName, " Read device ID failed!")
+        dcli.Println("f", devName, " Read PMBUS REV failed!")
         return
     }
 
-    if (devID != tps53688.IC_DEVICE_ID_VALUE) {
-        dcli.Println("F", devName, " Invalid Device ID: expected", tps53688.IC_DEVICE_ID_VALUE, "read", devID)
+    if (pmbusRev != tps53688.PMBUS_REV_VALUE) {
+        dcli.Println("F", devName, " Invalid PMBUS Rev: expected", tps53688.PMBUS_REV_VALUE, "read", pmbusRev)
         return errType.FAIL
     }
     return

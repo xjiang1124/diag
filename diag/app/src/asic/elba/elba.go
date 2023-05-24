@@ -22,7 +22,7 @@ type TResult struct {
     TestResult string `yaml:"TEST_RESULT"`
 }
 
-func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
+func Prbs(mode string, poly string, duration int, intLpbk int, asicType string) (err int) {
     var cmd string
     var filename string
     var errGo error
@@ -42,7 +42,7 @@ func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
         return
     }
 
-    dcli.Println("i", mode, strconv.Itoa(duration), intLpbk)
+    dcli.Println("i", mode, strconv.Itoa(duration), intLpbk, asicType)
 
     errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
     if errGo != nil {
@@ -58,7 +58,11 @@ func Prbs(mode string, poly string, duration int, intLpbk int) (err int) {
         dcli.Println("i", "Yaml file deleted")
     }
 
-    cmd = "/data/nic_arm/elba/asic_src/ip/cosim/tclsh/nic_prbs.sh"
+    if asicType == "ELBA" {
+        cmd = "/data/nic_arm/elba/asic_src/ip/cosim/tclsh/nic_prbs.sh"
+    } else {
+        cmd = "/data/nic_arm/giglio/asic_src/ip/cosim/tclsh/nic_prbs.sh"
+    }
     if mode == "PCIE" {
         passSign := "PCIE PRBS PASSED"
         failSign := "PCIE PRBS FAILED"
@@ -163,7 +167,7 @@ func SnakeAndPrbsCheck(testType string) (err int) {
     return
 }
 
-func Snake(mode string, duration int, intLpbk int, verbose bool, snakeNum int) (err int) {
+func Snake(mode string, duration int, intLpbk int, verbose bool, snakeNum int, asicType string) (err int) {
     var filename string
     var errGo error
 
@@ -192,7 +196,11 @@ func Snake(mode string, duration int, intLpbk int, verbose bool, snakeNum int) (
         verboseStr = "1"
     }
 
-    err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr, strconv.Itoa(snakeNum))
+    if asicType == "ELBA" {
+        err = runCmd.Run(passSign, failSign, cmdStr, "../elba/elb_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr, strconv.Itoa(snakeNum))
+    } else {
+        err = runCmd.Run(passSign, failSign, cmdStr, "../giglio/gig_arm_snake.tcl", mode, strconv.Itoa(duration), strconv.Itoa(intLpbk), verboseStr, strconv.Itoa(snakeNum))
+    }
 
     if err != errType.SUCCESS {
         dcli.Println("e", "Snake Test Failed!")
