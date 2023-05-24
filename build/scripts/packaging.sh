@@ -102,6 +102,14 @@ do
             sed -i 's/ASIC_DIR_SUB_TOP=\$ASIC_DIR_TOP\/elba/ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP\/giglio/' $TEMP_DIR/../start_diag.sh
             echo "export ASIC_TYPE=GIGLIO" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
         fi
+        if [[ $asic == "elba" ]]
+        then
+            echo "export ASIC_TYPE=ELBA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "capri" ]]
+        then
+            echo "export ASIC_TYPE=CAPRI" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_mtp.so $TEMP_DIR/tools/.
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_turbo.so $TEMP_DIR/tools/.
         cp $TOP_DIR/diag/python/regression/scripts/start_diag_tor.sh $TEMP_DIR/..
