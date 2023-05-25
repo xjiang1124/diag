@@ -58,6 +58,7 @@ const (
     READ_POUT                 = 0x96
     READ_PIN                  = 0x97
     PMBUS_REVISION            = 0x98
+        PMBUS_REV_VALUE           = 0x33
     MFR_ID                    = 0x99
     MFR_MODEL                 = 0x9A
     MFR_REVISION              = 0x9B
@@ -65,6 +66,7 @@ const (
     IC_DEVICE_ID              = 0xAD
         IC_DEVICE_ID_VALUE        = 0x544953688000
     IC_DEVICE_REV             = 0xAE
+        IC_DEVICE_REV_VALUE       = 0x3
     USER_DATA_01              = 0xB1
     USER_DATA_02              = 0xB2
     USER_DATA_03              = 0xB3

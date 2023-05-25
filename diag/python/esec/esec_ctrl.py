@@ -792,7 +792,10 @@ PRIVEK <ek.sk>"""
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
         nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
 
-        cmd = "./diag.exe gig_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+        if card_type == "GINESTRA_D4" or card_type == "GINESTRA_D5":
+            cmd = "./diag.exe gig_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+        else:
+            cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
         ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
 
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")

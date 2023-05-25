@@ -38,7 +38,10 @@ class arm_l1:
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
             self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
             self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
-            self.nic_con.uart_session_cmd(session, "./diag.exe ../elba/elb_arm_l1.tcl {} {} 1 &".format(sn, mode))
+            if os.environ['ASIC_TYPE'] == "GIGLIO":
+                self.nic_con.uart_session_cmd(session, "./diag.exe ../giglio/gig_arm_l1.tcl {} {} 1 &".format(sn, mode))
+            else:
+                self.nic_con.uart_session_cmd(session, "./diag.exe ../elba/elb_arm_l1.tcl {} {} 1 &".format(sn, mode))
             self.nic_con.uart_session_stop(session)
 
             print "=== NIC arm L1 on slot {} started ===".format(slot)
@@ -67,7 +70,10 @@ class arm_l1:
             return -1
  
         ret = self.nic_con.uart_session_cmd(session, "sync")
-        cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_arm_l1_test.log"
+        if os.environ['ASIC_TYPE'] == "GIGLIO":
+            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/giglio_arm_l1_test.log"
+        else:
+            cmd = "tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/elba_arm_l1_test.log"
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 5, "\#", ["ARM L1 TESTS PASSED", "FAILED"], False)
         if ret == 0:
             print "ARM L1 TESTS PASSED"
