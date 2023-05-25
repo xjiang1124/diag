@@ -153,7 +153,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         info_buf = self._nic_handle.before
-        info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', info_buf)[0]
+        info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]', info_buf)[0]
         self.nic_set_cmd_buf(self._nic_handle.before)
 
         return info_buf
