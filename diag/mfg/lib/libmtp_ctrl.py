@@ -3267,7 +3267,7 @@ class mtp_ctrl():
             if software_pn != "90-0020-0003":
                 return False
         elif naples_pn[0:7] == "68-0092":     #ORTANO2 SOLO Alibaba
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0022-0001":
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
             if software_pn != "90-0020-0003":
@@ -7640,6 +7640,8 @@ class mtp_ctrl():
                     else:
                         self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
                         return False
+                elif nic_type == NIC_Type.ORTANO2SOLOALI and partition in ["mainfwa","mainfwb"]:
+                    self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
                 else:
                     self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
             except KeyError as e:
@@ -7673,6 +7675,10 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting extdiag".format(boot_image))
                 return False
         elif nic_type == NIC_Type.ORTANO2ADIIBM:
+            if boot_image != "goldfw":
+                self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
+                return False
+        elif nic_type == NIC_Type.ORTANO2SOLOALI:
             if boot_image != "goldfw":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
                 return False

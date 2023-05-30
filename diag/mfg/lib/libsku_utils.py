@@ -278,6 +278,14 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2ADICR
     elif "DSC2-2Q200-32R32F64P-R" in pn:
         product_name = NIC_Type.ORTANO2
+    elif "DSC2-2Q200-32R32F64P-M5" in pn:
+        product_name = NIC_Type.ORTANO2ADICRMSFT
+    elif "DSC2-2Q200-32R32F64P-M4" in pn:
+        product_name = NIC_Type.ORTANO2SOLOMSFT
+    elif "68-0092-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLOALI
+    elif "DSC2-2Q200-32R32F64P-S4" in pn:
+        product_name = NIC_Type.ORTANO2SOLOALI
     elif "DSC2-2Q200-32R32F64P" in pn:
         product_name = NIC_Type.ORTANO2
     elif "68-0015-02" in pn:
@@ -301,8 +309,6 @@ def get_product_name_from_pn(pn):
     elif "68-0049-03" in pn:
         product_name = NIC_Type.ORTANO2ADICR
     elif "68-0091-01" in pn:
-        product_name = NIC_Type.ORTANO2ADICRMSFT
-    elif "DSC2-2Q200-32R32F64P-M5" in pn:
         product_name = NIC_Type.ORTANO2ADICRMSFT
     elif "68-0029-01" in pn:
         product_name = NIC_Type.ORTANO2INTERP
@@ -348,12 +354,6 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.ORTANO2SOLOORCTHS
     elif "68-0090-01" in pn:
         product_name = NIC_Type.ORTANO2SOLOMSFT
-    elif "DSC2-2Q200-32R32F64P-M4" in pn:
-        product_name = NIC_Type.ORTANO2SOLOMSFT
-    elif "68-0092-01" in pn:
-        product_name = NIC_Type.ORTANO2SOLOALI
-    elif "SC2-2Q200-32R32F64P-S" in pn:
-        product_name = NIC_Type.ORTANO2SOLOALI
     else:
         product_name = NIC_Type.UNKNOWN
 
