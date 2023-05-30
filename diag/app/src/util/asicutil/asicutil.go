@@ -92,7 +92,7 @@ func main() {
 
     if *snakePostPtr == true {
         if asicType == "ELBA" || asicType == "GIGLIO" {
-            elba.SnakePost()
+            elba.SnakePost(asicType)
         } else if asicType == "CAPRI"{
             capri.SnakePost(*modePtr)
         } else {

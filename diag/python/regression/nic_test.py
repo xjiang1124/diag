@@ -622,9 +622,13 @@ class nic_test:
             cmd = "/data/nic_util/asicutil -prbs_chk"
         else:
             cmd = "/data/nic_util/asicutil -snake_chk"
+        if os.environ['ASIC_TYPE'] == "GIGLIO":
+            asic_name = "giglio"
+        else:
+            asic_name = "elba"
 
         if test_type == "snake":
-            session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
+            session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_{}.log".format(asic_name))
 
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_cmd(session, "sync", 15)

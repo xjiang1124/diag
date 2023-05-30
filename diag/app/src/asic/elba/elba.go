@@ -213,11 +213,11 @@ func Snake(mode string, duration int, intLpbk int, verbose bool, snakeNum int, a
 
     dcli.Println("i", "Snake Done")
 
-    err = SnakePost()
+    err = SnakePost(asicType)
     return
 }
 
-func SnakePost() (err int) {
+func SnakePost(asicType string) (err int) {
     var logFn string
     var resultStr string
     var errGo error
@@ -225,7 +225,11 @@ func SnakePost() (err int) {
 
     testDone := false
 
-    logFn = "snake_elba.log"
+    if asicType == "ELBA" {
+        logFn = "snake_elba.log"
+    } else {
+        logFn = "snake_giglio.log"
+    }
 
     errGo = os.Chdir("/data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
     if errGo != nil {

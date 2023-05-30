@@ -87,8 +87,11 @@ set log_fn "ddr_bist_sn_${sn}_slot_${slot}_${cur_time}.log"
 plog_start $log_fn
 
 set in_err [plog_get_err_count]
-
-gig_card_rst $port $slot1 hod_1100 $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 1 $vdd_margin_pct $arm_margin_pct $margin_pct
+set vmarg_en 0
+if {$vmarg != "normal"} {
+    set vmarg_en 1
+}
+gig_card_rst $port $slot1 hod_1100 $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 $vmarg_en $vdd_margin_pct $arm_margin_pct $margin_pct
 gig_platform
 gig_ddr_init_ddr $::ddr5 $ddr_freq
 gig_ddr_bist
