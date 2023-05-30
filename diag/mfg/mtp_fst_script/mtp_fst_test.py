@@ -214,7 +214,6 @@ def main():
                 NIC_Type.ORTANO2ADICR,
                 NIC_Type.ORTANO2SOLOORCTHS,
                 NIC_Type.ORTANO2SOLOMSFT,
-                NIC_Type.ORTANO2SOLOALI,
                 NIC_Type.ORTANO2ADICRMSFT
                 ):
                 test_ROT = True
