@@ -1627,6 +1627,7 @@ if __name__ == "__main__":
     parser.add_argument("-hardcode", "--hardcode", help="DDR hardcode setting", action='store_true')
     parser.add_argument("-ddr_speed", "--ddr_speed", help="DDR speed", type=int, default=3200)
     parser.add_argument("-pc_mode", "--pc_mode", help="Power cycle mode; board: whole board PC; gpio3: GPIO3 PC", type=str, default="board")
+    parser.add_argument("-num_retry", "--num_retry", help="Number of retries", type=int, default=2)
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1677,7 +1678,7 @@ if __name__ == "__main__":
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port, env=args.skip_env)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port, args.num_retry, env=args.skip_env)
         sys.exit()
 
     if args.pwr_cycle_test == True:
