@@ -496,10 +496,11 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2SOLOALI"] = "0x1"
     fail_cpld_dat["ORTANO2SOLOALI"] = "0x05"
     fea_cpld_img["ORTANO2SOLOALI"] = "naples200_ortano2S_fea_rev1_0_1_10252022.bin"
-    diagfw_img["ORTANO2SOLOALI"] = "elba_diagfw_1.51.0-G-34_2023.05.03.tar"
-    diagfw_dat["ORTANO2SOLOALI"] = "05-02-2023"
-    goldfw_img["ORTANO2SOLOALI"] = "elba_goldfw_1.51.0-G-34_2023.05.03.tar"
-    goldfw_dat["ORTANO2SOLOALI"] = "05-02-2023"
+    diagfw_img["ORTANO2SOLOALI"] = "elba_diagfw_1.51.0-G-37_2023.05.17.tar"
+    diagfw_dat["ORTANO2SOLOALI"] = "05-17-2023"
+    goldfw_img["ORTANO2SOLOALI"] = "elba_goldfw_1.51.0-G-37_2023.05.17.tar"
+    goldfw_dat["ORTANO2SOLOALI"] = "05-17-2023"
+    uboot_img["ORTANO2SOLOALI"] = "boot0.1.51.0-G-37.img"
 
     # ORTANO2ADI CR
     cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
@@ -923,7 +924,7 @@ CONSOLE_DDR_BIST_NIC_LIST = [
     NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT
     ] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
 DDR_HARCODED_TRAINING_NIC_LIST = []
-NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]
+NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2SOLOALI]
 
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"

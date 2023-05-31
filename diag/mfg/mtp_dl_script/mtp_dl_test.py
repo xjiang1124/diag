@@ -75,7 +75,7 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
     dsp = FF_Stage.FF_DL
     testlist = ["QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
@@ -614,7 +614,7 @@ def main():
             uboota_img_file = ""
             ubootb_img_file = ""
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
+            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
                 uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboota_img[nic_type]
