@@ -678,7 +678,7 @@ class nic_test:
             time.sleep(interval)
             
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False, num_retry=2):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -687,7 +687,7 @@ class nic_test:
         #slot_list = ",".join(nic_list)
         print "slot_list:", slot_list
         #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
-        self.setup_env_multi_top(slot_list, False, 30, False, True, False)
+        self.setup_env_multi_top(slot_list, False, 30, False, True, False, numRetry=num_retry)
 
         test_result = OrderedDict()
         # Start snake
@@ -1646,7 +1646,7 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si, num_retry=args.num_retry)
         sys.exit()
 
     if args.prbs == True and (args.asic_type == "elba" or args.asic_type == "giglio"):
