@@ -5418,7 +5418,11 @@ class nic_ctrl():
         if self._nic_type not in ELBA_NIC_TYPE_LIST and self._nic_type not in GIGLIO_NIC_TYPE_LIST:
             return False
         
-        cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+        elif self._nic_type in GIGLIO_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_GIGLIO_PROG_FMT.format(self._slot+1)
+
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_L1_ESEC_PROG_DELAY):
             return False
 

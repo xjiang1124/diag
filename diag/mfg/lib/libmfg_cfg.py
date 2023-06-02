@@ -558,37 +558,35 @@ class NIC_IMAGES:
     goldfw_img["68-0091"] = "elba_goldfw_1.51.0-G-34_2023.05.03.tar"
     goldfw_dat["68-0091"] = "05-02-2023"
 
-    cpld_img["GINESTRA_D4"] = "naples200_ortano2_rev3_9_07292021.bin"
-    cpld_ver["GINESTRA_D4"] = "0x3"
-    cpld_dat["GINESTRA_D4"] = "0x09"
-    sec_cpld_img["GINESTRA_D4"] = "naples200_ortano2_rev3_9_07292021.bin"
-    sec_cpld_ver["GINESTRA_D4"] = "0x3"
-    sec_cpld_dat["GINESTRA_D4"] = "0x09"
-    fail_cpld_img["GINESTRA_D4"] = "naples200_ortano2_failsafe_rev3_A_04202022.bin"
-    fail_cpld_ver["GINESTRA_D4"] = "0x3"
-    fail_cpld_dat["GINESTRA_D4"] = "0x0A"
-    fea_cpld_img["GINESTRA_D4"] = "naples200_ortano2_fea_04272021.bin"
-    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
-    diagfw_dat["GINESTRA_D4"] = "10-27-2022"
-    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
-    goldfw_dat["GINESTRA_D4"] = "10-26-2022"
-    uboot_img["GINESTRA_D4"] = "boot0.rev14.img"
+    cpld_img["GINESTRA_D4"] = "ginestra_d4_working_04282023.bin"
+    cpld_ver["GINESTRA_D4"] = "0x1"
+    cpld_dat["GINESTRA_D4"] = "0x00"
+    sec_cpld_img["GINESTRA_D4"] = "ginestra_d4_working_04282023.bin"
+    sec_cpld_ver["GINESTRA_D4"] = "0x1"
+    sec_cpld_dat["GINESTRA_D4"] = "0x00"
+    fail_cpld_img["GINESTRA_D4"] = "ginestra_d4_failsafe_042182023.bin"
+    fail_cpld_ver["GINESTRA_D4"] = "0x1"
+    fail_cpld_dat["GINESTRA_D4"] = "0x00"
+    fea_cpld_img["GINESTRA_D4"] = "ginestra_impl1.bin"
+    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
+    diagfw_dat["GINESTRA_D4"] = "05-12-2023"
+    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
+    goldfw_dat["GINESTRA_D4"] = "05-12-2023"
 
-    cpld_img["GINESTRA_D5"] = "naples200_ortano2_rev3_9_07292021.bin"
-    cpld_ver["GINESTRA_D5"] = "0x3"
-    cpld_dat["GINESTRA_D5"] = "0x09"
-    sec_cpld_img["GINESTRA_D5"] = "naples200_ortano2_rev3_9_07292021.bin"
-    sec_cpld_ver["GINESTRA_D5"] = "0x3"
-    sec_cpld_dat["GINESTRA_D5"] = "0x09"
-    fail_cpld_img["GINESTRA_D5"] = "naples200_ortano2_failsafe_rev3_A_04202022.bin"
-    fail_cpld_ver["GINESTRA_D5"] = "0x3"
-    fail_cpld_dat["GINESTRA_D5"] = "0x0A"
-    fea_cpld_img["GINESTRA_D5"] = "naples200_ortano2_fea_04272021.bin"
-    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.51.0-G-9.2022.11.17.tar"
-    diagfw_dat["GINESTRA_D5"] = "10-27-2022"
-    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
-    goldfw_dat["GINESTRA_D5"] = "10-26-2022"
-    uboot_img["GINESTRA_D5"] = "boot0.rev14.img"
+    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_working.bin"
+    cpld_ver["GINESTRA_D5"] = "0x1"
+    cpld_dat["GINESTRA_D5"] = "0x00"
+    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_working.bin"
+    sec_cpld_ver["GINESTRA_D5"] = "0x1"
+    sec_cpld_dat["GINESTRA_D5"] = "0x00"
+    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_failsafe.bin"
+    fail_cpld_ver["GINESTRA_D5"] = "0x1"
+    fail_cpld_dat["GINESTRA_D5"] = "0x00"
+    fea_cpld_img["GINESTRA_D5"] = "ginestra_impl1.bin"
+    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
+    diagfw_dat["GINESTRA_D5"] = "05-12-2023"
+    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
+    goldfw_dat["GINESTRA_D5"] = "05-12-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -915,7 +913,7 @@ GIGLIO_NIC_TYPE_LIST = [
 
 PSLC_MODE_TYPE_LIST = [
     NIC_Type.VOMERO2, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
-    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT
+    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
     ]
 FPGA_TYPE_LIST = [NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32]
 TWO_OOB_MGMT_PORT_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL]

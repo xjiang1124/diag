@@ -82,7 +82,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and card_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
+    if card_type in (ELBA_NIC_TYPE_LIST) and card_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
                                                                                                         NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]):
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
@@ -296,7 +296,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
+    if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         if loopback:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
@@ -832,6 +832,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     for slot in nic_list:
         logfile_list = list()
         path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if "SNAKE_HBM" in mtp_para_test_list:
             logfile_list.append(path+"snake_hbm.log")
         if "SNAKE_PCIE" in mtp_para_test_list:
@@ -839,14 +840,26 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
         if "PRBS_ETH" in mtp_para_test_list:
             logfile_list.append(path+"prbs_eth.log")
         if "SNAKE_ELBA" in mtp_para_test_list:
-            logfile_list.append(path+"snake_elba.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"snake_giglio.log")
+            else:
+                logfile_list.append(path+"snake_elba.log")
             logfile_list.append("/data/nic_util/asicutil*log")
         if "ETH_PRBS" in mtp_para_test_list:
-            logfile_list.append(path+"elba_PRBS_MX.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_PRBS_MX.log")
+            else:
+                logfile_list.append(path+"elba_PRBS_MX.log")
         if "ARM_L1" in mtp_para_test_list:
-            logfile_list.append(path+"elba_arm_l1_test.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_arm_l1_test.log")
+            else:
+                logfile_list.append(path+"elba_arm_l1_test.log")
         if "PCIE_PRBS" in mtp_para_test_list:
-            logfile_list.append(path+"elba_PRBS_PCIE.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_PRBS_PCIE.log")
+            else:
+                logfile_list.append(path+"elba_PRBS_PCIE.log")
             logfile_list.append("/data/nic_util/asicutil*log")
         if "DDR_BIST" in mtp_para_test_list:
             logfile_list.append(path+"arm_ddr_bist_0.log")
@@ -1666,7 +1679,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
+                        if nic_type not in (ELBA_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]
