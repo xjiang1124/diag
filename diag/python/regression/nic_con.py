@@ -20,14 +20,14 @@ class nic_con:
         self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.fmt_change_rate = "stty speed {}"
 
-    def uart_session_start_login(self, session, baud=115200):
+    def uart_session_start_login(self, session, baud=115200, timeout=15):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print "ite: ", ite
-            timeout = 15
+            #timeout = 15
 
             try:
                 #session.expect("Terminal ready")
@@ -62,12 +62,12 @@ class nic_con:
 
         return ret
 
-    def uart_session_start(self, session, baud=115200):
+    def uart_session_start(self, session, baud=115200, numRetry=10):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
-        for ite in range(10):
+        for ite in range(numRetry):
             print "ite: ", ite
             timeout = 1
 
