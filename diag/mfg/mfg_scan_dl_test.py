@@ -78,7 +78,7 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
     dsp = FF_Stage.FF_DL
     testlist = ["QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
+    if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
@@ -136,6 +136,8 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
         testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
+    if nic_type in GIGLIO_NIC_TYPE_LIST:
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skipped_test in skip_testlist:
         if skipped_test in testlist:
             testlist.remove(skipped_test)
@@ -495,7 +497,7 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+            if nic_type in (ELBA_NIC_TYPE_LIST, GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
@@ -798,7 +800,7 @@ def main():
         uboota_img_file = ""
         ubootb_img_file = ""
         uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-        if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
+        if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
             uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
         if nic_type == NIC_Type.ORTANO2ADIIBM:
             uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboota_img[nic_type]
@@ -1145,6 +1147,8 @@ def main():
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)

@@ -3275,6 +3275,12 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
             if software_pn != "90-0020-0003":
                 return False
+        elif naples_pn[0:7] == "68-0074":     #GINESTRA_D4
+            if software_pn != "90-0023-0001":
+                return False
+        elif naples_pn[0:7] == "68-0075":     #GINESTRA_D5
+            if software_pn != "90-0023-0001":
+                return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False
@@ -3595,7 +3601,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_cpld_feature_row(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
         if nic_type in self._proto_type_list:
@@ -3659,7 +3665,7 @@ class mtp_ctrl():
 
     def mtp_verify_nic_cpld_fea(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
 
@@ -6102,7 +6108,6 @@ class mtp_ctrl():
                 preset_config = "18"
             elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
                 preset_config = "8"
-
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
                 return False
