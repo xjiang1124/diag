@@ -1002,11 +1002,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
                     mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
 
 
-def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, skip_testlist, dsp, stop_on_err):
-    nic_thread_list = list()
-    cpld_prog_list = list()
-    qspi_prog_list = list()
-
+def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, skip_testlist, dsp, stop_on_err):
     # hook to skip this portion
     if "PROG_UPDATE" in skip_testlist:
         return fail_nic_list
@@ -1040,14 +1036,12 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
                 elif test == "CPLD_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, timestamp_check=False, console=True) # cant read timestamp from smb
                     if not ret:
-                        cpld_prog_list.append(slot)
                         ret = True
                 # check diagfw version
                 elif test == "QSPI_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
 
                     if not ret:
-                        qspi_prog_list.append(slot)
                         ret = True
                 elif test == "VDD_DDR_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot, console=True)
@@ -1064,96 +1058,6 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
                     break
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-    if cpld_prog_list or qspi_prog_list:
-        mtp_mgmt_ctrl.cli_log_inf("Programmable updates needed... starting", level=0)
-        nic_list = libmfg_utils.list_union(cpld_prog_list, qspi_prog_list)
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, nic_util=True, stop_on_err=stop_on_err):
-            #mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-            for slot in nic_list:
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if stop_on_err:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                        return
-
-    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-    for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-        for slot in nic_list:
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-            if slot not in cpld_prog_list and slot not in qspi_prog_list:
-                continue
-
-            nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
-                                                                                  slot,
-                                                                                  skip_testlist,
-                                                                                  nic_test_rslt_list,
-                                                                                  dsp))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-    # monitor all the thread
-    while True:
-        if len(nic_thread_list) == 0:
-            break
-        for nic_thread in nic_thread_list[:]:
-            if not nic_thread.is_alive():
-                nic_thread.join()
-                nic_thread_list.remove(nic_thread)
-        time.sleep(5)
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if not nic_test_rslt_list[slot]:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-
-    # Ortano Boot check moved out of parallel tests to sequential test
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-            continue
-        if slot in fail_nic_list:
-            continue
-        if slot not in cpld_prog_list and slot not in qspi_prog_list:
-            continue
-        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_is_cpld_refresh_required(): # this flag may not be needed anymore
-            continue
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS,
-                        NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-            testlist = ["CPLD_BOOT_CHECK"]
-        else:
-            continue
-        for skip_test in skip_testlist:
-            if skip_test in testlist:
-                testlist.remove(skip_test)
-        for test in testlist:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-            
-            # check CPLD partition
-            if test == "CPLD_BOOT_CHECK":
-                ret = mtp_mgmt_ctrl.mtp_recover_nic_console(slot)
-                ret &= mtp_mgmt_ctrl.mtp_check_nic_cpld_partition(slot, console=True)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
-                continue
-
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                break
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
     return fail_nic_list
 
@@ -1546,8 +1450,8 @@ def main():
 
                     dsp = stage
 
-                    # Update programmables if necessary
-                    dl_check_fail_list = naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, args.skip_test, dsp, stop_on_err)
+                    # cpld & qspi image check
+                    dl_check_fail_list = naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, args.skip_test, dsp, stop_on_err)
                     programmables_checked = True
                     for slot in dl_check_fail_list:
                         if slot in nic_list:
