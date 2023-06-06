@@ -412,7 +412,7 @@ class NIC_IMAGES:
     uboot_img["ORTANO2ADIMSFT"] = "boot0.rev14.img"
     cpld_img["68-0034"] = "naples200_ortano2A_rev3_D_06082022.bin"
     cpld_ver["68-0034"] = "0x3"
-    cpld_dat["68-0034"] = "0x13"
+    cpld_dat["68-0034"] = "0x0D"
     sec_cpld_img["68-0034"] = "naples200_ortano2A_rev3_D_06082022.bin"
     sec_cpld_ver["68-0034"] = "0x3"
     sec_cpld_dat["68-0034"] = "0x0D"
