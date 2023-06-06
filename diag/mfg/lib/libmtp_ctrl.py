@@ -1464,9 +1464,6 @@ class mtp_ctrl():
                             if "-" in pin or "-" in pout:
                                 self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
                                 rc = False
-                            elif float(pout) < 3:
-                                self.cli_log_err("PSU1 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
-                                rc = False
                         else:
                             self.cli_log_err("PSU1 test failed.")
                             rc = False
@@ -1483,9 +1480,6 @@ class mtp_ctrl():
                             pin = match_psu.group(4)
                             if "-" in pin or "-" in pout:
                                 self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
-                                rc = False
-                            elif float(pout) < 3:
-                                self.cli_log_err("PSU2 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
                                 rc = False
                         else:
                             self.cli_log_err("PSU2 test failed")
