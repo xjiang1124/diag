@@ -535,8 +535,6 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot in fail_nic_list:
-            continue
         if not nic_prsnt_list[slot]:
             continue
         key = libmfg_utils.nic_key(slot)
@@ -545,7 +543,8 @@ def main():
             continue
         sn = nic_fru_cfg[mtp_id][key]["SN"]
         if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+            if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
         if slot in pass_nic_list and slot in fail_nic_list:
             pass_nic_list.remove(slot)
 
