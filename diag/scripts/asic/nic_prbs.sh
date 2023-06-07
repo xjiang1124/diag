@@ -26,6 +26,20 @@ then
     else
 	echo "INVALID MODE" $1
     fi
+elif [[ $CARD_TYPE == "GINESTRA_D4"      || \
+        $CARD_TYPE == "GINESTRA_D5"      ]]
+then
+    killall hal
+    cd /data/nic_arm/giglio/asic_src/ip/cosim/tclsh
+    if [[ $1 == "PCIE" ]]
+    then
+        ./diag.exe ../giglio/gig_arm_pcie_prbs.tcl $2
+    elif [[ $1 == "ETH" ]]
+    then
+        ./diag.exe ../giglio/gig_arm_mx_prbs.tcl $2 $3
+    else
+        echo "INVALID MODE" $1
+    fi
 else
     ./diag.exe prbs.e.a.tcl
 fi

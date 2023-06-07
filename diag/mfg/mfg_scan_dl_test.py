@@ -78,9 +78,9 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
     dsp = FF_Stage.FF_DL
     testlist = ["QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
+    if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG"]
-    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR):
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
         testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
     if nic_type == NIC_Type.ORTANO2ADIIBM:
         testlist = ["QSPI_PROG", "UBOOT_PROG", "UBOOTA_PROG", "UBOOTB_PROG", "QSPI_GOLD_PROG"]
@@ -128,14 +128,16 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
         testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO2:
         testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
-    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR):
+    if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
         testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
-    if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO):
+    if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
         testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
         testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
+    if nic_type in GIGLIO_NIC_TYPE_LIST:
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skipped_test in skip_testlist:
         if skipped_test in testlist:
             testlist.remove(skipped_test)
@@ -480,6 +482,8 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
                 if nic_type == NIC_Type.ORTANO2ADICR:
                     mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
+                if nic_type == NIC_Type.ORTANO2ADICRMSFT:
+                    mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICRMSFT"])
             except KeyError:
                 mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(nic_type))
             try:
@@ -493,7 +497,7 @@ def main():
                     mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[nic_type])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(nic_type))
-            if nic_type in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
+            if nic_type in (ELBA_NIC_TYPE_LIST, GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
                 try:
                     mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[nic_type])
                 except KeyError:
@@ -651,14 +655,16 @@ def main():
 
     if len(adi_ibm_reset_slot) > 0 and not mtp_mgmt_ctrl.mtp_nic_diag_init(adi_ibm_reset_slot, emmc_format=True, emmc_check=True, fru_fpo=True):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                if slot in adi_ibm_reset_slot:
-                    adi_ibm_reset_slot.remove(slot)
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+            if slot in adi_ibm_reset_slot:
+                adi_ibm_reset_slot.remove(slot)
 
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -787,14 +793,14 @@ def main():
         if nic_type == NIC_Type.NAPLES25SWM:
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[mtp_mgmt_ctrl.mtp_lookup_nic_swm_type(slot)]
         qspi_gold_img_file = ""
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR):
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
 
         uboot_img_file = ""
         uboota_img_file = ""
         ubootb_img_file = ""
         uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-        if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type != NIC_Type.ORTANO2INTERP and nic_type != NIC_Type.ORTANO2SOLO:
+        if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
             uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
         if nic_type == NIC_Type.ORTANO2ADIIBM:
             uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboota_img[nic_type]
@@ -889,7 +895,14 @@ def main():
     rc = mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, emmc_format=True, fru_valid=False, sn_tag=True, emmc_check=True, fru_cfg=nic_fru_cfg)
     if not rc:
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -1083,7 +1096,14 @@ def main():
     # init nic diag env.
     if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -1119,14 +1139,16 @@ def main():
                 test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
         if nic_type == NIC_Type.ORTANO:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY"]
-        if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2INTERP or nic_type == NIC_Type.ORTANO2SOLO:
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR):
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"] 
         if nic_type == NIC_Type.POMONTEDELL:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)

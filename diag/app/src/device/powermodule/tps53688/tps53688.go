@@ -116,6 +116,17 @@ func ReadDeviceID(devName string) (devID uint64, err int) {
     return devID, err
 }
 
+func ReadPmbusRev(devName string) (rev uint8, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    rev, err = pmbus.ReadByte(devName, PMBUS_REVISION)
+    return rev, err
+}
+
 //Read target voltage from VOUT COMMAND
 func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
     var VCMD uint16
@@ -567,6 +578,74 @@ func SetVMargin(devName string, pct int) (err int) {
         cli.Println("i", "New vmargin enabled")
     }
     misc.SleepInSec(1)
+
+    return
+}
+
+func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
+    var marginReg uint64
+    var marginCmd byte
+    var data uint16
+    var dacStepRegVal byte
+    var dacStep uint64
+
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    // Write phase register
+    pmbus.WriteByte(devName, PHASE, 0xFF)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+
+    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
+    integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
+
+    curVoutMv := integer *1000 + dec
+    cli.Println("d", "curVoutMv:", curVoutMv)
+
+    if tgtVoutMv == curVoutMv {
+        marginCmd = MARGIN_NONE_CMD
+    } else if tgtVoutMv > curVoutMv {
+        marginCmd = MARGIN_HIGH_IGN_FLT
+        marginReg = pmbus.VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_IGN_FLT
+        marginReg = pmbus.VOUT_MARGIN_LOW
+    }
+
+    // Update VOUT_MARGIN_HIGH/HOW with target VID
+    vidTgt, _ := calcVidFromVolt(tgtVoutMv, dacStep)
+
+    if marginCmd != MARGIN_NONE_CMD {
+        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        if err != errType.SUCCESS {
+            cli.Println("e", "VMargin failed!")
+            return
+        }
+    }
+    // Enable Vmargin
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "VMargin failed!")
+        return
+    }
 
     return
 }

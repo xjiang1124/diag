@@ -292,6 +292,8 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADIMSFT"])
                     if card_type == NIC_Type.ORTANO2ADICR:
                         mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICR"])
+                    if card_type == NIC_Type.ORTANO2ADICRMSFT:
+                        mtp_dl_image_list.append(NIC_IMAGES.goldfw_img["ORTANO2ADICRMSFT"])
                 except KeyError:
                     mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
                 try:
@@ -305,7 +307,7 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
-                if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
+                if card_type in (ELBA_NIC_TYPE_LIST, GIGLIO_NIC_TYPE_LIST) and card_type not in FPGA_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:

@@ -1,0 +1,23 @@
+MTP-990:
+    MODE: ""
+    TS: ""
+    TS_PORT: ""
+    TS_USERID: ""
+    TS_PASSWORD: ""
+    APC1: ""
+    APC1_PORT: ""
+    APC1_USERID: ""
+    APC1_PASSWORD: ""
+    APC2: ""
+    APC2_PORT: ""
+    APC2_USERID: ""
+    APC2_PASSWORD: ""
+    IP: "192.168.70.194"
+    USERID: "diag"
+    PASSWORD: "lab123"
+    ALIAS: "mtp992"
+    SLOTS: 10
+    #SKIP_SLOTS: 1,4-10
+    CAPABILITY: 0x3
+
+

@@ -4,6 +4,7 @@ import libmfg_utils
 import re
 import json
 import traceback
+import pexpect
 
 from datetime import datetime
 from libdefs import NIC_Type
@@ -64,6 +65,7 @@ class nic_ctrl():
         self._asic_type = None
         self._ip_addr = None
         self._fst_pcie_bus = None
+        self._fst_eth_mnic = None
         self._emmc_mfr_id = ""
 
         self._refresh_required = True
@@ -151,10 +153,39 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         info_buf = self._nic_handle.before
+        info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]', info_buf)[0]
         self.nic_set_cmd_buf(self._nic_handle.before)
 
         return info_buf
 
+    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """
+        try to set vaiable PS1 to '[$(date +%Y-%m-%d_%H:%M:%S)]\u# '
+        return False if timeout, otherwise return True
+        """
+
+        self._nic_handle.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u' + self._nic_con_prompt + '"')
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [("root" + self._nic_con_prompt)], timeout)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        return True
+
+    def nic_sync_mtp_timestamp(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+        """
+        try to set nic system time
+        this function only called when console login, since for ssh login, nic system time will set by nic_test.py
+        return False if timeout, otherwise return True
+        """
+        currentTime = datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+        self._nic_handle.sendline("date -s " + currentTime)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        return True
 
     def nic_exec_rst_cmd(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY, dontwait=False):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
@@ -173,6 +204,9 @@ class nic_ctrl():
             else:
                 break
         cmd_buf = self._nic_handle.before
+
+        if not self.nic_prompt_cfg():
+            return False
 
         self._nic_handle.sendline(nic_rst_cmd)
         # Here ssh should disconnected automatically, unless dontwait=True..in which case kill console ourselves and powercycle.
@@ -211,7 +245,8 @@ class nic_ctrl():
             else:
                 break
         cmd_buf = self._nic_handle.before
-
+        if not self.nic_prompt_cfg():
+            return False
         self._nic_handle.sendline(nic_rst_cmd)
         nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
             
@@ -241,6 +276,9 @@ class nic_ctrl():
                 continue
             else:
                 break
+
+        if not self.nic_prompt_cfg():
+            return False
 
         ret = True
         cmd_list = nic_cmd_list[:]
@@ -294,6 +332,9 @@ class nic_ctrl():
             else:
                 break
 
+        if not self.nic_prompt_cfg():
+            return False
+
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], tout)
         if idx < 0:
@@ -301,7 +342,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             info_buf = None
         else:
-            info_buf = self._nic_handle.before
+            info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', self._nic_handle.before)[0]
 
         cmd = "exit"
         if not self.mtp_exec_cmd(cmd):
@@ -393,6 +434,10 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
+        # Check if there is still got picocom process running
+        self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
+
         con_ts = libmfg_utils.timestamp_snapshot()
         ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
         self._nic_handle.sendline(ts_record_cmd)
@@ -427,6 +472,11 @@ class nic_ctrl():
                 self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
 
         return True
 
@@ -475,6 +525,11 @@ class nic_ctrl():
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_console_detach_fast()
                 return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
 
         return True
 
@@ -703,6 +758,7 @@ class nic_ctrl():
 
     def nic_cfg_verify(self):
         if not self.nic_console_attach():
+            self.nic_set_err_msg("Unable to connect to NIC console")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
@@ -710,6 +766,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -718,6 +775,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -726,6 +784,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -734,6 +793,7 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
             self.nic_console_detach()
             return False
         cfg0_md5sum = match[0]
@@ -742,6 +802,7 @@ class nic_ctrl():
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
+            self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
@@ -750,11 +811,13 @@ class nic_ctrl():
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
         if not match:
+            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
             self.nic_console_detach()
             return False
         cfg1_md5sum = match[0]
 
         if cfg0_md5sum != cfg1_md5sum:
+            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False            
@@ -2313,6 +2376,8 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
         nic_cmd_list.append(nic_cmd)
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT.format(img_name, img_name)
+        if self._nic_type == NIC_Type.NAPLES100:
+            nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_FMT_NAPLES100.format(img_name) # 90-0001-0001 does not have fwupdate binary packaged
         nic_cmd_list.append(nic_cmd)
         if self._nic_type not in FPGA_TYPE_LIST:
             nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_B_PROG_FMT.format(img_name, img_name)
@@ -2707,7 +2772,8 @@ class nic_ctrl():
         ### 1b. Validate HPE product number, if applicable
         if init_date:
             if self._pn_format in (
-                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                 ):
                 if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                     self.nic_set_err_msg("HPE Product Number doesn't match any known formats in ASIC FRU")
@@ -2753,7 +2819,8 @@ class nic_ctrl():
             ### 2b. Validate HPE product number, if applicable
             if init_date:
                 if self._pn_format in (
-                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,
+                    PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT
                     ):
                     if not self.nic_fru_parse_hpe_prod_num(fru_buf):
                         self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
@@ -2949,7 +3016,8 @@ class nic_ctrl():
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_EQI_PN_FMT)                       #68-0008-xx yy    NAPLES25 EQUINIX
                 ],
             NIC_Type.NAPLES25SWM: [
-                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT),              #P26968-001       NAPLES25 SWM HPE
+                (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT),                  #P26968-002       NAPLES25 SWM HPE
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT),              #P41851-001       NAPLES25 SWM HPE CLOUD
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT),              #P46653-001       NAPLES25 SWM HPE TAA
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT),                  #68-0016-01 XX    NAPLES25 SWM PENSANDO
@@ -3008,8 +3076,20 @@ class nic_ctrl():
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
                 ],
+            NIC_Type.ORTANO2SOLOORCTHS: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT)           #68-0089-01 XX    ORTANO2 SOLO Tall Heat Sink
+                ],
+            NIC_Type.ORTANO2SOLOMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT)              #68-0090-01 XX    ORTANO2 SOLO MICROSOFT
+                ],
+            NIC_Type.ORTANO2SOLOALI: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT)               #68-0092-01 XX    ORTANO2 SOLO Alibaba
+                ],
             NIC_Type.ORTANO2ADICR: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
+                ],
+            NIC_Type.ORTANO2ADICRMSFT: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT)            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
                 ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
@@ -3148,6 +3228,8 @@ class nic_ctrl():
             disp_field = REVISION_FIELD
         elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:
             disp_field = PROD_VER_FIELD
+        elif self._pn_format == PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:
+            disp_field = PROD_VER_FIELD
         else:
             # not applicable
             self.nic_set_err_msg("parse_hpe_version function not for this nic type")
@@ -3260,6 +3342,7 @@ class nic_ctrl():
             PART_NUMBERS_MATCH.N25_EQI_PN_FMT:          "eeutil -dev=fru -update",
 
             PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
+            PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  "eeutil -dev=fru -update -erase -numBytes=256 -hpeSwm",
             PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT:      "eeutil -dev=fru -update",
@@ -4920,7 +5003,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
 
                 if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
@@ -4994,7 +5077,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(cmd_buf.split("fwupdate -l")[1]))
+                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
 
                 if 'extosa' not in fw_info:
                     self.nic_set_err_msg("Missing extosa image")
@@ -5335,7 +5418,11 @@ class nic_ctrl():
         if self._nic_type not in ELBA_NIC_TYPE_LIST and self._nic_type not in GIGLIO_NIC_TYPE_LIST:
             return False
         
-        cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+        if self._nic_type in ELBA_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_PROG_FMT.format(self._slot+1)
+        elif self._nic_type in GIGLIO_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS.NIC_L1_ESEC_GIGLIO_PROG_FMT.format(self._slot+1)
+
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_L1_ESEC_PROG_DELAY):
             return False
 

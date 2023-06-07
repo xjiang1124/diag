@@ -252,6 +252,8 @@ PRIVEK <ek.sk>"""
                pn == "68-0049-03" or \
                pn == "68-0089-01" or \
                pn == "68-0029-01" or \
+               pn == "68-0074-01" or \
+               pn == "68-0075-01" or \
                pn == "68-0077-01":
                 output1 = list(output)
                 print("Adding Oracle signature")
@@ -435,8 +437,13 @@ PRIVEK <ek.sk>"""
     def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA" or asic_type == "GIGLIO":
+        if asic_type == "ELBA":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+                format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        elif asic_type == "GIGLIO":
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_giglio.tcl -stage esec_all\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
                 format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
@@ -457,11 +464,17 @@ PRIVEK <ek.sk>"""
         os.chdir("/home/diag/diag/scripts/asic/")
 
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA" or asic_type == "GIGLIO":
+        if asic_type == "ELBA":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all_pac\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
             format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        elif asic_type == "GIGLIO":
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_giglio.tcl -stage esec_all_pac\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+            format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+
         else:
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all_pac\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
@@ -779,7 +792,10 @@ PRIVEK <ek.sk>"""
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
         nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
 
-        cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+        if card_type == "GINESTRA_D4" or card_type == "GINESTRA_D5":
+            cmd = "./diag.exe gig_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+        else:
+            cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
         ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
 
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")

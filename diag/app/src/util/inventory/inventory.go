@@ -29,6 +29,9 @@ var OrtanoPowerFail0 = []string{"p12v", "p5v0_nic", "vdd_core", "vdd_arm", "ddr_
 var OrtanoPowerFail1 = []string{"avdd_pcie", "avddh_pcie", "pll_avdd_pcie", "p0v8_nw", "pod_pll", "p3v3_aod", "ddr_vtt", "ddr_vpp"}
 var OrtanoPowerFail2 = []string{"vdd_mac", "avdd_d6", "avddh_d6", "rtvdd", "pvdd", "tvddh", "p1v8_aod_se", "p1v8_aod_pll"}
 var FpgaPowerFail3   = []string{"fpga_mgtavcc_pg", "fpga_mgtavtt_pg"}
+var GinestraPowerFail0 = []string{"p12v", "p5v0_nic", "vdd_core", "vdd_arm", "pmic_pwr/ddr_vddq", "vdd_ddr", "p3v3_nic", "p1v8_nic"}
+var GinestraPowerFail1 = []string{"avdd", "avddh", "rtvdd", "tvddh", "gilo_efuse"}
+var GinestraPowerFail2 = []string{"qsfp1_pwr", "qsfp2_pwr", "p12v_hotswap", "gilo_vrd_hot", "gilo_ddr_pmic_gsi", "clock_buf_los"}
 
 func init() {
 }
@@ -307,7 +310,7 @@ func powerStatusCheck(slot int) (err int) {
     cli.DisableVerbose()
 
     err, asicType := cardinfo.GetAsicType(cardType)
-    if asicType == "ELBA" {
+    if asicType == "ELBA" || asicType == "GIGLIO" {
         powerGood = getPowerGoodOrtano(uutName)
     } else {
         powerGood = getPowerGood(uutName)
@@ -493,6 +496,21 @@ func powerStatusDumpFpga(uutName string)  {
     return
 }
 
+func powerStatusDumpGinestra(uutName string)  {
+
+    cli.DisableVerbose()
+    stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT0), uutName)
+    stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT1), uutName)
+    stat2, _ := hwdev.NaplesCpldRd("CPLD", uint64(ortanoCpld.REG_POWER_STAT2), uutName)
+    cli.EnableVerbose()
+
+    dispPowerStatus(GinestraPowerFail0, stat0)
+    dispPowerStatus(GinestraPowerFail1, stat1)
+    dispPowerStatus(GinestraPowerFail2, stat2)
+
+    return
+}
+
 func powerStatusDump(slot int)  {
     devName := "CPLD"
     uutName := "UUT_"+strconv.Itoa(slot)
@@ -508,6 +526,9 @@ func powerStatusDump(slot int)  {
     } else if cardType == "LACONA32DELL" || cardType == "LACONA32" || cardType == "POMONTEDELL" || cardType == "POMONTE" {
         powerStatusDumpOrtano(uutName)
         powerStatusDumpFpga(uutName)
+        return
+    } else if cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5" {
+        powerStatusDumpGinestra(uutName)
         return
     }
 

@@ -913,8 +913,14 @@ main(int argc, char *argv[])
         unsigned char *buf;
         unsigned char *data;
         char cpldId[4];
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
-
+    const char *spidev_path;
+	uint8_t card_type = cpld_read(0x80);
+	if (card_type == 0x60 || card_type == 0x61) {
+        spidev_path = "/dev/spidev0.1";
+	} else {
+        spidev_path = spidev_path1;
+	}
+    uint32_t fd = e_open(spidev_path, O_RDWR, 0);
 	flash_id(fd, cpldId);
 	if ( memcmp(cpldId, xo3d_id, 4) ) {
             printf("Invalid cpld id %8x\n", *(uint32_t *)cpldId);
@@ -972,7 +978,14 @@ main(int argc, char *argv[])
         close(fd);
         free(buf); 
     } else if (strcmp(argv[1], "-erase") == 0) {
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        const char *spidev_path;
+        uint8_t card_type = cpld_read(0x80);
+        if (card_type == 0x60 || card_type == 0x61) {
+            spidev_path = "/dev/spidev0.1";
+        } else {
+            spidev_path = spidev_path1;
+        }
+        uint32_t fd = e_open(spidev_path, O_RDWR, 0);
 	int cfgRegion = 0;
 
         cfgRegion = get_region_index_from_name(argv[2]);
@@ -982,7 +995,14 @@ main(int argc, char *argv[])
         flash_disable(fd);
         close(fd);
     } else if ( strcmp(argv[1], "-file") == 0 ) {
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        const char *spidev_path;
+        uint8_t card_type = cpld_read(0x80);
+        if (card_type == 0x60 || card_type == 0x61) {
+            spidev_path = "/dev/spidev0.1";
+        } else {
+            spidev_path = spidev_path1;
+        }
+        uint32_t fd = e_open(spidev_path, O_RDWR, 0);
         FILE* fptr = fopen(argv[2], "wb");
     	uint8_t *buf;
     	uint8_t *cpld_data;
@@ -1018,7 +1038,14 @@ main(int argc, char *argv[])
         close(fd);
         fclose(fptr);
     } else if ( strcmp(argv[1], "-id" ) == 0 ) {
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        const char *spidev_path;
+        uint8_t card_type = cpld_read(0x80);
+        if (card_type == 0x60 || card_type == 0x61) {
+            spidev_path = "/dev/spidev0.1";
+        } else {
+            spidev_path = spidev_path1;
+        }
+        uint32_t fd = e_open(spidev_path, O_RDWR, 0);
 	char id[4];
 	int rc = 0, i;
 
@@ -1058,7 +1085,14 @@ main(int argc, char *argv[])
     	uint8_t port = strtoul(argv[2], NULL, 0);
     	cap_counter(port);
     } else if (strcmp(argv[1], "-refresh") == 0) {
-        uint32_t fd = e_open(spidev_path1, O_RDWR, 0);
+        const char *spidev_path;
+        uint8_t card_type = cpld_read(0x80);
+        if (card_type == 0x60 || card_type == 0x61) {
+            spidev_path = "/dev/spidev0.1";
+        } else {
+            spidev_path = spidev_path1;
+        }
+        uint32_t fd = e_open(spidev_path, O_RDWR, 0);
 
     	flash_enable(fd);
         flash_refresh(fd);

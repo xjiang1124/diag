@@ -82,7 +82,8 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
     for item in para_test_list:
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
-    if card_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and card_type not in FPGA_TYPE_LIST and card_type != NIC_Type.ORTANO2SOLO and card_type != NIC_Type.ORTANO2ADICR:
+    if card_type in (ELBA_NIC_TYPE_LIST) and card_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
+                                                                                                        NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]):
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
@@ -295,7 +296,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
 def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
     
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
+    if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         if loopback:
             sub_test_list = [("MVL","ACC"), ("MVL","STUB"), ("MVL","LINK")]
         else:
@@ -831,6 +832,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     for slot in nic_list:
         logfile_list = list()
         path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if "SNAKE_HBM" in mtp_para_test_list:
             logfile_list.append(path+"snake_hbm.log")
         if "SNAKE_PCIE" in mtp_para_test_list:
@@ -838,14 +840,26 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
         if "PRBS_ETH" in mtp_para_test_list:
             logfile_list.append(path+"prbs_eth.log")
         if "SNAKE_ELBA" in mtp_para_test_list:
-            logfile_list.append(path+"snake_elba.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"snake_giglio.log")
+            else:
+                logfile_list.append(path+"snake_elba.log")
             logfile_list.append("/data/nic_util/asicutil*log")
         if "ETH_PRBS" in mtp_para_test_list:
-            logfile_list.append(path+"elba_PRBS_MX.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_PRBS_MX.log")
+            else:
+                logfile_list.append(path+"elba_PRBS_MX.log")
         if "ARM_L1" in mtp_para_test_list:
-            logfile_list.append(path+"elba_arm_l1_test.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_arm_l1_test.log")
+            else:
+                logfile_list.append(path+"elba_arm_l1_test.log")
         if "PCIE_PRBS" in mtp_para_test_list:
-            logfile_list.append(path+"elba_PRBS_PCIE.log")
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                logfile_list.append(path+"giglio_PRBS_PCIE.log")
+            else:
+                logfile_list.append(path+"elba_PRBS_PCIE.log")
             logfile_list.append("/data/nic_util/asicutil*log")
         if "DDR_BIST" in mtp_para_test_list:
             logfile_list.append(path+"arm_ddr_bist_0.log")
@@ -1111,7 +1125,8 @@ def naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fa
             continue
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+        if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS,
+                        NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
             testlist = ["CPLD_BOOT_CHECK"]
         else:
             continue
@@ -1286,6 +1301,8 @@ def main():
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     if stage == FF_Stage.FF_ORT: 
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
+    if stage == FF_Stage.FF_RDT:
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
     if args.mtpcfg:
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/"+args.mtpcfg))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -1326,8 +1343,12 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2ADIIBM] = "config/ortanoadi_ibm_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADIMSFT] = "config/ortanoadi_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICR] = "config/ortanoadi_cr_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADICRMSFT] = "config/ortanoadi_cr_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLO] = "config/ortanos_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOORCTHS] = "config/ortanos_ths_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOMSFT] = "config/ortanos_msft_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOALI] = "config/ortanos_ali_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
@@ -1397,7 +1418,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("Diag Regression Test Ambient Temperature Check Complete\n", level=0)
 
         inlet = mtp_mgmt_ctrl.mtp_get_inlet_temp(low_temp_threshold, high_temp_threshold)
-        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
+        if stage in (FF_Stage.FF_2C_H, FF_Stage.FF_4C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT) and inlet > MTP_Const.HIGH_CHAMBER_UPPER_LIMIT:
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP temperature is over 60 degree")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_ENV_SETUP, open_file_track_list)
@@ -1466,7 +1487,7 @@ def main():
                 else:
                     swm_lp_boot_mode=False
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):    #Skip SWM Low Power Test for 4C
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):    #Skip SWM Low Power Test for 4C
                     swm_lp_boot_mode=False
 
             if nic_list:
@@ -1519,7 +1540,7 @@ def main():
                 #
                 ######################################################################
 
-                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L, FF_Stage.FF_ORT):
+                if not programmables_checked and stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_4C_L):
                     mtp_mgmt_ctrl.mtp_power_off_nic()
                     mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
 
@@ -1580,7 +1601,7 @@ def main():
             if stage == FF_Stage.FF_P2C and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
                 test_section_list = ["TEST_FPGA_PROG", "NC-SI", "NIC_DIAG_INIT", "PROD_FPGA_PROG", "NIC_DIAG_INIT", "PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
 
-                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT):   #Skip SWM Low Power Test for 4 corner
+                if stage not in (FF_Stage.FF_P2C, FF_Stage.QA, FF_Stage.FF_ORT, FF_Stage.FF_RDT):   #Skip SWM Low Power Test for 4 corner
                     test_section_list.remove("ALOM_LP_MODE")
 
             if args.skip_test:
@@ -1658,7 +1679,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR):
+                        if nic_type not in (ELBA_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]

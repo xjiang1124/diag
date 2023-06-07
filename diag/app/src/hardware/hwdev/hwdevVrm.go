@@ -244,6 +244,8 @@ func marginByValue(devName string, tgtVoutMv uint64, lockFlag bool) (err int){
         err = tps544b25.SetVMarginByValue(devName, tgtVoutMv)
     } else if i2cif.Comp == "TPS53830" {
         err = tps53830.SetVMarginByValue(devName, tgtVoutMv)
+    } else if i2cif.Comp == "TPS53688" {
+        err = tps53688.SetVMarginByValue(devName, tgtVoutMv)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM

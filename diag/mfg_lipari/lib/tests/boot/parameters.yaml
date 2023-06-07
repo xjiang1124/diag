@@ -1,0 +1,4 @@
+  Name: OS_BOOT
+  Description: "Powercycle and boot into SONiC"
+  CONSOLE_CHECK_WAIT_TIME: 150         # no console during this period will trigger message box for operator
+  BOOTUP_MAX_WAIT_TIME: 900            # no login prompt during this period means its hung or stuck in endless reboot

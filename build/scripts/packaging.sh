@@ -29,7 +29,7 @@ elif [[ $2 == "giglio" ]]
 then
     declare -a asic_list=("giglio")
 else
-    declare -a asic_list=("elba" "capri")
+    declare -a asic_list=("giglio" "elba" "capri")
 fi
 
 for asic in ${asic_list[@]}
@@ -100,6 +100,15 @@ do
         if [[ $asic == "giglio" ]]
         then
             sed -i 's/ASIC_DIR_SUB_TOP=\$ASIC_DIR_TOP\/elba/ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP\/giglio/' $TEMP_DIR/../start_diag.sh
+            echo "export ASIC_TYPE=GIGLIO" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "elba" ]]
+        then
+            echo "export ASIC_TYPE=ELBA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "capri" ]]
+        then
+            echo "export ASIC_TYPE=CAPRI" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
         fi
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_mtp.so $TEMP_DIR/tools/.
         cp $TOP_DIR/diag/app/pkg/linux_$arch/clib/libacc_turbo.so $TEMP_DIR/tools/.
@@ -236,6 +245,7 @@ do
         cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/elb_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/gig_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/elb_arm*tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     fi

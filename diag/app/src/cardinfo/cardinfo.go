@@ -28,6 +28,12 @@ var Cardinfo = map[string]map[string]string{
     "POMONTEDELL": map[string]string{
         "ASIC": "ELBA",
         "CTRL": "FPGA"},
+    "GINESTRA_D5": map[string]string{
+        "ASIC": "GIGLIO",
+        "CTRL": "CPLD"},
+    "GINESTRA_D4": map[string]string{
+        "ASIC": "GIGLIO",
+        "CTRL": "CPLD"},
 }
 
 func GetAsicType(cardType string) (err int, asicType string) {

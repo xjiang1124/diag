@@ -23,7 +23,11 @@ class NIC_Type:
     ORTANO2ADIMSFT = "ORTANO2ADIMSFT"
     ORTANO2INTERP = "ORTANO2INTERP"
     ORTANO2SOLO = "ORTANO2SOLO"
+    ORTANO2SOLOORCTHS = "ORTANO2SOLOORCTHS"
+    ORTANO2SOLOMSFT = "ORTANO2SOLOMSFT"
+    ORTANO2SOLOALI = "ORTANO2SOLOALI"
     ORTANO2ADICR = "ORTANO2ADICR"
+    ORTANO2ADICRMSFT = "ORTANO2ADICRMSFT"
     GINESTRA_D4 = "GINESTRA_D4"
     GINESTRA_D5 = "GINESTRA_D5"
     UNKNOWN = "Unknown"
@@ -58,6 +62,7 @@ class FF_Stage(Enum):
     FF_CFG = "CFG"
     FF_SRN = "SRN"
     FF_ORT = "ORT"
+    FF_RDT = "RDT"
     QA = "CI-CD"
 
     def __str__(self):
@@ -73,6 +78,8 @@ class FPN_FF_Stage:
     FF_4C_L = "PSO-4C-L_AUTO"
     FF_SWI = "PSO-SWI_AUTO"
     FF_FST = "PSO-FST_AUTO"
+    FF_ORT = "PSO-ORT_AUTO"
+    FF_RDT = "PSO-RDT_AUTO"
 
 #NOT ONLY SWM TEST MODE, ALL TEST MODE WILL USE AS SAME
 class Swm_Test_Mode(Enum):
@@ -155,7 +162,7 @@ class MTP_Const:
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
     NIC_ESEC_WRITE_PROT_DELAY = 15 * 60
     NIC_I2C_DETECT_DELAY = 60
-    NIC_EDMA_ENV_INIT_CMD_DELAY = 240
+    NIC_EDMA_ENV_INIT_CMD_DELAY = 600
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -175,6 +182,8 @@ class MTP_Const:
     MFG_P2C_TEST_TIMEOUT = 48000
     # more than 12 hours
     MFG_ORT_TEST_TIMEOUT = 48000
+    # more than 12 hours
+    MFG_RDT_TEST_TIMEOUT = 48000
     # more than 24 hours
     MFG_4C_TEST_TIMEOUT = 96000
     # 4 hours
@@ -187,6 +196,7 @@ class MTP_Const:
     MFG_CFG_TEST_TIMEOUT = 3600
 
     MFG_ORT_HIGH_FAN_SPD = 100
+    MFG_RDT_HIGH_FAN_SPD = 100
     MFG_EDVT_HIGH_FAN_SPD = 100
     MFG_EDVT_NORM_FAN_SPD = 60
     MFG_EDVT_LOW_FAN_SPD = 60
@@ -248,6 +258,7 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_CSP_LOG_DIR_FMT = "/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_SRN_LOG_DIR_FMT = "/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_ORT_LOG_DIR_FMT = "/mfg_log/{:s}/ORT/{:s}/"
+    DIAG_MFG_RDT_LOG_DIR_FMT = "/mfg_log/{:s}/RDT/{:s}/"
     DIAG_MFG_MODEL_DL_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/DL/{:s}/"
     DIAG_MFG_MODEL_CFG_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/CFG/{:s}/"
     DIAG_MFG_MODEL_P2C_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/P2C/{:s}/"
@@ -258,6 +269,8 @@ class MTP_DIAG_Logfile:
     DIAG_MFG_MODEL_CSP_LOG_DIR_FMT = "/tmp/mfg_log/CSP_REC/{:s}/"
     DIAG_MFG_MODEL_SRN_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/SRN/{:s}/"
     DIAG_MFG_MODEL_ORT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/ORT/{:s}/"
+    DIAG_MFG_MODEL_RDT_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/RDT/{:s}/"
+
 
     MFG_DL_LOG_PKG_FILE = "DL_{:s}_{:s}.tar.gz"
     MFG_DL_LOG_DIR = "DL_{:s}_{:s}/"
@@ -277,6 +290,8 @@ class MTP_DIAG_Logfile:
     MFG_SRN_LOG_DIR = "SRN_{:s}_{:s}/"
     MFG_ORT_LOG_PKG_FILE = "ORT_{:s}_{:s}.tar.gz"
     MFG_ORT_LOG_DIR = "ORT_{:s}_{:s}/"
+    MFG_RDT_LOG_PKG_FILE = "RDT_{:s}_{:s}.tar.gz"
+    MFG_RDT_LOG_DIR = "RDT_{:s}_{:s}/"
 
     SCAN_BARCODE_FILE = "fru_barcode.yaml"
 
@@ -426,6 +441,7 @@ class MFG_DIAG_CMDS:
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
+    NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -509,12 +525,14 @@ class MFG_DIAG_CMDS:
     MTP_PARA_MGMT_FPO_FMT  = "nic_test.py -setup_multi -mgmt -slot_list {:s} -asic_type {:s} -fpo"
     MTP_PARA_PRBS_ETH_TEST_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=120 -vmarg {:s} -mode=eth"
     MTP_PARA_PRBS_ETH_ELBA_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=elba"
+    MTP_PARA_PRBS_ETH_GIGLIO_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=giglio"
     MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri"
     MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:s} -snake_num=6 -dura=120 -mode=nod_525"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=nod"
+    MTP_PARA_SNAKE_GIGLIO_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_ARM_L1_ELBA_FMT             = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s}"
     MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod"
     MTP_PARA_ARM_L1_ELBA_LACONA_FMT      = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod_525"
@@ -541,7 +559,8 @@ class MFG_DIAG_CMDS:
     NIC_DIAG_STOP_SYSMOND_FMT = "killall sysmond"
     NIC_DIAG_STOP_HAL_FMT = "killall hal"
     NIC_DIAG_STOP_TCLSH_FMT = "killall tclsh"
-    NIC_DIAG_STOP_PICOCOM_FMT = "killall picocom"
+    NIC_DIAG_STOP_PICOCOM_FMT = "killall -9 picocom"
+    NIC_DIAG_CHECK_PICOCOM_FMT = "ps -elf | grep picocom"
     NIC_DIAG_CONFIG_FMT = "source /data/nic_arm/nic_config.sh"
 
     MTP_DIAG_MGR_START_FMT = "nohup diagmgr > {:s} 2>&1 &"

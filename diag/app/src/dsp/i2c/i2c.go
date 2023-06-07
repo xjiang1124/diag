@@ -31,6 +31,11 @@ var laconaTestList = []string {
     "TSENSOR", "RTC",
 }
 
+var ginestraTestList = []string {
+    "GIG0_CORE", "GIG0_ARM", "DDR_VDDQ", "VDD_DDR",
+    "TSENSOR", "RTC",
+}
+
 var i2cTestList []string
 
 //var i2cTestMap map[string][]string
@@ -67,6 +72,8 @@ func init() {
     i2cTestMap["LACONA32"]        = laconaTestList
     i2cTestMap["POMONTEDELL"]     = laconaTestList
     i2cTestMap["POMONTE"]         = laconaTestList
+    i2cTestMap["GINESTRA_D4"]     = ginestraTestList
+    i2cTestMap["GINESTRA_D5"]     = ginestraTestList
     //Platform TAORMINA uses it's I2C INFO Table directly in i2cTest.go to get devices.  Do not set a table here for it
 
     i2cTestList = i2cTestMap[cardType]

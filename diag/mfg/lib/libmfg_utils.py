@@ -1274,6 +1274,10 @@ def flx_stage_to_penang(stage):
         return FPN_FF_Stage.FF_SWI
     elif stage == FF_Stage.FF_FST:
         return FPN_FF_Stage.FF_FST
+    elif stage == FF_Stage.FF_ORT:
+        return FPN_FF_Stage.FF_ORT
+    elif stage == FF_Stage.FF_RDT:
+        return FPN_FF_Stage.FF_RDT
     else:
         print("Unknown Flex Flow Stage: {:s}".format(stage))
         return None
@@ -1572,6 +1576,17 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
         # local copy of summary logfile
         local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    elif stage == FF_Stage.FF_RDT:
+        # log subdir
+        sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
+        # log pkg filename
+        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_RDT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
+        # onboard log files
+        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
+        # test summary logfile
+        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
+        # local copy of summary logfile
+        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
@@ -1619,7 +1634,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT:
+    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT or stage == FF_Stage.FF_RDT:
         if not vmarg:
             diag_log_dir = log_dir + "diag_logs/"
             asic_log_dir = log_dir + "asic_logs/"
@@ -1807,6 +1822,11 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_ORT_LOG_DIR_FMT.format(nic_type, sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_ORT_LOG_DIR_FMT.format(nic_type, sn)
+        elif stage == FF_Stage.FF_RDT:
+            if GLB_CFG_MFG_TEST_MODE:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_RDT_LOG_DIR_FMT.format(nic_type, sn)
+            else:
+                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_RDT_LOG_DIR_FMT.format(nic_type, sn)
         else:
             pass
 
@@ -2402,7 +2422,7 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                     cur_fail_list[mtp_id][slot] = 0
                     cur_fail_list[mtp_id][slot+length] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
+                    if nic_type in ELBA_NIC_TYPE_LIST:
                         read_data = [0]
                         rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
                         if not rc:
@@ -2449,6 +2469,63 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                         else:
                             # log the transceiver serial number. retry 3x if unable to read.
                             if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "2"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot+length] = 1
+                                    loopback_fail_list[mtp_id][slot+length] += 1
+                                    failure_detected = True
+
+                    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                        read_data = [0]
+                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
+                        if not rc:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
+                            if slot not in fail_nic_list[mtp_id]:
+                                fail_nic_list[mtp_id].append(slot)
+                            continue
+
+                        ### QSFP/SFP PORT 1
+                        if read_data[0] & 0x01 == 0:
+                            # not present, retry 3x
+                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot] = 1
+                                loopback_fail_list[mtp_id][slot] += 1
+                                failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
+                                    if slot not in fail_nic_list[mtp_id]:
+                                        fail_nic_list[mtp_id].append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[mtp_id][slot] = 1
+                                    loopback_fail_list[mtp_id][slot] += 1
+                                    failure_detected = True
+
+                        ### QSFP/SFP PORT 2
+                        if read_data[0] & 0x02 == 0:
+                            # not present, retry 3x
+                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list[mtp_id]:
+                                    fail_nic_list[mtp_id].append(slot)
+                                continue
+                            else:
+                                cur_fail_list[mtp_id][slot+length] = 1
+                                loopback_fail_list[mtp_id][slot+length] += 1
+                                failure_detected = True
+                        else:
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
                                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
                                 if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
                                     if slot not in fail_nic_list[mtp_id]:
@@ -2562,12 +2639,12 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
     skip_check_list = dict() # dont test slots that have already failed before sanity
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         skip_check_list[mtp_id] = fail_nic_list[mtp_id][:]
-        # Skip RJ45 check for slots populated with NIC_Type.ORTANO2SOLO or NIC_Type.ORTANO2ADICR
+        # Skip RJ45 check for slots populated with NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR or NIC_Type.ORTANO2ADICRMSFT
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip RJ45 Sanity Check For This Slot")
                     skip_check_list[mtp_id].append(slot)
 
@@ -2583,7 +2660,7 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR]:
+                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
                         continue
                     if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
@@ -2720,6 +2797,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
             log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
         elif stage == FF_Stage.FF_ORT:
             log_sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
+        elif stage == FF_Stage.FF_RDT:
+            log_sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
         else:
             print("Unknown stage!")
             return []
@@ -3004,6 +3083,9 @@ def pick_fan_speed(stage):
     elif stage == FF_Stage.FF_ORT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
 
+    elif stage == FF_Stage.FF_RDT:
+        fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+
     else:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
 
@@ -3028,7 +3110,10 @@ def pick_voltage_margin(stage):
     elif stage == FF_Stage.FF_4C_H:
         vmarg_list = [Voltage_Margin.low, Voltage_Margin.high]
 
-    elif stage == FF_Stage.ORT:
+    elif stage == FF_Stage.FF_ORT:
+        vmarg_list = [Voltage_Margin.normal]
+
+    elif stage == FF_Stage.FF_RDT:
         vmarg_list = [Voltage_Margin.normal]
 
     else:
@@ -3048,18 +3133,26 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod_1100"
     elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR) and test in ("L1", "SEC_PROG_VERIFY"):
         mode = "hod"
-    elif nic_type == NIC_Type.ORTANO2ADIMSFT and test in ("L1", "SEC_PROG_VERIFY"):
+    elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICRMSFT) and test in ("L1", "SEC_PROG_VERIFY"):
         mode = "hod_1100"
     elif nic_type == NIC_Type.ORTANO2INTERP:
         mode = "hod"
     elif nic_type == NIC_Type.ORTANO2SOLO:
         mode = "hod"
+    elif nic_type == NIC_Type.ORTANO2SOLOORCTHS:
+        mode = "hod"
+    elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
+        mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2SOLOALI:
+        mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
     elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         mode = "nod_550"
     elif nic_type in CAPRI_NIC_TYPE_LIST:
         mode = "hod"
+    elif nic_type in GIGLIO_NIC_TYPE_LIST:
+        mode = "hod_1100"
     else:
         mode = ""
 
