@@ -277,11 +277,10 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_prsnt_list[slot]:
                 continue
-            if slot in fail_nic_list[mtp_id]:
-                continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+                if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+                    pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
     # Sanity check
     try:

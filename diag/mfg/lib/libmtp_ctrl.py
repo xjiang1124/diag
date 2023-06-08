@@ -1464,9 +1464,6 @@ class mtp_ctrl():
                             if "-" in pin or "-" in pout:
                                 self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
                                 rc = False
-                            elif float(pout) < 3:
-                                self.cli_log_err("PSU1 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
-                                rc = False
                         else:
                             self.cli_log_err("PSU1 test failed.")
                             rc = False
@@ -1483,9 +1480,6 @@ class mtp_ctrl():
                             pin = match_psu.group(4)
                             if "-" in pin or "-" in pout:
                                 self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
-                                rc = False
-                            elif float(pout) < 3:
-                                self.cli_log_err("PSU2 test failed. (pout:{:s}, pin:{:s})".format(pout, pin))
                                 rc = False
                         else:
                             self.cli_log_err("PSU2 test failed")
@@ -1703,28 +1697,45 @@ class mtp_ctrl():
             # validate the readings
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
+            inlet_1_rs = True
+            inlet_2_rs = True
+            max_temp = 70
+            min_temp = -10
 
-            # if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_2C_L):
-            #     if (inlet_1 < -5 or inlet_1 > 15) or (inlet_2 < -5 or inlet_2 > 15):
-            #         rc = False
-
-            # elif stage in (FF_Stage.FF_4C_H, FF_Stage.FF_2C_H):
-            #     if (inlet_1 < 40 or inlet_1 > 60) or (inlet_2 < 40 or inlet_2 > 60):
-            #         rc = False
-            # else:
-            #     if (inlet_1 < 15 or inlet_1 > 40) or (inlet_2 < 15 or inlet_2 > 40):
-            #         rc = False
-            if (inlet_1 < -10 or inlet_1 > 70) or (inlet_2 < -10 or inlet_2 > 70):
+            if (inlet_1 < min_temp or inlet_1 > max_temp):
+                inlet_1_rs = False
+                rc = False
+            if (inlet_2 < min_temp or inlet_2 > max_temp):
+                inlet_2_rs = False
                 rc = False
 
             if not rc:
-                self.cli_log_err("Inlet1 ({:s}), Inlet2 ({:s}) temperature test failed".format(str(inlet_1), str(inlet_2)))
+                if not inlet_1_rs and not inlet_2_rs:
+                    if inlet_1 < min_temp and inlet_2 < min_temp:
+                        self.cli_log_err("Inlet1 ({:s}) is lesser than {:s} degree, Inlet2 ({:s}) is lesser than {:s} degree, temperature test failed".format(str(inlet_1), str(min_temp), str(inlet_2), str(min_temp)))
+                    elif inlet_1 < min_temp and inlet_2 > max_temp:
+                        self.cli_log_err("Inlet1 ({:s}) is lesser than {:s} degree, Inlet2 ({:s}) is greater than {:s} degree, temperature test failed".format(str(inlet_1), str(min_temp), str(inlet_2), str(max_temp)))
+                    elif inlet_1 > max_temp and inlet_2 < min_temp:
+                        self.cli_log_err("Inlet1 ({:s}) is geater than {:s} degree, Inlet2 ({:s}) is lesswe than {:s} degree, temperature test failed".format(str(inlet_1), str(max_temp), str(inlet_2), str(min_temp)))
+                    else:
+                        self.cli_log_err("Inlet1 ({:s}) is geater than {:s} degree, Inlet2 ({:s}) is greater than {:s} degree, temperature test failed".format(str(inlet_1), str(max_temp), str(inlet_2), str(max_temp)))
+                elif not inlet_1_rs:
+                    if inlet_1 < min_temp:
+                        self.cli_log_err("Inlet1 ({:s}) is lesser than {:s} degree, Inlet2 ({:s}), temperature test failed".format(str(inlet_1), str(min_temp), str(inlet_2)))
+                    else:
+                        self.cli_log_err("Inlet1 ({:s}) is greater than {:s} degree, Inlet2 ({:s}), temperature test failed".format(str(inlet_1), str(max_temp), str(inlet_2)))
+                elif not inlet_2_rs:
+                    if inlet_2 < min_temp:
+                        self.cli_log_err("Inlet1 ({:s}), Inlet2 ({:s}) is lesser than {:s} degree, temperature test failed".format(str(inlet_1), str(inlet_2), str(min_temp)))
+                    else:
+                        self.cli_log_err("Inlet1 ({:s}), Inlet2 ({:s}) is greater than {:s} degree, temperature test failed".format(str(inlet_1), str(inlet_2), str(max_temp)))
+
             else:
                 self.cli_log_inf("Inlet1 ({:s}), Inlet2 ({:s}) temperature test passed".format(str(inlet_1), str(inlet_2)))
 
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("Unable to get inlet temperature")
+            self.cli_log_err("MTP get inlet temperature failed")
             return False
 
         return rc

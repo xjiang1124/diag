@@ -1956,14 +1956,14 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
     with open(test_log_file, 'r') as fp:
         buf = fp.read()
 
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
+    # Factory detected related error, don't post any report
+    factory =  mtp_mgmt_ctrl.get_mtp_factory_location()
+    if factory is None or factory == Factory.UNKNOWN:
+        cli_inf(mtp_cli_id_str + "MTP Setup fails and not able to detect factory so no report will be generated")
         cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
         os.system(cmd)
         return
 
-    factory =  mtp_mgmt_ctrl.get_mtp_factory_location()
     cli_inf(mtp_cli_id_str + "Start posting test report")
     if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
         nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
@@ -2035,25 +2035,26 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
 
 
             if FLEX_SHOP_FLOOR_CONTROL:
-                post_cnt = 0
-                retry = FLEX_TWO_WAY_COMM.POST_RETRY
-                time.sleep(1)
-                while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
-                    if rs == 0:
-                        cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
-                        break
-                    else:
-                        if rs in FLEX_ERR_CODE_MAP.err_code:
-                            cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [{:s}:{:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
-                        else:
-                            cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(rs)))
-                        if rs != 9999:
-                            post_cnt = retry
-                        if post_cnt >= retry:
+                if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+                    post_cnt = 0
+                    retry = FLEX_TWO_WAY_COMM.POST_RETRY
+                    time.sleep(1)
+                    while True:
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                        if rs == 0:
+                            cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
-                    post_cnt += 1
-                    time.sleep(3)
+                        else:
+                            if rs in FLEX_ERR_CODE_MAP.err_code:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [{:s}:{:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
+                            else:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(rs)))
+                            if rs != 9999:
+                                post_cnt = retry
+                            if post_cnt >= retry:
+                                break
+                        post_cnt += 1
+                        time.sleep(3)
 
             else:
                 ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
@@ -2123,33 +2124,34 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
             if FLEX_SHOP_FLOOR_CONTROL:
-                post_cnt = 0
-                retry = FLEX_TWO_WAY_COMM.POST_RETRY
-                time.sleep(1)
-                while True:
-                    rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
-                    if rs == 0:
-                        cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
-                        break
-                    else:
-                        if rs in FLEX_ERR_CODE_MAP.err_code:
-                            cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [{:s}:{:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
-                        else:
-                            cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(rs)))
-                        if rs != 9999:
-                            post_cnt = retry
-                        if post_cnt >= retry:
+                if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+                    post_cnt = 0
+                    retry = FLEX_TWO_WAY_COMM.POST_RETRY
+                    time.sleep(1)
+                    while True:
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                        if rs == 0:
+                            cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
-                    post_cnt += 1
-                    time.sleep(3)
+                        else:
+                            if rs in FLEX_ERR_CODE_MAP.err_code:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [{:s}:{:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
+                            else:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(rs)))
+                            if rs != 9999:
+                                post_cnt = retry
+                            if post_cnt >= retry:
+                                break
+                        post_cnt += 1
+                        time.sleep(3)
 
-                #change from display PASS --> FAIL (it fail when post result to flex flow)
-                if rs != 0:
-                    for idx in range(len(mtp_test_summary)):
-                        # locate this SN's record
-                        if mtp_test_summary[idx][1] == sn:
-                            # force to set fail record
-                            mtp_test_summary[idx][3] = False
+                    #change from display PASS --> FAIL (it fail when post result to flex flow)
+                    if rs != 0:
+                        for idx in range(len(mtp_test_summary)):
+                            # locate this SN's record
+                            if mtp_test_summary[idx][1] == sn:
+                                # force to set fail record
+                                mtp_test_summary[idx][3] = False
 
             else:
                 ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
