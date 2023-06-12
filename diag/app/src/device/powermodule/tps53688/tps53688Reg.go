@@ -105,3 +105,8 @@ const (
     DAC_STEP_10MV = 0x24
     DAC_STEP_5MV = 0x27
 )
+
+const (
+    VOUT_MAX_MV = 1000
+    VOUT_MIN_MV = 700
+)

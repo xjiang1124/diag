@@ -406,6 +406,101 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
+func findVid(devName string, voutMv uint64) (vid byte, err int) {
+    var dacStepRegVal byte
+    var dacStep uint64
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Get current VOUT
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    // Write phase register
+    pmbus.WriteByte(devName, PHASE, 0xFF)
+    dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    if dacStepRegVal == DAC_STEP_5MV {
+        dacStep = 5
+    } else {
+        dacStep = 10
+    }
+    vid, err = calcVidFromVolt(voutMv, dacStep)
+    return
+}
+
+func UpdateVboot(devName string, tgtVoutMv uint64) (err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Write page register
+    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    // Write phase register
+    pmbus.WriteByte(devName, PHASE, 0xFF)
+
+    // Set VOUT_MAX
+    voutMaxVid, err := findVid(devName, VOUT_MAX_MV)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+    err = pmbus.WriteWord(devName, pmbus.VOUT_MAX, uint16(voutMaxVid))
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VOUT_MAX")
+        return
+    }
+
+    // Set VOUT_MIN
+    voutMinVid, err := findVid(devName, VOUT_MIN_MV)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+    err = pmbus.WriteWord(devName, pmbus.VOUT_MIN, uint16(voutMinVid))
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VOUT_MIN")
+        return
+    }
+
+    // Set OPERATION to On, Margin None
+    err = pmbus.WriteByte(devName, pmbus.OPERATION, 0x80)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to set OPERATION")
+        return
+    }
+
+    // Update VBoot
+    vbootVid, err := findVid(devName, tgtVoutMv)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to find vid")
+        return
+    }
+
+    err = pmbus.WriteWord(devName, pmbus.VOUT_COMMAND, uint16(vbootVid))
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to update VBOOT")
+        return
+    }
+
+    // Store to NVM
+    err = pmbus.SendByte(devName, pmbus.STORE_USER_ALL)
+
+    return
+}
+
 func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
     var TEMP uint16
     err = pmbus.Open(devName)
