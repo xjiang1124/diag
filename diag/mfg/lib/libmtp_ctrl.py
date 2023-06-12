@@ -256,7 +256,7 @@ class mtp_ctrl():
 
         script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
-            script_ver = script_ver_match.group(1)
+            script_ver = script_ver_match.group(2)
         else:
             script_ver = ""
         self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
