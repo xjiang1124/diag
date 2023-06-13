@@ -228,13 +228,13 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("FINAL_POWER_CYCLE_WITH_SANTITY_TEST_FAIL", level=0)
         mtp_mgmt_ctrl.cli_log_inf("*******************************************\n\n", level=0)
 
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
     mtp_mgmt_ctrl.cli_log_inf("*******************************************", level=0)
     mtp_mgmt_ctrl.cli_log_inf("SUMMARY_POWER_CYCLE_WITH_SANTITY_TEST_RESULT", level=0)
     mtp_mgmt_ctrl.cli_log_inf("*******************************************", level=0)
 
     for rs_idx, rs in enumerate(total_test_rs):
         mtp_mgmt_ctrl.cli_log_inf("{0}TH RESULT: {1}".format((rs_idx + 1), rs), level=0)
-
 
 if __name__ == "__main__":
     main()
