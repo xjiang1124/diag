@@ -67,6 +67,7 @@ def main():
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--stop-on-error", help="Stop test when fail occur", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
@@ -80,7 +81,9 @@ def main():
     stage = FF_Stage.FF_P2C
     iteration = 1
     mtpcfg_file = None
-
+    stop_on_error = False
+    if args.stop_on_error:
+        stop_on_error = True
     if args.iteration:
         iteration = args.iteration
     else:
@@ -216,7 +219,7 @@ def main():
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
             mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
 
-        if not current_test_rs:
+        if stop_on_error and not current_test_rs:
             break
 
     if final_test_rs:
