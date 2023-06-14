@@ -803,9 +803,19 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, skip_nic_pn_init=False):
+def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_nic_pn_init=False):
+    if level == 0:
+        retry_with_powercycle = True
+    else:
+        retry_with_powercycle = False
+
+    if stage == FF_Stage.FF_FST:
+        max_retry = 10
+    else:
+        max_retry = 3
+
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=retry_with_powercycle, max_retry=max_retry):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)

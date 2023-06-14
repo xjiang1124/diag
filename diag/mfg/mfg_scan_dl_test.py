@@ -385,11 +385,10 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+    mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="ScanDL", level=0):
         mtpid_list.remove(mtp_id)
         return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     # Sync timestamp to server
     timestamp_str = str(libmfg_utils.timestamp_snapshot())

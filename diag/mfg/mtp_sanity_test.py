@@ -136,10 +136,9 @@ def main():
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="P2C-SSH", retry_with_powercycle=True):
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
+            mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
                 current_test_rs = False
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         if current_test_rs and loop_cnt == 0:
             # Sync timestamp to server
