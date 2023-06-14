@@ -933,7 +933,7 @@ class mtp_ctrl():
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
             prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}]"+ prompt_str + "'")
+        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}] "+ prompt_str + "'")
 
         # refresh
         handle.sendline("uname")
