@@ -820,6 +820,12 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_ni
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
 
+    if not mtp_mgmt_ctrl.mtp_mgmt_set_date(stage):
+        mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
+        return False
+    else:
+        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
     # diag environment pre init
     if not mtp_mgmt_ctrl.mtp_diag_pre_init():
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)

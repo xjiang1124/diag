@@ -333,8 +333,7 @@ def main():
 
     # Sync timestamp to server
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date():
             mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)

@@ -390,14 +390,6 @@ def main():
         mtpid_list.remove(mtp_id)
         return
 
-    # Sync timestamp to server
-    timestamp_str = str(libmfg_utils.timestamp_snapshot())
-    if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-        mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-        mtpid_list.remove(mtp_id)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
     # Check if diag image update is needed
     mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
     nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE

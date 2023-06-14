@@ -276,17 +276,6 @@ def main():
                 continue
             mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
-        # Sync timestamp to server
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            timestamp_str = str(libmfg_utils.timestamp_snapshot())
-            if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-                mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
         # Sanity check
         try:
             fail_nic_list = sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list)

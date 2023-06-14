@@ -1121,9 +1121,10 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
         self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  #restore failure buffer
 
-    def mtp_mgmt_set_date(self, timestamp_str, fst=False):
+    def mtp_mgmt_set_date(self, stage=None):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
-        if fst:
+        if stage == FF_Stage.FF_FST:
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set MTP date")
                 return False
