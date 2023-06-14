@@ -201,19 +201,6 @@ def main():
             mtpid_fail_list.append(mtp_id)
             continue
 
-    # Check if diag image updated is needed
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
     # load SNs
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():

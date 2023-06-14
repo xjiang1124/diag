@@ -319,22 +319,6 @@ def main():
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        mtp_diag_image = "image_amd64_elba.tar"
-        nic_diag_image = "image_arm64_elba.tar"
-        #mtp_diag_image = "image_amd64_capri.tar"
-        #nic_diag_image = "image_arm64_capri.tar"
-
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
     fail_nic_list = dict()
     # Sanity check
     try:

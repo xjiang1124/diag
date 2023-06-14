@@ -350,17 +350,10 @@ def main():
         logfile_close(log_filep_list)
         return
 
-    # Check if image update is needed
-    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-
-    onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-
-    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-        mtpid_list.remove(mtp_id)
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+        logfile_close(log_filep_list)
         return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
