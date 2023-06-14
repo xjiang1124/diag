@@ -351,15 +351,6 @@ def run_ddr_test_suite(args):
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
         mtp_mgmt_ctrl.mtp_get_memory_size()
 
-    # load SNs
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
-            mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
     # type check
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -549,15 +540,6 @@ def run_emmc_test_suite(args):
             continue
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
         mtp_mgmt_ctrl.mtp_get_memory_size()
-
-    # load SNs
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
-            mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
 
     # type check
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

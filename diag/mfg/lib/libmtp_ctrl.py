@@ -1547,54 +1547,6 @@ class mtp_ctrl():
 
         return rc
 
-
-    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False, stage=None):
-        if not self.mtp_mgmt_connect():
-            self.cli_log_err("Unable to connect MTP chassis", level=0)
-            return False
-        self.cli_log_inf("MTP chassis connected\n", level=0)
-
-        # start the mtp diag
-        self.cli_log_inf("Pre Short Diag SW Environment Init", level=0)
-
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=25):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        # config the prompt
-        userid = self._mgmt_cfg[1]
-        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
-
-        if not self.mtp_sys_info_init():
-            self.cli_log_err("Failed to Init MTP system information", level=0)
-            return False
-
-        # PSU/FAN absent, power off all the cards
-        if not self.mtp_hw_init(stage):
-            self.cli_log_err("MTP HW Init Fail, Power Off All Cards", level=0)
-            self.mtp_power_off_nic()
-            return False
-
-        # get the mtp system info
-        if not self.mtp_sys_info_disp():
-            self.cli_log_err("Unable to retrieve MTP system info", level=0)
-            return False
-
-        if not self.mtp_nic_init(skip_nic_pn_init=skip_nic_pn_init):
-            self.cli_log_err("Initialize NIC type, present failed", level=0)
-            return False
-        return True
-
     def mtp_get_nic_sn_start(self, slot=0):
         rc = ""
         cmd = "eeutil -uut=UUT_{:s} -disp -field=sn".format(str(slot + 1))
@@ -1612,7 +1564,7 @@ class mtp_ctrl():
 
         return rc
 
-    def mtp_diag_pre_init(self):
+    def mtp_diag_pre_init(self, start_dsp=True):
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
@@ -1623,7 +1575,7 @@ class mtp_ctrl():
             return False
 
         cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
@@ -1632,54 +1584,47 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute env command", level=0)
             return False
 
-        # kill other diagmgr instances
-        cmd = "killall diagmgr"
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
-            return False
+        if start_dsp:
+            # kill other diagmgr instances
+            cmd = "killall diagmgr"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                return False
 
-        # start the mtp diagmgr
-        diagmgr_handle = self.mtp_session_create()
-        if not diagmgr_handle:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
+            # start the mtp diagmgr
+            diagmgr_handle = self.mtp_session_create()
+            if not diagmgr_handle:
+                self.cli_log_err("Failed to create diagmgr session", level=0)
+                return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
-        diagmgr_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
-        if idx < 0:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.close()
+            cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
+            diagmgr_handle.sendline(cmd)
+            idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
+            if idx < 0:
+                self.cli_log_err("Failed to start diagmgr", level=0)
+                return False
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+            diagmgr_handle.close()
 
-        # config the prompt
-        userid = self._mgmt_cfg[1]
-        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+            # register MTP diagsp
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to access dshell", level=0)
+                return False
 
-        # register MTP diagsp
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
+            cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+            sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+                self.cli_log_err("Failed to start dsp", level=0)
+                return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
             return False
 
         self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
-
         return True
 
     def mtp_inlet_temp_test(self, stage=None, sanity=False):

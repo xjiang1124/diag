@@ -386,14 +386,7 @@ def main():
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage="ScanDL", level=0):
-        mtpid_list.remove(mtp_id)
-        return
-
-    # init NIC types
-
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init_start(skip_nic_pn_init=True):
-        mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
         mtpid_list.remove(mtp_id)
         return
 

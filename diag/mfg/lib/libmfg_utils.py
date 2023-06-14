@@ -806,8 +806,10 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
 def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_nic_pn_init=False):
     if level == 0:
         retry_with_powercycle = True
+        start_dsp = True
     else:
         retry_with_powercycle = False
+        start_dsp = False
 
     if stage == FF_Stage.FF_FST:
         max_retry = 10
@@ -834,7 +836,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_ni
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init():
+    if not mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=start_dsp):
         mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
