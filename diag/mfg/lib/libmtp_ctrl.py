@@ -3664,9 +3664,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD verify for Proto NIC")
             return True
 
-        if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
-            self.cli_log_slot_err(slot, "Dumping esec failed")
-            return False
+        if nic_type not in CAPRI_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
+                self.cli_log_slot_err(slot, "Dumping esec failed")
+                return False
 
         if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
             self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
