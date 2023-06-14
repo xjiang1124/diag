@@ -168,38 +168,51 @@ class mtp_ctrl():
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
+    def log_mtp_file(self, msg):
+        self._diag_filep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._mgmt_handle:
+            self.mtp_mgmt_exec_cmd("")
+
+    def log_nic_file(self, slot, msg):
+        self._diag_nic_filep_list[slot].write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._nic_ctrl_list[slot] is not None:
+            if self._nic_ctrl_list[slot]._nic_handle:
+                self._nic_ctrl_list[slot].mtp_exec_cmd("")
+
     def log_slot_test_start(self, slot, testname):
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return start
 
     def log_slot_test_stop(self, slot, testname, start):
         # log the timestamp in NIC log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return duration
 
     def log_test_start(self, testname):
         # log the timestamp in MTP log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
         return start
 
     def log_test_stop(self, testname, start):
         # log the timestamp in MTP log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
         return duration
 
     def mtp_sys_info_disp(self):
@@ -4120,7 +4133,7 @@ class mtp_ctrl():
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
-        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
+        self.log_nic_file(slot, "#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -4166,7 +4179,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
+        self.log_nic_file(slot, "#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -5193,7 +5206,7 @@ class mtp_ctrl():
         ts_record = libmfg_utils.timestamp_snapshot()
         for slot in range(self._slots):
             if self._nic_ctrl_list[slot]:
-                self._nic_ctrl_list[slot].mtp_exec_cmd("#####  Power on NIC at {:s} #####".format(str(ts_record)))
+                self.log_nic_file(slot, "#####  Power on NIC #####")
 
         if count_down:
             self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
@@ -5235,7 +5248,7 @@ class mtp_ctrl():
         ts_record = libmfg_utils.timestamp_snapshot()
         for slot in range(self._slots):
             if self._nic_ctrl_list[slot]:
-                self._nic_ctrl_list[slot].mtp_exec_cmd("##### Power off NIC at {:s} #####".format(str(ts_record)))
+                self.log_nic_file(slot, "##### Power off NIC #####")
 
         self.cli_log_inf("Power off all NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
@@ -6493,9 +6506,8 @@ class mtp_ctrl():
         # on mtp_diag.log
         if slot is None:
             ts = libmfg_utils.timestamp_snapshot()
-            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-            self.mtp_mgmt_exec_cmd(ts_record_cmd)
+            ts_record_cmd = "#######= RESET I2C HUB =#######"
+            self.log_mtp_file(ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd(cmd)
@@ -6512,9 +6524,8 @@ class mtp_ctrl():
         # on mtp_NIC*_diag.log
         else:
             ts = libmfg_utils.timestamp_snapshot()
-            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-            self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+            ts_record_cmd = "#######= RESET I2C HUB =#######"
+            self.log_nic_file(slot, ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
@@ -7546,10 +7557,10 @@ class mtp_ctrl():
         eth = cmd_buf.splitlines()[-1].strip()
         if not cmd_buf or "grep" in eth:
             self.cli_log_slot_err(slot, "Unable to find ethernet interface for PCI device {:s}".format(bus))
-            self.mtp_mgmt_exec_cmd_para(slot, "#############= FA DUMP =#############")
+            self.log_nic_file(slot, "#############= FA DUMP =#############")
             self.mtp_mgmt_exec_cmd_para(slot, "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent")
             self.mtp_mgmt_exec_cmd_para(slot, "lshw -c network -businfo")
-            self.mtp_mgmt_exec_cmd_para(slot, "#############= END FA DUMP =#############")
+            self.log_nic_file(slot, "#############= END FA DUMP =#############")
             return ""
         self._nic_ctrl_list[slot]._fst_eth_mnic = eth
 
