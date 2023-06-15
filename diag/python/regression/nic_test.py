@@ -520,6 +520,10 @@ class nic_test:
             print "=== Ite {} ===".format(i)
             if pc_mode == "board":
                 ret, _ = self.setup_env_multi(nic_list, False, 60)
+            elif pc_mode == "12v":
+                slot_list = ",".join(nic_list)
+                self.nic_con.power_cycle_12v_multi(self.baud_rate, slot_list, 60)
+                ret, _ = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
             else:
                 ret, _ = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
 
@@ -527,7 +531,7 @@ class nic_test:
                 print "=== Power cycle test failed at ite {} ===".format(i)
                 break
 
-            if pc_mode != "board":
+            if pc_mode == "gpio3":
                 print("=== sysreset ===")
                 session = common.session_start()
                 self.nic_con.uart_session_start(session)
