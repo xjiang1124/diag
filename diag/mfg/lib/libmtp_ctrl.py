@@ -254,9 +254,9 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search("image_amd64_.....?_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
-            script_ver = script_ver_match.group(1)
+            script_ver = script_ver_match.group(2)
         else:
             script_ver = ""
         self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
@@ -1550,7 +1550,7 @@ class mtp_ctrl():
             return False
 
         cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=25):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
