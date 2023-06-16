@@ -73,7 +73,11 @@ foreach slot $slot_list {
     }
 
     try {
-        elb_prog_qspi_img $img $type
+        if {$type == "env_clean"} {
+            elb_erase_qspi 1024 0x7ffe0000
+        } else {
+            elb_prog_qspi_img $img $type
+        }
     } on error {msg} {
         plog_msg $msg
         dict set test_result $slot "FAIL"
