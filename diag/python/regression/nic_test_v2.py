@@ -380,7 +380,7 @@ class nic_test_v2:
 
                 self.nic_con.switch_console(slot)
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, numRetry=1)
                 if ret != 0:
                     common.session_stop(session)
                     continue

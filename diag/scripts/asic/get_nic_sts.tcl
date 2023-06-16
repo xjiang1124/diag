@@ -20,8 +20,15 @@ set ASIC_GEN "$ASIC_SRC"
 
 set MTP_TYPE $::env(MTP_TYPE)
 set ASIC_TYPE $::env(ASIC_TYPE)
-
-puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm"
+set UUT_NUM "UUT_$slot"
+set BOARD_TYPE $::env($UUT_NUM)
+set ddr5 0
+set cpld_id 0x60
+if { $BOARD_TYPE == "GINESTRA_D5" } {
+    set ddr5 1
+    set cpld_id 0x61
+}
+puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; board_type: $BOARD_TYPE"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -80,8 +87,8 @@ plog_msg "=================="
 plog_msg "MC intr"
 plog_msg "=================="
 if {$ASIC_TYPE == "GIGLIO"} {
-    gig_platform 1
-    gig_mc_irq_show -1 -1 $::ddr5
+    #gig_platform 1
+    gig_mc_irq_show -1 -1 $ddr5
 } else {
     mc_int
 }
@@ -96,9 +103,9 @@ plog_msg "=================="
 plog_msg "ECC intr"
 plog_msg "=================="
 if {$ASIC_TYPE == "GIGLIO"} {
-    gig_mc_check_ecc -1 -1 $::ddr5 $::board_type
-    gig_mc_clear_ecc_irq  -1  -1  -1  $::ddr5
-    gig_mc_clear_ecc_counter  -1  -1  $::ddr5
+    gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
+    gig_mc_clear_ecc_irq  -1  -1  -1  $ddr5
+    gig_mc_clear_ecc_counter  -1  -1  $ddr5
 } else {
     set output [check_ecc_intr]
     set substring "ECC_EN:0x33 ECC_INTERRUPT:0x0"

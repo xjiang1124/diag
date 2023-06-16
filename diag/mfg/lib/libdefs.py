@@ -162,7 +162,7 @@ class MTP_Const:
     NIC_L1_ESEC_PROG_DELAY = 5 * 60
     NIC_ESEC_WRITE_PROT_DELAY = 15 * 60
     NIC_I2C_DETECT_DELAY = 60
-    NIC_EDMA_ENV_INIT_CMD_DELAY = 240
+    NIC_EDMA_ENV_INIT_CMD_DELAY = 600
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -441,6 +441,7 @@ class MFG_DIAG_CMDS:
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
+    NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -524,12 +525,14 @@ class MFG_DIAG_CMDS:
     MTP_PARA_MGMT_FPO_FMT  = "nic_test.py -setup_multi -mgmt -slot_list {:s} -asic_type {:s} -fpo"
     MTP_PARA_PRBS_ETH_TEST_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=120 -vmarg {:s} -mode=eth"
     MTP_PARA_PRBS_ETH_ELBA_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=elba"
+    MTP_PARA_PRBS_ETH_GIGLIO_FMT  = "nic_test.py -prbs  -slot_list='{:s}' -wtime=180 -vmarg {:s} -mode=eth -dura=60 -asic_type=giglio"
     MTP_PARA_SNAKE_HBM_FMT      = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri"
     MTP_PARA_SNAKE_PCIE_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=180 -vmarg {:s} -asic_type=capri -mode=pcie"
     MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod"
     MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_SNAKE_LACONA_FMT   = "nic_test.py -snake -slot_list='{:s}' -wtime=300 -vmarg {:s} -snake_num=6 -dura=120 -mode=nod_525"
     MTP_PARA_SNAKE_ELBA_FMT     = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=nod"
+    MTP_PARA_SNAKE_GIGLIO_FMT = "nic_test.py -snake -slot_list='{:s}' -wtime=600 -vmarg {:s} -snake_num=4 -dura=3 -mode=hod_1100"
     MTP_PARA_ARM_L1_ELBA_FMT             = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s}"
     MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod"
     MTP_PARA_ARM_L1_ELBA_LACONA_FMT      = "arm_l1.py -arm_l1 -slot_list='{:s}' -wtime=30 -vmarg {:s} -mode=nod_525"

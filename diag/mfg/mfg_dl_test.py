@@ -307,7 +307,7 @@ def main():
                         mtp_dl_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
                     except KeyError:
                         mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
-                if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
+                if card_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and card_type not in FPGA_TYPE_LIST:
                     try:
                         mtp_dl_image_list.append(NIC_IMAGES.fea_cpld_img[card_type])
                     except KeyError:
@@ -354,11 +354,10 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if not nic_prsnt_list[slot]:
                 continue
-            if slot in fail_nic_list[mtp_id]:
-                continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
+                if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+                    pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
     # Close file handles
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

@@ -48,8 +48,8 @@ func main() {
     }
 
     if *prbsPtr == true {
-        if asicType == "ELBA" {
-            elba.Prbs(*modePtr, *polyPtr, *duraPtr, intLpbk)
+        if asicType == "ELBA" || asicType == "GIGLIO" {
+            elba.Prbs(*modePtr, *polyPtr, *duraPtr, intLpbk, asicType)
         } else if asicType == "CAPRI"{
             capri.Prbs(*modePtr, *polyPtr, *duraPtr)
         } else {
@@ -59,7 +59,7 @@ func main() {
     }
 
     if *prbsChkPtr == true {
-        if asicType == "ELBA" {
+        if asicType == "ELBA" || asicType == "GIGLIO" {
             elba.SnakeAndPrbsCheck("PRBS")
         } else {
             cli.Println("e", "Unsupported ASIC type", asicType)
@@ -69,8 +69,8 @@ func main() {
 
     cli.Println("d", "intLpbk:", intLpbk)
     if *snakePtr == true {
-        if asicType == "ELBA" {
-            elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr, *snakeNumPtr)
+        if asicType == "ELBA" || asicType == "GIGLIO" {
+            elba.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr, *snakeNumPtr, asicType)
         } else if asicType == "CAPRI"{
             capri.Snake(*modePtr, *duraPtr, intLpbk, *verbosePtr)
         } else {
@@ -80,7 +80,7 @@ func main() {
     }
 
     if *snakeChkPtr == true {
-        if asicType == "ELBA" {
+        if asicType == "ELBA" || asicType == "GIGLIO" {
             elba.SnakeAndPrbsCheck("SNAKE")
         } else if asicType == "CAPRI"{
             capri.SnakeCheck()
@@ -91,8 +91,8 @@ func main() {
     }
 
     if *snakePostPtr == true {
-        if asicType == "ELBA" {
-            elba.SnakePost()
+        if asicType == "ELBA" || asicType == "GIGLIO" {
+            elba.SnakePost(asicType)
         } else if asicType == "CAPRI"{
             capri.SnakePost(*modePtr)
         } else {

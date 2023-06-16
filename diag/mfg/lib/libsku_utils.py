@@ -47,7 +47,8 @@ class PART_NUMBERS_MATCH:
     N25_HPE_PN_FMT = r"P18669-00[0-9]{1}"                                                           #P18669-001       NAPLES25 HPE
     N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"                                                  #68-0008-xx yy    NAPLES25 EQUINIX
 
-    N25_SWM_HPE_PN_FMT     = r"P26968-00[0-9]{1}"                                                   #P26968-001       NAPLES25 SWM HPE
+    N25_SWM_HPE_001_PN_FMT = r"P26968-001"                                                          #P26968-001       NAPLES25 SWM HPE
+    N25_SWM_HPE_PN_FMT     = r"P26968-00[1-9]{1}"                                                   #P26968-002       NAPLES25 SWM HPE
     N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"                                                   #P41851-001       NAPLES25 SWM HPE CLOUD
     N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"                                                   #P46653-001       NAPLES25 SWM HPE TAA
     N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}"                                       #68-0016-01 01    NAPLES25 SWM PENSANDO
@@ -93,6 +94,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.N25_HPE_PN_FMT:          HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_PN_FMT:         HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT:     HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  HPE_P1_SN_FMT + HPE_SUFFIX_FMT,
@@ -110,6 +112,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT:  "FPD" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT:   "FPD" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT:    "FPG" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT:    "FPJ" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D4_PN_FMT:      "FPI" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT:      "FPH" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                  "FPF" + FLX_SN_SUFFIX_FMT + "|" + "FPN" + FLX_SN_SUFFIX_FMT # FPN allowed until Q2, then change this to "N/A" to block all FPN
@@ -118,6 +121,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.N25_HPE_PN_FMT:          HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_PN_FMT:         HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT:     HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  HPE_FSP_SN_FMT + HPE_SUFFIX_FMT,
@@ -136,6 +140,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.N25_HPE_PN_FMT:          HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_PN_FMT:         HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT:     HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT:  HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT:      HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT:  HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
         PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT:  HPE_MILP_SN_FMT + HPE_SUFFIX_FMT,
@@ -170,7 +175,8 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.N25_EQI_PN_FMT                       #68-0008-xx yy    NAPLES25 EQUINIX
         ],
     NIC_Type.NAPLES25SWM: [
-        PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,                  #P26968-001       NAPLES25 SWM HPE
+        PART_NUMBERS_MATCH.N25_SWM_HPE_001_PN_FMT,              #P26968-001       NAPLES25 SWM HPE
+        PART_NUMBERS_MATCH.N25_SWM_HPE_PN_FMT,                  #P26968-002       NAPLES25 SWM HPE
         PART_NUMBERS_MATCH.N25_SWM_HPE_CLD_PN_FMT,              #P41851-001       NAPLES25 SWM HPE CLOUD
         PART_NUMBERS_MATCH.N25_SWM_HPE_TAA_PN_FMT,              #P46653-001       NAPLES25 SWM HPE TAA
         PART_NUMBERS_MATCH.N25_SWM_PEN_PN_FMT,                  #68-0016-01 XX    NAPLES25 SWM PENSANDO
@@ -255,3 +261,100 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT                   #68-0075-01 01    GINESTRA_D5
         ]
 }
+
+
+def get_product_name_from_pn(pn):
+    if "DSC2-2Q200-32R32F64P-R3" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-B" in pn:
+        product_name = NIC_Type.ORTANO2ADIIBM
+    elif "DSC2-2Q200-32R32F64P-R2" in pn:
+        product_name = NIC_Type.ORTANO2ADI
+    elif "DSC2-2Q200-32R32F64P-R4" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
+        if "DSC2-2Q200-32R32F64P-R4-T" in pn:
+            product_name = NIC_Type.ORTANO2SOLOORCTHS
+    elif "DSC2-2Q200-32R32F64P-R5" in pn:
+        product_name = NIC_Type.ORTANO2ADICR
+    elif "DSC2-2Q200-32R32F64P-R" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "DSC2-2Q200-32R32F64P-M5" in pn:
+        product_name = NIC_Type.ORTANO2ADICRMSFT
+    elif "DSC2-2Q200-32R32F64P-M4" in pn:
+        product_name = NIC_Type.ORTANO2SOLOMSFT
+    elif "68-0092-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLOALI
+    elif "DSC2-2Q200-32R32F64P-S4" in pn:
+        product_name = NIC_Type.ORTANO2SOLOALI
+    elif "DSC2-2Q200-32R32F64P" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "68-0015-02" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "68-0021-02" in pn:
+        product_name = NIC_Type.ORTANO2
+    elif "0X322F" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0W5WGK" in pn:
+        product_name = NIC_Type.LACONA32DELL
+    elif "0PCFPC" in pn:
+        product_name = NIC_Type.POMONTEDELL
+    elif "P47930" in pn:
+        product_name = NIC_Type.LACONA32
+    elif "68-0026-01" in pn:
+        product_name = NIC_Type.ORTANO2ADI
+    elif "68-0028-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIIBM
+    elif "68-0034-01" in pn:
+        product_name = NIC_Type.ORTANO2ADIMSFT
+    elif "68-0049-03" in pn:
+        product_name = NIC_Type.ORTANO2ADICR
+    elif "68-0091-01" in pn:
+        product_name = NIC_Type.ORTANO2ADICRMSFT
+    elif "68-0029-01" in pn:
+        product_name = NIC_Type.ORTANO2INTERP
+    elif "68-0074-01" in pn:
+        product_name = NIC_Type.GINESTRA_D4
+    elif "DSC2A-2Q200-32R32F64P-R" in pn:
+        product_name = NIC_Type.GINESTRA_D4
+    elif "68-0075-01" in pn:
+        product_name = NIC_Type.GINESTRA_D5
+    elif "DSC2A-2Q200-32S32F64P-R" in pn:
+        product_name = NIC_Type.GINESTRA_D5
+    elif "68-0077-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLO
+    elif "68-0013-01" in pn:
+        product_name = NIC_Type.NAPLES100IBM
+    elif "P26968" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "P26966-B21" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "68-0014-01" in pn:
+        product_name = NIC_Type.NAPLES25SWMDELL
+    elif "P37689" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "P37687" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "68-0010" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "DSC1-2S25-4P8P-DS" in pn:
+        product_name = NIC_Type.NAPLES25OCP
+    elif "DSC1-2S25-4H8P-DS" in pn:
+        product_name = NIC_Type.NAPLES25SWMDELL
+    elif "DSC1-2S25-4H8P-SL" in pn:
+        product_name = NIC_Type.UNKNOWN
+    elif "DSC1-2S25-4H8P-ST" in pn:
+        product_name = NIC_Type.UNKNOWN
+    elif "DSC1-2S25-4H8P-S" in pn:
+        product_name = NIC_Type.NAPLES25SWM
+    elif "111-05363" in pn:
+        product_name = NIC_Type.NAPLES100
+    elif "68-0003" in pn:
+        product_name = NIC_Type.NAPLES100
+    elif "68-0089-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLOORCTHS
+    elif "68-0090-01" in pn:
+        product_name = NIC_Type.ORTANO2SOLOMSFT
+    else:
+        product_name = NIC_Type.UNKNOWN
+
+    return product_name

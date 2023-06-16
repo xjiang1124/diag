@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import subprocess
+import datetime
 from time import sleep
 
 sys.path.append("../lib")
@@ -19,14 +20,14 @@ class nic_con:
         self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.fmt_change_rate = "stty speed {}"
 
-    def uart_session_start_login(self, session, baud=115200):
+    def uart_session_start_login(self, session, baud=115200, timeout=15):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print "ite: ", ite
-            timeout = 15
+            #timeout = 15
 
             try:
                 #session.expect("Terminal ready")
@@ -48,14 +49,25 @@ class nic_con:
                     print "=== TIMEOUT: Can not connect to NIC on UART!"
                 ret = -1
             #time.sleep(15)
+        currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+        session.sendline("date -s " + currentTime)
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        if i != 0:
+            ret = -1
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        if i != 0:
+            ret = -1
+
         return ret
 
-    def uart_session_start(self, session, baud=115200):
+    def uart_session_start(self, session, baud=115200, numRetry=10):
         ret = 0
         cmd = self.fmt_con_cmd.format(baud)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
-        for ite in range(10):
+        for ite in range(numRetry):
             print "ite: ", ite
             timeout = 1
 
@@ -76,6 +88,17 @@ class nic_con:
                 if ite != 0:
                     print "=== TIMEOUT: Can not connect to NIC on UART!"
                 ret = -1
+
+        currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+        session.sendline("date -s " + currentTime)
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        if i != 0:
+            ret = -1
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        if i != 0:
+            ret = -1
         return ret
 
     def uart_session_start_slot(self, session, baud=115200, slot=0):
@@ -101,6 +124,17 @@ class nic_con:
                 session.expect("\#")
         except pexpect.TIMEOUT:
             print "=== TIMEOUT: Can not connect to NIC on UART!"
+            return -1
+
+        currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+        session.sendline("date -s " + currentTime)
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
+        if i != 0:
+            return -1
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15) # expect the # in my send command
+        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
+        if i != 0:
             return -1
         return 0
 
@@ -216,6 +250,25 @@ class nic_con:
         common.session_cmd(session, cmd)
         time.sleep(1)
         cmd = "turn_on_slot.sh on {}".format(slot_list)
+        if swm_lp == True:
+            cmd = "".join((cmd, " 1"))
+        common.session_cmd(session, cmd)
+
+        # Wait for nic to boot
+        print "Wait", wtime, "after power cycle"
+        time.sleep(wtime)
+
+        common.session_stop(session)
+        return ret
+
+    def power_cycle_12v_multi(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
+        ret = 0
+        session = common.session_start()
+
+        cmd = "turn_on_slot_12v.sh off {}".format(slot_list)
+        common.session_cmd(session, cmd)
+        time.sleep(1)
+        cmd = "turn_on_slot_12v.sh on {}".format(slot_list)
         if swm_lp == True:
             cmd = "".join((cmd, " 1"))
         common.session_cmd(session, cmd)

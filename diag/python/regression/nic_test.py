@@ -520,6 +520,10 @@ class nic_test:
             print "=== Ite {} ===".format(i)
             if pc_mode == "board":
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60)
+            elif pc_mode == "12v":
+                slot_list = ",".join(nic_list)
+                self.nic_con.power_cycle_12v_multi(self.baud_rate, slot_list, 60)
+                ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
             else:
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
 
@@ -535,7 +539,7 @@ class nic_test:
                 print("All cards have failed!")
                 break
 
-            if pc_mode != "board":
+            if pc_mode == "gpio3":
                 print("=== sysreset ===")
                 session = common.session_start()
                 self.nic_con.uart_session_start(session)
@@ -561,15 +565,19 @@ class nic_test:
         if in_lpbk == True:
             int_lpbk_str = "-int_lpbk"
 
+        if os.environ['ASIC_TYPE'] == "GIGLIO":
+            asic_name = "giglio"
+        else:
+            asic_name = "elba"
         if test_type == "snake" and mode == "hbm":
             test_cmd = "/data/nic_util/asicutil -snake -mode hbm_lb 2>&1 >  /data/nic_util/asicutil_hbm.log &"
         elif test_type == "snake" and mode == "pcie":
             test_cmd = "/data/nic_util/asicutil -snake -mode pcie_lb 2>&1 > /data/nic_util/asicutil_pcie.log &"
         elif (test_type == "snake" and ("nod" in mode)) or (test_type == "snake" and ("hod" in mode) ):
-            test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} -snake_num {} 2>&1 > /data/nic_util/asicutil_elba.log &".format(mode, dura, int_lpbk_str, snake_num)
+            test_cmd = "/data/nic_util/asicutil -snake -mode {} -dura {} {} -snake_num {} 2>&1 > /data/nic_util/asicutil_{}.log &".format(mode, dura, int_lpbk_str, snake_num, asic_name)
             print("test_cmd", test_cmd)
         elif test_type == "prbs" and mode == "eth":
-            test_cmd = "/data/nic_util/asicutil -prbs -mode ETH -dura {} {} 2>&1 > /data/nic_util/asicutil_elba_prbs_eth.log &".format(dura, int_lpbk_str)
+            test_cmd = "/data/nic_util/asicutil -prbs -mode ETH -dura {} {} 2>&1 > /data/nic_util/asicutil_{}_prbs_eth.log &".format(dura, int_lpbk_str, asic_name)
             print("test_cmd", test_cmd)
         else:
             print "Invalid test_type {} and mode {}".format(test_type, mode)
@@ -626,9 +634,13 @@ class nic_test:
             cmd = "/data/nic_util/asicutil -prbs_chk"
         else:
             cmd = "/data/nic_util/asicutil -snake_chk"
+        if os.environ['ASIC_TYPE'] == "GIGLIO":
+            asic_name = "giglio"
+        else:
+            asic_name = "elba"
 
         if test_type == "snake":
-            session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_elba.log")
+            session.sendline("tail -5 /data/nic_arm/nic/asic_src/ip/cosim/tclsh/snake_{}.log".format(asic_name))
 
         ret = self.nic_con.uart_session_cmd_sig(session, cmd, 15, "\#", ["SUCCESS", "FAIL", "RUNNING"], False)
         self.nic_con.uart_session_cmd(session, "sync", 15)
@@ -678,7 +690,7 @@ class nic_test:
             time.sleep(interval)
             
 
-    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False):
+    def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False, num_retry=2):
         print "=== NIC {} {} ===".format(test_type, mode)
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
@@ -687,7 +699,7 @@ class nic_test:
         #slot_list = ",".join(nic_list)
         print "slot_list:", slot_list
         #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
-        self.setup_env_multi_top(slot_list, False, 30, False, True, False)
+        self.setup_env_multi_top(slot_list, False, 30, False, True, False, numRetry=num_retry)
 
         test_result = OrderedDict()
         # Start snake
@@ -1627,6 +1639,7 @@ if __name__ == "__main__":
     parser.add_argument("-hardcode", "--hardcode", help="DDR hardcode setting", action='store_true')
     parser.add_argument("-ddr_speed", "--ddr_speed", help="DDR speed", type=int, default=3200)
     parser.add_argument("-pc_mode", "--pc_mode", help="Power cycle mode; board: whole board PC; gpio3: GPIO3 PC", type=str, default="board")
+    parser.add_argument("-num_retry", "--num_retry", help="Number of retries", type=int, default=2)
 
     # Skew test parameters
     parser.add_argument("-fan_ctrl", "--fan_ctrl", help="Enable fan control", action='store_true')
@@ -1645,10 +1658,10 @@ if __name__ == "__main__":
 
     if args.snake == True:
         slot_list = args.slot_list.split(',')
-        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si)
+        test.nic_test(slot_list, "snake", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk, snake_num=args.snake_num, disp_si=args.disp_si, num_retry=args.num_retry)
         sys.exit()
 
-    if args.prbs == True and args.asic_type == "elba":
+    if args.prbs == True and (args.asic_type == "elba" or args.asic_type == "giglio"):
         slot_list = args.slot_list.split(',')
         test.nic_test(slot_list, "prbs", args.mode, args.wait_time, vmargin=args.vmarg, duration=args.dura, int_lpbk=args.int_lpbk)
         sys.exit()
@@ -1677,7 +1690,7 @@ if __name__ == "__main__":
         elif args.goldfw == True:
             test.setup_env_multi_goldfw(slot_list, args.mgmt, 30)
         else: 
-            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port, env=args.skip_env)
+            test.setup_env_multi_top(slot_list, args.mgmt, 30, args.first_pwr_on, args.no_pwr_cycle, args.aapl, args.swm_lp, args.asic_type, args.uefi, args.dis_net_port, args.num_retry, env=args.skip_env)
         sys.exit()
 
     if args.pwr_cycle_test == True:

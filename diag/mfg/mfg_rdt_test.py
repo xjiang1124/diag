@@ -178,14 +178,15 @@ def main():
         libmfg_utils.cli_inf("#" * 320)
         mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} START".format(loop), level=0)
 
-        # power off all the test mtp
-        libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+        if loop == 1:
+            # power off all the test mtp
+            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
         # power on the mtp chassis
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="ORT-SSH", retry_with_powercycle=True):
+            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="RDT-SSH", retry_with_powercycle=True):
                 mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -217,7 +218,7 @@ def main():
 
         # load SNs
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
+            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start(stage=stage):
                 mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -280,18 +281,6 @@ def main():
                 mtpid_fail_list.append(mtp_id)
                 continue
             mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
-        # Flex flow 2 Way communication Pre-Post 
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot in fail_nic_list[mtp_id]:
-                    continue
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                    pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
 
         # Sanity check
         try:
@@ -362,8 +351,7 @@ def main():
         libmfg_utils.cli_inf("#" * 320 + "\n" * 3)
 
         if not result:
-            libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT ORT TEST******")
-            libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+            libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT RDT TEST******")
             break
 
 
