@@ -2240,8 +2240,6 @@ class mtp_ctrl():
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0049"]
             if nic_type == NIC_Type.ORTANO2ADICRMSFT:
                 expected_timestamp = NIC_IMAGES.goldfw_dat["68-0091"]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
             return False
@@ -2974,10 +2972,6 @@ class mtp_ctrl():
         cur_timestamp = nic_cpld_info[1]
         try:
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_version = NIC_IMAGES.cpld_ver["P41854"]
             if nic_type in NIC_Type.ORTANO2ADI and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0026"]
             if nic_type in NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -2993,10 +2987,6 @@ class mtp_ctrl():
             return False
         try:
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
             if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -3333,10 +3323,6 @@ class mtp_ctrl():
 
         try:
             expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_version = NIC_IMAGES.cpld_ver["P41854"]
             if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_version = NIC_IMAGES.cpld_ver["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -3352,10 +3338,6 @@ class mtp_ctrl():
             return False
         try:
             expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
             if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                 expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
             if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -3372,10 +3354,6 @@ class mtp_ctrl():
         if sec_cpld:
             try:
                 expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
-                if nic_type == NIC_Type.NAPLES25SWM:
-                    expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-                if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                    expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
                 if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                     expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
                 if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -3391,10 +3369,6 @@ class mtp_ctrl():
                 return False
             try:
                 expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
-                if nic_type == NIC_Type.NAPLES25SWM:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-                if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
                 if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
                     expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
                 if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
@@ -3507,10 +3481,6 @@ class mtp_ctrl():
             expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
             if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
                 expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
-            if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
-                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.diagfw_dat[self.mtp_lookup_nic_swm_type(slot)]
         except KeyError:
             self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
             return False
@@ -5095,57 +5065,6 @@ class mtp_ctrl():
         else:
             return False
 
-    def mtp_is_nic_ocp_dell(self, slot):
-        """
-         Differentiate OCP by PN
-         - 68-0010: Dell version -> return True
-         - P37689-001: HPE version -> return False
-         - any other -> return False with err msg
-        """
-        if self._nic_type_list[slot] != NIC_Type.NAPLES25OCP:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for OCP")
-            return False
-        slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for OCP: ".format(slot_pn))
-            return False
-        nic_pn = re.match(PART_NUMBERS_MATCH.N25_OCP_DEL_PN_FMT, slot_pn)
-        if nic_pn:
-            return True
-        else:
-            return False
-
-    def mtp_lookup_nic_swm_type(self, slot, slot_pn=None):
-        """
-         Differentiate SWM cards by PN
-
-            PN : lookup
-            -----------
-            P26968-001 : NAPLES25SWM
-            P41851-001 : P41851
-            P46653-001 : P46653
-            68-0016-XX XX : 68-0016
-            68-0017-XX XX : 68-0016
-            else : nic_type
-        """
-        if slot_pn is None:
-            slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for SWM: ".format(slot_pn))
-            return slot_pn
-
-        if self._nic_type_list[slot] != NIC_Type.NAPLES25SWM:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for SWM")
-            return slot_pn
-
-        swm_skus = ("P26968", "P41851", "P46653", "68-0016", "68-0017")
-        for sku in swm_skus:
-            if sku in slot_pn:
-                if sku == "P26968":
-                    return "NAPLES25SWM"
-                else:
-                    return sku
-
     def mtp_nic_erase_board_config(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_board_config():
             self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
@@ -5202,20 +5121,6 @@ class mtp_ctrl():
 
         self.cli_log_slot_inf(slot, "NIC cfg compare passed")
         return True
-
-    def mtp_is_nic_cloud(self, slot):
-        if self._nic_type_list[slot] != NIC_Type.NAPLES100HPE:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for HPE")
-            return False
-        slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for HPE: ".format(slot_pn))
-            return False
-        nic_pn = re.match(PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT, slot_pn)
-        if nic_pn:
-            return True
-        else:
-            return False
 
     def mtp_get_nic_sw_pn(self, slot):
         if self._nic_sw_pn_list[slot] is None:
