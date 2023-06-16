@@ -247,115 +247,14 @@ def main():
     # Check that firmware images are present
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_swi_image_list = list()
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
         for nic_sw_img_file in nic_sw_img_file_list:
             mtp_swi_image_list.append(nic_sw_img_file)
-        if (mtp_capability & 0x1):
-            for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                    if card_type == NIC_Type.ORTANO2ADI:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
-                    if card_type == NIC_Type.ORTANO2ADIIBM:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0028"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0028"])
-                    if card_type == NIC_Type.ORTANO2ADIMSFT:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0034"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0034"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
-                    if card_type == NIC_Type.ORTANO2ADI:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
-                    if card_type == NIC_Type.ORTANO2ADIIBM:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0028"])
-                    if card_type == NIC_Type.ORTANO2ADIMSFT:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0034"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                if card_type == NIC_Type.ORTANO2ADIIBM:
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.cert_img["68-0028"])
-                        mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0028"])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw & cert image for {:s}".format(card_type))
-        if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                    if card_type == NIC_Type.ORTANO2ADI:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0026"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0026"])
-                    if card_type == NIC_Type.ORTANO2ADIIBM:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0028"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0028"])
-                    if card_type == NIC_Type.ORTANO2ADIMSFT:
-                        mtp_swi_image_list.append(NIC_IMAGES.cpld_img["68-0034"])
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img["68-0034"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["P41854"])
-                    if card_type == NIC_Type.ORTANO2ADI:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0026"])
-                    if card_type == NIC_Type.ORTANO2ADIIBM:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0028"])
-                    if card_type == NIC_Type.ORTANO2ADIMSFT:
-                        mtp_swi_image_list.append(NIC_IMAGES.sec_cpld_img["68-0034"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing secure cpld image for {:s}".format(card_type))
-                try:
-                    mtp_swi_image_list.append(NIC_IMAGES.goldfw_img[card_type])
-                    mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0015"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.fail_cpld_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                if card_type in FPGA_TYPE_LIST:
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.timer1_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.timer2_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.uboot_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
-                if card_type == NIC_Type.ORTANO2ADIIBM:
-                    try:
-                        mtp_swi_image_list.append(NIC_IMAGES.cert_img["68-0028"])
-                        mtp_swi_image_list.append(NIC_IMAGES.goldfw_img["68-0028"])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing goldfw & cert image for {:s}".format(card_type))
-
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
+        if not mtp_update_firmware(mtp_mgmt_ctrl, mtp_swi_image_list):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update NIC SW image on MTP", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
             continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
 
     # Flex flow 2 Way communication Pre-Post 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):

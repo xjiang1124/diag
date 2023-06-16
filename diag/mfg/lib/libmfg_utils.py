@@ -32,6 +32,7 @@ from libdefs import FLEX_TWO_WAY_COMM
 from libdefs import Voltage_Margin
 from libmfg_cfg import *
 from libsku_utils import *
+import image_control
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -863,6 +864,13 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_ni
         mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
+
+    if level == 0:
+        # Check that firmware images are present
+        if not mtp_update_firmware(mtp_mgmt_ctrl, mtp_get_sw_image_list(mtp_mgmt_ctrl, stage)):
+            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
+            return False
+        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
     return True
 
 
@@ -908,7 +916,21 @@ def mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_
 
     return True
 
-def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
+def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
+    image_list = list()
+    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if not nic_prsnt_list[slot]:
+            continue
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage)
+        if images_for_nic_type is None:
+            return False
+        image_list += images_for_nic_type.values()
+    image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
+    return image_list
+
+def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
     mtp_usrid = mtp_mgmt_cfg[1]
@@ -918,6 +940,7 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
     done_list = []
     image_list_unique = list(set(image_list))
     image_list_unique.sort()
+    image_on_mtp = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     for image in image_list_unique:
         if image == "":
             continue

@@ -201,49 +201,6 @@ def main():
                 if slot not in fail_nic_list[mtp_id]:
                     fail_nic_list[mtp_id].append(slot)
 
-    # Check that firmware images are present
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_dl_image_list = list()
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        if (mtp_capability & 0x1):
-            for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-        if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                try:
-                    if card_type in FPGA_TYPE_LIST:
-                        mtp_dl_image_list.append(NIC_IMAGES.test_fpga_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing NC-SI FPGA image for {:s}".format(card_type))
-
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
     # Flex flow 2 Way communication Pre-Post 
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
