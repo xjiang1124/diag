@@ -2646,7 +2646,7 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5]:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip RJ45 Sanity Check For This Slot")
                     skip_check_list[mtp_id].append(slot)
 
@@ -2662,7 +2662,7 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                 if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
                     cur_fail_list[mtp_id][slot] = 0
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT] + GIGLIO_NIC_TYPE_LIST:
                         continue
                     if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
