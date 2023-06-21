@@ -2668,8 +2668,6 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                     elif nic_type in ELBA_NIC_TYPE_LIST:
                         ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
-                    elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
                     if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                         if ret != "SUCCESS":
