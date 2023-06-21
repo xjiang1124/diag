@@ -1818,7 +1818,7 @@ class mtp_ctrl():
         return cmd_buf
 
 
-    def mtp_diag_post_init(self, mtp_capability, stage):
+    def mtp_diag_post_init(self):
         self.cli_log_inf("Post Diag SW Environment Init", level=0)
         cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
         if not self.mtp_mgmt_exec_cmd(cmd):

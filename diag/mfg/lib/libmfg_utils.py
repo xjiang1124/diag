@@ -804,7 +804,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_nic_pn_init=False):
+def mtp_common_setup(mtp_mgmt_ctrl, stage=None, level=1, skip_nic_pn_init=False):
     if level == 0:
         retry_with_powercycle = True
         start_dsp = True
@@ -843,7 +843,7 @@ def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=None, level=1, skip_ni
         return False
 
     # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability, stage):
+    if not mtp_mgmt_ctrl.mtp_diag_post_init():
         mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -888,7 +888,7 @@ def mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_
         return False
 
     # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability, stage):
+    if not mtp_mgmt_ctrl.mtp_diag_post_init():
         mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
         #mtp_mgmt_ctrl.mtp_chassis_shutdown()
         return False
@@ -2720,8 +2720,8 @@ def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
 
     return fail_nic_list
 
-def mtp_setup(mtp_mgmt_ctrl, mtp_capability, setup_rslt_list):
-    setup_rslt_list[mtp_mgmt_ctrl._id] = mtp_common_setup(mtp_mgmt_ctrl, mtp_capability)
+def mtp_setup(mtp_mgmt_ctrl, setup_rslt_list):
+    setup_rslt_list[mtp_mgmt_ctrl._id] = mtp_common_setup(mtp_mgmt_ctrl)
 
 def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, skip_test):
     if "SANITY_CHECK" in skip_test:

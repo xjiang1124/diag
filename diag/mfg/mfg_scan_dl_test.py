@@ -385,8 +385,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage, level=0):
         mtpid_list.remove(mtp_id)
         return
 
@@ -437,7 +436,7 @@ def main():
         if slot in pass_nic_list and slot in fail_nic_list:
             pass_nic_list.remove(slot)
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, skip_nic_pn_init=True):
+    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage, skip_nic_pn_init=True):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
         logfile_close(log_filep_list)
         return
