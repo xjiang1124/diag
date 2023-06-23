@@ -254,9 +254,9 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP ASIC Version: {:s}".format(self._asic_ver))
 
-        script_ver_match = re.search("image_amd64_.....?_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
-            script_ver = script_ver_match.group(1)
+            script_ver = script_ver_match.group(2)
         else:
             script_ver = ""
         self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
@@ -1550,7 +1550,7 @@ class mtp_ctrl():
             return False
 
         cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=25):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
@@ -3664,9 +3664,10 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Secure CPLD verify for Proto NIC")
             return True
 
-        if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
-            self.cli_log_slot_err(slot, "Dumping esec failed")
-            return False
+        if nic_type not in CAPRI_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_dump_esec_qspi(libmfg_utils.get_mode_param(self, slot, "SEC_PROG_VERIFY")):
+                self.cli_log_slot_err(slot, "Dumping esec failed")
+                return False
 
         if not self._nic_ctrl_list[slot].nic_verify_sec_cpld():
             self.cli_log_slot_err(slot, "Verify NIC Secure CPLD failed")
