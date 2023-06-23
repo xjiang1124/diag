@@ -98,7 +98,7 @@ def main():
         verbosity = True
     else:
         verbosity = False
-
+    stage = FF_Stage.FF_FST
     mtpcfg_file = None
     if args.mtpcfg:
         mtpcfg_file = os.path.relpath(args.mtpcfg)
@@ -116,7 +116,23 @@ def main():
             diag_log_filep = None
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
         mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
+        if mtp_cfg_db.get_mtp_max_slots(mtp_id):
+            mtp_mgmt_ctrl._slots = mtp_cfg_db.get_mtp_max_slots(mtp_id)
+
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+
+    # logfiles
+    open_file_track_mtp_list = dict()
+    logfile_dir_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+
+    if not GLB_CFG_MFG_TEST_MODE:
+        args.skip_test.append("SCAN_VERIFY")
+
+    if "SCAN_VERIFY" not in args.skip_test and False:
+        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], is_fst_test=True)
 
     mfg_fst_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -171,7 +187,7 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         mtp_fst_script_pkg = "mtp_fst_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP FST Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg, extra_config=mtpcfg_file):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg, logfile_dir_list[mtp_id], extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP FST Test script failed", level=1)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
