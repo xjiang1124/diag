@@ -185,7 +185,7 @@ def main():
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage, level=0):
+            if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)

@@ -342,8 +342,7 @@ def run_ddr_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
+        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -492,8 +491,7 @@ def run_emmc_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
+        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)

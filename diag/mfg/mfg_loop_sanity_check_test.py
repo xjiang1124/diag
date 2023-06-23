@@ -59,7 +59,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 def mtp_setup(mtp_mgmt_ctrl, setup_rslt_list):
-    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, skip_test_list=["NIC_INIT"])
+    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup2(mtp_mgmt_ctrl, FF_Stage.FF_P2C)
 
 def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -215,7 +215,7 @@ def main():
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=FF_Stage.FF_P2C, level=0):
+            if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_P2C, args.skip_test):
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)

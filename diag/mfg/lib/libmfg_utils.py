@@ -803,117 +803,89 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
-
-def mtp_common_setup(mtp_mgmt_ctrl, stage=None, level=1, skip_nic_pn_init=False):
-    if level == 0:
-        retry_with_powercycle = True
-        start_dsp = True
-    else:
-        retry_with_powercycle = False
-        start_dsp = False
-
-    if stage == FF_Stage.FF_FST:
-        max_retry = 10
-    else:
-        max_retry = 3
-
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=retry_with_powercycle, max_retry=max_retry):
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
+def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    if not mtp_mgmt_ctrl.mtp_mgmt_set_date(stage):
-        mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-        return False
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
-    if level == 0:
-        # Check if diag image updated is needed
-        if not mtp_update_diag_image(mtp_mgmt_ctrl):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            return False
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=start_dsp):
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init():
-        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    if not mtp_mgmt_ctrl.mtp_hw_init(stage):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # get the mtp system info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init(stage, skip_nic_pn_init=skip_nic_pn_init):
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    if level == 0:
-        # Check that firmware images are present
-        if not mtp_update_firmware(mtp_mgmt_ctrl, mtp_get_sw_image_list(mtp_mgmt_ctrl, stage)):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-            return False
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
     return True
 
-
-def mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None):
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-        return False
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init():
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init():
-        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # get the mtp system info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
+def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
+    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd, stage):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        #sys.exit()
+    return True
+
+def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT",     "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
+    return True
 
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    #sys.exit()
-    # init all the nic.
-    # if not mtp_mgmt_ctrl.mtp_nic_init():
-    #     mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-    #     #mtp_mgmt_ctrl.mtp_chassis_shutdown()
-    #     return False
+def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+        return False
+    return True
 
+def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test):
+    sn = "MTP"
+    for test in test_list:
+        if test in skip_test:
+            continue
+
+        start_ts = mtp_mgmt_ctrl.log_test_start(test)
+        mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, stage, test), level=0)
+
+        if test == "MTP_FPO_CONNECT":
+            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=True)
+
+        elif test == "MTP_CONNECT":
+            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True)
+
+        elif test == "FST_CONNECT":
+            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=True, max_retry=10)
+
+        elif test == "MTP_TIME_SET":
+            ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(stage)
+
+        elif test == "DIAG_UPDATE":
+            ret = mtp_update_diag_image(mtp_mgmt_ctrl)
+
+        elif test == "NIC_FW_UPDATE":
+            ret = mtp_update_firmware(mtp_mgmt_ctrl, mtp_get_sw_image_list(mtp_mgmt_ctrl, stage))
+
+        elif test == "DIAG_START":
+            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False)
+
+        elif test == "DSP_START":
+            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=True)
+
+        elif test == "DIAG_POST":
+            ret = mtp_mgmt_ctrl.mtp_diag_post_init()
+
+        elif test == "MTP_SANITY_CHECK":
+            ret = mtp_mgmt_ctrl.mtp_hw_init(stage)
+
+        elif test == "MTP_ID":
+            ret = mtp_mgmt_ctrl.mtp_sys_info_disp()
+
+        elif test == "NIC_INIT":
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
+
+        elif test == "SCAN_NIC_INIT":
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, skip_nic_pn_init=True)
+
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown test {}".format(test))
+
+        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, stage, test, "FAILED", duration), level=0)
+            return False
+        else:
+            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration), level=0)
     return True
 
 def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):

@@ -386,7 +386,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage, level=0):
+    if not libmfg_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, args.skip_test):
         mtpid_list.remove(mtp_id)
         return
 
@@ -436,11 +436,6 @@ def main():
                 pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
         if slot in pass_nic_list and slot in fail_nic_list:
             pass_nic_list.remove(slot)
-
-    if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage, skip_nic_pn_init=True):
-        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-        logfile_close(log_filep_list)
-        return
 
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
