@@ -144,9 +144,6 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
-    if not args.rework:
-        rework = False
-
     stage = FF_Stage.FF_DL
 
     mtpcfg_file = None
