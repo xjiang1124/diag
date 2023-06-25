@@ -59,6 +59,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -140,7 +141,8 @@ def main():
                                                 "testsuite_name": stage,
                                                 "swm_test_mode": swmtestmode,
                                                 "only_test": args.only_test,
-                                                "l1_sequence": l1_sequence}))
+                                                "l1_sequence": l1_sequence,
+                                                "stop_on_err": args.stop_on_err}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

@@ -63,6 +63,7 @@ def main():
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
 
     verbosity = False
     l1_sequence = False
@@ -134,7 +135,8 @@ def main():
                                                 "testsuite_name": stage,
                                                 "swm_test_mode": swmtestmode,
                                                 "only_test": args.only_test,
-                                                "l1_sequence": l1_sequence}))
+                                                "l1_sequence": l1_sequence,
+                                                "stop_on_err": args.stop_on_err}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

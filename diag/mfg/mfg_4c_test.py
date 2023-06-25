@@ -69,6 +69,7 @@ def main():
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
 
     verbosity = False
     l1_sequence = False
