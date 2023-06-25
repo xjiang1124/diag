@@ -25,6 +25,7 @@ from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
+import test_utils
 
 
 def load_mtp_cfg(cfg_yaml = None):
@@ -38,13 +39,6 @@ def load_mtp_cfg(cfg_yaml = None):
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
 
-def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
-    os.system("sync")
-
-
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
@@ -57,60 +51,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
-
-def single_mtp_ort_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, skip_test=[], only_test=[], mtp_cfg_file = None):
-    stage = FF_Stage.FF_ORT
-
-    if skip_test:
-        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
-    else:
-        skipped_testlist = ""
-    if only_test:
-        only_testlist = " --only-test {:s}".format('"'+'" "'.join(only_test).strip()+'"')
-    else:
-        only_testlist = ""
-    if fail_nic_list:
-        fail_slots = " --fail-slots "
-        fail_slots += ' '.join(map(str,fail_nic_list))
-    else:
-        fail_slots = ""
-
-    # go to mtp_regression and start the test
-    cmd = "cd {:s}".format(mtp_script_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG ORT Test Start", level=0)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_diag_regression.py --mtpid {:s} --swm {:s} --stage {:s}".format(mtp_id, swm_test_mode, FF_Stage.FF_ORT)
-    if skip_test:
-        cmd += skipped_testlist
-    if only_test:
-        cmd += only_testlist
-    if fail_slots:
-        cmd += fail_slots
-    if mtp_cfg_file:
-        mtp_cfg_file_opt = " --mtpcfg " + mtp_cfg_file
-        cmd += mtp_cfg_file_opt
-    if l1_sequence:
-        cmd += " --l1-seq "
-
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_ORT_TEST_TIMEOUT)
-    #mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG ORT Test Complete", level=0)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect ORT Test result failed", level=0)
-        return
-    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
-    return
 
 
 def main():
@@ -151,8 +91,6 @@ def main():
         nic_sn_list = dict()
         invalid_nic_list = dict()
 
-        mtp_diag_image = os.getenv("DIAG_AMD64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
-        nic_diag_image = os.getenv("DIAG_ARM64_IMAGE_PATH", default=MFG_IMAGE_FILES.MTP_ARM64_IMAGE)
         # init mtp_ctrl list
         for mtp_id in mtpid_list:
             if verbosity:
@@ -183,94 +121,25 @@ def main():
         # power on the mtp chassis
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-        # Connect to MTP
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage, level=0):
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
-        # Check if diag image updated is needed
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-            if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-        # load SNs
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
-                mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-        # type check
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot in fail_nic_list[mtp_id]:
-                    continue
-                dsp = stage
-                test = "NIC_TYPE"
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list[mtp_id]:
-                        fail_nic_list[mtp_id].append(slot)
-
-        # Sanity check
-        try:
-            sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
-        except Exception as e:
-            err_msg = traceback.format_exc()
-            for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-                mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
-
-        # close file handles
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-        for mtp_id in mtpid_fail_list:
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-
-        # Copy script, config file on to each MTP Chassis
-        mtp_ort_script_dir = "mtp_regression/"
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_ort_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-            mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP ORT Test script", level=0)
-            if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_ort_script_dir, mtp_ort_script_pkg, logfile_dir_list[mtp_id]):
-                mtp_mgmt_ctrl.cli_log_err("Deploy MTP ORT Test script failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("Deploy MTP ORT Test script complete", level=0)
-
         mtp_thread_list = list()
         mfg_ort_summary = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             mfg_ort_summary[mtp_id] = list()
-            mtp_thread = threading.Thread(target = single_mtp_ort_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_ort_script_dir,
-                                                                                mtp_mgmt_ctrl,
-                                                                                mtp_id,
-                                                                                fail_nic_list[mtp_id],
-                                                                                mfg_ort_summary[mtp_id],
-                                                                                swmtestmode,
-                                                                                l1_sequence,
-                                                                                args.skip_test,
-                                                                                args.only_test,
-                                                                                args.mtpcfg))
+            mtp_thread = threading.Thread(target = test_utils.single_mtp_test,
+                                          args = (
+                                                    stage,
+                                                    mtp_mgmt_ctrl,
+                                                    mfg_ort_summary[mtp_id],
+                                                    logfile_dir_list[mtp_id],
+                                                    open_file_track_mtp_list[mtp_id],
+                                                    args.skip_test,
+                                                    args.jobd_logdir),
+                                        kwargs = ({
+                                                    "mtpcfg_file": mtpcfg_file,
+                                                    "testsuite_name": stage,
+                                                    "swm_test_mode": swmtestmode,
+                                                    "only_test": args.only_test,
+                                                    "l1_sequence": l1_sequence}))
             mtp_thread.daemon = True
             mtp_thread.start()
             mtp_thread_list.append(mtp_thread)

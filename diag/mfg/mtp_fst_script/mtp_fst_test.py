@@ -137,25 +137,10 @@ def main():
     elif mtp_capability == 0x6:
         fst = 3
 
-    # local log files
-    log_filep_list = list()
-    test_log_file = "test_fst.log"
-    test_log_filep = open(test_log_file, "w+", 0)
-    log_filep_list.append(test_log_filep)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [])
+    # local logfiles
+    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
 
-    diag_log_file = "diag_fst.log"
-    diag_log_filep = open(diag_log_file, "w+", 0)
-    log_filep_list.append(diag_log_filep)
-
-    diag_nic_log_filep_list = list()
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "diag_{:s}_fst.log".format(key)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+")
-        log_filep_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list)
     mtp_mgmt_ctrl._fst_ver = mtp_capability
     if mtp_cfg_db.get_mtp_max_slots(mtp_id):
         mtp_mgmt_ctrl._slots = mtp_cfg_db.get_mtp_max_slots(mtp_id)
@@ -163,7 +148,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTPS chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg = True):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTPS chassis", level=0)
-        logfile_close(log_filep_list)
+        logfile_close(open_file_track_list)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTPS chassis connected", level=0)
 
@@ -219,7 +204,7 @@ def main():
 
             if not ret:
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Test aborted.")
-                logfile_close(log_filep_list)
+                logfile_close(open_file_track_list)
                 return
 
 
@@ -368,7 +353,7 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-    logfile_close(log_filep_list)
+    logfile_close(open_file_track_list)
     return
 
 if __name__ == "__main__":

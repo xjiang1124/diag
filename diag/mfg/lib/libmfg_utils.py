@@ -33,6 +33,7 @@ from libdefs import Voltage_Margin
 from libmfg_cfg import *
 from libsku_utils import *
 import image_control
+import test_utils
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -803,90 +804,6 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
-def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
-        return False
-    return True
-
-def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
-        return False
-    mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    return True
-
-def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT",     "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
-        return False
-    return True
-
-def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
-        return False
-    return True
-
-def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test):
-    sn = "MTP"
-    for test in test_list:
-        if test in skip_test:
-            continue
-
-        start_ts = mtp_mgmt_ctrl.log_test_start(test)
-        mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, stage, test), level=0)
-
-        if test == "MTP_FPO_CONNECT":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=True)
-
-        elif test == "MTP_CONNECT":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True)
-
-        elif test == "FST_CONNECT":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_id=True, retry_with_powercycle=True, max_retry=10)
-
-        elif test == "MTP_TIME_SET":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(stage)
-
-        elif test == "DIAG_UPDATE":
-            ret = mtp_update_diag_image(mtp_mgmt_ctrl)
-
-        elif test == "NIC_FW_UPDATE":
-            ret = mtp_update_firmware(mtp_mgmt_ctrl, mtp_get_sw_image_list(mtp_mgmt_ctrl, stage))
-
-        elif test == "DIAG_START":
-            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False)
-
-        elif test == "DSP_START":
-            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=True)
-
-        elif test == "DIAG_POST":
-            ret = mtp_mgmt_ctrl.mtp_diag_post_init()
-
-        elif test == "MTP_SANITY_CHECK":
-            ret = mtp_mgmt_ctrl.mtp_hw_init(stage)
-
-        elif test == "MTP_ID":
-            ret = mtp_mgmt_ctrl.mtp_sys_info_disp()
-
-        elif test == "NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
-
-        elif test == "SCAN_NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, skip_nic_pn_init=True)
-
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown test {}".format(test))
-
-        duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, stage, test, "FAILED", duration), level=0)
-            return False
-        else:
-            mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration), level=0)
-    return True
 
 def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     image_list = list()
@@ -1017,8 +934,7 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
 
     return True
 
-def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
-
+def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, nic_image=MFG_IMAGE_FILES.penctl_token_img):
     if "penctl.linux" not in mtp_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl image: {:s}".format(mtp_image), level=0)
         return False
@@ -1049,6 +965,7 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
 
+    image_on_mtp = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if mtp_image in image_on_mtp and nic_image in image_on_mtp:
         if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
             not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
@@ -2215,7 +2132,18 @@ def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
             cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
 
-def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length):
+def mtp_common_setup(*args, **kwargs):
+    # for backward compatability
+    return test_utils.mtp_common_setup(*args, **kwargs)
+
+def mtp_common_setup_fpo(*args, **kwargs):
+    # for backward compatability
+    return test_utils.mtp_common_setup_fpo(*args, **kwargs)
+
+def mtp_setup(mtp_mgmt_ctrl, setup_rslt_list):
+    setup_rslt_list[mtp_mgmt_ctrl._id] = mtp_common_setup(mtp_mgmt_ctrl)
+
+def display_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list, length):
     """
     -------------------------------------------------
     | MTP-XXX                                       |
@@ -2237,68 +2165,65 @@ def display_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctr
     ' ' = empty/failed slot
 
     """
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    mtp_id = mtp_mgmt_ctrl._id
 
-        width = 49
-        horizontal_border = "-{:s}-".format("-"*47)
-        vertical_border = "| {:s} |".format(" "*45)
-        mtp_name_top = "| {:<45s} |".format(mtp_id)
-        mtp_name_bot = "| {:>45s} |".format(mtp_id)
+    width = 49
+    horizontal_border = "-{:s}-".format("-"*47)
+    vertical_border = "| {:s} |".format(" "*45)
+    mtp_name_top = "| {:<45s} |".format(mtp_id)
+    mtp_name_bot = "| {:>45s} |".format(mtp_id)
 
-        print(horizontal_border)
-        print(mtp_name_top)
-        print(vertical_border)
+    print(horizontal_border)
+    print(mtp_name_top)
+    print(vertical_border)
 
-        # Port 1 row
-        pre="|     "
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
-                pre += "    "
-            elif loopback_fail_list[mtp_id][slot] > 0:
-                pre += "X   "
-            else:
-                pre += "o   "
-        pre += "  |"
-        print(pre)
+    # Port 1 row
+    pre="|     "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot not in nic_list or slot in fail_nic_list:
+            pre += "    "
+        elif loopback_fail_list[slot] > 0:
+            pre += "X   "
+        else:
+            pre += "o   "
+    pre += "  |"
+    print(pre)
 
-        # Port 2 row
-        pre="|     "
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
-                pre += "    "
-            elif loopback_fail_list[mtp_id][slot+length] > 0:
-                pre += "X   "
-            else:
-                pre += "o   "
-        pre += "  |"
-        print(pre)
+    # Port 2 row
+    pre="|     "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot not in nic_list or slot in fail_nic_list:
+            pre += "    "
+        elif loopback_fail_list[slot+length] > 0:
+            pre += "X   "
+        else:
+            pre += "o   "
+    pre += "  |"
+    print(pre)
 
-        print(vertical_border)
+    print(vertical_border)
 
-        pre="|    "
-        for slot in range(len(nic_prsnt_list)):
-            pre+= "{:>2s}  ".format(str(slot+1))
-        pre += "   |"
-        print(pre)
+    pre="|    "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        pre+= "{:>2s}  ".format(str(slot+1))
+    pre += "   |"
+    print(pre)
 
-        print(vertical_border)
-        print(mtp_name_bot)
-        print(horizontal_border)
-
+    print(vertical_border)
+    print(mtp_name_bot)
+    print(horizontal_border)
 
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(len(nic_prsnt_list)):
-            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot]:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 1 is missing")
-            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot+length]:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 2 is missing")
+
+    for slot in nic_list:
+        if loopback_fail_list[slot]:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 1 is missing")
+        if loopback_fail_list[slot+length]:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "QSFP Module 2 is missing")
 
     return
 
-def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list):
+def display_rj45_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list):
     """
     -------------------------------------------------
     | MTP-XXX                                       |
@@ -2320,279 +2245,263 @@ def display_rj45_failures(loopback_fail_list, fail_nic_list, mtpid_list, mtp_mgm
     ' ' = empty/failed slot
 
     """
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    mtp_id = mtp_mgmt_ctrl._id
+    width = 49
+    horizontal_border = "-{:s}-".format("-"*47)
+    vertical_border = "| {:s} |".format(" "*45)
+    mtp_name_top = "| {:<45s} |".format(mtp_id)
+    mtp_name_bot = "| {:>45s} |".format(mtp_id)
 
-        width = 49
-        horizontal_border = "-{:s}-".format("-"*47)
-        vertical_border = "| {:s} |".format(" "*45)
-        mtp_name_top = "| {:<45s} |".format(mtp_id)
-        mtp_name_bot = "| {:>45s} |".format(mtp_id)
+    print(horizontal_border)
+    print(mtp_name_top)
+    print(vertical_border)
 
-        print(horizontal_border)
-        print(mtp_name_top)
-        print(vertical_border)
+    # Port 1 row
+    pre="|     "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if slot not in nic_list or slot in fail_nic_list:
+            pre += "    "
+        elif loopback_fail_list[slot] > 0:
+            pre += "X   "
+        else:
+            pre += "o   "
+    pre += "  |"
+    print(pre)
 
-        # Port 1 row
-        pre="|     "
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot] or slot in fail_nic_list[mtp_id]:
-                pre += "    "
-            elif loopback_fail_list[mtp_id][slot] > 0:
-                pre += "X   "
-            else:
-                pre += "o   "
-        pre += "  |"
-        print(pre)
+    # Port 2 row, for naples100 only
+    pre="|     "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        if (
+            slot not in nic_list
+            or slot in fail_nic_list
+            or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST
+            or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST
+            or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
+            ):
+            pre += "    "
+        elif loopback_fail_list[slot] > 0 and mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
+            pre += "X   "
+        elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
+            pre += "o   "
+        else:
+            pre += "    "
+    pre += "  |"
+    print(pre)
 
-        # Port 2 row, for naples100 only
-        pre="|     "
-        for slot in range(len(nic_prsnt_list)):
-            if (
-                not nic_prsnt_list[slot]
-                or slot in fail_nic_list[mtp_id]
-                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST
-                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST
-                or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
-                ):
-                pre += "    "
-            elif loopback_fail_list[mtp_id][slot] > 0 and mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
-                pre += "X   "
-            elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
-                pre += "o   "
-            else:
-                pre += "    "
-        pre += "  |"
-        print(pre)
+    print(vertical_border)
 
-        print(vertical_border)
+    # Slots row
+    pre="|    "
+    for slot in range(MTP_Const.MTP_SLOT_NUM):
+        pre+= "{:>2s}  ".format(str(slot+1))
+    pre += "   |"
+    print(pre)
 
-        # Slots row
-        pre="|    "
-        for slot in range(len(nic_prsnt_list)):
-            pre+= "{:>2s}  ".format(str(slot+1))
-        pre += "   |"
-        print(pre)
-
-        print(vertical_border)
-        print(mtp_name_bot)
-        print(horizontal_border)
+    print(vertical_border)
+    print(mtp_name_bot)
+    print(horizontal_border)
 
 
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(len(nic_prsnt_list)):
-            if nic_prsnt_list[slot] and loopback_fail_list[mtp_id][slot]:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "RJ45 module is missing")
+    for slot in nic_list:
+        if loopback_fail_list[slot]:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "RJ45 module is missing")
 
     return
     
 
-def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
+def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
     max_retries_per_slot = 3
-
-    loopback_fail_list = dict()
-    cur_fail_list = dict()
     length = MTP_Const.MTP_SLOT_NUM
-    for mtp_id in mtpid_list:
-        loopback_fail_list[mtp_id] = [0, 0] * length
-        cur_fail_list[mtp_id] = [0, 0] * length
-
-    skip_check_list = dict() # dont test slots that have already failed before sanity
-    for mtp_id in mtpid_list:
-        skip_check_list[mtp_id] = fail_nic_list[mtp_id][:]
-
+    loopback_fail_list = [0, 0] * length
+    cur_fail_list = [0, 0] * length
+    fail_nic_list = list()
     start_ts = timestamp_snapshot()
-
     while True:
         failure_detected = False
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            
-            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-            for slot in range(len(nic_prsnt_list)):
-                if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
-                    cur_fail_list[mtp_id][slot] = 0
-                    cur_fail_list[mtp_id][slot+length] = 0
-                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in ELBA_NIC_TYPE_LIST:
-                        read_data = [0]
-                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
-                        if not rc:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
-                            if slot not in fail_nic_list[mtp_id]:
-                                fail_nic_list[mtp_id].append(slot)
+        for slot in nic_list:
+            if slot not in fail_nic_list:
+                cur_fail_list[slot] = 0
+                cur_fail_list[slot+length] = 0
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type in ELBA_NIC_TYPE_LIST:
+                    read_data = [0]
+                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
+                    if not rc:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        continue
+
+                    ### QSFP/SFP PORT 1
+                    if read_data[0] & 0x01 == 0:
+                        # not present, retry 3x
+                        if loopback_fail_list[slot] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
                             continue
-
-                        ### QSFP/SFP PORT 1
-                        if read_data[0] & 0x01 == 0:
-                            # not present, retry 3x
-                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
+                        else:
+                            cur_fail_list[slot] = 1
+                            loopback_fail_list[slot] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
                                 continue
                             else:
-                                cur_fail_list[mtp_id][slot] = 1
-                                loopback_fail_list[mtp_id][slot] += 1
+                                cur_fail_list[slot] = 1
+                                loopback_fail_list[slot] += 1
                                 failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot] = 1
-                                    loopback_fail_list[mtp_id][slot] += 1
-                                    failure_detected = True
 
-                        ### QSFP/SFP PORT 2
-                        if read_data[0] & 0x02 == 0:
-                            # not present, retry 3x
-                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
-                                continue
-                            else:
-                                cur_fail_list[mtp_id][slot+length] = 1
-                                loopback_fail_list[mtp_id][slot+length] += 1
-                                failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "2"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot+length] = 1
-                                    loopback_fail_list[mtp_id][slot+length] += 1
-                                    failure_detected = True
-
-                    elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                        read_data = [0]
-                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
-                        if not rc:
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
-                            if slot not in fail_nic_list[mtp_id]:
-                                fail_nic_list[mtp_id].append(slot)
+                    ### QSFP/SFP PORT 2
+                    if read_data[0] & 0x02 == 0:
+                        # not present, retry 3x
+                        if loopback_fail_list[slot+length] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
                             continue
-
-                        ### QSFP/SFP PORT 1
-                        if read_data[0] & 0x01 == 0:
-                            # not present, retry 3x
-                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
+                        else:
+                            cur_fail_list[slot+length] = 1
+                            loopback_fail_list[slot+length] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "2"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
                                 continue
                             else:
-                                cur_fail_list[mtp_id][slot] = 1
-                                loopback_fail_list[mtp_id][slot] += 1
+                                cur_fail_list[slot+length] = 1
+                                loopback_fail_list[slot+length] += 1
                                 failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot] = 1
-                                    loopback_fail_list[mtp_id][slot] += 1
-                                    failure_detected = True
 
-                        ### QSFP/SFP PORT 2
-                        if read_data[0] & 0x02 == 0:
-                            # not present, retry 3x
-                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
+                elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                    read_data = [0]
+                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
+                    if not rc:
+                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        continue
+
+                    ### QSFP/SFP PORT 1
+                    if read_data[0] & 0x01 == 0:
+                        # not present, retry 3x
+                        if loopback_fail_list[slot] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot] = 1
+                            loopback_fail_list[slot] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
                                 continue
                             else:
-                                cur_fail_list[mtp_id][slot+length] = 1
-                                loopback_fail_list[mtp_id][slot+length] += 1
+                                cur_fail_list[slot] = 1
+                                loopback_fail_list[slot] += 1
                                 failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot+length] = 1
-                                    loopback_fail_list[mtp_id][slot+length] += 1
-                                    failure_detected = True
 
-                    elif nic_type in CAPRI_NIC_TYPE_LIST:
-                        # QSFP/SFP port 1
-                        read_data = [0]
+                    ### QSFP/SFP PORT 2
+                    if read_data[0] & 0x02 == 0:
+                        # not present, retry 3x
+                        if loopback_fail_list[slot+length] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot+length] = 1
+                            loopback_fail_list[slot+length] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                continue
+                            else:
+                                cur_fail_list[slot+length] = 1
+                                loopback_fail_list[slot+length] += 1
+                                failure_detected = True
+
+                elif nic_type in CAPRI_NIC_TYPE_LIST:
+                    # QSFP/SFP port 1
+                    read_data = [0]
+                    expected_val = 0x3
+                    if nic_type in (NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL):
+                        expected_val = 0x11
+                    else:
                         expected_val = 0x3
-                        if nic_type in (NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL):
-                            expected_val = 0x11
-                        else:
-                            expected_val = 0x3
 
-                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
-                        if not rc:
-                            read_data = [0]
-
-                        if read_data[0] & expected_val != expected_val:
-                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
-                                continue
-                            else:
-                                cur_fail_list[mtp_id][slot] = 1
-                                loopback_fail_list[mtp_id][slot] += 1
-                                failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot] = 1
-                                    loopback_fail_list[mtp_id][slot] += 1
-                                    failure_detected = True
-
-                        # QSFP/SFP port 2
+                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
+                    if not rc:
                         read_data = [0]
-                        rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(1, 0x50, 0, read_data)
-                        if not rc:
-                            read_data = [0]
 
-                        if read_data[0] & expected_val != expected_val:
-                            if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
+                    if read_data[0] & expected_val != expected_val:
+                        if loopback_fail_list[slot] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot] = 1
+                            loopback_fail_list[slot] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
                                 continue
                             else:
-                                cur_fail_list[mtp_id][slot+length] = 1
-                                loopback_fail_list[mtp_id][slot+length] += 1
+                                cur_fail_list[slot] = 1
+                                loopback_fail_list[slot] += 1
                                 failure_detected = True
-                        else:
-                            # log the transceiver serial number. retry 3x if unable to read.
-                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
-                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                                if loopback_fail_list[mtp_id][slot+length] == max_retries_per_slot:
-                                    if slot not in fail_nic_list[mtp_id]:
-                                        fail_nic_list[mtp_id].append(slot)
-                                    continue
-                                else:
-                                    cur_fail_list[mtp_id][slot+length] = 1
-                                    loopback_fail_list[mtp_id][slot+length] += 1
-                                    failure_detected = True
 
-        display_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list, length)
+                    # QSFP/SFP port 2
+                    read_data = [0]
+                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(1, 0x50, 0, read_data)
+                    if not rc:
+                        read_data = [0]
+
+                    if read_data[0] & expected_val != expected_val:
+                        if loopback_fail_list[slot+length] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot+length] = 1
+                            loopback_fail_list[slot+length] += 1
+                            failure_detected = True
+                    else:
+                        # log the transceiver serial number. retry 3x if unable to read.
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                            if loopback_fail_list[slot+length] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                continue
+                            else:
+                                cur_fail_list[slot+length] = 1
+                                loopback_fail_list[slot+length] += 1
+                                failure_detected = True
+
+        display_failures(mtp_mgmt_ctrl, nic_list, cur_fail_list, fail_nic_list, length)
 
         if not failure_detected:
             break
@@ -2600,165 +2509,109 @@ def loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
         # while True:
         raw_input("Please re-insert the modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
 
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
 
     stop_ts = timestamp_snapshot()
     duration = str(stop_ts - start_ts)
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        fail_rslt_list = list()
-        for slot in fail_nic_list[mtp_id]:
-            if slot in skip_check_list[mtp_id]:
-                continue
-            nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "QSFP", "FAILED", duration))
-        cli_log_rslt("{:s} Eth Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
+    fail_rslt_list = list()
+    mtp_id = mtp_mgmt_ctrl._id
+    for slot in fail_nic_list:
+        nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "QSFP", "FAILED", duration))
+    cli_log_rslt("{:s} Eth Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list
 
-def rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list):
+def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
     max_retries_per_slot = 3
 
-    loopback_fail_list = dict()
-    cur_fail_list = dict()
     length = MTP_Const.MTP_SLOT_NUM
-    for mtp_id in mtpid_list:
-        loopback_fail_list[mtp_id] = [0] * length
-        cur_fail_list[mtp_id] = [0] * length
-
-    skip_check_list = dict() # dont test slots that have already failed before sanity
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        skip_check_list[mtp_id] = fail_nic_list[mtp_id][:]
-        # Skip RJ45 check for slots populated with NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR or NIC_Type.ORTANO2ADICRMSFT
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5]:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip RJ45 Sanity Check For This Slot")
-                    skip_check_list[mtp_id].append(slot)
+    loopback_fail_list = [0] * length
+    cur_fail_list = [0] * length
+    fail_nic_list = list()
 
     start_ts = timestamp_snapshot()
 
     while True:
         failure_detected = False
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            
-            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in nic_list:
+            if slot not in fail_nic_list:
+                cur_fail_list[slot] = 0
+                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                    continue
+                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
+                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
+                elif nic_type in ELBA_NIC_TYPE_LIST:
+                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
-            for slot in range(len(nic_prsnt_list)):
-                if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
-                    cur_fail_list[mtp_id][slot] = 0
-                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT] + GIGLIO_NIC_TYPE_LIST:
-                        continue
-                    if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
-                    elif nic_type in ELBA_NIC_TYPE_LIST:
-                        ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
+                    if ret != "SUCCESS":
+                        if loopback_fail_list[slot] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot] = 1
+                            loopback_fail_list[slot] += 1
+                            failure_detected = True
 
-                    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                        if ret != "SUCCESS":
-                            if loopback_fail_list[mtp_id][slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list[mtp_id]:
-                                    fail_nic_list[mtp_id].append(slot)
-                                continue
-                            else:
-                                cur_fail_list[mtp_id][slot] = 1
-                                loopback_fail_list[mtp_id][slot] += 1
-                                failure_detected = True
-
-        display_rj45_failures(cur_fail_list, fail_nic_list, mtpid_list, mtp_mgmt_ctrl_list)
+        display_rj45_failures(mtp_mgmt_ctrl, nic_list, cur_fail_list, fail_nic_list)
 
         if not failure_detected:
             break
 
         raw_input("Please re-insert the RJ45 modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
 
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-            mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
 
     stop_ts = timestamp_snapshot()
     duration = str(stop_ts - start_ts)
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        fail_rslt_list = list()
-        for slot in fail_nic_list[mtp_id]:
-            if slot in skip_check_list[mtp_id]:
-                continue
-            nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "RJ45", "FAILED", duration))
-        cli_log_rslt("{:s} RJ45 Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
+    fail_rslt_list = list()
+    mtp_id = mtp_mgmt_ctrl._id
+    for slot in fail_nic_list:
+        nic_cli_id_str = id_str(mtp=mtp_id, nic=slot)
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        fail_rslt_list.append(nic_cli_id_str + "Sanity check failed {:d} attempts".format(max_retries_per_slot))
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "SANITY_CHECK", "RJ45", "FAILED", duration))
+    cli_log_rslt("{:s} RJ45 Sanity Check complete".format(mtp_id), [], fail_rslt_list, mtp_mgmt_ctrl._filep)
 
     return fail_nic_list
 
-def mtp_setup(mtp_mgmt_ctrl, setup_rslt_list):
-    setup_rslt_list[mtp_mgmt_ctrl._id] = mtp_common_setup(mtp_mgmt_ctrl)
-
-def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, skip_test):
-    if "SANITY_CHECK" in skip_test:
-        return fail_nic_list
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        # find any slots to skip
-        mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
-        mtp_mgmt_ctrl._slots_to_skip = mtp_slots_to_skip
-
-        # find the mtp capability
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-
+def sanity_check_setup(mtp_mgmt_ctrl, nic_list):
     cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
+    fail_nic_list = list()
+    para_nic_list = list()       # needs para_init
+    mgmt_nic_list = list()  # needs para_mgmt_init
+    for slot in nic_list:
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type in FPGA_TYPE_LIST:
+            mgmt_nic_list.append(slot)
+        else:
+            para_nic_list.append(slot)
 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        nic_list = list()       # needs para_init
-        mgmt_nic_list = list()  # needs para_mgmt_init
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if nic_prsnt_list[slot] and slot not in fail_nic_list[mtp_id]:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                    mgmt_nic_list.append(slot)
-                else:
-                    nic_list.append(slot)
+    # for all cards:
+    if para_nic_list:
+        if not mtp_mgmt_ctrl.mtp_nic_para_init(para_nic_list):
+            for slot in para_nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
 
-        # for all cards:
-        if nic_list:
-            if not mtp_mgmt_ctrl.mtp_nic_para_init(nic_list):
-                for slot in nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        if slot not in fail_nic_list[mtp_id]:
-                            fail_nic_list[mtp_id].append(slot)
-
-        # for lacona/pomonte:
-        if mgmt_nic_list:
-            if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False):
-                for slot in mgmt_nic_list:
-                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        if slot not in fail_nic_list[mtp_id]:
-                            fail_nic_list[mtp_id].append(slot)
-
-    if "QSFP" not in skip_test:
-        loopback_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-    if "RJ45" not in skip_test:
-        rj45_sanity_check(mtpid_list, mtp_mgmt_ctrl_list, fail_nic_list)
-
-    # if all slots in an MTP fail, assert stop on failure here
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        if len(fail_nic_list[mtp_id]) == mtp_mgmt_ctrl._slots:
-            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP completely failed Sanity Check. Test abort..")
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-
-    # close NIC ssh sessions
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_mgmt_ctrl.mtp_nic_para_session_end()
+    # for lacona/pomonte:
+    if mgmt_nic_list:
+        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False):
+            for slot in mgmt_nic_list:
+                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
 
     return fail_nic_list
 
@@ -2807,6 +2660,12 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
         mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
     else:
         mtp_diagmgr_log_file = "/tmp/mtp_diagmgr.log"
+
+    # so we dont break compatability with parser, mfg tracker, and other things
+    if stage == FF_Stage.FF_FST:
+        mtp_test_log_file = logfile_path + "/test_fst.log"
+        mtp_diag_log_file = logfile_path + "/diag_fst.log"
+
     mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
@@ -2818,6 +2677,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     for slot in range(mtp_mgmt_ctrl._slots):
         key = nic_key(slot)
         diag_nic_log_file = logfile_path + "/mtp_{:s}_diag.log".format(key)
+        if stage == FF_Stage.FF_FST:
+            diag_nic_log_file = logfile_path + "/diag_{:s}_fst.log".format(key)
         diag_nic_log_filep = open(diag_nic_log_file, MODIFIER, buffering=0)
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
@@ -2965,7 +2826,12 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
                         # block it
                         mtp_test_summary[idx][4] = True
 
-def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry = 0):
+@test_utils.semi_parallel_test_section
+def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
+    if sn is None:
+        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+        return False
     post_cnt = 0
     time.sleep(1)
     while True:
@@ -2980,13 +2846,11 @@ def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stag
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "{:d}th: Pre-Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(flex_rs)))
             if flex_rs != 9999 or retry == post_cnt:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                break
+                return False
         post_cnt += 1
         time.sleep(3)
 
-    return fail_nic_list
+    return False
 
 def get_fst_nic_ssh_cmd(ip, username, passwd):
     ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"

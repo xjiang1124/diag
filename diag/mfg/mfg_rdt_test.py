@@ -25,6 +25,7 @@ from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
+import test_utils
 
 
 def load_mtp_cfg(cfg_yaml = None):
@@ -37,12 +38,6 @@ def load_mtp_cfg(cfg_yaml = None):
         mtp_chassis_cfg_file_list.append(os.path.abspath(cfg_yaml))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
-
-def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
-    os.system("sync")
 
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
@@ -184,73 +179,25 @@ def main():
         # power on the mtp chassis
         libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-
-        # type check
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot in fail_nic_list[mtp_id]:
-                    continue
-                dsp = stage
-                test = "NIC_TYPE"
-                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list[mtp_id]:
-                        fail_nic_list[mtp_id].append(slot)
-
-        # Sanity check
-        try:
-            sanity_fail_list = libmfg_utils.sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list, fail_nic_list, args.skip_test)
-        except Exception as e:
-            err_msg = traceback.format_exc()
-            for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-                mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
-
-        # close file handles
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-        for mtp_id in mtpid_fail_list:
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-
-        # Copy script, config file on to each MTP Chassis
-        mtp_rdt_script_dir = "mtp_regression/"
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_rdt_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-            mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP RDT Test script", level=0)
-            if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_rdt_script_dir, mtp_rdt_script_pkg, logfile_dir_list[mtp_id]):
-                mtp_mgmt_ctrl.cli_log_err("Deploy MTP RDT Test script failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("Deploy MTP RDT Test script complete", level=0)
-
         mtp_thread_list = list()
         mfg_rdt_summary = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
             mfg_rdt_summary[mtp_id] = list()
-            mtp_thread = threading.Thread(target = single_mtp_rdt_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_rdt_script_dir,
-                                                                                mtp_mgmt_ctrl,
-                                                                                mtp_id,
-                                                                                fail_nic_list[mtp_id],
-                                                                                mfg_rdt_summary[mtp_id],
-                                                                                swmtestmode,
-                                                                                l1_sequence,
-                                                                                args.skip_test,
-                                                                                args.only_test,
-                                                                                args.mtpcfg))
+            mtp_thread = threading.Thread(target = test_utils.single_mtp_test,
+                                          args = (
+                                                    stage,
+                                                    mtp_mgmt_ctrl,
+                                                    mfg_rdt_summary[mtp_id],
+                                                    logfile_dir_list[mtp_id],
+                                                    open_file_track_mtp_list[mtp_id],
+                                                    args.skip_test,
+                                                    args.jobd_logdir),
+                                        kwargs = ({
+                                                    "mtpcfg_file": mtpcfg_file,
+                                                    "testsuite_name": stage,
+                                                    "swm_test_mode": swmtestmode,
+                                                    "only_test": args.only_test,
+                                                    "l1_sequence": l1_sequence}))
             mtp_thread.daemon = True
             mtp_thread.start()
             mtp_thread_list.append(mtp_thread)

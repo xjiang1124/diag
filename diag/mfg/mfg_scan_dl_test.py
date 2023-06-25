@@ -35,6 +35,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
+import test_utils
 
 
 def logfile_close(filep_list):
@@ -386,10 +387,13 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    if not libmfg_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, args.skip_test):
+    # start diag, nic_init..
+    if not test_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, args.skip_test):
         mtpid_list.remove(mtp_id)
+        logfile_close(log_filep_list)
         return
 
+    # construct pass_nic_list
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         key = libmfg_utils.nic_key(slot)
@@ -403,39 +407,8 @@ def main():
         pn = nic_fru_cfg[mtp_id][key]["PN"]
         mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
-    # type check
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        if not nic_prsnt_list[slot]:
-            continue
-        if slot in fail_nic_list:
-            continue
-        if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
-            continue
-        dsp = stage
-        test = "NIC_TYPE"
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if not nic_prsnt_list[slot]:
-            continue
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) != "YES":
-            continue
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-        if slot in pass_nic_list and slot in fail_nic_list:
-            pass_nic_list.remove(slot)
+    # check script folder, area check...
+    fail_nic_list += test_utils.nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, args.skip_test)
 
     # Set Naples25SWM test mode
     mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
@@ -445,32 +418,10 @@ def main():
     mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list, dl=True)
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        test = "GET_NIC_TYPE_BY_PN"
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         if nic_prsnt_list[slot]:
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
-                continue
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
-            mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
-            nic_type = libmfg_utils.get_nic_type_by_part_number(pn)
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-            if nic_type:
-                if nic_type == NIC_Type.ORTANO2ADIIBM and slot not in adi_ibm_reset_slot:
-                    adi_ibm_reset_slot.append(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            else:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.ORTANO2ADIIBM and slot not in adi_ibm_reset_slot:
+                adi_ibm_reset_slot.append(slot)                
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()

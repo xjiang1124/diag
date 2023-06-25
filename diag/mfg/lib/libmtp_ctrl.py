@@ -5066,6 +5066,11 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "'{:s}' PN not valid for this script folder".format(pn))
             return False
 
+    @test_utils.semi_parallel_test_section
+    def mtp_nic_list_type_test(self, slot):
+        # same as mtp_nic_type_test but call on a nic_list instead of single slot
+        return self.mtp_nic_type_test(slot)
+
     def mtp_nic_type_test(self, slot):
         type_check = self.mtp_nic_type_valid(slot)
         pn_check = self.mtp_nic_pn_valid(slot)

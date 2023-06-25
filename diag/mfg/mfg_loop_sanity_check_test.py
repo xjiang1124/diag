@@ -28,7 +28,7 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
-
+import test_utils
 
 def load_mtp_cfg():
     # DL/P2C MTP Chassis
@@ -215,7 +215,7 @@ def main():
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_P2C, args.skip_test):
+            if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_P2C, args.skip_test):
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)
