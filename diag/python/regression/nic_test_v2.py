@@ -461,6 +461,33 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
 
+    def multi_nic_cmds(self, args):
+        print(args)
+    
+        if args.slot_list == "":
+            print ("Invalide input slot_list:", slot_list)
+    
+        slot_list = args.slot_list.split(',')
+        for slot1 in slot_list:
+            slot = int(slot1)
+            print("=== Slot {} ===".format(slot))
+
+            self.nic_con.switch_console(slot)
+            session = common.session_start()
+
+            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            if ret != 0:
+                continue
+
+            if args.send_only:
+                session.sendline(args.nic_cmd)
+                time.sleep(3)
+            else:
+                ret = self.nic_con.uart_session_cmd(session, args.nic_cmd, args.timeout)
+
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -569,6 +596,16 @@ if __name__ == "__main__":
     parser_setup_multi.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
     parser_setup_multi.set_defaults(func=test.setup_multi)
+
+    # Multi nic cmd
+    parser_multi_nic_cmds = subparsers.add_parser('multi_nic_cmds', help='Run commands on each nic console', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_multi_nic_cmds.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_multi_nic_cmds.add_argument("-nic_cmd", "--nic_cmd", help="nic command", type=str, default="")
+    parser_multi_nic_cmds.add_argument("-timeout", "--timeout", help="timeout", type=int, default=30)
+    parser_multi_nic_cmds.add_argument("-sd_only", "--send_only", help="Only send command and do not wait for it finish", action='store_true')
+
+    parser_multi_nic_cmds.set_defaults(func=test.multi_nic_cmds)
 
     try:
         args = parser.parse_args()

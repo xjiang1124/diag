@@ -519,16 +519,24 @@ class nic_test:
         for i in range(iteration):
             print "=== Ite {} ===".format(i)
             if pc_mode == "board":
-                ret, _ = self.setup_env_multi(nic_list, False, 60)
+                ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60)
             elif pc_mode == "12v":
                 slot_list = ",".join(nic_list)
                 self.nic_con.power_cycle_12v_multi(self.baud_rate, slot_list, 60)
-                ret, _ = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
+                ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
             else:
-                ret, _ = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
+                ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
 
-            if ret != 0:
-                print "=== Power cycle test failed at ite {} ===".format(i)
+            #if ret != 0:
+            #    print "=== Power cycle test failed at ite {} ===".format(i)
+            #    break
+
+            nic_list_pass = [x for x in nic_list if x not in nic_list_remain]
+            nic_list = nic_list_pass
+            print("=== Ite {} Done; remaining list {}".format(i, nic_list))
+
+            if len(nic_list) == 0:
+                print("All cards have failed!")
                 break
 
             if pc_mode == "gpio3":
