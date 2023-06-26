@@ -78,6 +78,11 @@ class mtp_db():
         else:
             return False
 
+    def get_mtp_max_slots(self, mtpid):
+        if mtpid in self._mtpid_list:
+            return self._max_slots[mtpid]
+        else:
+            return None
 
     def get_mtp_console(self, mtpid):
         ts_cfg = list()

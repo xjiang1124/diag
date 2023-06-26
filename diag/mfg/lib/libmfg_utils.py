@@ -309,6 +309,18 @@ def part_number_lookup(pn):
 def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
 
+def rot_cable_serial_number_validate(tmp):
+    return re.match(r'^ROT\d{5}$', tmp)
+
+def part_number_match_rot_require_list(pn):
+
+    rc = False
+    for pattern in ROT_CABLE_REQUIRED_FOR_FST_PN_LIST:
+        if re.match(pattern, pn):
+            rc = True
+            break
+    return rc
+
 def get_nic_type_by_part_number(pn):
     for nic_type, pn_regex_arr in PN_FORMAT_TABLE.items():
         for pn_regex in pn_regex_arr:
@@ -715,7 +727,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     if logfile_dir:
         cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
         os.system(cmd)
-        if str(FF_Stage.FF_DL) in logfile_dir or str(FF_Stage.FF_SWI) in logfile_dir:
+        if str(FF_Stage.FF_DL) in logfile_dir or str(FF_Stage.FF_SWI) in logfile_dir or str(FF_Stage.FF_FST) in logfile_dir:
             cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
             os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
@@ -2853,11 +2865,11 @@ def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
     mtp_syslog_handle.send('\x03')
     mtp_syslog_handle.close()
 
-def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_Test_Mode.SW_DETECT):
+def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_Test_Mode.SW_DETECT, is_fst_test=False):
     mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
 
     while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode)
+        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode, is_fst_test=is_fst_test)
         if scan_rslt:
             break;
         mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
@@ -2870,17 +2882,25 @@ def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_
         nic_cli_id_str = id_str(mtp = mtp_id, nic = slot)
         if scan_rslt[key]["VALID"]:
             sn = scan_rslt[key]["SN"]
+            rot_sn = scan_rslt[key].get("ROTSN", "")
             pn = scan_rslt[key]["PN"]
             mac_ui = mac_address_format(scan_rslt[key]["MAC"])
             if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
                 alom_sn = scan_rslt[key]["SN_ALOM"]
                 alom_pn = scan_rslt[key]["PN_ALOM"]
                 if swmtestmode == Swm_Test_Mode.ALOM:
-                    pass_rslt_list.append(nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn)
+                    valid_display_string = nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn
+                    if rot_sn:
+                        valid_display_string += "; ROT SN = " + rot_sn
                 else:
-                    pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn)
+                    valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn
+                    if rot_sn:
+                        valid_display_string += "; ROT SN = " + rot_sn
             else:
-                pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
+                valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn
+                if rot_sn:
+                        valid_display_string += "; ROT SN = " + rot_sn
+            pass_rslt_list.append(valid_display_string)
         else:
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
     cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)

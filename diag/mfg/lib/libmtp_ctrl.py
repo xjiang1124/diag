@@ -4469,7 +4469,7 @@ class mtp_ctrl():
         self.cli_log_inf("End MTP NIC Info Dump")
 
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, skip_nic_pn_init=False):
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, skip_nic_pn_init=False, scanned_fru=None):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
 
         # open ssh session to each NIC
@@ -4481,7 +4481,7 @@ class mtp_ctrl():
 
         # init nic present list
         if stage == FF_Stage.FF_FST:
-            if not self.fst_init_nic_type():
+            if not self.fst_init_nic_type(scanned_fru):
                 self.cli_log_inf("Failed to init NICs in the FST", level = 0)
                 return False
         else:
@@ -5339,7 +5339,7 @@ class mtp_ctrl():
 
         return True
 
-    def fst_init_nic_type(self):
+    def fst_init_nic_type(self, scanned_fru=None):
         """
             Search lspci for DSCs
             And assign slot # in the order it appears in lspci
@@ -5359,9 +5359,46 @@ class mtp_ctrl():
             self.cli_log_err("No devices found")
             return False
 
+        if scanned_fru:
+            # build scanned serial number to scanned nic slot id mapping table
+            sn2slot = dict()
+            for slot in range(self._slots):
+                key = libmfg_utils.nic_key(slot)
+                if scanned_fru[key]["VALID"] == "Yes":
+                    sn2slot[scanned_fru[key]["SN"]] = slot
+
+            # Map to Scaned slot id by card serial number
+            phy_present_slot_list = []
+            phy_present_sn_list = []
+            for bus in bus_list_match:
+                cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    return False
+                result = self.mtp_get_cmd_buf()
+                sn_match = re.search("Serial number: *([A-Z0-9]*)", result)
+                if sn_match:
+                    sn = sn_match.group(1)
+                    if sn not in sn2slot:
+                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Abort".format(sn), level=0)
+                        return False
+                    phy_slot = sn2slot[sn]
+                    phy_present_slot_list.append(phy_slot)
+                    phy_present_sn_list.append(sn)
+
+            # Validate if there is scanned card not physical present
+            for sn in sn2slot:
+                if sn not in phy_present_sn_list:
+                    key = libmfg_utils.nic_key(slot)
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Abort".format(key, sn), level=0)
+                    return False
+            if not phy_present_slot_list:
+                phy_present_slot_list = range(len(bus_list_match))
+        else:
+            phy_present_slot_list = range(len(bus_list_match))
+
         self.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
         self.cli_log_inf("Init NIC SN, PN")
-        for slot, bus in enumerate(bus_list_match):
+        for slot, bus in zip(phy_present_slot_list, bus_list_match):
             if not self._slots_to_skip[slot]:
                 self._nic_prsnt_list[slot] = True
                 self._nic_ctrl_list[slot]._fst_pcie_bus = bus
@@ -6521,7 +6558,7 @@ class mtp_ctrl():
         return [ret, err_msg_list]
 
 
-    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False):
+    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False, is_fst_test=False):
         mtp_scan_rslt = dict()
         mtp_ts_snapshot = libmfg_utils.get_timestamp()
         mtp_scan_rslt["MTP_ID"] = self._id
@@ -6533,6 +6570,7 @@ class mtp_ctrl():
         scan_sn_list = list()
         scan_mac_list = list()
         scan_atom_sn_list = list()
+        scan_rot_sn_list = list()
         slot_num = 1
 
         # build all valid nic key list
@@ -6543,6 +6581,11 @@ class mtp_ctrl():
                 unscanned_nic_key_list.append(key)
 
         while True:
+            if len(scan_nic_key_list) == self._slots:
+                print("\033[1;93m")
+                libmfg_utils.cli_log_inf(self._filep, "!!! NO More Available Slot, Please Scan STOP !!!")
+                print("\033[0m")
+
             if present_check:
                 unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
                 usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
@@ -6591,6 +6634,7 @@ class mtp_ctrl():
                 sn_scanned = False
                 mac_scanned = False
                 pn_scanned = False
+                rot_scanned = False
                 while not sn_scanned:
                     usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
@@ -6642,6 +6686,28 @@ class mtp_ctrl():
                         #return None
                     else:
                         pn_scanned = True
+
+                #Scan ROT cable if FST Station
+                if is_fst_test:
+                    if libmfg_utils.part_number_match_rot_require_list(pn):
+                        while not rot_scanned:
+                            usr_prompt = "Please Scan {:s} ROT Cable Barcode:".format(key)
+                            rot_sn = raw_input(usr_prompt).strip()
+                            if not rot_sn:
+                                continue
+                            if not libmfg_utils.rot_cable_serial_number_validate(rot_sn):
+                                self.cli_log_err("Invalid ROT Cable SN: {:s}, please re-scan\n".format(rot_sn), level=0)
+                            elif rot_sn in scan_rot_sn_list:
+                                self.cli_log_err("ROT Cable: {:s} has already scanned, please re-scan\n".format(rot_sn), level=0)
+                            else:
+                                scan_rot_sn_list.append(rot_sn)
+                                rot_scanned = True
+                        nic_scan_rslt["ROTSN"] = rot_sn
+                    else:
+                        print("\033[1;92m")
+                        libmfg_utils.cli_log_inf(self._filep, "!!! NO NEED ROT CABLE FOR THIS CARD TYPE !!!")
+                        print("\033[0m")
+
                 #Scan ALOM SN Loop
                 alom_sn = None
                 alom_pn = None
@@ -6754,7 +6820,10 @@ class mtp_ctrl():
                     config_lines.append(tmp)
                     tmp = "        PN_ALOM: \"" + scan_rslt[key]["PN_ALOM"] + "\""
                     config_lines.append(tmp)
-
+                rot_sn = scan_rslt[key].get("ROTSN", "")
+                if rot_sn:
+                    tmp = '        ROTSN: "' + rot_sn + '"'
+                    config_lines.append(tmp)
             else:
                 tmp = "        VALID: \"No\""
                 config_lines.append(tmp)
