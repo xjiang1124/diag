@@ -2639,7 +2639,10 @@ class nic_ctrl():
             self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
             return False
 
-        self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
+        if self._nic_type in GIGLIO_NIC_TYPE_LIST:
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/giglio/ -d3"])
+        else:
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
 
         # get emmc nic utils version
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT

@@ -5932,6 +5932,8 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
+            elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
@@ -5946,7 +5948,10 @@ class mtp_ctrl():
                 self.cli_log_err("Incorrect test for this NIC TYPE")
                 return ["FAIL", nic_list[:]]
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                if nic_type in ELBA_NIC_TYPE_LIST:
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, vmarg)
                 # 2C/4C = internal loopback
                 if vmarg != Voltage_Margin.normal:
                     cmd += " -int_lpbk"
