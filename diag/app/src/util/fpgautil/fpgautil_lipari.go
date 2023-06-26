@@ -23,14 +23,15 @@ const errhelpLipari = "\nfpgautil:\n" +
         "fpgautil i2c bus mux scan\n" +
         //"fpgautil i2c debug enable/disable\n" +
         "\n" +
+        "fpgautil power <cycle/on/off> <e#/th4/all> -pciscan -goldfw\n" +
+        "\n" +
         "fpgautil flash <fgpa#> devid/readsr/writesr <data>\n" +
         "fpgautil flash <fgpa#> read <addr> <length>\n" +
         "fpgautil flash <fpga#> flash sectorerase <addr>/all\n" +
         //"fpgautil flash <fgpa#> w32/w64 <addr> <data>\n" +
         "fpgautil flash <fgpa#> program/verify/generate <primary/secondary/allflash> <filename>\n" +
         "\n" +
-        "fpgautil cpld cpu uc/devid/featurebits/featurerow/statusreg \n" +
-        "fpgautil cpld cpu refresh \n" +
+        "fpgautil cpld cpu uc/devid/featurebits/featurerow/statusreg/refresh \n" +
         "fpgautil cpld cpu generate/verify/erase/program <cfg0/cfg1/fea> <filename>\n" +
         "\n" +
         "fpgautil elba <elba#> flash devid/flagstatus/readsr/writesr <data>\n" +
@@ -40,8 +41,7 @@ const errhelpLipari = "\nfpgautil:\n" +
         "fpgautil elba <elba#> flash generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
          " \n" +
         "fpgautil elba <elba#> cpld i2c r/w <addr> <data>\n" +
-        "fpgautil elba <elba#> cpld uc/devid/featurebits/featurerow/statusreg \n" +
-        "fpgautil elba <elba#> cpld refresh \n" +
+        "fpgautil elba <elba#> cpld uc/devid/featurebits/featurerow/statusreg/refresh \n" +
         "fpgautil elba <elba#> cpld generate/verify/erase/program <cfg0/cfg1/fea> <filename>\n" 
         
 
@@ -106,7 +106,43 @@ func lipari_fpga_cli() {
             fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
         }
         os.Exit(0)
-
+    } else if os.Args[1] == "power" {
+        var nopciscan uint32 = 1
+        var bootgoldfw uint32 = 0
+        //"fpgautil power <cycle/on/off> <all/th4/e#> -pciscan -goldfw\n" +
+        var state uint32
+        var device uint32
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        switch os.Args[2] {
+            case "on": state = liparifpga.POWER_STATE_ON
+            case "off": state = liparifpga.POWER_STATE_OFF
+            case "cycle": state = liparifpga.POWER_STATE_CYCLE
+            default: fmt.Printf(" Error: arg[2] needs to be cycle, on, or off\n");  return
+        }
+        switch os.Args[3] {
+            case "e0": device = liparifpga.ELBA0
+            case "e1": device = liparifpga.ELBA1
+            case "e2": device = liparifpga.ELBA2
+            case "e3": device = liparifpga.ELBA3
+            case "e4": device = liparifpga.ELBA4
+            case "e5": device = liparifpga.ELBA5
+            case "e6": device = liparifpga.ELBA6
+            case "e7": device = liparifpga.ELBA7
+            case "th4": device = liparifpga.TH4
+            case "all": device = liparifpga.ALL
+            default: fmt.Printf(" Error: arg[3] needs to be all, th4, e0, or e1\n");  return
+        }
+        if contains(os.Args, "-pciscan") {
+            nopciscan = 0
+        }
+        if contains(os.Args, "-goldfw") {
+            bootgoldfw = 1
+        }
+        liparifpga.Asic_PowerCycle(device, state, nopciscan, bootgoldfw) 
+        return
     } else if os.Args[1] == "i2c" {
         wrData := []byte{}
         rdData := []byte{}
@@ -127,6 +163,45 @@ func lipari_fpga_cli() {
             } else {
                 fmt.Printf(" %s \n", errhelp)
             }
+            return
+        }
+        if os.Args[4] == "scan1" {   //scan1
+            wrData = append(wrData, 0x00)
+            matrix := make([]byte, 128)
+            bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            liparifpga.ExecutingScanChain = 1
+            for i:=3; i<0x78; i++ {
+
+                //if ((i >= 0x30 && i <= 0x37) || (i >= 0x50 && i <= 0x5F)) {
+                    //fmt.Printf("RD(%x) \n", i)
+                    rdData, err = liparifpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 1, wrData, 1 )
+                //} else {
+                    //fmt.Printf("WR(%x) \n", i)
+                //    rdData, err = I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 0x00 )
+                //}
+                if err == nil {
+                    matrix[i] = byte(i)
+                } else {
+                    matrix[i] = 0x99
+                }
+                //time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 2ms
+            }
+            liparifpga.ExecutingScanChain = 0
+            fmt.Printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f")
+            for i:=0; i<0x80; i++ {
+                if (i%0x10)==0 { fmt.Printf("\n%.02x:", i) }
+                if matrix[i] == 0 { fmt.Printf("   ") 
+                } else if matrix[i] == 0x99 { fmt.Printf(" --") 
+                } else { fmt.Printf(" %.02x", matrix[i]) }
+            }
+            fmt.Printf("\n")
             return
         }
         if argc == 5 {   //scan
@@ -857,4 +932,20 @@ func lipari_fpga_cli() {
     }
     return
 }
+
+
+
+func contains(s []string, str string) bool {
+    for _, v := range s {
+            if len(v) < len(str) {
+                continue
+            }
+            if v[:len(str)] == str {
+                    return true
+            }
+    }
+
+    return false
+}
+
  

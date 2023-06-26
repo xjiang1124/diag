@@ -1147,8 +1147,8 @@ var OrtanoTaorminaTbl = []entry {
     entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x65, 0x6E, 0x73,
         0x61, 0x6E, 0x64, 0x6F}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xE8}},
-    entry{"Product Name",                           STRING,      24,      40,    []byte{
-        0x44, 0x53, 0x53, 0x2d, 0x34, 0x38, 0x78, 0x32, 0x35, 0x47, 
+    entry{"Product Name",                           STRING,      24,      40,    []byte{        
+        0x44, 0x53, 0x53, 0x2d, 0x34, 0x38, 0x78, 0x32, 0x35, 0x47,                     //DSS-48x25G-6x100G
         0x2d, 0x36, 0x78, 0x31, 0x30, 0x30, 0x47, 0x20, 0x20, 0x20, 
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
@@ -1157,7 +1157,7 @@ var OrtanoTaorminaTbl = []entry {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Part Number Type/Length",                INT8,        76,       1,    []byte{0xD9}},
     entry{"Part Number",                            STRING,      77,       25,   []byte{
-        0x44, 0x53, 0x53, 0x2d, 0x34, 0x38, 0x32, 0x35, 0x2d, 0x36, 
+        0x44, 0x53, 0x53, 0x2d, 0x34, 0x38, 0x32, 0x35, 0x2d, 0x36,                      //DSS-4825-6100
         0x31, 0x30, 0x30, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
         0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"FRU File ID Type/Length",                INT8,       102,       1,    []byte{0xC8}},
@@ -1175,6 +1175,59 @@ var OrtanoTaorminaTbl = []entry {
     entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
     entry{"Assembly Number",                        STRING,     130,      13,    []byte{0x36, 0x38, 0x2d, 0x30, 
         0x30, 0x31, 0x38, 0x2d, 0x30, 0x31, 0x20, 0x30, 0x31}}, 
+    entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00}},
+    entry{"Board Info Area Checksum",               INT8,       151,       1,    []byte{0x00}},
+}
+
+
+var OrtanoLipariTbl = []entry {
+    entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
+    entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
+    entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
+    entry{"Board Info Offset",                      INT8,        3,        1,    []byte{0x01}},
+    entry{"Product Area Offset",                    INT8,        4,        1,    []byte{0x00}},
+    entry{"Multi-Record Area Offset",               INT8,        5,        1,    []byte{0x00}},
+    entry{"PAD",                                    INT8,        6,        1,    []byte{0x00}},
+    entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0x00}},
+
+    entry{"Board Info Format Version",              INT8,        8,        1,    []byte{0x01}},
+    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x12}},
+    entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
+    entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
+    entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x65, 0x6E, 0x73,
+        0x61, 0x6E, 0x64, 0x6F}},
+    entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xE8}},
+    entry{"Product Name",                           STRING,      24,      40,    []byte{
+        0x44, 0x53, 0x53, 0x2D, 0x32, 0x38, 0x34, 0x30, 0x30, 0x20,                         //DSS-28400
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"Serial Number Type/Length",              INT8,        64,       1,    []byte{0xCB}},
+    entry{"Serial Number",                          STRING,      65,       11,   []byte{0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"Part Number Type/Length",                INT8,        76,       1,    []byte{0xD9}},
+    entry{"Part Number",                            STRING,      77,       25,   []byte{
+        0x44, 0x53, 0x53, 0x2D, 0x32, 0x38, 0x34, 0x30, 0x30, 0x20,                         //DSS-28400   
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20}},
+    entry{"FRU File ID Type/Length",                INT8,       102,       1,    []byte{0xC8}},
+    entry{"FRU ID",                                 STRING,     103,       8,    []byte{0x30, 0x36, 0x2f, 0x30, 
+        0x34, 0x2f, 0x32, 0x31}},
+    entry{"Board ID Type/Length",                   INT8,       111,       1,    []byte{0x04}},
+    entry{"Board ID",                               INT8,       112,       4,    []byte{0x01, 0x00, 0x00, 0x00}},
+    entry{"Engineering Change Level Type/Length",   INT8,       116,       1,    []byte{0xC2}},
+    entry{"Engineering Change Level",               INT8,       117,       2,    []byte{0x00, 0x00}},
+    entry{"Number of MAC Address Type/Length",      INT8,       119,       1,    []byte{0x02}},
+    entry{"Number of MAC Address",                  INT8,       120,       2,    []byte{0x10, 0x00}},
+    entry{"MAC Address Base Type/Length",           INT8,       122,       1,    []byte{0x06}},
+    entry{"MAC Address Base",                       INT8,       123,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 
+        0x00, 0x00}},
+    entry{"Assembly Number Type/Length",            INT8,       129,       1,    []byte{0xCD}},
+    entry{"Assembly Number",                        STRING,     130,      13,    []byte{0x36, 0x38, 0x2d, 0x30, 
+        0x30, 0x33, 0x32, 0x2d, 0x30, 0x31, 0x20, 0x30, 0x31}}, 
     entry{"End of Field",                           INT8,       143,       1,    []byte{0xC1}},
     entry{"PAD",                                    INT8,       144,       7,    []byte{0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00}},

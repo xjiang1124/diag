@@ -66,7 +66,7 @@ const (
     ELBA5 = 5
     ELBA6 = 6
     ELBA7 = 7
-    TD4   = 8
+    TH4   = 8
     ALL   = 9
     NUMBER_ELBAS = 8
 
@@ -123,6 +123,9 @@ func init () {
     if cardType == "LIPARI" {
         bar := []uint64 { 0,0 }
         exists, _ := Path_exists("/tmp/fpgabars")
+
+        os.Setenv("CARD_TYPE",cardType)
+
         //TRY TO STORE THE BAR VALUES IN A FILE.  WE DONT WANT TO SCAN THE PCI AND GET THE BARS EVERYTIME WE USE ONE OF THE DIAG UTILITIES THAT CALLS THIS INIT
         if exists == true {
             var i int
@@ -153,7 +156,7 @@ func init () {
                 } else if i==1 { bar[1], _ = strconv.ParseUint(tmp, 0, 64) }
             }
 
-            file, errGo := os.OpenFile("/tmp/fpgabars", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+            file, errGo := os.OpenFile("/tmp/fpgabars", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
             if errGo != nil {
                 cli.Println("e", "ERROR: Failed to get open file /tmp/fpgabars.   GO ERROR=%v", errGo)
                 return
@@ -524,8 +527,8 @@ func GetResistorStrapping() (value uint32, err error) {
 }
 
 
-func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) {
-    var args string
+func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32, bootGoldFW uint32) (err error) {
+    //var args string
     var data32 uint32
     var ctrl_pwr_reg, stat_reg, ctrl_reg uint64 = FPGA0_ELBA0_PWR_CTRL_REG, FPGA0_ELBA0_PWR_STAT_REG, FPGA1_ELBA0_CTRL_REG
     var dev, dev_start, dev_end int
@@ -546,11 +549,6 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
     } else {
         dev_start = int(device); dev_end = int(device) + 1
     }
-
-    fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
-    fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
-    fmt.Printf(" FIXME FIXME FIXME.. NEED FPGA PCI BUS INFO PLUGGED INTO INIT CODE HERE\n")
-    return
 
     //remove device from linux & power off
     if state == POWER_STATE_OFF || state == POWER_STATE_CYCLE {
@@ -588,21 +586,32 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
                             stat_reg = FPGA0_ELBA7_PWR_STAT_REG
                             ctrl_reg = FPGA1_ELBA7_CTRL_REG
                             fmt.Printf(" Removing Elba7 from Linux PCI Enumeration and Powering Off\n")
-                case TD4:   ctrl_pwr_reg = FPGA0_TH4_PWR_CTRL_REG 
+                case TH4:   ctrl_pwr_reg = FPGA0_TH4_PWR_CTRL_REG 
                             stat_reg = FPGA0_TH4_PWR_STAT_REG
-                            fmt.Printf(" Removing TD4 from Linux PCI Enumeration and Powering Off\n")
+                            fmt.Printf(" Removing TH4 from Linux PCI Enumeration and Powering Off\n")
             }
+            /*
             switch(dev){
-                case ELBA0: args = "echo 1 > /sys/bus/pci/devices/0000:0b:00.0/remove"
-                case ELBA1: args = "echo 1 > /sys/bus/pci/devices/0000:05:00.0/remove"
-                case TD4:   args = "echo 1 > /sys/bus/pci/devices/0000:01:00.0/remove" 
+                case ELBA0: args = "echo 1 > /sys/bus/pci/devices/0000:0A:00.0/remove"
+                case ELBA1: args = "echo 1 > /sys/bus/pci/devices/0000:12:00.0/remove"
+                case ELBA2: args = "echo 1 > /sys/bus/pci/devices/0000:1A:00.0/remove"
+                case ELBA3: args = "echo 1 > /sys/bus/pci/devices/0000:23:00.0/remove"
+                case ELBA4: args = "echo 1 > /sys/bus/pci/devices/0000:1F:00.0/remove"
+                case ELBA5: args = "echo 1 > /sys/bus/pci/devices/0000:17:00.0/remove"
+                case ELBA6: args = "echo 1 > /sys/bus/pci/devices/0000:0E:00.0/remove"
+                case ELBA7: args = "echo 1 > /sys/bus/pci/devices/0000:06:00.0/remove"
+                case TH4:   args = "echo 1 > /sys/bus/pci/devices/0000:04:00.0/remove" 
             }
             exec.Command("bash", "-c", args).Output()
             time.Sleep(time.Duration(1) * time.Second) 
-
-            if dev < TD4 {  //Elba device
+            */
+            if dev < TH4 {  //Elba device
+                if bootGoldFW > 0 {
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x7)
+                } else {
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x3)
+                }
                 LipariWriteU32(LIPARI_FPGA0, ctrl_pwr_reg , 0x53)
-                LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x3)
                 if dev == ELBA0 {
                     LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI1_MUXSEL_REG , 0x00)
                     LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI9_MUXSEL_REG , 0x00)
@@ -629,11 +638,15 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
                     LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI16_MUXSEL_REG , 0x00)
                 }
             }
-            if dev == TD4 {
+            if dev == TH4 {
                 LipariWriteU32(LIPARI_FPGA0, FPGA0_TH4_CTRL_REG, 0x1ff) 
                 LipariWriteU32(LIPARI_FPGA0, FPGA0_TH4_PWR_CTRL_REG, 0x53) 
             }
         }
+        
+    }
+
+    if state == POWER_STATE_CYCLE {
         time.Sleep(time.Duration(500) * time.Millisecond)
     }
 
@@ -644,7 +657,7 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
                 case ELBA0: ctrl_pwr_reg = FPGA0_ELBA0_PWR_CTRL_REG
                             stat_reg = FPGA0_ELBA0_PWR_STAT_REG
                             ctrl_reg = FPGA1_ELBA0_CTRL_REG
-                            LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI1_MUXSEL_REG , 0x01)
+                            LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI1_MUXSEL_REG , 0x01)   //trun cpld and qspi mux back to elba
                             LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI9_MUXSEL_REG , 0x01)
                 case ELBA1: ctrl_pwr_reg = FPGA0_ELBA1_PWR_CTRL_REG
                             stat_reg = FPGA0_ELBA1_PWR_STAT_REG
@@ -681,26 +694,36 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
                             ctrl_reg = FPGA1_ELBA7_CTRL_REG
                             LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI8_MUXSEL_REG , 0x01)
                             LipariWriteU32(LIPARI_FPGA1, FPGA1_SPI16_MUXSEL_REG , 0x01)
-                case TD4:   ctrl_pwr_reg = FPGA0_TH4_PWR_CTRL_REG
+                case TH4:   ctrl_pwr_reg = FPGA0_TH4_PWR_CTRL_REG
                             stat_reg = FPGA0_TH4_PWR_STAT_REG
             }
-            if dev == ELBA0 || dev == ELBA1 {
+            //time.Sleep(time.Duration(500) * time.Millisecond) 
+            if dev >= ELBA0 || dev <= ELBA7 {
                 if nopciscan == 1 {
                     fmt.Printf(" Powering up Elba-%d\n", dev)
                 } else {
                     fmt.Printf(" Powering up Elba and Waiting 15 seconds for Elba to boot and enumerate\n")
                 }
-                LipariWriteU32(LIPARI_FPGA0, ctrl_reg , 0x1)
                 LipariWriteU32(LIPARI_FPGA0, ctrl_pwr_reg , 0xD1)
-                time.Sleep(time.Duration(300) * time.Millisecond)
-                LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x0)
-                time.Sleep(time.Duration(1000) * time.Millisecond) 
-            }
-            if dev == TD4 {
-                if nopciscan == 1 {
-                    fmt.Printf(" Powering up TD4\n")
+                if bootGoldFW > 0 {
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x5)
                 } else {
-                    fmt.Printf(" Powering up TD4 and Waiting 5 seconds for TD4 to come up and enumerate\n")
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x1)
+                }
+                
+                //time.Sleep(time.Duration(300) * time.Millisecond)
+                if bootGoldFW > 0 {
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x4)
+                } else {
+                    LipariWriteU32(LIPARI_FPGA1, ctrl_reg , 0x0)
+                }
+                //time.Sleep(time.Duration(1000) * time.Millisecond) 
+            }
+            if dev == TH4 {
+                if nopciscan == 1 {
+                    fmt.Printf(" Powering up TH4\n")
+                } else {
+                    fmt.Printf(" Powering up TH4 and Waiting 5 seconds for TH4 to come up and enumerate\n")
                 }
                 LipariWriteU32(LIPARI_FPGA0, FPGA0_TH4_PWR_CTRL_REG , 0xd1)
                 time.Sleep(time.Duration(100) * time.Millisecond)
@@ -721,7 +744,7 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
             switch(device){
                 case ALL: time.Sleep(time.Duration(15) * time.Second); break
                 case ELBA0, ELBA1, ELBA2, ELBA3, ELBA4, ELBA5, ELBA6, ELBA7: time.Sleep(time.Duration(15) * time.Second); break
-                case TD4:   time.Sleep(time.Duration(5) * time.Second); break
+                case TH4:   time.Sleep(time.Duration(5) * time.Second); break
             }
         } else {
             time.Sleep(time.Duration(1) * time.Second)
@@ -730,23 +753,24 @@ func Asic_PowerCycle(device uint32, state uint32, nopciscan uint32) (err error) 
 
         for dev=dev_start;dev<dev_end;dev++ {
             switch(dev){
-                case ELBA0: stat_reg = FPGA0_ELBA0_PWR_STAT_REG
-                case ELBA1: stat_reg = FPGA0_ELBA1_PWR_STAT_REG
-                case ELBA2: stat_reg = FPGA0_ELBA2_PWR_STAT_REG
-                case ELBA3: stat_reg = FPGA0_ELBA3_PWR_STAT_REG
-                case ELBA4: stat_reg = FPGA0_ELBA4_PWR_STAT_REG
-                case ELBA5: stat_reg = FPGA0_ELBA5_PWR_STAT_REG
-                case ELBA6: stat_reg = FPGA0_ELBA6_PWR_STAT_REG
-                case ELBA7: stat_reg = FPGA0_ELBA7_PWR_STAT_REG
-                case TD4:   stat_reg = FPGA0_TH4_PWR_STAT_REG
+                case ELBA0: stat_reg = FPGA1_ELBA0_STAT_REG
+                case ELBA1: stat_reg = FPGA1_ELBA1_STAT_REG
+                case ELBA2: stat_reg = FPGA1_ELBA2_STAT_REG
+                case ELBA3: stat_reg = FPGA1_ELBA3_STAT_REG
+                case ELBA4: stat_reg = FPGA1_ELBA4_STAT_REG
+                case ELBA5: stat_reg = FPGA1_ELBA5_STAT_REG
+                case ELBA6: stat_reg = FPGA1_ELBA6_STAT_REG
+                case ELBA7: stat_reg = FPGA1_ELBA7_STAT_REG
+                case TH4:   stat_reg = FPGA0_TH4_PWR_STAT_REG
             }
 
-            data32, err = LipariReadU32(LIPARI_FPGA0, stat_reg)
-            if (data32 & 0x2) != 0x2 {
-                err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
-                cli.Printf("e", "%s", err)
-                return
-            }
+            /* NOT WORKING AS OF 3/20/23 FPGA */
+            data32, err = LipariReadU32(LIPARI_FPGA1, stat_reg)
+            //if (data32 & 0x2) != 0x2 {
+            //    err = fmt.Errorf(" Error: Asic_PowerCycle.  FPGA status indicates Device did not power up ok")
+            //    cli.Printf("e", "%s", err)
+            //    return
+            //}
         }
         //Have Linux rescan the PCI bus to enumerate the devices
         if nopciscan == 0 {
@@ -784,47 +808,6 @@ func SystemPowerCycle() {
 }
 
 
-func FAN_AirFlow_Direction() (fan_air_direction int, err error) {
-    var data32 uint32
-
-    data32, err = LipariReadU32(LIPARI_FPGA0, FPGA0_FAN_STAT_REG)
-    if err != nil {
-        return
-    }
-    //fan present is 0 for present, 1 for not present
-    if (data32 &  FPGA0_FAN_STAT_PORT_SIDE_INTAKE_MASK) == FPGA0_FAN_STAT_PORT_SIDE_INTAKE_MASK {
-        fan_air_direction = AIRFLOW_FRONT_TO_BACK
-    } else if (data32 &  FPGA0_FAN_STAT_PORT_SIDE_INTAKE_MASK) == 0x00 {
-        fan_air_direction = AIRFLOW_BACK_TO_FRONT
-    } else {
-        fan_air_direction = AIRFLOW_MIXED_ERROR
-    }
-    return
-}
-
-
-func FAN_Module_present(FANnumber uint32) (present bool, err error) {
-    var data32 uint32
-    present = false
-
-    if FANnumber > (MAXFAN - 1) {
-        err = fmt.Errorf(" Error: FAN_Module_present.  FAN NUMBER PASSED (%d) IS NOT VALID!", FANnumber)
-        cli.Printf("e", "%s", err)
-        return
-    }
-    data32, err = LipariReadU32(LIPARI_FPGA0, FPGA0_FAN_STAT_REG)
-    if err != nil {
-        return
-    }
-
-    //fan present is 0 for present, 1 for not present
-    if (data32 &  (FPGA0_FAN_STAT_REG_NOT_PRESENT0 << (FPGA0_FAN_STAT_REG_NOT_PRESENT0_SHIFT + FANnumber))) == 0x00 {
-        present = true
-    }
-    return
-}
-
-
 func PSU_present(PSUnumber uint32) (present bool, err error) {
     var data32 uint32
     present = false
@@ -839,10 +822,10 @@ func PSU_present(PSUnumber uint32) (present bool, err error) {
         return
     }
 
-    if PSUnumber == PSU0 && ( (data32 &  FPGA0_PSU_STAT_REG_PRESENT0) == FPGA0_PSU_STAT_REG_PRESENT0) {
+    if PSUnumber == PSU0 && ( (data32 &  FPGA0_PSU_STAT_PRSNT0) == FPGA0_PSU_STAT_PRSNT0) {
         present = true
     }
-    if PSUnumber == PSU1 && ( (data32 &  FPGA0_PSU_STAT_REG_PRESENT1) == FPGA0_PSU_STAT_REG_PRESENT1) {
+    if PSUnumber == PSU1 && ( (data32 &  FPGA0_PSU_STAT_PRSNT1) == FPGA0_PSU_STAT_PRSNT1) {
         present = true
     }
     return
@@ -868,6 +851,30 @@ func PSU_pwrok(PSUnumber uint32) (pwrok bool, err error) {
     }
     if PSUnumber == PSU1 && ( (data32 &  FPGA0_PSU_STAT_PWROK1) == FPGA0_PSU_STAT_PWROK1) {
         pwrok = true
+    }
+    return
+}
+
+
+func PSU_check_alert(PSUnumber uint32) (alert bool, err error) {
+    var data32 uint32
+    alert = false
+
+    if PSUnumber > (MAXPSU - 1) {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = LipariReadU32(LIPARI_FPGA0, FPGA0_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  FPGA0_PSU_STAT_ALERT0) == FPGA0_PSU_STAT_ALERT0) {
+        alert = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  FPGA0_PSU_STAT_ALERT1) == FPGA0_PSU_STAT_ALERT1) {
+        alert = true
     }
     return
 }
