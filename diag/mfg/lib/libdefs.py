@@ -172,6 +172,8 @@ class MTP_Const:
     DIAG_SEQ_TEST_TIMEOUT = 90*60
     # single prbs test, 8 min
     DIAG_PARA_TEST_TIMEOUT = 8*60
+    # MEM DDR_STRESS timeout 5 min
+    DIAG_MEM_DDR_STRESS_TEST_TIMEOUT = 5*60
     # para/snake test, 30 min
     MTP_PARA_TEST_TIMEOUT = 30*60
     # para/asic l1 test, 30 min
@@ -454,6 +456,7 @@ class MFG_DIAG_CMDS:
     SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
     NIC_CFG_CHECKSUM_FMT = "md5sum cfg{:s}"
+    NIC_CHK_SECBOOT_FMT = "/data/nic_util/elba-chk-secboot-rdy.sh"
 
 
     # Naples100: core_freq=833 arm_freq=1600
