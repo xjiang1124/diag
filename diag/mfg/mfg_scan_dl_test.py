@@ -388,7 +388,7 @@ def main():
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # start diag, nic_init..
-    if not test_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, args.skip_test):
+    if not test_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, args.skip_test):
         mtpid_list.remove(mtp_id)
         logfile_close(log_filep_list)
         return
@@ -404,8 +404,6 @@ def main():
         if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) != "YES":
             continue
         pass_nic_list.append(slot)
-        pn = nic_fru_cfg[mtp_id][key]["PN"]
-        mtp_mgmt_ctrl.mtp_set_nic_pn(slot, pn)
 
     # check script folder, area check...
     fail_nic_list += test_utils.nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, args.skip_test)

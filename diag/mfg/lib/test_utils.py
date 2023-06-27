@@ -350,9 +350,9 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
         return False
     return True
 
-def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
 
@@ -408,7 +408,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
 
         elif test == "SCAN_NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, skip_nic_pn_init=True)
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"])
 
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown test {}".format(test))

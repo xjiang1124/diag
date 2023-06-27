@@ -3903,7 +3903,7 @@ class mtp_ctrl():
         self.cli_log_inf("End MTP NIC Info Dump")
 
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, skip_nic_pn_init=False, scanned_fru=None):
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
 
         # open ssh session to each NIC
@@ -3919,7 +3919,7 @@ class mtp_ctrl():
                 self.cli_log_inf("Failed to init NICs in the FST", level = 0)
                 return False
         else:
-            if not self.mtp_init_nic_type(stage, skip_nic_pn_init=skip_nic_pn_init):
+            if not self.mtp_init_nic_type(stage, scanned_fru):
                 self.cli_log_inf("Failed to init NICs in the MTP Chassis", level = 0)
                 return False
 
@@ -4667,7 +4667,7 @@ class mtp_ctrl():
         if not rc:
             return rc
 
-    def mtp_init_nic_type(self, stage=None, skip_nic_pn_init=False):
+    def mtp_init_nic_type(self, stage=None, scanned_fru=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -4721,49 +4721,67 @@ class mtp_ctrl():
         else:
             fru_fpo = False
 
-        if not skip_nic_pn_init:
+        if scanned_fru is None:
             self.cli_log_inf("Init NIC SN, PN")
-            for slot in range(self._slots):
-                if not self._nic_prsnt_list[slot]:
-                    continue
+        else:
+            self.cli_log_inf("Init Scanned NIC SN, PN")
+
+        for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+
+            if scanned_fru is None:
                 if not self.mtp_nic_sn_init(slot, fru_fpo):
                     self.mtp_get_nic_err_msg(slot)
                     self.mtp_dump_nic_err_msg(slot)
                     self.mtp_set_nic_status_fail(slot)
                     continue
+            else:
+                # In ScanDL, use scanned SN, PN as ground truth
+                mtp_id = self._id
+                key = libmfg_utils.nic_key(slot)
+                valid = scanned_fru[mtp_id][key]["VALID"]
+                if str.upper(valid) != "YES":
+                    self.cli_log_slot_err(slot, "Missing scan for this slot. Could not initialize.")
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
+                pn = scanned_fru[mtp_id][key]["PN"]
+                sn = scanned_fru[mtp_id][key]["SN"]
+                self.mtp_set_nic_sn(slot, sn)
+                self.mtp_set_nic_pn(slot, pn)
 
-            # set final nic_type
-            for slot in range(self._slots):
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADI
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADIIBM
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADIMSFT
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLO
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOMSFT
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOALI
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADICR
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADICRMSFT
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+        # set final nic_type
+        for slot in range(self._slots):
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADI
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIIBM
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIMSFT
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLO
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOMSFT
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOALI
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADICR
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADICRMSFT
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
 
         # populate OCP adapter info
         for slot in range(self._slots):
