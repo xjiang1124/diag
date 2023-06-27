@@ -1213,14 +1213,14 @@ def main():
 
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
             if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                test_list = ["CFG_VERIFY","SET_MAINFW", "SW_CLEANUP"]
+                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
-                test_list = ["CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
+                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
-                test_list = ["BOARD_CONFIG_CERT", "CFG_VERIFY", "SW_CLEANUP"]
+                test_list = ["BOARD_CONFIG_CERT", "SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
                 cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
             if nic_type == NIC_Type.ORTANO2SOLOALI:
-                test_list = ["CFG_VERIFY", "SW_CLEANUP"]
+                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
                     test_list.remove(skipped_test)
@@ -1240,6 +1240,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
                 elif test == "SET_EXTDIAGFW":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extdiag_boot(slot)
+                elif test == "SEC_BOOT_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_secboot_verify(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue

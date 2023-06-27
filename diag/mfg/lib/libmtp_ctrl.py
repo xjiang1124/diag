@@ -5616,6 +5616,15 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC board config cert")
         return True
 
+    def mtp_mgmt_nic_secboot_verify(self, slot):
+        if not self._nic_ctrl_list[slot].nic_secboot_verify():
+            self.cli_log_slot_err(slot, "NIC secure boot check failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "NIC secure boot check passed")
+        return True
+
     def mtp_mgmt_nic_cfg_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_cfg_verify():
             self.cli_log_slot_err(slot, "NIC cfg compare failed")
@@ -6531,7 +6540,7 @@ class mtp_ctrl():
         self.mtp_nic_console_unlock()
 
 
-    def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
+    def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, init_cmd):
@@ -6539,7 +6548,7 @@ class mtp_ctrl():
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # run diag test
-        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
+        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=timeout):
             err_msg = self.mtp_get_nic_err_msg(slot)
             return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 

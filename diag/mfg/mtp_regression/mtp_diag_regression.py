@@ -703,6 +703,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
 
 def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test_list, nic_test_rslt_list, stop_on_err, vmarg, swmtestmode):
     for dsp, test in diag_para_test_list:
+        diag_test_timeout= MTP_Const.DIAG_MEM_DDR_STRESS_TEST_TIMEOUT if dsp == "MEM" and test == "DDR_STRESS" else MTP_Const.DIAG_PARA_TEST_TIMEOUT
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
@@ -758,7 +759,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd, diag_test_timeout)
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
         if test == "I2C":
