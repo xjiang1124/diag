@@ -9,6 +9,7 @@ import (
     "common/errType"
     "device/i2chub/tca9546a"
     "device/fpga/taorfpga"
+    "device/fpga/liparifpga"
     "hardware/i2cinfo"
 )
 
@@ -92,6 +93,16 @@ func EnableHubChannel(devName string) (err int) {
         taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
         return
     }
+    if cardType == "LIPARI" {
+        var i2cInfo i2cinfo.I2cInfo
+        i2cInfo, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed: ", err)
+            return
+        }
+        liparifpga.SetI2Cmux((i2cInfo.Bus), uint32(i2cInfo.HubPort))
+        return
+    }
 
     // for MTP only for now
     if cardType != "MTP" {
@@ -125,6 +136,16 @@ func EnableHubChannelExclusive(devName string) (err int) {
         //So first bus is 1.  On the fpga the bus is zero based (0-16) 
         //we subtract 1 below from the bus number to make it zero based to match the fpga
         taorfpga.SetI2Cmux((i2cInfo.Bus - 1), uint32(i2cInfo.HubPort))
+        return
+    }
+    if cardType == "LIPARI" {
+        var i2cInfo i2cinfo.I2cInfo
+        i2cInfo, err = i2cinfo.GetI2cInfo(devName)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed: ", err)
+            return
+        }
+        liparifpga.SetI2Cmux((i2cInfo.Bus), uint32(i2cInfo.HubPort))
         return
     }
 

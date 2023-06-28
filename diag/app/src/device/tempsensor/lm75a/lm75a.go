@@ -21,25 +21,50 @@ const (
 
 )
 
+
+func smbus_read8(devName string, address uint8) (data8 uint8, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    
+    data8, err = smbus.ReadByte(devName, uint64(address))
+    if err != errType.SUCCESS {
+        cli.Println("e", " i2cTest:  Read Dev ID Failed")
+        return
+    }
+    smbus.Close()
+    return
+}
+
+func smbus_read16(devName string, address uint8) (data16 uint16, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    data16, err = smbus.ReadWord(devName, uint64(address))
+    if err != errType.SUCCESS {
+        cli.Println("e", " i2cTest:  Read Dev ID Failed")
+        return
+    }
+    smbus.Close()
+    return
+}
+
+
 func swap_uint16(a uint16) (b uint16) {
     b = ( uint16(a >> 8) | uint16(a << 8) )
     return
 }
 
-func I2cTest(devname string) (err int) {
+func I2cTest(devName string) (err int) {
     var id byte 
     var data16 uint16
     var temp_mask uint16 = uint16(LM75_TEMPERATURE_MASK)
 
-    err = smbus.Open(devname)
+    id, err = smbus_read8(devName, LM75_ID_REG)
     if err != errType.SUCCESS {
-        return
-    }
-    defer smbus.Close()
-
-    id, err = smbus.ReadByte(devname, LM75_ID_REG)
-    if err != errType.SUCCESS {
-        cli.Println("e", " i2cTest:  Read Dev ID Failed")
+        cli.Printf("e", " i2cTest:  Read reg-0x%x failed\n", LM75_ID_REG)
         return
     }
 
@@ -48,9 +73,8 @@ func I2cTest(devname string) (err int) {
         err = errType.FAIL
         return
     }
-
     
-    data16, err = smbus.ReadWord(devname, LM75_TEMPERATURE_REG)
+    data16, err = smbus_read16(devName, LM75_ID_REG)
     if err != errType.SUCCESS {
         cli.Printf("e", " i2cTest:  Read reg-0x%x failed\n", LM75_TEMPERATURE_REG)
         return
@@ -67,13 +91,11 @@ func I2cTest(devname string) (err int) {
 
 
 func ReadDevId(devName string) (id byte, err int) {
-    err = smbus.Open(devName)
+    id, err = smbus_read8(devName, LM75_ID_REG)
     if err != errType.SUCCESS {
+        cli.Printf("e", " i2cTest:  Read reg-0x%x failed\n", LM75_ID_REG)
         return
     }
-    defer smbus.Close()
-
-    id, err = smbus.ReadByte(devName, LM75_ID_REG)
     return
 }
 
@@ -82,23 +104,18 @@ func ReadTemp(devName string) (integer int64, dec int64, err int) {
     var data8 int8
     var udata8 uint8
 
-    err = smbus.Open(devName)
+    data16, err = smbus_read16(devName, LM75_TEMPERATURE_REG)
     if err != errType.SUCCESS {
+        cli.Printf("e", " i2cTest:  Read reg-0x%x failed\n", LM75_TEMPERATURE_REG)
         return
     }
-    defer smbus.Close()
 
-    
-    data16, err = smbus.ReadWord(devName, LM75_TEMPERATURE_REG)
-    if err != errType.SUCCESS {
-        return
-    }
     data16 = swap_uint16(data16)
 
     if (data16 & 0x80) == 0x80{
         dec = 5
     }
-    //data16 = data16 >> 8
+
     udata8 = uint8(data16 >> 8)
     //is it negative   check if msb is set?   Ugly code due to golang strict casting and rules
     if udata8 & 0x80 == 0x80{

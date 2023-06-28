@@ -7,19 +7,20 @@ import (
     //"strings"
     //"common/cli"
     "common/errType"
-    "platform/taormina"
+    "platform/lipari"
 )
 
 
 const errhelpLipari = "\nswitch:\n" +
         "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
+        "switch show <power/temperature/fans>\n" +
+        "switch margin <name> <pct>\n" +
         "\n"
-        
-
-                               
+                             
 
 func lipari_switch_cli() {
     argc := len(os.Args[0:])
+    rc := 0
 
     if argc < 2 {
         fmt.Printf(" %s \n", errhelpLipari)
@@ -47,14 +48,53 @@ func lipari_switch_cli() {
             if err != nil {
                 fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
             }
-            rc := taormina.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
+            rc := lipari.X86_CPU_MemoryTest(uint32(threads), uint32(percent), uint32(time), 1) 
             if rc != errType.SUCCESS {
                 os.Exit(-1)
             } else { 
                 os.Exit(0)
             }
         }
+    } else if os.Args[1] == "show" {
+        if argc < 3 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {    //power
+            rc = lipari.ShowPower()
+        } else if os.Args[2][0] == 't' || os.Args[2][0] == 'T' {    //temperature
+            rc = lipari.ShowTemperature()
+        } else if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {    //fans
+            rc = lipari.ShowFanSpeed()
+        } else {
+            fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
+            rc = errType.FAIL
+        }
+        if rc != errType.SUCCESS {
+            os.Exit(-1)
+        } else { 
+            os.Exit(0)
+        }
+    } else if os.Args[1] == "margin" {
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        //os.Args[2]  == name
+        percent, err := strconv.ParseInt(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); os.Exit(-1)
+        }
+
+        fmt.Printf(" Margin %s %d\n", os.Args[2], percent)
+        rc = lipari.Margin(os.Args[2], int(percent))
+        if rc != errType.SUCCESS {
+            os.Exit(-1)
+        } else { 
+            os.Exit(0)
+        }
     }
+
     return
 }
 
