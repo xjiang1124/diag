@@ -112,7 +112,8 @@ var Glob_mmap1 []byte
 
 
 func init () {
-    var cardType string = "LIPARI"
+    var cardType string
+    cardType = os.Getenv("CARD_TYPE")
     
     //quick hack to see if we are a Taormina since diag env is not setup yet
     exists, _ := Path_exists("/etc/openswitch/platform/HPE/10000")
