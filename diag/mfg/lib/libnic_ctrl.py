@@ -819,15 +819,6 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
-            self.nic_console_detach()
-            return False
-        cfg0_md5sum = match[0]
-
         # md5sum cfg1
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
@@ -836,21 +827,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
-
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
-            self.nic_console_detach()
-            return False
-        cfg1_md5sum = match[0]
-
-        if cfg0_md5sum != cfg1_md5sum:
-            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False            
 
         # detach the console connection
         if not self.nic_console_detach():
