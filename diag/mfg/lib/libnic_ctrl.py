@@ -2058,6 +2058,34 @@ class nic_ctrl():
 
         return True
 
+    def nic_dump_cpld(self, partition, file_path="/home/diag/cplddump"):
+        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, file_path, partition)
+        nic_cmd_list = list()
+        nic_cmd_list.append(cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
+        return True
+
+    def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        # check fail
+        buf_line = cmd_buf.split('\n')
+        if len(buf_line) > 3:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+        else:
+            if "EOF" in cmd_buf or "cmp:" in cmd_buf:
+                self.nic_set_status(NIC_Satus.NIC_STA_MGMT_FAIL)
+                return False
+
+        return True
+
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
@@ -2225,6 +2253,12 @@ class nic_ctrl():
             return False
 
         self.nic_boot_info_reset()
+
+        return True
+
+    def nic_copy_cpld_img(self, cpld_img):
+        if not self.nic_copy_image(cpld_img):
+            return False
 
         return True
 

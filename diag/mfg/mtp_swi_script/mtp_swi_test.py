@@ -341,6 +341,34 @@ def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, cert_img_file, sl
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+def single_nic_compare_cpld_image(mtp_mgmt_ctrl, final_cpld_img_file, failsafe_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+    dsp = FF_Stage.FF_SWI
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    test_list = []
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
+        test_list = ["COMPARE_CPLD", "COMPARE_FAILSAFE_CPLD"]
+
+    for skip_test in skip_testlist:
+        if skip_test in test_list:
+            test_list.remove(skip_test)
+    for test in test_list:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        if test == "COMPARE_CPLD":
+            ret = mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, final_cpld_img_file, "cfg0")
+        elif test == "COMPARE_FAILSAFE_CPLD":
+            ret = mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, failsafe_cpld_img_file, "cfg1")
+        else:
+            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
+            continue
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            prog_fail_nic_list.append(slot)
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
     dsp = FF_Stage.FF_SWI
@@ -1064,6 +1092,62 @@ def main():
             emmc_img_file = emmc_img_file_list[sw_pn]
             nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
                                                                                     emmc_img_file,
+                                                                                    slot,
+                                                                                    sn,
+                                                                                    prog_fail_nic_list,
+                                                                                    args.skip_test))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in prog_fail_nic_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+        # Copy cpld image & compare
+        nic_thread_list = list()
+        prog_fail_nic_list = list()
+        for slot in range(len(nic_prsnt_list)):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
+                continue
+
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
+                continue
+
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
+            failsafe_cpld_img_file = ""
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+            if nic_type == NIC_Type.ORTANO2ADI:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0026"]
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0026"]
+            if nic_type == NIC_Type.ORTANO2ADIIBM:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0028"]
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0028"]
+            if nic_type == NIC_Type.ORTANO2ADIMSFT:
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0034"]
+                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0034"]
+
+            nic_thread = threading.Thread(target = single_nic_compare_cpld_image, args = (mtp_mgmt_ctrl,
+                                                                                    sec_cpld_img_file,
+                                                                                    failsafe_cpld_img_file,
                                                                                     slot,
                                                                                     sn,
                                                                                     prog_fail_nic_list,
