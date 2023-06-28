@@ -27,7 +27,9 @@ class NIC_IMAGES:
     uboot_img = dict()
     uboot_dat = dict()
     uboota_img = dict()
+    uboota_dat = dict()
     ubootb_img = dict()
+    ubootb_dat = dict()
     cert_img = dict()
     test_fpga_img = dict()
     test_fpga_ver = dict()
@@ -108,6 +110,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
     goldfw_dat["ORTANO2"] = "10-26-2022"
     uboot_img["ORTANO2"] = "boot0.rev14.img"
+    uboot_dat["ORTANO2"] = "14"
     # ORTANO ORACLE (68-0015)
     # cpld_img["ORTANO2"] = "naples200_ortano2_rev3_9_07292021.bin"
     # cpld_ver["ORTANO2"] = "0x3"
@@ -202,6 +205,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2ADI"] = "elba_goldfw_1.15.9-C-100_2022.06.22.tar"
     goldfw_dat["ORTANO2ADI"] = "06-16-2022"
     uboot_img["ORTANO2ADI"] = "boot0.rev14.img"
+    uboot_dat["ORTANO2ADI"] = "14"
     cpld_img["68-0026"] = "naples200_ortano2A_rev3_D_06082022.bin"
     cpld_ver["68-0026"] = "0x3"
     cpld_dat["68-0026"] = "0x0D"
@@ -229,6 +233,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2ADIIBM"] = "naples_goldfw_elba_1.51.0-G-30_2023.04.09.tar"
     goldfw_dat["ORTANO2ADIIBM"] = "04-07-2023"
     uboot_img["ORTANO2ADIIBM"] = "boot0_rev18_G30.img"
+    uboot_dat["ORTANO2ADIIBM"] = "18"
     uboota_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-30_2023.04.07.img"
     ubootb_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-30_2023.04.07.img"
     cert_img["68-0028"] = "canon-prod-pkcerts.bin"
@@ -260,6 +265,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2ADIMSFT"] = "naples_goldfw_elba_1.51.0-G-9.2022.11.17.tar"
     goldfw_dat["ORTANO2ADIMSFT"] = "10-26-2022"
     uboot_img["ORTANO2ADIMSFT"] = "boot0.rev14.img"
+    uboot_dat["ORTANO2ADIMSFT"] = "14"
     cpld_img["68-0034"] = "naples200_ortano2A_rev3_D_06082022.bin"
     cpld_ver["68-0034"] = "0x3"
     cpld_dat["68-0034"] = "0x0D"
@@ -368,6 +374,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-134_2023.02.13.tar"
     goldfw_dat["ORTANO2ADICR"] = "02-09-2023"
     uboot_img["ORTANO2ADICR"] = "boot0.1.15.9-C-134.img"
+    uboot_dat["ORTANO2ADICR"] = ""
     cpld_img["68-0049"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0049"] = "0x1"
     cpld_dat["68-0049"] = "0x04"
@@ -396,6 +403,7 @@ class NIC_IMAGES:
     goldfw_img["ORTANO2ADICRMSFT"] = "elba_goldfw_1.51.0-G-34_2023.05.03.tar"
     goldfw_dat["ORTANO2ADICRMSFT"] = "05-02-2023"
     uboot_img["ORTANO2ADICRMSFT"] = "boot0.1.15.9-C-134.img"
+    uboot_dat["ORTANO2ADICRMSFT"] = ""
     cpld_img["68-0091"] = "ortano_adi_cr_rev1.4_working_12112022.bin"
     cpld_ver["68-0091"] = "0x1"
     cpld_dat["68-0091"] = "0x04"

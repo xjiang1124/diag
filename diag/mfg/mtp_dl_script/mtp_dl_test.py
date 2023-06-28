@@ -31,6 +31,7 @@ from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
+import image_control
 
 
 def logfile_close(filep_list):
@@ -343,8 +344,8 @@ def main():
             test_list = []
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["NOSECURE_CPLD_PROG", "NOSECURE_FAILSAFE_CPLD_PROG", "SET_DIAGFW_BOOT"]
-                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
@@ -487,15 +488,22 @@ def main():
                 riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
-                qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0015"]
-            failsafe_cpld_img_file = ""
-            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
 
-            uboot_img_file = ""
+            print("")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+            if nic_type == NIC_Type.NAPLES25OCP:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
+
+            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, dsp)
+            for image_name, image_file_path in dl_image_dict.items():
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
@@ -506,34 +514,6 @@ def main():
                 continue
             if not mtp_capability & mtp_exp_capability:
                 mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
-
-            print("")
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
-            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image1: " + os.path.basename(cpld_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image2: " + os.path.basename(failsafe_cpld_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-                if nic_type in FPGA_TYPE_LIST:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI uboot image: " + os.path.basename(uboot_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
-            elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA main image: " + os.path.basename(cpld_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FPGA gold image: " + os.path.basename(failsafe_cpld_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-                if nic_type == NIC_Type.NAPLES25OCP:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "CPLD image: " + os.path.basename(cpld_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "QSPI image: " + os.path.basename(qspi_img_file))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
             pre_check_testlist = ["NIC_POWER", "NIC_TYPE", "NIC_INIT", "NIC_DIAG_BOOT"]
             for skipped_test in args.skip_test:
@@ -594,22 +574,12 @@ def main():
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
-                qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img["68-0015"]
-            qspi_gold_img_file = ""
-            if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-                qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.goldfw_img[nic_type]
-
-            uboot_img_file = ""
-            uboota_img_file = ""
-            ubootb_img_file = ""
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboot(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboota(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            ubootb_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ubootb(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-            if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
-                uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img[nic_type]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
-                uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboota_img[nic_type]
-                ubootb_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.ubootb_img[nic_type]
 
             nic_thread = threading.Thread(target = single_nic_qspi_program, args = (mtp_mgmt_ctrl,
                                                                                     qspi_img_file,
@@ -713,14 +683,9 @@ def main():
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
-            failsafe_cpld_img_file = ""
-            fea_cpld_img_file = ""
-            if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
-                fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fea_cpld_img[nic_type]
-            elif nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_program, args = (mtp_mgmt_ctrl,
                                                                                nic_fru_cfg[mtp_id][key],

@@ -24,7 +24,6 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db

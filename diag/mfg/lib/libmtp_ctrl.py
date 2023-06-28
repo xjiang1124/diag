@@ -31,6 +31,8 @@ from libdefs import Swm_Test_Mode
 from libdefs import Voltage_Margin
 from libdefs import Factory
 from libnic_ctrl import nic_ctrl
+import test_utils
+import image_control
 
 class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
@@ -2225,24 +2227,7 @@ class mtp_ctrl():
         kernel_timestamp = gold_info[1]
 
         nic_type = self.mtp_get_nic_type(slot)
-
-        try:
-            expected_timestamp = NIC_IMAGES.goldfw_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
-            if nic_type == NIC_Type.ORTANO2ADI and self.mtp_is_nic_ortanoadi_oracle(slot):
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0034"]
-            if nic_type == NIC_Type.ORTANO2ADICR:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0049"]
-            if nic_type == NIC_Type.ORTANO2ADICRMSFT:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
-            return False
+        expected_timestamp = image_control.get_goldfw(self, nic_type, FF_Stage.FF_SWI)["timestamp"]
 
         if ( boot_image != "goldfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
@@ -2970,36 +2955,13 @@ class mtp_ctrl():
             return False
         cur_ver = nic_cpld_info[0]
         cur_timestamp = nic_cpld_info[1]
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type in NIC_Type.ORTANO2ADI and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
-            if nic_type in NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0028"]
-            if nic_type in NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0028"]
-            if nic_type in NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+        expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
 
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3071,16 +3033,8 @@ class mtp_ctrl():
         #     return False
         # cur_ver = nic_cpld_info[0]
         # cur_timestamp = nic_cpld_info[1]
-        # try:
-        #     expected_version = NIC_IMAGES.cpld_ver[nic_type]
-        # except KeyError:
-        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-        #     return False
-        # try:
-        #     expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-        # except KeyError:
-        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-        #     return False
+        # expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        # expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
 
         # if nic_type in self._proto_type_list:
         #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3092,10 +3046,10 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
         }
         program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
         
@@ -3131,10 +3085,10 @@ class mtp_ctrl():
             return False
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
@@ -3159,7 +3113,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "No feature row update for Proto NIC")
             return True
 
-        cpld_img = "/home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
+        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
@@ -3223,7 +3177,7 @@ class mtp_ctrl():
 
         fea_regex = r"00000000  (.*)  \|.*\|" #first 16 bytes
 
-        cmd = "hexdump -C /home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
+        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -3321,67 +3275,15 @@ class mtp_ctrl():
         cur_timestamp = nic_cpld_info[1]
         nic_type = self.mtp_get_nic_type(slot)
 
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+        expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
         if sec_cpld:
-            try:
-                expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
-                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
-                if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0028"]
-                if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0034"]
-                if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0049"]
-                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0091"]
-            except KeyError:
-                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-                return False
-            try:
-                expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
-                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
-                if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0028"]
-                if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0034"]
-                if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0049"]
-                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0091"]
-            except KeyError:
-                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-                return False
+            expected_version   = image_control.get_sec_cpld(self, nic_type, stage)["version"]
+            expected_timestamp = image_control.get_sec_cpld(self, nic_type, stage)["timestamp"]
 
         if cur_ver != expected_version or (timestamp_check and cur_timestamp != expected_timestamp):
                 self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
@@ -3476,14 +3378,7 @@ class mtp_ctrl():
         boot_image = qspi_info[0]
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
-
-        try:
-            expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
-                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
-            return False
+        expected_timestamp = image_control.get_diagfw(self, nic_type, FF_Stage.FF_DL)["timestamp"]
 
         if ( boot_image != "diagfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))

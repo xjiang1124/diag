@@ -1065,55 +1065,6 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
 
     return fail_nic_list
 
-def single_nic_fw_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp):
-    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.diagfw_img[nic_type]
-    cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cpld_img[nic_type]
-    qspi_gold_img_file = ""
-    uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
-    uboot_img_file = ""
-
-    testlist = ["QSPI_PROG", "CPLD_PROG", "CPLD_REF"]
-    if nic_type in FPGA_TYPE_LIST:
-        testlist = ["FPGA_PROG", "QSPI_PROG"]
-    for skip_test in skip_testlist:
-        if skip_test in testlist:
-            testlist.remove(skip_test)
-    for test in testlist:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        # program CPLD
-        if test == "CPLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
-        # program all FPGA partitions
-        elif test == "FPGA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
-        # program QSPI
-        elif test == "QSPI_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
-        # refresh CPLD
-        elif test == "CPLD_REF":
-            ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        elif test == "BOOT0_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboot_img_file, uboot_installer_file)
-        elif test == "UBOOT_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
-            # if need diaguboot:
-            # ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+NIC_IMAGES.uboot_img[nic_type])
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            nic_test_rslt_list[slot] = False
-            # mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
 def single_nic_test_fpga_program(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp):
     return single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list, dsp, test_fpga=True)
 

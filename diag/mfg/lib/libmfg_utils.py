@@ -925,12 +925,17 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage)
         if images_for_nic_type is None:
-            return False
+            return None
         image_list += images_for_nic_type.values()
+
     image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     return image_list
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
+    if image_list is None:
+        mtp_mgmt_ctrl.cli_log_err("Copy Firmware images failed... Abort", level=0)
+        return False
+
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
     mtp_usrid = mtp_mgmt_cfg[1]
