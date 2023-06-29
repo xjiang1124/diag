@@ -836,10 +836,13 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if "SNAKE_HBM" in mtp_para_test_list:
             logfile_list.append(path+"snake_hbm.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "SNAKE_PCIE" in mtp_para_test_list:
             logfile_list.append(path+"snake_pcie.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "PRBS_ETH" in mtp_para_test_list:
             logfile_list.append(path+"prbs_eth.log")
+            logfile_list.append("/data/nic_util/asicutil*log")
         if "SNAKE_ELBA" in mtp_para_test_list:
             if nic_type in GIGLIO_NIC_TYPE_LIST:
                 logfile_list.append(path+"snake_giglio.log")
