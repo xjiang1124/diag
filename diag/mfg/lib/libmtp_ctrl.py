@@ -3903,6 +3903,25 @@ class mtp_ctrl():
             
         return True
 
+    def mtp_compare_nic_cpld_img(self, slot, cpld_img, partition):
+        if not self._nic_ctrl_list[slot].nic_copy_cpld_img(cpld_img):
+            self.cli_log_slot_inf_lock(slot, "Copy NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        dump_cpld_image_path = "/tmp_{:s}_cpld_image.bin".format(partition)
+        if not self._nic_ctrl_list[slot].nic_dump_cpld(partition, file_path=dump_cpld_image_path):
+            self.cli_log_slot_inf_lock(slot, "Dump NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_compare_cpld_file(cpld_img, dump_cpld_image_path, partition):
+            self.cli_log_slot_inf_lock(slot, "Compare NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
@@ -7791,7 +7810,7 @@ class mtp_ctrl():
 
     def fst_board_config(self, slot):
         ### SET BOARD CONFIG
-        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -G 1 -F 1 -O 1'"
+        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -G 1 -F 0 -O 1'"
         if not self.mtp_nic_fst_exec_cmd(slot, cmd):
             self.cli_log_slot_err(slot, "failed to set board config")
             return False
@@ -7805,7 +7824,7 @@ class mtp_ctrl():
         ### VERIFY BOARD CONFIG
         buf = self.mtp_get_nic_cmd_buf(slot)
         match = re.findall(r"(gold_on_stop\s+1)", buf)
-        match1 = re.findall(r"(gold_no_hostif\s+1)", buf)
+        match1 = re.findall(r"(gold_no_hostif\s+0)", buf)
         match2 = re.findall(r"(gold_oob\s+1)", buf)
         if not match or not match1 or not match2:
             self.cli_log_slot_err(slot, "board config verify failed")

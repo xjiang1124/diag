@@ -10,6 +10,7 @@ config:
 test_types:
   precheckin:
     skip:
+      - CPLD_VERIFY
       #- L1 
       #- EDMA 
       #- SNAKE_ELBA

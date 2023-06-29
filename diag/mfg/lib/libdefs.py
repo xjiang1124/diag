@@ -368,6 +368,7 @@ class MFG_DIAG_CMDS:
     NIC_CPLD_ERASE_ELBA_FMT = "{:s}xo3dcpld -erase {:s}"
     NIC_CPLD_REF_ELBA_FMT = "{:s}xo3dcpld -refresh"
     NIC_CPLD_DUMP_ELBA_FMT = "{:s}xo3dcpld -file {:s} {:s}" #(-file output_file region)
+    NIC_CPLD_DUMP_COMPARE_FMT = "cmp -l /{:s} /{:s}"
     # NIC_FPGA_PROG_FMT = "{:s}artix7fpga -prog /{:s} {:s}"
     # NIC_FPGA_DUMP_FMT = "{:s}artix7fpga -file /{:s} {:s}"
     NIC_FPGA_PROG_FMT = "{:s}cpldapp -writeflash /{:s} {:s}"

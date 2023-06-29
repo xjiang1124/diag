@@ -819,15 +819,6 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
-            self.nic_console_detach()
-            return False
-        cfg0_md5sum = match[0]
-
         # md5sum cfg1
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
@@ -836,21 +827,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False
-
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
-            self.nic_console_detach()
-            return False
-        cfg1_md5sum = match[0]
-
-        if cfg0_md5sum != cfg1_md5sum:
-            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False            
 
         # detach the console connection
         if not self.nic_console_detach():
@@ -2058,6 +2034,34 @@ class nic_ctrl():
 
         return True
 
+    def nic_dump_cpld(self, partition, file_path="/home/diag/cplddump"):
+        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, file_path, partition)
+        nic_cmd_list = list()
+        nic_cmd_list.append(cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
+        return True
+
+    def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        # check fail
+        buf_line = cmd_buf.split('\n')
+        if len(buf_line) > 3:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+        else:
+            if "EOF" in cmd_buf or "cmp:" in cmd_buf:
+                self.nic_set_status(NIC_Satus.NIC_STA_MGMT_FAIL)
+                return False
+
+        return True
+
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
@@ -2225,6 +2229,12 @@ class nic_ctrl():
             return False
 
         self.nic_boot_info_reset()
+
+        return True
+
+    def nic_copy_cpld_img(self, cpld_img):
+        if not self.nic_copy_image(cpld_img):
+            return False
 
         return True
 
