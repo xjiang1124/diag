@@ -29,6 +29,7 @@ from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import *
+import test_utils
 
 
 # test cleanup.
@@ -230,7 +231,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     return fail_list
 
 
-def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, skip_testlist):
+def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, skip_testlist, stage):
     if aapl == False:
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Start".format(nic_type), level=0)
     else:
@@ -283,9 +284,12 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
         mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
 
     # Collect NIC onboard logfiles
-    for slot in nic_list:
-        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+    mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
+    fail_save_list = mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(nic_list, stage, "NIC_LOG_SAVE", aapl)
+    for slot in fail_save_list:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+        if slot not in fail_list:
+            fail_list.append(slot)
 
     if aapl == False:
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Complete\n".format(nic_type), level=0)
@@ -829,49 +833,50 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if ret != "SUCCESS" and stop_on_err:
             break
 
-def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_err):
-    for slot in nic_list:
-        logfile_list = list()
-        path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if "SNAKE_HBM" in mtp_para_test_list:
-            logfile_list.append(path+"snake_hbm.log")
-            logfile_list.append("/data/nic_util/asicutil*log")
-        if "SNAKE_PCIE" in mtp_para_test_list:
-            logfile_list.append(path+"snake_pcie.log")
-            logfile_list.append("/data/nic_util/asicutil*log")
-        if "PRBS_ETH" in mtp_para_test_list:
-            logfile_list.append(path+"prbs_eth.log")
-            logfile_list.append("/data/nic_util/asicutil*log")
-        if "SNAKE_ELBA" in mtp_para_test_list:
-            if nic_type in GIGLIO_NIC_TYPE_LIST:
-                logfile_list.append(path+"snake_giglio.log")
-            else:
-                logfile_list.append(path+"snake_elba.log")
-            logfile_list.append("/data/nic_util/asicutil*log")
-        if "ETH_PRBS" in mtp_para_test_list:
-            if nic_type in GIGLIO_NIC_TYPE_LIST:
-                logfile_list.append(path+"giglio_PRBS_MX.log")
-            else:
-                logfile_list.append(path+"elba_PRBS_MX.log")
-        if "ARM_L1" in mtp_para_test_list:
-            if nic_type in GIGLIO_NIC_TYPE_LIST:
-                logfile_list.append(path+"giglio_arm_l1_test.log")
-            else:
-                logfile_list.append(path+"elba_arm_l1_test.log")
-        if "PCIE_PRBS" in mtp_para_test_list:
-            if nic_type in GIGLIO_NIC_TYPE_LIST:
-                logfile_list.append(path+"giglio_PRBS_PCIE.log")
-            else:
-                logfile_list.append(path+"elba_PRBS_PCIE.log")
-            logfile_list.append("/data/nic_util/asicutil*log")
-        if "DDR_BIST" in mtp_para_test_list:
-            logfile_list.append(path+"arm_ddr_bist_0.log")
-            logfile_list.append(path+"arm_ddr_bist_1.log")
+@test_utils.parallel_threaded_test
+def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list, stop_on_err):
+    logfile_list = list()
+    path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if "SNAKE_HBM" in mtp_para_test_list:
+        logfile_list.append(path+"snake_hbm.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_PCIE" in mtp_para_test_list:
+        logfile_list.append(path+"snake_pcie.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "PRBS_ETH" in mtp_para_test_list:
+        logfile_list.append(path+"prbs_eth.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_ELBA" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"snake_giglio.log")
+        else:
+            logfile_list.append(path+"snake_elba.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "ETH_PRBS" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_MX.log")
+        else:
+            logfile_list.append(path+"elba_PRBS_MX.log")
+    if "ARM_L1" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_arm_l1_test.log")
+        else:
+            logfile_list.append(path+"elba_arm_l1_test.log")
+    if "PCIE_PRBS" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_PCIE.log")
+        else:
+            logfile_list.append(path+"elba_PRBS_PCIE.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "DDR_BIST" in mtp_para_test_list:
+        logfile_list.append(path+"arm_ddr_bist_0.log")
+        logfile_list.append(path+"arm_ddr_bist_1.log")
 
-        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
-    return
+    if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
+        return False
+    return True
 
 def parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg):
     if vmarg == Voltage_Margin.high:
@@ -1647,7 +1652,7 @@ def main():
                                                 fail_nic_list.append(slot)
                                             if slot in pass_nic_list:
                                                 pass_nic_list.remove(slot)
-                            naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_mtp_para_test_list, stop_on_err)
+                            naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, stage, "ASIC_LOG_SAVE", nic_mtp_para_test_list, stop_on_err)
                             parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg)
 
                             for slot in nic_list:
@@ -1690,7 +1695,8 @@ def main():
                                                                             vmarg,
                                                                             True,
                                                                             swmtestmode,
-                                                                            args.skip_test)
+                                                                            args.skip_test,
+                                                                            stage)
                                 for slot in diag_para_fail_list:
                                     if slot in nic_list and stop_on_err:
                                         nic_list.remove(slot)
@@ -1738,7 +1744,8 @@ def main():
                                                                         vmarg,
                                                                         False,
                                                                         swmtestmode,
-                                                                        args.skip_test)
+                                                                        args.skip_test,
+                                                                        stage)
                             for slot in diag_para_fail_list:
                                 if slot in nic_list and stop_on_err:
                                     nic_list.remove(slot)
@@ -1779,7 +1786,8 @@ def main():
                                                                             vmarg,
                                                                             True,
                                                                             swmtestmode,
-                                                                            args.skip_test)
+                                                                            args.skip_test,
+                                                                            stage)
                                 for slot in diag_para_fail_list:
                                     if slot in nic_list and stop_on_err:
                                         nic_list.remove(slot)

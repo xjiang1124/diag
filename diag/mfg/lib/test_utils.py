@@ -1,8 +1,38 @@
 import sys, os
+import time
 import traceback
+import threading
 from libdefs import *
 from libmfg_cfg import *
 import libmfg_utils
+
+def single_nic_test_start(mtp_mgmt_ctrl, slot, test_name):
+    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_name)
+    return start_ts
+
+def single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts):
+    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test_name, start_ts)
+    return duration
+
+def log_test_start(mtp_mgmt_ctrl, slot, test_section, test_name):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, test_section, test_name))
+
+def log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, rslt, duration):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    if not rslt:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, test_section, test_name, "FAILED", duration))
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, test_section, test_name, duration))
+
+def map_rslt_to_slot(rslt_list):
+    # rslt_list as e.g. [True, True, False, False, True, True, True, True, True, True]
+    # return fail_nic_list as e.g. [3,4]
+    fail_nic_list = list()
+    for idx, slot_rslt in enumerate(rslt_list):
+        if not slot_rslt:
+            fail_nic_list.append(idx)
+    return fail_nic_list
 
 """
     Wrapper to run a function on multiple slots, passing in a nic_list and returning a fail_nic_list.
@@ -34,13 +64,6 @@ def semi_parallel_test_section(func):
             err_msg = traceback.format_exc()
             mtp_mgmt_ctrl.cli_log_slot_err(slot, err_msg)
 
-    def map_rslt_to_slot(test_rslt_list):
-        fail_nic_list = list()
-        for slot, slot_rslt in enumerate(test_rslt_list):
-            if not slot_rslt:
-                fail_nic_list.append(slot)
-        return fail_nic_list
-
     def start_end(mtp_mgmt_ctrl, nic_list=None, *test_args, **test_kwargs):
         test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in nic_list:
@@ -48,6 +71,73 @@ def semi_parallel_test_section(func):
         return map_rslt_to_slot(test_rslt_list)
 
     return start_end
+
+"""
+    Wrapper to run a function on multiple slots in parallel, passing in a nic_list and returning a fail_nic_list.
+
+    Define the function as:
+        @test_utils.single_slot_test
+        def function_name(mtp_mgmt_ctrl, slot, ...):
+
+    First 2 arguments MUST match exactly. Return value must be True/False.
+
+
+    Call the function with the following required arguments:
+        ret = function_name(mtp_mgmt_ctrl, nic_list, "test section name", "test name", ...)
+
+"""
+def parallel_threaded_test(func):
+
+    def threaded_func(func, mtp_mgmt_ctrl, slot, test_section, test_name, thread_rslt_list, *args, **kwargs):
+        try:
+            log_test_start(mtp_mgmt_ctrl, slot, test_section, test_name)
+            start_ts = single_nic_test_start(mtp_mgmt_ctrl, slot, test_name)
+            ###### RUN THE TEST #####
+            ret = func(mtp_mgmt_ctrl, slot, *args, **kwargs)
+            #########################
+            duration = single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts)
+            log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, ret, duration)
+            if ret:
+                thread_rslt_list[slot] = True
+            else:
+                thread_rslt_list[slot] = False
+        except Exception:
+            err_msg = traceback.format_exc()
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, err_msg)
+            duration = single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts)
+            log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, False, duration)
+            thread_rslt_list[slot] = False
+
+    def start_end(mtp_mgmt_ctrl, nic_list, test_section, test_name, *test_args, **test_kwargs):
+        nic_thread_list = list()
+        thread_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+
+        for slot in nic_list:
+            thread_args = tuple([func, mtp_mgmt_ctrl, slot, test_section, test_name, thread_rslt_list]) + test_args
+            nic_thread = threading.Thread(
+                target = threaded_func,
+                args = thread_args,
+                kwargs = test_kwargs
+            )
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(1)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(1)
+
+        return map_rslt_to_slot(thread_rslt_list)
+
+    return start_end
+
 
 def mtp_test_cleanup(error_code, fp_list=None):
     if fp_list:

@@ -3511,6 +3511,7 @@ class mtp_ctrl():
         return True
 
 
+    @test_utils.parallel_threaded_test
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         self.cli_log_slot_inf(slot, "Collecting NIC diag logfiles")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
