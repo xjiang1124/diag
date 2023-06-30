@@ -1390,8 +1390,7 @@ class mtp_ctrl():
         rc = True
         self._mgmt_handle.sendline(cmd)
         cmd_before = ""
-        if sig_list:
-            self._buf_before_sig = ""
+        self._buf_before_sig = ""
         for sig in sig_list:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
             self._buf_before_sig += self._mgmt_handle.before
@@ -1408,7 +1407,7 @@ class mtp_ctrl():
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         else:
-            self._cmd_buf = self._mgmt_handle.before
+            self._cmd_buf = self._buf_before_sig + self._mgmt_handle.before
             return True
 
 
@@ -5379,15 +5378,24 @@ class mtp_ctrl():
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
             return ["TIMEOUT", nic_list[:]]
         ret = "SUCCESS"
+        cmd_buf = self.mtp_get_cmd_buf()
+        buf_before_sig = self.mtp_get_cmd_buf_before_sig()
 
-        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
+        self.nic_semi_parallel_log(nic_list, buf_before_sig)
 
-        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+        match = re.findall(r"Slot (\d+) ?: +(\w+)", cmd_buf)
+
+        rslt_list = [False] * MTP_Const.MTP_SLOT_NUM # fail any slots whose result is not captured
         for _slot, rslt in match:
             slot = int(_slot) - 1
-            if (rslt != "PASS" and rslt != "PASSED") and slot not in nic_fail_list:
-                nic_fail_list.append(slot)
-                ret = "FAIL"
+            if (rslt == "PASS" or rslt == "PASSED"):
+                rslt_list[slot] = True
+
+        for slot in nic_list:
+            if not rslt_list[slot]:
+                if slot not in nic_fail_list:
+                    nic_fail_list.append(slot)
+                    ret = "FAIL"
 
         return [ret, nic_fail_list]
 
