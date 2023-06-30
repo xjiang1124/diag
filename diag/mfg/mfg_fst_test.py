@@ -22,6 +22,7 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import MFG_IMAGE_FILES
+import test_utils
 
 parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -59,39 +60,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_fst_test(mtp_fst_script_dir, mtp_mgmt_ctrl, mtp_id, mtp_test_summary, card_type, stage, skip_testlist=[], cfgyml=None, mirror_logdir=None):
-    # go to mtp_fst_script and start the test
-    cmd = "cd {:s}".format(mtp_fst_script_dir)
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-    mtp_start_ts = libmfg_utils.timestamp_snapshot()
-    mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Start", level=0)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-    cmd = "./mtp_fst_test.py --mtpid {:s} --card_type {:s} --stage {:s}".format(mtp_id, card_type, stage)
-    if cfgyml:
-        cmd += " --mtpcfg {:s}".format(cfgyml)
-    if skip_testlist:
-        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_testlist).strip()+'"')
-        cmd += skipped_testlist
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
-    mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-    mtp_mgmt_ctrl.cli_log_inf("MFG FST Test Complete", level=0)
-    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-    
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_FST, mirror_logdir=mirror_logdir)
-    mtp_mgmt_ctrl.cli_log_inf("Collect MTP Logfile {:s}".format(test_log_file), level=0)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect FST Test result failed", level=0)
-        return
-    cmd = "cp {:s} {:s}".format(test_log_file, mirror_logdir)
-    os.system(cmd)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_FST, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
-    return
-
-
 def main():
     card_type = args.card_type.upper()
     if args.verbosity:
@@ -122,6 +90,7 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
     # logfiles
+    stage = FF_Stage.FF_FST
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
@@ -139,76 +108,21 @@ def main():
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-    # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="FST-SSH", max_retry=10):
-        #if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
-        # Sync timestamp to server
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str, fst=True):
-            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
-        mtp_dl_image_list = list()
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
-        mtp_diag_image = MFG_IMAGE_FILES.penctl_img
-        nic_diag_image = MFG_IMAGE_FILES.penctl_token_img
-
-        if not libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-
-    # Copy script, config file on to each MTP Chassis
-    mtp_fst_script_dir = "mtp_fst_script/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_fst_script_pkg = "mtp_fst_script.{:s}.tar".format(mtp_id)
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP FST Test script", level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_fst_script_dir, mtp_fst_script_pkg, logfile_dir_list[mtp_id], extra_config=mtpcfg_file):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP FST Test script failed", level=1)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP FST Test script complete", level=0)
-    # now that file has been packaged into config/, discard full path
-    if mtpcfg_file:
-        mtpcfg_file = os.path.basename(mtpcfg_file)
-
     mtp_thread_list = list()
     mfg_fst_summary = dict()
-    stage = "FETCH_SN"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_fst_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_fst_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_fst_script_dir,
-                                                                            mtp_mgmt_ctrl,
-                                                                            mtp_id,
-                                                                            mfg_fst_summary[mtp_id], 
-                                                                            card_type,
-                                                                            stage, args.skip_test, mtpcfg_file, args.logdir))
+        mtp_thread = threading.Thread(target = test_utils.single_mtp_test,
+                                      args = (stage,
+                                            mtp_mgmt_ctrl,
+                                            mfg_fst_summary[mtp_id],
+                                            logfile_dir_list[mtp_id],
+                                            open_file_track_mtp_list[mtp_id],
+                                            args.skip_test,
+                                            args.logdir),
+                                    kwargs = ({"mtpcfg_file": mtpcfg_file,
+                                            "testsuite_name": stage,
+                                            "card_type": card_type}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

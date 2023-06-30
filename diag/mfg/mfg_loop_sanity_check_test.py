@@ -28,7 +28,7 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
-
+import test_utils
 
 def load_mtp_cfg():
     # DL/P2C MTP Chassis
@@ -58,8 +58,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg)
     return mtp_mgmt_ctrl
 
-def mtp_setup(mtp_mgmt_ctrl, mtp_capability, setup_rslt_list):
-    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup2(mtp_mgmt_ctrl, mtp_capability)
+def mtp_setup(mtp_mgmt_ctrl, setup_rslt_list):
+    setup_rslt_list[mtp_mgmt_ctrl._id] = libmfg_utils.mtp_common_setup2(mtp_mgmt_ctrl, FF_Stage.FF_P2C)
 
 def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -76,7 +76,7 @@ def sanity_check(mtp_cfg_db, mtpid_list, mtp_mgmt_ctrl_list, mtpid_fail_list):
     mtp_thread_list = list()
     setup_rslt_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
-        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, mtp_capability, setup_rslt_list))
+        mtp_thread = threading.Thread(target = mtp_setup, args = (mtp_mgmt_ctrl, setup_rslt_list))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -215,78 +215,11 @@ def main():
 
         # Connect to MTP
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="P2C-SSH", retry_with_powercycle=True):
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
+            if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_P2C, args.skip_test):
                 mtpid_list.remove(mtp_id)
                 mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
                 mtpid_fail_list.append(mtp_id)
                 continue
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            # Check if image updated is needed
-            mtp_dl_image_list = list()
-            mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-            if (mtp_capability & 0x1):
-                for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                    try:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                        if card_type == NIC_Type.NAPLES100HPE:
-                            mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    try:
-                        mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-            if (mtp_capability & 0x2):
-                for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                    try:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                        if card_type == NIC_Type.NAPLES100HPE:
-                            mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                    try:
-                        mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                    try:
-                        if card_type == NIC_Type.LACONA32 or card_type == NIC_Type.LACONA32DELL:
-                            mtp_dl_image_list.append(NIC_IMAGES.uboot_img[card_type])
-                    except KeyError:
-                        mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing uboot image for {:s}".format(card_type))
-
-            onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-            if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-            mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
-            onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-            mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-            nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-            if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-                mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-            mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-        # Sync timestamp to server
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            timestamp_str = str(libmfg_utils.timestamp_snapshot())
-            if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-                mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
 
         # Sanity check
         try:

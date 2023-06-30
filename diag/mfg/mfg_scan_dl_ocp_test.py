@@ -345,22 +345,10 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+    if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_DL, args.skip_test):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+        logfile_close(log_filep_list)
         return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-    # Check if image update is needed
-    mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-    nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-
-    onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-
-    if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-        mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-        mtpid_list.remove(mtp_id)
-        return
-    mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
 
     if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=FF_Stage.FF_DL):
         mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")

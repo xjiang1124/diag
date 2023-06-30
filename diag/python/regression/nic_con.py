@@ -54,7 +54,7 @@ class nic_con:
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
@@ -94,7 +94,7 @@ class nic_con:
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
@@ -131,7 +131,7 @@ class nic_con:
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:
             return -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u# "')
+        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15) # expect the # in my send command
         i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:

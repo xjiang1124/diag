@@ -564,7 +564,7 @@ def main():
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     try:
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
+        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
