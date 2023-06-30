@@ -5404,10 +5404,10 @@ class mtp_ctrl():
 
         if test == "RMII_LINKUP":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, vmarg)
-            sig_list = "rmii_linkup_test done"
+            sig_list = ["rmii_linkup_test done"]
         elif test == "UART_LPBACK":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, vmarg)
-            sig_list = "uart_loopback_test done"
+            sig_list = ["uart_loopback_test done"]
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
