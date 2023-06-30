@@ -59,6 +59,9 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
     parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
 
     verbosity = False
@@ -68,7 +71,9 @@ def main():
         verbosity = True
     if args.swm:
         swmtestmode = args.swm
-
+    l1_sequence = False
+    if args.l1_seq:
+        l1_sequence = True
     if verbosity:
         diag_log_filep = sys.stdout
         diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
@@ -76,7 +81,12 @@ def main():
         diag_log_filep = None
         diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
 
-    mtp_cfg_db = load_mtp_cfg()
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtp_mgmt_ctrl_list = list()
     mtpid_fail_list = list()
