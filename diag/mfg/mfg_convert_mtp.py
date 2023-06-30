@@ -314,8 +314,7 @@ def main():
             continue
 
         # Copy over images if needed
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list, onboard_image_files):
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
