@@ -4047,7 +4047,7 @@ class mtp_ctrl():
         duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
         if not ret:
-            libmfg_utils.post_fail_steps(self, slot)
+            self.mtp_set_nic_status_fail(slot)
 
         return ret
 
