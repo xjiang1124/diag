@@ -319,9 +319,11 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
 
     # Collect NIC onboard logfiles
     mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
-    for slot in nic_list:
-        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+    fail_save_list = mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(nic_list, FF_Stage.FF_SRN, "NIC_LOG_SAVE", aapl)
+    for slot in fail_save_list:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+        if slot not in fail_list:
+            fail_list.append(slot)
 
     if aapl == False:
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel DSP Test Complete\n".format(nic_type), level=0)
