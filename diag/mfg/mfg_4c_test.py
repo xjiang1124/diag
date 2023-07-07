@@ -176,16 +176,13 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+
+    # dump the summary
+    test_result = libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
+
     # print return code for JobD to pick up
-    test_result = True
-    if len(mtpid_fail_list) > 0:
-        test_result = False
-    for mtp_id in mfg_4c_summary.keys():
-        if len(mfg_4c_summary[mtp_id]) == 0:
-            test_result = False
-        for slot, sn, nic_type, rc, retest_blocked in mfg_4c_summary[mtp_id]:
-            if not rc:
-                test_result = False
     if test_result:
         sys.exit(0)
     else:
