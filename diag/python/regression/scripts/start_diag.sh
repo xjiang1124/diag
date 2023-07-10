@@ -17,6 +17,19 @@ fi
 echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
+
+echo "Untar ASIC lib"
+ASIC_IMG=/home/diag/nic.tar.gz
+ASIC_IMG_REL=/home/diag/nic_x86_64.tar.gz
+if [[ -f "$ASIC_IMG_REL" ]]
+then
+    cp $ASIC_IMG_REL $ASIC_IMG
+fi
+tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/elba/
+cp -r $DIAG_DIR/asic_all/elba/nic/* $DIAG_DIR/asic_all/elba/
+cp $DIAG_DIR/asic_all/elba/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/elba/asic_version.txt
+rm -rf $DIAG_DIR/asic_all/elba/nic
+
 mkdir -p $DIAG_DIR/log/
 
 if [ -f "$DIAG_DIR/log/board_env.txt" ]; then

@@ -1,1 +1,2 @@
 # psdiag
+INFRASTRUCTURE_REV 2.0
