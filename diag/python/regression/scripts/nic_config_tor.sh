@@ -55,11 +55,6 @@ then
     fi
     echo "Copy scripts to nic_arm"
     ASIC_IMG=/data/nic.tar.gz
-    ASIC_IMG_REL=/data/nic_aarch64.tar.gz
-    if [[ -f "$ASIC_IMG_REL" ]]
-    then
-        cp $ASIC_IMG_REL $ASIC_IMG
-    fi
     tar xf $ASIC_IMG -C /data
     cp -r /data/nic/fake_root_target/nic/* $ARM_ASIC_PATH
     cp -r /data/nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl $ARM_ASIC_PATH/asic_version.txt

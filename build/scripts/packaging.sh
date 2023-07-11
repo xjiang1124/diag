@@ -37,9 +37,9 @@ do
     echo "asic: $asic"
 done
 
-# if asiclib is not specified in make command, default is "packaged", we use nic.tar.gz in /vol/hw, for mfg release
-# if asiclib=unpackaged in make command, let installation script copy nic.tar.gz to MTP
-asiclib="packaged"
+# if asiclib is not specified in make command, default is "stable", we use the stable nic.tar.gz in /vol/hw, for mfg release
+# if asiclib=weekly in make command, we use the weekly build nic.tar.gz in Jenkins
+asiclib="stable"
 if [[ $# -eq 3 ]]
 then
     asiclib=$3
@@ -219,20 +219,10 @@ do
     
         #echo "Copy snake CFG to $arch image"
         #rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
-        if [[ $asiclib == "packaged" ]]
+        if [[ $asiclib == "stable" ]]
         then
             echo "Copying ASIC lib for $asic"
-            # todo: change the path later to use minio asset
-            if [[ $asic == "capri" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/capri/amd64/nic.tar.gz"
-            elif [[ $asic == "elba" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/elba/amd64/nic.tar.gz"
-            elif [[ $asic == "giglio" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/giglio/amd64/nic.tar.gz"
-            fi
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic/$asic/amd64/nic.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP
         fi
     fi
@@ -250,20 +240,10 @@ do
     
         #echo "Copy ASIC lib to $arch image"
         #rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
-        if [[ $asiclib == "packaged" ]]
+        if [[ $asiclib == "stable" ]]
         then
             echo "Copying ASIC lib for $asic"
-            # todo: change the path later to use minio asset
-            if [[ $asic == "capri" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/capri/arm64/nic.tar.gz"
-            elif [[ $asic == "elba" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/elba/arm64/nic.tar.gz"
-            elif [[ $asic == "giglio" ]]
-            then
-                ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/giglio/arm64/nic.tar.gz"
-            fi
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic/$asic/arm64/nic.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP
         fi
         #echo "Copy snake CFG to $arch image"
