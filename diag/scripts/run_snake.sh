@@ -26,7 +26,7 @@ do
         echo "=== Checking result: $slot ==="
 
         num_slot=${#slot_list1[@]}
-        slot_info=$(grep -a -A${num_slot} "TEST RESULT: SNAKE" snake_ite.log | grep "Slot ${slot}")
+        slot_info=$(grep -a -A${num_slot} "TEST RESULT: SNAKE" snake_ite.log | grep "Slot ${slot} ")
         echo $slot_info
  
         num_pass=$(echo $slot_info | grep PASS | wc | awk -F " " '{print $1}')
