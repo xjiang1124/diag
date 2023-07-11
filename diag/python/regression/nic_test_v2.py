@@ -444,6 +444,7 @@ class nic_test_v2:
 
                 ret = self.nic_con.uart_session_start_login(session, self.baud_rate)
                 if ret != 0:
+                    self.nic_con.uart_session_stop(session)
                     return False
                 self.nic_con.uart_session_stop(session)
 
@@ -456,10 +457,12 @@ class nic_test_v2:
                     if ret == 0:
                         break
                 if ret != 0:
+                    self.nic_con.uart_session_stop(session)
                     return False
 
-                self.nic_con.uart_session_stop(session)
+                #self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
+                print("=== Slot:", slot, "Passed ===")
 
     def multi_nic_cmds(self, args):
         print(args)
@@ -579,6 +582,7 @@ if __name__ == "__main__":
 
     parser_setup_multi_w_console.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser_setup_multi_w_console.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser_setup_multi_w_console.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
 
     parser_setup_multi_w_console.set_defaults(func=test.setup_multi_w_console)
 
