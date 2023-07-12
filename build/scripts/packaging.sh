@@ -222,7 +222,7 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/$asic/amd64/nic.tar.gz"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${asic}_${arch}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP
         fi
     fi
