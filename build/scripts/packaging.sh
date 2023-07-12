@@ -222,8 +222,8 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${asic}_${arch}.tar.gz"
-            cp $ASIC_IMG $TEMP_DIR_TOP
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
     fi
     
@@ -243,8 +243,8 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/$asic/arm64/nic.tar.gz"
-            cp $ASIC_IMG $TEMP_DIR_TOP
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         #echo "Copy snake CFG to $arch image"
         #cp -r $SNAKE_CFG_PATH/* $DIAG_ASIC_IMG_PATH
