@@ -1569,6 +1569,11 @@ class mtp_ctrl():
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
+        cmd = "touch /dev/prompt"
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("{:s} command failed".format(cmd), level=0)
+            return False
+
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
