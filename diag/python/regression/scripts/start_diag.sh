@@ -23,6 +23,7 @@ ASIC_IMG=/home/diag/nic.tar.gz
 asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
+chmod -R 755 $DIAG_DIR/asic_all/$asic/
 tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
 cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
 cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
