@@ -2797,7 +2797,7 @@ class mtp_ctrl():
             if software_pn != "90-0018-0001":
                 return False
         elif naples_pn[0:7] == "68-0028":     #ORTANO2 ADI IBM
-            if software_pn != "90-0016-0003":
+            if software_pn != "90-0016-0004":
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
             if software_pn != "90-0019-0001":
