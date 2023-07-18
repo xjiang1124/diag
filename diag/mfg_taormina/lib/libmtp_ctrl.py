@@ -8248,8 +8248,8 @@ class mtp_ctrl():
             if "Speed 8GT/s" in cmd_buf and "Width x4" in cmd_buf:
                 continue
             else:
-                self.cli_log_slot_err(slot, "PCIe link to Elba {:s} failed speed and width check".format(slot))
-                self.mtp_dump_nic_err_msg(cmd_buf)
+                self.cli_log_slot_err(slot, "PCIe link to Elba {:d} failed speed and width check".format(slot))
+                self.mtp_dump_nic_err_msg(slot)
                 return False
 
         return True
@@ -8622,7 +8622,7 @@ class mtp_ctrl():
     def mtp_mgmt_clear_nic_ssh(self, slot):
         if not self._nic_ctrl_list[slot].nic_console_check_ssh_folder():
             self.cli_log_slot_inf(slot, "Required SSH files missing on NIC... clearing folder to reset")
-            self.mtp_clear_nic_err_msg() # clear out the error message
+            self.mtp_clear_nic_err_msg(slot) # clear out the error message
             if not self._nic_ctrl_list[slot].nic_console_clear_ssh_folder():
                 self.cli_log_slot_err(slot, "Failed to setup NIC ssh folder")
                 self.mtp_get_nic_err_msg(slot)
