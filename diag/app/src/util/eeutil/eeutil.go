@@ -43,6 +43,8 @@ const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
 const NAPLES200_IBM       string  = "68-0028-01 01"   //ORTANO IBM
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
 const NAPLES200_TAOR2     string  = "73-0040-03 A2"   //TAORMINA ORTANO Pensando (newer part number)
+const NAPLES200_LIPARI    string  = "68-0032-01 01"   //TAORMINA ORTANO Pensando
+
 
 const LACONA16GB_HPE     string  = "P47927-001"
 const LACONA32GB_HPE     string  = "P47930-001"
@@ -223,6 +225,9 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                 } else if pn[0:7] == NAPLES200_TAOR[0:7] || pn[0:7] == NAPLES200_TAOR2[0:7]{      
                     eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
                     eeprom.CustType = "PENORTANO"
+                } else if pn[0:7] == NAPLES200_LIPARI[0:7] {      
+                    eeprom.EepromTbl = eeprom.OrtanoLipariTbl
+                    eeprom.CustType = "PENORTANO"
                 } else {
                     cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming an Ortano Card")
                     return -1;
@@ -246,6 +251,9 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
                     eeprom.CustType = "PENORTANO"
                 } else if pn[0:7] == NAPLES200_TAOR[0:7] || pn[0:7] == NAPLES200_TAOR2[0:7]{      
                     eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+                    eeprom.CustType = "PENORTANO"
+                } else if pn[0:7] == NAPLES200_LIPARI[0:7] {      
+                    eeprom.EepromTbl = eeprom.OrtanoLipariTbl
                     eeprom.CustType = "PENORTANO"
                 } else {
                     cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming an Ortano Card")
@@ -462,6 +470,12 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
         rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_TAOR2[0:7])  //Taormina with Elba's
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.OrtanoTaorminaTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_LIPARI[0:7])  //Taormina with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.OrtanoLipariTbl
             eeprom.CustType = "PENORTANO"
             return(0)
         }

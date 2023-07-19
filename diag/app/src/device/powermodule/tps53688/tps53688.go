@@ -2,15 +2,12 @@ package tps53688
 
 import (
     "fmt"
-    //"math"
-    //"os"
-    //"cardinfo"
+    "math"
     "common/cli"
     "common/errType"
     "common/misc"
     "hardware/i2cinfo"
     "protocol/pmbus"
-    //"protocol/smbus"
 )
 
 func calcVoltFromVid (vid byte, dacStep uint64) (integer uint64, dec uint64, err int) {
@@ -77,6 +74,7 @@ func calcVidFromVolt (tgtVoltMv uint64, dacStep uint64) (vid byte, err int) {
     return 0, errType.FAIL
 }
 
+
 func ReadStatus(devName string) (status uint16, err int) {
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
@@ -90,7 +88,10 @@ func ReadStatus(devName string) (status uint16, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
 
     status, err = pmbus.ReadWord(devName, STATUS_WORD)
     return
@@ -143,9 +144,14 @@ func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE);
     if err != errType.SUCCESS {
@@ -157,10 +163,13 @@ func ReadTargetVoltage(devName string) (integer uint64, dec uint64, err int) {
         return
     }
 
-    if (dacStepRegVal == DAC_STEP_5MV) {
+    if (dacStepRegVal == DAC_STEP_10MV) {
+        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VCMD)
+    } else if (dacStepRegVal == DAC_STEP_5MV) {
         integer, dec, err =  pmbus.Convert_vr13_5mvVID(VCMD)
     } else {
-        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VCMD)
+        //Linear16
+        integer, dec, err =  pmbus.Linear16(uint64(dacStepRegVal), VCMD)
     }
     return
 }
@@ -180,15 +189,24 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     VIN, err = pmbus.ReadWord(devName, READ_VIN)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(VIN)
 
     return
+
 }
 
 
@@ -208,9 +226,14 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE);
     if err != errType.SUCCESS {
@@ -222,10 +245,14 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
 
-    if (dacStepRegVal == DAC_STEP_5MV) {
+    if (dacStepRegVal == DAC_STEP_10MV) {
+        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VOUT)
+    } else if (dacStepRegVal == DAC_STEP_5MV) {
         integer, dec, err =  pmbus.Convert_vr13_5mvVID(VOUT)
     } else {
-        integer, dec, err =  pmbus.Convert_vr13_10mvVID(VOUT)
+        //Linear16
+        integer, dec, err =  pmbus.Linear16(uint64(dacStepRegVal), VOUT)
+        
     }
 
     return
@@ -247,11 +274,19 @@ func ReadVout_Linear(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     VOUT, err = pmbus.ReadWord(devName, MFR_SPECIFIC_D4)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(VOUT)
 
@@ -275,9 +310,14 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE);
     if err != errType.SUCCESS {
@@ -302,6 +342,33 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
+func ReadVoutCmd(devName string) (voutcmd uint16, err int) {
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    voutcmd, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    return
+}
+
+
 func ReadIin(devName string) (integer uint64, dec uint64, err int) {
     var IIN uint16
     err = pmbus.Open(devName)
@@ -316,11 +383,19 @@ func ReadIin(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     IIN, err = pmbus.ReadWord(devName, READ_IIN)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(IIN)
 
@@ -342,11 +417,19 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     IOUT, err = pmbus.ReadWord(devName, READ_IOUT)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(IOUT)
 
@@ -369,11 +452,19 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     PIN, err = pmbus.ReadWord(devName, READ_PIN)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(PIN)
 
@@ -395,11 +486,19 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     POUT, err = pmbus.ReadWord(devName, READ_POUT)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(POUT)
 
@@ -515,11 +614,19 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
         return
     }
     // Write page register
-    pmbus.WriteByte(devName, PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     TEMP, err = pmbus.ReadWord(devName, READ_TEMPERATURE_1)
+    if err != errType.SUCCESS {
+        return
+    }
 
     integer, dec, err =  pmbus.Linear11(TEMP)
 
@@ -531,6 +638,58 @@ func GetTemperature(devName string) (temperatures []float64, err int) {
     temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
     return
 }
+
+
+// vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
+func DispVoltWattAmp(devName string) (err int) {
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
+
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    outStrTemp = "-"
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err := ReadVout(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadPout(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    digIout, fracIout, err := ReadIout(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, digIout, fracIout)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadVin(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadPin(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadIin(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    
+    fmt.Println(outStr)
+
+    return
+}
+
+
 
 func DispStatus(devName string) (err int) {
     vrmTitle := []string {"VBOOT", "POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
@@ -599,10 +758,17 @@ func SetVMargin(devName string, pct int) (err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
+    var voutcmd uint16
 
     //if pct > 10 || pct < -10 {
     //    return errType.INVALID_PARAM
     //}
+
+    voutcmd, err = ReadVoutCmd(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read voutcmd on device ", devName)
+        return
+    }
 
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
@@ -617,9 +783,14 @@ func SetVMargin(devName string, pct int) (err int) {
     }
 
     // Write page register
-    pmbus.WriteByte(devName, pmbus.PAGE, page)
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
     // Write phase register
-    pmbus.WriteByte(devName, PHASE, 0xFF)
+    if i2cinfo.CardType != "LIPARI" {
+        pmbus.WriteByte(devName, PHASE, 0xFF)
+    }
 
     // Disable Vmargin
     err = pmbus.WriteByte(devName, pmbus.OPERATION, MARGIN_NONE_CMD)
@@ -640,40 +811,79 @@ func SetVMargin(devName string, pct int) (err int) {
 
     dacStepRegVal, err = pmbus.ReadByte(devName, pmbus.VOUT_MODE)
 
-    if dacStepRegVal == DAC_STEP_5MV {
-        dacStep = 5
+
+    //LINEAR16 FORMAT FOR LIPARI
+    if dacStepRegVal == LINEAR {
+        var integer, dec uint64
+        var expval int = int(dacStepRegVal & 0x1F)
+
+        //Get Default Target Voltage for Part
+        integer, dec, err =  pmbus.Linear16(uint64(expval), voutcmd)
+        def_volt := float64(integer) + (float64(dec)/1000)
+
+
+
+        //Get Exponent Portion
+        if expval > 0xF {
+            expval = 0x20 - expval
+            expval = 0 - expval
+        }
+        exponentF := math.Pow(2, float64(expval))
+
+        //Calculate what to set Margin High or Low Reg to
+        marginVal := uint64( (def_volt + (def_volt * (float64(pct) / 100))) / exponentF)
+
+        fmt.Printf(" voutcmd=%x  marginVal=%x float64(pct)=%f  def_volt=%f\n", voutcmd, (marginVal & 0xFFFF), float64(pct), def_volt)
+
+        if pct != 0 {
+            err = pmbus.WriteWord(devName, marginReg, uint16(marginVal))
+            if err != errType.SUCCESS {
+                cli.Println("e", "WriteWord to %s reg %d failed", devName, marginReg)
+                return
+            }
+        }
+        err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
+        if err != errType.SUCCESS {
+            cli.Println("e", "WriteByte to %s reg %d failed", devName, pmbus.OPERATION)
+            return
+        }
+
     } else {
-        dacStep = 10
-    }
+        if dacStepRegVal == DAC_STEP_5MV {
+            dacStep = 5
+        } else {
+            dacStep = 10
+        }
 
-    data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
+        data, err = pmbus.ReadWord(devName, pmbus.VOUT_COMMAND)
 
-    integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
-    voltMv := integer *1000 + dec
-    voltMvTemp := voltMv * uint64(100+pct)
-    voltMvTgt := voltMvTemp / 100
+        integer, dec, _ := calcVoltFromVid(byte(data), dacStep)
+        voltMv := integer *1000 + dec
+        voltMvTemp := voltMv * uint64(100+pct)
+        voltMvTgt := voltMvTemp / 100
 
-    cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
-    // Update VOUT_MARGIN_HIGH/HOW with target VID
-    vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
-    cli.Printf("i", "Target VID: 0x%x\n", vidTgt)
-    if pct != 0 {
-        err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+        cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
+        // Update VOUT_MARGIN_HIGH/HOW with target VID
+        vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
+        cli.Printf("i", "Target VID: 0x%x\n", vidTgt)
+        if pct != 0 {
+            err = pmbus.WriteWord(devName, marginReg, uint16(vidTgt))
+            if err != errType.SUCCESS {
+                cli.Println("e", "VMargin failed!")
+                return
+            }
+        }
+
+        // Enable Vmargin
+        err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
         if err != errType.SUCCESS {
             cli.Println("e", "VMargin failed!")
             return
+        } else {
+            cli.Println("i", "New vmargin enabled")
         }
+        misc.SleepInSec(1)
     }
-    // Enable Vmargin
-    err = pmbus.WriteByte(devName, pmbus.OPERATION, marginCmd)
-    if err != errType.SUCCESS {
-        cli.Println("e", "VMargin failed!")
-        return
-    } else {
-        cli.Println("i", "New vmargin enabled")
-    }
-    misc.SleepInSec(1)
-
     return
 }
 

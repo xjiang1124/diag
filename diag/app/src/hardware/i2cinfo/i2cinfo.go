@@ -544,9 +544,100 @@ var TaorTbl = []I2cInfo {
 
 
 var LipariTbl = []I2cInfo {
-    //       name              comp          Bus   devAddr  page    HubName   HubPort  Flag
-    I2cInfo {"FRU_EE",          "AT24C02C",   3,   0x50,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"FRU_CERT",        "AT24C02C",   3,   0x51,    0x0,    "FPGA_HUB_2_0",  0,    I2C_TEST_ENABLE},
+    //       name              comp          Bus   devAddr  page    HubName       HubPort  Flag
+    //
+    //FPGA-0 DEVICES
+    /*
+    I2cInfo {"PSU_1_FRU",      "DPS-2100",    0,   0x50,    0x0,    "0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_1",          "DPS-2100",    0,   0x58,    0x0,    "0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2_FRU",      "DPS-2100",    0,   0x50,    0x0,    "0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2",          "DPS-2100",    0,   0x58,    0x0,    "0_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-CPU-FRNT",  "LM75",        0,   0x48,    0x0,    "0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-CPU-REAR",  "LM75",        0,   0x49,    0x0,    "0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-CPU-CNTR",  "LM75",        0,   0x4A,    0x0,    "0_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU",            "AT24C04C",    0,   0x50,    0x0,    "0_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",       "AT24C04C",    0,   0x51,    0x0,    "0_3",  3,    I2C_TEST_ENABLE},
+
+    I2cInfo {"FAN_1",          "ADT7462",     1,   0x5C,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_2",          "ADT7462",     1,   0x61,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_VDDCR",      "ISL69247",    1,   0x60,    0x0,    "1_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"SOC_VDDCR",      "ISL69247",    1,   0x60,    0x1,    "1_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"MEM_VDDIO",      "TPS53688",    1,   0x5E,    0x0,    "1_1",  1,    I2C_TEST_ENABLE},   //cannot ping
+    I2cInfo {"P12V",           "TPS25990",    1,   0x41,    0x0,    "1_1",  1,    I2C_TEST_ENABLE},   //hot swap contorller
+    I2cInfo {"FRU_SWITCH",     "AT24C04C",    1,   0x50,    0x0,    "1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_SWITCH2",    "AT24C04C",    1,   0x51,    0x0,    "1_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-FRNT",      "TMP451",      1,   0x4C,    0x0,    "1_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3S1",         "TPS53688",    1,   0x6C,    0x0,    "1_3",  3,    I2C_TEST_ENABLE},   //cannot ping
+
+    I2cInfo {"TH4_PDVDD",      "TPS536C7",    2,   0x69,    0x0,    "2_0",  0,    I2C_TEST_ENABLE},   //cannot ping
+    I2cInfo {"TH4_P0V75_AVDD", "TPS536C7",    2,   0x69,    0x1,    "2_0",  0,    I2C_TEST_ENABLE},   //cannot ping
+
+    I2cInfo {"TEMP-CNTR",      "LM75",        2,   0x49,    0x0,    "2_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-REAR",      "LM75",        2,   0x4A,    0x0,    "2_1",  1,    I2C_TEST_ENABLE},
+
+    I2cInfo {"TH4CLK",         "RC21012A",    2,   0x09,    0x0,    "2_2",  2,    I2C_TEST_ENABLE},   
+    I2cInfo {"P3V3"  ,         "MP8796",      2,   0x31,    0x0,    "2_2",  2,    I2C_TEST_ENABLE},   
+    I2cInfo {"P3V3S2",         "TPS53688",    2,   0x69,    0x0,    "2_2",  2,    I2C_TEST_ENABLE},   //cannot ping
+    */
+    I2cInfo {"PSU_1_FRU",      "DPS-2100",    4,   0x50,    0x0,    "0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_1",          "DPS-2100",    4,   0x58,    0x0,    "0_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2_FRU",      "DPS-2100",    5,   0x50,    0x0,    "0_1",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"PSU_2",          "DPS-2100",    5,   0x58,    0x0,    "0_1",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU-FRNT-LM75",  "LM75",        6,   0x48,    0x0,    "0_2",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU-REAR-LM75",  "LM75",        6,   0x49,    0x0,    "0_2",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU-CNTR-LM75",  "LM75",        6,   0x4A,    0x0,    "0_2",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU",            "AT24C04C",    7,   0x50,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CERT",       "AT24C04C",    7,   0x51,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
+
+    I2cInfo {"FAN_1",          "ADT7462",     9,   0x5C,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FAN_2",          "ADT7462",     9,   0x61,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU_VDDCR",      "ISL69247",    10,   0x60,    0x0,    "1_1",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"SOC_VDDCR",      "ISL69247",    10,   0x60,    0x1,    "1_1",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"MEM_VDDIO",      "TPS53688",    10,   0x5E,    0x0,    "1_1",  0,    I2C_TEST_ENABLE},   //cannot ping
+    I2cInfo {"P12V",           "TPS25990",    10,   0x41,    0x0,    "1_1",  0,    I2C_TEST_ENABLE},   //hot swap contorller
+    I2cInfo {"FRU_SWITCH",     "AT24C04C",    11,   0x50,    0x0,    "1_2",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"FRU_SWITCH2",    "AT24C04C",    11,   0x51,    0x0,    "1_2",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP-FRNT",      "TMP451",      12,   0x4C,    0x0,    "1_3",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P3V3S1",         "TPS53688",    12,   0x6C,    0x0,    "1_3",  0,    I2C_TEST_ENABLE},   //cannot ping
+
+    I2cInfo {"TH4_PDVDD",      "TPS536C7",    14,   0x69,    0x0,    "2_0",  0,    I2C_TEST_ENABLE},   //cannot ping
+    I2cInfo {"TH4_P0V75_AVDD", "TPS536C7",    14,   0x69,    0x1,    "2_0",  0,    I2C_TEST_ENABLE},   //cannot ping
+
+    I2cInfo {"CNTR-LM75",      "LM75",        15,   0x49,    0x0,    "2_1",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"REAR-LM75",      "LM75",        15,   0x4A,    0x0,    "2_1",  0,    I2C_TEST_ENABLE},
+
+    I2cInfo {"TH4CLK",         "RC21012A",    16,   0x09,    0x0,    "2_2",  0,    I2C_TEST_ENABLE},   
+    I2cInfo {"P3V3"  ,         "MP8796",      16,   0x31,    0x0,    "2_2",  0,    I2C_TEST_ENABLE},   
+    I2cInfo {"P3V3S2",         "TPS53688",    16,   0x69,    0x0,    "2_2",  0,    I2C_TEST_ENABLE},   //cannot ping
+
+    //FPGA-1 DEVICES
+    I2cInfo {"CPLD_ELBA0",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA1",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA2",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA3",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA4",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA5",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA6",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD_ELBA7",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+
+    I2cInfo {"ELBA0_TEMP",      "TMP451",     54,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA1_TEMP",      "TMP451",     55,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA2_TEMP",      "TMP451",     56,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA3_TEMP",      "TMP451",     57,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA4_TEMP",      "TMP451",     59,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA5_TEMP",      "TMP451",     60,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA6_TEMP",      "TMP451",     61,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"ELBA7_TEMP",      "TMP451",     62,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+    /*
+    I2cInfo {"TEMP_ELBA0",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA1",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA2",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA3",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA4",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA5",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA6",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    I2cInfo {"TEMP_ELBA7",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE}, 
+    */ 
 }
 
 func init() {

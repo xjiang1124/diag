@@ -23,6 +23,7 @@ from libdefs import FF_Stage
 from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
+from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -136,31 +137,18 @@ def main():
     elif mtp_capability == 0x6:
         fst = 3
 
-    # local log files
-    log_filep_list = list()
-    test_log_file = "test_fst.log"
-    test_log_filep = open(test_log_file, "w+", 0)
-    log_filep_list.append(test_log_filep)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [])
+    # local logfiles
+    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
 
-    diag_log_file = "diag_fst.log"
-    diag_log_filep = open(diag_log_file, "w+", 0)
-    log_filep_list.append(diag_log_filep)
-
-    diag_nic_log_filep_list = list()
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = "diag_{:s}_fst.log".format(key)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+")
-        log_filep_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list)
     mtp_mgmt_ctrl._fst_ver = mtp_capability
+    if mtp_cfg_db.get_mtp_max_slots(mtp_id):
+        mtp_mgmt_ctrl._slots = mtp_cfg_db.get_mtp_max_slots(mtp_id)
 
     mtp_mgmt_ctrl.cli_log_inf("Try to connect MTPS chassis", level=0)
     if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg = True):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTPS chassis", level=0)
-        logfile_close(log_filep_list)
+        logfile_close(open_file_track_list)
         return
     mtp_mgmt_ctrl.cli_log_inf("MTPS chassis connected", level=0)
 
@@ -171,6 +159,27 @@ def main():
     fail_nic_list = list()
     nic_prsnt_list = list()
     test_ROT = False
+
+    # load scanned fru
+    scanned_fru_cfg = None
+    if "SCAN_VERIFY" not in args.skip_test and False:
+        # load the barcode config file made in toplevel
+        scan_cfg_file =  MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+        scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+        if mtp_id not in scanned_fru_cfg_dict:
+            mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
+            # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
+            scanned_fru_cfg = dict()
+            for slot in range(mtp_mgmt_ctrl._slots):
+                key = libmfg_utils.nic_key(slot)
+                if not nic_prsnt_list[slot]:
+                    continue
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+        else:
+            scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
 
     try:
         dsp = FF_Stage.FF_FST
@@ -185,7 +194,7 @@ def main():
             start_ts = libmfg_utils.timestamp_snapshot()
 
             if test == "NIC_INIT":
-                ret = mtp_mgmt_ctrl.mtp_nic_init(FF_Stage.FF_FST)
+                ret = mtp_mgmt_ctrl.mtp_nic_init(FF_Stage.FF_FST, scanned_fru=scanned_fru_cfg)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                 continue
@@ -195,7 +204,7 @@ def main():
 
             if not ret:
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Test aborted.")
-                logfile_close(log_filep_list)
+                logfile_close(open_file_track_list)
                 return
 
 
@@ -206,19 +215,8 @@ def main():
             pass_nic_list.append(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             # add ROT test to testlist
-            if nic_type in (
-                NIC_Type.ORTANO2,
-                NIC_Type.ORTANO2ADI,
-                NIC_Type.ORTANO2INTERP,
-                NIC_Type.ORTANO2SOLO,
-                NIC_Type.ORTANO2ADICR,
-                NIC_Type.ORTANO2SOLOORCTHS,
-                NIC_Type.ORTANO2SOLOMSFT,
-                NIC_Type.ORTANO2ADICRMSFT
-                ):
+            if nic_type in ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST:
                 test_ROT = True
-
-
 
         # TESTS
         for slot in range(mtp_mgmt_ctrl._slots):
@@ -274,6 +272,15 @@ def main():
             testlist = ["ROT"]
         else:
             testlist = []
+
+        # build scanned slot id to scanned rot cable serial number mapping table
+        slot2rotsn = dict()
+        if scanned_fru_cfg:
+            for slot in range(mtp_mgmt_ctrl._slots):
+                key = libmfg_utils.nic_key(slot)
+                if scanned_fru_cfg[key]["VALID"] == "Yes" and "ROTSN" in scanned_fru_cfg[key]:
+                    slot2rotsn[slot] = scanned_fru_cfg[key]["ROTSN"]
+
         for skip_test in args.skip_test:
             if skip_test in testlist:
                 testlist.remove(skip_test)
@@ -290,6 +297,8 @@ def main():
             duration = str(stop_ts - start_ts)
 
             for slot in test_pass_list:
+                if slot in slot2rotsn:
+                    test = "ROT WITH ROT CABLE " + slot2rotsn[slot]
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
@@ -298,6 +307,8 @@ def main():
                     pass_nic_list.append(slot)
 
             for slot in test_fail_list:
+                if slot in slot2rotsn:
+                    test = "ROT WITH ROT CABLE " + slot2rotsn[slot]
                 sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
 
@@ -342,7 +353,7 @@ def main():
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-    logfile_close(log_filep_list)
+    logfile_close(open_file_track_list)
     return
 
 if __name__ == "__main__":

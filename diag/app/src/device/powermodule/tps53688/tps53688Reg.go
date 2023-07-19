@@ -102,6 +102,7 @@ const (
 )
 
 const (
+    LINEAR = 0x16
     DAC_STEP_10MV = 0x24
     DAC_STEP_5MV = 0x27
 )

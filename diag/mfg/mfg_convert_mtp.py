@@ -172,8 +172,7 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
         # Program new diag images
         mtp_diag_image = mtp_images_list[2]
         nic_diag_image = mtp_images_list[3]
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files, force_update=True):
+        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, force_update=True):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
             raise Exception
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
@@ -315,8 +314,7 @@ def main():
             continue
 
         # Copy over images if needed
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list, onboard_image_files):
+        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_images_list):
             mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -333,8 +331,7 @@ def main():
 
     # Sync timestamp to server
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date():
             mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)

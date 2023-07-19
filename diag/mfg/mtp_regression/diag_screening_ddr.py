@@ -522,9 +522,11 @@ def diag_para_mem_edma_ddr_stress_test(mtp_mgmt_ctrl, nic_type, nic_list, test_d
             time.sleep(5)
 
         # Collect NIC onboard logfiles, we need copy log before NIC power cycle for EDMA and DDR_STRESS Test. 
-        for slot in new_nic_list:
-            if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(slot, aapl):
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+        mtp_mgmt_ctrl.cli_log_inf("Collecting NIC onboard diag logfiles...", level=0)
+        fail_save_list = mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(new_nic_list, "DDR_STRESS", "NIC_LOG_SAVE", aapl)
+        for slot in fail_save_list:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Collecting NIC onboard diag logfile failed")
+            nic_test_rslt_list[slot] = False
 
         for slot in new_nic_list:
             if not nic_test_rslt_list[slot]:
@@ -923,7 +925,7 @@ def main():
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     try:
-        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, stage=stage):
+        if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -1198,7 +1200,7 @@ def main():
                                                 fail_nic_list.append(slot)
                                             if slot in pass_nic_list:
                                                 pass_nic_list.remove(slot)
-                            diag_reg.naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_mtp_para_test_list, stop_on_err)
+                            diag_reg.naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, stage, "ASIC_LOG_SAVE", nic_mtp_para_test_list, stop_on_err)
                             diag_reg.parse_nic_test_logfile(mtp_mgmt_ctrl, fstl, vmarg)
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_unhide_nic_status(slot)

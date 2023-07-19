@@ -46,6 +46,8 @@ const errhelp = "\nswitch:\n" +
         "switch voltage margin <+/-percent>\n" +
         "\n"
         
+   
+                
 /* 
 I2C -> I2C
 QSFP -> I2C
@@ -85,8 +87,6 @@ I2C                 idle
 -------- ASIC --------
 L1                  idle
 */ 
-
-                               
 
 func taormina_switch_cli() {
     argc := len(os.Args[0:])

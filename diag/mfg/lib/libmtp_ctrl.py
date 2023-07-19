@@ -31,6 +31,8 @@ from libdefs import Swm_Test_Mode
 from libdefs import Voltage_Margin
 from libdefs import Factory
 from libnic_ctrl import nic_ctrl
+import test_utils
+import image_control
 
 class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
@@ -168,38 +170,51 @@ class mtp_ctrl():
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
+    def log_mtp_file(self, msg):
+        self._diag_filep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._mgmt_handle:
+            self.mtp_mgmt_exec_cmd("")
+
+    def log_nic_file(self, slot, msg):
+        self._diag_nic_filep_list[slot].write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._nic_ctrl_list[slot] is not None:
+            if self._nic_ctrl_list[slot]._nic_handle:
+                self._nic_ctrl_list[slot].mtp_exec_cmd("")
+
     def log_slot_test_start(self, slot, testname):
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return start
 
     def log_slot_test_stop(self, slot, testname, start):
         # log the timestamp in NIC log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return duration
 
     def log_test_start(self, testname):
         # log the timestamp in MTP log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
         return start
 
     def log_test_stop(self, testname, start):
         # log the timestamp in MTP log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
         return duration
 
     def mtp_sys_info_disp(self):
@@ -933,7 +948,7 @@ class mtp_ctrl():
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
             prompt_str = "{:s}@MTP:{:s} ".format(userid, prompt)
-        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}]"+ prompt_str + "'")
+        handle.sendline("PS1='[\D{%Y-%m-%d_%H:%M:%S}] "+ prompt_str + "'")
 
         # refresh
         handle.sendline("uname")
@@ -1108,9 +1123,10 @@ class mtp_ctrl():
         self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
         self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  #restore failure buffer
 
-    def mtp_mgmt_set_date(self, timestamp_str, fst=False):
+    def mtp_mgmt_set_date(self, stage=None):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
-        if fst:
+        if stage == FF_Stage.FF_FST:
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set MTP date")
                 return False
@@ -1374,8 +1390,7 @@ class mtp_ctrl():
         rc = True
         self._mgmt_handle.sendline(cmd)
         cmd_before = ""
-        if sig_list:
-            self._buf_before_sig = ""
+        self._buf_before_sig = ""
         for sig in sig_list:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, [sig], timeout)
             self._buf_before_sig += self._mgmt_handle.before
@@ -1392,7 +1407,7 @@ class mtp_ctrl():
             self.mtp_dump_err_msg(self._mgmt_handle.before)
             return False
         else:
-            self._cmd_buf = self._mgmt_handle.before
+            self._cmd_buf = self._buf_before_sig + self._mgmt_handle.before
             return True
 
 
@@ -1533,54 +1548,6 @@ class mtp_ctrl():
 
         return rc
 
-
-    def mtp_diag_pre_init_start(self, skip_nic_pn_init=False, stage=None):
-        if not self.mtp_mgmt_connect():
-            self.cli_log_err("Unable to connect MTP chassis", level=0)
-            return False
-        self.cli_log_inf("MTP chassis connected\n", level=0)
-
-        # start the mtp diag
-        self.cli_log_inf("Pre Short Diag SW Environment Init", level=0)
-
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=25):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        # config the prompt
-        userid = self._mgmt_cfg[1]
-        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
-
-        if not self.mtp_sys_info_init():
-            self.cli_log_err("Failed to Init MTP system information", level=0)
-            return False
-
-        # PSU/FAN absent, power off all the cards
-        if not self.mtp_hw_init(stage):
-            self.cli_log_err("MTP HW Init Fail, Power Off All Cards", level=0)
-            self.mtp_power_off_nic()
-            return False
-
-        # get the mtp system info
-        if not self.mtp_sys_info_disp():
-            self.cli_log_err("Unable to retrieve MTP system info", level=0)
-            return False
-
-        if not self.mtp_nic_init(skip_nic_pn_init=skip_nic_pn_init):
-            self.cli_log_err("Initialize NIC type, present failed", level=0)
-            return False
-        return True
-
     def mtp_get_nic_sn_start(self, slot=0):
         rc = ""
         cmd = "eeutil -uut=UUT_{:s} -disp -field=sn".format(str(slot + 1))
@@ -1598,9 +1565,14 @@ class mtp_ctrl():
 
         return rc
 
-    def mtp_diag_pre_init(self):
+    def mtp_diag_pre_init(self, start_dsp=True):
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
+
+        cmd = "touch /dev/prompt"
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("{:s} command failed".format(cmd), level=0)
+            return False
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
@@ -1609,7 +1581,7 @@ class mtp_ctrl():
             return False
 
         cmd = "source ~/.bash_profile"
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=5):
             self.cli_log_err("Failed to Init Diag SW Environment", level=0)
             return False
 
@@ -1618,54 +1590,47 @@ class mtp_ctrl():
             self.cli_log_err("Failed to execute env command", level=0)
             return False
 
-        # kill other diagmgr instances
-        cmd = "killall diagmgr"
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Command {:s} failed".format(cmd), level=0)
-            return False
+        if start_dsp:
+            # kill other diagmgr instances
+            cmd = "killall diagmgr"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                return False
 
-        # start the mtp diagmgr
-        diagmgr_handle = self.mtp_session_create()
-        if not diagmgr_handle:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
+            # start the mtp diagmgr
+            diagmgr_handle = self.mtp_session_create()
+            if not diagmgr_handle:
+                self.cli_log_err("Failed to create diagmgr session", level=0)
+                return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
-        diagmgr_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
-        if idx < 0:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
-        diagmgr_handle.close()
+            cmd = MFG_DIAG_CMDS.MTP_DIAG_MGR_START_FMT.format(self._diagmgr_logfile)
+            diagmgr_handle.sendline(cmd)
+            idx = libmfg_utils.mfg_expect(diagmgr_handle, [self._mgmt_prompt])
+            if idx < 0:
+                self.cli_log_err("Failed to start diagmgr", level=0)
+                return False
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+            diagmgr_handle.close()
 
-        # config the prompt
-        userid = self._mgmt_cfg[1]
-        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        self._mgmt_prompt = "{:s}@MTP:".format(userid) + self._mgmt_prompt
+            # register MTP diagsp
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to access dshell", level=0)
+                return False
 
-        # register MTP diagsp
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
+            cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
+            sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
+            if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
+                self.cli_log_err("Failed to start dsp", level=0)
+                return False
 
-        cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
-        sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-
-        time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
+            time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
 
         if not self.mtp_sys_info_init():
             self.cli_log_err("Failed to Init MTP system information", level=0)
             return False
 
         self.cli_log_inf("Pre Diag SW Environment Init complete\n", level=0)
-
         return True
 
     def mtp_inlet_temp_test(self, stage=None, sanity=False):
@@ -1859,7 +1824,7 @@ class mtp_ctrl():
         return cmd_buf
 
 
-    def mtp_diag_post_init(self, mtp_capability, stage):
+    def mtp_diag_post_init(self):
         self.cli_log_inf("Post Diag SW Environment Init", level=0)
         cmd = "rm -f {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1880,416 +1845,7 @@ class mtp_ctrl():
             self.cli_log_err("Dump DSP failed", level=0)
             return False
 
-        # check if firmware image exist
-        img_list = []
-        if (mtp_capability & 0x1):
-            for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                if stage in (
-                    FF_Stage.FF_DL,
-                    FF_Stage.FF_P2C,
-                    FF_Stage.FF_4C_L,
-                    FF_Stage.FF_4C_H,
-                    FF_Stage.FF_2C_L,
-                    FF_Stage.FF_2C_H,
-                    FF_Stage.FF_ORT,
-                    FF_Stage.FF_RDT):
-                    # CPLD and diagfw images.
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.diagfw_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                        pass
-
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.diagfw_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
-                        return False
-                elif stage == FF_Stage.FF_CFG:
-                    # CPLD image
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                elif stage == FF_Stage.FF_SWI:
-                    # Secure CPLD and goldfw images
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.sec_cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.goldfw_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                        pass
-
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_version = NIC_IMAGES.sec_cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.sec_cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.goldfw_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
-                        return False
-                else:
-                    # no images needed in this stage
-                    continue
-
-        if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                if stage == FF_Stage.FF_DL:
-                    # CPLD, failsafe, feature row and diagfw images
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.diagfw_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
-                            img = NIC_IMAGES.fail_cpld_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type in ELBA_NIC_TYPE_LIST and card_type not in FPGA_TYPE_LIST:
-                            img = NIC_IMAGES.fea_cpld_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing feature row image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type in FPGA_TYPE_LIST:
-                            img = NIC_IMAGES.timer1_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing timer1 image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type in FPGA_TYPE_LIST:
-                            img = NIC_IMAGES.timer2_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing timer2 image for {:s}".format(card_type))
-                        pass
-
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.diagfw_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
-                            expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
-                            if expected_timestamp.strip() == "":
-                                raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
-                        pass
-                elif stage in (
-                    FF_Stage.FF_P2C,
-                    FF_Stage.FF_4C_L,
-                    FF_Stage.FF_4C_H,
-                    FF_Stage.FF_2C_L,
-                    FF_Stage.FF_2C_H,
-                    FF_Stage.FF_ORT,
-                    FF_Stage.FF_RDT):
-                    # CPLD, failsafe, feature row and diagfw images
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.diagfw_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-                        pass
-
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.diagfw_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing diagfw timestamp for {:s}".format(card_type))
-                        return False
-                elif stage == FF_Stage.FF_CFG:
-                    # CPLD image
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                elif stage == FF_Stage.FF_SWI:
-                    # CPLD, Secure CPLD and goldfw images. Failsafe for Elba cards.
-                    try:
-                        img = NIC_IMAGES.cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.sec_cpld_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
-                            img = NIC_IMAGES.fail_cpld_img[card_type]
-                            if img.strip() == "":
-                                raise KeyError
-                            img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld image for {:s}".format(card_type))
-                        pass
-                    try:
-                        img = NIC_IMAGES.goldfw_img[card_type]
-                        if img.strip() == "":
-                            raise KeyError
-                        img_list.append(img)
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing goldfw image for {:s}".format(card_type))
-                        pass
-                    # In addition to images, check the version & timestamp fields as well here
-                    try:
-                        expected_version = NIC_IMAGES.cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_version = NIC_IMAGES.sec_cpld_ver[card_type]
-                        if expected_version.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld version for {:s}".format(card_type))
-                        return False
-                    try:
-                        expected_timestamp = NIC_IMAGES.sec_cpld_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing sec_cpld timestamp for {:s}".format(card_type))
-                        return False
-                    try:
-                        if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
-                            expected_timestamp = NIC_IMAGES.fail_cpld_dat[card_type]
-                            if expected_timestamp.strip() == "":
-                                raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing failsafe cpld timestamp for {:s}".format(card_type))
-                        pass
-                    try:
-                        expected_timestamp = NIC_IMAGES.goldfw_dat[card_type]
-                        if expected_timestamp.strip() == "":
-                            raise KeyError
-                    except KeyError:
-                        self.cli_log_err("mfg_cfg is missing goldfw timestamp for {:s}".format(card_type))
-                        return False
-
-                else:
-                    # no images needed in this stage
-                    continue
-
-        cmd = "ls {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
-            return False
-        cmd_buf = self.mtp_get_cmd_buf()
-        for img_file in img_list:
-            if not os.path.basename(img_file) in cmd_buf:
-                self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
-                return False
-
         self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
-        # naples100 dsp check
-#        self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
-#        naples100_dsp_list = naples100_test_db.get_diag_seq_dsp_list()
-#        naples100_dsp_list += naples100_test_db.get_diag_para_dsp_list()
-#        for dsp in naples100_dsp_list:
-#            if dsp not in self._mgmt_handle.before:
-#                self.cli_log_err("Diag DSP: {:s} is not detected".format(dsp), level = 0)
-#                return False
-#        self.cli_log_inf("Diag DSP Sanity Check Complete", level = 0)
-
         return True
 
 
@@ -2675,26 +2231,7 @@ class mtp_ctrl():
         kernel_timestamp = gold_info[1]
 
         nic_type = self.mtp_get_nic_type(slot)
-
-        try:
-            expected_timestamp = NIC_IMAGES.goldfw_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0015"]
-            if nic_type == NIC_Type.ORTANO2ADI and self.mtp_is_nic_ortanoadi_oracle(slot):
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0034"]
-            if nic_type == NIC_Type.ORTANO2ADICR:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0049"]
-            if nic_type == NIC_Type.ORTANO2ADICRMSFT:
-                expected_timestamp = NIC_IMAGES.goldfw_dat["68-0091"]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.goldfw_dat[self.mtp_lookup_nic_swm_type(slot)]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing goldfw timestamp for {:s}".format(nic_type))
-            return False
+        expected_timestamp = image_control.get_goldfw(self, nic_type, FF_Stage.FF_SWI)["timestamp"]
 
         if ( boot_image != "goldfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
@@ -3422,44 +2959,13 @@ class mtp_ctrl():
             return False
         cur_ver = nic_cpld_info[0]
         cur_timestamp = nic_cpld_info[1]
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_version = NIC_IMAGES.cpld_ver["P41854"]
-            if nic_type in NIC_Type.ORTANO2ADI and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
-            if nic_type in NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0028"]
-            if nic_type in NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0028"]
-            if nic_type in NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+        expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
 
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3531,16 +3037,8 @@ class mtp_ctrl():
         #     return False
         # cur_ver = nic_cpld_info[0]
         # cur_timestamp = nic_cpld_info[1]
-        # try:
-        #     expected_version = NIC_IMAGES.cpld_ver[nic_type]
-        # except KeyError:
-        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-        #     return False
-        # try:
-        #     expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-        # except KeyError:
-        #     self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-        #     return False
+        # expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        # expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
 
         # if nic_type in self._proto_type_list:
         #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3552,10 +3050,10 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
         }
         program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
         
@@ -3591,10 +3089,10 @@ class mtp_ctrl():
             return False
 
         partition_img_dict = {
-            "cfg0": NIC_IMAGES.cpld_img[nic_type],
-            "cfg1": NIC_IMAGES.fail_cpld_img[nic_type],
-            "cfg2": NIC_IMAGES.timer1_img[nic_type],
-            "cfg3": NIC_IMAGES.timer2_img[nic_type]
+            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
@@ -3619,7 +3117,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "No feature row update for Proto NIC")
             return True
 
-        cpld_img = "/home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
+        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
@@ -3683,7 +3181,7 @@ class mtp_ctrl():
 
         fea_regex = r"00000000  (.*)  \|.*\|" #first 16 bytes
 
-        cmd = "hexdump -C /home/diag/"+NIC_IMAGES.fea_cpld_img[nic_type]
+        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -3781,83 +3279,15 @@ class mtp_ctrl():
         cur_timestamp = nic_cpld_info[1]
         nic_type = self.mtp_get_nic_type(slot)
 
-        try:
-            expected_version = NIC_IMAGES.cpld_ver[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_version = NIC_IMAGES.cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_version = NIC_IMAGES.cpld_ver["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_version = NIC_IMAGES.cpld_ver["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-            return False
-        try:
-            expected_timestamp = NIC_IMAGES.cpld_dat[nic_type]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-            if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                expected_timestamp = NIC_IMAGES.cpld_dat["P41854"]
-            if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0034"]
-            if nic_type in NIC_Type.ORTANO2ADICR and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0049"]
-            if nic_type in NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                expected_timestamp = NIC_IMAGES.cpld_dat["68-0091"]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-            return False
+        if dl_step:
+            stage = FF_Stage.FF_DL
+        else:
+            stage = FF_Stage.FF_SWI
+        expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
         if sec_cpld:
-            try:
-                expected_version = NIC_IMAGES.sec_cpld_ver[nic_type]
-                if nic_type == NIC_Type.NAPLES25SWM:
-                    expected_version = NIC_IMAGES.sec_cpld_ver[self.mtp_lookup_nic_swm_type(slot)]
-                if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                    expected_version = NIC_IMAGES.sec_cpld_ver["P41854"]
-                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0026"]
-                if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0028"]
-                if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0034"]
-                if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0049"]
-                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                    expected_version = NIC_IMAGES.sec_cpld_ver["68-0091"]
-            except KeyError:
-                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD version for {:s}".format(nic_type))
-                return False
-            try:
-                expected_timestamp = NIC_IMAGES.sec_cpld_dat[nic_type]
-                if nic_type == NIC_Type.NAPLES25SWM:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat[self.mtp_lookup_nic_swm_type(slot)]
-                if nic_type == NIC_Type.NAPLES100HPE and self.mtp_is_nic_cloud(slot):
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["P41854"]
-                if nic_type == NIC_Type.ORTANO2ADI and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0026"]
-                if nic_type == NIC_Type.ORTANO2ADIIBM and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0028"]
-                if nic_type == NIC_Type.ORTANO2ADIMSFT and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0034"]
-                if nic_type == NIC_Type.ORTANO2ADICR and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0049"]
-                if nic_type == NIC_Type.ORTANO2ADICRMSFT and not dl_step:
-                    expected_timestamp = NIC_IMAGES.sec_cpld_dat["68-0091"]
-            except KeyError:
-                self.cli_log_slot_err_lock(slot, "mfg_cfg is missing CPLD timestamp for {:s}".format(nic_type))
-                return False
+            expected_version   = image_control.get_sec_cpld(self, nic_type, stage)["version"]
+            expected_timestamp = image_control.get_sec_cpld(self, nic_type, stage)["timestamp"]
 
         if cur_ver != expected_version or (timestamp_check and cur_timestamp != expected_timestamp):
                 self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
@@ -3903,6 +3333,25 @@ class mtp_ctrl():
             
         return True
 
+    def mtp_compare_nic_cpld_img(self, slot, cpld_img, partition):
+        if not self._nic_ctrl_list[slot].nic_copy_cpld_img(cpld_img):
+            self.cli_log_slot_inf_lock(slot, "Copy NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        dump_cpld_image_path = "/tmp_{:s}_cpld_image.bin".format(partition)
+        if not self._nic_ctrl_list[slot].nic_dump_cpld(partition, file_path=dump_cpld_image_path):
+            self.cli_log_slot_inf_lock(slot, "Dump NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_compare_cpld_file(cpld_img, dump_cpld_image_path, partition):
+            self.cli_log_slot_inf_lock(slot, "Compare NIC cpld image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
     def mtp_program_nic_gold(self, slot, gold_img):
         if not self._nic_ctrl_list[slot].nic_program_gold(gold_img):
             self.cli_log_slot_inf_lock(slot, "Program NIC goldfw failed")
@@ -3933,18 +3382,7 @@ class mtp_ctrl():
         boot_image = qspi_info[0]
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
-
-        try:
-            expected_timestamp = NIC_IMAGES.diagfw_dat[nic_type]
-            if nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_oracle(slot):
-                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0015"]
-            if nic_type == NIC_Type.NAPLES25OCP and self.mtp_is_nic_ocp_dell(slot):
-                expected_timestamp = NIC_IMAGES.diagfw_dat["68-0010"]
-            if nic_type == NIC_Type.NAPLES25SWM:
-                expected_timestamp = NIC_IMAGES.diagfw_dat[self.mtp_lookup_nic_swm_type(slot)]
-        except KeyError:
-            self.cli_log_slot_err_lock(slot, "mfg_cfg is missing diagfw timestamp for {:s}".format(nic_type))
-            return False
+        expected_timestamp = image_control.get_diagfw(self, nic_type, FF_Stage.FF_DL)["timestamp"]
 
         if ( boot_image != "diagfw" ):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
@@ -4077,6 +3515,7 @@ class mtp_ctrl():
         return True
 
 
+    @test_utils.parallel_threaded_test
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         self.cli_log_slot_inf(slot, "Collecting NIC diag logfiles")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
@@ -4101,7 +3540,7 @@ class mtp_ctrl():
         # if rslt == "TIMEOUT":
         # if dsp_timeout_sig in rslt_cmd_buf:
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
-        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
+        self.log_nic_file(slot, "#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -4147,7 +3586,7 @@ class mtp_ctrl():
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
-        self._nic_ctrl_list[slot].mtp_exec_cmd("#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
+        self.log_nic_file(slot, "#######= {:s} =#######".format("END post dsp {:s} fail debug".format(test)))
 
         return ret
 
@@ -4469,7 +3908,7 @@ class mtp_ctrl():
         self.cli_log_inf("End MTP NIC Info Dump")
 
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, skip_nic_pn_init=False):
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None):
         self.cli_log_inf("Init NICs in the MTP Chassis", level = 0)
 
         # open ssh session to each NIC
@@ -4481,11 +3920,11 @@ class mtp_ctrl():
 
         # init nic present list
         if stage == FF_Stage.FF_FST:
-            if not self.fst_init_nic_type():
+            if not self.fst_init_nic_type(scanned_fru):
                 self.cli_log_inf("Failed to init NICs in the FST", level = 0)
                 return False
         else:
-            if not self.mtp_init_nic_type(stage, skip_nic_pn_init=skip_nic_pn_init):
+            if not self.mtp_init_nic_type(stage, scanned_fru):
                 self.cli_log_inf("Failed to init NICs in the MTP Chassis", level = 0)
                 return False
 
@@ -4613,7 +4052,7 @@ class mtp_ctrl():
         duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
 
         if not ret:
-            libmfg_utils.post_fail_steps(self, slot)
+            self.mtp_set_nic_status_fail(slot)
 
         return ret
 
@@ -5174,7 +4613,7 @@ class mtp_ctrl():
         ts_record = libmfg_utils.timestamp_snapshot()
         for slot in range(self._slots):
             if self._nic_ctrl_list[slot]:
-                self._nic_ctrl_list[slot].mtp_exec_cmd("#####  Power on NIC at {:s} #####".format(str(ts_record)))
+                self.log_nic_file(slot, "#####  Power on NIC #####")
 
         if count_down:
             self.cli_log_inf("Power on all NIC, wait {:02d} seconds for NIC power up".format(MTP_Const.NIC_POWER_ON_DELAY), level=0)
@@ -5216,7 +4655,7 @@ class mtp_ctrl():
         ts_record = libmfg_utils.timestamp_snapshot()
         for slot in range(self._slots):
             if self._nic_ctrl_list[slot]:
-                self._nic_ctrl_list[slot].mtp_exec_cmd("##### Power off NIC at {:s} #####".format(str(ts_record)))
+                self.log_nic_file(slot, "##### Power off NIC #####")
 
         self.cli_log_inf("Power off all NIC, wait {:02d} seconds for NIC power down".format(MTP_Const.NIC_POWER_OFF_DELAY), level=0)
         libmfg_utils.count_down(MTP_Const.NIC_POWER_OFF_DELAY)
@@ -5233,7 +4672,7 @@ class mtp_ctrl():
         if not rc:
             return rc
 
-    def mtp_init_nic_type(self, stage=None, skip_nic_pn_init=False):
+    def mtp_init_nic_type(self, stage=None, scanned_fru=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5287,49 +4726,67 @@ class mtp_ctrl():
         else:
             fru_fpo = False
 
-        if not skip_nic_pn_init:
+        if scanned_fru is None:
             self.cli_log_inf("Init NIC SN, PN")
-            for slot in range(self._slots):
-                if not self._nic_prsnt_list[slot]:
-                    continue
+        else:
+            self.cli_log_inf("Init Scanned NIC SN, PN")
+
+        for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+
+            if scanned_fru is None:
                 if not self.mtp_nic_sn_init(slot, fru_fpo):
                     self.mtp_get_nic_err_msg(slot)
                     self.mtp_dump_nic_err_msg(slot)
                     self.mtp_set_nic_status_fail(slot)
                     continue
+            else:
+                # In ScanDL, use scanned SN, PN as ground truth
+                mtp_id = self._id
+                key = libmfg_utils.nic_key(slot)
+                valid = scanned_fru[mtp_id][key]["VALID"]
+                if str.upper(valid) != "YES":
+                    self.cli_log_slot_err(slot, "Missing scan for this slot. Could not initialize.")
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
+                pn = scanned_fru[mtp_id][key]["PN"]
+                sn = scanned_fru[mtp_id][key]["SN"]
+                self.mtp_set_nic_sn(slot, sn)
+                self.mtp_set_nic_pn(slot, pn)
 
-            # set final nic_type
-            for slot in range(self._slots):
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADI
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADIIBM
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADIMSFT
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLO
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOMSFT
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2SOLOALI
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
-                    pn = self.mtp_get_nic_pn(slot)
-                    if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADICR
-                    elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
-                        final_nic_type = NIC_Type.ORTANO2ADICRMSFT
-                    self._nic_type_list[slot] = final_nic_type
-                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+        # set final nic_type
+        for slot in range(self._slots):
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADI
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIIBM
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADIMSFT
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLO
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOORCTHS
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOMSFT
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2SOLOALI
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADICR
+                elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
+                    final_nic_type = NIC_Type.ORTANO2ADICRMSFT
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
 
         # populate OCP adapter info
         for slot in range(self._slots):
@@ -5339,7 +4796,7 @@ class mtp_ctrl():
 
         return True
 
-    def fst_init_nic_type(self):
+    def fst_init_nic_type(self, scanned_fru=None):
         """
             Search lspci for DSCs
             And assign slot # in the order it appears in lspci
@@ -5359,9 +4816,46 @@ class mtp_ctrl():
             self.cli_log_err("No devices found")
             return False
 
+        if scanned_fru:
+            # build scanned serial number to scanned nic slot id mapping table
+            sn2slot = dict()
+            for slot in range(self._slots):
+                key = libmfg_utils.nic_key(slot)
+                if scanned_fru[key]["VALID"] == "Yes":
+                    sn2slot[scanned_fru[key]["SN"]] = slot
+
+            # Map to Scaned slot id by card serial number
+            phy_present_slot_list = []
+            phy_present_sn_list = []
+            for bus in bus_list_match:
+                cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    return False
+                result = self.mtp_get_cmd_buf()
+                sn_match = re.search("Serial number: *([A-Z0-9]*)", result)
+                if sn_match:
+                    sn = sn_match.group(1)
+                    if sn not in sn2slot:
+                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Abort".format(sn), level=0)
+                        return False
+                    phy_slot = sn2slot[sn]
+                    phy_present_slot_list.append(phy_slot)
+                    phy_present_sn_list.append(sn)
+
+            # Validate if there is scanned card not physical present
+            for sn in sn2slot:
+                if sn not in phy_present_sn_list:
+                    key = libmfg_utils.nic_key(slot)
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Abort".format(key, sn), level=0)
+                    return False
+            if not phy_present_slot_list:
+                phy_present_slot_list = range(len(bus_list_match))
+        else:
+            phy_present_slot_list = range(len(bus_list_match))
+
         self.cli_log_inf("Found {:d} devices".format(len(bus_list_match)))
         self.cli_log_inf("Init NIC SN, PN")
-        for slot, bus in enumerate(bus_list_match):
+        for slot, bus in zip(phy_present_slot_list, bus_list_match):
             if not self._slots_to_skip[slot]:
                 self._nic_prsnt_list[slot] = True
                 self._nic_ctrl_list[slot]._fst_pcie_bus = bus
@@ -5489,57 +4983,6 @@ class mtp_ctrl():
         else:
             return False
 
-    def mtp_is_nic_ocp_dell(self, slot):
-        """
-         Differentiate OCP by PN
-         - 68-0010: Dell version -> return True
-         - P37689-001: HPE version -> return False
-         - any other -> return False with err msg
-        """
-        if self._nic_type_list[slot] != NIC_Type.NAPLES25OCP:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for OCP")
-            return False
-        slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for OCP: ".format(slot_pn))
-            return False
-        nic_pn = re.match(PART_NUMBERS_MATCH.N25_OCP_DEL_PN_FMT, slot_pn)
-        if nic_pn:
-            return True
-        else:
-            return False
-
-    def mtp_lookup_nic_swm_type(self, slot, slot_pn=None):
-        """
-         Differentiate SWM cards by PN
-
-            PN : lookup
-            -----------
-            P26968-001 : NAPLES25SWM
-            P41851-001 : P41851
-            P46653-001 : P46653
-            68-0016-XX XX : 68-0016
-            68-0017-XX XX : 68-0016
-            else : nic_type
-        """
-        if slot_pn is None:
-            slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for SWM: ".format(slot_pn))
-            return slot_pn
-
-        if self._nic_type_list[slot] != NIC_Type.NAPLES25SWM:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for SWM")
-            return slot_pn
-
-        swm_skus = ("P26968", "P41851", "P46653", "68-0016", "68-0017")
-        for sku in swm_skus:
-            if sku in slot_pn:
-                if sku == "P26968":
-                    return "NAPLES25SWM"
-                else:
-                    return sku
-
     def mtp_nic_erase_board_config(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_board_config():
             self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
@@ -5579,6 +5022,15 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC board config cert")
         return True
 
+    def mtp_mgmt_nic_secboot_verify(self, slot):
+        if not self._nic_ctrl_list[slot].nic_secboot_verify():
+            self.cli_log_slot_err(slot, "NIC secure boot check failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "NIC secure boot check passed")
+        return True
+
     def mtp_mgmt_nic_cfg_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_cfg_verify():
             self.cli_log_slot_err(slot, "NIC cfg compare failed")
@@ -5587,20 +5039,6 @@ class mtp_ctrl():
 
         self.cli_log_slot_inf(slot, "NIC cfg compare passed")
         return True
-
-    def mtp_is_nic_cloud(self, slot):
-        if self._nic_type_list[slot] != NIC_Type.NAPLES100HPE:
-            self.cli_log_slot_err_lock(slot, "Should not be here - this function only for HPE")
-            return False
-        slot_pn = self.mtp_get_nic_pn(slot)
-        if not slot_pn:
-            self.cli_log_slot_err_lock(slot, "Unknown PN for HPE: ".format(slot_pn))
-            return False
-        nic_pn = re.match(PART_NUMBERS_MATCH.N100_HPE_CLD_PN_FMT, slot_pn)
-        if nic_pn:
-            return True
-        else:
-            return False
 
     def mtp_get_nic_sw_pn(self, slot):
         if self._nic_sw_pn_list[slot] is None:
@@ -5650,6 +5088,11 @@ class mtp_ctrl():
 
             self.cli_log_slot_err(slot, "'{:s}' PN not valid for this script folder".format(pn))
             return False
+
+    @test_utils.semi_parallel_test_section
+    def mtp_nic_list_type_test(self, slot):
+        # same as mtp_nic_type_test but call on a nic_list instead of single slot
+        return self.mtp_nic_type_test(slot)
 
     def mtp_nic_type_test(self, slot):
         type_check = self.mtp_nic_type_valid(slot)
@@ -5895,6 +5338,8 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
+            elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, vmarg)
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
 
@@ -5909,7 +5354,10 @@ class mtp_ctrl():
                 self.cli_log_err("Incorrect test for this NIC TYPE")
                 return ["FAIL", nic_list[:]]
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                if nic_type in ELBA_NIC_TYPE_LIST:
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, vmarg)
                 # 2C/4C = internal loopback
                 if vmarg != Voltage_Margin.normal:
                     cmd += " -int_lpbk"
@@ -5936,15 +5384,24 @@ class mtp_ctrl():
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
             return ["TIMEOUT", nic_list[:]]
         ret = "SUCCESS"
+        cmd_buf = self.mtp_get_cmd_buf()
+        buf_before_sig = self.mtp_get_cmd_buf_before_sig()
 
-        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
+        self.nic_semi_parallel_log(nic_list, buf_before_sig)
 
-        match = re.findall(r"Slot (\d+) ?: +(\w+)", self.mtp_get_cmd_buf())
+        match = re.findall(r"Slot (\d+) ?: +(\w+)", cmd_buf)
+
+        rslt_list = [False] * MTP_Const.MTP_SLOT_NUM # fail any slots whose result is not captured
         for _slot, rslt in match:
             slot = int(_slot) - 1
-            if (rslt != "PASS" and rslt != "PASSED") and slot not in nic_fail_list:
-                nic_fail_list.append(slot)
-                ret = "FAIL"
+            if (rslt == "PASS" or rslt == "PASSED"):
+                rslt_list[slot] = True
+
+        for slot in nic_list:
+            if not rslt_list[slot]:
+                if slot not in nic_fail_list:
+                    nic_fail_list.append(slot)
+                    ret = "FAIL"
 
         return [ret, nic_fail_list]
 
@@ -5961,10 +5418,10 @@ class mtp_ctrl():
 
         if test == "RMII_LINKUP":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, vmarg)
-            sig_list = "rmii_linkup_test done"
+            sig_list = ["rmii_linkup_test done"]
         elif test == "UART_LPBACK":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, vmarg)
-            sig_list = "uart_loopback_test done"
+            sig_list = ["uart_loopback_test done"]
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
@@ -6423,9 +5880,8 @@ class mtp_ctrl():
         # on mtp_diag.log
         if slot is None:
             ts = libmfg_utils.timestamp_snapshot()
-            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-            self.mtp_mgmt_exec_cmd(ts_record_cmd)
+            ts_record_cmd = "#######= RESET I2C HUB =#######"
+            self.log_mtp_file(ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd(cmd)
@@ -6442,9 +5898,8 @@ class mtp_ctrl():
         # on mtp_NIC*_diag.log
         else:
             ts = libmfg_utils.timestamp_snapshot()
-            ts_record = "{:s} - at {:s}".format("RESET I2C HUB", str(ts))
-            ts_record_cmd = "#######= {:s} =#######".format(ts_record)
-            self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+            ts_record_cmd = "#######= RESET I2C HUB =#######"
+            self.log_nic_file(slot, ts_record_cmd)
 
             cmd = MFG_DIAG_CMDS.MTP_CPLD_WRITE_FMT.format(0x2, 0xf)
             self.mtp_mgmt_exec_cmd_para(slot, cmd)
@@ -6489,7 +5944,7 @@ class mtp_ctrl():
         self.mtp_nic_console_unlock()
 
 
-    def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None):
+    def mtp_run_diag_test_para(self, slot, diag_cmd, rslt_cmd, test, init_cmd=None, post_cmd=None, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
         # init command
         if init_cmd:
             if not self.mtp_mgmt_exec_cmd_para(slot, init_cmd):
@@ -6497,7 +5952,7 @@ class mtp_ctrl():
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         # run diag test
-        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT):
+        if not self.mtp_mgmt_exec_cmd_para(slot, diag_cmd, timeout=timeout):
             err_msg = self.mtp_get_nic_err_msg(slot)
             return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
@@ -6521,7 +5976,7 @@ class mtp_ctrl():
         return [ret, err_msg_list]
 
 
-    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False):
+    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False, is_fst_test=False):
         mtp_scan_rslt = dict()
         mtp_ts_snapshot = libmfg_utils.get_timestamp()
         mtp_scan_rslt["MTP_ID"] = self._id
@@ -6533,6 +5988,7 @@ class mtp_ctrl():
         scan_sn_list = list()
         scan_mac_list = list()
         scan_atom_sn_list = list()
+        scan_rot_sn_list = list()
         slot_num = 1
 
         # build all valid nic key list
@@ -6543,6 +5999,11 @@ class mtp_ctrl():
                 unscanned_nic_key_list.append(key)
 
         while True:
+            if len(scan_nic_key_list) == self._slots:
+                print("\033[1;93m")
+                libmfg_utils.cli_log_inf(self._filep, "!!! NO More Available Slot, Please Scan STOP !!!")
+                print("\033[0m")
+
             if present_check:
                 unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
                 usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
@@ -6591,6 +6052,7 @@ class mtp_ctrl():
                 sn_scanned = False
                 mac_scanned = False
                 pn_scanned = False
+                rot_scanned = False
                 while not sn_scanned:
                     usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
                     raw_scan = raw_input(usr_prompt)
@@ -6642,6 +6104,28 @@ class mtp_ctrl():
                         #return None
                     else:
                         pn_scanned = True
+
+                #Scan ROT cable if FST Station
+                if is_fst_test:
+                    if libmfg_utils.part_number_match_rot_require_list(pn):
+                        while not rot_scanned:
+                            usr_prompt = "Please Scan {:s} ROT Cable Barcode:".format(key)
+                            rot_sn = raw_input(usr_prompt).strip()
+                            if not rot_sn:
+                                continue
+                            if not libmfg_utils.rot_cable_serial_number_validate(rot_sn):
+                                self.cli_log_err("Invalid ROT Cable SN: {:s}, please re-scan\n".format(rot_sn), level=0)
+                            elif rot_sn in scan_rot_sn_list:
+                                self.cli_log_err("ROT Cable: {:s} has already scanned, please re-scan\n".format(rot_sn), level=0)
+                            else:
+                                scan_rot_sn_list.append(rot_sn)
+                                rot_scanned = True
+                        nic_scan_rslt["ROTSN"] = rot_sn
+                    else:
+                        print("\033[1;92m")
+                        libmfg_utils.cli_log_inf(self._filep, "!!! NO NEED ROT CABLE FOR THIS CARD TYPE !!!")
+                        print("\033[0m")
+
                 #Scan ALOM SN Loop
                 alom_sn = None
                 alom_pn = None
@@ -6754,7 +6238,10 @@ class mtp_ctrl():
                     config_lines.append(tmp)
                     tmp = "        PN_ALOM: \"" + scan_rslt[key]["PN_ALOM"] + "\""
                     config_lines.append(tmp)
-
+                rot_sn = scan_rslt[key].get("ROTSN", "")
+                if rot_sn:
+                    tmp = '        ROTSN: "' + rot_sn + '"'
+                    config_lines.append(tmp)
             else:
                 tmp = "        VALID: \"No\""
                 config_lines.append(tmp)
@@ -7444,10 +6931,10 @@ class mtp_ctrl():
         eth = cmd_buf.splitlines()[-1].strip()
         if not cmd_buf or "grep" in eth:
             self.cli_log_slot_err(slot, "Unable to find ethernet interface for PCI device {:s}".format(bus))
-            self.mtp_mgmt_exec_cmd_para(slot, "#############= FA DUMP =#############")
+            self.log_nic_file(slot, "#############= FA DUMP =#############")
             self.mtp_mgmt_exec_cmd_para(slot, "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent")
             self.mtp_mgmt_exec_cmd_para(slot, "lshw -c network -businfo")
-            self.mtp_mgmt_exec_cmd_para(slot, "#############= END FA DUMP =#############")
+            self.log_nic_file(slot, "#############= END FA DUMP =#############")
             return ""
         self._nic_ctrl_list[slot]._fst_eth_mnic = eth
 
@@ -7708,7 +7195,7 @@ class mtp_ctrl():
 
     def fst_board_config(self, slot):
         ### SET BOARD CONFIG
-        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -G 1 -F 1 -O 1'"
+        cmd = "'export LD_LIBRARY_PATH=$LD_LIBRAY_PATH:/nic/lib;/nic/bin/board_config -G 1 -F 0 -O 1'"
         if not self.mtp_nic_fst_exec_cmd(slot, cmd):
             self.cli_log_slot_err(slot, "failed to set board config")
             return False
@@ -7722,7 +7209,7 @@ class mtp_ctrl():
         ### VERIFY BOARD CONFIG
         buf = self.mtp_get_nic_cmd_buf(slot)
         match = re.findall(r"(gold_on_stop\s+1)", buf)
-        match1 = re.findall(r"(gold_no_hostif\s+1)", buf)
+        match1 = re.findall(r"(gold_no_hostif\s+0)", buf)
         match2 = re.findall(r"(gold_oob\s+1)", buf)
         if not match or not match1 or not match2:
             self.cli_log_slot_err(slot, "board config verify failed")

@@ -125,6 +125,11 @@ class nic_ctrl():
     def nic_clear_fa(self):
         self._nic_missed_fa = False
 
+    def nic_hide_prompt(self, cmd_buf):
+        # "[timestamp] root# abcd" --> "# abcd"
+        prompt_rgx = r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\] '+NIC_MGMT_USERNAME
+        return re.split(prompt_rgx, cmd_buf)[0]
+
     def nic_set_asic_type(self):
         if self._nic_type == None:
             self._asic_type = None
@@ -164,7 +169,7 @@ class nic_ctrl():
         return False if timeout, otherwise return True
         """
 
-        self._nic_handle.sendline('PS1="[$(date +%Y-%m-%d_)\\t]\u' + self._nic_con_prompt + '"')
+        self._nic_handle.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u' + self._nic_con_prompt + '"')
         idx = libmfg_utils.mfg_expect(self._nic_handle, [("root" + self._nic_con_prompt)], timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -342,7 +347,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             info_buf = None
         else:
-            info_buf = re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', self._nic_handle.before)[0]
+            info_buf = self.nic_hide_prompt(self._nic_handle.before)
 
         cmd = "exit"
         if not self.mtp_exec_cmd(cmd):
@@ -436,11 +441,6 @@ class nic_ctrl():
 
         # Check if there is still got picocom process running
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_CHECK_PICOCOM_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
-
-        con_ts = libmfg_utils.timestamp_snapshot()
-        ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
-        self._nic_handle.sendline(ts_record_cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
@@ -756,6 +756,36 @@ class nic_ctrl():
 
         return True
 
+    def nic_secboot_verify(self):
+        if not self.nic_console_attach():
+            self.nic_set_err_msg("Unable to connect to NIC console")
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # send bash command elba-chk-secboot-rdy.sh and it's leading commands
+        nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS.NIC_CHK_SECBOOT_FMT]
+        for nic_cmd in nic_secboot_verify_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            if idx < 0:
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                self.nic_console_detach()
+                return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"SUCCESS", buf)
+        if not match:
+            self.nic_console_detach()
+            return False          
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
+
     def nic_cfg_verify(self):
         if not self.nic_console_attach():
             self.nic_set_err_msg("Unable to connect to NIC console")
@@ -789,15 +819,6 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg0", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg0")
-            self.nic_console_detach()
-            return False
-        cfg0_md5sum = match[0]
-
         # md5sum cfg1
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
@@ -807,28 +828,12 @@ class nic_ctrl():
             self.nic_console_detach()
             return False
 
-        # remove the potential special character
-        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-        match = re.findall(r"([0-9a-f]{32})\s+cfg1", buf)
-        if not match:
-            self.nic_set_err_msg("Unable to get md5sum value for cfg1")
-            self.nic_console_detach()
-            return False
-        cfg1_md5sum = match[0]
-
-        if cfg0_md5sum != cfg1_md5sum:
-            self.nic_set_err_msg("cfg0 md5sum {:s} don't match cfg1 md5sum {:s}".format(cfg0_md5sum, cfg1_md5sum))
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False            
-
         # detach the console connection
         if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
-
 
     def nic_set_diag_boot(self):
         if not self.nic_console_attach():
@@ -2029,6 +2034,34 @@ class nic_ctrl():
 
         return True
 
+    def nic_dump_cpld(self, partition, file_path="/home/diag/cplddump"):
+        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, file_path, partition)
+        nic_cmd_list = list()
+        nic_cmd_list.append(cmd)
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+            return False
+
+        return True
+
+    def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
+        nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not self.nic_exec_cmds(nic_cmd_list):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        # check fail
+        buf_line = cmd_buf.split('\n')
+        if len(buf_line) > 3:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+        else:
+            if "EOF" in cmd_buf or "cmp:" in cmd_buf:
+                self.nic_set_status(NIC_Satus.NIC_STA_MGMT_FAIL)
+                return False
+
+        return True
+
     def nic_verify_sec_cpld(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
@@ -2196,6 +2229,12 @@ class nic_ctrl():
             return False
 
         self.nic_boot_info_reset()
+
+        return True
+
+    def nic_copy_cpld_img(self, cpld_img):
+        if not self.nic_copy_image(cpld_img):
+            return False
 
         return True
 
@@ -2639,7 +2678,10 @@ class nic_ctrl():
             self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
             return False
 
-        self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
+        if self._nic_type in GIGLIO_NIC_TYPE_LIST:
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/giglio/ -d3"])
+        else:
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
 
         # get emmc nic utils version
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT
@@ -5003,7 +5045,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
+                fw_info = json.loads(r'{}'.format(self.nic_hide_prompt(cmd_buf.split("fwupdate -l")[1])))
 
                 if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
@@ -5077,8 +5119,7 @@ class nic_ctrl():
                 return False
         
             try:
-                fw_info = json.loads(r'{}'.format(re.split(r'\[\d{4}-\d{1,2}-\d{1,2}_\d{1,2}:\d{1,2}.*\]root', cmd_buf.split("fwupdate -l")[1])[0]))
-
+                fw_info = json.loads(r'{}'.format(self.nic_hide_prompt(cmd_buf.split("fwupdate -l")[1])))
                 if 'extosa' not in fw_info:
                     self.nic_set_err_msg("Missing extosa image")
                     self.nic_console_detach()

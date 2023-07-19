@@ -81,6 +81,7 @@ func ReadStatus(devName string) (status uint16, err int) {
 
 //Read target voltage from VOUT 
 func ReadVin(devName string) (integer uint64, dec uint64, err int) {
+    var VMODE byte
     var VIN uint16
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -91,7 +92,10 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
 
     VIN, err = pmbus.ReadWord(devName, READ_VIN)
 
-    integer, dec, err =  pmbus.Linear11(VIN)
+    VMODE, err = pmbus.ReadByte(devName, VOUT_MODE)
+    VMODE = VMODE & 0x1F  //mask exponent
+
+    integer, dec, err =  pmbus.Linear16(uint64(VMODE), VIN)//pmbus.Convert_vr13_5mvVID(VOUT)
 
     return
 }
@@ -228,6 +232,7 @@ func StrIsAscii(s string ) bool {
 
 func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
     var psuNumber uint32 = 0
+    var i byte = 0
     wrData := []byte{}
     mfgId := []byte{}
     mfgRev := []byte{}
@@ -300,9 +305,15 @@ func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
         err = errType.FAIL
         return
     }
-    if len(mfgSerial) != MFR_SERIAL_BLK_SIZE + 1 {
+    i = mfgSerial[0]
+    if i < (MFR_SERIAL_BLK_SIZE-6) || i > MFR_SERIAL_BLK_SIZE {
         err = errType.FAIL
-        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgSerial), MFR_SERIAL_BLK_SIZE + 1)
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect %d - Expect=%d for the length", devName, i, (MFR_SERIAL_BLK_SIZE-6), MFR_SERIAL_BLK_SIZE + 1)
+    }
+    //s/n might be less than total block size.. truncate it if it is 
+    if i != MFR_SERIAL_BLK_SIZE {
+        i=i+1
+        mfgSerial = mfgSerial[:i]
     }
 
     wrData[0] = MFR_FW_REVISION
@@ -491,7 +502,7 @@ func GetTemperature(devName string) (temperatures []float64, err int) {
     return
 }
 
-
+// vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
 func DispStatus(devName string) (err int) {
     vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP1", "TEMP2", "TEMP3", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
@@ -536,26 +547,27 @@ func DispStatus(devName string) (err int) {
     //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, err := ReadPout(devName)
+    dig, frac, _ := ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     if err != errType.SUCCESS {
         return;
     }
 
-    dig, frac, _ = ReadVout(devName)
+    dig, frac, err = ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
 
     dig, frac, _ = ReadIout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPin(devName)
+    dig, frac, _ = ReadVin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVin(devName)
+    dig, frac, _ = ReadPin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

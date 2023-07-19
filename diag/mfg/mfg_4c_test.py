@@ -24,12 +24,12 @@ from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
+import test_utils
 
 
 def load_mtp_cfg(cfg_yaml=None):
@@ -41,12 +41,6 @@ def load_mtp_cfg(cfg_yaml=None):
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/4c_mtp_chassis_cfg.yaml"))
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
     return mtp_cfg_db
-
-def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
-    os.system("sync")
 
 def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -62,80 +56,6 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
 
 
-def single_mtp_4c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_list, mtp_test_summary, swm_test_mode, l1_sequence, iteration, skip_test=[], only_test=[], mtpcfg_file=None, mirror_logdir=None):
-    if skip_test:
-        skipped_testlist = " --skip-test {:s}".format('"'+'" "'.join(skip_test).strip()+'"')
-    else:
-        skipped_testlist = ""
-    if only_test:
-        only_testlist = " --only-test {:s}".format('"'+'" "'.join(only_test).strip()+'"')
-    else:
-        only_testlist = ""
-    if fail_nic_list:
-        fail_slots = " --fail-slots "
-        fail_slots += ' '.join(map(str,fail_nic_list))
-    else:
-        fail_slots = ""
-
-    for loop in range(1, iteration+1):
-        if iteration > 1:
-            mtp_mgmt_ctrl.cli_log_inf("4C Test Iteration-{:03d} start".format(loop), level=0)
-
-        mfg_4c_start_ts = libmfg_utils.timestamp_snapshot()
-
-        # go to mtp_regression and Start the regression
-        cmd = "cd {:s}".format(mtp_script_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-        mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-        cmd = "./mtp_diag_regression.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, stage, swm_test_mode)
-        if skip_test:
-            cmd += skipped_testlist
-        if only_test:
-            cmd += only_testlist
-        if fail_slots:
-            cmd += fail_slots
-        if l1_sequence:
-            cmd += " --l1-seq "
-        if mtpcfg_file:
-            cmd += " --mtpcfg " + mtpcfg_file
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
-        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
-        mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
-        if not test_log_file:
-            mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
-            return
-        libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-        if GLB_CFG_MFG_TEST_MODE:
-            libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-        cmd = "rm -rf {:s}".format(test_log_file)
-        os.system(cmd)
-
-        mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
-        libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, mfg_4c_stop_ts - mfg_4c_start_ts))
-
-        libmfg_utils.mfg_summary_disp(stage, {mtp_id: mtp_test_summary}, [])
-
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-
-        if loop != iteration:
-            mtp_mgmt_ctrl.mtp_apc_pwr_on()
-            mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-            libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
-            if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
-                return
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-    return
-
-
 def main():
     parser = argparse.ArgumentParser(description="MFG 4C Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--high-temp", help="high temperature environment", action='store_true')
@@ -149,6 +69,7 @@ def main():
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
 
     verbosity = False
     l1_sequence = False
@@ -219,159 +140,27 @@ def main():
     # power on the mtp chassis
     libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
-    # Connect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="4C-SSH", retry_with_powercycle=True):
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-    # Sync timestamp to server
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        timestamp_str = str(libmfg_utils.timestamp_snapshot())
-        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
-            mtp_mgmt_ctrl.cli_log_err("MTP Chassis timestamp sync failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
-
-    # Check if diag image updated is needed
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        mtp_diag_image = MFG_IMAGE_FILES.MTP_AMD64_IMAGE
-        nic_diag_image = MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if not libmfg_utils.mtp_update_diag_image(mtp_mgmt_ctrl, mtp_diag_image, nic_diag_image, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis diag image", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Diag Image is updated", level=0)
-
-    # load SNs
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_diag_pre_init_start():
-            mtp_mgmt_ctrl.cli_log_err("MTP diag init failed", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
-    # type check
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list[mtp_id]:
-                continue
-            dsp = stage
-            test = "NIC_TYPE"
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-            ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                if slot not in fail_nic_list[mtp_id]:
-                    fail_nic_list[mtp_id].append(slot)
-
-    # Check that firmware images are present
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_dl_image_list = list()
-        mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
-        if (mtp_capability & 0x1):
-            for card_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-        if (mtp_capability & 0x2):
-            for card_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST + ["P41851", "P46653", "68-0016", "68-0017"]:
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.cpld_img[card_type])
-                    if card_type == NIC_Type.NAPLES100HPE:
-                        mtp_dl_image_list.append(NIC_IMAGES.cpld_img["P41854"])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing cpld image for {:s}".format(card_type))
-                try:
-                    mtp_dl_image_list.append(NIC_IMAGES.diagfw_img[card_type])
-                except KeyError:
-                    mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing diagfw image for {:s}".format(card_type))
-
-        mtp_dl_image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
-
-        onboard_image_files = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-        if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, mtp_dl_image_list, onboard_image_files):
-            mtp_mgmt_ctrl.cli_log_err("Unable to update MTP Chassis firmware", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP NIC firmware is updated", level=0)
-
-    # Flex flow 2 Way communication Pre-Post 
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-                if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
-                    pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list[mtp_id], sn, stage, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-
-    # close file handles
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-    for mtp_id in mtpid_fail_list:
-        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-
-    # Copy script, config file on to each MTP Chassis
-    mtp_4c_script_dir = "mtp_regression/"
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_4c_script_pkg = "mtp_regression.{:s}.tar".format(mtp_id)
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_4c_script_dir, mtp_4c_script_pkg, logfile_dir_list[mtp_id], extra_config=mtpcfg_file):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
-
-    # now that file has been packaged into config/, discard full path
-    if mtpcfg_file:
-        mtpcfg_file = os.path.basename(mtpcfg_file)
-
     mtp_thread_list = list()
     mfg_4c_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
         mfg_4c_summary[mtp_id] = list()
-        mtp_thread = threading.Thread(target = single_mtp_4c_test, args = (MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_4c_script_dir,
-                                                                           mtp_mgmt_ctrl,
-                                                                           mtp_id,
-                                                                           stage,
-                                                                           fail_nic_list[mtp_id],
-                                                                           mfg_4c_summary[mtp_id],
-                                                                           swmtestmode,
-                                                                           l1_sequence,
-                                                                           args.iteration,
-                                                                           args.skip_test,
-                                                                           args.only_test,
-                                                                           mtpcfg_file,
-                                                                           args.jobd_logdir))
+        mtp_thread = threading.Thread(target = test_utils.single_mtp_test,
+                                      args = (
+                                                stage,
+                                                mtp_mgmt_ctrl,
+                                                mfg_4c_summary[mtp_id],
+                                                logfile_dir_list[mtp_id],
+                                                open_file_track_mtp_list[mtp_id],
+                                                args.skip_test,
+                                                args.jobd_logdir),
+                                    kwargs = ({
+                                                "mtpcfg_file": mtpcfg_file,
+                                                "testsuite_name": stage,
+                                                "swm_test_mode": swmtestmode,
+                                                "only_test": args.only_test,
+                                                "l1_sequence": l1_sequence,
+                                                "iteration": args.iteration,
+                                                "stop_on_err": args.stop_on_err}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -387,16 +176,13 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+    # power off all the test mtp
+    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+
+    # dump the summary
+    test_result = libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
+
     # print return code for JobD to pick up
-    test_result = True
-    if len(mtpid_fail_list) > 0:
-        test_result = False
-    for mtp_id in mfg_4c_summary.keys():
-        if len(mfg_4c_summary[mtp_id]) == 0:
-            test_result = False
-        for slot, sn, nic_type, rc, retest_blocked in mfg_4c_summary[mtp_id]:
-            if not rc:
-                test_result = False
     if test_result:
         sys.exit(0)
     else:
