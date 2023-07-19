@@ -261,6 +261,28 @@ class nic_con:
         common.session_stop(session)
         return ret
 
+    def power_cycle_multi_via_3v3(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
+        ret = 0
+        session = common.session_start()
+
+        cmd = "turn_on_slot.sh off {}".format(slot_list)
+        common.session_cmd(session, cmd)
+        time.sleep(1)
+        cmd = "turn_on_slot_3v3.sh on {}".format(slot_list)
+        common.session_cmd(session, cmd)
+
+        cmd = "turn_on_slot.sh on {}".format(slot_list)
+        if swm_lp == True:
+            cmd = "".join((cmd, " 1"))
+        common.session_cmd(session, cmd)
+
+        # Wait for nic to boot
+        print "Wait", wtime, "after power cycle"
+        time.sleep(wtime)
+
+        common.session_stop(session)
+        return ret
+
     def power_cycle_12v_multi(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
         ret = 0
         session = common.session_start()

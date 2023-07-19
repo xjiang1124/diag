@@ -42,48 +42,49 @@ class nic_test_v2:
                 cmd = self.fmt_con_cmd.format(self.baud_rate)
                 uart_session.sendline(cmd)
 
-                uart_session = common.session_start()
+                #uart_session = common.session_start()
                 #cmd = self.fmt_con_cmd.format(self.baud_rate)
                 #uart_session.sendline(cmd)
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi_via_3v3(self.baud_rate, slot, wtime=0, swm_lp=False)
 
+                self.nic_con.uart_session_stop(uart_session)
                 ret = self.nic_con.uart_session_start_login(uart_session, self.baud_rate)
-                #self.nic_con.uart_session_stop(uart_session)
+
                 #common.session_stop(uart_session)
 
                 if ret != 0:
                     return -1
                 self.nic_con.uart_session_stop(uart_session)
-                common.session_stop(uart_session)
+                #common.session_stop(uart_session)
 
-                # Winbond prog test
-                uart_session = common.session_start()
-                #ret = self.nic_con.uart_session_start(uart_session, self.baud_rate)
-                try:
-                    cmd = self.fmt_con_cmd.format(self.baud_rate)
-                    uart_session.sendline(cmd)
-                    cmd = 'fwupdate -p /data/naples_gold_elba.tar -i all; sleep 10; echo "DIAGFW PROG DONE"'
-                    cmd = 'date;sleep 10; date; echo "DIAGFW PROG DONE"'
-                    cmd = "source /data/run_prog.sh"
-                    uart_session.timeout=1800
-                    uart_session.sendline(cmd)
-                    uart_session.expect("DIAGFW PROG DONE")
-                    #uart_session.expect("\#")
-                except pexpect.TIMEOUT:
-                    print "DIAGFW PROG FAILED!"
-                    sys.exit(0)
-                continue
+                ## Winbond prog test
+                #uart_session = common.session_start()
+                ##ret = self.nic_con.uart_session_start(uart_session, self.baud_rate)
+                #try:
+                #    cmd = self.fmt_con_cmd.format(self.baud_rate)
+                #    uart_session.sendline(cmd)
+                #    cmd = 'fwupdate -p /data/naples_gold_elba.tar -i all; sleep 10; echo "DIAGFW PROG DONE"'
+                #    cmd = 'date;sleep 10; date; echo "DIAGFW PROG DONE"'
+                #    cmd = "source /data/run_prog.sh"
+                #    uart_session.timeout=1800
+                #    uart_session.sendline(cmd)
+                #    uart_session.expect("DIAGFW PROG DONE")
+                #    #uart_session.expect("\#")
+                #except pexpect.TIMEOUT:
+                #    print "DIAGFW PROG FAILED!"
+                #    sys.exit(0)
+                #continue
 
 
-                ret = self.nic_con.uart_session_cmd(uart_session, cmd, 1800, "DIAGFW PROG DONE")
-                if ret != 0:
-                    return -1
+                #ret = self.nic_con.uart_session_cmd(uart_session, cmd, 1800, "DIAGFW PROG DONE")
+                #if ret != 0:
+                #    return -1
 
-                self.nic_con.uart_session_stop(uart_session)
-                common.session_stop(uart_session)
-                continue
+                #self.nic_con.uart_session_stop(uart_session)
+                #common.session_stop(uart_session)
+                #continue
 
                 # Setup ENV
                 ret = self.nic_test.setup_env(int(slot), False, 30, args.first_pwr_on, False, False)
