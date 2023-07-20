@@ -1569,6 +1569,11 @@ class mtp_ctrl():
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
+        cmd = "touch /dev/prompt"
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_err("{:s} command failed".format(cmd), level=0)
+            return False
+
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -2792,7 +2797,7 @@ class mtp_ctrl():
             if software_pn != "90-0018-0001":
                 return False
         elif naples_pn[0:7] == "68-0028":     #ORTANO2 ADI IBM
-            if software_pn != "90-0016-0003":
+            if software_pn != "90-0016-0004":
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
             if software_pn != "90-0019-0001":
