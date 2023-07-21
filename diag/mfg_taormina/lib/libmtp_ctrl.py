@@ -253,6 +253,25 @@ class mtp_ctrl():
     def cli_log_file(self, msg):
         self._filep.write(msg + "\n")
 
+    def log_mtp_file(self, msg):
+        self._diag_filep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._mgmt_handle:
+            self.mtp_mgmt_exec_cmd("")
+
+    def log_nic_file(self, slot, msg):
+        self._diag_nic_filep_list[slot].write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
+        # extra sendline to clean up log
+        if self._nic_ctrl_list[slot] is not None:
+            if self._nic_ctrl_list[slot]._nic_handle:
+                self._nic_ctrl_list[slot].mtp_exec_cmd("")
+
+    def log_debug_msg(self, msg, slot=None):
+        if slot is None:
+            self.log_mtp_file(">>>DBG {}\nDBG<<<".format(msg))
+        else:
+            self.log_nic_file(slot, ">>>DBG {}\nDBG<<<".format(msg))
+
     def log_slot_test_start(self, slot, testname):
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
@@ -5478,6 +5497,7 @@ class mtp_ctrl():
             # get IP
             if not self.tor_get_ip():
                 self.cli_log_err("Failed to obtain IP", level=0)
+                self.log_debug_msg("cmd_buf: {}".format(self._cmd_buf))
                 return False
 
             # switch to ssh
