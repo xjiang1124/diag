@@ -1934,12 +1934,18 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_diag_log_file = logfile_path + "/mtp_diag.log"
     mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
     mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
+    mtp_console_log_file = logfile_path + "/mtp_console.log"
+    mtp_console_cmd_file = logfile_path + "/mtp_console_cmd.log"
     mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_diag_log_filep)
     mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_diag_cmd_log_filep)
+    mtp_console_log_filep = open(mtp_console_log_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_console_log_filep)
+    mtp_console_cmd_filep = open(mtp_console_cmd_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_console_cmd_filep)
     mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, MODIFIER, buffering=0)
 
     diag_nic_log_filep_list = list()
@@ -1952,6 +1958,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
 
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
+    mtp_mgmt_ctrl._console_filep = mtp_console_log_filep
+    mtp_mgmt_ctrl._console_cmd_filep = mtp_console_cmd_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
 

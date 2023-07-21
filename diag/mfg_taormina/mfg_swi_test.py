@@ -57,7 +57,7 @@ def load_mtp_cfg():
     return mtp_cfg_db
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=False):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=False):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     if telnet:
         mtp_ts_cfg = mtp_cfg_db.get_mtp_console(mtp_id)
@@ -73,7 +73,7 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
     if telnet:
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
     return mtp_mgmt_ctrl
@@ -110,6 +110,11 @@ def single_uut_fw_program(stage,
         diag_log_filep = open(diag_log_file, "w+", buffering=0)
         log_filep_list.append(diag_log_filep)
 
+        console_log_file = log_dir + log_sub_dir + "mtp_console.log"
+        log_file_list.append(console_log_file)
+        console_log_filep = open(console_log_file, "w+", buffering=0)
+        log_filep_list.append(console_log_filep)
+
     diag_nic_log_filep_list = list()
     for slot in range(0,2):
         key = libmfg_utils.nic_key(slot)
@@ -121,7 +126,7 @@ def single_uut_fw_program(stage,
 
     # Begin test
     mtp_cfg_db = load_mtp_cfg()
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=True)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
 
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA

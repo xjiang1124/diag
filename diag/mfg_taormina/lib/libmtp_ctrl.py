@@ -30,10 +30,11 @@ from libnic_ctrl import nic_ctrl
 from libtest_db import *
 
 class mtp_ctrl():
-    def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, usb_ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
+    def __init__(self, mtpid, filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, console_cmd_log_filep=None, ts_cfg = None, usb_ts_cfg = None, mgmt_cfg = None, apc_cfg = None, num_of_slots = MTP_Const.MTP_SLOT_NUM, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
         self._id = mtpid
         self._ts_handle = None
         self._mgmt_handle = None
+        self._console_handle = None
         self._mgmt_prompt = None
         self._mgmt_timeout = MTP_Const.MTP_POWER_ON_TIMEOUT
         self._diagmgr_handle = None
@@ -85,6 +86,8 @@ class mtp_ctrl():
         self._cmd_buf = None
         self._diag_filep = diag_log_filep
         self._diag_cmd_filep = diag_cmd_log_filep
+        self._console_filep = console_log_filep
+        self._console_cmd_filep = console_cmd_log_filep
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
         self._temppn = None
 
@@ -101,6 +104,7 @@ class mtp_ctrl():
         self.uut_type = "TAORMINA"
 
         self._svos_boot = True # set to False once OS is installed
+        self._using_ssh = False # set to True once switch from console to ssh
         self._use_usb_console = False
 
         self._hard_failure = False
@@ -800,6 +804,8 @@ class mtp_ctrl():
             self.cli_log_err("management port config is empty")
             return None
 
+        self._using_ssh = True
+        self.console_keep_alive()
         self.mtp_mgmt_disconnect()
 
         self.cli_log_inf("Connecting to UUT over management port", level=0)
@@ -1007,6 +1013,7 @@ class mtp_ctrl():
     def mtp_console_connect(self, prompt_cfg=False, prompt_id=None):
         # if not self.mtp_console_disconnect():
         #     return None
+        self._using_ssh = False
         self.mtp_console_spawn()
 
         delay = MTP_Const.TOR_CONSOLE_CON_DELAY
@@ -1161,6 +1168,32 @@ class mtp_ctrl():
             self._mgmt_handle.close()
             self._mgmt_handle = None
         return True
+
+    def console_keep_alive_bg_thread(self):
+        try:
+            self.cli_log_inf("Opening console monitor in background", level=0)
+            self._console_handle.expect("901827345881919", timeout=MTP_Const.MFG_2C_TEST_TIMEOUT) # random string that has no chance of appearing
+            self.cli_log_inf("Closing background console connection", level=0)
+        except:
+            self.cli_log_inf("Abruptly ending background console connection", level=0)
+            return True
+
+    def console_keep_alive(self):
+        if not self.mtp_console_connect():
+            self.cli_log_err("Unable to launch background console connection", level=0)
+            return False
+        self._console_handle = self._mgmt_handle
+        self._console_handle.logfile_read = self._console_filep
+        self._console_handle.logfile_send = self._console_cmd_filep
+
+        # start a daemon thread...
+        console_thread = threading.Thread(
+            target = self.console_keep_alive_bg_thread)
+        console_thread.daemon = True
+        console_thread.start()
+        time.sleep(1)
+        if not console_thread.is_alive():
+            console_thread.join()
 
     def mtp_nic_console_attach(self, slot):
         if self._uut_type == NIC_Type.TAORMINA:
@@ -1473,8 +1506,10 @@ class mtp_ctrl():
 
 
     def mtp_mgmt_exec_cmd(self, cmd, sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
-        # return self.mtp_mgmt_exec_cmd2(cmd, sig_list, fail_sig_list, timeout)
-        return self.mtp_mgmt_exec_cmd_no_error_printout(cmd, sig_list, timeout)
+        if self._using_ssh:
+            return self.exec_cmd(cmd, sig_list, fail_sig_list, timeout)
+        else:
+            return self.mtp_mgmt_exec_cmd_no_error_printout(cmd, sig_list, fail_sig_list, timeout)
 
         rc = True
         self._mgmt_handle.sendline(cmd)
@@ -1497,7 +1532,7 @@ class mtp_ctrl():
             self._cmd_buf = self._mgmt_handle.before
             return True
 
-    def mtp_mgmt_exec_cmd_no_error_printout(self, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+    def mtp_mgmt_exec_cmd_no_error_printout(self, cmd, sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
         self.clear_buffer()
         rc = True
         self._mgmt_handle.sendline(cmd)
@@ -1524,32 +1559,56 @@ class mtp_ctrl():
             self._cmd_buf = self._mgmt_handle.before
             return True
 
-    def mtp_mgmt_exec_cmd2(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+    def exec_cmd(self, cmd, pass_sig_list=[], fail_sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+        SSH_FAIL_SIG_LIST = ["closed by remote host", "timed out", "lost connection", "RebootLib"]
+
+        handle = self._mgmt_handle
+        prompt = self._mgmt_prompt
+
         self.clear_buffer()
         rc = True
-        self._mgmt_handle.sendline(cmd)
+        idx = -1
+        handle.sendline(cmd)
+        if self._use_usb_console:
+            handle.sendline("") # extra newline for USB console server
         cmd_before = ""
+        cmd_after = ""
+        sig_list = pass_sig_list + SSH_FAIL_SIG_LIST + fail_sig_list
         if sig_list:
-            sig_list = pass_sig_list + fail_sig_list
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, sig_list, timeout)
-            cmd_before = self._mgmt_handle.before
+            idx = libmfg_utils.mfg_expect(handle, sig_list + [prompt], timeout)
+            cmd_before = str(handle.before)
+            cmd_after = str(handle.after)
             if idx < 0:
+                self.log_debug_msg("Encountered pexpect timeout with command buffer: " + str(repr(handle.before)))
                 rc = False
-            elif idx < len(pass_sig_list):
+            elif idx < len(pass_sig_list) or idx == len(sig_list):
                 rc = True
+            elif len(pass_sig_list) <= idx < len(SSH_FAIL_SIG_LIST):
+                self.cli_log_err("Connection to UUT interrupted", level=0)
+                rc = False
             else:
                 rc = False
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [self._mgmt_prompt], timeout)
+
+        if idx == len(sig_list): 
+            # no pass/fail sig, got prompt already
+            idx = 99999999
+        else:
+            # no sig_list, OR found a signature in previous expect, now expect a prompt
+            idx = libmfg_utils.mfg_expect(handle, [prompt], timeout)
+
+        if idx < len(sig_list):
+            # add what was captured in sig_list into the buf
+            self._cmd_buf = cmd_before + cmd_after + str(handle.before)
+        else:
+            self._cmd_buf = handle.before
+
         # signature match fails
         if not rc:
-            self.mtp_dump_err_msg(cmd_before)
             return False
         elif idx < 0:
-            print("idx < 0")
-            self.mtp_dump_err_msg(self._mgmt_handle.before)
+            self.log_debug_msg("Encountered pexpect timeout with command buffer: " + str(repr(self._cmd_buf)))
             return False
         else:
-            self._cmd_buf = self._mgmt_handle.before
             return True
 
     def clear_buffer(self):
@@ -6810,11 +6869,6 @@ class mtp_ctrl():
             if not self.tor_check_fpgautil():
                 return False
 
-        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("{:s} failed".format(cmd), level=0)
-            return False
-
         if not self.tor_cpld_init():
             self.cli_log_err("CPLD init failed", level=0)
             return False
@@ -6825,6 +6879,11 @@ class mtp_ctrl():
 
         if not self.tor_bios_init():
             self.cli_log_err("BIOS init failed", level=0)
+            return False
+
+        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("{:s} failed".format(cmd, timeout=100), level=0)
             return False
 
         self.tor_info_disp()
