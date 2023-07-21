@@ -7836,17 +7836,19 @@ class mtp_ctrl():
         "elba 0": ["elba 0"],
         "elba 1": ["elba 1"]
         }
-        
-        if not self._cpld_dat or device == "":
-            # reload all device versions
-            if not self.tor_cpld_init():
-                return False
 
         if device == "":
             # verify all devices if nothing supplied
             dlist = list(set(chain(*devices.values())))
         else:
             dlist = devices[device]
+
+        for _device in dlist:
+            if self._cpld_dat is None or _device not in self._cpld_dat.keys():
+                # reload all device versions
+                if not self.tor_cpld_init():
+                    return False
+                break
 
         for _device in dlist:
             if device == "":
