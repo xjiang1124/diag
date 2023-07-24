@@ -159,6 +159,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage):
     elif stage == FF_Stage.FF_P2C:
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(test_fpga)
+            images_needed.append(cpld)
 
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
