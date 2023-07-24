@@ -626,6 +626,8 @@ def single_uut_2c_test(stage,
                     test_db = taormina_test_db
                     if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
                         dsp_test_list.remove(("SWITCH", "ELBA_EDMA_TEST"))
+                    if ("SWITCH", "ELBALINKFLAP") in dsp_test_list:
+                        dsp_test_list.remove(("SWITCH", "ELBALINKFLAP"))
                     if ("ASIC", "L1") in dsp_test_list:
                         dsp_test_list.remove(("ASIC", "L1"))
                     if ("BCM", "TD3DIAG") in dsp_test_list:
@@ -637,6 +639,9 @@ def single_uut_2c_test(stage,
                     dsp_test_list = taormina_seq_test_list[:]
                     test_db = taormina_test_db
                     new_dsp_test_list = list()
+                    # LINKFLAP needs to be run before EDMA,L1 as EDMA,L1 kill the mgmt link to elba
+                    if ("SWITCH", "ELBALINKFLAP") in dsp_test_list:
+                        new_dsp_test_list.append(("SWITCH", "ELBALINKFLAP"))
                     if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
                         new_dsp_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
                     if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):

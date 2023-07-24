@@ -127,6 +127,13 @@ TOR_DSP:
                 NIC_NAME: No
                 SN: No
                 SLOT: No
+        ELBALINKFLAP:
+            INIT: ""
+            POST: ""
+            OPTS:
+                NIC_NAME: No
+                SN: No
+                SLOT: No
     BCM:
         TD3DIAG:
             INIT: ""
