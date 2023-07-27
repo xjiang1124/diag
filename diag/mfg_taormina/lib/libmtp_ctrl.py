@@ -6537,7 +6537,7 @@ class mtp_ctrl():
         }
 
         eeprom2_fields = {
-            "assembly_info pca_rev": "0x01",
+            "assembly_info pca_rev": "0x02",
             "assembly_info rework_rev": "0x01",
             "assembly_info bom_rev": "0x01",
             "assembly_info num_of_prgm_dev": "13",
@@ -6616,7 +6616,7 @@ class mtp_ctrl():
 
 
         eeprom2_fields = {
-            "pca_rev": "0x01",
+            "pca_rev": "0x02",
             "rework_rev": "0x01",
             "bom_rev": "0x01",
             "num_of_prgm_dev": "13",
