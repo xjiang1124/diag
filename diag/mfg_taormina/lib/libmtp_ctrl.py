@@ -110,6 +110,8 @@ class mtp_ctrl():
 
         self._hard_failure = False
 
+        self._recover_diag_init = False # set in diag_init.. if set, powercycle and retry diag_init without failing
+
         # name is defined by its name in diag fpgautil
         # None/"" = not present
         self.sys_modules = {
@@ -1743,8 +1745,13 @@ class mtp_ctrl():
         else:
             cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
             sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+        self._recover_diag_init = False # new retry
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=5*60):
+            if "Reboot reason: Chassis critical temperature" in self.mtp_get_cmd_buf():
+                self.cli_log_inf("Caught known bug in start_diag_tor.sh: Attempting to recover system", level=0)
+                self._recover_diag_init = True
+                return False
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
 
         if self._uut_type == UUT_Type.TOR:
@@ -6980,6 +6987,21 @@ class mtp_ctrl():
         return True
 
     def tor_diag_init(self, stage, fpo=False):
+        if not self.tor_diag_init_inner(stage, fpo):
+            while self._recover_diag_init: # known failure to recover by poweryccling
+                if not self.tor_boot_select(1):
+                    return False
+                if not self.save_prev_sys_logs():
+                    self.cli_log_err("Failed to save previous session's system logs", level=0)
+                    pass
+                if self.tor_diag_init_inner(stage, fpo):
+                    # error gone
+                    return True
+            # else regular failure:
+            return False
+        return True
+
+    def tor_diag_init_inner(self, stage, fpo=False):
         homedir = self.get_homedir()
         if fpo:
             # One-time steps related to running the diag image
