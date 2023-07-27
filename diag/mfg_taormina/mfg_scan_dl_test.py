@@ -265,7 +265,6 @@ def single_uut_fw_program(stage,
                         "NIC_QSPI_UPDATE",
                         "OS_BOOT",
                         "OS_TEST_VERIFY",
-                        "TIME_SET",
                         "UL_FRU_PROG",
                         "OS_BOOT",
                         "UL_FRU_VERIFY",
@@ -392,11 +391,6 @@ def single_uut_fw_program(stage,
                 ret = mtp_mgmt_ctrl.tor_diag_init(FF_Stage.FF_DL, fpo=True)
             elif test == "DIAG_INIT2":
                 ret = mtp_mgmt_ctrl.tor_diag_init(FF_Stage.FF_DL, fpo=False)
-
-            elif test == "TIME_SET":
-                # Sync timestamp to server
-                timestamp_str = str(libmfg_utils.timestamp_snapshot())
-                ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))

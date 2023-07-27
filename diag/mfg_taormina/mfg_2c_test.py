@@ -147,19 +147,14 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
     return True
 
 def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
-    for test in ["TIME_SET", "DIAG_UPDATE", "PYPKG_UPDATE"]:
+    for test in ["DIAG_UPDATE", "PYPKG_UPDATE"]:
         if test in skip_test:
             continue
 
         start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-        # Sync timestamp to server
-        if test == "TIME_SET":
-            timestamp_str = str(libmfg_utils.timestamp_snapshot())
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str)
-
         # copy diag image
-        elif test == "DIAG_UPDATE":
+        if test == "DIAG_UPDATE":
             asic_type = MTP_ASIC_SUPPORT.ELBA
             x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
             arm_image = MTP_IMAGES.ARM64_IMG[asic_type]

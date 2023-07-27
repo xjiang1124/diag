@@ -1005,14 +1005,15 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_set_date(self, timestamp_str):
+    def mtp_mgmt_set_date(self):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
         if self._uut_type == UUT_Type.TOR:
-            cmd = "hwclock --set --date '{:s}'".format(timestamp_str)
+            cmd = "date -s '{:s}'".format(timestamp_str)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set UUT date")
                 return False
 
-            cmd = "hwclock -s"
+            cmd = "hwclock -w"
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to save UUT date")
                 return False
@@ -5550,6 +5551,10 @@ class mtp_ctrl():
             if not self.mtp_console_enter_shell("sh"):
                 self.cli_log_err("Unable to setup SVOS shell", level=0)
                 return False
+
+        # Sync UUT time with server 
+        if not self.mtp_mgmt_set_date():
+            return False
 
         return True
 
