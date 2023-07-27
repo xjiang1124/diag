@@ -138,6 +138,7 @@ def single_uut_led_checks(stage,
     # Begin test
     mtp_cfg_db = load_mtp_cfg()
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
+    mtp_mgmt_ctrl._test_log_folder = log_dir + log_sub_dir
 
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA
@@ -268,6 +269,13 @@ def single_uut_led_checks(stage,
         mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
 
         time.sleep(5) #?
+
+        if uut_id in fail_uut_list:
+            # if OS has been installed and system failed,
+            # reboot to get last session's logs
+            if not mtp_mgmt_ctrl._svos_boot:
+                mtp_mgmt_ctrl.tor_boot_select(1)
+                mtp_mgmt_ctrl.save_prev_sys_logs()
 
         # shut down system
         mtp_mgmt_ctrl.uut_chassis_shutdown()

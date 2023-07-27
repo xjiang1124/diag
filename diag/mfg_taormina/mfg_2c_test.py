@@ -407,20 +407,20 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
     os.system(cmd)
     # save the asic/diag log files
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + diag_sub_dir, MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save diag logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save diag logs", level=0)
         rslt = False
 
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save asic logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save asic logs", level=0)
         rslt = False
 
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + nic_sub_dir, MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save NIC logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save NIC logs", level=0)
         rslt = False
 
     # save the x86 system logs
     if rslt and not mtp_mgmt_ctrl.tor_copy_sys_log(mtp_script_dir, local_copy=False):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save x86 system logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save x86 system logs", level=0)
         rslt = False
 
     # clean up logfiles for the next run
@@ -428,6 +428,12 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
     if rslt and not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Log cleanup failed")
         rslt = False
+
+    if not rslt:
+        # reboot to get last session's logs
+        mtp_mgmt_ctrl.cli_log_inf("Rebooting to get previous session's system logs", level=0)
+        mtp_mgmt_ctrl.tor_boot_select(1)
+        mtp_mgmt_ctrl.save_prev_sys_logs()
 
     if not rslt:
         uut_test_rslt_list[uut_id] = False
@@ -460,6 +466,8 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
 
     # cleanup the log dir
     logfile_cleanup([log_dir, "log/"+log_pkg_file])
+
+    return True
 
 
 def single_uut_2c_test(stage,
@@ -681,20 +689,24 @@ def single_uut_2c_test(stage,
 
             mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
-            save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+            if not save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
+                uut_test_rslt_list[uut_id] = False
 
             mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
             libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
     
         mtp_mgmt_ctrl.cli_log_inf("2C Test Process Complete", level=0)
         # shut down system
-        if not uut_test_rslt_list[uut_id]:
+        if uut_test_rslt_list[uut_id]:
             mtp_mgmt_ctrl.uut_chassis_shutdown()
 
     except Exception as e:
         uut_test_rslt_list[uut_id] = False
         exit_fail(mtp_mgmt_ctrl, open_file_track_list, traceback.print_exc())
-        save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+        if not save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
+            # reboot to get last session's logs
+            mtp_mgmt_ctrl.tor_boot_select(1)
+            mtp_mgmt_ctrl.save_prev_sys_logs()
 
 def main():
     parser = argparse.ArgumentParser(description="MFG SWI Test", formatter_class=argparse.RawTextHelpFormatter)

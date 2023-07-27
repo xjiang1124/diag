@@ -1686,6 +1686,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 
+    mtp_mgmt_ctrl._test_log_folder = logfile_path
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
     mtp_mgmt_ctrl._console_filep = mtp_console_log_filep

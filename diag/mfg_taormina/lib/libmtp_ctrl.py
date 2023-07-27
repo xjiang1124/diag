@@ -90,6 +90,7 @@ class mtp_ctrl():
         self._console_cmd_filep = console_cmd_log_filep
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
         self._temppn = None
+        self._test_log_folder = None
 
         self._sn = None
         self._mac = None
@@ -8256,6 +8257,10 @@ class mtp_ctrl():
         return True
 
     def tor_copy_sys_log(self, dest_folder, local_copy=False):
+        if self._svos_boot:
+            # no current logs in svos
+            return True
+
         self.cli_log_inf("Copying system logs", level=0)
 
         logfiles = (
@@ -8268,7 +8273,7 @@ class mtp_ctrl():
 
         for filename in logfiles:
             if not self.tor_file_exists(filename):
-                continue
+                pass
             # copy them so they stop changing
             cmd = "cp {:s} /{:s}".format(filename, os.path.basename(filename))
             if not self.mtp_mgmt_exec_cmd(cmd):
@@ -8290,6 +8295,97 @@ class mtp_ctrl():
                 if not libmfg_utils.network_get_file(self, dest_name, filename): #open("scp.log", "w+")):
                     self.cli_log_err("Unable to copy UUT system log file {:}".format(filename), level=0)
                     continue
+
+        handle = pexpect.spawn("ls {:s}".format(dest_folder))
+        handle.expect("$")
+        handle.sendline("ls {:s}".format(dest_folder))
+        handle.expect("$")
+        handle.close()
+
+        return True
+
+    def save_prev_sys_logs(self, local_copy=False):
+        self.cli_log_inf("Copying system logs from previous session", level=0)
+
+        dest_folder = self._test_log_folder
+
+        cmd = "vtysh -c \"show boot-history\""
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+            pass
+        cmd_buf = self.mtp_get_cmd_buf()
+        if not cmd_buf:
+            most_recent_boot_index = "0"
+        else:
+            # search for the boot index that was the immediately previous boot
+            """
+                e.g. output is
+
+                Management module
+                =================
+                
+                Index : 3
+                Boot ID : 1ec336d819b0404688eb6297d8131f54
+                Current Boot, up for 24 mins 32 secs
+                
+                Index : 2
+                Boot ID : 7c492499a99144179ba1a82e292a8d1b
+                24 Jul 23 23:55:44 : Uncontrolled reboot, likely due to power removal. 
+                
+                Index : 1
+                Boot ID : 93b2a5583a1d4390b17715c7ac23738e
+                24 Jul 23 23:50:12 : Uncontrolled reboot, likely due to power removal. 
+                
+                Index : 0
+                Boot ID : 728261212f7b4094b97092bf0158829b
+                1 Jul 23 23:44:27 : Uncontrolled reboot, likely due to power removal.
+                
+                
+                then the last boot would be Index 2 since it has the latest timestamp.
+            """
+            most_recent_timestamp = datetime.min
+            most_recent_boot_index = "0"
+            boot_history = cmd_buf.split("Index : ")
+            for boot_index_buf in boot_history:
+                timestamp_rgx = r"\d?\d [A-Za-z]{3} \d?\d \d\d:\d\d:\d\d"
+                boot_timestamp_match = re.search(timestamp_rgx, boot_index_buf)
+                if boot_timestamp_match:
+                    boot_ts = datetime.strptime(boot_timestamp_match.group(0), "%d %b %y %X")
+                    if boot_ts > most_recent_timestamp:
+                        most_recent_timestamp = boot_ts
+                        most_recent_boot_index = boot_index_buf[0]
+                else:
+                    # not a line with timestamp info
+                    pass
+
+
+        logfiles = (
+            "/fs/logs/boot{:s}/messages.gz".format(most_recent_boot_index),
+            "/fs/logs/boot{:s}/critical.log.gz".format(most_recent_boot_index),
+            "/fs/logs/boot{:s}/event.log.gz".format(most_recent_boot_index),
+            "/fs/logs/boot{:s}/dsm0_uart.log.gz".format(most_recent_boot_index),
+            "/fs/logs/boot{:s}/dsm1_uart.log.gz".format(most_recent_boot_index)
+            )
+
+        for filename in logfiles:
+            if not self.tor_file_exists(filename):
+                pass
+            # # copy them so they stop changing
+            # cmd = "cp {:s} /{:s}".format(filename, os.path.basename(filename))
+            # if not self.mtp_mgmt_exec_cmd(cmd):
+            #     self.cli_log_err("Couldn't save system logfile of previous session safely", level=0)
+            #     continue
+            # cmd = "chmod +r /{:s}".format(os.path.basename(filename))
+            # if not self.mtp_mgmt_exec_cmd(cmd):
+            #     self.cli_log_err("Couldn't change system logfile of previous session permissions", level=0)
+            #     continue
+            boot_index = os.path.dirname(filename).split("/")[-1]
+            dest_name = os.path.splitext(os.path.basename(filename))[0] # get filename without the extension
+            dest_name = os.path.splitext(os.path.basename(dest_name))[0] # twice for .log.gz
+            dest_name = "{:s}{:s}_{:s}.log".format(dest_folder, boot_index, dest_name)
+            if not libmfg_utils.network_get_file(self, dest_name, "/"+filename): #open("scp.log", "w+")):
+                self.cli_log_err("Unable to copy UUT system log file {:} of previous session".format(filename), level=0)
+                continue
 
         handle = pexpect.spawn("ls {:s}".format(dest_folder))
         handle.expect("$")

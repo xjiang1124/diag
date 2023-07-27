@@ -127,6 +127,7 @@ def single_uut_fw_program(stage,
     # Begin test
     mtp_cfg_db = load_mtp_cfg()
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
+    mtp_mgmt_ctrl._test_log_folder = log_dir + log_sub_dir
 
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA
@@ -503,6 +504,12 @@ def single_uut_fw_program(stage,
         # shut down system
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.uut_chassis_shutdown()
+        else:
+            # if OS has been installed and system failed,
+            # reboot to get last session's logs
+            if not mtp_mgmt_ctrl._svos_boot:
+                mtp_mgmt_ctrl.tor_boot_select(1)
+                mtp_mgmt_ctrl.save_prev_sys_logs()
 
         mfg_swi_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("MFG SWI Test Duration:{:s}".format(mfg_swi_stop_ts - mfg_swi_start_ts))
