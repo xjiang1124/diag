@@ -256,8 +256,14 @@ class mtp_ctrl():
     def log_mtp_file(self, msg):
         self._diag_filep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
         # extra sendline to clean up log
-        if self._mgmt_handle:
-            self.mtp_mgmt_exec_cmd("")
+        # if self._mgmt_handle:
+        #     try:
+        #         self.mtp_mgmt_exec_cmd("")
+        #     except:
+        #         pass
+        # else:
+        #     self._diag_filep.write("\n")
+        self._diag_filep.write("\n")
 
     def log_nic_file(self, slot, msg):
         self._diag_nic_filep_list[slot].write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
@@ -265,6 +271,8 @@ class mtp_ctrl():
         if self._nic_ctrl_list[slot] is not None:
             if self._nic_ctrl_list[slot]._nic_handle:
                 self._nic_ctrl_list[slot].mtp_exec_cmd("")
+        else:
+            self._diag_nic_filep_list[slot].write("\n")
 
     def log_debug_msg(self, msg, slot=None):
         if slot is None:
@@ -272,38 +280,41 @@ class mtp_ctrl():
         else:
             self.log_nic_file(slot, ">>>DBG {}\nDBG<<<".format(msg))
 
+    def log_other_file(self, msg, logfilep):
+        logfilep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg + "\n")
+
     def log_slot_test_start(self, slot, testname):
         # log the timestamp in NIC log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return start
 
     def log_slot_test_stop(self, slot, testname, start):
         # log the timestamp in NIC log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd_para(slot, ts_record_cmd)
+        self.log_nic_file(slot, ts_record_cmd)
         return duration
 
     def log_test_start(self, testname):
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(testname, str(start))
+        ts_record = "{:s} Started".format(testname)
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self._diag_filep.write("\n"+ts_record_cmd+"\n")
+        self.log_mtp_file(ts_record_cmd)
         return start
 
     def log_test_stop(self, testname, start):
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
         duration = stop - start
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(testname, str(stop), str(duration))
+        ts_record = "{:s} Stopped - duration {:s}".format(testname, str(duration))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self._diag_filep.write("\n"+ts_record_cmd+"\n")
+        self.log_mtp_file(ts_record_cmd)
         return duration
 
 
@@ -734,10 +745,16 @@ class mtp_ctrl():
             self._mgmt_handle = None
 
 
-    def mtp_session_create(self, logfile=None):
-        if logfile is None:
-            logfile = "/tmp/mtpsession.log"
-        logfilep = open(logfile, "w")
+    def mtp_session_create(self, slot=None, session_logfile=None):
+        if slot is None:
+            if session_logfile is None:
+                logfilep = self._diag_filep
+            else:
+                logfilep = session_logfile
+                if isinstance(logfilep, str):
+                    logfilep = open(logfilep, "w+")
+        else:
+            logfilep = self._diag_nic_filep_list[slot]
 
         # mgmt_cfg is a list with format [ip, userid, passwd]
         ip = self._mgmt_cfg[0]
@@ -745,17 +762,24 @@ class mtp_ctrl():
         passwd = self._mgmt_cfg[2]
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
+        if slot is None:
+            if session_logfile is None:
+                self.log_mtp_file(ssh_cmd)
+            else:
+                self.log_other_file(ssh_cmd, logfilep)
+        else:
+            self.log_nic_file(slot, ssh_cmd)
         handle = pexpect.spawn(ssh_cmd, logfile=logfilep)
         idx = libmfg_utils.mfg_expect(handle, ["assword:"], timeout=60)
         if idx < 0:
-            self.cli_log_err("Can not connect to mtp, check the console.\n", level = 0)
+            self.cli_log_err("Can not connect to UUT, check the network connection.\n", level = 0)
             return None
         else:
             handle.sendline(passwd)
 
         idx = libmfg_utils.mfg_expect(handle, self._prompt_list, timeout=60)
         if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            self.cli_log_err("Connect to UUT over mgmt timeout", level = 0)
             return None
 
         ## new CXOS:
@@ -772,7 +796,7 @@ class mtp_ctrl():
         handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(handle, sig_list, timeout=60)
         if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt failed", level = 0)
+            self.cli_log_err("Connect to UUT mgmt failed", level = 0)
             return None
         
         handle.sendline("stty rows 50 cols 200")
@@ -787,12 +811,9 @@ class mtp_ctrl():
 
     def mtp_nic_para_session_init(self):
         userid = self._mgmt_cfg[1]
-        if self._uut_type == UUT_Type.TOR:
-            mtp_prompt = "#"
-        else:
-            mtp_prompt = "$"
+        mtp_prompt = "#"
         for slot in range(self._slots):
-            handle = self.mtp_session_create()
+            handle = self.mtp_session_create(slot)
             if handle:
                 if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
                     self.cli_log_err("Unable to config new ssh session for NIC")
@@ -805,17 +826,13 @@ class mtp_ctrl():
                     if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
                         self.cli_log_slot_err(slot, "{:s} failed".format(para_cmd))
                         return False
-                para_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
-                if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
-                    self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
-                    return False
             else:
                 self.cli_log_err("Unable to create MTP session")
                 return False
         return True
 
 
-    def mtp_mgmt_connect(self, prompt_cfg=False, prompt_id=None):
+    def mtp_mgmt_connect(self, prompt_cfg=False):
         delay = 30
         retries = self._mgmt_timeout / delay
         retries = retries + 4
@@ -823,9 +840,9 @@ class mtp_ctrl():
             self.cli_log_err("management port config is empty")
             return None
 
-        self._using_ssh = True
         self.console_keep_alive()
         self.mtp_mgmt_disconnect()
+        self._using_ssh = True
 
         self.cli_log_inf("Connecting to UUT over management port", level=0)
 
@@ -835,6 +852,7 @@ class mtp_ctrl():
         passwd = self._mgmt_cfg[2]
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
+        self.log_mtp_file(ssh_cmd)
         self._mgmt_handle = pexpect.spawn(ssh_cmd)
         while True:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"], timeout=60)
@@ -875,34 +893,37 @@ class mtp_ctrl():
             return None
 
         # set logfile
+        self._mgmt_handle.logfile = None
         self._mgmt_handle.logfile_read = self._diag_filep
         self._mgmt_handle.logfile_send = self._diag_cmd_filep
         if prompt_cfg:
             # config the prompt
-            if prompt_id:
-                userid = prompt_id
-            else:
-                userid = self._mgmt_cfg[1]
+            userid = self._mgmt_cfg[1]
             if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
                 self.cli_log_err("Failed to Init Diag SW Environment", level=0)
                 return None
-            self._mgmt_prompt = "{:s}@{:s}:".format(userid, UUT_Type.dsp_type[self._uut_type]) + self._mgmt_prompt
 
         return self._mgmt_prompt
 
 
     def mtp_prompt_cfg(self, handle, userid, prompt, slot=None):
         handle.sendline("stty rows 50 cols 200")
-        idx = libmfg_utils.mfg_expect(handle, [prompt])
+        idx = libmfg_utils.mfg_expect(handle, [prompt], timeout=60)
         if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt timeout", level = 0)
+            self.cli_log_err("Failed to set terminal window size", level=0)
             return False
 
+        datetime_format = "%Y-%m-%d_%H-%M-%S"
+        ps1_timestamp = "[\\D{"+datetime_format+"}] "
+        if self._svos_boot:
+            os_context = "ServiceOS"
+        else:
+            os_context = "CX-OS"
         if slot != None:
             prompt_str = "{:s}@NIC-{:02d}:{:s} ".format(userid, slot+1, prompt)
         else:
-            prompt_str = "{:s}@{:s}:{:s} ".format(userid, UUT_Type.dsp_type[self._uut_type], prompt)
-        handle.sendline("PS1='{:s}'".format(prompt_str))
+            prompt_str = "{:s}@{:s}:{:s} ".format(userid, os_context, prompt)
+        handle.sendline("PS1='{:s}'".format(ps1_timestamp + prompt_str))
 
         # refresh
         handle.sendline("uname")
@@ -914,6 +935,9 @@ class mtp_ctrl():
         if idx < 0:
             self.cli_log_err("Prompt not saved", level = 0)
             return False
+
+        if slot is None:
+            self._mgmt_prompt = prompt_str
 
         return True
 
@@ -1018,7 +1042,9 @@ class mtp_ctrl():
                 successentersh = False
                 if self.mtp_mgmt_exec_cmd("stty rows 50 cols 160", sig_list=["#"], timeout=60):
                     successentersh = True
-
+                if not self.mtp_prompt_cfg(self._mgmt_handle, "admin", self._mgmt_prompt):
+                    self.cli_log_err("Failed to set SVOS shell prompt", level=0)
+                    return None
             if shell == "svcli":
                 successentersh = False
                 if self.mtp_mgmt_exec_cmd("", sig_list=[">"], timeout=60):
@@ -1029,7 +1055,7 @@ class mtp_ctrl():
 
         return successentersh
 
-    def mtp_console_connect(self, prompt_cfg=False, prompt_id=None):
+    def mtp_console_connect(self, prompt_cfg=False):
         # if not self.mtp_console_disconnect():
         #     return None
         self._using_ssh = False
@@ -1107,18 +1133,15 @@ class mtp_ctrl():
         self._mgmt_prompt = self._prompt_list[idx]
 
         # set logfile
+        self._mgmt_handle.logfile = None
         self._mgmt_handle.logfile_read = self._diag_filep
         self._mgmt_handle.logfile_send = self._diag_cmd_filep
         if prompt_cfg:
             # config the prompt
-            if prompt_id:
-                userid = prompt_id
-            else:
-                userid = self._mgmt_cfg[1]
+            userid = "admin"
             if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
                 self.cli_log_err("Failed to Init Diag SW Environment", level=0)
                 return None
-            self._mgmt_prompt = "{:s}@UUT:".format(userid) + self._mgmt_prompt
 
         return self._mgmt_prompt
     
@@ -1169,9 +1192,11 @@ class mtp_ctrl():
         telnet_cmd = self.mtp_get_telnet_command()
         if self._mgmt_handle is not None:
             self.mtp_console_disconnect()
+        self.log_mtp_file(telnet_cmd)
         self._mgmt_handle = pexpect.spawn(telnet_cmd, logfile=self._diag_filep)
         self._mgmt_handle.setecho(False)
         # self._mgmt_handle.logfile = sys.stdout
+        self._mgmt_handle.logfile = None
         self._mgmt_handle.logfile_read = self._diag_filep
         self._mgmt_handle.logfile_send = self._diag_cmd_filep
 
@@ -1202,6 +1227,7 @@ class mtp_ctrl():
             self.cli_log_err("Unable to launch background console connection", level=0)
             return False
         self._console_handle = self._mgmt_handle
+        self._console_handle.logfile = None
         self._console_handle.logfile_read = self._console_filep
         self._console_handle.logfile_send = self._console_cmd_filep
 
@@ -1350,11 +1376,6 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Failed to get asic util version", level = 0)
             return False
-
-        if self._uut_type == UUT_Type.TOR:
-            if not self.mtp_mgmt_exec_cmd("fpgautil inventory"):
-                self.cli_log_err("Failed to get inventory from fpgautil", level=0)
-                return False
 
         return True
 
@@ -1573,6 +1594,7 @@ class mtp_ctrl():
             return False
         elif idx < 0:
             #self.mtp_dump_err_msg(self._mgmt_handle.before)
+            self.log_debug_msg("Encountered pexpect timeout with command buffer: " + str(repr(self._cmd_buf)))
             return False
         else:
             self._cmd_buf = self._mgmt_handle.before
@@ -1728,7 +1750,7 @@ class mtp_ctrl():
         else:
             cmd = "source ~/.bash_profile"
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
 
         cmd = "env | grep UUT"
@@ -1737,9 +1759,9 @@ class mtp_ctrl():
             return False
 
         # start the mtp diagmgr
-        diagmgr_handle = self.mtp_session_create()
+        diagmgr_handle = self.mtp_session_create(session_logfile=diagmgr_logfile)
         if not diagmgr_handle:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            self.cli_log_err("Failed to init new session for diagmgr", level=0)
             return False
 
         diagmgr_handle.sendline("source /home/root/.profile")
@@ -1752,23 +1774,16 @@ class mtp_ctrl():
         diagmgr_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(diagmgr_handle, libmfg_utils.get_linux_prompt_list())
         if idx < 0:
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
         # diagmgr_handle.close()
         self._diagmgr_handle = diagmgr_handle
 
-        # config the prompt
-        userid = self._mgmt_cfg[1]
-        if not self.mtp_prompt_cfg(self._mgmt_handle, userid, self._mgmt_prompt):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
-            return False
-        self._mgmt_prompt = "{:s}@{:s}:".format(userid, UUT_Type.dsp_type[self._uut_type]) + self._mgmt_prompt
-
         # register MTP diagsp
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
 
         if self._uut_type == UUT_Type.TOR:
@@ -1778,7 +1793,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
             sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
-            self.cli_log_err("Failed to Init Diag SW Environment", level=0)
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
             return False
 
         time.sleep(MTP_Const.MTP_DIAGMGR_DELAY)
@@ -2150,6 +2165,8 @@ class mtp_ctrl():
                 self.cli_log_err("Firmware {:s} doesn't exist".format(img_file), level=0)
                 return False
 
+        self.dump_switch_stats()
+
         self.cli_log_inf("Post Diag SW Environment Init complete\n", level=0)
         # naples100 dsp check
 #        self.cli_log_inf("Start Diag DSP Sanity Check", level = 0)
@@ -2190,6 +2207,18 @@ class mtp_ctrl():
 
         return rc
 
+    def dump_switch_stats(self):
+        cmd = "/fs/nos/home_diag/diag/util/switch show power"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+            return False
+
+        cmd = "/fs/nos/home_diag/diag/util/switch show temp"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd), level=0)
+            return False
+
+        return True
 
     def mtp_wait_temp_ready(self, low_threshold=None, high_threshold=None):
         if low_threshold != None:
@@ -4729,9 +4758,9 @@ class mtp_ctrl():
 
         # log the timestamp in diag log
         start = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Started - at {:s}".format(test, str(start))
+        ts_record = "{:s} Started".format(test)
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
 
         test_timeout = self.get_test_timeout(diag_cmd, test)
 
@@ -4751,9 +4780,9 @@ class mtp_ctrl():
 
         # log the timestamp in diag log
         stop = libmfg_utils.timestamp_snapshot()
-        ts_record = "{:s} Stopped - at {:s} - duration {:s}".format(test, str(stop), str(stop-start))
+        ts_record = "{:s} Stopped - duration {:s}".format(test, str(stop-start))
         ts_record_cmd = "######## {:s} ########".format(ts_record)
-        self.mtp_mgmt_exec_cmd(ts_record_cmd)
+        self.log_mtp_file(ts_record_cmd)
 
         # post command
         if post_cmd:
@@ -5404,6 +5433,7 @@ class mtp_ctrl():
 
         telnet_cmd = self.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4]+"20"+telnet_cmd[-2:] #replace port 40xx with 20xx
+        self.log_mtp_file(telnet_cmd)
         self._mgmt_handle = pexpect.spawn(telnet_cmd, logfile = self._diag_filep)
         countconnectrefusedissue = 10
         while libmfg_utils.mfg_expect(self._mgmt_handle, ["Connection refused"], timeout=1) == 0:
@@ -5487,7 +5517,14 @@ class mtp_ctrl():
             self.cli_log_err("Failed to connect console in 3 retries", level=0)
             return False
 
-        if not self.mtp_console_connect():
+        if selection == 0:
+            self._svos_boot = True
+            prompt_cfg = False # do the console's prompt_cfg after doing 'sh'
+        else:
+            self._svos_boot = False
+            prompt_cfg = True # do the console's prompt_cfg immediately
+
+        if not self.mtp_console_connect(prompt_cfg=prompt_cfg):
             self.cli_log_err("Failed to connect console", level=0)
             return False
 
@@ -5508,6 +5545,10 @@ class mtp_ctrl():
         if selection == 0:
             if not self.svos_usb_mount():
                 self.cli_log_err("Unable to mount usb", level=0)
+                return False
+
+            if not self.mtp_console_enter_shell("sh"):
+                self.cli_log_err("Unable to setup SVOS shell", level=0)
                 return False
 
         return True
@@ -7242,9 +7283,6 @@ class mtp_ctrl():
         return True
 
     def tor_mgmt_os_prog(self, os_img, force_download=True):
-        ip_addr = self._mgmt_cfg[0]
-        usrid = self._mgmt_cfg[1]
-        passwd = self._mgmt_cfg[2]
         uut_img_dir = MTP_DIAG_Path.ONBOARD_TOR_IMG_PATH
 
         cmd = "ls /fs/nos/"
@@ -7252,7 +7290,7 @@ class mtp_ctrl():
             self.cli_log_err("{:s} failed".format(cmd), level=0)
             return False
         if force_download or os.path.basename(os_img) not in self.mtp_get_cmd_buf():
-            if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, os_img, uut_img_dir, self._diag_filep):
+            if not libmfg_utils.network_copy_file(mtp_mgmt_ctrl, os_img, uut_img_dir):
                 self.cli_log_err("Copy OS image failed", level=0)
                 return False
 
@@ -7713,14 +7751,6 @@ class mtp_ctrl():
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
             return False
-        # else:
-        #     ip_addr = self._mgmt_cfg[0]
-        #     usrid = self._mgmt_cfg[1]
-        #     passwd = self._mgmt_cfg[2]
-
-        #     if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, cpld_img_file, "/", self._diag_filep):
-        #         self.cli_log_err("Download CPLD image failed", level=0)
-        #         return False
 
         devices = {
         "fpga": ["fpga"],
@@ -7893,14 +7923,6 @@ class mtp_ctrl():
         if not libmfg_utils.console_copy_file(self, TOR_IMAGES.TFTP_SERVER_IP, "/", TOR_IMAGES.TFTP_SERVER_DIR+cpld_img_file):
             self.cli_log_err("Unable to get {:s}".format(cpld_img_file), level=0)
             return False
-        # else:
-        #     ip_addr = self._mgmt_cfg[0]
-        #     usrid = self._mgmt_cfg[1]
-        #     passwd = self._mgmt_cfg[2]
-
-        #     if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, cpld_img_file, "/", self._diag_filep):
-        #         self.cli_log_err("Download CPLD image failed", level=0)
-        #         return False
 
         devices = {
         "elba 0": ["elba 0"],
@@ -7970,115 +7992,8 @@ class mtp_ctrl():
         """
         # libmfg_utils.count_down(180) # waiting for bcm shell to bring up port 1943
         cmd = "{:s}fpgautil td3 checkgb".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list="PASS:", timeout=120):
+        if not self.mtp_mgmt_exec_cmd(cmd, sig_list=["PASS:"], timeout=120):
             return False
-        return True
-
-    def tor_nic_cpld_prog(self, slot, cpld_img_file, fpgautil_path=MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH):
-        ip_addr = self._mgmt_cfg[0]
-        usrid = self._mgmt_cfg[1]
-        passwd = self._mgmt_cfg[2]
-
-        self.cli_log_slot_inf(slot, "Downloading CPLD image")
-        if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, cpld_img_file, "/", self._nic_ctrl_list[slot]._diag_filep):
-            self.cli_log_err("Copy CPLD image failed", level=0)
-            return False
-
-        self.cli_log_slot_inf(slot, "Programming CPLD cfg0 partition")
-        cmd = "{:s}fpgautil elba {:d} cpld program cfg0 /{:s}".format(fpgautil_path, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Programming passed" not in cmd_buf:
-            self.cli_log_err("Programming Elba{:d} CPLD failed".format(slot))
-            return False
-
-        self.cli_log_slot_inf(slot, "Verifying CPLD cfg0 partition")
-        cmd = "{:s}fpgautil elba {:d} cpld verifyimage cfg0 /{:s}".format(fpgautil_path, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Verification passed" not in cmd_buf:
-            self.cli_log_err("Verifying Elba{:d} CPLD failed".format(slot))
-            return False
-
-        return True
-
-    def tor_nic_failsalfe_cpld_prog(self, slot, cpld_img_file):
-        ip_addr = self._mgmt_cfg[0]
-        usrid = self._mgmt_cfg[1]
-        passwd = self._mgmt_cfg[2]
-
-        self.cli_log_slot_inf(slot, "Downloading failsafe CPLD image")
-        if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, cpld_img_file, "/", self._nic_ctrl_list[slot]._diag_filep):
-            self.cli_log_err("Copy CPLD image failed", level=0)
-            return False
-
-        self.cli_log_slot_inf(slot, "Programming CPLD cfg1 partition")
-        cmd = "{:s}fpgautil elba {:d} cpld program cfg1 /{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Programming passed" not in cmd_buf:
-            self.cli_log_err("Programming Elba{:d} CPLD failed".format(slot))
-            return False
-
-        self.cli_log_slot_inf(slot, "Verifying CPLD cfg1 partition")
-        cmd = "{:s}fpgautil elba {:d} cpld verifyimage cfg1 /{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Verification passed" not in cmd_buf:
-            self.cli_log_err("Verifying Elba{:d} CPLD failed".format(slot))
-            return False
-
-
-        return True
-
-    def tor_nic_fea_cpld_prog(self, slot, cpld_img_file):
-        ip_addr = self._mgmt_cfg[0]
-        usrid = self._mgmt_cfg[1]
-        passwd = self._mgmt_cfg[2]
-
-        self.cli_log_slot_inf(slot, "Downloading CPLD feature row image")
-        if not libmfg_utils.network_copy_file(ip_addr, usrid, passwd, cpld_img_file, "/", self._nic_ctrl_list[slot]._diag_filep):
-            self.cli_log_err("Copy CPLD feature row image failed", level=0)
-            return False
-
-        self.cli_log_slot_inf(slot, "Programming CPLD feature row")
-        cmd = "{:s}fpgautil elba {:d} cpld program fea /{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Programming passed" not in cmd_buf:
-            self.cli_log_err("Programming Elba{:d} CPLD feature row failed".format(slot))
-            return False
-
-        self.cli_log_slot_inf(slot, "Verifying CPLD feature row  partition")
-        cmd = "{:s}fpgautil elba {:d} cpld verifyimage fea /{:s}".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot, os.path.basename(cpld_img_file))
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout=MTP_Const.TOR_CPLD_PROG_DELAY):
-            self.cli_log_err("{:s} failed".format(cmd))
-            return False
-        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
-        if "Verification passed" not in cmd_buf:
-            self.cli_log_err("Verifying Elba{:d} CPLD feature row failed".format(slot))
-            return False
-
-
-        return True
-
-    def tor_nic_cpld_refresh(self, slot):
-        self._mgmt_handle.sendline("{:s}fpgautil elba {:d} cpld refresh".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot))
-        time.sleep(3)
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["Refresh performed"])
-        while idx > 0:
-            idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["Refresh performed"])
-
         return True
 
     def tor_pcie_enum(self, slot):
@@ -8106,7 +8021,7 @@ class mtp_ctrl():
 
     def tor_nic_avs_set(self, slot):
         cmd = "{:s}fpgautil i2c 2 {:d} 0x4a w 0x22 0xA0".format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, slot+2)
-        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, sig_list="WR:"):
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, sig_list=["WR:"]):
             return False
 
         if not self.mtp_mgmt_set_nic_avs(slot):
@@ -8459,6 +8374,9 @@ class mtp_ctrl():
 
         if not self.mtp_mgmt_exec_cmd("ls /fs/nos/"):
             return False
+
+        if not self._svos_boot:
+            self.dump_switch_stats()
 
         return True
 

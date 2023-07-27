@@ -139,7 +139,7 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
                 fail_uut_list = [uut_id]
             libmfg_utils.cli_log_rslt("{:s} Sanity Check complete".format(uut_id), pass_uut_list, fail_uut_list, mtp_mgmt_ctrl._filep)
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="2C-SSH"):
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
@@ -548,7 +548,6 @@ def single_uut_2c_test(stage,
             # reapply the mainfw flag after nic_init
             for slot in range(mtp_mgmt_ctrl._slots):
                 mtp_mgmt_ctrl._nic_ctrl_list[slot]._in_mainfw = True
-            mtp_mgmt_ctrl._svos_boot = False
 
 
 
