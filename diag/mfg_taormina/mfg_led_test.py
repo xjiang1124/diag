@@ -23,6 +23,7 @@ from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+from libmes import *
 
 
 def logfile_close(filep_list):
@@ -90,10 +91,12 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, conso
     return mtp_mgmt_ctrl
 
 def single_uut_led_checks(stage,
-                          fru_cfg, 
-                          fail_uut_list, pass_uut_list, 
-                          log_file_list, 
-                          verbosity, 
+                          fru_cfg,
+                          fail_uut_list, pass_uut_list,
+                          log_file_list,
+                          verbosity,
+                          mes_obj,
+                          scan_rslt,
                           skip_testlist = []):
     dsp = stage #FF_Stage.FF_DL
     uut_id = fru_cfg["ID"]
@@ -148,7 +151,7 @@ def single_uut_led_checks(stage,
     arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
     mtp_mgmt_ctrl.set_homedir(MTP_DIAG_Path.ONBOARD_TOR_DIAG_PATH)
     mtp_mgmt_ctrl._slots = 2
-    
+
     qspi_fa_img_file = TOR_IMAGES.first_article_img[uut_type]
     os_test_img_file = TOR_IMAGES.os_test_img[uut_type]
     os_test_exp_version = TOR_IMAGES.os_test_dat[uut_type]
@@ -170,7 +173,13 @@ def single_uut_led_checks(stage,
         if not fru_cfg["SN"]:
             fru_cfg["SN"] = "UNKNOWN"
 
-        for test in ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]:
+        testlist = ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]
+
+        if isinstance(mes_obj, MES):
+            # Add MES tasks, if applicable
+            testlist.extend(["MES_ACCESS", "OK_TEST_STN_CHK"])
+
+        for test in testlist:
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
@@ -179,11 +188,29 @@ def single_uut_led_checks(stage,
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
                 ret = mtp_mgmt_ctrl.mtp_console_connect()
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_err("Failed to connect to UUT console", level=0)
+                else:
+                    mtp_mgmt_ctrl.cli_log_inf("UUT console is connected", level=0)
+
+            elif test == "MES_ACCESS":
+                # Access MES data
+                mtp_mgmt_ctrl.cli_log_inf("Access MES data", level=0)
+                mes_obj.store_mgmt_ctrl(mtp_mgmt_ctrl)
+                ret = mes_obj.pull_mes_info(mtp_mgmt_ctrl._sn)
+
+            elif test == "OK_TEST_STN_CHK":
+                # Verify if UUT is allowed to undergo this test station
+                ret = mes_obj.verify_next_test_station("LED TEST")
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
+                else:
+                    mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
             duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
 
             if not ret:
-                mtp_mgmt_ctrl.cli_log_err("Unable to connect UUT Chassis", level=0)
+                mtp_mgmt_ctrl.cli_log_err("Failed to complete test initialization", level=0)
                 mtp_mgmt_ctrl.tor_sys_failure_dump()
                 exit_fail(mtp_mgmt_ctrl, log_filep_list)
                 if uut_id not in fail_uut_list:
@@ -192,6 +219,22 @@ def single_uut_led_checks(stage,
                     pass_uut_list.remove(uut_id)
 
                 mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Status
+                # - Test Fail Mode
+                # - Test Fail Signature
+                # - Test End Time
+                # - (Clear the passmark just in case)
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_test_status("FAIL")
+                    mes_obj.save_res_fail_mode(test)
+                    mes_obj.save_res_fail_signature("TBD")
+                    mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
+                    mes_obj.save_res_passmark("N/A")
+
+                    mes_obj.push_results_to_mes()
+
                 return
 
         mtp_mgmt_ctrl.cli_log_inf("UUT Chassis is connected", level=0)
@@ -213,11 +256,14 @@ def single_uut_led_checks(stage,
         ### X86 HOST TESTS
         if stage == "LED":
             testlist = [
+                        "MES_SCAN_INPUT_CHK",
+                        "MES_FRU_EEPROM_CHK",
                         "MGMT_INIT",
                         "DOWNLOAD_USB_LED_TOOL",
                         "TEST_LED_GREEN",
                         "TEST_LED_ORANGE",
-                        "OS_BOOT"
+                        "OS_BOOT",
+                        "MES_MFG_EEPROM_CHK",
                         ]
 
         for skipped_test in skip_testlist:
@@ -238,6 +284,43 @@ def single_uut_led_checks(stage,
             elif test.startswith("OS_BOOT"):
                 ret = mtp_mgmt_ctrl.tor_boot_select(1)
 
+            elif test == "MES_SCAN_INPUT_CHK" and isinstance(mes_obj, MES):
+                # Verify scanned input against MES data
+                mtp_mgmt_ctrl.cli_log_inf("Verify scanned input against MES data", level=0)
+                ret = mes_obj.verify_scanned_input_against_mes(scan_rslt[uut_id])
+
+            elif test == "MES_FRU_EEPROM_CHK" and isinstance(mes_obj, MES):
+
+                # Verify FRU EEPROM contents against MES data
+                eeprom_contents = dict()
+                msg = "Verify FRU EEPROM contents against MES data"
+                mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                ret, eeprom_contents = mtp_mgmt_ctrl.get_eeprom_contents()
+                if ret:
+                    ret = mes_obj.verify_eeprom_against_mes(eeprom_contents, eeprom_type='fru')
+
+            elif test == "MES_MFG_EEPROM_CHK" and isinstance(mes_obj, MES):
+
+                # Verify Locked MFG EEPROM contents against MES data
+                eeprom_contents = dict()
+                msg = "Verify Locked MFG EEPROM contents against MES data"
+                mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                ret, eeprom_contents = \
+                    mtp_mgmt_ctrl.get_eeprom_contents(eeprom_location='mfg_l')
+                if ret:
+                    ret = mes_obj.verify_eeprom_against_mes(eeprom_contents,
+                        eeprom_type='mfg_l')
+
+                    # Verify Unlocked MFG EEPROM contents against MES data
+                    if ret:
+                        msg = "Verify Unlocked MFG EEPROM contents against MES data"
+                        mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                        ret, eeprom_contents = \
+                            mtp_mgmt_ctrl.get_eeprom_contents(eeprom_location='mfg_ul')
+                        if ret:
+                            ret = mes_obj.verify_eeprom_against_mes(eeprom_contents,
+                                eeprom_type='mfg_ul')
+
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
                 continue
@@ -249,6 +332,14 @@ def single_uut_led_checks(stage,
                     fail_uut_list.append(uut_id)
                 if uut_id in pass_uut_list:
                     pass_uut_list.remove(uut_id)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Fail Mode
+                # - Test Fail Signature
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_fail_mode(test)
+                    mes_obj.save_res_fail_signature('TBD')
+
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration), level=0)
@@ -264,6 +355,19 @@ def single_uut_led_checks(stage,
                     pass_uut_list.remove(uut_id)
                 if uut_id not in fail_uut_list:
                     fail_uut_list.append(uut_id)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Fail Mode
+                # - Test Fail Signature
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_fail_mode('Failed to program LED passmark')
+                    mes_obj.save_res_fail_signature('TBD')
+
+            else:
+                # PASS: Save the following to be uploaded to MES later:
+                # - Passmark Timestamp
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_passmark(mtp_mgmt_ctrl.get_passmark_timestamp())
 
         # copy additional logs
         mtp_mgmt_ctrl.tor_copy_sys_log(log_dir + log_sub_dir)
@@ -286,8 +390,31 @@ def single_uut_led_checks(stage,
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 
+            # PASS: Save the following to be uploaded to MES later:
+            # - Test Status
+            # - Test End Time
+            # - (Clear the fail mode and signature just in case)
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_test_status("PASS")
+                mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
+                mes_obj.save_res_fail_mode("N/A")
+                mes_obj.save_res_fail_signature("N/A")
+
+                mes_obj.push_results_to_mes()
+
         if uut_id in fail_uut_list:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Status
+            # - Test End Time
+            # - (Clear the passmark just in case)
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_test_status("FAIL")
+                mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
+                mes_obj.save_res_passmark("N/A")
+
+                mes_obj.push_results_to_mes()
 
     except Exception as e:
         if uut_id not in fail_uut_list:
@@ -302,6 +429,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--LED", "-LED", "--led", "-led", "-1", help="station to LED test", action="store_true")
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
+    parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
 
     args = parser.parse_args()
     if args.verbosity:
@@ -312,8 +440,22 @@ def main():
     if args.LED:
         stage = "LED"
 
+    mes_obj = None
+    if args.no_mes:
+        print("Script will NOT access the Foxconn MES Shop Floor System")
+    else:
+        print("Script will access the Foxconn MES Shop Floor System")
+        mes_obj = MES()
+
+        # Save the following to be uploaded to MES later:
+        # - Test Start Time
+        # - Test Station
+        mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
+        mes_obj.save_res_test_station("LED TEST")
+
+
     TAORMINA_TEST = True
-    if TAORMINA_TEST: 
+    if TAORMINA_TEST:
 
         ######################################
         mtp_cfg_db = load_mtp_cfg()
@@ -324,7 +466,44 @@ def main():
         os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir))
 
         if stage == "LED":
-            uut_id_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+
+            scan_rslt = {}
+            if isinstance(mes_obj, MES):
+                # Get the scanned barcode information from Operator
+                print("Start the Barcode Scan Process")
+                while True:
+                    scan_rslt = libmfg_utils.uut_barcode_scan(mtp_cfg_db._mtpid_list)
+                    if scan_rslt:
+                        break;
+                    print("Restart the Barcode Scan Process")
+
+                # print scan summary
+                for uut_id in scan_rslt.keys():
+                    uut_cli_id_str = libmfg_utils.id_str(mtp = uut_id)
+                    if scan_rslt[uut_id]["UUT_VALID"]:
+                        sn = scan_rslt[uut_id]["UUT_SN"]
+                        pn = scan_rslt[uut_id]["UUT_PN"]
+                        edc = scan_rslt[uut_id]["UUT_EDC"]
+                        mac_ui = libmfg_utils.mac_address_format(scan_rslt[uut_id]["UUT_MAC"])
+                        pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + \
+                            "; MAC = " + mac_ui + "; PN = " + pn + "; EDC = " + edc)
+                    else:
+                        fail_rslt_list.append(uut_cli_id_str + "UUT Absent")
+                libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list,
+                    fail_rslt_list, open("/dev/null", "w"))
+
+            if isinstance(mes_obj, MES):
+                uut_id_list = scan_rslt.keys()
+
+                # Save the following to be uploaded to MES later:
+                # - Test Rack location
+                # - Chassis Base SN
+                mes_obj.save_res_test_location(uut_id_list[0])
+                mes_obj.save_res_chassis_sn(scan_rslt[uut_id_list[0]]['UUT_SN'])
+
+            else:
+                uut_id_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+
             fru_cfg = dict()
             for uut_id in uut_id_list:
                 fru_cfg[uut_id] = dict()
@@ -353,13 +532,15 @@ def main():
                     continue
 
                 logfile_dict[uut] = list()
-                single_uut_led_checks                                                (stage,
-                                                                                      fru_cfg[uut], 
-                                                                                      fail_uut_list,
-                                                                                      pass_uut_list,
-                                                                                      logfile_dict[uut],
-                                                                                      verbosity,
-                                                                                      args.skip_test)
+                single_uut_led_checks(stage,
+                                        fru_cfg[uut],
+                                        fail_uut_list,
+                                        pass_uut_list,
+                                        logfile_dict[uut],
+                                        verbosity,
+                                        mes_obj,
+                                        scan_rslt,
+                                        args.skip_test)
 
 
         # Package each UUT's logfile
@@ -405,7 +586,7 @@ def main():
             sn = fru_cfg[uut_id]["SN"]
             card_type = NIC_Type.TAORMINA
             test_summary_dict[uut_id] = [(uut_id, sn, card_type, True)]
-        
+
         for uut_id in fail_uut_list:
             sn = fru_cfg[uut_id]["SN"]
             card_type = NIC_Type.TAORMINA

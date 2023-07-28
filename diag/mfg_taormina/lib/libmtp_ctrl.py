@@ -112,6 +112,8 @@ class mtp_ctrl():
 
         self._recover_diag_init = False # set in diag_init.. if set, powercycle and retry diag_init without failing
 
+        self._pass_timestamp = ''
+
         # name is defined by its name in diag fpgautil
         # None/"" = not present
         self.sys_modules = {
@@ -194,6 +196,10 @@ class mtp_ctrl():
                 "QSFP-06": ""
                 }
             }
+
+    def get_passmark_timestamp(self):
+        return self._pass_timestamp
+
 
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
@@ -6516,14 +6522,20 @@ class mtp_ctrl():
         time.sleep(1)
         return True
 
-    def tor_mfg_fru_prog(self):
+    def tor_mfg_fru_prog(self, edc=''):
         """
         Program the MFG portion of "Locked" EEPROM
         Program relevant sections of the "Unlocked" EEPROM
         """
-        if not self.tor_retrieve_edc():
-            self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
-            return False
+        if edc:
+            # If EDC is passed in as a parameter, use it
+            # This is done particulary when EDC is available in Foxconn's MES system
+            self.cli_log_inf("Script will not obtain EDC from internal edc file", level=0)
+            self._edc = edc
+        else:
+            if not self.tor_retrieve_edc():
+                self.cli_log_err("Failed to parse EDC from FRU - please rerun DL1", level=0)
+                return False
 
         if not self.mtp_mgmt_exec_cmd('vtysh -c "diag" -c "diag fruwrite chassis_ul 1 clear_all"'):
             self.cli_log_err("Failed to clear unlocked FRU", level=0)
@@ -6581,6 +6593,9 @@ class mtp_ctrl():
         if not self.mtp_mgmt_exec_cmd('yes | vtysh -c "diag" -c "diag mfgwrite chassis_ul 1 {:s}"'.format(prog_val)):
             self.cli_log_err("Failed to store passmark into FRU", level=0)
             return False
+
+        # Save the passmark timestamp
+        self._pass_timestamp = pass_timestamp
 
         return True
 
@@ -8753,4 +8768,33 @@ class mtp_ctrl():
 
         return True
 
+    def get_eeprom_contents(self, eeprom_location='fru'):
+        total_attempts = 5
+        eeprom_data = dict()
+        valid_eeprom_locations = ['fru', 'mfg_l', 'mfg_ul']
 
+        if eeprom_location not in valid_eeprom_locations:
+            return False, ""
+        if eeprom_location == 'mfg_l':
+            cmd = MFG_DIAG_CMDS.TOR_MFG_L_DISP_FMT
+            unique_search = 'MFG EEPROM Info'
+        elif eeprom_location == 'mfg_ul':
+            cmd = MFG_DIAG_CMDS.TOR_MFG_UL_DISP_FMT
+            unique_search = 'Passmark Info'
+        else:
+            cmd = MFG_DIAG_CMDS.TOR_FRU_DISP_FMT
+            unique_search ='Product Name'
+
+        for attempt in range(total_attempts):
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                continue
+            if unique_search not in self._cmd_buf:
+                continue
+            eeprom_data = self.parse_fruread(self._cmd_buf)
+            break
+
+        if not eeprom_data:
+            self.cli_log_err("Unable to display " + eeprom_location + " eeprom contents")
+            return False, ""
+
+        return True, eeprom_data
