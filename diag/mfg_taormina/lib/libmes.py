@@ -14,6 +14,7 @@ class MES():
 
         self.mgmt_ctrl = ''
         self.next_test_station = ''
+        self.do_push_to_mes = True
 
         self.mes_uut_info = dict()
 
@@ -103,6 +104,8 @@ class MES():
 
     def save_mes_next_test_station(self, next_test_station):
         self.next_test_station = next_test_station
+    def clear_push_to_mes(self):
+        self.do_push_to_mes = False
     def save_mes_uut_cssn(self, cssn):
         # CSSN - Shipping-level SN
         self.mes_uut_info['CSSN'] = cssn
@@ -123,6 +126,8 @@ class MES():
 
     def get_mgmt_ctrl(self):
         return self.mgmt_ctrl
+    def get_push_to_mes(self):
+        return self.do_push_to_mes
     def get_mes_ip(self):
         return self.mes_ip_addr
     def get_mes_url_pfx(self):
@@ -175,7 +180,11 @@ class MES():
             error = True
         if not self.pull_uut_edc_from_mes(chassis_sn):
             error = True
-        if not self.pull_next_test_station_from_mes(self.get_mes_uut_cssn()):
+        try:
+            cssn = self.get_mes_uut_cssn()
+            if not self.pull_next_test_station_from_mes(cssn):
+                error = True
+        except:
             error = True
 
         if error:
@@ -196,7 +205,8 @@ class MES():
             return False
 
         # Verify MES API response
-        if not self._verify_mes_api_response(info, self.get_next_test_station_api()):
+        if not self._verify_mes_api_response(
+            info, self.get_next_test_station_api(), chassis_sn):
             return False
 
         if not unicode(u'NEXT_STATION') in info.json()[u'ResData'][0].keys():
@@ -225,7 +235,9 @@ class MES():
             return False
 
         # Verify MES API response
-        if not self._verify_mes_api_response(info, self.get_uut_info_api()):
+        if not self._verify_mes_api_response(info, self.get_uut_info_api(), chassis_sn):
+            self.get_mgmt_ctrl().cli_log_inf("Test data will NOT be pushed to MES")
+            self.clear_push_to_mes()
             return False
 
         # Save the Shipping-level SN (CSSN) from MES
@@ -285,7 +297,7 @@ class MES():
             return False
 
         # Verify MES API response
-        if not self._verify_mes_api_response(info, self.get_uut_edc_api()):
+        if not self._verify_mes_api_response(info, self.get_uut_edc_api(), chassis_sn):
             return False
 
         # Save the EDC from MES
@@ -328,6 +340,8 @@ class MES():
                     "Chassis Base SN mismatch detected between scanned and MES data")
                 self.get_mgmt_ctrl().cli_log_err("Scanned data : " + scanned_input["UUT_SN"])
                 self.get_mgmt_ctrl().cli_log_err("From MES     : " + self.get_mes_uut_vssn())
+                self.get_mgmt_ctrl().cli_log_inf("Test data will NOT be pushed to MES")
+                self.clear_push_to_mes()
             else:
                 self.get_mgmt_ctrl().cli_log_inf(
                     "Scanned Chassis Base SN matches MES record", level=0)
@@ -430,6 +444,10 @@ class MES():
 
     def push_results_to_mes(self):
 
+        if not self.get_push_to_mes():
+            self.get_mgmt_ctrl().cli_log_inf("Skip data push to MES")
+            return
+
         vssn = self.get_res_chassis_sn()
         test_station = self.get_res_test_station()
         test_status = self.get_res_test_status()
@@ -487,12 +505,12 @@ class MES():
             else:
                 self.get_mgmt_ctrl().cli_log_err("Failed to push info to MES")
                 self.get_mgmt_ctrl().cli_log_err(
-                    "ErrorMessage: " + info.json()['ErrorMessage'])
+                    "ErrorMessage: " + str(info.json()['ErrorMessage']))
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
 
-    def _verify_mes_api_response(self, info, api_name):
+    def _verify_mes_api_response(self, info, api_name, chassis_sn):
 
         # Verify that the API response data structure is valid
         if unicode('Status') not in info.json().keys() or \

@@ -163,6 +163,8 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             if not ret:
                 mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + FF_Stage.FF_2C,
                     level=0)
+                mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
+                mes_obj.clear_push_to_mes()
             else:
                 mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + FF_Stage.FF_2C, level=0)
 

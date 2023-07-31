@@ -204,6 +204,8 @@ def single_uut_led_checks(stage,
                 ret = mes_obj.verify_next_test_station("LED TEST")
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
+                    mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
+                    mes_obj.clear_push_to_mes()
                 else:
                     mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
