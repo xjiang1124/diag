@@ -776,15 +776,15 @@ def main():
             elif nic_type == NIC_Type.NAPLES25SWM:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["ASSIGN_BOARD_ID", "NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
+                testlist = ["ASSIGN_BOARD_ID", "NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
             elif nic_type in FPGA_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["ASSIGN_BOARD_ID", "NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["ASSIGN_BOARD_ID", "NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
+                testlist = ["ASSIGN_BOARD_ID", "NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -831,6 +831,9 @@ def main():
                 # set avs
                 elif test == "AVS_SET":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
+                # assign borad id
+                elif test == "ASSIGN_BOARD_ID":
+                    ret = mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue

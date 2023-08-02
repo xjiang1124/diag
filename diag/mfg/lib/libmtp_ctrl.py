@@ -4669,8 +4669,7 @@ class mtp_ctrl():
             return rc
 
         rc = self.mtp_power_on_nic(slot_list, dl, count_down)
-        if not rc:
-            return rc
+        return rc
 
     def mtp_init_nic_type(self, stage=None, scanned_fru=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
@@ -5587,6 +5586,36 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
             self.cli_log_slot_err_lock(slot, "Set board config failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_nic_assign_board_id(self, slot, partNumber):
+        """
+        Assign provided board id to provided slot, according retrieved CPLD ID and  passed in part number.
+        """
+
+        if partNumber is None:
+            self.cli_log_slot_err_lock(slot, "Please Provide Part Number")
+            return False
+        if not isinstance(partNumber, str):
+            self.cli_log_slot_err_lock(slot, "Please Specify Part Number with String Format")
+            return False
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
+            return False
+        cpldId = nic_cpld_info[2]
+        partNumberIn6Digits = partNumber[0:7] if "-" in partNumber[0:6] else partNumber[0:6]
+        boardId = PN_AND_CPLD_TO_BOARDID.get((partNumberIn6Digits, cpldId), None)
+        if not boardId:
+            self.cli_log_slot_err_lock(slot, "Failed find board ID for PN {:s} and CPLD {:s}".format(partNumber, cpldId))
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId):
+            self.cli_log_slot_err_lock(slot, "Assign Board ID Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False

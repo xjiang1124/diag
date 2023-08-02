@@ -158,6 +158,7 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
     match = re.findall(r"Slot (\d+) ?: +(\w+)", mtp_mgmt_ctrl.mtp_get_cmd_buf())
     for _slot, rslt in match:
         slot = int(_slot) - 1
+        rslt = rslt.upper()
         if (rslt != "PASS" and rslt != "PASSED") and slot not in nic_fail_list:
             nic_fail_list.append(slot)
             ret = "FAIL"
@@ -230,7 +231,7 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
 
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, "DDR_BIST"))
         for iter in range(1, int(iteration)+1):
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "    Iteration: {:d}......".format(iter))
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Sub-iteration: {:d} in {:d}th power cycle loop ......".format(iter, power_cycle_count))
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 nic_test_rslt_list[slot] = False
                 break
