@@ -5591,9 +5591,9 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_nic_assign_board_id(self, slot, partNumber):
+    def mtp_nic_assign_board_id(self, slot, partNumber=None):
         """
-        Assign provided board id to provided slot, according retrieved CPLD ID and  passed in part number.
+        Assign board id to provided slot, according retrieved CPLD ID and passed in part number.
         """
 
         if partNumber is None:
