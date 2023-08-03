@@ -6068,12 +6068,17 @@ class mtp_ctrl():
             as mount usb needs to be done in original svos shell (fresh boot), not an svcli later down the stack
         """
         self.cli_log_inf("Mount USB", level=0)
-        self.mtp_mgmt_exec_cmd("mount usb")
+        handle = self._mgmt_handle
+        prompt = self._mgmt_prompt
+        handle.sendline("mount usb")
+        time.sleep(1)
+        libmfg_utils.mfg_expect(handle, [prompt], timeout=10)
+        handle.sendline("sh")
+        libmfg_utils.mfg_expect(handle, ["#"], timeout=10)
+        handle.sendline("lsusb")
+        libmfg_utils.mfg_expect(handle, ["#"], timeout=10)
+        handle.sendline("exit")
         self.cli_log_inf("Mount USB done", level=0)
-        if not self.mtp_console_enter_shell("sh"):
-            self.cli_log_err("Unable to init bash shell", level=0)
-            return False
-        self.mtp_mgmt_exec_cmd("lsusb", timeout=10)
 
         return True
 
