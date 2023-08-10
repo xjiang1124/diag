@@ -114,6 +114,9 @@ class mtp_ctrl():
 
         self._pass_timestamp = ''
 
+        self._taa_sn = ''
+        self._taa_country_code = 'US'
+
         # name is defined by its name in diag fpgautil
         # None/"" = not present
         self.sys_modules = {
@@ -8773,7 +8776,79 @@ class mtp_ctrl():
 
         return True
 
+
+    def set_taa_sn(self, sn):
+        self._taa_sn = self._taa_country_code + sn[2:]
+    def get_taa_sn(self):
+        return self._taa_sn
+
+
+    def program_taa_fru_eeprom_sn(self):
+        '''
+        Programs the TAA Chassis base SN into the FRU EEPROM area and then checks
+        the EEPROM contents. FTX TAA only.
+
+        Returns True or False
+        '''
+
+        taa_sn = self.get_taa_sn()
+        msg = "Program the TAA Chassis Base SN " + taa_sn + " into the FRU EEPROM"
+        self.cli_log_inf(msg, level=0)
+
+        self.mtp_mgmt_exec_cmd(
+            "fruwrite --chassis 1 --serial_nr {:s}".format(taa_sn))
+        status, eeprom_contents = self.get_eeprom_contents(eeprom_location='fru')
+        if not status:
+            return False
+
+        if eeprom_contents['Serial Number'] != taa_sn:
+            msg = "Failed to program the TAA Chassis Base SN into the FRU EEPROM"
+            self.cli_log_err(msg, level=0)
+            return False
+        else:
+            msg = "Programmed the TAA Chassis Base SN into the FRU EEPROM"
+            self.cli_log_inf(msg, level=0)
+            return True
+
+
+    def program_taa_mfg_eeprom_sn(self):
+        '''
+        Programs the TAA Chassis base SN into the Locked MFG EEPROM area and then
+        checks the EEPROM contents. FTX TAA only.
+
+        Returns True or False
+        '''
+
+        taa_sn = self.get_taa_sn()
+        msg = "Program the TAA Chassis Base SN " + taa_sn + " into the MFG EEPROM"
+        self.cli_log_inf(msg, level=0)
+
+        self.mtp_mgmt_exec_cmd(
+            'yes | vtysh -c "diag" -c "diag mfgwrite chassis 1 serial_nr {:s}"'.format(taa_sn))
+
+        status, eeprom_contents = self.get_eeprom_contents(eeprom_location='mfg_l')
+        if not status:
+            return False
+
+        if eeprom_contents['serial_nr'] != taa_sn:
+            msg = "Failed to program the TAA Chassis Base SN into the MFG EEPROM"
+            self.cli_log_err(msg, level=0)
+            return False
+        else:
+            msg = "Programmed the TAA Chassis Base SN into the MFG EEPROM"
+            self.cli_log_inf(msg, level=0)
+            return True
+
+
     def get_eeprom_contents(self, eeprom_location='fru'):
+        '''
+        Common method to read either the FRU, Locked MFG, or Unlocked MFG
+        EEPROM contents.
+
+        Returns True or False. If True, an eeprom_data dictionary is also
+        returned.
+        '''
+
         total_attempts = 5
         eeprom_data = dict()
         valid_eeprom_locations = ['fru', 'mfg_l', 'mfg_ul']

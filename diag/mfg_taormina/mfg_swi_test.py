@@ -7,6 +7,7 @@ import pexpect
 import threading
 import argparse
 import re
+import socket
 import traceback
 
 sys.path.append(os.path.relpath("lib"))
@@ -131,6 +132,16 @@ def single_uut_fw_program(stage,
     mtp_cfg_db = load_mtp_cfg()
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
     mtp_mgmt_ctrl._test_log_folder = log_dir + log_sub_dir
+
+    # FTX TAA only: Indicate that the Chassis Base SN will be assigned a TAA SN
+    # and that the new SN will be reprogrammed into both FRU and MFG EEPROMs.
+    # Determine and store the new TAA SN into memory for now.
+    if socket.gethostname().lower().startswith('ftx'):
+        mtp_mgmt_ctrl.set_taa_sn(scan_rslt[uut_id]['UUT_SN'])
+        msg = "Chassis Base SN " + scan_rslt[uut_id]['UUT_SN'] + \
+            " will be programmed to " + mtp_mgmt_ctrl.get_taa_sn() + \
+            " in the FRU and MFG EEPROM locations"
+        mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
 
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA
@@ -273,6 +284,7 @@ def single_uut_fw_program(stage,
                     "MGMT_INIT",
                     "SVOS_PROG_UTIL",
                     "MES_FRU_EEPROM_CHK",
+                    "TAA_FRU_EEPROM_PROG",
                     "BOARD_ID",
                     "GPIO_CPLD_PROG",
                     "ELBA_CPLD_PROG",
@@ -292,6 +304,7 @@ def single_uut_fw_program(stage,
                     "ISP_DISABLE",
                     "OS_VERIFY",
                     "MES_MFG_EEPROM_CHK",
+                    "TAA_MFG_EEPROM_PROG",
                     "DIAG_INIT",
                     "PCIE_SCAN",
                     "CLEAR_UT_MARK"
@@ -369,12 +382,17 @@ def single_uut_fw_program(stage,
             elif test == "CLEAR_UT_MARK":
                 ret = mtp_mgmt_ctrl.tor_clear_ut_mark()
 
-            elif test == "MES_SCAN_INPUT_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_SCAN_INPUT_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
+
                 # Verify scanned input against MES data
                 mtp_mgmt_ctrl.cli_log_inf("Verify scanned input against MES data", level=0)
                 ret = mes_obj.verify_scanned_input_against_mes(scan_rslt[uut_id])
 
-            elif test == "MES_FRU_EEPROM_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_FRU_EEPROM_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
 
                 # Verify FRU EEPROM contents against MES data
                 eeprom_contents = dict()
@@ -384,7 +402,9 @@ def single_uut_fw_program(stage,
                 if ret:
                     ret = mes_obj.verify_eeprom_against_mes(eeprom_contents, eeprom_type='fru')
 
-            elif test == "MES_MFG_EEPROM_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_MFG_EEPROM_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
 
                 # Verify Locked MFG EEPROM contents against MES data
                 eeprom_contents = dict()
@@ -405,6 +425,18 @@ def single_uut_fw_program(stage,
                         if ret:
                             ret = mes_obj.verify_eeprom_against_mes(eeprom_contents,
                                 eeprom_type='mfg_ul')
+
+            elif test == "TAA_FRU_EEPROM_PROG":
+                # FTX TAA only
+                if not socket.gethostname().lower().startswith('ftx'):
+                    continue
+                ret = mtp_mgmt_ctrl.program_taa_fru_eeprom_sn()
+
+            elif test == "TAA_MFG_EEPROM_PROG":
+                # FTX TAA only
+                if not socket.gethostname().lower().startswith('ftx'):
+                    continue
+                ret = mtp_mgmt_ctrl.program_taa_mfg_eeprom_sn()
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))

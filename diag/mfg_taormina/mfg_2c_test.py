@@ -168,12 +168,18 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             else:
                 mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + FF_Stage.FF_2C, level=0)
 
-        elif test == "MES_SCAN_INPUT_CHK" and isinstance(mes_obj, MES):
+        elif test == "MES_SCAN_INPUT_CHK":
+            if not isinstance(mes_obj, MES):
+                continue
+
             # Verify scanned input against MES data
             mtp_mgmt_ctrl.cli_log_inf("Verify scanned input against MES data", level=0)
             ret = mes_obj.verify_scanned_input_against_mes(scan_rslt[uut_id])
 
-        elif test == "MES_EEPROM_CHK" and isinstance(mes_obj, MES):
+        elif test == "MES_EEPROM_CHK":
+            if not isinstance(mes_obj, MES):
+                continue
+
             # Verify FRU EEPROM contents against MES data
             eeprom_contents = dict()
             msg = "Verify FRU EEPROM contents against MES data"

@@ -286,12 +286,17 @@ def single_uut_led_checks(stage,
             elif test.startswith("OS_BOOT"):
                 ret = mtp_mgmt_ctrl.tor_boot_select(1)
 
-            elif test == "MES_SCAN_INPUT_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_SCAN_INPUT_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
+
                 # Verify scanned input against MES data
                 mtp_mgmt_ctrl.cli_log_inf("Verify scanned input against MES data", level=0)
                 ret = mes_obj.verify_scanned_input_against_mes(scan_rslt[uut_id])
 
-            elif test == "MES_FRU_EEPROM_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_FRU_EEPROM_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
 
                 # Verify FRU EEPROM contents against MES data
                 eeprom_contents = dict()
@@ -301,7 +306,9 @@ def single_uut_led_checks(stage,
                 if ret:
                     ret = mes_obj.verify_eeprom_against_mes(eeprom_contents, eeprom_type='fru')
 
-            elif test == "MES_MFG_EEPROM_CHK" and isinstance(mes_obj, MES):
+            elif test == "MES_MFG_EEPROM_CHK":
+                if not isinstance(mes_obj, MES):
+                    continue
 
                 # Verify Locked MFG EEPROM contents against MES data
                 eeprom_contents = dict()
