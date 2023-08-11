@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from libdefs import NIC_Type
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
@@ -125,7 +126,7 @@ def main():
         open_file_track_mtp_list = dict()
         logfile_dir_list = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
         mfg_start_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.cli_log_inf("LOOP CYCLE: {0} START".format((loop_cnt + 1)), level=0)

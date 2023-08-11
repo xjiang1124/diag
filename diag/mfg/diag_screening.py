@@ -13,6 +13,7 @@ sys.path.append(os.path.relpath("mtp_regression"))
 import libmfg_utils
 import libmtp_utils
 import test_utils
+import testlog
 from ddr_test_parameters import test2args
 from libdefs import NIC_Type
 from libdefs import Voltage_Margin
@@ -124,7 +125,7 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.cli_log_inf("DDR Test At {:s} Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, vmarg)
+        test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, vmarg)
         if not test_log_file:
             mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
             return
@@ -192,7 +193,7 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(
+    test_log_file = testlog.get_mtp_logfile(
         mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err(
@@ -400,7 +401,7 @@ def run_ddr_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -446,7 +447,7 @@ def run_ddr_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         ddr_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("DDR"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("DDR"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -597,7 +598,7 @@ def run_emmc_test_suite(args):
         emmc_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf(
             "Start deploy MTP {:s} Test script".format("EMMC"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err(
                 "Deploy MTP {:s} Test script failed".format("EMMC"), level=0)
             mtpid_list.remove(mtp_id)

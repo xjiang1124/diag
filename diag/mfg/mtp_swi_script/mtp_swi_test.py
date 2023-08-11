@@ -29,6 +29,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
+import testlog
 
 
 def logfile_close(filep_list):
@@ -455,7 +456,7 @@ def main():
 
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [], skip_slots=args.skip_slots)
     # local logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)

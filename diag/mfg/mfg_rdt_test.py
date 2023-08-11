@@ -26,7 +26,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 import test_utils
-
+import testlog
 
 def load_mtp_cfg(cfg_yaml = None):
     # DL/P2C MTP Chassis
@@ -98,7 +98,7 @@ def single_mtp_rdt_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
+    test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
     if not test_log_file:
         mtp_mgmt_ctrl.cli_log_err("MTP Collect RDT Test result failed", level=0)
         return
@@ -176,7 +176,7 @@ def main():
         open_file_track_mtp_list = dict()
         logfile_dir_list = dict()
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
         mfg_rdt_start_ts = libmfg_utils.timestamp_snapshot()
 

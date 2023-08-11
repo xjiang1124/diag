@@ -28,6 +28,7 @@ from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils
+import testlog
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -150,7 +151,7 @@ def main():
 
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [], skip_slots=args.skip_slots)
     # local logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
 
     mtp_mgmt_ctrl._fst_ver = mtp_capability
     if mtp_cfg_db.get_mtp_max_slots(mtp_id):

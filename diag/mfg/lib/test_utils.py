@@ -6,6 +6,7 @@ from libdefs import *
 from libmfg_cfg import *
 import libmfg_utils
 import libmtp_utils
+import testlog
 
 def single_nic_test_start(mtp_mgmt_ctrl, slot, test_name):
     start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_name)
@@ -303,7 +304,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             profile_cfg = None
 
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_script=profile_cfg, extra_config=mtpcfg_file):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_script=profile_cfg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             return False
         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
@@ -391,7 +392,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_script_dir + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
+        test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
         if not test_log_file:
             mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
             return False

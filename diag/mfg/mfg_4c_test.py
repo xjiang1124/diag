@@ -30,6 +30,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
 import test_utils
+import testlog
 
 
 def load_mtp_cfg(cfg_yaml=None):
@@ -136,7 +137,7 @@ def main():
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)

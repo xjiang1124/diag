@@ -23,6 +23,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import MFG_IMAGE_FILES
 import test_utils
+import testlog
 
 parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -97,7 +98,7 @@ def main():
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     if not GLB_CFG_MFG_TEST_MODE:
         args.skip_test.append("SCAN_VERIFY")

@@ -14,6 +14,7 @@ import json
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from libdefs import MTP_Const
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -1079,7 +1080,7 @@ def main():
                              dbg_mode = verbosity)
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
 
     try:
