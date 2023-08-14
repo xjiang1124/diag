@@ -620,11 +620,14 @@ def expect_sendline(handle, cmd, timeout=None):
         return False
     return True
 
-def host_shell_cmd(mtp_mgmt_ctrl, cmd, timeout=None):
+def host_shell_cmd(mtp_mgmt_ctrl, cmd, timeout=None, logfile=None):
     # host session doesnt have defined prompt, just wait for EOF. Thats why each command needs new session
     if timeout is None:
         timeout = MTP_Const.OS_CMD_DELAY
-    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("### HOST CMD: ### {:s}".format(cmd)) # log the command otherwise pexpect eats it up
+    if logfile is None:
+        logfile = mtp_mgmt_ctrl._diag_filep
+
+    logfile.write("\n[{:s}] HOST: # {:s}".format(get_timestamp(), cmd)) # log the command otherwise pexpect eats it up
     session = pexpect.spawn(cmd, timeout=timeout, logfile=mtp_mgmt_ctrl._diag_filep)
     session.setecho(False)
     idx = mfg_expect_new(session, [pexpect.EOF], timeout=timeout)
@@ -641,11 +644,15 @@ def get_userid(proj):
     else:
         return "diag"
 
-def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir, logfilep=""):
+def network_copy_file(mtp_mgmt_ctrl, local_file, remote_dir):
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    ip_addr = mtp_mgmt_cfg[0]
+    userid = mtp_mgmt_cfg[1]
+    passwd = mtp_mgmt_cfg[2]
+
     temp_remote_dir = "/home/{:s}/".format(userid) #first, scp to a directory where we have permissions
 
-    if logfilep == "":
-        logfilep = open("/tmp/{:s}_nc".format(ip_addr), "w+")
+    logfilep = mtp_mgmt_ctrl._diag_filep
     cmd = "md5sum " + local_file
     session = pexpect.spawn(cmd, logfile=logfilep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
@@ -758,7 +765,9 @@ def network_get_file(mtp_mgmt_ctrl, local_file, remote_file):
     userid = mtp_mgmt_cfg[1]
     passwd = mtp_mgmt_cfg[2]
 
-    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file), logfile=mtp_mgmt_ctrl._diag_filep)
+    cmd = "scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file)
+    mtp_mgmt_ctrl.log_mtp_file(cmd)
+    session = pexpect.spawn(cmd, logfile=mtp_mgmt_ctrl._diag_filep)
     session.setecho(False)
     if mfg_expect(session, ["ssword:"]) < 0:
         mtp_mgmt_ctrl.cli_log_err("File copy: could not get password prompt")
@@ -844,7 +853,9 @@ def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
 
     if logfilep == "":
         logfilep = open("/tmp/{:s}_nc".format(ip_addr), "w+")
+
     cmd = "md5sum " + local_file
+    mtp_mgmt_ctrl.log_mtp_file(cmd)
     session = pexpect.spawn(cmd, logfile=logfilep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
@@ -855,7 +866,9 @@ def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
         cli_err("Execute command {:s} failed".format(cmd))
         return False
 
-    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, temp_remote_dir), logfile=logfilep)
+    cmd = "scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, temp_remote_dir)
+    mtp_mgmt_ctrl.log_mtp_file(cmd)
+    session = pexpect.spawn(cmd, logfile=logfilep)
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
@@ -887,6 +900,7 @@ def network_copy_file2(mtp_mgmt_ctrl, local_file, remote_dir):
         return False
 
 def mtp_clear_console(mtp_mgmt_ctrl):
+    mtp_mgmt_ctrl._using_ssh = False
     if mtp_mgmt_ctrl._ts_cfg:
         if mtp_mgmt_ctrl._use_usb_console:
             mtp_mgmt_ctrl.cli_log_inf("Clearing USB console line")
@@ -900,6 +914,7 @@ def mtp_clear_console(mtp_mgmt_ctrl):
         ts_pass = ts_cfg[3]
         telnet_cmd = mtp_mgmt_ctrl.mtp_get_telnet_command()
         telnet_cmd = telnet_cmd[:-4] #remove port
+        mtp_mgmt_ctrl.log_mtp_file(telnet_cmd)
         session = pexpect.spawn(telnet_cmd, logfile=mtp_mgmt_ctrl._diag_filep)
         prompt_list = ["ogin:","assword:", "]>", ">", "#"]
         while True:
@@ -966,12 +981,8 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
     cmd = "rm -rf {:s}/lib {:s}/config {:s}/".format(mtp_script_dir, mtp_script_dir, logfile_dir)
     os.system(cmd)
 
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
     # download the test script pkg
-    if not network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, onboard_home_dir, mtp_mgmt_ctrl._diag_filep):
+    if not network_copy_file(mtp_mgmt_ctrl, mtp_script_pkg, onboard_home_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
         return False
     # remove the stale test script
@@ -1031,50 +1042,8 @@ def tor_uut_list_poweroff(mtp_mgmt_ctrl_list):
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
 
-def mtp_common_setup(mtp_mgmt_ctrl, mtp_capability, fan_spd=MTP_Const.MFG_EDVT_NORM_FAN_SPD, stage=None):
-    mtp_mgmt_ctrl.cli_log_inf("Try to connect MTP chassis", level=0)
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect():
-        mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP chassis", level=0)
-        return False
-    mtp_mgmt_ctrl.cli_log_inf("MTP chassis connected\n", level=0)
-
-    # diag environment pre init
-    if not mtp_mgmt_ctrl.mtp_diag_pre_init("/dev/null"):
-        mtp_mgmt_ctrl.cli_log_err("Unable to pre-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # diag environment post init
-    if not mtp_mgmt_ctrl.mtp_diag_post_init(mtp_capability, stage):
-        mtp_mgmt_ctrl.cli_log_err("Unable to post-init diag environment", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # get the mtp system info
-    if not mtp_mgmt_ctrl.mtp_sys_info_disp():
-        mtp_mgmt_ctrl.cli_log_err("Unable to retrieve MTP system info", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # PSU/FAN absent, powerdown MTP
-    if not mtp_mgmt_ctrl.mtp_hw_init(fan_spd):
-        mtp_mgmt_ctrl.cli_log_err("MTP HW Init Fail", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-
-    # init all the nic.
-    if not mtp_mgmt_ctrl.mtp_nic_init():
-        mtp_mgmt_ctrl.cli_log_err("Initialize NIC type, present failed", level=0)
-        mtp_mgmt_ctrl.mtp_chassis_shutdown()
-        return False
-    return True
-
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    mtp_ip_addr = mtp_mgmt_cfg[0]
-    mtp_usrid = mtp_mgmt_cfg[1]
-    mtp_passwd = mtp_mgmt_cfg[2]
     image_dir = "/home/diag/"
 
     done_list = []
@@ -1088,7 +1057,7 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list, image_on_mtp):
                 return False
 
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s}".format(image), level=0)
-            if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir):
+            if not network_copy_file(mtp_mgmt_ctrl, image_rel_path, image_dir):
                 mtp_mgmt_ctrl.cli_log_err("Copy Firmware image {:s} failed... Abort".format(image), level=0)
                 return False
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s} complete".format(image), level=0)
@@ -1125,14 +1094,9 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, hom
         return False
 
     mtp_mgmt_ctrl.cli_log_inf("Copy MTP Chassis image: {:s}".format(mtp_image_file), level=0)
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    mtp_ip_addr = mtp_mgmt_cfg[0]
-    mtp_usrid = mtp_mgmt_cfg[1]
-    mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = homedir
-    logfilep = mtp_mgmt_ctrl._diag_filep
 
-    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir, logfilep=logfilep):
+    if not network_copy_file(mtp_mgmt_ctrl, mtp_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy MTP Chassis image failed... Abort", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
@@ -1142,7 +1106,7 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp, hom
     mtp_mgmt_ctrl.cli_log_inf("Update MTP Chassis image complete\n", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("Copy NIC Diag image: {:s}".format(nic_image_file), level=0)
-    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
+    if not network_copy_file(mtp_mgmt_ctrl, nic_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy NIC Diag image failed... Abort", level=0)
         return False
 
@@ -1180,13 +1144,9 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
         return False
 
     mtp_mgmt_ctrl.cli_log_inf("Copy FST Penctl image: {:s}".format(mtp_image_file), level=0)
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    mtp_ip_addr = mtp_mgmt_cfg[0]
-    mtp_usrid = mtp_mgmt_cfg[1]
-    mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
 
-    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir):
+    if not network_copy_file(mtp_mgmt_ctrl, mtp_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy FST Penctl image failed... Abort", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update FST Penctl image: {:s}".format(os.path.basename(mtp_image_file)), level=0)
@@ -1196,7 +1156,7 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image, nic_image, image_on_mtp):
     mtp_mgmt_ctrl.cli_log_inf("Update FST Penctl image complete\n", level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("Copy FST Penctl TOKEN image: {:s}".format(nic_image_file), level=0)
-    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir):
+    if not network_copy_file(mtp_mgmt_ctrl, nic_image_file, remote_dir):
         mtp_mgmt_ctrl.cli_log_err("Copy FST Penctl TOKEN image failed... Abort", level=0)
         return False
 
@@ -1215,6 +1175,7 @@ def mtp_update_packages(mtp_mgmt_ctrl, packages_src_dir, packages_dst_dir):
         return False
 
     cmd = "ls " + packages_src_dir
+    mtp_mgmt_ctrl.log_mtp_file(cmd)
     session = pexpect.spawn(cmd, logfile=mtp_mgmt_ctrl._diag_filep)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     if "No such file" in session.before:
@@ -1273,15 +1234,6 @@ def fail_all_slots(mtp_mgmt_ctrl):
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-def post_fail_steps(mtp_mgmt_ctrl, slot):
-    # first, exit out of nic ssh if pexpect handle is there
-    mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds(list(), timeout=1)
-
-    mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
-    mtp_mgmt_ctrl.mtp_mgmt_check_cpld_debug_bits(slot)
-    mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
-    mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
-
 def email_report(email_to, title, body = None):
     if not email_to:
         return
@@ -1299,165 +1251,6 @@ def email_report(email_to, title, body = None):
     server.quit()
 
 ###################################################################################
-
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
-    test_xml = ""
-    for test, test_rslt, err_dsc, err_code in zip(test_list, test_rslt_list, err_dsc_list, err_code_list):
-        # (test, status, value, description, failure code)
-        value = ""
-        test_xml += FLX_SAVE_UUT_TEST_RSLT_FMT.format(test, test_rslt, value, err_dsc, err_code)
-
-    #(stage, SN, start_ts, duration, stop_ts, result)
-
-    factory = flx_sn_to_factory(sn)
-    if not factory:
-        print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return None
-
-    if factory == FLX_Factory.PENANG:
-        ff_pn = flx_stage_to_penang(stage)
-        return FLX_PENANG_SAVE_UUT_RSLT_XML_HEAD + \
-               FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT.format(ff_pn,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
-               test_xml + \
-               FLX_SAVE_UUT_RSLT_ENTRY_END + \
-               FLX_SAVE_UUT_RSLT_XML_TAIL
-    else:
-        return FLX_SAVE_UUT_RSLT_XML_HEAD + \
-               FLX_SAVE_UUT_RSLT_ENTRY_FMT.format(stage,sn,str(start_ts),str(duration),str(stop_ts),rslt,nic_type,duration,rslt) + \
-               test_xml + \
-               FLX_SAVE_UUT_RSLT_ENTRY_END + \
-               FLX_SAVE_UUT_RSLT_XML_TAIL
-
-
-def flx_soap_get_uut_info_xml(stage, sn):
-    factory = flx_sn_to_factory(sn)
-    if not factory:
-        print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return None
-
-    if factory == FLX_Factory.PENANG:
-        ff_pn = flx_stage_to_penang(stage)
-        return FLX_PENANG_GET_UUT_INFO_XML_HEAD + \
-               FLX_PENANG_GET_UUT_INFO_ENTRY_FMT.format(sn, ff_pn) + \
-               FLX_GET_UUT_INFO_XML_TAIL
-    else:
-        return FLX_GET_UUT_INFO_XML_HEAD + \
-               FLX_GET_UUT_INFO_ENTRY_FMT.format(sn, stage) + \
-               FLX_GET_UUT_INFO_XML_TAIL
-
-
-def flx_sn_to_factory(sn):
-    if re.match(FLX_PENANG_BUILD_SN_FMT, sn):
-        return FLX_Factory.PENANG
-    elif re.match(FLX_MILPITAS_BUILD_SN_FMT, sn):
-        return FLX_Factory.MILPITAS
-    else:
-        return None
-
-
-def flx_stage_to_penang(stage):
-    if stage == FF_Stage.FF_DL:
-        return FPN_FF_Stage.FF_DL
-    elif stage == FF_Stage.FF_CFG:
-        return FPN_FF_Stage.FF_CFG
-    elif stage == FF_Stage.FF_P2C:
-        return FPN_FF_Stage.FF_P2C
-    elif stage == FF_Stage.FF_2C:
-        return FPN_FF_Stage.FF_2C
-    elif stage == FF_Stage.FF_4C_H:
-        return FPN_FF_Stage.FF_4C_H
-    elif stage == FF_Stage.FF_4C_L:
-        return FPN_FF_Stage.FF_4C_L
-    elif stage == FF_Stage.FF_SWI:
-        return FPN_FF_Stage.FF_SWI
-    elif stage == FF_Stage.FF_FST:
-        return FPN_FF_Stage.FF_FST
-    else:
-        print("Unknown Flex Flow Stage: {:s}".format(stage))
-        return None
-
-def soap_post_report(xml, factory=FLX_Factory.PENANG):
-    if factory == FLX_Factory.PENANG:
-        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
-    else:
-        webservice = httplib.HTTP(FLX_WEBSERVER)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
-
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
-
-    webservice.send(xml)
-
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
-    if match:
-        return match[0]
-    else:
-        print("################## SAVE UUT RSLT #######################")
-        print resp
-        print("################## SAVE UUT RSLT #######################")
-        return "500"
-
-
-def soap_get_uut_info(xml, factory=FLX_Factory.PENANG):
-    if factory == FLX_Factory.PENANG:
-        webservice = httplib.HTTP(FLX_PENANG_WEBSERVER)
-        webservice.putrequest("POST", FLX_PENANG_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
-    else:
-        webservice = httplib.HTTP(FLX_WEBSERVER)
-        webservice.putrequest("POST", FLX_API_URL)
-        webservice.putheader("Content-Type", "text/xml")
-        webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
-
-    webservice.putheader("Content-length", "%d" % len(xml))
-    webservice.endheaders()
-
-    webservice.send(xml)
-
-    statuscode, statusmessage, header = webservice.getreply()
-    resp = webservice.getfile().read()
-    match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
-    if match:
-        return match[0]
-    else:
-        print("################## GET UUT INF #######################")
-        print resp
-        print("################## GET UUT INF #######################")
-        return "500"
-
-
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list):
-    factory = flx_sn_to_factory(sn)
-    if not factory:
-        print("Unable to locate flex factory based on sn: {:s}".format(sn))
-        return False
-
-    xml = flx_soap_get_uut_info_xml(stage, sn)
-    if not xml:
-        return False
-
-    ret = soap_get_uut_info(xml, factory)
-    if int(ret) != 0:
-        return False
-
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-    if not xml:
-        return False
-
-    ret = soap_post_report(xml, factory)
-    if int(ret) != 0:
-        return False
-
-    return True
-
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
@@ -1802,69 +1595,6 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage):
 
     return local_test_log_file
 
-
-def mfg_report(mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage):
-    mtp_cli_id_str = id_str(mtp = mtp_id)
-    duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
-
-    # MTP related error, don't post any report
-    if MTP_DIAG_Report.MTP_DIAG_REGRESSION_FAIL in buf:
-        cli_inf(mtp_cli_id_str + "MTP Setup fails, no report will be generated")
-        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-        os.system(cmd)
-        return
-
-    cli_inf(mtp_cli_id_str + "Start posting test report")
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS in buf:
-        nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-        match = re.findall(nic_pass_reg_exp, buf)
-        for slot, sn_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            err_code_list = list()
-            nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-                err_code_list.append(result)
-            ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list)
-            if not ret:
-                cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
-            else:
-                cli_inf(mtp_cli_id_str + "Post [{:s}] result to webserver complete".format(sn))
-
-
 def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
     # for 2C, coalesce HV and LV results into one result
     sn_result_dict = dict()
@@ -1934,12 +1664,18 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
     mtp_diag_log_file = logfile_path + "/mtp_diag.log"
     mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
     mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
+    mtp_console_log_file = logfile_path + "/mtp_console.log"
+    mtp_console_cmd_file = logfile_path + "/mtp_console_cmd.log"
     mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_test_log_filep)
     mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_diag_log_filep)
     mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
     open_file_track_list.append(mtp_diag_cmd_log_filep)
+    mtp_console_log_filep = open(mtp_console_log_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_console_log_filep)
+    mtp_console_cmd_filep = open(mtp_console_cmd_file, MODIFIER, buffering=0)
+    open_file_track_list.append(mtp_console_cmd_filep)
     mtp_diagmgr_log_filep = open(mtp_diagmgr_log_file, MODIFIER, buffering=0)
 
     diag_nic_log_filep_list = list()
@@ -1950,8 +1686,11 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 
+    mtp_mgmt_ctrl._test_log_folder = logfile_path
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
+    mtp_mgmt_ctrl._console_filep = mtp_console_log_filep
+    mtp_mgmt_ctrl._console_cmd_filep = mtp_console_cmd_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
 

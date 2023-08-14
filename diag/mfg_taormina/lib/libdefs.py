@@ -375,6 +375,9 @@ class MFG_DIAG_CMDS:
     NIC_HPESWM_VENDOR_DISP_FMT = "{:s}eeutil -disp -field=sn -hpeSwm"
     NIC_FRU_DUMP_FMT = "eeutil -dump -numBytes=512"
 
+    TOR_MFG_L_DISP_FMT = "vtysh -c 'diag' -c 'diag mfgread chassis 1'"
+    TOR_MFG_UL_DISP_FMT = "vtysh -c 'diag' -c 'diag mfgread chassis_ul 1'"
+
     TOR_FRU_DISP_FMT  = "fruread  --chassis 1"
     TOR_PCBASN_DISP_FMT = "fruread --chassis 1 --ext_tpm_serial_nr"
     TOR_FRU_ERASE_FMT = "fruwrite --chassis 1 --clear_all"
