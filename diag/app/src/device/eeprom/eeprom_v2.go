@@ -79,7 +79,7 @@ const (
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
     SKU_ADI_MSFT        string = "DSC2-2Q200-32R32F64P-M2"
     SKU_SOLO_MSFT       string = "DSC2-2Q200-32R32F64P-M4"
-    SKU_ADICR_MSFT      string = "DSC2-2Q200-32R32F64P-M4"
+    SKU_ADICR_MSFT      string = "DSC2-2Q200-32R32F64P-M5"
     SKU_SOLO_SSDK       string = "DSC2-2Q200-32R32F64P-S4"
     SKU_NETAPP_R2       string = "NA"
     SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"
