@@ -30,6 +30,7 @@ parser.add_argument("-card_type", "--card_type", help="card type", type=str, def
 parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
 parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
 parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])
 parser.add_argument("--logdir", help="Log dir", default=None)
 
 args = parser.parse_args()
@@ -46,7 +47,7 @@ def load_mtp_cfg(cfg_yaml):
     return mtp_cfg_db
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, skip_slots=[]):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -55,6 +56,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+    if len(skip_slots) > 0 and not mtp_cfg_db.set_mtp_slots_to_skip(mtp_id, skip_slots):
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to set skip slots")
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
@@ -83,7 +86,7 @@ def main():
         else:
             diag_log_filep = None
             diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
-        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list, skip_slots=args.skip_slots)
         if mtp_cfg_db.get_mtp_max_slots(mtp_id):
             mtp_mgmt_ctrl._slots = mtp_cfg_db.get_mtp_max_slots(mtp_id)
 
@@ -119,7 +122,8 @@ def main():
                                             logfile_dir_list[mtp_id],
                                             open_file_track_mtp_list[mtp_id],
                                             args.skip_test,
-                                            args.logdir),
+                                            args.logdir,
+                                            args.skip_slots),
                                     kwargs = ({"mtpcfg_file": mtpcfg_file,
                                             "testsuite_name": stage,
                                             "card_type": card_type}))
