@@ -111,3 +111,5 @@ dependencies:
     exclude_dirs: ["mfg/scripts"]
   diag/mfg/mtp_fst_test:
   - reference: test/jobs/sanity/ortano-fst
+  qa-infra:
+  - reference: test/jobs/precheckin/ortano-DL
