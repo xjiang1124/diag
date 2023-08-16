@@ -7,14 +7,18 @@ declare -A ortanoA_high=([elb0_arm]=2 [elb0_core]=2)
 declare -A ortanoA_low=([elb0_arm]=-2 [elb0_core]=-2)
 declare -A ortanoA_normal=([elb0_arm]=0 [elb0_core]=0)
 ortanoA_vmarg=(ortanoA_normal ortanoA_low ortanoA_high)
-declare -A ginestra_d4_high=([gig0_arm]=5 [gig0_core]=5 [vdd_ddr]=2 [ddr_vddq]=2)
-declare -A ginestra_d4_low=([gig0_arm]=-10 [gig0_core]=-10 [vdd_ddr]=-2 [ddr_vddq]=-2)
+declare -A ginestra_d4_high_2=([gig0_arm]=2 [gig0_core]=2 [vdd_ddr]=2 [ddr_vddq]=2)
+declare -A ginestra_d4_low_2=([gig0_arm]=-2 [gig0_core]=-2 [vdd_ddr]=-2 [ddr_vddq]=-2)
+declare -A ginestra_d4_high_3=([gig0_arm]=3 [gig0_core]=3 [vdd_ddr]=3 [ddr_vddq]=3)
+declare -A ginestra_d4_low_3=([gig0_arm]=-3 [gig0_core]=-3 [vdd_ddr]=-3 [ddr_vddq]=-3)
 declare -A ginestra_d4_normal=([gig0_arm]=0 [gig0_core]=0 [vdd_ddr]=0 [ddr_vddq]=0)
-ginestra_d4_vmarg=(ginestra_d4_normal ginestra_d4_low ginestra_d4_high)
-declare -A ginestra_d5_high=([gig0_arm]=5 [gig0_core]=5 [vdd_ddr]=2 [ddr_vdd]=2 [ddr_vddq]=2 [ddr_vpp]=2)
-declare -A ginestra_d5_low=([gig0_arm]=-10 [gig0_core]=-10 [vdd_ddr]=-2 [ddr_vdd]=-2 [ddr_vddq]=-2 [ddr_vpp]=-2)
+ginestra_d4_vmarg=(ginestra_d4_normal ginestra_d4_low_2 ginestra_d4_low_3 ginestra_d4_high_2 ginestra_d4_high_3)
+declare -A ginestra_d5_high_2=([gig0_arm]=2 [gig0_core]=2 [vdd_ddr]=2 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
+declare -A ginestra_d5_low_2=([gig0_arm]=-2 [gig0_core]=-2 [vdd_ddr]=-2 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
+declare -A ginestra_d5_high_3=([gig0_arm]=3 [gig0_core]=3 [vdd_ddr]=3 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
+declare -A ginestra_d5_low_3=([gig0_arm]=-3 [gig0_core]=-3 [vdd_ddr]=-3 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
 declare -A ginestra_d5_normal=([gig0_arm]=0 [gig0_core]=0 [vdd_ddr]=0 [ddr_vdd]=0 [ddr_vddq]=0 [ddr_vpp]=0)
-ginestra_d5_vmarg=(ginestra_d5_normal ginestra_d5_low ginestra_d5_high)
+ginestra_d5_vmarg=(ginestra_d5_normal ginestra_d5_low_2 ginestra_d5_low_3 ginestra_d5_high_2 ginestra_d5_high_3)
 
 set_vmarg_lacona()
 {
@@ -113,10 +117,22 @@ set_vmarg()
             index=0
         elif [[ "$1" == "low" ]]
         then
-            index=1
+            if [[ "$2" == "2" ]]
+            then
+                index=1
+            elif [[ "$2" == "3" ]]
+            then
+                index=2
+            fi
         elif [[ "$1" == "high" ]]
         then
-            index=2
+            if [[ "$2" == "2" ]]
+            then
+                index=3
+            elif [[ "$2" == "3" ]]
+            then
+                index=4
+            fi
         fi
         if [[ $CARD_TYPE == "GINESTRA_D4" ]]
         then
@@ -148,9 +164,9 @@ set_vmarg()
     return
 }
 
-echo "=== Pre-Setting Vmarg to $1 ==="
+echo "=== Pre-Setting Vmarg to $@ ==="
 /data/nic_util/devmgr -status
-echo "=== Post Setting Vmarg to $1 ==="
-set_vmarg $1
-echo "=== Vmarg is at $1 ==="
+echo "=== Post Setting Vmarg to $@ ==="
+set_vmarg "$@"
+echo "=== Vmarg is at $@ ==="
 
