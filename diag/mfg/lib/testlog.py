@@ -8,7 +8,13 @@ from libdefs import FF_Stage
 from libdefs import MFG_DIAG_CMDS
 
 
+DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
+DIAG_MFG_STAGE_LOG_DIR_FMT   = "/mfg_log/{:s}/{:s}/{:s}"
+DIAG_MFG_CSP_LOG_DIR_FMT     = "/mfg_log/CSP_REC/{:s}/"
+DIAG_MODEL_STAGE_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/{:s}/{:s}"
+DIAG_MODEL_CSP_LOG_DIR_FMT   = "/tmp/mfg_log/CSP_REC/{:s}/"
 MFG_STAGE_LOG_DIR = "{:s}_{:s}_{:s}"
+MFG_STAGE_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
 
 def find_logfile_path(mtp_mgmt_ctrl, stage):
     log_parent_dir = os.getcwd()
@@ -41,10 +47,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
     mtp_test_log_file = logfile_path + "/mtp_test.log"
     mtp_diag_log_file = logfile_path + "/mtp_diag.log"
     mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
-    if run_from_mtp:
-        mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
-    else:
-        mtp_diagmgr_log_file = "/tmp/mtp_diagmgr.log"
+    mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
 
     # so we dont break compatability with parser, mfg tracker, and other things
     if stage == FF_Stage.FF_FST:
@@ -148,118 +151,34 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
     mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files started".format(stage), level=0)
 
     log_timestamp = libmfg_utils.get_timestamp()
+    sub_dir = MFG_STAGE_LOG_DIR.format(stage, mtp_id, log_timestamp)
+    log_pkg_file = log_dir + MFG_STAGE_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
+    test_log_file = "{:s}/mtp_test.log".format(log_dir+sub_dir)
+    local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
+    if stage == FF_Stage.FF_FST:
+        test_log_file = "{:s}/test_fst.log".format(log_dir+sub_dir)
     if stage == FF_Stage.FF_DL:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_CFG:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_CFG_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_CFG_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_CFG_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_P2C:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_P2C_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(stage, mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_2C_LOG_DIR.format(stage, mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_2C_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_SWI:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_SWI_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SWI_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
         # copy csp files from MTP to Server
         test_onboard_csp_log_files = MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES
     elif stage == FF_Stage.FF_FST:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_FST_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_FST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}test_fst.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_test_fst.log".format(mtp_id)
     elif stage == FF_Stage.FF_SRN:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_SRN_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SRN_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_ORT:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_ORT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     elif stage == FF_Stage.FF_RDT:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_RDT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     else:
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
@@ -448,60 +367,10 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
             temp_nic_type = nic_type
         if sn == "None":
             sn = NIC_Type.UNKNOWN
-        if stage == FF_Stage.FF_DL:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-        if stage == FF_Stage.FF_CFG:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CFG_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_CFG_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_P2C:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
-        elif stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, stage, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, stage, sn)
-        elif stage == FF_Stage.FF_SWI:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SWI_LOG_DIR_FMT.format(nic_type, sn)
-                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CSP_LOG_DIR_FMT.format(nic_type)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SWI_LOG_DIR_FMT.format(nic_type, sn)
-                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_CSP_LOG_DIR_FMT.format(nic_type)
-        elif stage == FF_Stage.FF_FST:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_SRN:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SRN_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SRN_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_ORT:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_ORT_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_ORT_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_RDT:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_RDT_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_RDT_LOG_DIR_FMT.format(nic_type, sn)
+        if GLB_CFG_MFG_TEST_MODE:
+            mfg_log_dir = DIAG_MFG_STAGE_LOG_DIR.format(nic_type, stage, sn)
         else:
-            pass
+            mfg_log_dir = DIAG_MODEL_STAGE_LOG_DIR.format(nic_type, stage, sn)
 
         if GLB_CFG_MFG_TEST_MODE:
             cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
