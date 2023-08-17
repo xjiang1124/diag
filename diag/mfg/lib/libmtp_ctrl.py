@@ -97,6 +97,7 @@ class mtp_ctrl():
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
         self._diagmgr_logfile = None
         self._temppn = None
+        self._test_log_folder = None # relative path to log folder
 
         self._cicd_run = False
 

@@ -1,45 +1,39 @@
 import sys, os
+import re
 import libmfg_utils
 from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_DIAG_Report
 from libdefs import FF_Stage
+from libdefs import MFG_DIAG_CMDS
 
 
-def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
+MFG_STAGE_LOG_DIR = "{:s}_{:s}_{:s}"
+
+def find_logfile_path(mtp_mgmt_ctrl, stage):
+    log_parent_dir = os.getcwd()
+    mtp_id = mtp_mgmt_ctrl._id
+    stage = str(stage)
+    search_rgx = r"%s_MTP-[0-9A-Za-z]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
+    for item in os.listdir(log_parent_dir):
+        if re.search(search_rgx, item):
+            return log_parent_dir + "/" + item
+    return None
+
+def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
+    log_timestamp = libmfg_utils.get_timestamp()
+    mtp_id = mtp_mgmt_ctrl._id
+    log_dir = MFG_STAGE_LOG_DIR.format(stage, mtp_id, log_timestamp)
+    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_parent_dir + log_dir))
+    logfile_path = log_parent_dir + "/" + log_dir
+    return logfile_path
+
+def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
     if run_from_mtp:
-        # Running python/pexpect on the MTP
-        # Fixed directory name, always cleaned up before starting
-        logfile_path = os.getcwd()
+        logfile_path = find_logfile_path(mtp_mgmt_ctrl, stage)
         MODIFIER = "a+"
     else:
-        # Running python/pexpect outside MTP
-        # Directory name contains timestamp and MTP id
-        log_dir = "log/"
-        log_timestamp = libmfg_utils.get_timestamp()
-        mtp_id = mtp_mgmt_ctrl._id
-        if stage == FF_Stage.FF_DL:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_P2C:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_2C_L or stage == FF_Stage.FF_2C_H:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format("4C", mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_SWI:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_FST:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_SRN:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_ORT:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_RDT:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
-        else:
-            print("Unknown stage!")
-            return []
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
-
-        logfile_path = log_dir + log_sub_dir
+        logfile_path = create_logfile_path(mtp_mgmt_ctrl, stage)
         MODIFIER = "w+"
 
     open_file_track_list = list()
@@ -74,6 +68,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 
+    mtp_mgmt_ctrl._test_log_folder = logfile_path
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
@@ -82,7 +77,8 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
 
     return logfile_path, open_file_track_list
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None, extra_config=None):
+
+def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=None, extra_config=None):
     shared_script_dir = os.path.dirname(mtp_script_dir)
     mtp_script_dir = os.path.dirname(mtp_script_dir) + ".{:s}/".format(mtp_mgmt_ctrl._id)
     # remove previous copy to this MTP
@@ -100,12 +96,9 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
-    if logfile_dir:
-        cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
-        os.system(cmd)
-        if str(FF_Stage.FF_DL) in logfile_dir or str(FF_Stage.FF_SWI) in logfile_dir or str(FF_Stage.FF_FST) in logfile_dir:
-            cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
-            os.system(cmd)
+    logfile_dir = mtp_mgmt_ctrl._test_log_folder
+    cmd = "cp -r {:s}/ {:s}".format(logfile_dir, mtp_script_dir)
+    os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
     os.system(cmd)
     # remove the lib config for the next run

@@ -177,7 +177,8 @@ def main():
     scanned_fru_cfg = None
     if "SCAN_VERIFY" not in args.skip_test and False:
         # load the barcode config file made in toplevel
-        scan_cfg_file =  MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
         scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
         if mtp_id not in scanned_fru_cfg_dict:
             mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)

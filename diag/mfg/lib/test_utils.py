@@ -304,7 +304,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             profile_cfg = None
 
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_script=profile_cfg, extra_config=mtpcfg_file):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=profile_cfg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             return False
         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
