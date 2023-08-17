@@ -6,33 +6,54 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MTP_DIAG_Report
 from libdefs import FF_Stage
 from libdefs import MFG_DIAG_CMDS
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 
 
-DIAG_QA_LOG_DIR = "/vol/hw/diag/diag_qa/regression_log/"
-DIAG_MFG_STAGE_LOG_DIR_FMT   = "/mfg_log/{:s}/{:s}/{:s}"
-DIAG_MFG_CSP_LOG_DIR_FMT     = "/mfg_log/CSP_REC/{:s}/"
-DIAG_MODEL_STAGE_LOG_DIR_FMT = "/tmp/mfg_log/{:s}/{:s}/{:s}"
-DIAG_MODEL_CSP_LOG_DIR_FMT   = "/tmp/mfg_log/CSP_REC/{:s}/"
-MFG_STAGE_LOG_DIR = "{:s}_{:s}_{:s}"
-MFG_STAGE_LOG_PKG_FILE = "{:s}_{:s}_{:s}.tar.gz"
+QA_LOG_DIR          = "/vol/hw/diag/diag_qa/regression_log/"
+MFG_STAGE_LOG_DIR   = "/mfg_log/{:s}/{:s}/{:s}/"
+MFG_CSP_LOG_DIR     = "/mfg_log/CSP_REC/{:s}/"
+MODEL_STAGE_LOG_DIR = "/tmp/mfg_log/{:s}/{:s}/{:s}/"
+MODEL_CSP_LOG_DIR   = "/tmp/mfg_log/CSP_REC/{:s}/"
+STAGE_LOG_FOLDER    = "{:s}_{:s}_{:s}"
+
+def set_mtp_test_log_folder(mtp_mgmt_ctrl, log_path):
+    mtp_mgmt_ctrl._test_log_folder = log_path
+
+def get_mtp_test_log_folder(mtp_mgmt_ctrl):
+    return mtp_mgmt_ctrl._test_log_folder
 
 def find_logfile_path(mtp_mgmt_ctrl, stage):
+    if stage == FF_Stage.FF_P2C:
+        stage = "NT"
     log_parent_dir = os.getcwd()
     mtp_id = mtp_mgmt_ctrl._id
     stage = str(stage)
     search_rgx = r"%s_MTP-[0-9A-Za-z]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
     for item in os.listdir(log_parent_dir):
         if re.search(search_rgx, item):
-            return log_parent_dir + "/" + item
+            return os.path.join(log_parent_dir, item)
     return None
 
 def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
+    if stage == FF_Stage.FF_P2C:
+        stage = "NT"
+    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_parent_dir)
+    err = os.system(cmd) # make sure it exists
+    if err:
+        mtp_mgmt_ctrl.cli_log_err("Unable to create directory {:s} for the log".format(log_parent_dir), level=0)
+        return None
     log_timestamp = libmfg_utils.get_timestamp()
     mtp_id = mtp_mgmt_ctrl._id
-    log_dir = MFG_STAGE_LOG_DIR.format(stage, mtp_id, log_timestamp)
+    log_dir = STAGE_LOG_FOLDER.format(stage, mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_parent_dir + log_dir))
-    logfile_path = log_parent_dir + "/" + log_dir
+    logfile_path = os.path.join(log_parent_dir, log_dir)
     return logfile_path
+
+def replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir):
+    """ at end of test, get the new ONBOARD logfile path """
+    tlvl_logfile_path = get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    log_dir = os.path.split(os.path.normpath(tlvl_logfile_path))[1] # extract "log//DL_MTP-XXXX/" --> "DL_MTP-XXXX"
+    set_mtp_test_log_folder(mtp_mgmt_ctrl, os.path.join(mtp_script_dir, log_dir))
 
 def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
     if run_from_mtp:
@@ -71,7 +92,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 
-    mtp_mgmt_ctrl._test_log_folder = logfile_path
+    set_mtp_test_log_folder(mtp_mgmt_ctrl, logfile_path)
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
@@ -99,7 +120,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
-    logfile_dir = mtp_mgmt_ctrl._test_log_folder
+    logfile_dir = get_mtp_test_log_folder(mtp_mgmt_ctrl)
     cmd = "cp -r {:s}/ {:s}".format(logfile_dir, mtp_script_dir)
     os.system(cmd)
     cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
@@ -143,6 +164,13 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
 
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[], mirror_logdir=None):
+    if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_4C_H):
+        stage_str = "4C/"+str(stage)
+    elif stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
+        stage_str = "2C/"+str(stage)
+    else:
+        stage_str = str(stage)
+
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     ipaddr = mtp_mgmt_cfg[0]
     userid = mtp_mgmt_cfg[1]
@@ -150,13 +178,14 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
 
     mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files started".format(stage), level=0)
 
-    log_timestamp = libmfg_utils.get_timestamp()
-    sub_dir = MFG_STAGE_LOG_DIR.format(stage, mtp_id, log_timestamp)
-    log_pkg_file = log_dir + MFG_STAGE_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-    test_log_file = "{:s}/mtp_test.log".format(log_dir+sub_dir)
+    logfile_path = get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    logfile_name = os.path.basename(os.path.normpath(logfile_path))
+    logfile_parent = log_dir #os.path.dirname(os.path.normpath(logfile_path))
+    log_pkg_file = logfile_name + ".tar.gz"
+    test_log_file = "{:s}/mtp_test.log".format(logfile_path)
     local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
     if stage == FF_Stage.FF_FST:
-        test_log_file = "{:s}/test_fst.log".format(log_dir+sub_dir)
+        test_log_file = "{:s}/test_fst.log".format(logfile_path)
     if stage == FF_Stage.FF_DL:
         test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
     elif stage == FF_Stage.FF_CFG:
@@ -183,19 +212,23 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
         return None
 
-    # local dir to temporarily store test summary
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/")
-    err = os.system(cmd)
-    if err:
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
-        return None
-    # temporary dir for log files on MTP
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
+    if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
+        # save the avs and ecc dump log files
+        asic_sub_dir = "/asic_logs/"
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(logfile_path + asic_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, logfile_path + asic_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, logfile_path + asic_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+    if stage == FF_Stage.FF_SWI:
+        asic_sub_dir = "/asic_logs/"
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES, logfile_path + asic_sub_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
     # move onboard log files
-    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
+    cmd = "mv {:s} {:s}".format(test_onboard_log_files, logfile_path)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
         return None
@@ -203,44 +236,26 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
     # for DL/P2C/4C test, extra logfiles are needed
     if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
         asic_log_dir = log_dir + "asic_logs/"
-
-        if stage == FF_Stage.FF_SWI:
-            cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp_*txt"
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-            listoffile = listoffileoutput.split()
-        
-            listcspfiletoupload = list()
-            for cspfile in listoffile:
-                if 'txt' in cspfile:
-                    listcspfiletoupload.append(cspfile)
-            for cspfilepath in listcspfiletoupload:
-                cmd = "cp {:s} {:s}".format(cspfilepath, asic_log_dir)
-                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                    return None
-                csp_log_file = os.path.basename(cspfilepath)
-                mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s} to asic folder".format(csp_log_file))
-
-        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(asic_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
+
     elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT or stage == FF_Stage.FF_RDT:
         if not vmarg:
             diag_log_dir = log_dir + "diag_logs/"
             asic_log_dir = log_dir + "asic_logs/"
             nic_log_dir = log_dir + "nic_logs/"
             # move the extra logfile
-            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(diag_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
-            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(asic_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
-            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(nic_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
@@ -259,15 +274,15 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
                     asic_log_dir = log_dir + "asic_logs/"
                     nic_log_dir = log_dir + "nic_logs/"
                 # move the extra logfile
-                cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+                cmd = "mv {:s} {:s}".format(diag_log_dir, logfile_path)
                 if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                     mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                     return None
-                cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+                cmd = "mv {:s} {:s}".format(asic_log_dir, logfile_path)
                 if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                     mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                     return None
-                cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+                cmd = "mv {:s} {:s}".format(nic_log_dir, logfile_path)
                 if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                     mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                     return None
@@ -280,28 +295,28 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         lv_asic_log_dir = log_dir + "lv_asic_logs/"
         lv_nic_log_dir = log_dir + "lv_nic_logs/"
         # move the extra logfile
-        cmd = "mv {:s} {:s}".format(hv_diag_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(hv_diag_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = "mv {:s} {:s}".format(hv_asic_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(hv_asic_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = "mv {:s} {:s}".format(hv_nic_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(hv_nic_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
         # move the extra logfile
-        cmd = "mv {:s} {:s}".format(lv_diag_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(lv_diag_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = "mv {:s} {:s}".format(lv_asic_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(lv_asic_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
-        cmd = "mv {:s} {:s}".format(lv_nic_log_dir, log_dir+sub_dir)
+        cmd = "mv {:s} {:s}".format(lv_nic_log_dir, logfile_path)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             return None
@@ -310,15 +325,15 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
             asic_log_dir = log_dir + "asic_logs/"
             nic_log_dir = log_dir + "nic_logs/"
             # move the extra logfile
-            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(diag_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
-            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(asic_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
-            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
+            cmd = "mv {:s} {:s}".format(nic_log_dir, logfile_path)
             if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
                 mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
                 return None
@@ -328,7 +343,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
 
     logfile_list = list()
     # pkg the onboard logs
-    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
+    cmd = "tar czf {:s} -C {:s} {:s}".format(log_pkg_file, log_dir, logfile_name)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
         return None
@@ -368,9 +383,9 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         if sn == "None":
             sn = NIC_Type.UNKNOWN
         if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = DIAG_MFG_STAGE_LOG_DIR.format(nic_type, stage, sn)
+            mfg_log_dir = MFG_STAGE_LOG_DIR.format(nic_type, stage_str, sn)
         else:
-            mfg_log_dir = DIAG_MODEL_STAGE_LOG_DIR.format(nic_type, stage, sn)
+            mfg_log_dir = MODEL_STAGE_LOG_DIR.format(nic_type, stage_str, sn)
 
         if GLB_CFG_MFG_TEST_MODE:
             cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
@@ -395,7 +410,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
         # copy the onboard logs only once
         if log_hard_copy_flag:
             qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-            if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
+            if not libmfg_utils.network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, os.path.join(logfile_parent, log_pkg_file)):
                 mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file to {:}".format(qa_log_pkg_file), level=0)
                 continue
 
@@ -448,7 +463,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
                     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(csp_log_dir))
                     os.system("chmod 777 {:s}".format(csp_log_dir+"/.."))
             csp_log_file = csp_log_dir + os.path.basename(cspfilepath)
-            if not network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
+            if not libmfg_utils.network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
                 mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(csp_log_file), level=0)
                 continue
             mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(csp_log_file))
@@ -480,7 +495,7 @@ def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vma
 
     # clear the onboard logs
     logfile_list.append(log_pkg_file)
-    logfile_list.append(log_dir+sub_dir)
+    logfile_list.append(logfile_path)
     #cmd = "rm -rf {:s}".format(" ".join(logfile_list))
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)

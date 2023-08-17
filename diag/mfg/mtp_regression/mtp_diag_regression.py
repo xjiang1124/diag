@@ -2077,20 +2077,21 @@ def main():
                 nic_sub_dir = "/nic_logs/"
                 asic_sub_dir = "/asic_logs/"
             # create log dir
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
+            tlf = mtp_mgmt_ctrl._test_log_folder
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + diag_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + nic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
+            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             # save the asic/diag log files
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_script_dir + diag_sub_dir)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, tlf + diag_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, tlf + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_script_dir + asic_sub_dir)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, tlf + asic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
+            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, tlf + nic_sub_dir)
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
             # clean up logfiles for the next run
             cmd = "cleanup.sh"

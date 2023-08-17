@@ -380,17 +380,8 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout)
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+        testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
-
-        if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
-            # save the avs and ecc dump log files
-            asic_sub_dir = "/asic_logs/"
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
         test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, mirror_logdir=mirror_logdir)
         if not test_log_file:
