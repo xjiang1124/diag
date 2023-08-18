@@ -94,7 +94,7 @@ if {$vmarg != "normal"} {
 gig_card_rst $port $slot1 hod_1100 $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 $vmarg_en $vdd_margin_pct $arm_margin_pct $margin_pct
 gig_platform
 gig_ddr_init_ddr $::ddr5 $ddr_freq
-gig_ddr_bist
+gig_ddr_bist -1 -1 -1
 gig_platform
 gig_mc_check_ecc  -1  -1  $::ddr5  $::board_type
 gig_mc_clear_ecc_irq  -1  -1  -1  $::ddr5
