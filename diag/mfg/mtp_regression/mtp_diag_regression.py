@@ -1124,6 +1124,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     args = parser.parse_args()
@@ -1178,6 +1179,10 @@ def main():
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
+
+    # set skip slots when pass in skip_slots
+    if len(args.skip_slots) > 0 and not mtp_cfg_db.set_mtp_slots_to_skip(mtp_id, args.skip_slots):
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to set skip slots")
 
     # find any slots to skip
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
