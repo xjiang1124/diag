@@ -149,7 +149,7 @@ def fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary):
     # abort test without saving logfile
     mtp_test_summary.append((0, mtp_mgmt_ctrl._id, None, False, False))
 
-def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, **kwargs):
+def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, skip_slot_list=[], **kwargs):
     try:
         mtp_cfg_file = None
         mtp_sn = None
@@ -336,6 +336,9 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
         if fail_nic_list:
             cmd += " --fail-slots "
             cmd += ' '.join(map(str,fail_nic_list))
+        if skip_slot_list:
+            cmd += " --skip-slots "
+            cmd += ' '.join(map(str,skip_slot_list))
         if mtpcfg_file:
             cmd += " --mtpcfg " + os.path.basename(mtpcfg_file) # file has been packaged into config/, discard full path
         if stop_on_err:

@@ -2047,7 +2047,7 @@ class nic_ctrl():
     def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
         cmd_buf = self.nic_get_info(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list):
+        if not cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2085,15 +2085,6 @@ class nic_ctrl():
         # check signature
         if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
-
-        return True
-
-    def nic_dump_cpld(self, partition):
-        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "/home/diag/cplddump", partition)
-        nic_cmd_list = list()
-        nic_cmd_list.append(cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
