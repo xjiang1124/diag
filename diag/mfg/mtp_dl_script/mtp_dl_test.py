@@ -843,9 +843,6 @@ def main():
                 # set avs
                 elif test == "AVS_SET":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
-                # assign borad id
-                elif test == "ASSIGN_BOARD_ID":
-                    ret = mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
