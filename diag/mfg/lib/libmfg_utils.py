@@ -61,6 +61,10 @@ def cli_err(err):
     print("\033[1;91m" + "## [" + get_timestamp() + "] ERR: " + err + "\033[0m")
 
 
+def cli_wrn(err):
+    print("\033[1;91m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
+
+
 def cli_log_inf(fp, info):
     msg = "## [" + get_timestamp() + "] LOG: " + info
     fp.write(msg + "\n")
@@ -73,6 +77,13 @@ def cli_log_err(fp, err):
     fp.write(msg + "\n")
 
     cli_err(err)
+
+
+def cli_log_wrn(fp, wrn):
+    msg = "## [" + get_timestamp() + "] WRN: " + wrn
+    fp.write(msg + "\n")
+
+    cli_wrn(wrn)
 
 
 def cli_log_rslt(title, pass_list, fail_list, fp):
