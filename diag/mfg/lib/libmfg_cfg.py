@@ -431,15 +431,15 @@ class NIC_IMAGES:
     goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
     goldfw_dat["GINESTRA_D4"] = "05-12-2023"
 
-    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.1_working.bin"
+    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
     cpld_ver["GINESTRA_D5"] = "0x1"
-    cpld_dat["GINESTRA_D5"] = "0x01"
-    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.1_working.bin"
+    cpld_dat["GINESTRA_D5"] = "0x02"
+    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
     sec_cpld_ver["GINESTRA_D5"] = "0x1"
-    sec_cpld_dat["GINESTRA_D5"] = "0x01"
-    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.1_failsafe.bin"
+    sec_cpld_dat["GINESTRA_D5"] = "0x02"
+    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_failsafe_08162023.bin"
     fail_cpld_ver["GINESTRA_D5"] = "0x1"
-    fail_cpld_dat["GINESTRA_D5"] = "0x01"
+    fail_cpld_dat["GINESTRA_D5"] = "0x02"
     fea_cpld_img["GINESTRA_D5"] = "ginestra_impl1.bin"
     diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
     diagfw_dat["GINESTRA_D5"] = "05-12-2023"
@@ -785,7 +785,7 @@ NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Typ
 # Card Type List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2SOLOORCTHS,
-    NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT
+    NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
     ]
 
 # Part Number Pattern List Which need attash ROT cable when run FST test

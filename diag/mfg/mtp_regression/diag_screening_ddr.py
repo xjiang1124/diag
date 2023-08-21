@@ -120,7 +120,7 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
             pn_list.append(pn)
     if len(pn_list) != 1:
         # Check if all cards share first 6 digits of part number
-        first6_pn = set([ mypn[0:6] for mypn in pn_list])
+        first6_pn = set([ mypn.replace("-", "")[0:6] for mypn in pn_list])
         if len(first6_pn) != 1:
             mtp_mgmt_ctrl.cli_log_err("Not Support Mix NIC with Different Part Number")
             return ["Not Support", nic_list[:]]
