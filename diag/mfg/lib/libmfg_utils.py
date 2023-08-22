@@ -608,7 +608,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
     if remote_md5sum == local_md5sum:
         return True
     else:
-        cli_err("File md5sum mismatch")
+        cli_wrn("File md5sum mismatch")
         return False
 
 def need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename=None, filename_on_mtp=None):
