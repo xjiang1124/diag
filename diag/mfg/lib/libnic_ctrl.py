@@ -234,38 +234,6 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return True
 
-    def nic_exec_cmd_get_rslt(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
-        cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
-        self._nic_handle.sendline(cmd)
-        while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
-            if idx < 0:
-                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
-            if idx == 0:
-                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-                continue
-            else:
-                break
-        cmd_buf = self._nic_handle.before
-        if not self.nic_prompt_cfg():
-            return False
-        self._nic_handle.sendline(nic_rst_cmd)
-        nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
-            
-        idx = libmfg_utils.mfg_expect(self._nic_handle, nic_exp_prompts, timeout)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        else:
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            self._nic_handle.sendline("exit")   
-            return True
-
     def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY, fail_sig=None):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
         cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
@@ -1705,8 +1673,9 @@ class nic_ctrl():
             return False
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition)
-            if not self.nic_exec_cmd_get_rslt(nic_fgpa_cmd, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
+            nic_cmd_list = list()
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition))
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
                 return False
 
             cmd_buf = self.nic_get_cmd_buf()
