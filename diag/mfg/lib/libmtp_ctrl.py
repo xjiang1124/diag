@@ -133,6 +133,17 @@ class mtp_ctrl():
             libmfg_utils.cli_err(cli_id_str + indent + msg)
 
 
+    def cli_log_wrn(self, msg, level = 1):
+        if msg is None:
+            msg = ""
+        cli_id_str = libmfg_utils.id_str(mtp = self._id)
+        indent = "    " * level
+        if self._filep:
+            libmfg_utils.cli_log_wrn(self._filep, cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_wrn(cli_id_str + indent + msg)
+
+
     def cli_log_slot_inf(self, slot, msg, level = 0):
         if msg is None:
             msg = ""
@@ -153,6 +164,17 @@ class mtp_ctrl():
             libmfg_utils.cli_log_err(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_err(nic_cli_id_str + indent + msg)
+
+
+    def cli_log_slot_wrn(self, slot, msg, level = 0):
+        if msg is None:
+            msg = ""
+        nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
+        indent = "    " * level
+        if self._filep:
+            libmfg_utils.cli_log_wrn(self._filep, nic_cli_id_str + indent + msg)
+        else:
+            libmfg_utils.cli_wrn(nic_cli_id_str + indent + msg)
 
 
     def cli_log_slot_inf_lock(self, slot, msg, level = 0):
@@ -4718,7 +4740,7 @@ class mtp_ctrl():
                         self._nic_ctrl_list[slot].nic_set_type(nic_type)
                     else:
                         self._nic_prsnt_list[slot] = False
-                        self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
+                        self.cli_log_slot_wrn(slot, MTP_DIAG_Report.NIC_DIAG_SLOT_SKIPPED)
 
         if stage is None or stage == FF_Stage.FF_DL:
             fru_fpo = True
