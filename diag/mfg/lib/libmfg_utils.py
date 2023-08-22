@@ -646,7 +646,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + remote_dir + os.path.basename(local_file)
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
-    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    match = re.search(r"([0-9a-fA-F]{32}) +.*", str(session.before))
     session.close()
     # md5sum match
     if match:

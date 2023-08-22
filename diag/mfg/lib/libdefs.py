@@ -453,6 +453,8 @@ class MFG_DIAG_CMDS:
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
     SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
+    ASSIGN_BOARD_ID_FMT = "board_config -B {:s}"
+    READ_BOARD_ID_FMT = "board_config -b"
     ERASE_BOARD_CONFIG_FMT = "board_config -e"
     SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
