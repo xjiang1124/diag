@@ -2058,7 +2058,7 @@ class nic_ctrl():
             return False
         else:
             if "EOF" in cmd_buf or "cmp:" in cmd_buf:
-                self.nic_set_status(NIC_Satus.NIC_STA_MGMT_FAIL)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
 
         return True
@@ -2725,9 +2725,9 @@ class nic_ctrl():
         return True
 
 
-    def nic_set_vmarg(self, vmarg_param):
+    def nic_set_vmarg(self, vmarg_param, percentage=""):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param)
+        nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
         nic_cmd_list.append(nic_cmd)
 
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -5241,30 +5241,47 @@ class nic_ctrl():
     
         return True
 
-    def nic_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
-        nic_cmd = "i2cget -y 0 0x1c 0xd3"
-        cmd_buf = self.nic_get_info(nic_cmd)
+    def gigilo_nic_vdd_ddr_fix(self, i2cbus_num="2", chip_addr="0x1c", d3_val=None, d4_val=None):
 
-        if not cmd_buf:
-            self.nic_set_err_msg("Buffer empty")
+        nic_cmd_list = list()
+        # set vdd_ddr freq
+        if d3_val:
+            nic_cmd_list.append("i2cset -y {:s} {:s} 0xd3 {:s}".format(i2cbus_num, chip_addr, d3_val))
+        if d4_val:
+            nic_cmd_list.append("i2cset -y {:s} {:s} 0xd4 {:s}".format(i2cbus_num, chip_addr, d4_val))
+
+        # save to nvram
+        nic_cmd_list.append("i2cset -y {:s} {:s} 0x11 c".format(i2cbus_num, chip_addr))
+
+        if not self.nic_exec_cmds(nic_cmd_list):
             return False
+        return True
 
-        if d3_val not in cmd_buf:
-            self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
-            return False
+    def nic_vdd_ddr_check(self, d3_val=None, d4_val=None, vddq_prog=None, i2cbus_num="0", chip_addr="0x1c"):
+        if d3_val:
+            nic_cmd = "i2cget -y {:s} {:s} 0xd3".format(i2cbus_num, chip_addr)
+            cmd_buf = self.nic_get_info(nic_cmd)
+
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
+
+            if d3_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
+                return False
 
 
+        if d4_val:
+            nic_cmd = "i2cget -y {:s} {:s} 0xd4".format(i2cbus_num, chip_addr)
+            cmd_buf = self.nic_get_info(nic_cmd)
 
-        nic_cmd = "i2cget -y 0 0x1c 0xd4"
-        cmd_buf = self.nic_get_info(nic_cmd)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
 
-        if not cmd_buf:
-            self.nic_set_err_msg("Buffer empty")
-            return False
-
-        if d4_val not in cmd_buf:
-            self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
-            return False
+            if d4_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
+                return False
 
         nic_cmd = "fwenv"
         cmd_buf = self.nic_get_info(nic_cmd)
