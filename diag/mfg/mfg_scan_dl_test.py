@@ -146,7 +146,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
     if nic_type in GIGLIO_NIC_TYPE_LIST:
-        testlist = ["QSPI_VERIFY", "FRU_PROG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skipped_test in skip_testlist:
         if skipped_test in testlist:
             testlist.remove(skipped_test)
@@ -1005,7 +1005,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    #mtp_mgmt_ctrl.mtp_chassis_shutdown()
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
     mfg_dl_summary = list()
