@@ -38,7 +38,7 @@ class NIC_IMAGES:
     diagfw_dat["TAORMINA"] = ""
     goldfw_img["TAORMINA"] = "kernelg_1.29.0-T-Beta-9.img"
     goldfw_dat["TAORMINA"] = "02-24-2021"
-    mainfw_dat["TAORMINA"] = "08-19-2022"
+    mainfw_dat["TAORMINA"] = "09-29-2022"
 
 class MTP_IMAGES:
     AMD64_IMG = dict()
@@ -103,8 +103,8 @@ class TOR_IMAGES:
     usb_tarball["TAORMINA"] = "Taormina-USB-small.tar.gz"
 
     ## CX-OS ##
-    os_ship_img["TAORMINA"] = "DL_10_10_1010.swi"
-    os_ship_dat["TAORMINA"] = "2022-09-21"
+    os_ship_img["TAORMINA"] = "DL_10_11_0001.swi"
+    os_ship_dat["TAORMINA"] = "2022-11-30"
     os_test_img["TAORMINA"] = "taormina-swjenkins-main_0912_2022.swi"
     os_test_dat["TAORMINA"] = "2022-09-08"
 

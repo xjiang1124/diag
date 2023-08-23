@@ -37,6 +37,7 @@ class nic_ctrl():
         self._diag_util_ver = None
         self._diag_asic_ver = None
         self._cpld_ver = None
+        self._cpld_id = None
         self._cpld_timestamp = None
         self._sn = None
         self._mac = None
@@ -2046,7 +2047,7 @@ class nic_ctrl():
     def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
         cmd_buf = self.nic_get_info(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list):
+        if not cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2084,15 +2085,6 @@ class nic_ctrl():
         # check signature
         if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
-
-        return True
-
-    def nic_dump_cpld(self, partition):
-        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "/home/diag/cplddump", partition)
-        nic_cmd_list = list()
-        nic_cmd_list.append(cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
@@ -2390,7 +2382,7 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
- 
+
     def nic_emmc_check_perf_mode(self):
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
         perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
@@ -3492,6 +3484,17 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
+        # init cpld id
+        read_data = [0]
+        if smb:
+            rc = self.nic_read_cpld_via_smbus(0x80, read_data)
+        else:
+            rc = self.nic_read_cpld(0x80, read_data)
+        if not rc:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        self._cpld_id = "0x{:X}".format(read_data[0])
+
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
@@ -3547,10 +3550,10 @@ class nic_ctrl():
     
     
     def nic_get_cpld(self):
-        if not self._cpld_ver or not self._cpld_timestamp:
+        if not self._cpld_ver or not self._cpld_timestamp or not self._cpld_id:
             return None
         else:
-            return [self._cpld_ver, self._cpld_timestamp]
+            return [self._cpld_ver, self._cpld_timestamp, self._cpld_id]
 
 
     def nic_get_diag(self):
@@ -4459,6 +4462,43 @@ class nic_ctrl():
         else:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
+    def nic_assign_board_id(self, boardId=None):
+        """
+        assign passed in Board ID String to this board by utility board_config
+        example:
+        # assign, board_config -B 0x03610001
+        # read and verify, board_config -b, got 0x03610001
+        """
+
+        if boardId is None:
+            self.nic_set_err_msg("Please Provide Board ID")
+            return False
+        if not isinstance(boardId, str):
+            self.nic_set_err_msg("Please Specify Board ID with String Format")
+            return False
+
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ASSIGN_BOARD_ID_FMT.format(boardId))
+        if not cmd_buf:
+            self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
+            return False
+        # test string "Config successfully set" in command return buffer
+        if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+            self.nic_set_err_msg("Assign Board ID NOT Success")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        # Read Board ID back and compare
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.READ_BOARD_ID_FMT)
+        if not cmd_buf:
+            self.nic_set_err_msg("Read Board ID Command 'board_config -b' Failed")
+            return False
+        if boardId.lower() not in cmd_buf.lower():
+            self.nic_set_err_msg("Read Back and Compare Board ID Failed")
+            self.nic_set_err_msg(cmd_buf)
             return False
 
         return True

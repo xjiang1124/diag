@@ -61,6 +61,10 @@ def cli_err(err):
     print("\033[1;91m" + "## [" + get_timestamp() + "] ERR: " + err + "\033[0m")
 
 
+def cli_wrn(err):
+    print("\033[1;91m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
+
+
 def cli_log_inf(fp, info):
     msg = "## [" + get_timestamp() + "] LOG: " + info
     fp.write(msg + "\n")
@@ -73,6 +77,13 @@ def cli_log_err(fp, err):
     fp.write(msg + "\n")
 
     cli_err(err)
+
+
+def cli_log_wrn(fp, wrn):
+    msg = "## [" + get_timestamp() + "] WRN: " + wrn
+    fp.write(msg + "\n")
+
+    cli_wrn(wrn)
 
 
 def cli_log_rslt(title, pass_list, fail_list, fp):
@@ -597,7 +608,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
     if remote_md5sum == local_md5sum:
         return True
     else:
-        cli_err("File md5sum mismatch")
+        cli_wrn("File md5sum mismatch")
         return False
 
 def need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename=None, filename_on_mtp=None):
@@ -646,7 +657,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + remote_dir + os.path.basename(local_file)
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
-    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    match = re.search(r"([0-9a-fA-F]{32}) +.*", str(session.before))
     session.close()
     # md5sum match
     if match:

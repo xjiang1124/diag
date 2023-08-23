@@ -138,3 +138,16 @@ class mtp_db():
             libmfg_utils.sys_exit("Invalid mtpid: " + mtpid)
 
         return self._slots_to_skip[mtpid]
+
+    def set_mtp_slots_to_skip(self, mtpid, slots=[]):
+        if not self.mtpid_valid(mtpid):
+            return False
+
+        for slot in slots:
+            if int(self._max_slots[mtpid]) > int(slot):
+                return False
+
+        for slot in slots:
+            self._slots_to_skip[mtpid][int(slot)-1] = True
+
+        return True
