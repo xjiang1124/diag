@@ -426,10 +426,10 @@ class NIC_IMAGES:
     fail_cpld_ver["GINESTRA_D4"] = "0x1"
     fail_cpld_dat["GINESTRA_D4"] = "0x01"
     fea_cpld_img["GINESTRA_D4"] = "ginestra_impl1.bin"
-    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
-    diagfw_dat["GINESTRA_D4"] = "05-12-2023"
-    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
-    goldfw_dat["GINESTRA_D4"] = "05-12-2023"
+    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
+    diagfw_dat["GINESTRA_D4"] = "08-21-2023"
+    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
+    goldfw_dat["GINESTRA_D4"] = "08-21-2023"
 
     cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
     cpld_ver["GINESTRA_D5"] = "0x1"
@@ -441,10 +441,10 @@ class NIC_IMAGES:
     fail_cpld_ver["GINESTRA_D5"] = "0x1"
     fail_cpld_dat["GINESTRA_D5"] = "0x02"
     fea_cpld_img["GINESTRA_D5"] = "ginestra_impl1.bin"
-    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
-    diagfw_dat["GINESTRA_D5"] = "05-12-2023"
-    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
-    goldfw_dat["GINESTRA_D5"] = "05-12-2023"
+    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
+    diagfw_dat["GINESTRA_D5"] = "08-21-2023"
+    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
+    goldfw_dat["GINESTRA_D5"] = "08-21-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
