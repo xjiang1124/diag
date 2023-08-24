@@ -3675,15 +3675,24 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_set_nic_vmarg(self, slot, vmarg):
+    def mtp_set_nic_vmarg(self, slot, vmarg, percentage=""):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip Vmargin for Proto NIC")
             return True
 
-        self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg))
+        if not percentage:
+            if nic_type in (NIC_Type.GINESTRA_D5):
+                # For EDVT percentage parameter is 3
+                # percentage = "3"
+                # For MFG percentage parameter is 2
+                percentage = "2"
+        if percentage:
+            self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s} with percentage {:s}".format(vmarg, percentage))
+        else:
+            self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s}".format(vmarg))
 
-        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg):
+        if not self._nic_ctrl_list[slot].nic_set_vmarg(vmarg, percentage):
             self.cli_log_slot_err_lock(slot, "Set voltage margin to {:s} failed".format(vmarg))
             self.mtp_set_nic_status_fail(slot)
             return False
@@ -3979,7 +3988,7 @@ class mtp_ctrl():
         return True
 
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, stop_on_err):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, stop_on_err, vmarg_percentage=""):
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -4058,7 +4067,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = self.log_slot_test_start(slot, test)
 
-            if ret and not self.mtp_set_nic_vmarg(slot, vmargin):
+            if ret and not self.mtp_set_nic_vmarg(slot, vmargin, vmarg_percentage):
                 ret = False
 
             if ret and not self.mtp_nic_display_voltage(slot):
@@ -5744,6 +5753,10 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.ORTANO2SOLOALI:
             vdd_avs_cmd = MFG_DIAG_CMDS.ORTANO_PEN_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.GINESTRA_D4:
+            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.GINESTRA_D5:
+            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -6794,6 +6807,9 @@ class mtp_ctrl():
             d4_val = "0x10"
             vddq_prog = False
 
+        if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+            d3_val = "0x04"
+
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):
                 self.mtp_clear_nic_err_msg(slot) # clear out the error message
@@ -6807,14 +6823,26 @@ class mtp_ctrl():
                     self.mtp_get_nic_err_msg(slot)
                     return False
         else:
-            if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
+            else:
+                rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
+            if not rc:
                 self.mtp_clear_nic_err_msg(slot) # clear out the error message
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog):
+                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                    rc = self._nic_ctrl_list[slot].gigilo_nic_vdd_ddr_fix(d3_val=d3_val)
+                else:
+                    rc = self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog)
+                if not rc:
                     self.cli_log_slot_err(slot, "Failed to set VDD_DDR margin")
                     self.mtp_get_nic_err_msg(slot)
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if not self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog):
+                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                    rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
+                else:
+                    rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
+                if not rc:
                     self.cli_log_slot_err(slot, "VDD_DDR values incorrect")
                     self.mtp_get_nic_err_msg(slot)
                     return False

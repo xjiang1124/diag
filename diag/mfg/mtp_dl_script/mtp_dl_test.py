@@ -143,7 +143,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
     if nic_type in GIGLIO_NIC_TYPE_LIST:
-        testlist = ["QSPI_VERIFY", "FRU_PROG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -798,7 +798,7 @@ def main():
             elif nic_type in ELBA_NIC_TYPE_LIST:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
