@@ -151,7 +151,7 @@ def fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary):
 
 def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, skip_slot_list=[], **kwargs):
     try:
-        mtp_cfg_file = None
+        mtpcfg_file = None
         mtp_sn = None
         l1_sequence = None
         stop_on_err = None
@@ -210,7 +210,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
                 continue
             pass_nic_list.append(slot)
 
-        if stage == FF_Stage.FF_FST: # skip these tests until FST scanning is implemented
+        if stage != FF_Stage.FF_FST: # skip these tests until FST scanning is implemented
             fail_nic_list += nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, skip_test_list)
 
         # Close file handles
