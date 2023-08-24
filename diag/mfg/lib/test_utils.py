@@ -292,9 +292,13 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
         mtp_script_dir = testsuite_config[stage]["mtp_script_dir"]
         mtp_script_pkg = testsuite_config[stage]["mtp_script_pkg"]
         test_timeout   = testsuite_config[stage]["timeout"]
+        if profile_cfg_file_list:
+            profile_cfg = profile_cfg_file_list[0] # multiple profiles not supported
+        else:
+            profile_cfg = None
 
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_config=mtpcfg_file):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_script=profile_cfg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             return False
         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
