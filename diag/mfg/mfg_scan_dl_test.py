@@ -1005,7 +1005,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
-    #mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    mtp_mgmt_ctrl.mtp_chassis_shutdown()
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
     mfg_dl_summary = list()
