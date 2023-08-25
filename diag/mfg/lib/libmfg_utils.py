@@ -2841,7 +2841,8 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
     if sn is None:
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+    if sn is None or str(sn).upper() == "UNKNOWN" or str(sn).upper() == "NONE" or len(str(sn)) <= 6:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Bad SN for area check: '{:s}'".format(str(sn)))
         return False
     post_cnt = 0
     time.sleep(1)
@@ -2861,7 +2862,7 @@ def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, r
         post_cnt += 1
         time.sleep(3)
 
-    return False
+    return True
 
 def get_fst_nic_ssh_cmd(ip, username, passwd):
     ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"
