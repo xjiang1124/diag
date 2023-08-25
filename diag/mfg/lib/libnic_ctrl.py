@@ -37,6 +37,7 @@ class nic_ctrl():
         self._diag_util_ver = None
         self._diag_asic_ver = None
         self._cpld_ver = None
+        self._cpld_id = None
         self._cpld_timestamp = None
         self._sn = None
         self._mac = None
@@ -231,38 +232,6 @@ class nic_ctrl():
             return True
         else:
             self.nic_set_cmd_buf(cmd_buf)
-            return True
-
-    def nic_exec_cmd_get_rslt(self, nic_rst_cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-        ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
-        cmd = libmfg_utils.get_ssh_connect_cmd(NIC_MGMT_USERNAME, ipaddr)
-        self._nic_handle.sendline(cmd)
-        while True:
-            idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:", self._nic_con_prompt], timeout=MTP_Const.SSH_PASSWORD_DELAY)
-            if idx < 0:
-                libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
-                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-                self.nic_set_cmd_buf(self._nic_handle.before)
-                return False
-            if idx == 0:
-                self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-                continue
-            else:
-                break
-        cmd_buf = self._nic_handle.before
-        if not self.nic_prompt_cfg():
-            return False
-        self._nic_handle.sendline(nic_rst_cmd)
-        nic_exp_prompts = [self._nic_prompt, self._nic_con_prompt]
-            
-        idx = libmfg_utils.mfg_expect(self._nic_handle, nic_exp_prompts, timeout)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        else:
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            self._nic_handle.sendline("exit")   
             return True
 
     def nic_exec_cmds(self, nic_cmd_list, timeout=MTP_Const.NIC_CON_CMD_DELAY, fail_sig=None):
@@ -1704,8 +1673,9 @@ class nic_ctrl():
             return False
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_fgpa_cmd = MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition)
-            if not self.nic_exec_cmd_get_rslt(nic_fgpa_cmd, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
+            nic_cmd_list = list()
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition))
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
                 return False
 
             cmd_buf = self.nic_get_cmd_buf()
@@ -2046,7 +2016,7 @@ class nic_ctrl():
     def nic_compare_cpld_file(self, cpld_image, dump_cpld_image, partition):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_COMPARE_FMT.format(os.path.basename(cpld_image), os.path.basename(dump_cpld_image))
         cmd_buf = self.nic_get_info(nic_cmd)
-        if not self.nic_exec_cmds(nic_cmd_list):
+        if not cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2057,7 +2027,7 @@ class nic_ctrl():
             return False
         else:
             if "EOF" in cmd_buf or "cmp:" in cmd_buf:
-                self.nic_set_status(NIC_Satus.NIC_STA_MGMT_FAIL)
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
                 return False
 
         return True
@@ -2084,15 +2054,6 @@ class nic_ctrl():
         # check signature
         if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
-
-        return True
-
-    def nic_dump_cpld(self, partition):
-        cmd = MFG_DIAG_CMDS.NIC_CPLD_DUMP_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, "/home/diag/cplddump", partition)
-        nic_cmd_list = list()
-        nic_cmd_list.append(cmd)
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
             return False
 
         return True
@@ -2390,7 +2351,7 @@ class nic_ctrl():
         else:
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
- 
+
     def nic_emmc_check_perf_mode(self):
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_PERF_MODE_CHECK
         perf_sig = MFG_DIAG_SIG.NIC_EMMC_PERF_MODE_OK_SIG
@@ -2733,9 +2694,9 @@ class nic_ctrl():
         return True
 
 
-    def nic_set_vmarg(self, vmarg_param):
+    def nic_set_vmarg(self, vmarg_param, percentage=""):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param)
+        nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
         nic_cmd_list.append(nic_cmd)
 
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -3492,6 +3453,17 @@ class nic_ctrl():
             return False
         self._cpld_ver = "0x{:X}".format(read_data[0])
 
+        # init cpld id
+        read_data = [0]
+        if smb:
+            rc = self.nic_read_cpld_via_smbus(0x80, read_data)
+        else:
+            rc = self.nic_read_cpld(0x80, read_data)
+        if not rc:
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+        self._cpld_id = "0x{:X}".format(read_data[0])
+
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
@@ -3547,10 +3519,10 @@ class nic_ctrl():
     
     
     def nic_get_cpld(self):
-        if not self._cpld_ver or not self._cpld_timestamp:
+        if not self._cpld_ver or not self._cpld_timestamp or not self._cpld_id:
             return None
         else:
-            return [self._cpld_ver, self._cpld_timestamp]
+            return [self._cpld_ver, self._cpld_timestamp, self._cpld_id]
 
 
     def nic_get_diag(self):
@@ -4463,6 +4435,43 @@ class nic_ctrl():
 
         return True
 
+    def nic_assign_board_id(self, boardId=None):
+        """
+        assign passed in Board ID String to this board by utility board_config
+        example:
+        # assign, board_config -B 0x03610001
+        # read and verify, board_config -b, got 0x03610001
+        """
+
+        if boardId is None:
+            self.nic_set_err_msg("Please Provide Board ID")
+            return False
+        if not isinstance(boardId, str):
+            self.nic_set_err_msg("Please Specify Board ID with String Format")
+            return False
+
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ASSIGN_BOARD_ID_FMT.format(boardId))
+        if not cmd_buf:
+            self.nic_set_err_msg("Assign Board ID Command 'board_config -B' Failed")
+            return False
+        # test string "Config successfully set" in command return buffer
+        if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+            self.nic_set_err_msg("Assign Board ID NOT Success")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        # Read Board ID back and compare
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.READ_BOARD_ID_FMT)
+        if not cmd_buf:
+            self.nic_set_err_msg("Read Board ID Command 'board_config -b' Failed")
+            return False
+        if boardId.lower() not in cmd_buf.lower():
+            self.nic_set_err_msg("Read Back and Compare Board ID Failed")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        return True
+
     def nic_mvl_acc_test(self):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:
             return False
@@ -5201,30 +5210,47 @@ class nic_ctrl():
     
         return True
 
-    def nic_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
-        nic_cmd = "i2cget -y 0 0x1c 0xd3"
-        cmd_buf = self.nic_get_info(nic_cmd)
+    def gigilo_nic_vdd_ddr_fix(self, i2cbus_num="2", chip_addr="0x1c", d3_val=None, d4_val=None):
 
-        if not cmd_buf:
-            self.nic_set_err_msg("Buffer empty")
+        nic_cmd_list = list()
+        # set vdd_ddr freq
+        if d3_val:
+            nic_cmd_list.append("i2cset -y {:s} {:s} 0xd3 {:s}".format(i2cbus_num, chip_addr, d3_val))
+        if d4_val:
+            nic_cmd_list.append("i2cset -y {:s} {:s} 0xd4 {:s}".format(i2cbus_num, chip_addr, d4_val))
+
+        # save to nvram
+        nic_cmd_list.append("i2cset -y {:s} {:s} 0x11 c".format(i2cbus_num, chip_addr))
+
+        if not self.nic_exec_cmds(nic_cmd_list):
             return False
+        return True
 
-        if d3_val not in cmd_buf:
-            self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
-            return False
+    def nic_vdd_ddr_check(self, d3_val=None, d4_val=None, vddq_prog=None, i2cbus_num="0", chip_addr="0x1c"):
+        if d3_val:
+            nic_cmd = "i2cget -y {:s} {:s} 0xd3".format(i2cbus_num, chip_addr)
+            cmd_buf = self.nic_get_info(nic_cmd)
+
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
+
+            if d3_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
+                return False
 
 
+        if d4_val:
+            nic_cmd = "i2cget -y {:s} {:s} 0xd4".format(i2cbus_num, chip_addr)
+            cmd_buf = self.nic_get_info(nic_cmd)
 
-        nic_cmd = "i2cget -y 0 0x1c 0xd4"
-        cmd_buf = self.nic_get_info(nic_cmd)
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                return False
 
-        if not cmd_buf:
-            self.nic_set_err_msg("Buffer empty")
-            return False
-
-        if d4_val not in cmd_buf:
-            self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
-            return False
+            if d4_val not in cmd_buf:
+                self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
+                return False
 
         nic_cmd = "fwenv"
         cmd_buf = self.nic_get_info(nic_cmd)

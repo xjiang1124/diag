@@ -214,6 +214,71 @@ proc set_avs_elb { {board_id SN000001} {j2c_slot 1} {core_freq 1033} {arm_freq 2
 
     return $err_cnt
 }
+
+proc set_avs_gig { {board_id SN000001} {j2c_slot 1} {core_freq 1100} {arm_freq 3000} {use_zmq 0} {zmq_conn ""} } {
+    global G_USE_ZMQ
+    global G_ZMQ_CONN
+    global G_SLOT 0
+    set G_USE_ZMQ $use_zmq
+    set G_ZMQ_CONN $zmq_conn
+    set G_SLOT $j2c_slot
+
+    set chip_id [ gig_get_cur_chip_id ]
+    set cur_time [clock format [clock seconds] -format %y%m%d_%H%M%S]
+    set log_file set_avs_${board_id}_${cur_time}.log
+    set cur_dir [pwd]
+    set j2c_port 10
+    set slot $j2c_slot
+
+    set MTP_TYPE $::env(MTP_TYPE)
+    if {$MTP_TYPE == "MTP_TURBO_ELBA"} {
+        set j2c_port [get_port_turbo $slot]
+        set slot 1
+    }
+
+
+    plog_stop
+    plog_start $log_file 1000000000
+    plog_msg "Running [info level 0]"
+
+    if { $use_zmq == 1} {
+        diag_force_close_zmq_if $zmq_conn $slot
+        diag_open_zmq_if $zmq_conn $slot
+    } else {
+        diag_open_j2c_if $j2c_port $slot
+    }
+
+    set in_err [plog_get_err_count]
+    set mode hod
+    if { $core_freq == 1100 } {
+        set mode hod_1100
+    } elseif { $core_freq == 833 } {
+        set mode nod
+    } elseif { $core_freq == 550 } {
+        set mode nod_550
+    } elseif { $core_freq == 525 } {
+        set mode nod 525
+    }
+    gig_card_rst $j2c_port $slot $mode 5600 3000 0 0 "127.0.0.1" 1 1 normal 0 0
+
+    gig_set_avs $core_freq $arm_freq 
+
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+    if {$err_cnt != 0} {
+        plog_msg "set avs slot$j2c_slot failed:  $err_cnt"
+    }
+
+    if { $use_zmq == 1 } {
+        diag_close_zmq_if
+    } else {
+        diag_close_j2c_if $j2c_port $j2c_slot
+    }
+
+    plog_stop
+
+    return $err_cnt
+}
+
 proc asic_snake { {asic_type CAPRI} {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} {fan_ctrl 0} {tgt_temp 115} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
