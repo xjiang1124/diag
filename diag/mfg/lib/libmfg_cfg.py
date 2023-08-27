@@ -5,6 +5,7 @@ from libsku_utils import PART_NUMBERS_MATCH
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
 MFG_BYPASS_PSU_CHECK = False
+RUNNING_EDVT = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -967,3 +968,11 @@ FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT =                                            
           &lt;PANEL&gt;&#xD;                                                               \
           &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
+VMARG_PERCENTAGE = {
+    # nic_test.py will using "_" to seperate vmargin high/low and percentage, so add a leading _ here when fill the percentage
+    "DEFAULT"                    : "",
+    # For GINESTRA_D5, if run EDVT, percentage parameter is 3, if MFG, percentage parameter is 2
+    # header of value list          Normal, EDVT
+    "68-0074"                    : ("_2",   "_3"),
+    "68-0075"                    : ("_2",   "_3"),
+}
