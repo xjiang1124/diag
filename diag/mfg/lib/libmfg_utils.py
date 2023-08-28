@@ -2996,6 +2996,24 @@ def pick_voltage_margin(stage):
 
     return vmarg_list
 
+def pick_voltage_margin_percentage(part_number=None):
+
+    partnumber = part_number if part_number else "DEFAULT"
+    no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
+    if partnumber != "DEFAULT" and partnumber == no_rev_partnumber:
+        no_rev_partnumber = partnumber[0:6]
+    vmarg_percentage = VMARG_PERCENTAGE.get(no_rev_partnumber, "")
+    if not vmarg_percentage:
+        result = vmarg_percentage
+    if vmarg_percentage:
+        # Normal MFG value
+        result = vmarg_percentage[0]
+        # EDVT valuse
+        if RUNNING_EDVT:
+            result = vmarg_percentage[1]
+
+    return result
+
 def get_mode_param(mtp_mgmt_ctrl, slot, test):
     """
     For NIC_ASIC L1 test parameter.

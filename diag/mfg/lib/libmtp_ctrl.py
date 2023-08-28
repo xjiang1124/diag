@@ -3681,12 +3681,6 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Skip Vmargin for Proto NIC")
             return True
 
-        if not percentage:
-            if nic_type in (NIC_Type.GINESTRA_D5):
-                # For EDVT percentage parameter is 3
-                # percentage = "3"
-                # For MFG percentage parameter is 2
-                percentage = "2"
         if percentage:
             self.cli_log_slot_inf_lock(slot, "Set voltage margin to {:s} with percentage {:s}".format(vmarg, percentage))
         else:
@@ -4541,6 +4535,16 @@ class mtp_ctrl():
             # for QA only not DL: do mgmt para init but do emmc format. 
             emmc_format = True
 
+        partnumber = ""
+        for nic_controller in  self._nic_ctrl_list:
+            if nic_controller._pn:
+                partnumber = nic_controller._pn
+                break
+
+        vmarg_percentage = libmfg_utils.pick_voltage_margin_percentage(partnumber)
+        vmarg_percentage = vmarg_percentage.strip("_")
+        self.cli_log_inf("Got Vmargin Percentage: {:s} With Part Number: {:s} ".format(vmarg_percentage, partnumber),  level=0)
+
         nic_thread_list = list()
         for slot in nic_list:
             if not self._nic_prsnt_list[slot] or not self.mtp_check_nic_status(slot):
@@ -4554,7 +4558,8 @@ class mtp_ctrl():
                                                   aapl,
                                                   dis_hal,
                                                   fru_fpo,
-                                                  stop_on_err))
+                                                  stop_on_err,
+                                                  vmarg_percentage))
             nic_thread.daemon = True
             nic_thread.start()
             nic_thread_list.append(nic_thread)
@@ -5343,13 +5348,21 @@ class mtp_ctrl():
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
+        n_vmarg = vmarg
+        partnumber = ""
+        for nic_controller in  self._nic_ctrl_list:
+            if nic_controller._pn:
+                partnumber = nic_controller._pn
+                break
+        n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
+        self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
 
         if test == "PRBS_ETH":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_HBM":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_HBM_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_PCIE":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_PCIE_FMT.format(nic_list_param, n_vmarg)
         elif test == "SNAKE_ELBA":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -5359,19 +5372,19 @@ class mtp_ctrl():
                 return ["FAIL", nic_list[:]]
             elif nic_type == NIC_Type.ORTANO2:
                 if self.mtp_is_nic_ortano_oracle(slot):
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
                 else:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2SOLOALI):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_PEN_FMT.format(nic_list_param, n_vmarg)
             elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_LACONA_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_GIGLIO_FMT.format(nic_list_param, n_vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
 
             # 2C/4C = internal loopback
             if vmarg != Voltage_Margin.normal:
@@ -5385,9 +5398,9 @@ class mtp_ctrl():
                 return ["FAIL", nic_list[:]]
             else:
                 if nic_type in ELBA_NIC_TYPE_LIST:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, vmarg)
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
                 elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, vmarg)
+                    cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, n_vmarg)
                 # 2C/4C = internal loopback
                 if vmarg != Voltage_Margin.normal:
                     cmd += " -int_lpbk"
@@ -5395,17 +5408,17 @@ class mtp_ctrl():
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.POMONTEDELL:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, vmarg)
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, n_vmarg)
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, vmarg) 
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg) 
         elif test == "PCIE_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
-            cmd = MFG_DIAG_CMDS.MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, vmarg, "PRBS31")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_PCIE_PRBS_FMT.format(nic_list_param, n_vmarg, "PRBS31")
         elif test == "DDR_BIST":
-            cmd = MFG_DIAG_CMDS.MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, n_vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return ["FAIL", nic_list[:]]
@@ -5446,11 +5459,20 @@ class mtp_ctrl():
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
 
+        n_vmarg = vmarg
+        partnumber = ""
+        for nic_controller in  self._nic_ctrl_list:
+            if nic_controller._pn:
+                partnumber = nic_controller._pn
+                break
+        n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
+        self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+
         if test == "RMII_LINKUP":
-            cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)
             sig_list = ["rmii_linkup_test done"]
         elif test == "UART_LPBACK":
-            cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, vmarg)
+            cmd = MFG_DIAG_CMDS.MTP_NCSI_UART_LPBACK_FMT.format(nic_list_param, n_vmarg)
             sig_list = ["uart_loopback_test done"]
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
@@ -6808,7 +6830,7 @@ class mtp_ctrl():
             vddq_prog = False
 
         if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
-            d3_val = "0x04"
+            d3_val = "0x07"
 
         if console:
             if not self._nic_ctrl_list[slot].nic_console_vdd_ddr_check(d3_val, d4_val, vddq_prog):

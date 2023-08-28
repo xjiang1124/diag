@@ -1215,6 +1215,8 @@ def main():
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
             if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                test_list = ["CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
                 test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:

@@ -5,6 +5,7 @@ from libsku_utils import PART_NUMBERS_MATCH
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
 MFG_BYPASS_PSU_CHECK = False
+RUNNING_EDVT = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -416,15 +417,15 @@ class NIC_IMAGES:
     goldfw_img["68-0091"] = "elba_goldfw_1.51.0-G-34_2023.05.03.tar"
     goldfw_dat["68-0091"] = "05-02-2023"
 
-    cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.1_working.bin"
+    cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_working.bin"
     cpld_ver["GINESTRA_D4"] = "0x1"
-    cpld_dat["GINESTRA_D4"] = "0x01"
-    sec_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.1_working.bin"
+    cpld_dat["GINESTRA_D4"] = "0x02"
+    sec_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_working.bin"
     sec_cpld_ver["GINESTRA_D4"] = "0x1"
-    sec_cpld_dat["GINESTRA_D4"] = "0x01"
-    fail_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.1_failsafe.bin"
+    sec_cpld_dat["GINESTRA_D4"] = "0x02"
+    fail_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_failsafe.bin"
     fail_cpld_ver["GINESTRA_D4"] = "0x1"
-    fail_cpld_dat["GINESTRA_D4"] = "0x01"
+    fail_cpld_dat["GINESTRA_D4"] = "0x02"
     fea_cpld_img["GINESTRA_D4"] = "ginestra_impl1.bin"
     diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
     diagfw_dat["GINESTRA_D4"] = "08-21-2023"
@@ -967,3 +968,11 @@ FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT =                                            
           &lt;PANEL&gt;&#xD;                                                               \
           &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
+VMARG_PERCENTAGE = {
+    # nic_test.py will using "_" to seperate vmargin high/low and percentage, so add a leading _ here when fill the percentage
+    "DEFAULT"                    : "",
+    # For GINESTRA_D5, if run EDVT, percentage parameter is 3, if MFG, percentage parameter is 2
+    # header of value list          Normal, EDVT
+    "68-0074"                    : ("_2",   "_3"),
+    "68-0075"                    : ("_2",   "_3"),
+}
