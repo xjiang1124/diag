@@ -443,8 +443,10 @@ class nic_ctrl():
                 return False
 
         if not self.nic_sync_mtp_timestamp():
+            self.nic_console_detach()
             return False
         if not self.nic_prompt_cfg():
+            self.nic_console_detach()
             return False
 
         return True
@@ -496,8 +498,10 @@ class nic_ctrl():
                 return False
 
         if not self.nic_sync_mtp_timestamp():
+            self.nic_console_detach_fast()
             return False
         if not self.nic_prompt_cfg():
+            self.nic_console_detach_fast()
             return False
 
         return True
