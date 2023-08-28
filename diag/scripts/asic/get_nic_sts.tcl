@@ -141,6 +141,15 @@ if { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
     exit 0
 }
+
+if {$ASIC_TYPE == "GIGLIO"} {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg "GIG health check"
+    plog_msg "=================="
+    gig_health_check
+}
+
 plog_msg "\n\n\n"
 plog_msg "=================="
 plog_msg "ARM status"
