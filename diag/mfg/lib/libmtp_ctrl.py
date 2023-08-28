@@ -4535,15 +4535,16 @@ class mtp_ctrl():
             # for QA only not DL: do mgmt para init but do emmc format. 
             emmc_format = True
 
-        partnumber = ""
-        for nic_controller in  self._nic_ctrl_list:
-            if nic_controller._pn:
-                partnumber = nic_controller._pn
-                break
-
-        vmarg_percentage = libmfg_utils.pick_voltage_margin_percentage(partnumber)
-        vmarg_percentage = vmarg_percentage.strip("_")
-        self.cli_log_inf("Got Vmargin Percentage: {:s} With Part Number: {:s} ".format(vmarg_percentage, partnumber),  level=0)
+        vmarg_percentage = ""
+        if vmargin in (Voltage_Margin.high, Voltage_Margin.low):
+            partnumber = ""
+            for nic_controller in  self._nic_ctrl_list:
+                if nic_controller._pn:
+                    partnumber = nic_controller._pn
+                    break
+            vmarg_percentage = libmfg_utils.pick_voltage_margin_percentage(partnumber)
+            vmarg_percentage = vmarg_percentage.strip("_")
+            self.cli_log_inf("Got Vmargin Percentage: {:s} With Part Number: {:s} ".format(vmarg_percentage, partnumber),  level=0)
 
         nic_thread_list = list()
         for slot in nic_list:
@@ -5349,13 +5350,14 @@ class mtp_ctrl():
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
 
         n_vmarg = vmarg
-        partnumber = ""
-        for nic_controller in  self._nic_ctrl_list:
-            if nic_controller._pn:
-                partnumber = nic_controller._pn
-                break
-        n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-        self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+        if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
+            partnumber = ""
+            for nic_controller in  self._nic_ctrl_list:
+                if nic_controller._pn:
+                    partnumber = nic_controller._pn
+                    break
+            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
 
         if test == "PRBS_ETH":
             cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
@@ -5460,13 +5462,14 @@ class mtp_ctrl():
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
 
         n_vmarg = vmarg
-        partnumber = ""
-        for nic_controller in  self._nic_ctrl_list:
-            if nic_controller._pn:
-                partnumber = nic_controller._pn
-                break
-        n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-        self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+        if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
+            partnumber = ""
+            for nic_controller in  self._nic_ctrl_list:
+                if nic_controller._pn:
+                    partnumber = nic_controller._pn
+                    break
+            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
 
         if test == "RMII_LINKUP":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)
