@@ -83,6 +83,8 @@ if { $val != 0x00000001 } {
     exit 0
 }
 
+set in_err [plog_get_err_count]
+
 plog_msg "=================="
 plog_msg "MC intr"
 plog_msg "=================="
@@ -104,6 +106,19 @@ plog_msg "ECC intr"
 plog_msg "=================="
 if {$ASIC_TYPE == "GIGLIO"} {
     gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+    if {$err_cnt != 0} {
+        plog_msg "ECC happaned. Dumping DDR configuration"
+        exec rm -rf ${sn}_dump 
+        exec mkdir ${sn}_dump 
+        cd ${sn}_dump
+        ddr5_dump_all
+        cd ..
+        set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+        exec tar cf ${sn}_dump_${cur_time}.tar ${sn}_dump/
+    } else {
+        plog_msg "ECC is clean"
+    }
     gig_mc_clear_ecc_irq  -1  -1  -1  $ddr5
     gig_mc_clear_ecc_counter  -1  -1  $ddr5
 } else {
@@ -126,6 +141,15 @@ if { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
     exit 0
 }
+
+if {$ASIC_TYPE == "GIGLIO"} {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg "GIG health check"
+    plog_msg "=================="
+    gig_health_check
+}
+
 plog_msg "\n\n\n"
 plog_msg "=================="
 plog_msg "ARM status"

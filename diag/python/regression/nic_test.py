@@ -591,6 +591,7 @@ class nic_test:
             session.timeout = timeout
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
             if vmarg != "normal":
+                vmarg = vmarg.replace('_', ' ')
                 self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
 
             session.sendline(test_cmd)

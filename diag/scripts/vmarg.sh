@@ -117,7 +117,10 @@ set_vmarg()
             index=0
         elif [[ "$1" == "low" ]]
         then
-            if [[ "$2" == "2" ]]
+            if [[ $# == 1 ]]
+            then
+                index=1
+            elif [[ "$2" == "2" ]]
             then
                 index=1
             elif [[ "$2" == "3" ]]
@@ -126,7 +129,10 @@ set_vmarg()
             fi
         elif [[ "$1" == "high" ]]
         then
-            if [[ "$2" == "2" ]]
+            if [[ $# == 1 ]]
+            then
+                index=3
+            elif [[ "$2" == "2" ]]
             then
                 index=3
             elif [[ "$2" == "3" ]]
