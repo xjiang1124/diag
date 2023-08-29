@@ -195,7 +195,7 @@ class mtp_ctrl():
     def log_mtp_file(self, msg):
         self._diag_filep.write("\n[" + libmfg_utils.get_timestamp() + "] " + msg)
         # extra sendline to clean up log
-        if self._mgmt_handle:
+        if self._mgmt_handle and self._mgmt_prompt:
             self.mtp_mgmt_exec_cmd("")
 
     def log_nic_file(self, slot, msg):
