@@ -27,6 +27,7 @@ from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+import test_utils
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -336,13 +337,14 @@ def main():
             if slot not in fail_nic_list:
                 fail_nic_list.append(slot)
 
-    for slot in pass_nic_list + fail_nic_list:
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            if sn is not None and len(sn) > 0:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, FF_Stage.FF_FST, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-    pass_nic_list = [i for i in pass_nic_list if i not in fail_nic_list]
+    # Pre-post check at the end of FST since we dont get the SNs earlier
+    if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+        pre_post_fail_list = test_utils.nic_common_setup_test_picker(mtp_mgmt_ctrl, FF_Stage.FF_FST, pass_nic_list + fail_nic_list, ["FF_AREA_CHECK"], [])
+        for slot in pre_post_fail_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
