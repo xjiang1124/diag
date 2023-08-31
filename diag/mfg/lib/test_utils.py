@@ -469,7 +469,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True)
 
         elif test == "FST_CONNECT":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, retry_with_powercycle=True, max_retry=10)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, max_retry=10)
 
         elif test == "MTP_TIME_SET":
             ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(stage)

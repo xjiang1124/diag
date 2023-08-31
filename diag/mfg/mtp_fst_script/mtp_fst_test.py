@@ -27,6 +27,7 @@ from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
+import test_utils
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -38,6 +39,10 @@ def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     return usb_serial
 
 def check_rot(mtp_mgmt_ctrl, nic_list):
+    if len(nic_list) == 0:
+        mtp_mgmt_ctrl.cli_log_err("No NICs passed", level=0)
+        return [], []
+
     pass_list, fail_list = [], []
     serial_ports = []
     serial_ports = load_mtp_usb_serial_port(mtp_mgmt_ctrl)
@@ -221,9 +226,20 @@ def main():
             if nic_type in ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST:
                 test_ROT = True
 
+        # Pre-post check
+        if FLEX_SHOP_FLOOR_CONTROL: #if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+            pre_post_fail_list = test_utils.nic_common_setup_test_picker(mtp_mgmt_ctrl, FF_Stage.FF_FST, pass_nic_list + fail_nic_list, ["FF_AREA_CHECK"], args.skip_test)
+            for slot in pre_post_fail_list:
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+
         # TESTS
         for slot in range(mtp_mgmt_ctrl._slots):
             if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
                 continue
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
@@ -290,15 +306,18 @@ def main():
         for test in testlist:
             start_ts = libmfg_utils.timestamp_snapshot()
 
+            for slot in pass_nic_list:
+                sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
+
             if test == "ROT":
-                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, pass_nic_list + fail_nic_list)
+                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, pass_nic_list)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                 continue
 
             stop_ts = libmfg_utils.timestamp_snapshot()
             duration = str(stop_ts - start_ts)
-
             for slot in test_pass_list:
                 if slot in slot2rotsn:
                     test = "ROT WITH ROT CABLE " + slot2rotsn[slot]
@@ -335,14 +354,6 @@ def main():
                 pass_nic_list.remove(slot)
             if slot not in fail_nic_list:
                 fail_nic_list.append(slot)
-
-    for slot in pass_nic_list + fail_nic_list:
-        key = libmfg_utils.nic_key(slot)
-        sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
-            if sn is not None and len(sn) > 0:
-                pre_post_fail_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, fail_nic_list, sn, FF_Stage.FF_FST, slot, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
-    pass_nic_list = [i for i in pass_nic_list if i not in fail_nic_list]
 
     for slot in pass_nic_list:
         key = libmfg_utils.nic_key(slot)
