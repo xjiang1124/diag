@@ -318,7 +318,7 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.GINESTRA_D4
     elif "DSC2A-2Q200-32R32F64P-R" in pn:
         product_name = NIC_Type.GINESTRA_D4
-    elif "68-0075-01" in pn:
+    elif "68-0075-01" in pn or "68-0075-02" in pn:
         product_name = NIC_Type.GINESTRA_D5
     elif "DSC2A-2Q200-32S32F64P-R" in pn:
         product_name = NIC_Type.GINESTRA_D5

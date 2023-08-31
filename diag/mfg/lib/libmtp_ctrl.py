@@ -2849,7 +2849,7 @@ class mtp_ctrl():
             if software_pn != "90-0023-0001":
                 return False
         elif naples_pn[0:7] == "68-0075":     #GINESTRA_D5
-            if software_pn != "90-0023-0001":
+            if software_pn != "90-0023-0002":
                 return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
