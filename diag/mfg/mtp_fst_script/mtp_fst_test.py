@@ -227,7 +227,7 @@ def main():
                 test_ROT = True
 
         # Pre-post check
-        if FLEX_SHOP_FLOOR_CONTROL: #if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
+        if GLB_CFG_MFG_TEST_MODE and FLEX_SHOP_FLOOR_CONTROL:
             pre_post_fail_list = test_utils.nic_common_setup_test_picker(mtp_mgmt_ctrl, FF_Stage.FF_FST, pass_nic_list + fail_nic_list, ["FF_AREA_CHECK"], args.skip_test)
             for slot in pre_post_fail_list:
                 if slot not in fail_nic_list:
