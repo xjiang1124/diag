@@ -91,6 +91,10 @@ class nic_test_v2:
                 if ret != 0:
                     return -1
 
+                if args.fast == True:
+                    common.session_stop(uart_session)
+                    continue
+
                 self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), args.first_pwr_on)
                 if ret != 0:
                     return -1
@@ -170,7 +174,7 @@ class nic_test_v2:
                     session.timeout=1800
                     session.sendline("source /update/run_prog.sh")
                     session.expect("DIAGFW PROG DONE")
-                    self.nic_con.uart_session_cmd(session, "fwupdate -s goldfw")
+                    #self.nic_con.uart_session_cmd(session, "fwupdate -s diagfw")
                     self.nic_con.uart_session_cmd(session, "pwd")
                 except pexpect.TIMEOUT:
                     print "DIAGFW PROG FAILED!"
@@ -481,6 +485,8 @@ class nic_test_v2:
 
             ret = self.nic_con.uart_session_start(session, self.baud_rate)
             if ret != 0:
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
                 continue
 
             if args.send_only:
@@ -506,6 +512,7 @@ if __name__ == "__main__":
     parser_pc_test.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser_pc_test.add_argument("-ite", "--iteration", help="Number of iterations", type=int, required=False, default=1)
     parser_pc_test.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser_pc_test.add_argument("-fast", "--fast", help="Fast test", action='store_true')
     #parser_pc_test.add_argument("-fg", "--foreground", help="Run test in foreground", action='store_true')
     parser_pc_test.set_defaults(func=test.pc_test)
 

@@ -478,7 +478,7 @@ class ddr_test:
             slot_list = ",".join(nic_list)
             session = common.session_start()
             common.session_cmd(session, "cd ~/diag/python/regression/")
-            common.session_cmd(session, "nic_test.py -snake -slot_list={} -wtime=3600 -snake_num=6 -dura=3600 -mode=hod -int_lpbk".format(slot_list), 600, ending="before checking result")
+            common.session_cmd(session, "nic_test.py -snake -slot_list={} -wtime=3600 -snake_num=6 -dura=3600 -mode=hod_1100 -int_lpbk".format(slot_list), 600, ending="before checking result")
             print("=== Snake started: wait for 300 sec ===")
             time.sleep(300)
 
