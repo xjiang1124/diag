@@ -59,6 +59,7 @@ class nic_ctrl():
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle
         self._nic_prompt = prompt
+        self._nic_handle.logfile = None
         self._nic_handle.logfile_read = self._diag_filep
         self._nic_handle.logfile_send = self._diag_cmd_filep
 
@@ -352,10 +353,6 @@ class nic_ctrl():
 
 
     def nic_console_attach(self):
-        con_ts = libmfg_utils.timestamp_snapshot()
-        ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
-        self._nic_handle.sendline(ts_record_cmd)
-
         if self._nic_type == NIC_Type.TAORMINA:
             self.mtp_exec_cmd("systemctl stop dsm-uart-log")
             self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH))

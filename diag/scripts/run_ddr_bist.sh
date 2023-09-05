@@ -13,13 +13,13 @@ then
     margin_pct=0
 elif [[ $vmarg == "high" ]]
 then
-    vdd_margin_pct=5
-    arm_margin_pct=5
+    vdd_margin_pct=2
+    arm_margin_pct=2
     margin_pct=2
 elif [[ $vmarg == "low" ]]
 then
-    vdd_margin_pct=10
-    arm_margin_pct=10
+    vdd_margin_pct=2
+    arm_margin_pct=2
     margin_pct=2
 fi
 for (( idx=0; idx<$ite; idx++ ))

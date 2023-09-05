@@ -64,7 +64,7 @@ const (
     PN_SR4T_ORACLE   string = "68-0089-01"
     PN_LIPARI_ELBA   string = "68-0032"
     PN_GIN_D4_ORACLE string = "68-0074-01"
-    PN_GIN_D5_ORACLE string = "68-0075-01"
+    PN_GIN_D5_ORACLE string = "68-0075"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -79,7 +79,7 @@ const (
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
     SKU_ADI_MSFT        string = "DSC2-2Q200-32R32F64P-M2"
     SKU_SOLO_MSFT       string = "DSC2-2Q200-32R32F64P-M4"
-    SKU_ADICR_MSFT      string = "DSC2-2Q200-32R32F64P-M4"
+    SKU_ADICR_MSFT      string = "DSC2-2Q200-32R32F64P-M5"
     SKU_SOLO_SSDK       string = "DSC2-2Q200-32R32F64P-S4"
     SKU_NETAPP_R2       string = "NA"
     SKU_SOLO_ORACLE     string = "DSC2-2Q200-32R32F64P-R4"

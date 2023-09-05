@@ -5,6 +5,7 @@ from libsku_utils import PART_NUMBERS_MATCH
 GLB_CFG_MFG_TEST_MODE = False
 FLEX_SHOP_FLOOR_CONTROL = False
 MFG_BYPASS_PSU_CHECK = False
+RUNNING_EDVT = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -228,14 +229,14 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2ADIIBM"] = "0x3"
     fail_cpld_dat["ORTANO2ADIIBM"] = "0x14"
     fea_cpld_img["ORTANO2ADIIBM"] = "naples200_ortano2A_fea_rev3_C_01192022.bin"
-    diagfw_img["ORTANO2ADIIBM"] = "naples_diagfw_elba_1.51.0-G-30_2023.04.07.tar"
-    diagfw_dat["ORTANO2ADIIBM"] = "04-07-2023"
-    goldfw_img["ORTANO2ADIIBM"] = "naples_goldfw_elba_1.51.0-G-30_2023.04.09.tar"
-    goldfw_dat["ORTANO2ADIIBM"] = "04-07-2023"
-    uboot_img["ORTANO2ADIIBM"] = "boot0_rev18_G30.img"
+    diagfw_img["ORTANO2ADIIBM"] = "elba_diagfw_1.51.0-G-37_2023.05.17.tar"
+    diagfw_dat["ORTANO2ADIIBM"] = "05-17-2023"
+    goldfw_img["ORTANO2ADIIBM"] = "elba_goldfw_1.51.0-G-37_2023.05.17.tar"
+    goldfw_dat["ORTANO2ADIIBM"] = "05-17-2023"
+    uboot_img["ORTANO2ADIIBM"] = "boot0.1.51.0-G-37.img"
     uboot_dat["ORTANO2ADIIBM"] = "18"
-    uboota_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-30_2023.04.07.img"
-    ubootb_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-30_2023.04.07.img"
+    uboota_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-37_2023.05.30.img"
+    ubootb_img["ORTANO2ADIIBM"] = "fip_1.51.0-G-37_2023.05.30.img"
     cert_img["68-0028"] = "canon-prod-pkcerts.bin"
     cpld_img["68-0028"] = "ortano_adi_working_rev3.14_033023.bin"
     cpld_ver["68-0028"] = "0x3"
@@ -246,8 +247,8 @@ class NIC_IMAGES:
     fail_cpld_img["68-0028"] = "ortano_adi_failsafe_secure_rev83.14_033023.bin"
     fail_cpld_ver["68-0028"] = "0x83"
     fail_cpld_dat["68-0028"] = "0x14"
-    goldfw_img["68-0028"] = "naples_sec_goldfw_prod_1.51.0-G-30_2023.04.07.tar"
-    goldfw_dat["68-0028"] = "04-07-2023"
+    goldfw_img["68-0028"] = "naples_sec_goldfw_prod_1.51.0-G-37_2023.05.30.tar"
+    goldfw_dat["68-0028"] = "05-17-2023"
     
     #MSFT ADI
     cpld_img["ORTANO2ADIMSFT"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
@@ -416,35 +417,35 @@ class NIC_IMAGES:
     goldfw_img["68-0091"] = "elba_goldfw_1.51.0-G-34_2023.05.03.tar"
     goldfw_dat["68-0091"] = "05-02-2023"
 
-    cpld_img["GINESTRA_D4"] = "ginestra_d4_working_04282023.bin"
+    cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_working.bin"
     cpld_ver["GINESTRA_D4"] = "0x1"
-    cpld_dat["GINESTRA_D4"] = "0x00"
-    sec_cpld_img["GINESTRA_D4"] = "ginestra_d4_working_04282023.bin"
+    cpld_dat["GINESTRA_D4"] = "0x02"
+    sec_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_working.bin"
     sec_cpld_ver["GINESTRA_D4"] = "0x1"
-    sec_cpld_dat["GINESTRA_D4"] = "0x00"
-    fail_cpld_img["GINESTRA_D4"] = "ginestra_d4_failsafe_042182023.bin"
+    sec_cpld_dat["GINESTRA_D4"] = "0x02"
+    fail_cpld_img["GINESTRA_D4"] = "ginestra_d4_rev1.2_failsafe.bin"
     fail_cpld_ver["GINESTRA_D4"] = "0x1"
-    fail_cpld_dat["GINESTRA_D4"] = "0x00"
+    fail_cpld_dat["GINESTRA_D4"] = "0x02"
     fea_cpld_img["GINESTRA_D4"] = "ginestra_impl1.bin"
-    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
-    diagfw_dat["GINESTRA_D4"] = "05-12-2023"
-    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
-    goldfw_dat["GINESTRA_D4"] = "05-12-2023"
+    diagfw_img["GINESTRA_D4"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
+    diagfw_dat["GINESTRA_D4"] = "08-21-2023"
+    goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
+    goldfw_dat["GINESTRA_D4"] = "08-21-2023"
 
-    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_working.bin"
+    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
     cpld_ver["GINESTRA_D5"] = "0x1"
-    cpld_dat["GINESTRA_D5"] = "0x00"
-    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_working.bin"
+    cpld_dat["GINESTRA_D5"] = "0x02"
+    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
     sec_cpld_ver["GINESTRA_D5"] = "0x1"
-    sec_cpld_dat["GINESTRA_D5"] = "0x00"
-    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.0.16_failsafe.bin"
+    sec_cpld_dat["GINESTRA_D5"] = "0x02"
+    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_failsafe_08162023.bin"
     fail_cpld_ver["GINESTRA_D5"] = "0x1"
-    fail_cpld_dat["GINESTRA_D5"] = "0x00"
+    fail_cpld_dat["GINESTRA_D5"] = "0x02"
     fea_cpld_img["GINESTRA_D5"] = "ginestra_impl1.bin"
-    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.64.0-31_2023.05.12.tar"
-    diagfw_dat["GINESTRA_D5"] = "05-12-2023"
-    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.64.0-31_2023.05.12.tar"
-    goldfw_dat["GINESTRA_D5"] = "05-12-2023"
+    diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
+    diagfw_dat["GINESTRA_D5"] = "08-21-2023"
+    goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
+    goldfw_dat["GINESTRA_D5"] = "08-21-2023"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -785,7 +786,7 @@ NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Typ
 # Card Type List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2SOLOORCTHS,
-    NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT
+    NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
     ]
 
 # Part Number Pattern List Which need attash ROT cable when run FST test
@@ -799,6 +800,39 @@ ROT_CABLE_REQUIRED_FOR_FST_PN_LIST = [
     PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT,             #68-0090-01 A0    ORTANO2SOLO MICROSOFT
     PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT            #68-0091-01 A0    ORTANO2ADI CR MICROSOFT
     ]
+
+# Board Part Numebr and CPLD ID To Board IP Mapping Table
+PN_AND_CPLD_TO_BOARDID = {
+    ("P26968", "0x17")     : "0x01170001",
+    ("68-0014", "0x20")    : "0x01200002",
+    ("P37689", "0x19")     : "0x01170001",
+    ("68-0010", "0x19")    : "0x01190003",
+    ("68-0003", "0x12")    : "0x01120002",
+    ("68-0013", "0x1C")    : "0x011C0001",
+    ("P47930", "0x4A")     : "0x024A0001",
+    ("P47927", "0x46")     : "0x02460001",
+    ("68-0020", "0x45")    : "0x02450001",
+    ("0X322F", "0x49")     : "0x02490001",
+    ("0W5WGK", "0x49")     : "0x02490002",
+    ("P47933", "0x48")     : "0x02480001",
+    ("0PCFPC", "0x47")     : "0x02470001",
+    ("68-0026", "0x4B")    : "0x024B0001",
+    ("68-0015", "0x44")    : "0x02440003",
+    ("68-0028", "0x4B")    : "0x024B0003",
+    ("68-0021", "0x44")    : "0x02440001",
+    ("68-0029", "0x4C")    : "0x024C0001",
+    ("68-0077", "0x4E")    : "0x024E0001",
+    ("68-0089", "x")       : "0x024E0003",
+    ("68-0049", "0x50")    : "0x02500001",
+    ("68-0034", "0x4B")    : "0x024B0002",
+    ("68-0090", "0x4E")    : "0x024E0002",
+    ("68-0091", "0x50")    : "0x02500002",
+    ("68-0074", "0x60")    : "0x03600001",
+    ("68-0075", "0x61")    : "0x03610001",
+    ("68-0086", "0x60")    : "",
+    ("68-0087", "0x61")    : "",
+    ("68-0092", "0x4E")    : "0x024E0002",
+}
 
 NIC_MGMT_USERNAME = "root"
 NIC_MGMT_PASSWORD = "pen123"
@@ -934,3 +968,11 @@ FLX_PENANG_SAVE_UUT_RSLT_ENTRY_FMT =                                            
           &lt;PANEL&gt;&#xD;                                                               \
           &lt;DUT ID="{:s}" SOCKET="1" TIMESTAMP="{:s}" TESTTIME="{:s}" ENDTIME="{:s}" STATUS="{:s}"&gt;&#xD;'
 
+VMARG_PERCENTAGE = {
+    # nic_test.py will using "_" to seperate vmargin high/low and percentage, so add a leading _ here when fill the percentage
+    "DEFAULT"                    : "",
+    # For GINESTRA_D5, if run EDVT, percentage parameter is 3, if MFG, percentage parameter is 2
+    # header of value list          Normal, EDVT
+    "68-0074"                    : ("_2",   "_3"),
+    "68-0075"                    : ("_2",   "_3"),
+}

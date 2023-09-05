@@ -28,6 +28,7 @@ from libmfg_cfg import TOR_IMAGES
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
+from libmes import *
 
 def logfile_close(filep_list):
     os.system("sync")
@@ -60,7 +61,7 @@ def load_mtp_cfg():
     return mtp_cfg_db
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=False):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=False):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     if telnet:
         mtp_ts_cfg = mtp_cfg_db.get_mtp_console(mtp_id)
@@ -76,15 +77,42 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
-    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
+    mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, ts_cfg=mtp_ts_cfg, apc_cfg=mtp_apc_cfg, num_of_slots=2, slots_to_skip=mtp_slots_to_skip)
     if telnet:
         mtp_mgmt_ctrl.set_uut_type(UUT_Type.TOR)
     return mtp_mgmt_ctrl
 
-def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
+def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
     mtp_mgmt_ctrl.print_script_version()
 
-    for test in ["OS_BOOT", "PRESENT_CHECK", "LINK_CHECK", "USB_PRESENT_CHECK", "NIC_INIT", "NIC_MAINFW_SET", "SSH_SETUP", "OS_BOOT"]: #, "NIC_INIT", "MAINFW_VERIFY"]:
+    if isinstance(mes_obj, MES):
+        testlist = [
+            "OS_BOOT",
+            "MES_ACCESS",
+            "OK_TEST_STN_CHK",
+            "MES_SCAN_INPUT_CHK",
+            "MES_EEPROM_CHK",
+            "PRESENT_CHECK",
+            "LINK_CHECK",
+            "USB_PRESENT_CHECK",
+            "NIC_INIT",
+            "NIC_MAINFW_SET",
+            "SSH_SETUP",
+            "OS_BOOT",
+        ]
+    else:
+        testlist = [
+            "OS_BOOT",
+            "PRESENT_CHECK",
+            "LINK_CHECK",
+            "USB_PRESENT_CHECK",
+            "NIC_INIT",
+            "NIC_MAINFW_SET",
+            "SSH_SETUP",
+            "OS_BOOT",
+        ]
+
+    for test in testlist:
         if test in skip_test:
             continue
 
@@ -123,11 +151,77 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
             ret  = mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(0)
             ret &= mtp_mgmt_ctrl.mtp_mgmt_clear_nic_ssh(1)
 
+        elif test == "MES_ACCESS":
+            # Access MES data
+            mtp_mgmt_ctrl.cli_log_inf("Access MES data", level=0)
+            mes_obj.store_mgmt_ctrl(mtp_mgmt_ctrl)
+            ret = mes_obj.pull_mes_info(mtp_mgmt_ctrl._sn)
+
+        elif test == "OK_TEST_STN_CHK":
+            # Verify if UUT is allowed to undergo this test station
+            ret = mes_obj.verify_next_test_station(FF_Stage.FF_P2C)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + FF_Stage.FF_2C,
+                    level=0)
+                mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
+                mes_obj.clear_push_to_mes()
+            else:
+                mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + FF_Stage.FF_2C, level=0)
+
+        elif test == "MES_SCAN_INPUT_CHK":
+            if not isinstance(mes_obj, MES):
+                continue
+
+            # Verify scanned input against MES data
+            mtp_mgmt_ctrl.cli_log_inf("Verify scanned input against MES data", level=0)
+            ret = mes_obj.verify_scanned_input_against_mes(scan_rslt[uut_id])
+
+        elif test == "MES_EEPROM_CHK":
+            if not isinstance(mes_obj, MES):
+                continue
+
+            # Verify FRU EEPROM contents against MES data
+            eeprom_contents = dict()
+            msg = "Verify FRU EEPROM contents against MES data"
+            mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+            ret, eeprom_contents = mtp_mgmt_ctrl.get_eeprom_contents()
+            if ret:
+                ret = mes_obj.verify_eeprom_against_mes(eeprom_contents, eeprom_type='fru')
+
+                if ret:
+                    # Verify Locked MFG EEPROM contents against MES data
+                    eeprom_contents = dict()
+                    msg = "Verify Locked MFG EEPROM contents against MES data"
+                    mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                    ret, eeprom_contents = \
+                        mtp_mgmt_ctrl.get_eeprom_contents(eeprom_location='mfg_l')
+                    if ret:
+                        ret = mes_obj.verify_eeprom_against_mes(eeprom_contents,
+                            eeprom_type='mfg_l')
+
+                        # Verify Unlocked MFG EEPROM contents against MES data
+                        if ret:
+                            msg = "Verify Unlocked MFG EEPROM contents against MES data"
+                            mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                            ret, eeprom_contents = \
+                                mtp_mgmt_ctrl.get_eeprom_contents(eeprom_location='mfg_ul')
+                            if ret:
+                                ret = mes_obj.verify_eeprom_against_mes(eeprom_contents,
+                                    eeprom_type='mfg_ul')
+
         duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
 
         if not ret:
             sn = mtp_mgmt_ctrl._sn #refresh to get latest
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Fail Mode
+            # - Test Fail Signature
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_fail_mode(test)
+                mes_obj.save_res_fail_signature('TBD')
+
             return False
 
         if test == "USB_PRESENT_CHECK":
@@ -139,27 +233,30 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
                 fail_uut_list = [uut_id]
             libmfg_utils.cli_log_rslt("{:s} Sanity Check complete".format(uut_id), pass_uut_list, fail_uut_list, mtp_mgmt_ctrl._filep)
 
-    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="2C-SSH"):
+    if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True):
         mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis", level=0)
+
+        # FAIL: Save the following to be uploaded to MES later:
+        # - Test Fail Mode
+        # - Test Fail Signature
+        if isinstance(mes_obj, MES):
+            mes_obj.save_res_fail_mode("Unable to connect to UUT")
+            mes_obj.save_res_fail_signature('TBD')
+
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
     return True
 
 def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
-    for test in ["TIME_SET", "DIAG_UPDATE", "PYPKG_UPDATE"]:
+    for test in ["DIAG_UPDATE", "PYPKG_UPDATE"]:
         if test in skip_test:
             continue
 
         start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-        # Sync timestamp to server
-        if test == "TIME_SET":
-            timestamp_str = str(libmfg_utils.timestamp_snapshot())
-            ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str)
-
         # copy diag image
-        elif test == "DIAG_UPDATE":
+        if test == "DIAG_UPDATE":
             asic_type = MTP_ASIC_SUPPORT.ELBA
             x86_image = MTP_IMAGES.AMD64_IMG[asic_type]
             arm_image = MTP_IMAGES.ARM64_IMG[asic_type]
@@ -178,6 +275,13 @@ def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
         if not ret:
             sn = mtp_mgmt_ctrl._sn
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
+
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Fail Mode
+            # - Test Fail Signature
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_fail_mode(test)
+                mes_obj.save_res_fail_signature('TBD')
             return False
 
     return True
@@ -263,7 +367,7 @@ def naples_exec_param_cmd(nic_list, naples_test_db, mtp_mgmt_ctrl):
 
 
 
-def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
+def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist, mes_obj):
     test_rslt = True
     if vmarg > 0:
         dsp = "HV_PRE_CHECK"
@@ -272,6 +376,7 @@ def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
     else:
         dsp = "PRE_CHECK"
 
+    collect_testlist = ""
     for test in test_list:
         sn = mtp_mgmt_ctrl._sn
         mtp_mgmt_ctrl.cli_log_inf(MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
@@ -284,9 +389,17 @@ def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, ret, duration), level=0)
             test_rslt &= False
 
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Fail Mode
+            # - Test Fail Signature
+            if isinstance(mes_obj, MES):
+                collect_testlist += test + "|"
+                mes_obj.save_res_fail_mode(collect_testlist)
+                mes_obj.save_res_fail_signature('TBD')
+
     return test_rslt
 
-def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
+def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist, mes_obj):
     test_rslt = True
     if vmarg > 0:
         dsp = "HV_ASIC"
@@ -308,6 +421,13 @@ def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration), level=0)
             test_rslt &= False
 
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Fail Mode
+            # - Test Fail Signature
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_fail_mode(test)
+                mes_obj.save_res_fail_signature('TBD')
+
             mtp_mgmt_ctrl.tor_dsp_failure_dump()
             if mtp_mgmt_ctrl.hard_failure():
                 # stop further testing
@@ -315,7 +435,7 @@ def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist):
 
     return test_rslt
 
-def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testlist):
+def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testlist, mes_obj):
     test_rslt = True
     sn = mtp_mgmt_ctrl._sn
     for dsp, test in test_list:
@@ -373,6 +493,14 @@ def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testli
                 mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("echo $ELBA1_J2C_ID")
                 mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
             mtp_mgmt_ctrl.cli_log_err(MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration), level=0)
+
+            # FAIL: Save the following to be uploaded to MES later:
+            # - Test Fail Mode
+            # - Test Fail Signature
+            if isinstance(mes_obj, MES):
+                mes_obj.save_res_fail_mode(test)
+                mes_obj.save_res_fail_signature('TBD')
+
             # only display first 3 and last 3 error messages
             if len(err_msg_list) < 6:
                 err_msg_disp_list = err_msg_list
@@ -388,7 +516,7 @@ def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testli
 
     return test_rslt
 
-def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
+def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj):
     rslt = True
     if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
         diag_sub_dir = "/lv_diag_logs/"
@@ -412,20 +540,20 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
     os.system(cmd)
     # save the asic/diag log files
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + diag_sub_dir, MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save diag logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save diag logs", level=0)
         rslt = False
 
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save asic logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save asic logs", level=0)
         rslt = False
 
     if rslt and not libmfg_utils.network_get_file(mtp_mgmt_ctrl, mtp_script_dir + nic_sub_dir, MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save NIC logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save NIC logs", level=0)
         rslt = False
 
     # save the x86 system logs
     if rslt and not mtp_mgmt_ctrl.tor_copy_sys_log(mtp_script_dir, local_copy=False):
-        mtp_mgmt_ctrl.cli_log_err("Unable to save x86 system logs")
+        mtp_mgmt_ctrl.cli_log_err("Unable to save x86 system logs", level=0)
         rslt = False
 
     # clean up logfiles for the next run
@@ -435,14 +563,45 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
         rslt = False
 
     if not rslt:
+        # reboot to get last session's logs
+        mtp_mgmt_ctrl.cli_log_inf("Rebooting to get previous session's system logs", level=0)
+        mtp_mgmt_ctrl.tor_boot_select(1)
+        mtp_mgmt_ctrl.save_prev_sys_logs()
+
+    if not rslt:
         uut_test_rslt_list[uut_id] = False
 
     sn = mtp_mgmt_ctrl.get_mtp_sn()
     if uut_test_rslt_list[uut_id]:
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, NIC_Type.TAORMINA, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 
+        # PASS: Save the following to be uploaded to MES later,
+        # at the end of 2C-LV:
+        # - Test Status
+        # - Test End Time
+        # - (Clear the fail mode and signature just in case)
+        if isinstance(mes_obj, MES) and vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+            mes_obj.save_res_test_status("PASS")
+            mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
+            mes_obj.save_res_fail_mode("N/A")
+            mes_obj.save_res_fail_signature("N/A")
+
+            mes_obj.push_results_to_mes()
+
     if not uut_test_rslt_list[uut_id]:
         mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, NIC_Type.TAORMINA, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+
+        # FAIL: Save the following to be uploaded to MES later,
+        # at the end of 2C-LV:
+        # - Test Status
+        # - Test End Time
+        # - (Clear the passmark just in case)
+        if isinstance(mes_obj, MES) and vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+            mes_obj.save_res_test_status("FAIL")
+            mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
+            mes_obj.save_res_passmark("N/A")
+
+            mes_obj.push_results_to_mes()
 
     # Package this UUT's logfile
     log_sub_dir = os.path.basename(os.path.dirname(log_dir))
@@ -466,6 +625,8 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir):
     # cleanup the log dir
     logfile_cleanup([log_dir, "log/"+log_pkg_file])
 
+    return True
+
 
 def single_uut_2c_test(stage,
                        uut_id,
@@ -473,6 +634,8 @@ def single_uut_2c_test(stage,
                        uut_sn_list,
                        log_file_list,
                        verbosity,
+                       mes_obj,
+                       scan_rslt,
                        skip_testlist = []):
     dsp = stage
     if verbosity:
@@ -482,6 +645,7 @@ def single_uut_2c_test(stage,
     else:
         test_log_filep = None
         diag_log_filep = None
+        console_log_filep = None
         diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
 
     open_file_track_list = list()
@@ -489,7 +653,7 @@ def single_uut_2c_test(stage,
 
     # Begin test
     mtp_cfg_db = load_mtp_cfg()
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, telnet=True)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
 
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA
@@ -522,17 +686,18 @@ def single_uut_2c_test(stage,
                 if "USB_PRESENT_CHECK" not in skip_testlist:
                     skip_testlist.append("USB_PRESENT_CHECK")
 
-            if not single_tor_setup(mtp_mgmt_ctrl, uut_id, stage, skip_testlist):
+            if not single_tor_setup(mtp_mgmt_ctrl, uut_id, stage, mes_obj, scan_rslt,
+                skip_testlist):
                 uut_test_rslt_list[uut_id] = False
                 uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
-                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
             uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
 
             if idx == 0:
                 if not single_tor_diag_update(mtp_mgmt_ctrl, uut_id, stage, skip_testlist):
                     uut_test_rslt_list[uut_id] = False
-                    save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+                    save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                     continue
 
             sn = mtp_mgmt_ctrl._sn
@@ -541,13 +706,20 @@ def single_uut_2c_test(stage,
 
             if not mtp_mgmt_ctrl.tor_diag_init(stage, fpo=True):
                 uut_test_rslt_list[uut_id] = False
-                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Fail Mode
+                # - Test Fail Signature
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_fail_mode("Failed Diag Init")
+                    mes_obj.save_res_fail_signature('TBD')
+
+                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
 
             # reapply the mainfw flag after nic_init
             for slot in range(mtp_mgmt_ctrl._slots):
                 mtp_mgmt_ctrl._nic_ctrl_list[slot]._in_mainfw = True
-            mtp_mgmt_ctrl._svos_boot = False
 
 
 
@@ -592,13 +764,29 @@ def single_uut_2c_test(stage,
             if not mtp_mgmt_ctrl.tor_set_vmarg(vmarg):
                 mtp_mgmt_ctrl.cli_log_err("Failed to voltage margin UUT", level=0)
                 uut_test_rslt_list[uut_id] = False
-                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Fail Mode
+                # - Test Fail Signature
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_fail_mode("Failed to voltage margin UUT")
+                    mes_obj.save_res_fail_signature('TBD')
+
+                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
 
             if not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, nic_util=True):
                 mtp_mgmt_ctrl.cli_log_err("Initialized NIC Diag Environment failed", level=0)
                 uut_test_rslt_list[uut_id] = False
-                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+
+                # FAIL: Save the following to be uploaded to MES later:
+                # - Test Fail Mode
+                # - Test Fail Signature
+                if isinstance(mes_obj, MES):
+                    mes_obj.save_res_fail_mode("Failed NIC Diag Environment Initialization")
+                    mes_obj.save_res_fail_signature('TBD')
+
+                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
 
             test_section_list = ["PRE_CHECK", "SNAKE", "DSP", "EDMA", "J2C_L1", "TD3"]
@@ -611,13 +799,15 @@ def single_uut_2c_test(stage,
 
             for test_section in test_section_list:
                 if test_section == "PRE_CHECK":
-                    if not tor_precheck_test(mtp_mgmt_ctrl, vmarg, taormina_pre_test_check_list, skip_testlist):
+                    if not tor_precheck_test(mtp_mgmt_ctrl, vmarg,
+                        taormina_pre_test_check_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
                         continue
 
                 elif test_section == "SNAKE":
                     bash_test_list = taormina_mtp_para_test_list[:]
-                    if not tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, bash_test_list, skip_testlist):
+                    if not tor_diag_binary_test(mtp_mgmt_ctrl, vmarg,
+                        bash_test_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
 
                 elif test_section == "DSP":
@@ -625,20 +815,27 @@ def single_uut_2c_test(stage,
                     test_db = taormina_test_db
                     if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
                         dsp_test_list.remove(("SWITCH", "ELBA_EDMA_TEST"))
+                    if ("SWITCH", "ELBALINKFLAP") in dsp_test_list:
+                        dsp_test_list.remove(("SWITCH", "ELBALINKFLAP"))
                     if ("ASIC", "L1") in dsp_test_list:
                         dsp_test_list.remove(("ASIC", "L1"))
                     if ("BCM", "TD3DIAG") in dsp_test_list:
                         dsp_test_list.remove(("BCM", "TD3DIAG"))
-                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, dsp_test_list, skip_testlist):
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db,
+                        dsp_test_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
 
                 elif test_section == "EDMA":
                     dsp_test_list = taormina_seq_test_list[:]
                     test_db = taormina_test_db
                     new_dsp_test_list = list()
+                    # LINKFLAP needs to be run before EDMA,L1 as EDMA,L1 kill the mgmt link to elba
+                    if ("SWITCH", "ELBALINKFLAP") in dsp_test_list:
+                        new_dsp_test_list.append(("SWITCH", "ELBALINKFLAP"))
                     if ("SWITCH", "ELBA_EDMA_TEST") in dsp_test_list:
                         new_dsp_test_list.append(("SWITCH", "ELBA_EDMA_TEST"))
-                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db,
+                        new_dsp_test_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
 
                 elif test_section == "J2C_L1":
@@ -647,7 +844,8 @@ def single_uut_2c_test(stage,
                     new_dsp_test_list = list()
                     if ("ASIC", "L1") in dsp_test_list:
                         new_dsp_test_list.append(("ASIC", "L1"))
-                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db,
+                        new_dsp_test_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
 
                 elif test_section == "TD3":
@@ -656,13 +854,27 @@ def single_uut_2c_test(stage,
                     new_dsp_test_list = list()
                     if ("BCM", "TD3DIAG") in dsp_test_list:
                         new_dsp_test_list.append(("BCM", "TD3DIAG"))
-                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db, new_dsp_test_list, skip_testlist):
+                    if not tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, test_db,
+                        new_dsp_test_list, skip_testlist, mes_obj):
                         uut_test_rslt_list[uut_id] = False
 
                 elif test_section == "PASSMARK":
                     if uut_test_rslt_list[uut_id]:
                         if not mtp_mgmt_ctrl.tor_fru_passmark(stage):
                             uut_test_rslt_list[uut_id] = False
+
+                            # FAIL: Save the following to be uploaded to MES later:
+                            # - Test Fail Mode
+                            # - Test Fail Signature
+                            if isinstance(mes_obj, MES):
+                                mes_obj.save_res_fail_mode('Failed to program 2C passmark')
+                                mes_obj.save_res_fail_signature('TBD')
+                        else:
+                            # PASS: Save the following to be uploaded to MES later:
+                            # - Passmark Timestamp
+                            if isinstance(mes_obj, MES):
+                                mes_obj.save_res_passmark(
+                                    mtp_mgmt_ctrl.get_passmark_timestamp())
 
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown 2C Test: {:s}, Ignore".format(test_section))
@@ -681,32 +893,49 @@ def single_uut_2c_test(stage,
 
             mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression Test Complete\n", level=0)
 
-            save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+            if not save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj):
+                uut_test_rslt_list[uut_id] = False
 
             mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
             libmfg_utils.cli_inf("MFG 2C Test Duration:{:s}".format(mfg_2c_stop_ts - mfg_2c_start_ts))
-    
+
         mtp_mgmt_ctrl.cli_log_inf("2C Test Process Complete", level=0)
         # shut down system
-        if not uut_test_rslt_list[uut_id]:
+        if uut_test_rslt_list[uut_id]:
             mtp_mgmt_ctrl.uut_chassis_shutdown()
 
     except Exception as e:
         uut_test_rslt_list[uut_id] = False
         exit_fail(mtp_mgmt_ctrl, open_file_track_list, traceback.print_exc())
-        save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir)
+        if not save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj):
+            # reboot to get last session's logs
+            mtp_mgmt_ctrl.tor_boot_select(1)
+            mtp_mgmt_ctrl.save_prev_sys_logs()
 
 def main():
     parser = argparse.ArgumentParser(description="MFG SWI Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
+    parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
+
 
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
     else:
         verbosity = False
+
+    mes_obj = None
+    if args.no_mes:
+        print("Script will NOT access the Foxconn MES Shop Floor System")
+    else:
+        print("Script will access the Foxconn MES Shop Floor System")
+        mes_obj = MES()
+
+        # Save the following to be uploaded to MES later:
+        # - Test Start Time
+        mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
 
     ######################################
     mtp_cfg_db = load_mtp_cfg()
@@ -716,9 +945,46 @@ def main():
     log_dir = "log/"
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir))
 
-    stage = FF_Stage.FF_2C
+    scan_rslt = {}
+    if isinstance(mes_obj, MES):
 
-    uut_id_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+        # Get the scanned barcode information from Operator
+        print("Start the Barcode Scan Process")
+        while True:
+            scan_rslt = libmfg_utils.uut_barcode_scan(mtp_cfg_db._mtpid_list)
+            if scan_rslt:
+                break;
+            print("Restart the Barcode Scan Process")
+
+        # print scan summary
+        for uut_id in scan_rslt.keys():
+            uut_cli_id_str = libmfg_utils.id_str(mtp = uut_id)
+            if scan_rslt[uut_id]["UUT_VALID"]:
+                sn = scan_rslt[uut_id]["UUT_SN"]
+                pn = scan_rslt[uut_id]["UUT_PN"]
+                edc = scan_rslt[uut_id]["UUT_EDC"]
+                mac_ui = libmfg_utils.mac_address_format(scan_rslt[uut_id]["UUT_MAC"])
+                pass_rslt_list.append(uut_cli_id_str + "SN = " + sn + \
+                    "; MAC = " + mac_ui +     "; PN = " + pn + "; EDC = " + edc)
+            else:
+                fail_rslt_list.append(uut_cli_id_str + "UUT Absent")
+        libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list,
+            fail_rslt_list, open("/dev/null", "w"))
+
+    stage = FF_Stage.FF_2C
+    if isinstance(mes_obj, MES):
+        uut_id_list = scan_rslt.keys()
+
+        # Save the following to be uploaded to MES later:
+        # - Test Station (use P2C)
+        # - Test Rack location
+        # - Chassis Base SN
+        mes_obj.save_res_test_station(FF_Stage.FF_P2C)
+        mes_obj.save_res_test_location(uut_id_list[0])
+        mes_obj.save_res_chassis_sn(scan_rslt[uut_id_list[0]]['UUT_SN'])
+
+    else:
+        uut_id_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
 
     ######################################
 
@@ -739,13 +1005,16 @@ def main():
             continue
 
         logfile_dict[uut_id] = list()
-        uut_thread = threading.Thread(target = single_uut_2c_test, args = (stage,
-                                                                           uut_id,
-                                                                           uut_test_rslt_list,
-                                                                           uut_sn_list,
-                                                                           logfile_dict[uut_id],
-                                                                           verbosity,
-                                                                           args.skip_test))
+        uut_thread = threading.Thread(target = single_uut_2c_test,
+                                        args = (stage,
+                                                uut_id,
+                                                uut_test_rslt_list,
+                                                uut_sn_list,
+                                                logfile_dict[uut_id],
+                                                verbosity,
+                                                mes_obj,
+                                                scan_rslt,
+                                                args.skip_test))
         uut_thread.daemon = True
         uut_thread.start()
         uut_thread_list.append(uut_thread)
@@ -774,7 +1043,7 @@ def main():
         sn = uut_sn_list[uut_id]
         card_type = NIC_Type.TAORMINA
         test_summary_dict[uut_id] = [(uut_id, sn, card_type, True)]
-    
+
     for uut_id in fail_uut_list:
         sn = uut_sn_list[uut_id]
         card_type = NIC_Type.TAORMINA
