@@ -4863,27 +4863,32 @@ class mtp_ctrl():
             # Map to Scaned slot id by card serial number
             phy_present_slot_list = []
             phy_present_sn_list = []
+            rc = True
             for bus in bus_list_match:
                 cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
                 if not self.mtp_mgmt_exec_cmd(cmd):
-                    return False
+                    rc = False
                 result = self.mtp_get_cmd_buf()
                 sn_match = re.search("Serial number: *([A-Z0-9]*)", result)
                 if sn_match:
                     sn = sn_match.group(1)
                     if sn not in sn2slot:
-                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Abort".format(sn), level=0)
-                        return False
+                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Aborting ...".format(sn), level=0)
+                        rc = False
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
                     phy_present_sn_list.append(sn)
+            if not rc:
+                return rc
 
             # Validate if there is scanned card not physical present
             for sn in sn2slot:
                 if sn not in phy_present_sn_list:
                     key = libmfg_utils.nic_key(slot)
-                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Abort".format(key, sn), level=0)
-                    return False
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Aborting ...".format(key, sn), level=0)
+                    rc = False
+            if not rc:
+                return rc
             if not phy_present_slot_list:
                 phy_present_slot_list = range(len(bus_list_match))
         else:

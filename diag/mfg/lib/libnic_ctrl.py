@@ -4445,6 +4445,9 @@ class nic_ctrl():
         example:
         # assign, board_config -B 0x03610001
         # read and verify, board_config -b, got 0x03610001
+        #-------------------------------------------------
+        # since board_config -b may report the board_id from FRU after we erase board_cfg and board_id
+        # so SW team suggest using board_config -r to read board_id
         """
 
         if boardId is None:
@@ -4465,9 +4468,9 @@ class nic_ctrl():
             return False
 
         # Read Board ID back and compare
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.READ_BOARD_ID_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
-            self.nic_set_err_msg("Read Board ID Command 'board_config -b' Failed")
+            self.nic_set_err_msg("Read Board ID Command 'board_config -r' Failed")
             return False
         if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Read Back and Compare Board ID Failed")
