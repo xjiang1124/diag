@@ -3,6 +3,15 @@
     "MfgDiagImages" : [
         {
             "Release" : "latest",
+            "Asic" : "giglio",
+            "Board" : "ginestra",
+            "Images" : {
+                "AMD64" : "image_amd64_giglio.tar",
+                "ARM64" : "image_arm64_giglio.tar"
+            }
+	},
+        {
+            "Release" : "latest",
             "Asic" : "elba",
             "Board" : "ortano",
             "Images" : {
@@ -23,13 +32,22 @@
     "AsicLibraries" : [
         {
             "Release" : "latest",
+            "Asic" : "giglio",
+            "Board" : "ginestra",
+            "Images" : {
+                "AMD64" : "nic_x86_64.tar.gz",
+                "ARM64" : "nic_aarch64.tar.gz"
+            }
+	},
+        {
+            "Release" : "latest",
             "Asic" : "elba",
             "Board" : "ortano",
             "Images" : {
                 "AMD64" : "nic_x86_64.tar.gz",
                 "ARM64" : "nic_aarch64.tar.gz"
             }
-        },
+	},
         {
             "Release" : "latest",
             "Asic" : "capri",

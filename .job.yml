@@ -1,6 +1,16 @@
 ---
 version: 2.0
 builds:
+  build-amd64-giglio:
+    commands: [ "sh", "-c", "cd build; make amd64 asic=giglio asiclib=unpackaged" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_giglio.tar
+  build-arm64-giglio:
+    commands: [ "sh", "-c", "cd build; make arm64 asic=giglio asiclib=unpackaged" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_arm64_giglio.tar
   build-amd64-elba:
     commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
@@ -21,6 +31,12 @@ builds:
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
+  package-giglio-mfg-script:
+    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    artifacts:
+    - /psdiag/jobd/jobd.tar.gz
+    - /psdiag/jobd/fw.tar.gz
   package-elba-mfg-script:
     commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
@@ -43,73 +59,48 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build"]
-  test/jobs/precheckin/ortano-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/monterey-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/naples25-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/ortano-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/monterey-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/naples25-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/sanity/ortano-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/monterey-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/naples25-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/ortano-ScanDL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  test/jobs/sanity/monterey-ScanDL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  # test/jobs/sanity/naples25-ScanDL:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  test/jobs/sanity/ortano-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/monterey-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/naples25-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/ortano-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/monterey-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/naples25-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/ortano-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/monterey-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/naples25-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/ortano-fst:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  # test/jobs/sanity/monterey-fst:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  # test/jobs/sanity/naples25-fst:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  test/jobs/regression/ortano-4C:
-    labels: ["CI-DIAG-Regression"]
-  test/jobs/regression/monterey-4C:
-    labels: ["CI-DIAG-Regression"]
-  test/jobs/regression/naples25-4C:
-    labels: ["CI-DIAG-Regression"]
+  test/DL:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-DL"]
+  test/ScanDL:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
+  test/P2C:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-P2C"]
+  test/4C:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-Diag-Regression", "CI-DIAG-4C"]
+  test/SWI:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-SWI"]
+  test/FST:
+    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-FST"]
 
 dependencies:
   test/infra:
-  - reference: test/jobs/precheckin/ortano-DL
-  diag:
-  - reference: test/jobs/precheckin/ortano-DL
-  - reference: test/jobs/precheckin/monterey-DL
-  - reference: test/jobs/precheckin/naples25-DL
-  - reference: test/jobs/precheckin/ortano-P2C
-  - reference: test/jobs/precheckin/monterey-P2C
-  - reference: test/jobs/precheckin/naples25-P2C
-    exclude_dirs: ["mfg/scripts"]
-  diag/mfg/mtp_fst_test:
-  - reference: test/jobs/sanity/ortano-fst
+  - reference: test/FST
   qa-infra:
-  - reference: test/jobs/precheckin/ortano-DL
+  - reference: test/FST
+  diag:
+  - reference: test/DL
+    exclude_dirs: ["mfg"]
+  - reference: test/P2C
+    exclude_dirs: ["mfg"]
+  diag/mfg:
+  - reference: test/DL
+    exclude_dirs: ["mfg/scripts"]
+  - reference: test/ScanDL
+    exclude_dirs: ["mfg/scripts"]
+  - reference: test/P2C
+    exclude_dirs: ["mfg/scripts"]
+  - reference: test/4C
+    exclude_dirs: ["mfg/scripts"]
+  - reference: test/SWI
+    exclude_dirs: ["mfg/scripts"]
+  - reference: test/FST
+    exclude_dirs: ["mfg/scripts"]
+  diag/mfg/mtp_dl_script:
+  - reference: test/DL
+  diag/mfg/mtp_diag_regression:
+  - reference: test/P2C
+  - reference: test/4C
+  diag/mfg/mtp_swi_script:
+  - reference: test/SWI
+  diag/mfg/mtp_fst_script:
+  - reference: test/FST

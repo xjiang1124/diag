@@ -1,16 +1,18 @@
 ---
 version: 2.0
-meta:
-  asic: elba
-    
+
 queue_name: asic
 image:
   bind_dir: "/psdiag"
   work_dir: "/psdiag"
 
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz
+
 e2e-targets:
-  ortano-ScanDL-sanity:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --testbed /warmd.json --test-type sanity --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+  ortano-ti-orc:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/FST.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -27,15 +29,13 @@ e2e-targets:
          vendor: Pensando
          count: 1
          props:
-         - name: mtp-nic-processor
-           value: elba
-         - name: nic1-board-name
-           value: ortano
+         - name: mtp-type
+           value: supermicro
+         - name: ortano-ti
+           value: yes
     provision:
       username: diag
       password: lab123
       vars:
         BmOs: linux
 
-logfiles:
- - /psdiag/diag_detailed_log.tgz
