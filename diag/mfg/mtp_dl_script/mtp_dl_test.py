@@ -184,7 +184,7 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
         elif test == "ASSIGN_BOARD_ID":
             ret = mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn)
         elif test == "ERASE_BOARD_CONFIG":
-            ret = mtp_mgmt_ctrl.mtp_nic_erase_board_config(slot)
+            ret = mtp_mgmt_ctrl.mtp_nic_erase_board_config_ssh(slot)
         # set board config
         elif test == "BOARD_CONFIG":
             ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)

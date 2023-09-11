@@ -5033,6 +5033,15 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Erase NIC Board Config")
         return True
 
+    def mtp_nic_erase_board_config_ssh(self, slot):
+        if not self._nic_ctrl_list[slot].nic_erase_board_config_ssh():
+            self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "Erase NIC Board Config")
+        return True
+
     def mtp_nic_cpld_update_request(self, slot):
         if not self._nic_ctrl_list[slot].nic_cpld_update_request():
             if not self._nic_ctrl_list[slot].nic_check_status():
