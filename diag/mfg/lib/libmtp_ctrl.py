@@ -2797,7 +2797,7 @@ class mtp_ctrl():
             if software_pn != "90-0003-0001":
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
@@ -2816,7 +2816,7 @@ class mtp_ctrl():
             if software_pn != "90-0017-0003":
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0028":     #ORTANO2 ADI IBM
             if software_pn != "90-0016-0004":
@@ -2825,10 +2825,10 @@ class mtp_ctrl():
             if software_pn != "90-0019-0001":
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0089":     #ORTANO2 SOLO Tall Heat Sink
             if software_pn != "90-0021-0001":
@@ -2840,7 +2840,7 @@ class mtp_ctrl():
             if software_pn != "90-0022-0001":
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
             if software_pn != "90-0020-0003":
