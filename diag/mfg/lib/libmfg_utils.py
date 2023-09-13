@@ -2552,7 +2552,7 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
             if slot not in fail_nic_list:
                 cur_fail_list[slot] = 0
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]:
                     continue
                 if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
@@ -3034,7 +3034,9 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "hod"
     elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
         mode = "hod_1100"
-    elif nic_type == NIC_Type.ORTANO2SOLOALI:
+    elif nic_type == NIC_Type.ORTANO2SOLOS4:
+        mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2ADICRS4:
         mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
