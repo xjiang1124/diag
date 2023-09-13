@@ -295,9 +295,9 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
     elif "DSC2-2Q200-32R32F64P-M4" in pn:
         product_name = NIC_Type.ORTANO2SOLOMSFT
     elif "68-0092-01" in pn:
-        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPJ" else NIC_Type.ORTANO2ADICRS4
+        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPF" else NIC_Type.ORTANO2ADICRS4
     elif "DSC2-2Q200-32R32F64P-S4" in pn:
-        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPJ" else NIC_Type.ORTANO2ADICRS4
+        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPF" else NIC_Type.ORTANO2ADICRS4
     elif "DSC2-2Q200-32R32F64P" in pn:
         product_name = NIC_Type.ORTANO2
     elif "68-0015-02" in pn:
