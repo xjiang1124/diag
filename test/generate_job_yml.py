@@ -9,8 +9,8 @@ def write_headers(fh):
     fh.write("  bind_dir: \"/psdiag\"\n")
     fh.write("  work_dir: \"/psdiag\"\n")
     fh.write("\n")
-    #fh.write("host_mounts:\n")
-    #fh.write("  \"/hw\": \"/vol/hw\"\n")
+    fh.write("host_mounts:\n")
+    fh.write("  \"/hw\": \"/vol/hw\"\n")
     fh.write("\n")
 
     fh.write("logfiles:\n")

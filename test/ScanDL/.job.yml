@@ -6,6 +6,8 @@ image:
   bind_dir: "/psdiag"
   work_dir: "/psdiag"
 
+host_mounts:
+  "/hw": "/vol/hw"
 
 logfiles:
  - /psdiag/diag_detailed_log.tgz
