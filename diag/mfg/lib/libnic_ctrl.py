@@ -4381,6 +4381,29 @@ class nic_ctrl():
 
         return True
 
+    def nic_erase_board_config_ssh(self):
+
+        before_erase = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        if not before_erase:
+            self.nic_set_err_msg("Unable to get board config")
+            return False
+
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
+        if not cmd_buf:
+            self.nic_set_err_msg("Unable to erase board config")
+            return False
+
+        after_release = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
+        if not after_release:
+            return False
+
+        if "u-boot sets to board defaults" not in after_release:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
     def nic_set_board_config(self, preset_config):
         """
          Quick Start guide
@@ -4445,6 +4468,9 @@ class nic_ctrl():
         example:
         # assign, board_config -B 0x03610001
         # read and verify, board_config -b, got 0x03610001
+        #-------------------------------------------------
+        # since board_config -b may report the board_id from FRU after we erase board_cfg and board_id
+        # so SW team suggest using board_config -r to read board_id
         """
 
         if boardId is None:
@@ -4465,9 +4491,9 @@ class nic_ctrl():
             return False
 
         # Read Board ID back and compare
-        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.READ_BOARD_ID_FMT)
+        cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
         if not cmd_buf:
-            self.nic_set_err_msg("Read Board ID Command 'board_config -b' Failed")
+            self.nic_set_err_msg("Read Board ID Command 'board_config -r' Failed")
             return False
         if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Read Back and Compare Board ID Failed")

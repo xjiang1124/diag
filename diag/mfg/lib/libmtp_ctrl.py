@@ -2797,7 +2797,7 @@ class mtp_ctrl():
             if software_pn != "90-0003-0001":
                 return False
         elif naples_pn[0:7] == "68-0015":     #ORTANO
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
@@ -2816,7 +2816,7 @@ class mtp_ctrl():
             if software_pn != "90-0017-0003":
                 return False
         elif naples_pn[0:7] == "68-0026":     #ORTANO2 ADI ORACLE
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0028":     #ORTANO2 ADI IBM
             if software_pn != "90-0016-0004":
@@ -2825,10 +2825,10 @@ class mtp_ctrl():
             if software_pn != "90-0019-0001":
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
-            if software_pn != "90-0018-0001":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0077":     #ORTANO2 SOLO
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0089":     #ORTANO2 SOLO Tall Heat Sink
             if software_pn != "90-0021-0001":
@@ -2840,7 +2840,7 @@ class mtp_ctrl():
             if software_pn != "90-0022-0001":
                 return False
         elif naples_pn[0:7] == "68-0049":     #ORTANO2 ADI CR
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
             if software_pn != "90-0020-0003":
@@ -4863,27 +4863,32 @@ class mtp_ctrl():
             # Map to Scaned slot id by card serial number
             phy_present_slot_list = []
             phy_present_sn_list = []
+            rc = True
             for bus in bus_list_match:
                 cmd = "lspci -vvv -s {:s} | grep \"Serial number\" --color=never".format(bus)
                 if not self.mtp_mgmt_exec_cmd(cmd):
-                    return False
+                    rc = False
                 result = self.mtp_get_cmd_buf()
                 sn_match = re.search("Serial number: *([A-Z0-9]*)", result)
                 if sn_match:
                     sn = sn_match.group(1)
                     if sn not in sn2slot:
-                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Abort".format(sn), level=0)
-                        return False
+                        self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Aborting ...".format(sn), level=0)
+                        rc = False
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
                     phy_present_sn_list.append(sn)
+            if not rc:
+                return rc
 
             # Validate if there is scanned card not physical present
             for sn in sn2slot:
                 if sn not in phy_present_sn_list:
                     key = libmfg_utils.nic_key(slot)
-                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Abort".format(key, sn), level=0)
-                    return False
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Aborting ...".format(key, sn), level=0)
+                    rc = False
+            if not rc:
+                return rc
             if not phy_present_slot_list:
                 phy_present_slot_list = range(len(bus_list_match))
         else:
@@ -5021,6 +5026,15 @@ class mtp_ctrl():
 
     def mtp_nic_erase_board_config(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_board_config():
+            self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        self.cli_log_slot_inf(slot, "Erase NIC Board Config")
+        return True
+
+    def mtp_nic_erase_board_config_ssh(self, slot):
+        if not self._nic_ctrl_list[slot].nic_erase_board_config_ssh():
             self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
             self.mtp_get_nic_err_msg(slot)
             return False
