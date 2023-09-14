@@ -348,7 +348,7 @@ def single_nic_compare_cpld_image(mtp_mgmt_ctrl, final_cpld_img_file, failsafe_c
     dsp = FF_Stage.FF_SWI
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     test_list = []
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         test_list = ["COMPARE_CPLD", "COMPARE_FAILSAFE_CPLD"]
 
     for skip_test in skip_testlist:
