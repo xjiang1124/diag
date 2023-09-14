@@ -128,10 +128,10 @@ def main():
 
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    # # power off all the test mtp
+    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+    # # power on the mtp chassis
+    # libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     mtp_thread_list = list()
     mfg_dl_summary = dict()
@@ -169,8 +169,8 @@ def main():
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
 
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+    # # power off all the test mtp
+    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     test_result = libmfg_utils.mfg_summary_disp(stage, mfg_dl_summary, mtpid_fail_list)

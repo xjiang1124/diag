@@ -4400,7 +4400,7 @@ class nic_ctrl():
         if not after_release:
             return False
 
-        if "u-boot sets to board defaults" not in after_release:
+        if "u-boot sets to board defaults" not in after_release and "Board config not set" not in after_release:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False

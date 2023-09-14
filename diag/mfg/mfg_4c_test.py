@@ -138,10 +138,10 @@ def main():
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+    # # power off all the test mtp
+    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+    # # power on the mtp chassis
+    # libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     mtp_thread_list = list()
     mfg_4c_summary = dict()
@@ -180,8 +180,8 @@ def main():
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
+    # # power off all the test mtp
+    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     test_result = libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)

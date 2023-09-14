@@ -397,13 +397,13 @@ def main():
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
-    mtp_mgmt_ctrl.mtp_apc_pwr_off()
-    mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for system coming down\n".format(MTP_Const.MTP_POWER_OFF_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_OFF_DELAY)
+    # mtp_mgmt_ctrl.mtp_apc_pwr_off()
+    # mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for system coming down\n".format(MTP_Const.MTP_POWER_OFF_DELAY), level=0)
+    # libmfg_utils.count_down(MTP_Const.MTP_POWER_OFF_DELAY)
 
-    mtp_mgmt_ctrl.mtp_apc_pwr_on()
-    mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
-    libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    # mtp_mgmt_ctrl.mtp_apc_pwr_on()
+    # mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up\n".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
+    # libmfg_utils.count_down(MTP_Const.MTP_POWER_ON_DELAY)
 
     # start diag, nic_init..
     if not test_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, args.skip_test):
@@ -1009,7 +1009,7 @@ def main():
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+    # mtp_mgmt_ctrl.mtp_chassis_shutdown()
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
     mfg_dl_summary = list()
