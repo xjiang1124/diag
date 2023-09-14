@@ -20,7 +20,6 @@ def write_headers(fh):
     fh.write("e2e-targets:\n")
 
 def write_targets(fh, asic, hardware, nic_type, stage):
-    fh.write("  {:s}:\n".format(nic_type))
     fh.write("    commands: [\"sh\", \"-c\", \"/psdiag/test/run_mfg_job.sh \
 --nic-type {:s} \
 --testbed /warmd.json \
@@ -58,22 +57,99 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("        BmOs: linux\n")
     fh.write("\n")
 
-
-def f1(stage):
-    with open("jobs.cfg", "r") as fj:
-
-        job_yml_file = "{:s}/.job.yml".format(stage)
-        fh = open(job_yml_file, "w")
+def write_stage_headers(stage):
+    job_yml_file = "{:s}/.job.yml".format(stage)
+    try:
+        with open(job_yml_file, "r") as fh:
+            first_line = fh.readline()
+            if first_line.strip() == "---":
+                # headers already present
+                # else, rewrite this file
+                return
+    except FileNotFoundError:
+        # will write new file
+        pass
+    os.system(f"mkdir -p {stage}/")
+    with open(job_yml_file, "w") as fh:
         write_headers(fh)
 
-        for line in fj:
+def test_bundle_by_stage():
+    os.system("rm -r DL P2C 4C SWI FST ScanDL")
+    with open("jobs.cfg", "r") as jobs_matrix:
+        for line in jobs_matrix:
             line = line.strip()
             if line.strip() == "":
                 continue
             if line.startswith("#"):
                 continue
-            asic, hardware, nic_type, *fields = line.split("\t")
-            write_targets(fh, asic, hardware, nic_type, stage)
+            *stages, asic, hardware, nic_type = line.split("\t")
 
+            for stage in stages:
+                if not stage: # empty
+                    continue
+                write_stage_headers(stage)
+                job_yml_file = "{:s}/.job.yml".format(stage)
+                fh = open(job_yml_file, "a")
+                fh.write("  {:s}:\n".format(nic_type))
+                write_targets(fh, asic, hardware, nic_type, stage)
+                fh.close()
 
-f1(sys.argv[1])
+def test_bundle_by_nic_type():
+    with open("jobs.cfg", "r") as job_matrix:
+        for line in job_matrix:
+            line = line.strip()
+            if line.strip() == "":
+                continue
+            if line.startswith("#"):
+                continue
+            *stages, asic, hardware, nic_type = line.split("\t")
+            
+            os.system(f"mkdir -p {nic_type}/")
+            job_yml_file = f"{nic_type}/.job.yml"
+            fh = open(job_yml_file, "w")
+            write_headers(fh)
+            for stage in stages:
+                if not stage: # empty
+                    continue
+                fh.write("  {:s}:\n".format(stage))
+                write_targets(fh, asic, hardware, nic_type, stage)
+            fh.close()
+
+def update_root_job_yml():
+    ### remove old lines
+    for section in [
+                    "NIC_TYPE DEPENDENCY",
+                    "NIC_TYPE TEST BUNDLE"
+                    ]:
+
+        os.system("sed -i '/^### %s ###/,/^### END %s ###/{/^### %s ###/!{/^### END %s ###/!d}}' ../.job.yml" % (section, section, section, section))
+        os.system("sync")
+
+    import fileinput
+    with open("jobs.cfg", "r") as job_matrix:
+        for line in job_matrix:
+            line = line.strip()
+            if line.strip() == "":
+                continue
+            if line.startswith("#"):
+                continue
+            *stages, asic, hardware, nic_type = line.split("\t")
+
+            ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
+            for rline in fileinput.FileInput("../.job.yml", inplace=True):
+                if "### NIC_TYPE TEST BUNDLE ###" in rline:
+                    new_line  = f"  test/{nic_type}:\n"
+                    new_line += f"    labels: [\"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
+                    rline += new_line
+                if "### NIC_TYPE DEPENDENCY ###" in rline:
+                    new_line  = f"    - reference: test/{nic_type}\n"
+                    new_line += f"      exclude_dirs: [\"scripts\"]\n"
+                    rline += new_line
+                print(rline, end="")
+
+                
+
+test_bundle_by_nic_type()
+test_bundle_by_stage()
+
+update_root_job_yml()

@@ -60,47 +60,78 @@ jobs:
   asset-build:
     labels: ["CI-DIAG-Build"]
   test/DL:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-DL"]
+    labels: ["CI-DIAG-DL"]
   test/ScanDL:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
+    labels: ["CI-DIAG-ScanDL"]
   test/P2C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-P2C"]
+    labels: ["CI-DIAG-P2C"]
   test/4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-Diag-Regression", "CI-DIAG-4C"]
+    labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
   test/SWI:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-SWI"]
+    labels: ["CI-DIAG-SWI"]
   test/FST:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Precheckin", "CI-DIAG-Sanity", "CI-DIAG-FST"]
+    labels: ["CI-DIAG-FST"]
+### NIC_TYPE TEST BUNDLE ###
+  test/ginestra:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ginestra"]
+  test/monterey:
+    labels: ["CI-DIAG-Build", "CI-DIAG-monterey"]
+  test/ortano-adicr-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
+  test/ortano-solo-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
+  test/ortano-interp-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-interp-orc"]
+  test/ortano-adi-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
+  test/ortano-ti-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
+  test/naples25swm-hpe:
+    labels: ["CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
+  test/naples100:
+    labels: ["CI-DIAG-Build", "CI-DIAG-naples100"]
+### END NIC_TYPE TEST BUNDLE ###
 
 dependencies:
   test/infra:
-  - reference: test/FST
-  qa-infra:
-  - reference: test/FST
+    - reference: test/FST
+  qa/infra:
+    - reference: test/FST
+
   diag:
-  - reference: test/DL
-    exclude_dirs: ["mfg"]
-  - reference: test/P2C
-    exclude_dirs: ["mfg"]
+    - reference: test/DL
+      exclude_dirs: ["mfg"]
+    - reference: test/P2C
+      exclude_dirs: ["mfg"]
+
   diag/mfg:
-  - reference: test/DL
-    exclude_dirs: ["mfg/scripts"]
-  - reference: test/ScanDL
-    exclude_dirs: ["mfg/scripts"]
-  - reference: test/P2C
-    exclude_dirs: ["mfg/scripts"]
-  - reference: test/4C
-    exclude_dirs: ["mfg/scripts"]
-  - reference: test/SWI
-    exclude_dirs: ["mfg/scripts"]
-  - reference: test/FST
-    exclude_dirs: ["mfg/scripts"]
+### NIC_TYPE DEPENDENCY ###
+    - reference: test/ginestra
+      exclude_dirs: ["scripts"]
+    - reference: test/monterey
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adicr-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-solo-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-interp-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adi-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-ti-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/naples25swm-hpe
+      exclude_dirs: ["scripts"]
+    - reference: test/naples100
+      exclude_dirs: ["scripts"]
+### END NIC_TYPE DEPENDENCY ###
+
   diag/mfg/mtp_dl_script:
-  - reference: test/DL
+    - reference: test/DL
   diag/mfg/mtp_diag_regression:
-  - reference: test/P2C
-  - reference: test/4C
+    - reference: test/P2C
+    - reference: test/4C
   diag/mfg/mtp_swi_script:
-  - reference: test/SWI
+    - reference: test/SWI
   diag/mfg/mtp_fst_script:
-  - reference: test/FST
+    - reference: test/FST
