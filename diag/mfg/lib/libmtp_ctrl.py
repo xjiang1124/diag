@@ -7308,6 +7308,10 @@ class mtp_ctrl():
             if boot_image != "goldfw":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
                 return False
+        elif nic_type == NIC_Type.ORTANO2ADICRS4:
+            if boot_image != "goldfw":
+                self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
+                return False
         else:
             if boot_image != "mainfwa":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting mainfwa".format(boot_image))
