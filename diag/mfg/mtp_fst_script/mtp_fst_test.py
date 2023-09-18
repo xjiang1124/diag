@@ -38,7 +38,7 @@ def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.cli_log_inf("Found /dev/ttyUSB{}".format(port))
     return usb_serial
 
-def check_rot(mtp_mgmt_ctrl, nic_list):
+def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
     if len(nic_list) == 0:
         mtp_mgmt_ctrl.cli_log_err("No NICs passed", level=0)
         return [], []
@@ -53,7 +53,10 @@ def check_rot(mtp_mgmt_ctrl, nic_list):
 
     result = ""
     for port in serial_ports:
-        cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+        if not s4_family:
+            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+        else:
+            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba-gold -c ortano -p {:s}".format(port)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
         cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
@@ -167,6 +170,7 @@ def main():
     fail_nic_list = list()
     nic_prsnt_list = list()
     test_ROT = False
+    s4_family = False
 
     # load scanned fru
     scanned_fru_cfg = None
@@ -247,6 +251,9 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 testlist = ["SETUP_SSH", "FETCH_SN", "SET_BOARD_CONFIG", "PCIE_LINK", "SSH_DISABLE"]
 
+            if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
+                s4_family = True
+
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -311,7 +318,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
 
             if test == "ROT":
-                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, pass_nic_list)
+                test_pass_list, test_fail_list = check_rot(mtp_mgmt_ctrl, pass_nic_list, s4_family)
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown FST Test: {:s}, Ignore".format(test))
                 continue
