@@ -114,7 +114,7 @@ class arm_l1:
 
         # Start L1 
         for slot in nic_list_remain:
-            ret = self.test_start(int(slot), vmargin)
+            ret = self.test_start(int(slot), vmargin, sn, mode)
             if ret == 0:
                 test_result[slot] = "NO RESULT"
 
