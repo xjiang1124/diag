@@ -64,7 +64,7 @@ const (
     PN_SR4T_ORACLE   string = "68-0089-01"
     PN_LIPARI_ELBA   string = "68-0032"
     PN_GIN_D4_ORACLE string = "68-0074-01"
-    PN_GIN_D5_ORACLE string = "68-0075-01"
+    PN_GIN_D5_ORACLE string = "68-0075"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"

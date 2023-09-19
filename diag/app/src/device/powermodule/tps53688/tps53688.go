@@ -861,7 +861,9 @@ func SetVMargin(devName string, pct int) (err int) {
         voltMv := integer *1000 + dec
         voltMvTemp := voltMv * uint64(100+pct)
         voltMvTgt := voltMvTemp / 100
-
+        if (voltMvTgt < 700) {
+            voltMvTgt = 700
+        }
         cli.Printf("d", "VOUT(mv): %d; TargetVolt(mv): %d\n", voltMv, voltMvTgt)
         // Update VOUT_MARGIN_HIGH/HOW with target VID
         vidTgt, _ := calcVidFromVolt(voltMvTgt, dacStep)
@@ -893,7 +895,9 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var data uint16
     var dacStepRegVal byte
     var dacStep uint64
-
+    if (tgtVoutMv < 700) {
+        tgtVoutMv = 700
+    }
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open device", devName)

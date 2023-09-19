@@ -61,6 +61,10 @@ def cli_err(err):
     print("\033[1;91m" + "## [" + get_timestamp() + "] ERR: " + err + "\033[0m")
 
 
+def cli_wrn(err):
+    print("\033[1;91m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
+
+
 def cli_log_inf(fp, info):
     msg = "## [" + get_timestamp() + "] LOG: " + info
     fp.write(msg + "\n")
@@ -73,6 +77,13 @@ def cli_log_err(fp, err):
     fp.write(msg + "\n")
 
     cli_err(err)
+
+
+def cli_log_wrn(fp, wrn):
+    msg = "## [" + get_timestamp() + "] WRN: " + wrn
+    fp.write(msg + "\n")
+
+    cli_wrn(wrn)
 
 
 def cli_log_rslt(title, pass_list, fail_list, fp):
@@ -597,7 +608,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
     if remote_md5sum == local_md5sum:
         return True
     else:
-        cli_err("File md5sum mismatch")
+        cli_wrn("File md5sum mismatch")
         return False
 
 def need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename=None, filename_on_mtp=None):
@@ -646,7 +657,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + remote_dir + os.path.basename(local_file)
     session.sendline(cmd)
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
-    match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
+    match = re.search(r"([0-9a-fA-F]{32}) +.*", str(session.before))
     session.close()
     # md5sum match
     if match:
@@ -2547,10 +2558,8 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                 elif nic_type in ELBA_NIC_TYPE_LIST:
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
-                elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
-                if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
+                if nic_type in ELBA_NIC_TYPE_LIST:
                     if ret != "SUCCESS":
                         if loopback_fail_list[slot] == max_retries_per_slot:
                             if slot not in fail_nic_list:
@@ -2830,7 +2839,8 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
     if sn is None:
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
+    if sn is None or str(sn).upper() == "UNKNOWN" or str(sn).upper() == "NONE" or len(str(sn)) <= 6:
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Bad SN for area check: '{:s}'".format(str(sn)))
         return False
     post_cnt = 0
     time.sleep(1)
@@ -2850,7 +2860,7 @@ def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, r
         post_cnt += 1
         time.sleep(3)
 
-    return False
+    return True
 
 def get_fst_nic_ssh_cmd(ip, username, passwd):
     ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"
@@ -2983,6 +2993,24 @@ def pick_voltage_margin(stage):
         vmarg_list = [Voltage_Margin.normal]
 
     return vmarg_list
+
+def pick_voltage_margin_percentage(part_number=None):
+
+    partnumber = part_number if part_number else "DEFAULT"
+    no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
+    if partnumber != "DEFAULT" and partnumber == no_rev_partnumber:
+        no_rev_partnumber = partnumber[0:6]
+    vmarg_percentage = VMARG_PERCENTAGE.get(no_rev_partnumber, "")
+    if not vmarg_percentage:
+        result = vmarg_percentage
+    if vmarg_percentage:
+        # Normal MFG value
+        result = vmarg_percentage[0]
+        # EDVT valuse
+        if RUNNING_EDVT:
+            result = vmarg_percentage[1]
+
+    return result
 
 def get_mode_param(mtp_mgmt_ctrl, slot, test):
     """

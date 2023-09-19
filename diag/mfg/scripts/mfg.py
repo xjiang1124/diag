@@ -1,11 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
+from datetime import datetime
 import argparse
 import errno
 import os
-#import pathlib
-#import pexpect
+from os import listdir
+from os.path import isfile, join
 import re
+import shutil
 import subprocess
 import sys
 import shlex
@@ -40,7 +42,7 @@ class mfg:
         self.pwd  = "pensando"
         self.remote_path = "/mfg_log/"
 
-    def fetch_remote(self, cm, card_type, stage, sn_list, logroot):
+    def fetch_remote(self, cm, card_type, stage, sn_list, logroot, tt_c):
         remote_ip = mfg.cm_server[cm]
 
         corner_4C = ['4C-H', '4C-L']
@@ -87,13 +89,53 @@ class mfg:
                 mkdir_p(logroot1)
 
                 cmd = "sshpass -p 'pensando' rsync -r mfg@"+remote_ip+":"+remote_path+"* "+logroot1
-                print(cmd)
+                #print(cmd)
                 try:
                     subprocess.run(cmd, shell=True, check=True, executable='/bin/bash')
                 except:
                     continue
 
-    def fetch_remote_file(self, cm, card_type, stage, filename, fmode, logroot):
+                test_time = tt_c
+                if test_time == "all":
+                    continue
+
+                # Get timestamp of directory
+                # Get first/last/all of the logs
+                r = re.compile(r'.*MTP-[\d]+_([\d]+)-([\d]+)-([\d]+)_([\d]+)-([\d]+)-([\d]+).tar.gz')
+
+                cur_pwd = os.getcwd()
+                #print("cur_pwd:", cur_pwd)
+                os.chdir(logroot1)
+
+                print("Test time condition:", test_time)
+                all_files = [f for f in listdir('.') if isfile(join('.', f))]
+                find_file=""
+                for log_file in all_files:
+                    print(log_file)
+                    m = r.match(log_file)
+                    if m:
+                        dtime = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6)))
+                        if find_file == "":
+                            find_file = log_file
+                            find_dtime = dtime
+                        else:
+                            if test_time == "first":
+                                if dtime < find_dtime:
+                                    find_dtime = dtime
+                                    find_file = log_file
+                            else:
+                                if dtime > find_dtime:
+                                    find_dtime = dtime
+                                    find_file = log_file
+
+                print(find_dtime)
+                print(find_file)
+                for log_file in all_files:
+                    if log_file != find_file:
+                        os.remove(log_file)
+                os.chdir(cur_pwd)
+
+    def fetch_remote_file(self, cm, card_type, stage, filename, fmode, logroot, tt_c):
         print("Using SN in file", filename)
         with open(filename) as f:
             sn_list = f.readlines()
@@ -126,7 +168,7 @@ class mfg:
                 print("Invalid FMODE:", fmode)
                 return
 
-            mfg.fetch_remote(cm, card_type1, stage1, sn_list1, args.logroot)
+            mfg.fetch_remote(cm, card_type1, stage1, sn_list1, args.logroot, tt_c)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -143,6 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("-card_type", "--card_type", help="Serial ", type=str, default="")
     parser.add_argument("-stage", "--stage", help="Manufacture stage: DL/P2C/4C/SWI/FST", type=str, default="")
     parser.add_argument("-logroot", "--logroot", help="Path to log root folder", type=str, default="/home/xguo2/workspace/manufacture/mfg_log/")
+    parser.add_argument("-tt_c", "--test_time_condition", help="Test time condition", type=str, default="all")
 
     args = parser.parse_args()
     
@@ -160,6 +203,8 @@ if __name__ == "__main__":
     sn_list1 = args.sn_list.upper()
     sn_list = sn_list1.split(',')
  
+    tt_c = args.test_time_condition.lower()
+
     try:
         srv_ip = mfg.cm_server[cm]
         print(srv_ip)
@@ -176,9 +221,9 @@ if __name__ == "__main__":
 
     if args.fetch == True:
         if filename == "":
-            mfg.fetch_remote(cm, card_type, stage, sn_list, logroot)
+            mfg.fetch_remote(cm, card_type, stage, sn_list, logroot, tt_c)
             sys.exit()
         else:
-            mfg.fetch_remote_file(cm, card_type, stage, filename, fmode, logroot)
+            mfg.fetch_remote_file(cm, card_type, stage, filename, fmode, logroot, tt_c)
             sys.exit()
 

@@ -149,9 +149,9 @@ def fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary):
     # abort test without saving logfile
     mtp_test_summary.append((0, mtp_mgmt_ctrl._id, None, False, False))
 
-def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, **kwargs):
+def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, skip_slot_list=[], **kwargs):
     try:
-        mtp_cfg_file = None
+        mtpcfg_file = None
         mtp_sn = None
         l1_sequence = None
         stop_on_err = None
@@ -210,7 +210,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
                 continue
             pass_nic_list.append(slot)
 
-        if stage == FF_Stage.FF_FST: # skip these tests until FST scanning is implemented
+        if stage != FF_Stage.FF_FST: # skip these tests until FST scanning is implemented
             fail_nic_list += nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, skip_test_list)
 
         # Close file handles
@@ -292,9 +292,13 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
         mtp_script_dir = testsuite_config[stage]["mtp_script_dir"]
         mtp_script_pkg = testsuite_config[stage]["mtp_script_pkg"]
         test_timeout   = testsuite_config[stage]["timeout"]
+        if profile_cfg_file_list:
+            profile_cfg = profile_cfg_file_list[0] # multiple profiles not supported
+        else:
+            profile_cfg = None
 
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_config=mtpcfg_file):
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir, extra_script=profile_cfg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             return False
         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
@@ -336,6 +340,9 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
         if fail_nic_list:
             cmd += " --fail-slots "
             cmd += ' '.join(map(str,fail_nic_list))
+        if skip_slot_list:
+            cmd += " --skip-slots "
+            cmd += ' '.join(map(str,skip_slot_list))
         if mtpcfg_file:
             cmd += " --mtpcfg " + os.path.basename(mtpcfg_file) # file has been packaged into config/, discard full path
         if stop_on_err:
@@ -462,7 +469,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True)
 
         elif test == "FST_CONNECT":
-            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, retry_with_powercycle=True, max_retry=10)
+            ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, max_retry=10)
 
         elif test == "MTP_TIME_SET":
             ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(stage)
@@ -553,6 +560,8 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
             for slot in pass_nic_list:
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))
+                elif nic_type in GIGLIO_NIC_TYPE_LIST:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))
                 else:
                     rj45_nic_list.append(slot)

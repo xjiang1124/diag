@@ -36,6 +36,7 @@ class arm_l1:
         try:
             session.timeout = 30
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
+            vmarg = vmarg.replace('_', ' ')
             self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
             self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
             if os.environ['ASIC_TYPE'] == "GIGLIO":

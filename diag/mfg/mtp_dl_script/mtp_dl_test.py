@@ -57,7 +57,7 @@ def load_mtp_cfg(cfg_yaml=None):
     return mtp_cfg_db
 
 
-def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list):
+def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, skip_slots=[]):
     mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
     mtp_mgmt_cfg = mtp_cfg_db.get_mtp_mgmt(mtp_id)
     if not mtp_mgmt_cfg:
@@ -66,6 +66,8 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_apc_cfg = mtp_cfg_db.get_mtp_apc(mtp_id)
     if not mtp_apc_cfg:
         libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to find apc config")
+    if len(skip_slots) > 0 and not mtp_cfg_db.set_mtp_slots_to_skip(mtp_id, skip_slots):
+        libmfg_utils.sys_exit(mtp_cli_id_str + "Unable to set skip slots")
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
@@ -121,22 +123,27 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
     dsp = FF_Stage.FF_DL
     testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "CPLD_REF"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type in ELBA_NIC_TYPE_LIST:
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "ERASE_BOARD_CONFIG", "BOARD_CONFIG", "CPLD_PROG", "CPLD_REF"]
     if (nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM):
         testlist = ["QSPI_VERIFY", "FRU_PROG"]
     if nic_type == NIC_Type.NAPLES25OCP:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG"]
     if nic_type == NIC_Type.ORTANO2:
-        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "ERASE_BOARD_CONFIG", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
-    if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
-        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "ERASE_BOARD_CONFIG", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    if nic_type in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
+        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "ERASE_BOARD_CONFIG", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+    # so far only apply assign board id to Ali and Ginestra cards
+    if nic_type in [NIC_Type.ORTANO2SOLOALI]:
+        testlist = ["QSPI_VERIFY", "FIX_VRM", "VDD_DDR_FIX", "FRU_PROG", "ERASE_BOARD_CONFIG", "ASSIGN_BOARD_ID",  "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
         testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
     if nic_type in GIGLIO_NIC_TYPE_LIST:
-        testlist = ["QSPI_VERIFY", "FRU_PROG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
+        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "ERASE_BOARD_CONFIG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -173,6 +180,14 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
             ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot)
         elif test == "QSPI_VERIFY":
             ret = mtp_mgmt_ctrl.mtp_verify_nic_qspi(slot)
+        # assign borad id
+        elif test == "ASSIGN_BOARD_ID":
+            ret = mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn)
+        elif test == "ERASE_BOARD_CONFIG":
+            ret = mtp_mgmt_ctrl.mtp_nic_erase_board_config_ssh(slot)
+        # set board config
+        elif test == "BOARD_CONFIG":
+            ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue
@@ -193,6 +208,7 @@ def main():
     parser.add_argument("--fru-verify", "-v", "--verify", "-verify", help="Verify FRU mode", action='store_true')
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
 
     args = parser.parse_args()
@@ -208,7 +224,7 @@ def main():
     if not args.skip_test:
         args.skip_test = []
 
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [])
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [], skip_slots=args.skip_slots)
     # local logfiles
     mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
 
@@ -776,15 +792,15 @@ def main():
             elif nic_type == NIC_Type.NAPLES25SWM:
                 testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG"]
             elif nic_type in FPGA_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "BOARD_CONFIG", "L1_ESEC_PROG"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -824,8 +840,6 @@ def main():
                 # verify Feature Row
                 elif test == "FEA_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea(slot)
-                elif test == "BOARD_CONFIG":
-                    ret = mtp_mgmt_ctrl.mtp_nic_board_config(slot)
                 elif test == "L1_ESEC_PROG":
                     ret = mtp_mgmt_ctrl.mtp_nic_l1_esecure_prog(slot)
                 # set avs

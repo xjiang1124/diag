@@ -448,11 +448,13 @@ class MFG_DIAG_CMDS:
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
-    NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s}"
+    NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
     SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
+    ASSIGN_BOARD_ID_FMT = "board_config -B {:s}"
+    READ_BOARD_ID_FMT = "board_config -b"
     ERASE_BOARD_CONFIG_FMT = "board_config -e"
     SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
@@ -494,6 +496,8 @@ class MFG_DIAG_CMDS:
     LACONA32_AVS_SET_FMT     = "tclsh set_avs_elb.tcl -sn {:s} -slot {:d} -core_freq 833 -arm_freq 3000"
     #Ortano MSFT
     ORTANO2_VRM_FIX_OC_FMT = "/data/nic_util/fix_o2_vrm_oc.sh apply"
+    # Ginestra
+    GINESTRA_AVS_SET_FMT  = "tclsh set_avs_gig.tcl -sn {:s} -slot {:d} -core_freq 1100 -arm_freq 3000"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
