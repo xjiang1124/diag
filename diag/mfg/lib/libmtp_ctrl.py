@@ -5429,8 +5429,10 @@ class mtp_ctrl():
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_POMONTEDELL_FMT.format(nic_list_param, n_vmarg)
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_LACONA_FMT.format(nic_list_param, n_vmarg)
+            elif nic_type in ARM_L1_MODE_HOD_1100 or (nic_type == NIC_Type.ORTANO2 and self.mtp_is_nic_ortano_microsoft(slot)):
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod_1100")
             else:
-                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg) 
+                cmd = MFG_DIAG_CMDS.MTP_PARA_ARM_L1_ELBA_FMT.format(nic_list_param, n_vmarg, "hod")
         elif test == "PCIE_PRBS":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
