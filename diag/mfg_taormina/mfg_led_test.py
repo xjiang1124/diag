@@ -104,6 +104,7 @@ def single_uut_led_checks(stage,
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
+    error_msg = ""
 
     # Prepare local log files
     log_filep_list = list()
@@ -176,8 +177,8 @@ def single_uut_led_checks(stage,
         testlist = ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]
 
         if isinstance(mes_obj, MES):
-            # Add MES tasks, if applicable
-            testlist.extend(["MES_ACCESS", "OK_TEST_STN_CHK"])
+            # Add MES tasks in front, if applicable
+            testlist = ["MES_ACCESS", "OK_TEST_STN_CHK",] + testlist
 
         for test in testlist:
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
@@ -206,6 +207,7 @@ def single_uut_led_checks(stage,
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
                     mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                     mes_obj.clear_push_to_mes()
+                    return
                 else:
                     mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
@@ -231,7 +233,7 @@ def single_uut_led_checks(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature("TBD")
+                    mes_obj.save_res_fail_signature(error_msg)
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -347,7 +349,7 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(error_msg)
 
                 break
             else:
@@ -370,7 +372,7 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program LED passmark')
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(error_msg)
 
             else:
                 # PASS: Save the following to be uploaded to MES later:
@@ -439,6 +441,8 @@ def main():
     parser.add_argument("--LED", "-LED", "--led", "-led", "-1", help="station to LED test", action="store_true")
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
     parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
+    parser.add_argument("--operator", help="specify Operator name")
+
 
     args = parser.parse_args()
     if args.verbosity:
@@ -459,8 +463,11 @@ def main():
         # Save the following to be uploaded to MES later:
         # - Test Start Time
         # - Test Station
+        # - Operator ID
         mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
         mes_obj.save_res_test_station("LED TEST")
+        if args.operator:
+            mes_obj.save_res_operator_id(args.operator)
 
 
     TAORMINA_TEST = True

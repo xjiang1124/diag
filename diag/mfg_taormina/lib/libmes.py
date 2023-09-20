@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import libmfg_utils
+from libdefs import MTP_Const
 import requests
 
 # ------------------------------------------------------------------------------
@@ -175,33 +176,44 @@ class MES():
 
     def pull_mes_info(self, chassis_sn):
 
-        error = False
         if not self.pull_uut_info_from_mes(chassis_sn):
-            error = True
+            return False
         if not self.pull_uut_edc_from_mes(chassis_sn):
-            error = True
+            return False
         try:
             cssn = self.get_mes_uut_cssn()
             if not self.pull_next_test_station_from_mes(cssn):
-                error = True
+                return False
         except:
-            error = True
-
-        if error:
             return False
-        else:
-            return True
+
+        return True
 
     # --------------------------------------------------------------------------
 
     def pull_next_test_station_from_mes(self, chassis_sn):
 
-        # Access the MES API
-        try:
-            info = requests.get(self.get_mes_next_test_station_url(),
-                params={"SN": chassis_sn}, timeout=10)
-        except:
-            self.get_mgmt_ctrl().cli_log_err("Failed to access the MES system")
+        total_attempts = 3
+        is_success = False
+
+        for attempt in range(1, total_attempts+1):
+
+            # Access the MES API
+            msg = "Attempt " + str(attempt) + " of " + str(total_attempts) + ": "
+
+            try:
+                info = requests.get(self.get_mes_next_test_station_url(),
+                    params={"SN": chassis_sn}, timeout=10)
+                self.get_mgmt_ctrl().cli_log_inf(msg + \
+                    "Accessed MES via API: " + self.get_next_test_station_api())
+                is_success = True
+                break
+            except:
+                self.get_mgmt_ctrl().cli_log_err(msg + \
+                    "Failed to access MES via API: " + self.get_next_test_station_api())
+                libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+
+        if not is_success:
             return False
 
         # Verify MES API response
@@ -224,14 +236,27 @@ class MES():
 
     def pull_uut_info_from_mes(self, chassis_sn):
 
-        error = False
+        total_attempts = 3
+        is_success = False
 
-        # Access the MES API
-        try:
-            info = requests.get(self.get_mes_uut_info_url(),
-                params={"SN": chassis_sn}, timeout=10)
-        except:
-            self.get_mgmt_ctrl().cli_log_err("Failed to access the MES system")
+        for attempt in range(1, total_attempts+1):
+
+            # Access the MES API
+            msg = "Attempt " + str(attempt) + " of " + str(total_attempts) + ": "
+
+            try:
+                info = requests.get(self.get_mes_uut_info_url(),
+                    params={"SN": chassis_sn}, timeout=10)
+                self.get_mgmt_ctrl().cli_log_inf(msg + \
+                    "Accessed MES via API: " + self.get_uut_info_api())
+                is_success = True
+                break
+            except:
+                self.get_mgmt_ctrl().cli_log_err(msg + \
+                    "Failed to access MES via API: " + self.get_uut_info_api())
+                libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+
+        if not is_success:
             return False
 
         # Verify MES API response
@@ -241,6 +266,7 @@ class MES():
             return False
 
         # Save the Shipping-level SN (CSSN) from MES
+        error = False
         if unicode('CSSN') in info.json()[u'ResData'][0].keys():
             self.save_mes_uut_cssn(str(info.json()[u'ResData'][0][unicode('CSSN')]))
         else:
@@ -285,15 +311,28 @@ class MES():
 
     def pull_uut_edc_from_mes(self, chassis_sn):
 
-        error = False
+        total_attempts = 3
+        is_success = False
 
-        # Access the MES API
-        try:
-            scan_type = "EDC"
-            info = requests.post(self.get_mes_uut_edc_url(),
-                params={"SN": chassis_sn, "SCANTYPE": scan_type}, timeout=10)
-        except:
-            self.get_mgmt_ctrl().cli_log_err("Failed to access the MES system")
+        for attempt in range(1, total_attempts+1):
+
+            # Access the MES API
+            msg = "Attempt " + str(attempt) + " of " + str(total_attempts) + ": "
+
+            try:
+                scan_type = "EDC"
+                info = requests.post(self.get_mes_uut_edc_url(),
+                    params={"SN": chassis_sn, "SCANTYPE": scan_type}, timeout=10)
+                self.get_mgmt_ctrl().cli_log_inf(msg + \
+                    "Accessed MES via API: " + self.get_uut_edc_api())
+                is_success = True
+                break
+            except:
+                self.get_mgmt_ctrl().cli_log_err(msg + \
+                    "Failed to access MES via API: " + self.get_uut_edc_api())
+                libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+
+        if not is_success:
             return False
 
         # Verify MES API response
@@ -301,6 +340,7 @@ class MES():
             return False
 
         # Save the EDC from MES
+        error = False
         if unicode('VALUE') in info.json()[u'ResData'][0].keys():
             self.save_mes_uut_edc(str(info.json()[u'ResData'][0][unicode('VALUE')]))
         else:
@@ -325,6 +365,10 @@ class MES():
     def verify_scanned_input_against_mes(self, scanned_input):
 
         error = False
+
+        # Print scanned PN for logging purpose only
+        self.get_mgmt_ctrl().cli_log_inf(
+            "Part Number scanned: " + scanned_input["UUT_PN"], level=0)
 
         # Verify scanned Chassis Base SN against MES data (VSSN)
         if not "UUT_SN" in scanned_input.keys():
@@ -444,6 +488,8 @@ class MES():
 
     def push_results_to_mes(self):
 
+        total_attempts = 3
+
         if not self.get_push_to_mes():
             self.get_mgmt_ctrl().cli_log_inf("Skip data push to MES")
             return
@@ -487,25 +533,43 @@ class MES():
             "SW_Version": cxos_version,
         }
 
-        info = requests.post(
-            self.get_mes_upload_results_url(),
-            json=post_json,
-            headers=self.get_upload_test_headers())
+        for attempt in range(1, total_attempts+1):
 
-        if unicode(u'Status') not in info.json().keys() or \
-            unicode(u'ErrorMessage') not in info.json().keys() or \
-            unicode(u'ResData') not in info.json().keys():
-            self.get_mgmt_ctrl().cli_log_err(
-                "Unable to push info to MES API: " + api)
-        else:
-            if info.json()['Status'] == 0:
-                self.get_mgmt_ctrl().cli_log_inf("Info is pushed to MES")
-                self.get_mgmt_ctrl().cli_log_inf(
-                    "Result Data: " + str(info.json()['ResData'][0]))
-            else:
-                self.get_mgmt_ctrl().cli_log_err("Failed to push info to MES")
-                self.get_mgmt_ctrl().cli_log_err(
-                    "ErrorMessage: " + str(info.json()['ErrorMessage']))
+            try:
+
+                # Access the MES API
+                msg = "Attempt " + str(attempt) + " of " + str(total_attempts) + ": "
+
+                info = requests.post(
+                    self.get_mes_upload_results_url(),
+                    json=post_json,
+                    headers=self.get_upload_test_headers())
+
+                if unicode(u'Status') not in info.json().keys() or \
+                    unicode(u'ErrorMessage') not in info.json().keys() or \
+                    unicode(u'ResData') not in info.json().keys():
+                    # Fail
+                    self.get_mgmt_ctrl().cli_log_err(msg + \
+                        "Unable to push info to MES API: " + api)
+                    libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+                else:
+                    if info.json()['Status'] == 0:
+                        # Pass
+                        self.get_mgmt_ctrl().cli_log_inf(msg + "Info is pushed to MES")
+                        self.get_mgmt_ctrl().cli_log_inf(
+                            "Result Data: " + str(info.json()['ResData'][0]))
+                        break
+                    else:
+                        # Fail
+                        self.get_mgmt_ctrl().cli_log_err(msg + "Failed to push info to MES")
+                        self.get_mgmt_ctrl().cli_log_err(
+                            "ErrorMessage: " + str(info.json()['ErrorMessage']))
+                        libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+
+            except:
+                self.get_mgmt_ctrl().cli_log_err(msg + "Failed to push info to MES")
+                libmfg_utils.count_down(MTP_Const.MES_ACCESS_DELAY)
+
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------

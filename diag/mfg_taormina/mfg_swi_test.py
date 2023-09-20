@@ -94,6 +94,7 @@ def single_uut_fw_program(stage,
     # mac = fru_cfg["MAC"]
     # pn = fru_cfg["PN"]
     # prog_date = str(fru_cfg["TS"])
+    error_msg = ""
 
     # Prepare local log files
     log_filep_list = list()
@@ -133,16 +134,6 @@ def single_uut_fw_program(stage,
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, uut_id, test_log_filep, diag_log_filep, console_log_filep, diag_nic_log_filep_list, telnet=True)
     mtp_mgmt_ctrl._test_log_folder = log_dir + log_sub_dir
 
-    # FTX TAA only: Indicate that the Chassis Base SN will be assigned a TAA SN
-    # and that the new SN will be reprogrammed into both FRU and MFG EEPROMs.
-    # Determine and store the new TAA SN into memory for now.
-    if socket.gethostname().lower().startswith('ftx'):
-        mtp_mgmt_ctrl.set_taa_sn(scan_rslt[uut_id]['UUT_SN'])
-        msg = "Chassis Base SN " + scan_rslt[uut_id]['UUT_SN'] + \
-            " will be programmed to " + mtp_mgmt_ctrl.get_taa_sn() + \
-            " in the FRU and MFG EEPROM locations"
-        mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
-
     # hardcode all these for now
     card_type = NIC_Type.TAORMINA
     uut_type = UUT_Type.TOR
@@ -173,14 +164,25 @@ def single_uut_fw_program(stage,
         testlist = ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]
 
         if isinstance(mes_obj, MES):
-            # Add MES tasks, if applicable
-            testlist.extend(["MES_ACCESS", "OK_TEST_STN_CHK"])
+            # Add MES tasks in front, if applicable
+            testlist = ["MES_ACCESS", "OK_TEST_STN_CHK",] + testlist
 
         for test in testlist:
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
             if test == "SVOS_BOOT":
                 ret = mtp_mgmt_ctrl.tor_boot_select(0, console_sanity_check=True)
+
+                # FTX TAA only: Indicate that the Chassis Base SN will be assigned a TAA SN
+                # and that the new SN will be reprogrammed into both FRU and MFG EEPROMs.
+                # Determine and store the new TAA SN into memory for now.
+                if socket.gethostname().lower().startswith('ftx'):
+                    mtp_mgmt_ctrl.set_taa_sn(scan_rslt[uut_id]['UUT_SN'])
+                    msg = "Chassis Base SN " + mtp_mgmt_ctrl._sn + \
+                        " will be programmed to " + mtp_mgmt_ctrl.get_taa_sn() + \
+                        " in the FRU and MFG EEPROM locations"
+                    mtp_mgmt_ctrl.cli_log_inf(msg, level=0)
+                    mtp_mgmt_ctrl._sn = mtp_mgmt_ctrl.get_taa_sn()
             elif test == "CONSOLE_CLEAR":
                 ret = libmfg_utils.mtp_clear_console(mtp_mgmt_ctrl)
             elif test == "CONSOLE_CONNECT":
@@ -203,6 +205,7 @@ def single_uut_fw_program(stage,
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
                     mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                     mes_obj.clear_push_to_mes()
+                    return
                 else:
                     mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
@@ -228,7 +231,7 @@ def single_uut_fw_program(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature("TBD")
+                    mes_obj.save_res_fail_signature(error_msg)
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -283,8 +286,8 @@ def single_uut_fw_program(stage,
                     "MES_SCAN_INPUT_CHK",
                     "MGMT_INIT",
                     "SVOS_PROG_UTIL",
-                    "MES_FRU_EEPROM_CHK",
                     "TAA_FRU_EEPROM_PROG",
+                    "MES_FRU_EEPROM_CHK",
                     "BOARD_ID",
                     "GPIO_CPLD_PROG",
                     "ELBA_CPLD_PROG",
@@ -303,8 +306,8 @@ def single_uut_fw_program(stage,
                     "OS_S_BOOT",
                     "ISP_DISABLE",
                     "OS_VERIFY",
-                    "MES_MFG_EEPROM_CHK",
                     "TAA_MFG_EEPROM_PROG",
+                    "MES_MFG_EEPROM_CHK",
                     "DIAG_INIT",
                     "PCIE_SCAN",
                     "CLEAR_UT_MARK"
@@ -383,6 +386,10 @@ def single_uut_fw_program(stage,
                 ret = mtp_mgmt_ctrl.tor_clear_ut_mark()
 
             elif test == "MES_SCAN_INPUT_CHK":
+                # FTX: Skip this test since new Chassis base label prefix is 'US'
+                if socket.gethostname().lower().startswith('ftx'):
+                    continue
+
                 if not isinstance(mes_obj, MES):
                     continue
 
@@ -457,7 +464,7 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(error_msg)
 
                 break
             else:
@@ -503,7 +510,7 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode("Unknown SWI subtest")
-                            mes_obj.save_res_fail_signature('TBD')
+                            mes_obj.save_res_fail_signature(error_msg)
 
                         break
                     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
@@ -519,7 +526,7 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode(test)
-                            mes_obj.save_res_fail_signature('TBD')
+                            mes_obj.save_res_fail_signature(error_msg)
 
                         break
                     else:
@@ -560,7 +567,7 @@ def single_uut_fw_program(stage,
                     # - Test Fail Signature
                     if isinstance(mes_obj, MES):
                         mes_obj.save_res_fail_mode(test)
-                        mes_obj.save_res_fail_signature('TBD')
+                        mes_obj.save_res_fail_signature(error_msg)
 
                     break
                 else:
@@ -605,7 +612,7 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode("Unknown SWI subtest")
-                            mes_obj.save_res_fail_signature('TBD')
+                            mes_obj.save_res_fail_signature(error_msg)
 
                         break
                     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
@@ -621,7 +628,7 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode(test)
-                            mes_obj.save_res_fail_signature('TBD')
+                            mes_obj.save_res_fail_signature(error_msg)
 
                         break
                     else:
@@ -657,7 +664,7 @@ def single_uut_fw_program(stage,
                     # - Test Fail Signature
                     if isinstance(mes_obj, MES):
                         mes_obj.save_res_fail_mode(test)
-                        mes_obj.save_res_fail_signature('TBD')
+                        mes_obj.save_res_fail_signature(error_msg)
 
                     break
                 else:
@@ -675,7 +682,7 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program SWI passmark')
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(error_msg)
 
         if uut_id not in fail_uut_list and isinstance(mes_obj, MES):
             # PASS: Save the following to be uploaded to MES later:
@@ -746,6 +753,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
     parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
+    parser.add_argument("--operator", help="specify Operator name")
 
     args = parser.parse_args()
     if args.verbosity:
@@ -762,7 +770,10 @@ def main():
 
         # Save the following to be uploaded to MES later:
         # - Test Start Time
+        # - Operator ID
         mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
+        if args.operator:
+            mes_obj.save_res_operator_id(args.operator)
 
 
     ######################################
