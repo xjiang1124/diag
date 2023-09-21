@@ -7268,7 +7268,7 @@ class mtp_ctrl():
                     else:
                         self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
                         return False
-                elif nic_type == NIC_Type.ORTANO2SOLOS4 and partition in ["mainfwa","mainfwb"]:
+                elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4) and partition in ["mainfwa","mainfwb"]:
                     self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
                 else:
                     self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
