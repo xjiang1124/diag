@@ -47,7 +47,10 @@ def write_targets(fh, asic, hardware, nic_type, stage):
         fh.write("           value: supermicro\n")
     else:
         fh.write("         - name: mtp-nic-processor\n")
-        fh.write("           value: {:s}\n".format(asic))
+        if asic == "elba":
+            fh.write("           value: elba,giglio\n") # allow elba cards on giglio MTP
+        else:
+            fh.write("           value: {:s}\n".format(asic))
     fh.write("         - name: {:s}\n".format(hardware))
     fh.write("           value: yes\n")
     fh.write("    provision:\n")
