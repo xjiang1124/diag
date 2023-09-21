@@ -278,6 +278,8 @@ PN_FORMAT_TABLE = {
 def get_product_name_from_pn_and_sn(pn, sn=""):
     if "DSC2-2Q200-32R32F64P-R3" in pn:
         product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-M2" in pn:
+        product_name = NIC_Type.ORTANO2ADIMSFT
     elif "DSC2-2Q200-32R32F64P-B" in pn:
         product_name = NIC_Type.ORTANO2ADIIBM
     elif "DSC2-2Q200-32R32F64P-R2" in pn:
@@ -310,6 +312,8 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.LACONA32DELL
     elif "0PCFPC" in pn:
         product_name = NIC_Type.POMONTEDELL
+    elif "P47928" in pn:
+        product_name = NIC_Type.LACONA32
     elif "P47930" in pn:
         product_name = NIC_Type.LACONA32
     elif "68-0026-01" in pn:
