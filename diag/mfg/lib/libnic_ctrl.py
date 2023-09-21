@@ -3089,14 +3089,17 @@ class nic_ctrl():
             NIC_Type.ORTANO2SOLOMSFT: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT)              #68-0090-01 XX    ORTANO2 SOLO MICROSOFT
                 ],
-            NIC_Type.ORTANO2SOLOALI: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT)               #68-0092-01 XX    ORTANO2 SOLO Alibaba
+            NIC_Type.ORTANO2SOLOS4: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_S4_PN_FMT)                #68-0092-01 XX    ORTANO2 SOLO S4
                 ],
             NIC_Type.ORTANO2ADICR: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT)                 #68-0049-03 XX    ORTANO2ADI CR
                 ],
             NIC_Type.ORTANO2ADICRMSFT: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT)            #68-0091-01 XX    ORTANO2ADI CR MICROSOFT
+                ],
+            NIC_Type.ORTANO2ADICRS4: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2ADI_CR_S4_PN_FMT)              #68-0092-01 XX    ORTANO2ADI CR S4
                 ],
             NIC_Type.POMONTEDELL: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT)                   #0PCFPC X/A       POMONTE DELL
@@ -4397,7 +4400,7 @@ class nic_ctrl():
         if not after_release:
             return False
 
-        if "u-boot sets to board defaults" not in after_release:
+        if "u-boot sets to board defaults" not in after_release and "Board config not set" not in after_release:
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False

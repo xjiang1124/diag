@@ -83,9 +83,10 @@ class PART_NUMBERS_MATCH:
     ORTANO2SOLO_ORC_PN_FMT = r"68-0077-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0077-01 A0    ORTANO2SOLO_ORC_PN_FMT ORACLE
     ORTANO2SOLO_ORC_THS_PN_FMT = r"68-0089-0[1-9]{1} [A-Z0-9]{2}"                                   #68-0089-01 A0    ORTANO2SOLO ORACLE Tall Heat Sink
     ORTANO2SOLO_MSFT_PN_FMT = r"68-0090-0[1-9]{1} [A-Z0-9]{2}"                                      #68-0090-01 A0    ORTANO2SOLO MICROSOFT
-    ORTANO2SOLO_ALI_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                       #68-0092-01 A0    ORTANO2SOLO Alibaba
+    ORTANO2SOLO_S4_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                        #68-0092-01 A0    ORTANO2SOLO S4
     ORTANO2ADI_CR_PN_FMT = r"68-0049-0[1-9]{1} [A-Z0-9]{2}"                                         #68-0049-03 A0    ORTANO2ADI CR
     ORTANO2ADI_CR_MSFT_PN_FMT = r"68-0091-0[1-9]{1} [A-Z0-9]{2}"                                    #68-0091-01 A0    ORTANO2ADI CR MICROSOFT
+    ORTANO2ADI_CR_S4_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                      #68-0092-01 A0    ORTANO2ADI CR S4
     GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
     GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
 
@@ -259,8 +260,11 @@ PN_FORMAT_TABLE = {
     NIC_Type.ORTANO2SOLOMSFT: [
         PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT              #68-0090-01 A0    ORTANO2 SOLO MICROSOFT
         ],
-    NIC_Type.ORTANO2SOLOALI: [
-        PART_NUMBERS_MATCH.ORTANO2SOLO_ALI_PN_FMT               #68-0092-01 A0    ORTANO2 SOLO Alibaba
+    NIC_Type.ORTANO2SOLOS4: [
+        PART_NUMBERS_MATCH.ORTANO2SOLO_S4_PN_FMT                #68-0092-01 A0    ORTANO2 SOLO S4
+        ],
+    NIC_Type.ORTANO2ADICRS4: [
+        PART_NUMBERS_MATCH.ORTANO2ADI_CR_S4_PN_FMT              #68-0092-01 A0    ORTANO2ADI CR S4
         ],
     NIC_Type.GINESTRA_D4: [
         PART_NUMBERS_MATCH.GINESTRA_D4_PN_FMT                   #68-0074-01 01    GINESTRA_D4
@@ -271,9 +275,11 @@ PN_FORMAT_TABLE = {
 }
 
 
-def get_product_name_from_pn(pn):
+def get_product_name_from_pn_and_sn(pn, sn=""):
     if "DSC2-2Q200-32R32F64P-R3" in pn:
         product_name = NIC_Type.ORTANO2INTERP
+    elif "DSC2-2Q200-32R32F64P-M2" in pn:
+        product_name = NIC_Type.ORTANO2ADIMSFT
     elif "DSC2-2Q200-32R32F64P-B" in pn:
         product_name = NIC_Type.ORTANO2ADIIBM
     elif "DSC2-2Q200-32R32F64P-R2" in pn:
@@ -291,9 +297,9 @@ def get_product_name_from_pn(pn):
     elif "DSC2-2Q200-32R32F64P-M4" in pn:
         product_name = NIC_Type.ORTANO2SOLOMSFT
     elif "68-0092-01" in pn:
-        product_name = NIC_Type.ORTANO2SOLOALI
+        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPF" else NIC_Type.ORTANO2ADICRS4
     elif "DSC2-2Q200-32R32F64P-S4" in pn:
-        product_name = NIC_Type.ORTANO2SOLOALI
+        product_name = NIC_Type.ORTANO2SOLOS4 if sn[:3].upper() == "FPF" else NIC_Type.ORTANO2ADICRS4
     elif "DSC2-2Q200-32R32F64P" in pn:
         product_name = NIC_Type.ORTANO2
     elif "68-0015-02" in pn:
@@ -306,6 +312,8 @@ def get_product_name_from_pn(pn):
         product_name = NIC_Type.LACONA32DELL
     elif "0PCFPC" in pn:
         product_name = NIC_Type.POMONTEDELL
+    elif "P47928" in pn:
+        product_name = NIC_Type.LACONA32
     elif "P47930" in pn:
         product_name = NIC_Type.LACONA32
     elif "68-0026-01" in pn:

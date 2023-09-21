@@ -348,7 +348,7 @@ def single_nic_compare_cpld_image(mtp_mgmt_ctrl, final_cpld_img_file, failsafe_c
     dsp = FF_Stage.FF_SWI
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     test_list = []
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
+    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
         test_list = ["COMPARE_CPLD", "COMPARE_FAILSAFE_CPLD"]
 
     for skip_test in skip_testlist:
@@ -379,7 +379,7 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type == NIC_Type.ORTANO2ADIIBM:
         test_list = []
-    if nic_type == NIC_Type.ORTANO2SOLOALI:
+    if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
         test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
@@ -617,6 +617,7 @@ def main():
             if slot in fail_nic_list:
                 continue
 
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
@@ -658,7 +659,7 @@ def main():
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
 
-            if nic_type not in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOALI):
+            if nic_type not in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
                 if emmc_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
@@ -1222,7 +1223,7 @@ def main():
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["BOARD_CONFIG_CERT", "SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
                 cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
-            if nic_type == NIC_Type.ORTANO2SOLOALI:
+            if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
                 test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
             for skipped_test in args.skip_test:
                 if skipped_test in test_list:
@@ -1287,7 +1288,7 @@ def main():
                 sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2ADIMSFT or nic_type == NIC_Type.ORTANO2ADICRMSFT:
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOALI):
+            if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
                 sw_test_list = []
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
