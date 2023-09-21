@@ -32,7 +32,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba,giglio
+           value: elba
          - name: ortano-interp
            value: yes
     provision:
@@ -60,7 +60,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba,giglio
+           value: elba
          - name: ortano-interp
            value: yes
     provision:
@@ -88,7 +88,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba,giglio
+           value: elba
          - name: ortano-interp
            value: yes
     provision:
@@ -116,7 +116,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba,giglio
+           value: elba
          - name: ortano-interp
            value: yes
     provision:
@@ -144,7 +144,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba,giglio
+           value: elba
          - name: ortano-interp
            value: yes
     provision:
