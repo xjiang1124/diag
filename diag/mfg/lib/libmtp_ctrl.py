@@ -315,7 +315,9 @@ class mtp_ctrl():
 
     def set_mtp_diag_logfile(self, diag_filep):
         self._diag_filep = diag_filep
+        self._mgmt_handle.logfile = None
         self._mgmt_handle.logfile_read = self._diag_filep
+        self._mgmt_handle.logfile_send = None
 
 
     def mtp_get_cmd_buf_before_sig(self):

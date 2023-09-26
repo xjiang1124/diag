@@ -130,6 +130,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--swm", help="SWM test mode")
 
     args = parser.parse_args()
     if args.mtpid:

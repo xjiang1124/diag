@@ -134,14 +134,9 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_P2C)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect P2C Test result failed", level=0)
+    if not save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
         return
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_P2C, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+
     return
 
 

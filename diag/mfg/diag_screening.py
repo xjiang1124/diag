@@ -125,15 +125,8 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.cli_log_inf("DDR Test At {:s} Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-        test_log_file = testlog.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, vmarg)
-        if not test_log_file:
-            mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
-            return
-        libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-        if GLB_CFG_MFG_TEST_MODE:
-            libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-        cmd = "rm -rf {:s}".format(test_log_file)
-        os.system(cmd)
+        if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+            mtp_mgmt_ctrl.cli_log_err("MTP Save {:s} DDR Test result failed".format(stage), level=0)
 
         mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("DDR Test At {:s} Test Duration:{:s}".format(env_temp, mfg_4c_stop_ts - mfg_4c_start_ts))
@@ -193,18 +186,8 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = testlog.get_mtp_logfile(
-        mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err(
-            "MTP Collect {:s} Test result failed".format(stage), level=0)
-        return
-    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts,
-                                mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+    if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+        mtp_mgmt_ctrl.cli_log_err("MTP Save EMMC Test result failed", level=0)
 
     mfg_emmc_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("EMMC Validation Test At {:s} Test Duration:{:s}".format(
@@ -264,18 +247,8 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
     mtp_mgmt_ctrl.cli_log_inf("CPLD Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(
-        mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err(
-            "MTP Collect {:s} Test result failed".format(stage), level=0)
-        return
-    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts,
-                                mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+    if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+        mtp_mgmt_ctrl.cli_log_err("MTP Save EMMC Test result failed", level=0)
 
     mfg_cpld_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("CPLD Validation Test Test Duration:{:s}".format(mfg_cpld_stop_ts - mfg_cpld_start_ts))

@@ -437,6 +437,7 @@ def main():
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--swm", help="SWM test mode")
 
     nic_profile = None
     args = parser.parse_args()
