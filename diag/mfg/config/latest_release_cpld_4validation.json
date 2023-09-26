@@ -1,0 +1,72 @@
+{
+    "68-0090": {
+        "cpld_id":"0x4e",
+        "working_imge" : {
+            "name": "ortano_solo_rev1.4_working_12092022.bin",
+            "version": "0x1",
+            "minor_version" : "0x04",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "cd7d4f5eae9873d3382299250db90dd99352782b1487d18c160d3787fb184c8b32fbfacc1dd7fc681425b1b353e9e03361512d46338d6cdb122a10c0149c76e9"
+        },
+        "failsafe_imge" : {
+            "name": "ortano_solo_failsafe_rev1.4_12092022.bin",
+            "version": "0x1",
+            "minor_version" : "0x04",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "bd49cb7de6a4df82bd1b7e586dc148f47a5c18d4b60801b39b5ae27b542993327e1c4f24182551fe8ac8d31b31ec4ed9fa9ba7e8c700d65c5b4d3f529238ad78"
+        },
+        "secure_imge" : {
+            "name": "",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : ""
+        },
+        "special_boot0_imge" : {
+            "name": "special_boot0_elba.img",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : ""
+        }
+    },
+    "68-0077": {
+        "cpld_id":"0x4e",
+        "working_imge" : {
+            "name": "ortano_solo_working_rev1.5_033123.bin",
+            "version": "0x1",
+            "minor_version" : "0x05",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "9814f573a5ef0357f346cd9085d9bcbc96a191847993c85cf579dfd323eb03428596b6346592828b7a4c9f400f2e21ecc65fafabf1b7a610cdf9ee03587ce508"
+        },
+        "failsafe_imge" : {
+            "name": "ortano_solo_failsafe_rev1.5_033123.bin",
+            "version": "0x1",
+            "minor_version" : "0x05",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "e18b5654387e79459c41bb30b5cd3295a2b2c3056882487296687527c89f5710e776c908e676d99a7754ee6a1292261f855439ef8cd67b135997545d7956a5e0"
+        },
+        "secure_imge" : {
+            "name": "",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : ""
+        },
+        "special_boot0_imge" : {
+            "name": "special_boot0_elba.img",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "", 
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : ""
+        }
+    }
+}
