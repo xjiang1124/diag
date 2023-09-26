@@ -140,9 +140,9 @@ def single_nic_program(mtp_mgmt_ctrl, fru_cfg, cpld_img_file, fail_cpld_img_file
     if nic_type in [NIC_Type.ORTANO2ADICRS4]:
         testlist = ["QSPI_VERIFY", "FRU_PROG", "ERASE_BOARD_CONFIG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     if nic_type == NIC_Type.POMONTEDELL:
-        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "FPGA_PROG"]
+        testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "BOARD_CONFIG", "FPGA_PROG"]
     if nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
-        testlist = ["QSPI_VERIFY", "FRU_PROG", "FPGA_PROG"]
+        testlist = ["QSPI_VERIFY", "FRU_PROG", "BOARD_CONFIG", "FPGA_PROG"]
     if nic_type in GIGLIO_NIC_TYPE_LIST:
         testlist = ["QSPI_VERIFY", "VDD_DDR_FIX", "FRU_PROG", "ERASE_BOARD_CONFIG", "ASSIGN_BOARD_ID", "BOARD_CONFIG", "CPLD_PROG", "FSAFE_CPLD_PROG", "FEA_PROG", "CPLD_REF"]
     for skip_test in skip_testlist:
