@@ -121,6 +121,21 @@ if {$ASIC_TYPE == "GIGLIO"} {
     }
     gig_mc_clear_ecc_irq  -1  -1  -1  $ddr5
     gig_mc_clear_ecc_counter  -1  -1  $ddr5
+
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
+
+    if {$err_cnt != 0} {
+        plog_msg "ECC happaned. Dumping DDR configuration"
+        exec rm -rf ${sn}_dump 
+        exec mkdir ${sn}_dump 
+        cd ${sn}_dump
+        ddr5_dump_all
+        cd ..
+        set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+        exec tar cf ${sn}_dump_${cur_time}.tar ${sn}_dump/
+    } else {
+        plog_msg "ECC is clean"
+    }
 } else {
     set output [check_ecc_intr]
     set substring "ECC_EN:0x33 ECC_INTERRUPT:0x0"

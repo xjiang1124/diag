@@ -84,7 +84,7 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
         mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
 
     if card_type in (ELBA_NIC_TYPE_LIST) and card_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
-                                                                                                        NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]):
+                                                                                                        NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]):
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
@@ -1208,11 +1208,12 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2ADIMSFT] = "config/ortanoadi_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICR] = "config/ortanoadi_cr_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICRMSFT] = "config/ortanoadi_cr_msft_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADICRS4] = "config/ortanoadi_cr_s4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLO] = "config/ortanos_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLOORCTHS] = "config/ortanos_ths_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLOMSFT] = "config/ortanos_msft_mtp_test_cfg.yaml"
-    test_cfg_file[NIC_Type.ORTANO2SOLOALI] = "config/ortanos_ali_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOS4] = "config/ortanos_s4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
@@ -1543,7 +1544,7 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        if nic_type not in (ELBA_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT):
+                        if nic_type not in (ELBA_NIC_TYPE_LIST) or nic_type in (NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
                             continue
 
                         nic_para_test_list = para_test_list[nic_type]

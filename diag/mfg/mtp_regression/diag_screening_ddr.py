@@ -885,7 +885,7 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2SOLO] = "config/ortanos_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLOORCTHS] = "config/ortanos_ths_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLOMSFT] = "config/ortanos_msft_mtp_test_cfg.yaml"
-    test_cfg_file[NIC_Type.ORTANO2SOLOALI] = "config/ortanos_ali_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2SOLOS4] = "config/ortanos_s4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.POMONTEDELL] = "config/pomontedell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32DELL] = "config/lacona32dell_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
