@@ -5,7 +5,7 @@
             "name": "ortano_solo_rev1.4_working_12092022.bin",
             "version": "0x1",
             "minor_version" : "0x04",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : "cd7d4f5eae9873d3382299250db90dd99352782b1487d18c160d3787fb184c8b32fbfacc1dd7fc681425b1b353e9e03361512d46338d6cdb122a10c0149c76e9"
         },
@@ -13,7 +13,7 @@
             "name": "ortano_solo_failsafe_rev1.4_12092022.bin",
             "version": "0x1",
             "minor_version" : "0x04",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : "bd49cb7de6a4df82bd1b7e586dc148f47a5c18d4b60801b39b5ae27b542993327e1c4f24182551fe8ac8d31b31ec4ed9fa9ba7e8c700d65c5b4d3f529238ad78"
         },
@@ -21,7 +21,7 @@
             "name": "",
             "version": "",
             "minor_version" : "",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : ""
         },
@@ -29,7 +29,7 @@
             "name": "special_boot0_elba.img",
             "version": "",
             "minor_version" : "",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : ""
         }
@@ -40,7 +40,7 @@
             "name": "ortano_solo_working_rev1.5_033123.bin",
             "version": "0x1",
             "minor_version" : "0x05",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : "9814f573a5ef0357f346cd9085d9bcbc96a191847993c85cf579dfd323eb03428596b6346592828b7a4c9f400f2e21ecc65fafabf1b7a610cdf9ee03587ce508"
         },
@@ -48,7 +48,7 @@
             "name": "ortano_solo_failsafe_rev1.5_033123.bin",
             "version": "0x1",
             "minor_version" : "0x05",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : "e18b5654387e79459c41bb30b5cd3295a2b2c3056882487296687527c89f5710e776c908e676d99a7754ee6a1292261f855439ef8cd67b135997545d7956a5e0"
         },
@@ -56,7 +56,7 @@
             "name": "",
             "version": "",
             "minor_version" : "",
-            "nano_version" : "", 
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : ""
         },
@@ -64,9 +64,44 @@
             "name": "special_boot0_elba.img",
             "version": "",
             "minor_version" : "",
-            "nano_version" : "", 
+            "nano_version" : "",
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "a217bc49e380c7946d0d910b41684c90a501cb173f6ba4a658329d3807799fbde65df12e9f94609a59c974e34b3644dcaec487513c71fef914508c2ac847817f"
+        }
+    },
+    "68-0075": {
+        "cpld_id":"0x61",
+        "working_imge" : {
+            "name": "ginestra_d5_rev2.1_working.bin",
+            "version": "0x2",
+            "minor_version" : "0x1",
+            "nano_version" : "",
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "f6053a93db20bbeead305eb9cd5dde6583fa9188d28ffff0207d2fa657ec471f6f196ced17b471d70f3b72e8871a2df19d04b058f7e93f4a2dc8ab6b0d399dff"
+        },
+        "failsafe_imge" : {
+            "name": "ginestra_d5_rev2.1_failsafe.bin",
+            "version": "0x2",
+            "minor_version" : "0x01",
+            "nano_version" : "",
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "54efe2dea24309a5c281ce03d000160db40c7906e22493f8242bde09bfe5baec96ab092d5dd6b0b1d630b1bd53f0b97306f34a0e0700ab6f355591b916a81a33"
+        },
+        "secure_imge" : {
+            "name": "",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
             "sha512sum" : ""
+        },
+        "special_boot0_imge" : {
+            "name": "special_boot0_giglio.img",
+            "version": "",
+            "minor_version" : "",
+            "nano_version" : "",
+            "file_location" : "/vol/hw/diag/diag_images/CPLD",
+            "sha512sum" : "d13ebeff632ba3b12b3d44aa2188f468b3fcb1f2afd7b86e4ec1e04e2405b95f3a79714d3ca5ff0645e1cad169ff2a0f269e7405d8e50aad9f98804f7c276ecc"
         }
     }
 }

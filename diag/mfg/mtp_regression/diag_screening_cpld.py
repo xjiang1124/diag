@@ -251,6 +251,46 @@ def cpld_console_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_case_name
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} {:s} {:s} Complete\n".format(nic_type, dsp, test_case_name), level=0)
     return fail_list
 
+def single_nic_para_cpld_program(mtp_mgmt_ctrl, slot, nic_test_rslt_list, cpld_img_file=None, fail_cpld_img_file=None, fea_cpld_img_file=None):
+
+    dsp = FF_Stage.FF_DL
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    ret = True
+    testlist = []
+    if cpld_img_file:
+        testlist.append("CPLD_PROG")
+    if fail_cpld_img_file:
+        testlist.append("FSAFE_CPLD_PROG")
+    if fea_cpld_img_file:
+        testlist.append("FEA_PROG")
+
+    for test in testlist:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        # program CPLD
+        if test == "CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file)
+        # program failsafe CPLD
+        elif test == "FSAFE_CPLD_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
+        # program feature row
+        elif test == "FEA_PROG":
+            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, fea_cpld_img_file)
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
+            continue
+        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+        if not ret:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+            nic_test_rslt_list[slot] = False
+            # mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_nic_err_msg(slot))
+            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+            break
+        else:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+    return ret
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP CPLD Validation Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -400,12 +440,65 @@ def main():
         mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(inlet))
         mtp_mgmt_ctrl.cli_log_inf("Diag CPLD Validation Test Environment End\n", level=0)
 
-        mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
-        mtp_mgmt_ctrl.cli_log_inf("Single MTP CPLD Validation Test Start",  level=0)
-        # Update to config file specified programmable version
+        # program to config file specified CPLD, namely the MFG released CPLD, in case of some lab cards are running test version.
+        dsp = "CPLD_VALIDATION"
+        mtp_mgmt_ctrl.cli_log_inf("Diag CPLD Validation program CPLD to config file specified version Started", level=0)
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-        dsp = "CPLD_VALIDATION"
+        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_test_full_list, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
+            for nic_list in nic_test_full_list:
+                for slot in nic_list:
+                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
+                        if stop_on_err:
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                            return
+
+        nic_thread_list = list()
+        nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list:
+                nic_test_rslt_list[slot] = False
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                nic_test_rslt_list[slot] = False
+                continue
+
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
+            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
+            nic_thread = threading.Thread(target=single_nic_para_cpld_program, args = (mtp_mgmt_ctrl,
+                                                                                        slot,
+                                                                                        nic_test_rslt_list,
+                                                                                        cpld_img_file,
+                                                                                        failsafe_cpld_img_file,
+                                                                                        fea_cpld_img_file))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_test_rslt_list[slot]:
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+
         # # cpld & qspi image check
         dl_check_fail_list = diag_reg.naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, "", dsp, stop_on_err)
         for slot in dl_check_fail_list:
@@ -415,8 +508,9 @@ def main():
                 fail_nic_list.append(slot)
             if slot in pass_nic_list:
                 pass_nic_list.remove(slot)
-        mtp_mgmt_ctrl.cli_log_inf("\n",  level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Diag CPLD Validation program CPLD to config file specified version end\n\n", level=0)
 
+        mtp_mgmt_ctrl.cli_log_inf("Single MTP CPLD Validation Test Start",  level=0)
         # Disable PCIe polling
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)

@@ -449,7 +449,7 @@ class nic_ctrl():
         return the boot screen
         """
 
-        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY + 4
         time_out *= pc_iter
         exp_list = [pexpect.TIMEOUT, pexpect.EOF]
         see_expect_str = True
@@ -5809,6 +5809,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(self._nic_handle.before)
 
         if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_console_detach()
             return False

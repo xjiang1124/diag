@@ -228,11 +228,11 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
         fail_slots = ""
 
     mfg_cpld_start_ts = libmfg_utils.timestamp_snapshot()
-    stage = FF_Stage.FF_DL
+    stage = FF_Stage.FF_P2C
     swm_test_mode = "sw_detect"
 
     # force stage to DL to update MTP CPLD image files specified in libmfg_cfg.py, using the libmfg_cfg.py specified cpld image as downgrade target
-    if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
+    if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_DL):
         test_utils.fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
         return False
 

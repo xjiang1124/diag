@@ -367,6 +367,7 @@ def cpld_gpio3_powercycle_test(mtp_mgmt_ctrl, slot, pc_cycles=100, stop_on_err=F
     for i in range(1, pc_cycles+1):
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "GPIO3 POWER CYCLE Iteration {:d}".format(i), level=0)
         if  not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_call_sysresetsh():
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC did not boot to login after sysreset.sh command")
             rc = False
         result = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
         if not cpld_and_diag_boot_log_parser(mtp_mgmt_ctrl, slot, logstring=result, occurrences=1, bootCheckStr="Restarting system"):
