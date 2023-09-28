@@ -10,6 +10,8 @@ parser.add_argument('--testbed', dest='testbed_json', default=None,
                     required=True, help='Testbed JSON')
 parser.add_argument('--asic', dest='asic', default=None,
                     required=True, help='ASIC for test')
+parser.add_argument('--nic-type', dest='nic_type', default=None,
+                    required=True, help='Name of target SKU')
 parser.add_argument('--image-manifest', dest='image_manifest', default=None,
                     required=True, help='Image manifest')
 parser.add_argument('--diag-images', dest='diag_images', default=None,
