@@ -1,5 +1,7 @@
 import sys, os
 
+EXCLUDE_FROM_PRECHECKIN=["4C", "ORT", "RDT"]
+
 def write_headers(fh):
     fh.write("---\n")
     fh.write("version: 2.0\n")
@@ -110,6 +112,8 @@ def test_bundle_by_nic_type():
             write_headers(fh)
             for stage in stages:
                 if not stage: # empty
+                    continue
+                if stage in EXCLUDE_FROM_PRECHECKIN:
                     continue
                 fh.write("  {:s}:\n".format(stage))
                 write_targets(fh, asic, hardware, nic_type, stage)
