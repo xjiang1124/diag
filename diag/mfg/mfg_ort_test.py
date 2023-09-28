@@ -68,6 +68,7 @@ def main():
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
+    test_result = False
     verbosity = False
     l1_sequence = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -172,11 +173,16 @@ def main():
             libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
         # dump the summary
-        libmfg_utils.mfg_summary_disp("{:s} ITERATION-{:06d}".format(stage, loop), mfg_ort_summary, mtpid_fail_list)
+        test_result = libmfg_utils.mfg_summary_disp("{:s} ITERATION-{:06d}".format(stage, loop), mfg_ort_summary, mtpid_fail_list)
 
         mtp_mgmt_ctrl_list[0].cli_log_inf("ORT TEST ITERATION-{:06d} END".format(loop), level=0)
         libmfg_utils.cli_inf("#" * 320 + "\n" * 3)
 
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

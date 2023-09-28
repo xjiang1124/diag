@@ -2113,15 +2113,19 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     cli_inf("---------- Report: ----------")
     # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
+    final_result = True
     for mtp_id in summary_dict.keys():
         for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
             else:
+                final_result = False
                 cli_err("{:s} {:s} {:s} FAIL".format(slot, sn, nic_type))
     cli_inf("--------- Report End --------\n")
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+        final_result = False
+    return final_result
 
 def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))

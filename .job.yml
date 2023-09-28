@@ -67,6 +67,12 @@ jobs:
     labels: ["CI-DIAG-P2C"]
   test/4C:
     labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
+  test/RDT:
+    labels: ["CI-DIAG-RDT"]
+  test/ORT:
+    labels: ["CI-DIAG-ORT"]
+  test/SRN:
+    labels: ["CI-DIAG-SRN"]
   test/SWI:
     labels: ["CI-DIAG-SWI"]
   test/FST:
@@ -125,13 +131,3 @@ dependencies:
     - reference: test/naples100
       exclude_dirs: ["scripts"]
 ### END NIC_TYPE DEPENDENCY ###
-
-  diag/mfg/mtp_dl_script:
-    - reference: test/DL
-  diag/mfg/mtp_diag_regression:
-    - reference: test/P2C
-    - reference: test/4C
-  diag/mfg/mtp_swi_script:
-    - reference: test/SWI
-  diag/mfg/mtp_fst_script:
-    - reference: test/FST

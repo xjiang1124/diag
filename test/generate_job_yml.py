@@ -1,6 +1,6 @@
 import sys, os
 
-EXCLUDE_FROM_PRECHECKIN=["4C", "ORT", "RDT"]
+EXCLUDE_FROM_PRECHECKIN=["4C", "ORT", "RDT", "SRN"]
 
 def write_headers(fh):
     fh.write("---\n")
@@ -76,7 +76,7 @@ def write_stage_headers(stage):
         write_headers(fh)
 
 def test_bundle_by_stage():
-    os.system("rm -r DL P2C 4C SWI FST ScanDL")
+    os.system("rm -r DL P2C 4C RDT ORT SRN SWI FST ScanDL")
     with open("jobs.cfg", "r") as jobs_matrix:
         for line in jobs_matrix:
             line = line.strip()

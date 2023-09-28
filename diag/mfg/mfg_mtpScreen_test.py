@@ -59,6 +59,8 @@ def main():
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -68,8 +70,13 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
-    mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
@@ -171,6 +178,7 @@ def main():
                                                 args.skip_test,
                                                 args.jobd_logdir),
                                     kwargs = ({
+                                                "mtpcfg_file": mtpcfg_file,
                                                 "swm_test_mode": swmtestmode,
                                                 "mtp_sn": mtp_sn}))
         mtp_thread.daemon = True
@@ -194,8 +202,13 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
-    libmfg_utils.mfg_summary_srn_disp(FF_Stage.FF_SRN, mfg_srn_summary, mtpid_fail_list, mtp_sn)
+    test_result = libmfg_utils.mfg_summary_srn_disp(FF_Stage.FF_SRN, mfg_srn_summary, mtpid_fail_list, mtp_sn)
 
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
