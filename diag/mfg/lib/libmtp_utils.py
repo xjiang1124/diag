@@ -100,7 +100,7 @@ def generate_cpld_img_full_path_list(cpld_json_dict, verbosity=False):
 
     return cpld_files_with_path
 
-def mtp_issue_3v3powercycle(mtp_mgmt_ctrl, sessionId, slot,  pc_iter=100):
+def mtp_issue_3v3powercycle(mtp_mgmt_ctrl, slot, pc_iter=100):
     """
     send turn on 3v3 before power on 12v command sequence in given MTP session.
     return True or False
@@ -112,17 +112,15 @@ def mtp_issue_3v3powercycle(mtp_mgmt_ctrl, sessionId, slot,  pc_iter=100):
     pc_cmd += "turn_on_slot.sh on {:d}".format(slot+1)
 
     for ite in range(1, pc_iter+1):
-        sessionId.sendline(pc_cmd)
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "3V3_POWER_CYCLE Iteration {:d}, CMD: {:s}".format(ite, pc_cmd), level=0)
-        idx = libmfg_utils.mfg_expect(sessionId, mtp_mgmt_ctrl._prompt_list, 30)
-        if idx == -1:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, '\n' + sessionId.before + sessionId.after)
-            mtp_mgmt_ctrl.cli_log_err("Failed to power cycle slot")
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(pc_cmd):
+            mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_err("Failed to execute 3V3_POWER_CYCL command", level = 0)
             return False
         time.sleep(MTP_Const.NIC_CON_INIT_DELAY)
     return True
 
-def mtp_issue_ac_powercycle(mtp_mgmt_ctrl, sessionId, slot, iteration_index):
+def mtp_issue_ac_powercycle(mtp_mgmt_ctrl, slot, iteration_index):
     """
     send turn off/on 12v command sequence in given MTP session.
     return True or False
@@ -132,30 +130,25 @@ def mtp_issue_ac_powercycle(mtp_mgmt_ctrl, sessionId, slot, iteration_index):
     pc_cmd += "sleep 3; "
     pc_cmd += "turn_on_slot.sh on {:d}".format(slot+1)
 
-    sessionId.sendline(pc_cmd)
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "AC power cycle at iteration {:d}, CMD: {:s}".format(iteration_index, pc_cmd), level=0)
-    idx = libmfg_utils.mfg_expect(sessionId, mtp_mgmt_ctrl._prompt_list, 30)
-    if idx == -1:
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, '\n' + sessionId.before + sessionId.after)
-        mtp_mgmt_ctrl.cli_log_err("Failed to power cycle slot")
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(pc_cmd):
+        mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_err("Failed to execute AC power cycle command", level = 0)
         return False
     time.sleep(MTP_Const.NIC_CON_INIT_DELAY)
     return True
 
-def mtp_issue_turn_on_slot(mtp_mgmt_ctrl, sessionId, slot):
+def mtp_issue_turn_on_slot(mtp_mgmt_ctrl, slot):
     """
     only send turn on 12v command sequence in given MTP session.
     return True or False
     """
 
     cmd = "turn_on_slot.sh on {:d}".format(slot+1)
-
-    sessionId.sendline(cmd)
     #mtp_mgmt_ctrl.cli_log_slot_inf(slot, "sending turn on slot CMD: {:s}".format(cmd), level=0)
-    idx = libmfg_utils.mfg_expect(sessionId, mtp_mgmt_ctrl._prompt_list, 30)
-    if idx == -1:
-        mtp_mgmt_ctrl.cli_log_slot_inf(slot, '\n' + sessionId.before + sessionId.after)
-        mtp_mgmt_ctrl.cli_log_err("Failed to send {:s} command".format(cmd))
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_err("Failed to send {:s} command".format(cmd), level = 0)
         return False
     time.sleep(MTP_Const.NIC_CON_INIT_DELAY)
     return True
@@ -338,12 +331,9 @@ def cpld_3v3_powercycle_test(mtp_mgmt_ctrl, slot, new_cpld_json_dict, pc_cycles=
     expMinorVer = "%02x" % int(new_working_img_min_ver.lower(), 16)
 
     if mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_attach_without_login():
-        # create another session to power cycle NIC
-        session_3v3_pc = mtp_mgmt_ctrl.mtp_session_create()
-
-        # run power cycle tests in two thread
+        # run power cycle tests in two thread, one is power cycle, the other one is monitoring booting
         t1 = Thread(target=mtp_mgmt_ctrl._nic_ctrl_list[slot].wait_nic_bootup, args=[pc_cycles])
-        t2 = Thread(target=mtp_issue_3v3powercycle, args=[mtp_mgmt_ctrl, session_3v3_pc, slot, pc_cycles])
+        t2 = Thread(target=mtp_issue_3v3powercycle, args=[mtp_mgmt_ctrl, slot, pc_cycles])
         t1.start()
         time.sleep(1)
         t2.start()
@@ -383,14 +373,12 @@ def cpld_ac_powercycle_test(mtp_mgmt_ctrl, slot, pc_cycles=100, stop_on_err=Fals
 
     rc = True
     if mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_attach_without_login():
-        # create another session to power cycle NIC
-        session_ac_pc = mtp_mgmt_ctrl.mtp_session_create()
         for i in range(1, pc_cycles+1):
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "AC POWER CYCLE AT Iteration {:d}".format(i), level=0)
 
             # run power cycle tests in two thread
             t1 = Thread(target=mtp_mgmt_ctrl._nic_ctrl_list[slot].wait_nic_bootup, args=[1, "login"])
-            t2 = Thread(target=mtp_issue_ac_powercycle, args=[mtp_mgmt_ctrl, session_ac_pc, slot, i])
+            t2 = Thread(target=mtp_issue_ac_powercycle, args=[mtp_mgmt_ctrl, slot, i])
             t1.start()
             time.sleep(1)
             t2.start()
@@ -411,7 +399,7 @@ def cpld_ac_powercycle_test(mtp_mgmt_ctrl, slot, pc_cycles=100, stop_on_err=Fals
             rc = False
     return rc
 
-def cpld_cpldapp_reload(mtp_mgmt_ctrl, session_mtp, slot, iteration_index):
+def cpld_cpldapp_reload(mtp_mgmt_ctrl, slot, iteration_index):
     """
     send cpldapp from console session of mtp_mgmt_ctrl, then send turn on 12v only in given MTP session.
     return True or False
@@ -419,11 +407,11 @@ def cpld_cpldapp_reload(mtp_mgmt_ctrl, session_mtp, slot, iteration_index):
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "cpldapp reload power cycle at Iteration {:d}, CMD: {:s}".format(iteration_index, "cpldapp -reload"), level=0)
     mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_handle.sendline("cpldapp -reload")
     # after 'cpldapp -reload' command, console will default to three pin header, send a turn on slot command to bring the console to mtp
-    if not mtp_issue_turn_on_slot(mtp_mgmt_ctrl, session_mtp, slot):
+    if not mtp_issue_turn_on_slot(mtp_mgmt_ctrl, slot):
         return False
     return True
 
-def cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=1, expMajorVer=None, expMinorVer=None, expNanoVer=None, expBootPartion=None):
+def cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=1, expMajorVer=None, expMinorVer=None, expNanoVer=None, expBootPartion=None):
     """
     Program CPLD in a console session, check NIC card can boot to login after power cycle.
     if expected versions or expected boot partion specified, verify them.
@@ -454,7 +442,7 @@ def cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, wri
         rc = False
     # power cycle card
     pc_func = random.choice([mtp_issue_ac_powercycle, cpld_cpldapp_reload])
-    if not pc_func(mtp_mgmt_ctrl, session_mtp, slot, iterIndex):
+    if not pc_func(mtp_mgmt_ctrl, slot, iterIndex):
         rc = False
     # bootup
     if not mtp_mgmt_ctrl._nic_ctrl_list[slot].wait_nic_bootup(1, "login"):
@@ -558,8 +546,6 @@ def cpld_upgrade_downgrade_utility_function_test(mtp_mgmt_ctrl, slot, new_cpld_j
     if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_attach_without_login():
         rc = False
         return rc
-    # create another session to power cycle NIC
-    session_mtp = mtp_mgmt_ctrl.mtp_session_create()
 
     # upgrade/downgrade/utility function and stress test
     for i in range(1, pc_cycles+1):
@@ -568,20 +554,19 @@ def cpld_upgrade_downgrade_utility_function_test(mtp_mgmt_ctrl, slot, new_cpld_j
         progCmd = random.choice(prog_cmd_list)
         imgFile = dest_dir + os.path.basename(new_working_img_file)
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Upgrading of Iteration {:d} ......".format(i), level=0)
-        if not cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=i, expMajorVer=new_working_img_ver, expMinorVer=new_working_img_min_ver, expNanoVer=new_working_img_nano_ver):
+        if not cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=i, expMajorVer=new_working_img_ver, expMinorVer=new_working_img_min_ver, expNanoVer=new_working_img_nano_ver):
             rc = False
 
         ### downgrade mfg release version of CPLD cfg0
         mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Downgrading of Iteration {:d} ......".format(i), level=0)
         progCmd = random.choice(prog_cmd_list)
         imgFile = dest_dir + os.path.basename(old_cpld_img_file)
-        if not cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=i, expMajorVer=old_cpld_img_ver, expMinorVer=old_cpld_img_min_ver, expNanoVer=None):
+        if not cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg0", iterIndex=i, expMajorVer=old_cpld_img_ver, expMinorVer=old_cpld_img_min_ver, expNanoVer=None):
             rc = False
 
         if not rc and stop_on_err:
             if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_detach():
                 rc = False
-            session_mtp.close()
             return rc
         time.sleep(1)
 
@@ -590,26 +575,25 @@ def cpld_upgrade_downgrade_utility_function_test(mtp_mgmt_ctrl, slot, new_cpld_j
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Upgrade failsafe image ...", level=0)
     progCmd = random.choice(prog_cmd_list)
     imgFile = dest_dir + os.path.basename(new_failsafe_img_file)
-    if not cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg1", expMajorVer=old_cpld_img_ver, expMinorVer=old_cpld_img_min_ver, expNanoVer=None):
+    if not cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg1", expMajorVer=old_cpld_img_ver, expMinorVer=old_cpld_img_min_ver, expNanoVer=None):
         rc = False
 
     # erase working image and check if CPLD boot from golden
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Erase working image ...", level=0)
     progCmd = "/data/nic_util/xo3dcpld -erase {:s} {:s}"
     imgFile = ""
-    if not cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg0", expMajorVer=new_failsafe_img_ver, expMinorVer=new_failsafe_img_min_ver, expNanoVer=new_failsafe_img_nano_ver, expBootPartion="cfg1"):
+    if not cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg0", expMajorVer=new_failsafe_img_ver, expMinorVer=new_failsafe_img_min_ver, expNanoVer=new_failsafe_img_nano_ver, expBootPartion="cfg1"):
         rc = False
 
     # Write working image back and verify CPLD boot from default main
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Write working image back and verify CPLD boot from default main", level=0)
     progCmd = random.choice(prog_cmd_list)
     imgFile = dest_dir + os.path.basename(new_working_img_file)
-    if not cpld_console_program(mtp_mgmt_ctrl, session_mtp, slot, progCmd, imgFile, writePartition="cfg0", expMajorVer=new_working_img_ver, expMinorVer=new_working_img_min_ver, expNanoVer=new_working_img_nano_ver, expBootPartion="cfg0"):
+    if not cpld_console_program(mtp_mgmt_ctrl, slot, progCmd, imgFile, writePartition="cfg0", expMajorVer=new_working_img_ver, expMinorVer=new_working_img_min_ver, expNanoVer=new_working_img_nano_ver, expBootPartion="cfg0"):
         rc = False
 
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Now both main and gold CPLD are validation target new version, so following tests running on new version", level=0)
     if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_detach():
         rc = False
-    session_mtp.close()
 
     return rc

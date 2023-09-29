@@ -449,7 +449,7 @@ class nic_ctrl():
         return the boot screen
         """
 
-        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY + 4
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY + 20   # 20 seconds is the power cycle command execution time
         time_out *= pc_iter
         exp_list = [pexpect.TIMEOUT, pexpect.EOF]
         see_expect_str = True

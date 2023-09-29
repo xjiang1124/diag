@@ -53,6 +53,11 @@ def single_nic_qsfp_read_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, ds
             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             break
         qsfp_ref_sn = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf().split("\n")[1].strip("\r")
+        if 'not detected' in qsfp_ref_sn.lower():
+            ret = False
+            nic_test_rslt_list[slot] = False
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            break
         qsfp_ports_sn[port] = qsfp_ref_sn
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got refernce QSFP SN, {:s}".format(qsfp_ref_sn))
 
@@ -500,6 +505,8 @@ def main():
                     pass_nic_list.remove(slot)
 
         # # cpld & qspi image check
+        mtp_mgmt_ctrl.mtp_power_off_nic()
+        mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
         dl_check_fail_list = diag_reg.naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, "", dsp, stop_on_err)
         for slot in dl_check_fail_list:
             if slot in nic_list:
@@ -512,8 +519,6 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_inf("Single MTP CPLD Validation Test Start",  level=0)
         # Disable PCIe polling
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
         if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
             mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
             libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
@@ -538,7 +543,7 @@ def main():
                             return
         mtp_mgmt_ctrl.cli_log_inf("\n",  level=0)
 
-        test_case_list = ["PROGRAM_SPECIAL_BOOT0", "UPGRADE_DOWNGRADE_UTILITY_FUNCTION_STRESS_AND_FAILSAFE_NEGTIVE", "QSFP_SN_READ_STRESS", "3V3_POWER_CYCLE", "GPIO3_POWER_CYCLE", "AC_POWER_CYCLE", "RECOVER_BOOT0"]
+        test_case_list = ["PROGRAM_SPECIAL_BOOT0", "UPGRADE_DOWNGRADE_UTILITY_FUNCTION_STRESS_AND_FAILSAFE_NEGTIVE", "QSFP_SN_READ_STRESS",  "GPIO3_POWER_CYCLE", "3V3_POWER_CYCLE", "AC_POWER_CYCLE", "RECOVER_BOOT0"]
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if not nic_list:
                 continue

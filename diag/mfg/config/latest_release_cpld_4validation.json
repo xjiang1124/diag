@@ -88,12 +88,12 @@
             "sha512sum" : "54efe2dea24309a5c281ce03d000160db40c7906e22493f8242bde09bfe5baec96ab092d5dd6b0b1d630b1bd53f0b97306f34a0e0700ab6f355591b916a81a33"
         },
         "secure_imge" : {
-            "name": "",
-            "version": "",
-            "minor_version" : "",
+            "name": "ginestra_d5_rev2.1_working.bin",
+            "version": "0x2",
+            "minor_version" : "0x1",
             "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
-            "sha512sum" : ""
+            "sha512sum" : "f6053a93db20bbeead305eb9cd5dde6583fa9188d28ffff0207d2fa657ec471f6f196ced17b471d70f3b72e8871a2df19d04b058f7e93f4a2dc8ab6b0d399dff"
         },
         "special_boot0_imge" : {
             "name": "special_boot0_giglio.img",
