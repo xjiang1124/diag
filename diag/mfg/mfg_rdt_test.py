@@ -121,6 +121,7 @@ def main():
     parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
     verbosity = False
     l1_sequence = False
@@ -138,7 +139,12 @@ def main():
 
 
     stage = FF_Stage.FF_RDT
-    mtp_cfg_db = load_mtp_cfg(args.mtpcfg)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
     mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
 
     for loop in range(1, iteration+1):
@@ -174,7 +180,7 @@ def main():
         mfg_rdt_start_ts = libmfg_utils.timestamp_snapshot()
 
         libmfg_utils.cli_inf("#" * 320)
-        mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} START".format(loop), level=0)
+        mtp_mgmt_ctrl_list[0].cli_log_inf("RDT TEST ITERATION-{:06d} START".format(loop), level=0)
 
         if loop == 1:
             # power off all the test mtp
@@ -226,7 +232,7 @@ def main():
         if loop == iteration or not result:
             libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
-        mtp_mgmt_ctrl.cli_log_inf("RDT TEST ITERATION-{:06d} END".format(loop), level=0)
+        mtp_mgmt_ctrl_list[0].cli_log_inf("RDT TEST ITERATION-{:06d} END".format(loop), level=0)
         libmfg_utils.cli_inf("#" * 320 + "\n" * 3)
 
         if not result:

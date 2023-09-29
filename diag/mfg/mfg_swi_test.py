@@ -125,7 +125,7 @@ def main():
         if not libmfg_utils.file_exist(nic_sw_link_file):
             for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
                 mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
-            return
+            sys.exit(1)
         nic_sw_img_file = os.readlink(nic_sw_link_file)
         nic_sw_img_file_list.append(nic_sw_img_file)
 

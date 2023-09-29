@@ -50,8 +50,17 @@ class LaunchApp(object):
             Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
             return None
 
+        ## get testbed_id
         testbed_id = testbed_spec.get('ID').split("-")[1]
-        return testbed_id
+
+        ## get mtp_resource_name
+        instances = testbed_spec.get('Instances', None)
+        if instances == None or len(instances) == 0:
+            return defs.Result.INFRA_FAILURE, None
+        mtp_instance = instances[0]
+        mtp_resource_name = mtp_instance.get('Name')
+
+        return testbed_id, mtp_resource_name
 
     def __parse_warmd(self, testbed_json):
         Logger.info(f"Loading {testbed_json} to parse MTP info")
@@ -80,7 +89,36 @@ class LaunchApp(object):
 
         return defs.Result.SUCCESS, mtp_resource
 
-    def __gen_mtp_inventory(self, mtp_resource, testbed_id):
+    def __gen_barcode_scans(self, mtp_resource_name):
+        nic_type = GlobalOptions.nic_type.upper()
+
+        import yaml
+        barcode_scans = dict()
+        try:
+            with open("/vol/hw/diag/cicd/{:s}.yaml".format(mtp_resource_name), "r") as mtp_yml:
+              scans_yml = yaml.load(mtp_yml, yaml.SafeLoader)
+            for slot in range(1,11):
+              if slot not in scans_yml.keys():
+                # empty slot
+                continue
+              if "SKUs" not in scans_yml[slot].keys():
+                Logger.error(f"Bad MTP barcodes - Missing 'SKUs' field in /vol/hw/diag/cicd/{mtp_resource_name}.yaml:")
+                Logger.error(f"{scans_yml[slot]}")
+                return defs.Result.INFRA_FAILURE
+              node = scans_yml[slot]["SKUs"]
+              for key, value in zip(node.keys(), node.values()):
+                key = key.upper()
+                if nic_type != key:
+                  # not the nic_type for this job
+                  continue
+                barcode_scans[slot] = value
+        except Exception as e:
+            Logger.error(f"Caught exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS, barcode_scans
+
+    def __gen_mtp_inventory(self, mtp_resource, testbed_id, barcode_scans):
         mtp_cfg_yaml_file = os.path.join(GlobalOptions.cfgfolder, 'jobd_mtp_cfg.yml')
         mtp_ip = mtp_resource.get("host-ip")
 
@@ -120,10 +158,18 @@ class LaunchApp(object):
                     data[f'APC{idx+1}_USERID'] =  "apc"
                     data[f'APC{idx+1}_PASSWORD'] =  "apc"
 
-        # change SKIP_SLOTS to skip none or use outermost 2 even slots
-        test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
-        if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
-            data['SKIP_SLOTS'] = "1,3-9"
+        # change SKIP_SLOTS to test only slots that match the nic_type
+        def list_subtract(a, b):
+            """ set(A) - set(B) but keep the ordering """
+            return list(x for x in a if x not in b)
+
+        def make_skip_slots_string(slots_to_test):
+          skip_slots = list_subtract(range(1,11), slots_to_test)
+          return ",".join(map(str, skip_slots))
+
+        slots_to_test = list(barcode_scans.keys())
+        slots_to_test.sort()
+        data['SKIP_SLOTS'] = make_skip_slots_string(slots_to_test)
 
         testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
         mtp_yaml_data = {
@@ -142,57 +188,52 @@ class LaunchApp(object):
         self.__settings['MTP_ID'] = testbed_id
         return defs.Result.SUCCESS
 
-    def __gen_nic_barcodes(self, mtp_resource, testbed_id):
-        data = dict()
-
-        # scan all barcodes, or only 2, based on what test spec says
-        test_spec = getattr(self.__testsuite.test_types, GlobalOptions.testtype)
-        if hasattr(test_spec, 'slots') and int(test_spec.slots) != 10:
-            slot_range = [2,10]
-        else:
-            slot_range = range(1,11)
-
-        for slot in slot_range:
-            nic_slot = "NIC-{:02d}".format(slot)
-            data[nic_slot] = {
-                'SN': mtp_resource.get("nic{:d}-serial-number".format(slot)),
-                'MAC': mtp_resource.get("nic{:d}-mac-address".format(slot)),
-                'PN': mtp_resource.get("nic{:d}-part-number".format(slot))
-            }
-
+    def __gen_nic_barcodes(self, mtp_resource_name, barcode_scans):
         # write to a file same as it is scanned into scan_dl...
         scanDL_input = "nic_barcode_scan"
-        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
-        Logger.info(f"Generating {testbed_id} NIC barcodes in input file: {scanDL_input}")
+        Logger.info(f"Generating {mtp_resource_name} NIC barcodes in input file: {scanDL_input}")
         try:
             with open(os.path.join(GlobalOptions.topdir, scanDL_input), "w") as fh:
-                for slot in data.keys():
-                    if not data[slot]['SN'] or not data[slot]['MAC']:
-                        # skip empty slot
-                        continue
+                for slot in barcode_scans.keys():
+                    if "SN" not in barcode_scans[slot].keys():
+                        Logger.error(f"Missing 'SN' field from slot {slot} in /vol/hw/diag/cicd/{mtp_resource_name}.yaml")
+                        return defs.Result.INFRA_FAILURE
+                    if "MAC" not in barcode_scans[slot].keys():
+                        Logger.error(f"Missing 'MAC' field from slot {slot} in /vol/hw/diag/cicd/{mtp_resource_name}.yaml")
+                        return defs.Result.INFRA_FAILURE
+                    if "PN" not in barcode_scans[slot].keys():
+                        # Dont throw error for missing PN since it can be empty for Dell-monterey label
+                        barcode_scans[slot]['PN'] = ""
 
-                    fh.write(f'{slot}\n')
-                    fh.write(data[slot]['SN'] + "\n")
-                    fh.write(data[slot]['MAC'] + "\n")
-                    if data[slot]['PN']:
-                        fh.write(data[slot]['PN'] + "\n")
+                    fh.write('NIC-{:02d}\n'.format(slot))
+                    fh.write(barcode_scans[slot]['SN'] + "\n")
+                    fh.write(barcode_scans[slot]['MAC'] + "\n")
+                    if barcode_scans[slot]['PN']:
+                        fh.write(barcode_scans[slot]['PN'] + "\n")
                 fh.write(f'STOP\n')
         except Exception as e:
-            Logger.error("Failed to write {:s}".format(scanDL_input))
+            Logger.error(f"Failed to write {scanDL_input}: {e}")
             return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS
 
-    def __gen_mtp_sw_pn(self, mtp_resource, testbed_id):
+    def __gen_mtp_sw_pn(self, mtp_resource_name, barcode_scans):
         # write to a file with all SW PNs in one line
         swi_input = "swi_input"
-        testbed_id = f"{self.__testsuite.config.testbed}-{testbed_id}"
-        Logger.info(f"Generating {testbed_id} SW PN in input file: {swi_input}")
+        Logger.info(f"Generating {mtp_resource_name} SW PN in input file: {swi_input}")
 
         sw_pn_test_args = ""
-        for swpn_idx in range(1,11):
-            if mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)):
-                sw_pn_test_args += mtp_resource.get("nic{:d}-sw-pn".format(swpn_idx)) + " "
+        for slot in barcode_scans.keys():
+            if "SW_PN" not in barcode_scans[slot].keys():
+                Logger.error(f"Missing 'SW_PN' field from slot {slot} in /vol/hw/diag/cicd/{mtp_resource_name}.yaml")
+                return defs.Result.INFRA_FAILURE
+            sw_pn = barcode_scans[slot]["SW_PN"]
+
+            if not sw_pn.strip():
+                sw_pn = "90-0000-0000" # enter something so we dont get stuck at "Scan SW PN:" input
+
+            sw_pn_test_args += str(barcode_scans[slot]["SW_PN"]) + " "
+
         try:
             with open(os.path.join(GlobalOptions.topdir, swi_input), "w") as fh:
                 fh.write(sw_pn_test_args)
@@ -230,6 +271,8 @@ class LaunchApp(object):
                 self.__settings['DIAG_ARM64_IMAGE_PATH'] = os.path.join(GlobalOptions.diag_images, imgs.get("ARM64"))
                 self.__settings['DIAG_IMAGE_FOLDER'] = GlobalOptions.diag_images
             else:
+                Logger.error("Could not load diag images from image-manifest:")
+                Logger.error(diag_images)
                 return defs.Result.INFRA_FAILURE
 
             asic_images = list(filter(lambda x:
@@ -246,7 +289,10 @@ class LaunchApp(object):
                                                                         imgs.get("ARM64"))
                 self.__settings['ASIC_IMAGE_FOLDER'] = os.path.join(GlobalOptions.asic_images, GlobalOptions.asic)
             else:
+                Logger.error("Could not load asic images from image-manifest:")
+                Logger.error(asic_images)
                 return defs.Result.INFRA_FAILURE
+
         return defs.Result.SUCCESS
 
     def __build_test_cmdline_args(self):
@@ -289,22 +335,28 @@ class LaunchApp(object):
             Logger.error(f"Failed to extract MTP resource JSON from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
-        testbed_id = self.__get_testbed_id(GlobalOptions.testbed_json)
+        testbed_id, mtp_resource_name = self.__get_testbed_id(GlobalOptions.testbed_json)
 
-        ret = self.__gen_mtp_inventory(mtp_resource, testbed_id)
+        ret, barcode_scans = self.__gen_barcode_scans(mtp_resource_name)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract testing slots from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
+            return ret
+
+        ret = self.__gen_mtp_inventory(mtp_resource, testbed_id, barcode_scans)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract mtp-inventory from {GlobalOptions.testbed_json} - ABORT")
             return ret
 
-        ret = self.__gen_nic_barcodes(mtp_resource, testbed_id)
+        ret = self.__gen_nic_barcodes(mtp_resource_name, barcode_scans)
         if ret != defs.Result.SUCCESS:
-            Logger.error(f"Failed to extract NIC SN, MAC, PN from {GlobalOptions.testbed_json} - ABORT")
+            Logger.error(f"Failed to extract NIC SN, MAC, PN from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
             return ret
 
-        ret = self.__gen_mtp_sw_pn(mtp_resource, testbed_id)
-        if ret != defs.Result.SUCCESS:
-            Logger.error(f"Failed to extract SW PNs from {GlobalOptions.testbed_json} - ABORT")
-            return ret
+        if self.__testsuite.config.job == "SWI":
+            ret = self.__gen_mtp_sw_pn(mtp_resource_name, barcode_scans)
+            if ret != defs.Result.SUCCESS:
+                Logger.error(f"Failed to extract SW PNs from from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
+                return ret
 
         ret =  self.__load_image_manifest()
         if ret != defs.Result.SUCCESS:
