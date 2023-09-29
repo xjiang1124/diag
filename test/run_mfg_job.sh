@@ -252,7 +252,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_ort_test.py ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_ort_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
@@ -269,7 +269,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_rdt_test.py ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_rdt_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
@@ -286,7 +286,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_mtpScreen_test.py ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_mtpScreen_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
