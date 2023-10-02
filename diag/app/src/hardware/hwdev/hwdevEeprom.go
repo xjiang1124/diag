@@ -298,3 +298,38 @@ func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string, fp
 
     return
 }
+
+
+func EepromUpdateTlvFpga(devName string, sn string, pn string, sn2 string, pn2 string,
+                         mac string, date string) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.ProgTlvFpga(devName, sn, pn, sn2, pn2, mac, date)
+    if err != errType.SUCCESS {
+        cli.Println("e", "EEPROM update failed!")
+        return
+    }
+
+    return
+}
+
+func EepromUpdateTlvFieldFpga(devName string, field string, value string) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.ProgTlvFieldFpga(devName, field, value)
+    if err != errType.SUCCESS {
+        cli.Println("e", "EEPROM update failed!")
+        return
+    }
+
+    return
+}
+
+func EepromDisplayTlvFpga(devName string, field string, fpo bool) (err int) {
+    hwinfo.EnableHubChannelExclusive(devName)
+
+    err = eeprom.DisplayTlvFpga(devName, field, fpo)
+
+    return
+}
+

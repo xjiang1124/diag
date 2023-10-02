@@ -24,6 +24,14 @@ type I2cInfo struct {
     Flag    byte
 }
 
+type I2cFpgaMap struct {
+    DevName     string
+    Bus         uint32
+    Mux         uint32
+    I2cAddr     uint32
+    OffsetLen   int
+}
+
 //I2cInfo Flag Defines
 
 const (
@@ -36,6 +44,16 @@ const (
 var I2cTbl    []I2cInfo
 //var UutI2cTbl []I2cInfo
 var CurI2cTbl []I2cInfo
+var I2cFpgaTbl []I2cFpgaMap
+
+//=========================================
+// Lipari smbus not ready, go through I2CFPGA
+var LipariI2cFpgaTbl = []I2cFpgaMap {
+              //DevName     Bus Mux I2cAddr OffsetLen
+    I2cFpgaMap {"FRU",      0,  3,  0x50,   1},
+    I2cFpgaMap {"CPU",      0,  3,  0x50,   1},
+    I2cFpgaMap {"SWITCH",   1,  2,  0x50,   2},
+}
 
 //=========================================
 // Naples100 I2C table on ARM
@@ -588,6 +606,8 @@ var LipariTbl = []I2cInfo {
     I2cInfo {"CPU-CNTR-LM75",  "LM75",        6,   0x4A,    0x0,    "0_2",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU",            "AT24C04C",    7,   0x50,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU_CERT",       "AT24C04C",    7,   0x51,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPU",            "AT24C04",     0,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
+    I2cInfo {"SWITCH",         "AT24C256C",   1,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
 
     I2cInfo {"FAN_1",          "ADT7462",     9,   0x5C,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FAN_2",          "ADT7462",     9,   0x61,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
@@ -732,6 +752,7 @@ func init() {
         I2cTbl = TaorElbaTbl
     } else if CardType == "LIPARI" {
         I2cTbl = LipariTbl
+        I2cFpgaTbl = LipariI2cFpgaTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -869,6 +890,7 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = TaorTbl
     } else if uutType == "LIPARI" {
         CurI2cTbl = LipariTbl
+        I2cFpgaTbl = LipariI2cFpgaTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
@@ -899,6 +921,18 @@ func SwitchI2cTblByIndex(uutIndex uint) (err int) {
 func GetI2cInfo(devName string) (i2cinfo I2cInfo, err int) {
     for _, i2cinfo = range(CurI2cTbl) {
         if devName == i2cinfo.Name {
+            return
+        }
+    }
+    cli.Println("f", "Unsupported device:", devName)
+    err = errType.INVALID_PARAM
+    return
+
+}
+
+func GetI2cFpgaMap(devName string) (i2cfmap I2cFpgaMap, err int) {
+    for _, i2cfmap = range(I2cFpgaTbl) {
+        if devName == i2cfmap.DevName {
             return
         }
     }

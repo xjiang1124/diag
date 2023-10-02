@@ -63,6 +63,10 @@ const (
     PN_ADICR_ORACLE  string = "68-0049-03"
     PN_SR4T_ORACLE   string = "68-0089-01"
     PN_LIPARI_ELBA   string = "68-0032"
+    PN_LIPARI        string = "68-0032-01"
+    PN_LIPARI_SWITCH string = "73-0067-01"
+    PN_LIPARI_CPUBRD string = "73-0068-01"
+    PN_LIPARI_BMC    string = "73-0076-01"
     PN_GIN_D4_ORACLE string = "68-0074-01"
     PN_GIN_D5_ORACLE string = "68-0075"
 
