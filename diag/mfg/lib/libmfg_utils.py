@@ -832,7 +832,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     return image_list
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
-    if image_list is None:
+    if not image_list:
         mtp_mgmt_ctrl.cli_log_err("Copy Firmware images failed... Abort", level=0)
         return False
 

@@ -403,6 +403,214 @@ class nic_ctrl():
             return False
         return True
 
+    def nic_console_attach_without_login(self, consoleObj=None, maxRetry=5, timeOut=None):
+        """
+        this method send "spawn console connection" command to current self._nic_handle or passed in console connection object, so self._nic_handle become console connection.
+        if console object arugument provided, means setup console connection could be from three pin header
+        otherwise, setup conosle connection though con_connect
+        """
+
+        linux_prompts = libmfg_utils.get_linux_prompt_list()
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        console_login_screen = ""
+        if consoleObj:
+            # under construnction
+            pass
+        else:
+            for _ in range(maxRetry):
+                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, linux_prompts, timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx < 0:
+                    continue
+                con_ts = libmfg_utils.timestamp_snapshot()
+                ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
+                self._nic_handle.sendline(ts_record_cmd)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, linux_prompts, timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx < 0:
+                    continue
+                cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+                self._nic_handle.sendline(cmd)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx >= 0:
+                    break
+            else:
+                self.nic_set_err_msg("{:s} failed in {:d} retries- occupied or missing".format(cmd, maxRetry))
+                self.nic_set_cmd_buf(console_login_screen)
+                return False
+            self.nic_set_cmd_buf(console_login_screen)
+            return True
+
+    def wait_nic_bootup(self, pc_iter, expect_str=None, consoleObj=None, timeOut=None):
+        """
+        wait for nic fw to boot up from console connection, which established from self._nic_handle or passed in console connection object.
+        return the boot screen
+        """
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY + 20   # 20 seconds is the power cycle command execution time
+        time_out *= pc_iter
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF]
+        see_expect_str = True
+        if expect_str:
+            exp_list.append(expect_str)
+            see_expect_str = False
+        nic_boot_screen = ""
+
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            if idx == 0:
+                nic_boot_screen += self._nic_handle.before
+                break
+            elif idx == 1:
+                # EOF, need re-establish console session
+                nic_boot_screen += self._nic_handle.before
+                if not self.nic_console_attach_without_login(consoleObj, time_out):
+                    nic_boot_screen += self.nic_get_cmd_buf()
+                    break
+            elif idx == 2:
+                nic_boot_screen += self._nic_handle.before + self._nic_handle.after
+                see_expect_str = True
+                break
+
+        self.nic_set_cmd_buf(nic_boot_screen)
+        return see_expect_str
+
+    def nic_console_probe_login_prompt(self, consoleObj=None, maxRetry=5, timeOut=None):
+        """
+        this method trying to probe if card boot to login prompt from console connection, which established from self._nic_handle or passed in console connection object
+        return True if see login prompt otherwise return False
+        """
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [self._nic_con_prompt, "login:", "assword:"]
+        console_login_screen = ""
+        see_login_prompt = False
+
+        # send return
+        self._nic_handle.sendline("")
+        # Forio need another enter to connect console
+        if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
+            self._nic_handle.sendline("")
+
+        retry = 1
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            # print(self._nic_handle.before)
+            if idx == 0:
+                # timeout, just send a carriage return and retry
+                console_login_screen += self._nic_handle.before
+                if retry == maxRetry:
+                    break
+                self._nic_handle.sendline("")
+                retry += 1
+                time_out = 10
+            elif idx == 1:
+                # EOF, need re-establish console session
+                console_login_screen += self._nic_handle.before
+                if self.nic_console_attach_without_login(consoleObj, maxRetry, time_out):
+                    self._nic_handle.sendline("")
+                    retry += 1
+                    continue
+                else:
+                    break
+            elif idx == 2:
+                self._nic_handle.sendline("exit")
+                continue
+            elif idx == 3 or idx == 4:
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                see_login_prompt = True
+                break
+
+        # expect extral login prompt "login:"
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=3)
+            if idx == 0:
+                break
+            else:
+                continue
+
+        self.nic_set_cmd_buf(console_login_screen)
+        if not see_login_prompt:
+            self.nic_set_err_msg("failed to probe login prompt in {:d} retries".format(maxRetry))
+            return False
+        return True
+
+    def nic_console_login(self, consoleObj=None, username=NIC_MGMT_USERNAME, password=NIC_MGMT_PASSWORD, maxRetry=5, timeOut=None):
+        """
+        this method trying to login to card with specified username and password from console connection, which established from self._nic_handle or passed in console connection object
+        """
+
+        if not self.nic_console_probe_login_prompt(consoleObj, maxRetry, timeOut):
+            return False
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [self._nic_con_prompt, "login:", "assword:"]
+        console_login_screen = ""
+        sucess_logon = False
+
+        retry = 1
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            # print(self._nic_handle.before)
+            if idx == 0:
+                # timeout, just send a carriage return and retry
+                console_login_screen += self._nic_handle.before
+                if retry == maxRetry:
+                    break
+                self._nic_handle.sendline("")
+                retry += 1
+                time_out = 10
+            elif idx == 1:
+                # EOF, need re-establish console session
+                console_login_screen += self._nic_handle.before
+                if self.nic_console_attach_without_login(consoleObj, maxRetry, time_out):
+                    self._nic_handle.sendline("")
+                    retry += 1
+                    continue
+                else:
+                    break
+            elif idx == 2:
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                sucess_logon = True
+                break
+            elif idx == 3:
+                self._nic_handle.sendline(username)
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                time_out = 5
+                continue
+            elif idx == 4:
+                self._nic_handle.sendline(password)
+                console_login_screen +=  self._nic_handle.before + self._nic_handle.after
+                time_out = 10
+                continue
+
+        self.nic_set_cmd_buf(console_login_screen)
+        if not sucess_logon:
+            self.nic_set_err_msg("failed to login in {:d} retries".format(maxRetry))
+            return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
+
+        return True
+
+    def nic_console_exec_cmd(self, cmd=None):
+        """
+        execute passed in command in a existing NIC console connection, which established from self._nic_handle.
+        """
+
+        rc = True
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
+            rc = False
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        return rc
 
     def nic_console_attach(self):
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
@@ -5587,4 +5795,39 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
+    def nic_console_call_sysresetsh(self, ending="login", checkPoints=[]):
+        """
+        Excute systeset.sh command in new establishe console session.
+        """
 
+        if not self.nic_console_attach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        self._nic_handle.sendline("sysreset.sh")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [ending], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        self.nic_set_cmd_buf(self._nic_handle.before)
+
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            self.nic_console_detach()
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(buf)
+
+        # check checkpoints
+        for check_point in checkPoints:
+            match = re.findall(r"{:s}".format(check_point), buf)
+            if not match:
+                self.nic_console_detach()
+                return False
+
+        # detach the console connection
+        if not self.nic_console_detach():
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        return True
