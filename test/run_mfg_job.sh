@@ -273,23 +273,6 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "SRN" ]];
-then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
-    echo "**************************************************"
-    echo " Launching mfg_mtpScreen_test.py"
-    echo "**************************************************"
-
-    set -x
-    python ./mfg_mtpScreen_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
-    ret=$?
-fi
-
 cd ${PSDIAG_ROOT}
 tar -zcvf diag_detailed_log.tgz log
 
