@@ -59,16 +59,22 @@ def main():
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
 
+    stage = FF_Stage.FF_SRN
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
+    l1_sequence = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
     if args.swm:
         swmtestmode = args.swm
+    if args.l1_seq:
+        l1_sequence = True
 
     mtpcfg_file = None
     if args.mtpcfg:
@@ -81,7 +87,6 @@ def main():
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
     scan_rslt = dict()
-    mtp_sn = ""
 
     # only allow one per time
     if len(mtpid_list) > 1:
@@ -180,6 +185,10 @@ def main():
                                     kwargs = ({
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "swm_test_mode": swmtestmode,
+                                                "mtpcfg_file": mtpcfg_file,
+                                                "jobd_logdir": args.jobd_logdir,
+                                                "l1_sequence": l1_sequence,
+                                                "swm_test_mode": swmtestmode,
                                                 "mtp_sn": mtp_sn}))
         mtp_thread.daemon = True
         mtp_thread.start()
@@ -202,6 +211,7 @@ def main():
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
+    mtp_sn = mtp_mgmt_ctrl.get_mtp_sn()
     test_result = libmfg_utils.mfg_summary_srn_disp(FF_Stage.FF_SRN, mfg_srn_summary, mtpid_fail_list, mtp_sn)
 
     # print return code for JobD to pick up
