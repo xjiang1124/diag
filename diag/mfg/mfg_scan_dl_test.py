@@ -36,6 +36,7 @@ from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
 import test_utils
+import testlog
 
 
 def logfile_close(filep_list):
@@ -262,7 +263,7 @@ def main():
     log_filep_list = list()
     log_dir = "log/"
     log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
+    log_sub_dir = testlog.STAGE_LOG_FOLDER.format(stage, mtp_id, log_timestamp)
     os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "mtp_test.log"
     log_file_list.append(test_log_file)

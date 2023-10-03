@@ -141,69 +141,131 @@ def parallel_threaded_test(func):
     return start_end
 
 
-def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
+def mtp_test_cleanup(mtp_mgmt_ctrl):
+    mtp_mgmt_ctrl.close_file_handles()
     os.system("sync")
 
+def save_toplevel_logs(mtp_mgmt_ctrl, stage):
+    mtp_test_cleanup(mtp_mgmt_ctrl)
+    log_dir = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    
+    ## package the log file
+    ## upload the test
+
+
 def fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary):
-    # abort test without saving logfile
     mtp_test_summary.append((0, mtp_mgmt_ctrl._id, None, False, False))
 
-def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, skip_slot_list=[], **kwargs):
-    try:
-        mtpcfg_file = None
-        l1_sequence = None
-        stop_on_err = None
-        card_type = None
-        swm_test_mode = None
-        mtp_sn = None
-        only_test_list = []
-        nic_sw_img_file_list = []
-        sw_pn_list = []
-        profile_cfg_file_list = []
-        if "mtpcfg_file" in kwargs:
-            mtpcfg_file = kwargs["mtpcfg_file"]
-        if "l1_sequence" in kwargs:
-            l1_sequence = kwargs["l1_sequence"]
-        if "stop_on_err" in kwargs:
-            stop_on_err = kwargs["stop_on_err"]
-        if "card_type" in kwargs:
-            card_type = kwargs["card_type"]
-        if "swm_test_mode" in kwargs:
-            swm_test_mode = kwargs["swm_test_mode"]
-        if "mtp_sn" in kwargs:
-            mtp_sn = kwargs["mtp_sn"]
-        if "only_test_list" in kwargs:
-            only_test_list = kwargs["only_test_list"]
-        if "nic_sw_img_file_list" in kwargs:
-            nic_sw_img_file_list = kwargs["nic_sw_img_file_list"]
-        if "sw_pn_list" in kwargs:
-            sw_pn_list = kwargs["sw_pn_list"]
-        if "profile_cfg_file_list" in kwargs:
-            profile_cfg_file_list = kwargs["profile_cfg_file_list"]
 
+def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *args, **kwargs):
+    # Handle outer-test args
+    mtp_id = mtp_mgmt_ctrl._id
+    loop_cnt      = kwargs.get("iteration", 1)
+    no_pc         = kwargs.get("no_pc", None)
+    stop_on_err   = kwargs.get("stop_on_err", False)
+    mirror_logdir = kwargs.get("jobd_logdir", None)
+    swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
+
+    for loop_idx in range(1, loop_cnt+1):
+
+        ### Begin logging
+        testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+
+        ### Barcode scanning
+        if loop_idx == 1:
+            if stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
+                if not GLB_CFG_MFG_TEST_MODE:
+                    skip_test_list.append("SCAN_VERIFY")
+
+                if "SCAN_VERIFY" not in skip_test_list:
+                    libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
+            elif stage == FF_Stage.FF_FST:
+                if not GLB_CFG_MFG_TEST_MODE:
+                    skip_test_list.append("SCAN_VERIFY")
+
+                if "SCAN_VERIFY" not in skip_test_list and False:
+                    libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), is_fst_test=True)
+
+            elif stage == FF_Stage.FF_SRN:
+                mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
+                while True:
+                    scan_rslt = mtp_mgmt_ctrl.mtp_screen_barcode_scan()
+                    if scan_rslt and scan_rslt["VALID"]:
+                        mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
+                        break;
+                    mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+                mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
+
+        if loop_cnt > 1:
+            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:03d} START ====".format(stage, loop_idx))
+
+        ### Power cycle MTP
+        if stage in (FF_Stage.FF_RDT, FF_Stage.FF_ORT):
+            # leave looping/powercycling MTP in toplevel control for these stages
+            pass
+        else:
+            if not no_pc:
+                libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl], safely=False)
+                libmfg_utils.mtpid_list_poweron([mtp_mgmt_ctrl])
+
+        ### Deploy & run the test
+        ret = single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *args, **kwargs)
+
+        if loop_cnt > 1:
+            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:03d} END   ====".format(stage, loop_idx))
+
+        if not ret:
+            fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
+            save_toplevel_logs(mtp_mgmt_ctrl, stage)
+            if stop_on_err:
+                break
+        # else:
+        #     save_mtp_logs(mtp_mgmt_ctrl, stage)
+
+
+    ### Final power off
+    if stage in (FF_Stage.FF_RDT, FF_Stage.FF_ORT):
+        # leave looping/powercycling MTP in toplevel control for these stages
+        pass
+    else:
+        if not no_pc:
+            libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl])
+
+def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list=[], skip_slot_list=[], **kwargs):
+    try:
+        # Handle inner-test args
         mtp_id = mtp_mgmt_ctrl._id
-        mtp_mgmt_ctrl.set_mtp_sn(mtp_sn)
-      
+        mtp_sn = mtp_mgmt_ctrl.get_mtp_sn()
+        mtpcfg_file   = kwargs.get("mtpcfg_file", None)
+        l1_sequence   = kwargs.get("l1_sequence", None)
+        stop_on_err   = kwargs.get("stop_on_err", None)
+        card_type     = kwargs.get("card_type",   None)
+        swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
+        only_test_list        = kwargs.get("only_test_list",        [])
+        nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
+        sw_pn_list            = kwargs.get("sw_pn_list",            [])
+        profile_cfg_file_list = kwargs.get("profile_cfg_file_list", [])
+
+        if stage == FF_Stage.FF_SWI:
+            if not handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
+                return False
+
         ####### MTP SETUP: start_diag, MTP sanity check, ...
+        mtp_mgmt_ctrl.mtp_mgmt_disconnect()
+
         if stage == FF_Stage.FF_FST:
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
-                fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                 return False
         elif stage == FF_Stage.FF_SRN:
             if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list):
                 return False
         else:
             if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
-                fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                 return False
 
         if stage == FF_Stage.FF_SWI:
             # upload mainfw image received via args
             if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, ["NIC_SW_IMG_UPDATE"], skip_test_list, nic_sw_img_file_list=nic_sw_img_file_list):
-                fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                 return False
 
         fail_nic_list = list()
@@ -220,7 +282,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             fail_nic_list += nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, skip_test_list)
 
         # Close file handles
-        mtp_test_cleanup(open_file_track_list)
+        mtp_test_cleanup(mtp_mgmt_ctrl)
 
         testsuite_config = {
             FF_Stage.FF_DL:
@@ -415,7 +477,6 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
     except Exception as e:
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.cli_log_err(err_msg)
-        fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
         return False
 
 def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
@@ -616,4 +677,31 @@ def test_pass_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts):
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration))
+    return True
+
+
+def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
+    for sw_pn in sw_pn_list:
+        mtp_mgmt_ctrl.cli_log_inf("==> Scanned SW PN: {:s} <==".format(sw_pn))
+
+    # get sw image name based on the sw pn
+    for sw_pn in sw_pn_list:
+        nic_sw_link_file = "release/{:s}".format(sw_pn)
+        if not libmfg_utils.file_exist(nic_sw_link_file):
+            mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
+            return False
+        nic_sw_img_file = os.readlink(nic_sw_link_file)
+        nic_sw_img_file_list.append(nic_sw_img_file)
+
+    # get path to profile, but doesnt work if multiple sw_pn supplied
+    for sw_pn in sw_pn_list:
+        profile_link_cfg_file = "release/profile_{:s}.py".format(sw_pn)
+        if not libmfg_utils.file_exist(profile_link_cfg_file):
+            mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
+            profile_cfg_file = None
+        else:
+            profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
+            mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
+            profile_cfg_file_list.append(profile_link_cfg_file)
+
     return True

@@ -98,6 +98,7 @@ class mtp_ctrl():
         self._diagmgr_logfile = None
         self._temppn = None
         self._test_log_folder = None # relative path to log folder
+        self._open_file_handles = []
 
         self._cicd_run = False
 
@@ -106,7 +107,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_inf(cli_id_str + indent + msg)
@@ -118,7 +119,7 @@ class mtp_ctrl():
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         prefix = "==> "
         postfix = " <=="
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, cli_id_str + prefix + msg + postfix)
         else:
             libmfg_utils.cli_inf(cli_id_str + prefix + msg + postfix)
@@ -129,7 +130,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_err(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_err(cli_id_str + indent + msg)
@@ -140,7 +141,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_wrn(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_wrn(cli_id_str + indent + msg)
@@ -151,7 +152,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_inf(nic_cli_id_str + indent + msg)
@@ -162,7 +163,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_err(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_err(nic_cli_id_str + indent + msg)
@@ -173,7 +174,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_wrn(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_wrn(nic_cli_id_str + indent + msg)
@@ -429,6 +430,11 @@ class mtp_ctrl():
     def set_mtp_sn(self, sn):
         self._mtp_sn = sn
         self.cli_log_inf("Set MTP SN to {:s}".format(sn), level=0)
+
+    def close_file_handles(self):
+        fp_list = self._open_file_handles
+        for fp in fp_list:
+            fp.close()
 
     def _apc_model_check(self, handle):
         """

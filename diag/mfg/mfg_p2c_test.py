@@ -11,22 +11,13 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import NIC_Type
+import test_utils
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libdiag_db import diag_db
-import test_utils
-import testlog
 
 
 def load_mtp_cfg(cfg_yaml = None):
@@ -65,6 +56,8 @@ def main():
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])
+    parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
+    parser.add_argument("--no-pc", "--no-mtp-powercycle", help="Don't powercycle MTP between iterations", action='store_true', required=False, default=False)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
     parser.add_argument("--stop-on-err", help="Break out of test on failure", required=False, action='store_true', default=False)
@@ -108,18 +101,7 @@ def main():
         nic_sn_list[mtp_id] = list()
         invalid_nic_list[mtp_id] = list()
 
-    # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     mtp_thread_list = list()
     mfg_p2c_summary = dict()
@@ -130,17 +112,17 @@ def main():
                                                 stage,
                                                 mtp_mgmt_ctrl,
                                                 mfg_p2c_summary[mtp_id],
-                                                logfile_dir_list[mtp_id],
-                                                open_file_track_mtp_list[mtp_id],
                                                 args.skip_test,
-                                                args.jobd_logdir,
                                                 args.skip_slots),
                                     kwargs = ({
                                                 "mtpcfg_file": mtpcfg_file,
+                                                "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
                                                 "swm_test_mode": swmtestmode,
                                                 "only_test": args.only_test,
                                                 "l1_sequence": l1_sequence,
+                                                "iteration": args.iteration,
+                                                "no_pc": args.no_pc,
                                                 "stop_on_err": args.stop_on_err}))
         mtp_thread.daemon = True
         mtp_thread.start()
@@ -158,9 +140,6 @@ def main():
         time.sleep(5)
     mfg_p2c_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG P2C Test Duration:{:s}".format(mfg_p2c_stop_ts - mfg_p2c_start_ts))
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     test_result = libmfg_utils.mfg_summary_disp(stage, mfg_p2c_summary, mtpid_fail_list)

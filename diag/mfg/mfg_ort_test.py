@@ -11,22 +11,13 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import NIC_Type
+import test_utils
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libdiag_db import diag_db
-import test_utils
-import testlog
 
 
 def load_mtp_cfg(cfg_yaml = None):
@@ -116,12 +107,6 @@ def main():
             nic_sn_list[mtp_id] = list()
             invalid_nic_list[mtp_id] = list()
 
-        # logfiles
-        open_file_track_mtp_list = dict()
-        logfile_dir_list = dict()
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
         mfg_ort_start_ts = libmfg_utils.timestamp_snapshot()
 
         libmfg_utils.cli_inf("#" * 320)
@@ -141,13 +126,11 @@ def main():
                                                     stage,
                                                     mtp_mgmt_ctrl,
                                                     mfg_ort_summary[mtp_id],
-                                                    logfile_dir_list[mtp_id],
-                                                    open_file_track_mtp_list[mtp_id],
                                                     args.skip_test,
-                                                    args.jobd_logdir,
                                                     args.skip_slots),
                                         kwargs = ({
                                                     "mtpcfg_file": mtpcfg_file,
+                                                    "jobd_logdir": args.jobd_logdir,
                                                     "testsuite_name": stage,
                                                     "swm_test_mode": swmtestmode,
                                                     "only_test": args.only_test,

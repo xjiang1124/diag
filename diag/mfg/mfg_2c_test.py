@@ -11,23 +11,13 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import test_utils
 from libdefs import Swm_Test_Mode
-from libdefs import NIC_Type
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libdiag_db import diag_db
-import test_utils
-import testlog
-
 
 def load_mtp_cfg():
     mtp_chassis_cfg_file_list = list()
@@ -112,6 +102,8 @@ def main():
         nic_sn_list[mtp_id] = list()
         invalid_nic_list[mtp_id] = list()
 
+    mfg_2c_start_ts = libmfg_utils.timestamp_snapshot()
+
     # wait operator set chamber temperature
     if args.high_temp:
         libmfg_utils.cli_inf("CLOSE THE CHAMBER AND SET TEMPERATURE TO {:d} DEGREE CENTIGRADE\n".format(MTP_Const.MFG_EDVT_HIGH_TEMP))
@@ -124,19 +116,6 @@ def main():
     else:
         libmfg_utils.sys_exit("Unknown 2C Corner... Abort")
 
-    # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
-    mfg_2c_start_ts = libmfg_utils.timestamp_snapshot()
-
-    # power off the mtp chassis
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
-
     mtp_thread_list = list()
     mfg_2c_summary = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
@@ -146,13 +125,11 @@ def main():
                                                 stage,
                                                 mtp_mgmt_ctrl,
                                                 mfg_2c_summary[mtp_id],
-                                                logfile_dir_list[mtp_id],
-                                                open_file_track_mtp_list[mtp_id],
                                                 args.skip_test,
-                                                args.jobd_logdir,
                                                 args.skip_slots),
                                     kwargs = ({
                                                 "mtpcfg_file": mtpcfg_file,
+                                                "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
                                                 "swm_test_mode": swmtestmode,
                                                 "only_test": args.only_test,
@@ -175,9 +152,6 @@ def main():
 
     mfg_2c_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, mfg_2c_stop_ts - mfg_2c_start_ts))
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     libmfg_utils.mfg_summary_disp(stage, mfg_2c_summary, mtpid_fail_list)

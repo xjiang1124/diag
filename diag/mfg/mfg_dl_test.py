@@ -12,31 +12,12 @@ import traceback
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import test_utils
-import testlog
-from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import FF_Stage
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FLEX_TWO_WAY_COMM
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
-from libmfg_cfg import FLEX_ERR_CODE_MAP
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import ELBA_NIC_TYPE_LIST
-from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
-from libmfg_cfg import FPGA_TYPE_LIST
-from libmfg_cfg import NEED_UBOOT_IMG_CARD_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libdiag_db import diag_db
 from libdefs import Swm_Test_Mode
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 
 
 def load_mtp_cfg(cfg_yaml=None):
@@ -114,25 +95,7 @@ def main():
         nic_sn_list[mtp_id] = list()
         invalid_nic_list[mtp_id] = list()
 
-    # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
-    if not GLB_CFG_MFG_TEST_MODE:
-        args.skip_test.append("SCAN_VERIFY")
-
-    if "SCAN_VERIFY" not in args.skip_test:
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], swmtestmode)
-
     mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     mtp_thread_list = list()
     mfg_dl_summary = dict()
@@ -143,13 +106,11 @@ def main():
                                                 stage,
                                                 mtp_mgmt_ctrl,
                                                 mfg_dl_summary[mtp_id],
-                                                logfile_dir_list[mtp_id],
-                                                open_file_track_mtp_list[mtp_id],
                                                 args.skip_test,
-                                                args.jobd_logdir,
                                                 args.skip_slots),
                                     kwargs = ({
                                                 "mtpcfg_file": mtpcfg_file,
+                                                "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
                                                 "swm_test_mode": swmtestmode}))
         mtp_thread.daemon = True
@@ -169,9 +130,6 @@ def main():
 
     mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     test_result = libmfg_utils.mfg_summary_disp(stage, mfg_dl_summary, mtpid_fail_list)

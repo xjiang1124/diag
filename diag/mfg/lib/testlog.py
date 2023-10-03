@@ -6,6 +6,7 @@ from libdefs import MTP_DIAG_Path
 from libdefs import MTP_DIAG_Report
 from libdefs import FF_Stage
 from libdefs import MFG_DIAG_CMDS
+from libdefs import NIC_Type
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 
 
@@ -15,6 +16,7 @@ MFG_CSP_LOG_DIR     = "/mfg_log/CSP_REC/{:s}/"
 MODEL_STAGE_LOG_DIR = "/tmp/mfg_log/{:s}/{:s}/{:s}/"
 MODEL_CSP_LOG_DIR   = "/tmp/mfg_log/CSP_REC/{:s}/"
 STAGE_LOG_FOLDER    = "{:s}_{:s}_{:s}"
+
 
 def set_mtp_test_log_folder(mtp_mgmt_ctrl, log_path):
     mtp_mgmt_ctrl._test_log_folder = log_path
@@ -28,10 +30,11 @@ def find_logfile_path(mtp_mgmt_ctrl, stage):
     log_parent_dir = os.getcwd()
     mtp_id = mtp_mgmt_ctrl._id
     stage = str(stage)
-    search_rgx = r"%s_MTP-[0-9A-Za-z]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
+    search_rgx = r"%s_MTPS?-[0-9A-Za-z\-]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
     for item in os.listdir(log_parent_dir):
         if re.search(search_rgx, item):
             return os.path.join(log_parent_dir, item)
+    mtp_mgmt_ctrl.cli_log_err("Could not find logfile directory after deploying", level=0)
     return None
 
 def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
@@ -94,6 +97,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
 
     set_mtp_test_log_folder(mtp_mgmt_ctrl, logfile_path)
     mtp_mgmt_ctrl._filep = mtp_test_log_filep
+    mtp_mgmt_ctrl._open_file_handles = open_file_track_list
     mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
@@ -116,7 +120,7 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
         cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
         os.system(cmd)
     if extra_config:
-        cmd = "cp {:s} config/".format(extra_config)
+        cmd = "cp {:s} config/".format(os.path.relpath(extra_config))
         os.system(cmd)
     cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
     os.system(cmd)
@@ -162,6 +166,43 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
     os.system(cmd)
     return True
 
+def save_nic_logfiles(mtp_mgmt_ctrl, sn, stage, nic_type, mirror_logdir=None):
+    if stage == FF_Stage.FF_P2C:
+        stage = "NT"
+
+    if GLB_CFG_MFG_TEST_MODE:
+        mfg_log_dir = MFG_STAGE_LOG_DIR.format(nic_type, stage, sn)
+    elif mirror_logdir:
+        mfg_log_dir = mirror_logdir
+    else:
+        mfg_log_dir = MODEL_STAGE_LOG_DIR.format(nic_type, stage, sn)
+
+    logfile_path = get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    logfile_name = os.path.basename(os.path.normpath(logfile_path))
+    logfile_parent = os.path.dirname(os.path.normpath(logfile_path))
+    log_pkg_file = logfile_name + ".tar.gz"
+    log_upload_path = mfg_log_dir + log_pkg_file
+
+    mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, log_upload_path))
+
+    # package: tar czf <>.tar.gz mtp_script/<>/
+    cmd = "tar czf {:s} -C {:s} {:s}".format(log_pkg_file, logfile_parent, logfile_name)
+    if not libmfg_utils.host_shell_cmd(mtp_mgmt_ctrl, cmd):
+        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+        return False
+
+    # save: scp <>.tar.gz /mfg_log/<>
+    create_log_dir(log_upload_path)
+
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    ipaddr = mtp_mgmt_cfg[0]
+    userid = mtp_mgmt_cfg[1]
+    passwd = mtp_mgmt_cfg[2]
+    if not libmfg_utils.network_get_file(ipaddr, userid, passwd, log_upload_path, os.path.join(logfile_parent, log_pkg_file)):
+        mtp_mgmt_ctrl.cli_log_err("Unable to copy log file to {:}".format(log_upload_path), level=0)
+        return False
+
+    return True
 
 def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[], mirror_logdir=None):
     if stage in (FF_Stage.FF_4C_L, FF_Stage.FF_4C_H):

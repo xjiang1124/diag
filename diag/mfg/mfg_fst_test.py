@@ -10,20 +10,13 @@ import re
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import NIC_Type
+import test_utils
 from libdefs import MTP_Const
 from libdefs import FF_Stage
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libmfg_cfg import MFG_IMAGE_FILES
-import test_utils
-import testlog
+
 
 parser = argparse.ArgumentParser(description="MFG Final Test", formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -93,24 +86,7 @@ def main():
 
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
 
-    # logfiles
-    stage = FF_Stage.FF_FST
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
-    if not GLB_CFG_MFG_TEST_MODE:
-        args.skip_test.append("SCAN_VERIFY")
-
-    if "SCAN_VERIFY" not in args.skip_test and False:
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir_list[mtp_id], is_fst_test=True)
-
     mfg_fst_start_ts = libmfg_utils.timestamp_snapshot()
-
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
     mtp_thread_list = list()
     mfg_fst_summary = dict()
@@ -120,12 +96,10 @@ def main():
                                       args = (stage,
                                             mtp_mgmt_ctrl,
                                             mfg_fst_summary[mtp_id],
-                                            logfile_dir_list[mtp_id],
-                                            open_file_track_mtp_list[mtp_id],
                                             args.skip_test,
-                                            args.logdir,
                                             args.skip_slots),
                                     kwargs = ({"mtpcfg_file": mtpcfg_file,
+                                            "jobd_logdir": args.logdir,
                                             "testsuite_name": stage,
                                             "card_type": card_type}))
         mtp_thread.daemon = True
@@ -145,9 +119,6 @@ def main():
 
     mfg_fst_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP Final Test Duration:{:s}".format(mfg_fst_stop_ts - mfg_fst_start_ts))
-
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
 
     # dump the summary
     final_result = libmfg_utils.mfg_summary_disp(FF_Stage.FF_FST, mfg_fst_summary, mtpid_fail_list)
