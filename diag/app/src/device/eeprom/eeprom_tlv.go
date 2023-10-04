@@ -210,9 +210,9 @@ type cardDevPn struct {
 var CardTypesTlv = []cardDevPn{
     cardDevPn{"LIPARI",  "SYSTEM",   PN_LIPARI       },
     cardDevPn{"LIPARI",  "FRU",      PN_LIPARI_CPUBRD},
-    cardDevPn{"LIPARI",  "CPU",      PN_LIPARI_CPUBRD},
-    cardDevPn{"LIPARI",  "SWITCH",   PN_LIPARI_SWITCH},
-    cardDevPn{"LIPARI",  "BMC",      PN_LIPARI_BMC   },
+    cardDevPn{"LIPARI",  "FRU_CPU",      PN_LIPARI_CPUBRD},
+    cardDevPn{"LIPARI",  "FRU_SWITCH",   PN_LIPARI_SWITCH},
+    cardDevPn{"LIPARI",  "FRU_BMC",      PN_LIPARI_BMC   },
 }
 
 
@@ -223,14 +223,13 @@ var CardTypesTlv = []cardDevPn{
 func CardInListTlv(dev string) (found bool, minPN string) {
     found = false
 
-    //return true if card number is in the list of card types using tlv eeprom format
+    //return true if card type is in the list of cards with tlv-format eeprom
     var cardtyp string = os.Getenv("CARD_TYPE")
     for _, card := range(CardTypesTlv) {
         if strings.Contains(cardtyp, card.cardTyp) {
             found = true
             if strings.Contains(dev, card.devName) {
                 minPN = card.partNum
-                //cli.Println("i", "TLV-based EEPROM: Card_Type", cardtyp, "devName", dev, "PN", minPN)
                 return
             }
         }
@@ -835,6 +834,45 @@ func getTlvDatatyp(tlvcode byte) (typ int, err int) {
         typ = INT16
     default:
         typ = STRING
+    }
+
+    return
+}
+
+
+func EraseTlvEeprom(devName string, numBytes int) (err int) {
+    err = errType.SUCCESS
+    i2cFMap, errFMap := i2cinfo.GetI2cFpgaMap(devName)
+    if errFMap != errType.SUCCESS {
+        cli.Println("e", "smbus not available and failed to obtain I2C FPGA mapping of", devName)
+        err = errType.FAIL
+        return
+    }
+    bus := i2cFMap.Bus
+    mux := i2cFMap.Mux
+    i2cAddr := i2cFMap.I2cAddr
+    i2cOffsetlen := i2cFMap.OffsetLen
+
+    wrData := []byte{}
+    for i:=0; i<=i2cOffsetlen; i++ {
+        wrData = append(wrData, byte(0x00))
+    }
+
+    var errFpga error
+    for k:=0; k<numBytes; k++ {
+        for t:=0; t<i2cOffsetlen; t++ {
+            wrData[t] = byte((k>>uint(8*(i2cOffsetlen-t-1))) & 0xFF)
+        }
+        wrData[i2cOffsetlen] = 0xFF
+        _, errFpga = liparifpga.I2c_access(bus, mux, i2cAddr, uint32(len(wrData)), wrData, 0)
+        if errFpga != nil {
+            cli.Println("e", "Failed to erase (write 0xFF) EEPROM through I2C FPGA: dev bus mux i2cAddr i2cOffsetlen",
+                        devName, bus, mux, i2cAddr, i2cOffsetlen)
+            err = errType.FAIL
+            return
+        }
+        // delay for writing
+        misc.SleepInUSec(10000)
     }
 
     return

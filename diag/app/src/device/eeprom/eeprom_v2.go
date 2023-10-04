@@ -2,6 +2,7 @@ package eeprom
 
 import (
     "fmt"
+    "os"
     "bytes"
     "time"
     "strconv"
@@ -497,6 +498,13 @@ var CardTypes = []card{
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
                       }
+
+var CardTypesAccessViaFpga = []cardDevPn{
+    cardDevPn{"LIPARI",  "FRU",      PN_LIPARI_CPUBRD},
+    cardDevPn{"LIPARI",  "FRU_CPU",      PN_LIPARI_CPUBRD},
+    cardDevPn{"LIPARI",  "FRU_SWITCH",   PN_LIPARI_SWITCH},
+}
+
 
 //Data structure slices
 var Data    []byte
@@ -1119,6 +1127,24 @@ func CardInListNew(partNum string) (found bool, minPN string) {
             return
         }
     }
+    return
+}
+
+func CardInListAccessViaFpga(dev string) (found bool, minPN string) {
+    found = false
+
+    //return true if card type in the list of cards access eeprom via FPGA
+    var cardtyp string = os.Getenv("CARD_TYPE")
+    for _, card := range(CardTypesAccessViaFpga) {
+        if strings.Contains(cardtyp, card.cardTyp) {
+            found = true
+            if strings.Contains(dev, card.devName) {
+                minPN = card.partNum
+                return
+            }
+        }
+    }
+
     return
 }
 

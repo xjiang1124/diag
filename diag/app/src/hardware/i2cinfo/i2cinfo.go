@@ -47,12 +47,12 @@ var CurI2cTbl []I2cInfo
 var I2cFpgaTbl []I2cFpgaMap
 
 //=========================================
-// Lipari smbus not ready, go through I2CFPGA
+// Lipari can't access eeprom via system smbus, go through I2CFPGA
 var LipariI2cFpgaTbl = []I2cFpgaMap {
               //DevName     Bus Mux I2cAddr OffsetLen
     I2cFpgaMap {"FRU",      0,  3,  0x50,   1},
-    I2cFpgaMap {"CPU",      0,  3,  0x50,   1},
-    I2cFpgaMap {"SWITCH",   1,  2,  0x50,   2},
+    I2cFpgaMap {"FRU_CPU",      0,  3,  0x50,   1},
+    I2cFpgaMap {"FRU_SWITCH",   1,  2,  0x50,   2},
 }
 
 //=========================================
@@ -606,8 +606,8 @@ var LipariTbl = []I2cInfo {
     I2cInfo {"CPU-CNTR-LM75",  "LM75",        6,   0x4A,    0x0,    "0_2",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU",            "AT24C04C",    7,   0x50,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU_CERT",       "AT24C04C",    7,   0x51,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"CPU",            "AT24C04",     0,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
-    I2cInfo {"SWITCH",         "AT24C256C",   1,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
+    I2cInfo {"FRU_CPU",        "AT24C04",     0,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
+    //I2cInfo {"FRU_SWITCH",     "AT24C256C",   1,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
 
     I2cInfo {"FAN_1",          "ADT7462",     9,   0x5C,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FAN_2",          "ADT7462",     9,   0x61,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},

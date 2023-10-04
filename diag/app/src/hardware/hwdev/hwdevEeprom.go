@@ -229,7 +229,13 @@ func EepromUpdate(devName string, bus uint32, devAddr byte, mac string, sn strin
 func EepromErase(devName string, bus uint32, devAddr byte, numBytes int) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.EraseEeprom(devName, bus, devAddr, numBytes)
+    found, _ := eeprom.CardInListTlv(devName)
+    if found == true {
+        err = eeprom.EraseTlvEeprom(devName, numBytes)
+    } else {
+        err = eeprom.EraseEeprom(devName, bus, devAddr, numBytes)
+    }
+
     if err != errType.SUCCESS {
         cli.Println("f", "EEPROM Erase failed!")
         return

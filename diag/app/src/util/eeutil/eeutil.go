@@ -618,7 +618,6 @@ func main() {
     custTypePtr:= flag.String("custType", "pensando", "Customerized eeeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     fpoPtr     := flag.Bool  ("fpo",    false,      "First time power on")
-    smbusPtr   := flag.Bool  ("smbus",  true,       "smbus availability")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -664,13 +663,12 @@ func main() {
         eeprom.DellOcp = 1
     }
 
-    if *smbusPtr == false {
-        // Currently eeprom access via smbus is not available on Lipari
-        // access eeprom via I2C FPGA, need para I2C bus/mux/addr
-        //cli.Println("i", "eeutil: SMBus is not available, go through I2C!")
+    found, _ := eeprom.CardInListAccessViaFpga(devName)
+    // Smbus == true: access eeprom via system smbus
+    // Smbus == false: access eeprom via FPGA (e.g., LIPARI)
+    if found {
         eeprom.Smbus = false
     } else {
-        cli.Println("i", "SMBus is available!")
         eeprom.Smbus = true
     }
 
@@ -705,7 +703,7 @@ func main() {
         return
     }
 
-    found, _ := eeprom.CardInListNew(pn)
+    found, _ = eeprom.CardInListNew(pn)
     if !found {
         rc := eepromTlbInit(uut, pn, *updatePtr, devName)
         if rc != 0 {
