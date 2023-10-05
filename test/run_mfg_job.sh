@@ -239,6 +239,40 @@ then
     ret=$?
 fi
 
+if [[ "${JOB_TYPE}" == "ORT" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_ort_test.py for two loops"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_ort_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret=$?
+fi
+
+if [[ "${JOB_TYPE}" == "RDT" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_rdt_test.py for two loops"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_rdt_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret=$?
+fi
+
 cd ${PSDIAG_ROOT}
 tar -zcvf diag_detailed_log.tgz log
 
