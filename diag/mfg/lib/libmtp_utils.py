@@ -56,6 +56,23 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
 
     return ret
 
+def verify_img_mtp_host_nic(mtp_mgmt_ctrl, host_nic_device="i210"):
+    if host_nic_device.lower() == "i210":
+        cmd = "./eeupdate64e /NIC=1 /D=Dev_Start_I210_SerdesBX_NOMNG_16Mb_A2.bin"
+        rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
+        if rs.startswith("[FAIL]:"):
+            mtp_mgmt_ctrl.cli_log_err("MTP I210 command failed.{:s}".format(cmd), level=0)
+            return False
+        if "8086-1537" in rs and "8086-1533" in rs: 
+            mtp_mgmt_ctrl.cli_log_inf("MTP I210 second command response Pass.", level=0)
+            return True
+        else:
+            mtp_mgmt_ctrl.cli_log_err("MTP I210 second command response Fail.", level=0)
+            return False
+    else:
+        mtp_mgmt_ctrl.cli_log_err("Check on MTP NIC device {:s} not support yet".format(host_nic_device), level=0)
+        return False
+
 def load_cpld_info_json(cpld_json_file, verbosity=False):
     """
     load new cpld bibary file info json file.

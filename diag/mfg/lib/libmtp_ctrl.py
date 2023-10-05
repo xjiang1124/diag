@@ -37,6 +37,7 @@ import image_control
 class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
         self._id = mtpid
+        self._mtp_sn = None
         self._ts_handle = None
         self._mgmt_handle = None
         self._mgmt_prompt = None
@@ -420,6 +421,13 @@ class mtp_ctrl():
 
         self.cli_log_err("MTP IP does not belong in any valid network range")
         return Factory.UNKNOWN
+
+    def get_mtp_sn(self):
+        return self._mtp_sn
+
+    def set_mtp_sn(self, sn):
+        self._mtp_sn = sn
+        self.cli_log_inf("Set MTP SN to {:s}".format(sn), level=0)
 
     def _apc_model_check(self, handle):
         """
@@ -1093,31 +1101,31 @@ class mtp_ctrl():
                 self.cli_log_err("Unable to display MTP SN, REV and MAC info")
                 return False                
             
-            match = re.findall(r"SERIAL_NUM\s+(\S+)", self.mtp_get_cmd_buf())
+            match = re.findall(r"SERIAL_NUM\s+([A-Z0-9]+)", self.mtp_get_cmd_buf())
             if match:
-                prog_sn = match[0]
+                prog_sn = match[0].strip()
                 if prog_sn != sn:
-                    self.cli_log_err("Failed to set MTP SN info", level = 0)
+                    self.cli_log_err("Failed to set MTP SN info; got {:s} expected {:s}".format(sn, prog_sn), level = 0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP SN info", level = 0)
                 return False
 
-            match = re.findall(r"HW_MAJOR_REV\s+(\S+)", self.mtp_get_cmd_buf())        
+            match = re.findall(r"HW_MAJOR_REV\s+([0-9]+)", self.mtp_get_cmd_buf())        
             if match:
-                prog_maj = match[0]
+                prog_maj = match[0].strip()
                 if prog_maj != maj:
-                    self.cli_log_err("Failed to set MTP REV info", level = 0)
+                    self.cli_log_err("Failed to set MTP REV info; got {:s} expected {:s}".format(maj, prog_maj), level = 0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP REV info", level = 0)
                 return False                
 
-            match = re.findall(r"MAC_ADDR\s+(\S+)", self.mtp_get_cmd_buf())        
+            match = re.findall(r"MAC_ADDR\s+([A-F0-9]+)", self.mtp_get_cmd_buf())        
             if match:
-                prog_mac = match[0]
+                prog_mac = match[0].strip()
                 if prog_mac != mac:
-                    self.cli_log_err("Failed to set MTP MAC info", level = 0)
+                    self.cli_log_err("Failed to set MTP MAC info; got {:s} expected {:s}".format(mac, prog_mac), level = 0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP MAC info", level = 0)

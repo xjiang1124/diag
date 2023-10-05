@@ -123,6 +123,7 @@ def main():
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
 
+    result = False
     verbosity = False
     l1_sequence = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -239,6 +240,11 @@ def main():
             libmfg_utils.cli_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT RDT TEST******")
             break
 
+    # print return code for JobD to pick up
+    if result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

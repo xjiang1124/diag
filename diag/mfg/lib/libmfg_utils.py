@@ -802,6 +802,7 @@ def mtpid_list_poweron(mtp_mgmt_ctrl_list):
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    return True
 
 
 def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
@@ -814,6 +815,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    return True
 
 
 def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
@@ -2113,15 +2115,19 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     cli_inf("---------- Report: ----------")
     # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
+    final_result = True
     for mtp_id in summary_dict.keys():
         for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
             else:
+                final_result = False
                 cli_err("{:s} {:s} {:s} FAIL".format(slot, sn, nic_type))
     cli_inf("--------- Report End --------\n")
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+        final_result = False
+    return final_result
 
 def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
@@ -2132,7 +2138,7 @@ def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
             cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
         else:
             #one fail all fail
-            for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+            for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
                 nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
                 if not rc:
                     result = False
