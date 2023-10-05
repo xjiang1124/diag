@@ -144,7 +144,7 @@ class mtp_db():
             return False
 
         for slot in slots:
-            if int(self._max_slots[mtpid]) > int(slot):
+            if int(self._max_slots[mtpid]) < int(slot):
                 return False
 
         for slot in slots:
