@@ -370,7 +370,7 @@ def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
 def upload_testlogs(mtp_mgmt_ctrl, stage, mirror_logdir, logs_local=False):
     mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files started".format(stage), level=0)
 
-    if not gather_final_logs(mtp_mgmt_ctrl, stage):
+    if not gather_final_logs(mtp_mgmt_ctrl, stage, logs_local):
         mtp_mgmt_ctrl.cli_log_err("Failed to collect NIC logfiles", level=0)
         pass
 
@@ -436,19 +436,37 @@ def gather_dsp_logs(mtp_mgmt_ctrl, vmarg):
 
     return ret
 
-def gather_asic_logs(mtp_mgmt_ctrl):
+def gather_asic_logs(mtp_mgmt_ctrl, logs_local):
     ret = True
     tlf = get_mtp_test_log_folder(mtp_mgmt_ctrl)
     asic_sub_dir = tlf +  "asic_logs/"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        ret = False
-    cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, asic_sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        ret = False
-    cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, asic_sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        ret = False
+
+    if not logs_local:
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            ret = False
+
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, asic_sub_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            ret = False
+
+        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, asic_sub_dir)    
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
+            ret = False
+    else:
+        # scan_dl
+        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
+        err_code = os.system(cmd)
+        if err_code:
+            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on host".format(cmd), level=0)
+            ret = False
+        ipaddr, userid, passwd = mtp_mgmt_ctrl._mgmt_cfg
+        libmfg_utils.network_get_file(ipaddr, userid, passwd, asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
+        libmfg_utils.network_get_file(ipaddr, userid, passwd, asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES)
+
     return ret
 
 def gather_csp_logs(mtp_mgmt_ctrl):
@@ -463,7 +481,7 @@ def gather_csp_logs(mtp_mgmt_ctrl):
         ret = False
     return ret
 
-def gather_final_logs(mtp_mgmt_ctrl, stage):
+def gather_final_logs(mtp_mgmt_ctrl, stage, logs_local):
     """
         Gather all logs from asic & dsp directories into one place onboard MTP
     """
@@ -475,7 +493,7 @@ def gather_final_logs(mtp_mgmt_ctrl, stage):
 
     if stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
         # copy AVS log and ECC dump
-        if not gather_asic_logs(mtp_mgmt_ctrl):
+        if not gather_asic_logs(mtp_mgmt_ctrl, logs_local):
             ret = False
 
     if stage == FF_Stage.FF_SWI:
