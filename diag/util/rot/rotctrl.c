@@ -757,6 +757,8 @@ int set_spi_mux(int fd, FILE *fptr, unsigned char mux)
     fprintf(fptr, "%s initial reg value 0x%2x 0x%2x\n", __func__, data[0], data[1]);
     data[0] &= 0x3e;
     data[0] |= mask;
+    // Rot Register bit7 enable qspi reset
+    data[1] |= 0x80;
     fprintf(fptr, "%s setting reg value 0x%2x 0x%2x\n", __func__, data[0], data[1]);
     rc = UartRegWrite(fd, data, 2);
     if ( rc != 2) {
