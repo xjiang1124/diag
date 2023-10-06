@@ -61,7 +61,7 @@ func dispInfo() {
     }
 }
 
-func eepromTlbInit(uut string, pn string, update bool) (err int) {
+func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
 
     if pn == MTPOCPADAPTER || eeprom.CustType == "MTPOCPADAPTER" {
         // OCP Adapter, CARD_TYPE not supported in env!
@@ -343,7 +343,18 @@ func eepromTlbInit(uut string, pn string, update bool) (err int) {
             eeprom.CustType = "DELLNAPLES100"
             eeprom.EepromTbl = eeprom.Naples100DELLTbl
         }
-        
+        if (cardType == "LIPARI") {
+            eeprom.CustType = "LIPARI"
+            eeprom.EepromTbl = nil 
+            if strings.Contains(dev, "FRU") || strings.Contains(dev, "CPU") {
+                eeprom.EepromTlvs = eeprom.LipariCpuTlvs
+            } else if strings.Contains(dev, "SWITCH") {
+                eeprom.EepromTlvs = eeprom.LipariSwitchTlvs
+            } else {
+                cli.Println("e", "eepromTlbInit(): Not supported CardType", cardType, "devName", dev)
+                return errType.FAIL
+            }
+        }
     }
 
     return(0)
@@ -591,9 +602,12 @@ func main() {
     dumpPtr    := flag.Bool  ("dump",    false,      "Dump FRU")
     macPtr     := flag.String("mac",    "",         "MAC address")
     snPtr      := flag.String("sn",     "",         "Serial number")
+    sn2Ptr     := flag.String("pcbsn",  "",         "Serial number in product info area")
     pnPtr      := flag.String("pn",     "",         "Part number")
+    pn2Ptr     := flag.String("pcbpn",  "",         "Part number in product info area")
     mfgDatePtr := flag.String("date",   "",         "Manufacturing date")
     fieldPtr   := flag.String("field",  "all",      "Display specific eeprom field")
+    valuePtr   := flag.String("value",  "",         "value to be updated in eeprom field")
     uutPtr     := flag.String("uut",    "UUT_NONE", "Target UUT")
     majorPtr   := flag.String("maj",    "",         "Hardware major reversion")
     hpePtr     := flag.Bool  ("hpe",    false,      "HPE eeprom operation option")
@@ -610,13 +624,17 @@ func main() {
     mac := strings.ToUpper(*macPtr)
     sn := strings.ToUpper(*snPtr)
     pn := strings.ToUpper(*pnPtr)
+    sn2 := strings.ToUpper(*sn2Ptr)
+    pn2 := strings.ToUpper(*pn2Ptr)
     date := strings.ToUpper(*mfgDatePtr)
     field := strings.ToUpper(*fieldPtr)
+    value := strings.ToUpper(*valuePtr)
     uut := strings.ToUpper(*uutPtr)
     major := strings.ToUpper(*majorPtr)
     numBytes := *numBytesPtr
     fixHpe := 1
     custType := strings.ToUpper(*custTypePtr)
+    dutCardType := os.Getenv("CARD_TYPE")
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -643,6 +661,15 @@ func main() {
 
     if *DellOcpPtr == true {
         eeprom.DellOcp = 1
+    }
+
+    found, _ := eeprom.CardInListAccessViaFpga(devName)
+    // Smbus == true: access eeprom via system smbus
+    // Smbus == false: access eeprom via FPGA (e.g., LIPARI)
+    if found {
+        eeprom.Smbus = false
+    } else {
+        eeprom.Smbus = true
     }
 
     if len(uut) < 5 {
@@ -676,14 +703,15 @@ func main() {
         return
     }
 
-    found, _ := eeprom.CardInListNew(pn)
+    found, _ = eeprom.CardInListNew(pn)
     if !found {
-        rc := eepromTlbInit(uut, pn, *updatePtr)
+        rc := eepromTlbInit(uut, pn, *updatePtr, devName)
         if rc != 0 {
             cli.Println("e", "eepromTlbInit Failed\n")
             return
         }
     } else {
+        //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
         info, _ := i2cinfo.GetI2cInfo(devName)
         if (info.Flag == i2cinfo.FLAG_16BIT_EEPROM) {
             eeprom.I2cAddr16 = true
@@ -695,7 +723,31 @@ func main() {
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
         if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-            err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
+            found, _ := eeprom.CardInListTlv(devName)
+            if found == true {
+                //cli.Printf("i", "eeutil :: Display FRU - found PN (%s) in eeprom.CardTypesTlv\n", pn)
+                if eeprom.Smbus {
+                    // TODO: currently only Lipari has tlv-based eeprom and without smbus
+                    //       will implement once smbus is ready on Lipari
+                    //err = hwdev.EepromDisplayTlv(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
+                    err = errType.FAIL
+                    cli.Println("e", "smbus is not ready for", dutCardType)
+                } else {
+                    err = hwdev.EepromDisplayTlvFpga(devName, field, *fpoPtr)
+                }
+                return
+            } else {
+                if eeprom.Smbus {
+                    err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
+                } else {
+                    // currently don't need to support non tlv-based eeprom without smbus
+                    // will implement whenever necessary
+                    //err = hwdev.EepromDisplayfpga(devName, field, *fpoPtr)
+                    cli.Println("e", "Not supported: non-tlv eeprom but smbus not ready. CARD_TYPE", dutCardType)
+                    err = errType.FAIL
+                    return
+                }
+            }
 
             if err == errType.SUCCESS {
                 return
@@ -747,7 +799,23 @@ func main() {
             misc.SleepInUSec(1000)
             cli.Printf("i", "Programming/Updating Fru\n")
             if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-                found, _ := eeprom.CardInListNew(pn)
+                found, _ := eeprom.CardInListTlv(devName)
+                if found == true {
+                    if eeprom.Smbus {
+                        // TODO: will implement when smbus is ready
+                        cli.Println("e", "smbus is not ready for", dutCardType)
+                    } else {
+                        if field == "ALL" {
+                            hwdev.EepromUpdateTlvFpga(devName, sn, pn, sn2, pn2, mac, date)
+                        } else {
+                            hwdev.EepromUpdateTlvFieldFpga(devName, field, value)
+                        }
+                        misc.SleepInUSec(500000)
+                    }
+                    return
+                }
+
+                found, _ = eeprom.CardInListNew(pn)
                 if found == true {
                     hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, mac, date)
                     misc.SleepInUSec(500000)
@@ -803,13 +871,32 @@ func main() {
             rd = rd | 0x2
             _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
         } else {
-            CpldWrite(0x1, 0x6)
+            if eeprom.Smbus {
+                CpldWrite(0x1, 0x6)
+            }
         }
         return
     }
 
     if *dumpPtr == true {
-        hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+        if numBytes <= 0 {
+            cli.Println("e", "Please set a positive number of bytes to dump!", devName)
+            return;
+        }
+        found, _ := eeprom.CardInListTlv(devName)
+        if found == true {
+            if eeprom.Smbus {
+                // TODO: will implement when smbus is ready
+                cli.Println("e", "smbus is not ready for", dutCardType)
+            } else {
+                eeprom.DumpEepromTlvFpga(devName, numBytes)
+                misc.SleepInUSec(500000)
+            }
+            return
+        } else {
+            hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+        }
+
         return
     }
 

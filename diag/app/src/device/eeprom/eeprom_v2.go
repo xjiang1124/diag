@@ -2,6 +2,7 @@ package eeprom
 
 import (
     "fmt"
+    "os"
     "bytes"
     "time"
     "strconv"
@@ -63,6 +64,10 @@ const (
     PN_ADICR_ORACLE  string = "68-0049-03"
     PN_SR4T_ORACLE   string = "68-0089-01"
     PN_LIPARI_ELBA   string = "68-0032"
+    PN_LIPARI        string = "68-0032-01"
+    PN_LIPARI_SWITCH string = "73-0067-01"
+    PN_LIPARI_CPUBRD string = "73-0068-01"
+    PN_LIPARI_BMC    string = "73-0076-01"
     PN_GIN_D4_ORACLE string = "68-0074-01"
     PN_GIN_D5_ORACLE string = "68-0075"
 
@@ -493,6 +498,13 @@ var CardTypes = []card{
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
                       }
+
+var CardTypesAccessViaFpga = []cardDevPn{
+    cardDevPn{"LIPARI",  "FRU",      PN_LIPARI_CPUBRD},
+    cardDevPn{"LIPARI",  "FRU_CPU",      PN_LIPARI_CPUBRD},
+    cardDevPn{"LIPARI",  "FRU_SWITCH",   PN_LIPARI_SWITCH},
+}
+
 
 //Data structure slices
 var Data    []byte
@@ -1115,6 +1127,24 @@ func CardInListNew(partNum string) (found bool, minPN string) {
             return
         }
     }
+    return
+}
+
+func CardInListAccessViaFpga(dev string) (found bool, minPN string) {
+    found = false
+
+    //return true if card type in the list of cards access eeprom via FPGA
+    var cardtyp string = os.Getenv("CARD_TYPE")
+    for _, card := range(CardTypesAccessViaFpga) {
+        if strings.Contains(cardtyp, card.cardTyp) {
+            found = true
+            if strings.Contains(dev, card.devName) {
+                minPN = card.partNum
+                return
+            }
+        }
+    }
+
     return
 }
 
