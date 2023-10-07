@@ -262,7 +262,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
                 start_ts = libmfg_utils.timestamp_snapshot()
                 if test == "FETCH_SN":
-                    ret = mtp_mgmt_ctrl.fst_fetch_nic_info(slot)
+                    ret = mtp_mgmt_ctrl.fst_fetch_nic_info(slot, scanned_fru=scanned_fru_cfg)
                 elif test == "PCIE_LINK":
                     ret = mtp_mgmt_ctrl.fst_check_nic_pcie(slot)
                 elif test == "SET_BOARD_CONFIG":

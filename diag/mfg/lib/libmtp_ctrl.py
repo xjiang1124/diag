@@ -7150,10 +7150,10 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "PCIE link came up {:s}GT/s x{:s}".format(expected_speed, expected_width))
         return True
 
-    def fst_fetch_nic_info(self, slot):
+    def fst_fetch_nic_info(self, slot, scanned_fru=None):
         nic_type = self.mtp_get_nic_type(slot)
 
-        if not self.fst_get_nic_fru_info(slot):
+        if not self.fst_get_nic_fru_info(slot, scanned_fru):
             return False
 
         if not self.fst_get_nic_fw_info(slot):
@@ -7199,7 +7199,7 @@ class mtp_ctrl():
 
         return True
 
-    def fst_get_nic_fru_info(self, slot):
+    def fst_get_nic_fru_info(self, slot, scanned_fru=None):
         cmd = "cat /tmp/fru.json"
         if not self.mtp_nic_fst_exec_cmd(slot, cmd):
             self.cli_log_slot_err(slot, "failed to fetch SN")
@@ -7229,13 +7229,35 @@ class mtp_ctrl():
             except KeyError:
                 self.cli_log_slot_err(slot, "Unable to parse part-number from FRU")
                 pn = ""
-
         nic_type = get_product_name_from_pn_and_sn(pn, sn)
         if nic_type != self.mtp_get_nic_type(slot):
             self.cli_log_slot_err(slot, "Unknown PN read from FRU: {:s} ({:s})".format(pn, str(nic_type)))
             return False
-
         self.cli_log_slot_inf(slot, "SN = {:s}, PN = {:s}, TYPE = {:s}".format(sn, pn, nic_type))
+
+        if scanned_fru:
+            scanned_pn = list()
+            scanned_mac = list()
+            for slot_index in range(self._slots):
+                key = libmfg_utils.nic_key(slot_index)
+                if scanned_fru[key]["VALID"] == "Yes":
+                    scanned_pn.append(scanned_fru[key]["PN"].lower())
+                    scanned_mac.append(scanned_fru[key]["MAC"].lower())
+            if pn.lower() not in scanned_pn:
+                self.cli_log_slot_err(slot, "PN {:s} read from FRU file /tmp/fru.json not in scanned PN list: {:s}".format(pn, str(scanned_pn)))
+                return False
+            # get mac address from /tmp/fru.json and compare with scanned mac address
+            try:
+                mac = fru["mac-address"]
+            except KeyError:
+                self.cli_log_slot_err(slot, "Unable to parse mac-address from FRU")
+                return False
+            else:
+                self.cli_log_slot_inf(slot, "MAC = {:s}".format(mac))
+            if mac.lower() not in scanned_mac:
+                self.cli_log_slot_err(slot, "MAC {:s} read from FRU file /tmp/fru.json not in scanned MAC list: {:s}".format(pn, str(scanned_pn)))
+                return False
+
         return True
 
     def fst_get_nic_fw_info(self, slot):
