@@ -682,6 +682,6 @@ def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg
         else:
             profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
             mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
-            profile_cfg_file_list.append(profile_link_cfg_file)
+            profile_cfg_file_list.insert(0, profile_link_cfg_file)
 
     return True
