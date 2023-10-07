@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.17.04282023";
+my $rev = "1.18.09282023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -415,6 +415,12 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"SNAKE_EMMC_INTR"}) {
         $top_diag_fa_code = "SNAKE_EMMC_INTR";
         delete $diag_fa_code{"SNAKE_EMMC_INTR"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CHLNG_WR_TIMEOUT"}) {
+        $top_diag_fa_code = "CHLNG_WR_TIMEOUT";
+        delete $diag_fa_code{"CHLNG_WR_TIMEOUT"};
         return;
     }
 
@@ -839,7 +845,10 @@ sub parse_l1_log {
                 $diag_fa_code{"L1_ESEC_FAILURE"} = 1;
             }
         }
-
+        if($line =~ m/cap_chlng_wr :: Timeout while waiting for sta_WACK/) {
+            $test_err_msg .= $line;
+            $diag_fa_code{"CHLNG_WR_TIMEOUT"} = 1;
+        }
         if ($subtest_start && ($line =~ m/ERROR ::/)) {
             if ($health_check_test && ($line =~ m/ERROR ::.*FAILED:/)) {
                 $test_err_msg .= $lines_saved[-4].$lines_saved[-3].$lines_saved[-2].$lines_saved[-1];
@@ -1426,7 +1435,8 @@ sub parse_fst_log {
     }
     while(my $line = <TR3>)
     {
-        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+        if (($line =~ m/\[NIC-$slot\]: (\d+)th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: (\d+)th: Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $fst_test_msg .= $line;
@@ -1677,7 +1687,8 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"NIC_UNRESPONSIVE"} = 1;
         }
-        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+        if (($line =~ m/\[NIC-$slot\]: (\d+)th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: (\d+)th: Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $mtp_test_msg .= $line;
