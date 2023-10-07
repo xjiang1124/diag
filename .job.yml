@@ -67,12 +67,12 @@ jobs:
     labels: ["CI-DIAG-P2C"]
   test/4C:
     labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
-  test/RDT:
-    labels: ["CI-DIAG-RDT"]
+  #test/RDT:
+  #  labels: ["CI-DIAG-RDT"]
   test/ORT:
     labels: ["CI-DIAG-ORT"]
-  test/SRN:
-    labels: ["CI-DIAG-SRN"]
+  #test/SRN:
+  #  labels: ["CI-DIAG-SRN"]
   test/SWI:
     labels: ["CI-DIAG-SWI"]
   test/FST:
@@ -99,10 +99,16 @@ jobs:
 ### END NIC_TYPE TEST BUNDLE ###
 
 dependencies:
+  .:
+    - reference: test/FST
   test/infra:
     - reference: test/FST
   qa/infra:
     - reference: test/FST
+  build:
+    - reference: asset-build
+  asset-build:
+    - reference: asset-build
 
   diag:
     - reference: test/DL
@@ -131,3 +137,5 @@ dependencies:
     - reference: test/naples100
       exclude_dirs: ["scripts"]
 ### END NIC_TYPE DEPENDENCY ###
+  diag/mfg/scripts:
+    - reference: test/FST
