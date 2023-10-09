@@ -7255,7 +7255,7 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_inf(slot, "MAC = {:s}".format(mac))
             if mac.lower() not in scanned_mac:
-                self.cli_log_slot_err(slot, "MAC {:s} read from FRU file /tmp/fru.json not in scanned MAC list: {:s}".format(pn, str(scanned_pn)))
+                self.cli_log_slot_err(slot, "MAC {:s} read from FRU file /tmp/fru.json not in scanned MAC list: {:s}".format(mac, str(scanned_mac)))
                 return False
 
         return True
