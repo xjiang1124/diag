@@ -2,6 +2,12 @@ import sys, os
 
 EXCLUDE_FROM_PRECHECKIN=["4C", "ORT", "RDT", "SRN"]
 
+cwd = os.path.basename(os.getcwd())
+if cwd == "test-asic":
+    job_set = "asic"
+else:
+    job_set = "diag"
+
 def write_headers(fh):
     fh.write("---\n")
     fh.write("version: 2.0\n")
@@ -33,8 +39,12 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("    sub-area:\n")
     fh.write("    feature:\n")
     fh.write("    build-dependencies:\n")
-    fh.write("     - build-amd64-{:s}\n".format(asic))
-    fh.write("     - build-arm64-{:s}\n".format(asic))
+    if job_set == "diag":
+        fh.write("     - build-amd64-{:s}\n".format(asic))
+        fh.write("     - build-arm64-{:s}\n".format(asic))
+    elif job_set == "asic":
+        fh.write("     - build-amd64-{:s}-tot\n".format(asic))
+        fh.write("     - build-arm64-{:s}-tot\n".format(asic))
     fh.write("     - package-{:s}-mfg-script\n".format(asic))
     fh.write("    deployment:\n")
     fh.write("      skip-pxe-install: true\n")
@@ -121,11 +131,12 @@ def test_bundle_by_nic_type():
 
 def update_root_job_yml():
     ### remove old lines
-    for section in [
-                    "NIC_TYPE DEPENDENCY",
-                    "NIC_TYPE TEST BUNDLE"
-                    ]:
+    if job_set == "diag":
+        sections = [ "NIC_TYPE TEST BUNDLE", "NIC_TYPE DEPENDENCY" ]
+    elif job_set == "asic":
+        sections = [ "NIC_TYPE ASIC TEST BUNDLE" ]
 
+    for section in sections:
         os.system("sed -i '/^### %s ###/,/^### END %s ###/{/^### %s ###/!{/^### END %s ###/!d}}' ../.job.yml" % (section, section, section, section))
         os.system("sync")
 
@@ -141,19 +152,28 @@ def update_root_job_yml():
 
             ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
             for rline in fileinput.FileInput("../.job.yml", inplace=True):
-                if "### NIC_TYPE TEST BUNDLE ###" in rline:
-                    new_line  = f"  test/{nic_type}:\n"
-                    new_line += f"    labels: [\"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
-                    rline += new_line
-                if "### NIC_TYPE DEPENDENCY ###" in rline:
-                    new_line  = f"    - reference: test/{nic_type}\n"
-                    new_line += f"      exclude_dirs: [\"scripts\"]\n"
-                    rline += new_line
+                if job_set == "diag":
+                    if "### NIC_TYPE TEST BUNDLE ###" in rline:
+                        new_line  = f"  test/{nic_type}:\n"
+                        new_line += f"    labels: [\"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
+                        rline += new_line
+                    if "### NIC_TYPE DEPENDENCY ###" in rline:
+                        new_line  = f"    - reference: test/{nic_type}\n"
+                        new_line += f"      exclude_dirs: [\"scripts\"]\n"
+                        rline += new_line
+                elif job_set == "asic":
+                    if "### NIC_TYPE ASIC TEST BUNDLE ###" in rline:
+                        new_line  = f"  test-asic/{nic_type}:\n"
+                        new_line += f"    labels: [\"CI-ASIC-TOT\", \"CI-ASIC-{nic_type}\"]\n"
+                        rline += new_line
                 print(rline, end="")
-
                 
+if job_set == "diag":
+    test_bundle_by_nic_type()
+    test_bundle_by_stage()
+    update_root_job_yml()
 
-test_bundle_by_nic_type()
-test_bundle_by_stage()
+elif job_set == "asic":
+    test_bundle_by_nic_type()
+    update_root_job_yml()
 
-update_root_job_yml()
