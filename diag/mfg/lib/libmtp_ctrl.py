@@ -67,6 +67,7 @@ class mtp_ctrl():
         self._nic_alom_sn_list = [None] * self._slots
         self._nic_status_before_hide_list = [NIC_Status.NIC_STA_OK] * self._slots
         self._nic_sw_pn_list = [None] * self._slots
+        self.barcode_scans = dict()
 
         self._nic_thread_list = [None] * self._slots
         # lock for printing

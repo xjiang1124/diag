@@ -947,6 +947,22 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
 
     return True
 
+def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
+    if mtp_mgmt_ctrl.barcode_scans == {}:
+        return False
+    mtp_id = mtp_mgmt_ctrl._id
+    key = nic_key(slot)
+    if key not in mtp_mgmt_ctrl.barcode_scans[mtp_id].keys():
+        return False
+    if str.upper(mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["VALID"]) != "YES":
+        return False
+    sn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["SN"]
+    pn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["PN"]
+    nic_type = get_nic_type_by_part_number(pn)
+    mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+    mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
+    return True
+
 def fail_all_slots(mtp_mgmt_ctrl):
     """
      Call this function when failing a script BEFORE any dsp test results have come.
@@ -955,7 +971,11 @@ def fail_all_slots(mtp_mgmt_ctrl):
     """
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not mtp_mgmt_ctrl._nic_prsnt_list[slot]:
-            continue
+            # may not have initialized prsnt_list yet. But this stage may have SCAN. 
+            # So try to load SN and NIC_TYPE from the scans.
+            # Otherwise, skip this slot
+            if not load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
+                continue
         key = nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -2139,6 +2159,23 @@ def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_
     scan_cfg_filep = open(scan_cfg_file, "w+")
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
+
+    ## also save the scans into mtp object
+    if not read_scanned_barcodes(mtp_mgmt_ctrl):
+        return False
+
+def read_scanned_barcodes(mtp_mgmt_ctrl):
+    import testlog
+    # load the barcode config file made earlier
+    mtp_id = mtp_mgmt_ctrl._id
+    tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+    scanned_fru_cfg_dict = load_cfg_from_yaml(scan_cfg_file)
+    if mtp_id not in scanned_fru_cfg_dict:
+        mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
+        return False
+    mtp_mgmt_ctrl.barcode_scans = scanned_fru_cfg_dict
+    return True
 
 @test_utils.semi_parallel_test_section
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
