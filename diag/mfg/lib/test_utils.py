@@ -256,13 +256,13 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
         ### Barcode scanning
         if loop_idx == 1:
             if stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
-                if not GLB_CFG_MFG_TEST_MODE:
+                if not ENABLE_SCAN_VERIFY:
                     skip_test_list.append("SCAN_VERIFY")
 
                 if "SCAN_VERIFY" not in skip_test_list:
                     libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
             elif stage == FF_Stage.FF_FST:
-                if not GLB_CFG_MFG_TEST_MODE:
+                if not ENABLE_SCAN_VERIFY:
                     skip_test_list.append("SCAN_VERIFY")
 
                 if "SCAN_VERIFY" not in skip_test_list and False:
