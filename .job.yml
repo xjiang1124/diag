@@ -12,22 +12,22 @@ builds:
     artifacts:
     - /psdiag/build/images/image_arm64_giglio.tar
   build-amd64-elba:
-    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_elba.tar
   build-arm64-elba:
-    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_elba.tar
   build-amd64-capri:
-    commands: [ "sh", "-c", "cd build; make amd64 asic=capri asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=capri asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_capri.tar
   build-arm64-capri:
-    commands: [ "sh", "-c", "cd build; make arm64 asic=capri asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=capri asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
