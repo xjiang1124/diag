@@ -462,10 +462,11 @@ def main():
             mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp)
 
         # write and reload the barcode config file
-        # with open(MTP_DIAG_Logfile.SCAN_BARCODE_FILE, "w+") as fru_cfg_filep:
-        with open(MTP_DIAG_Logfile.SCAN_BARCODE_FILE, "w") as fru_cfg_filep:
+        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+        with open(scan_cfg_file, "w") as fru_cfg_filep:
             mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
-        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
         # enter in failures from construct_nic_fru_config
         for slot in range(MTP_Const.MTP_SLOT_NUM):

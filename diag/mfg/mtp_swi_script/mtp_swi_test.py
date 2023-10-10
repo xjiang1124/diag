@@ -572,7 +572,9 @@ def main():
             fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=True)
 
             # reload the barcode config file
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
             nic_thread_list = list()
             for slot in fru_reprogram_list:
