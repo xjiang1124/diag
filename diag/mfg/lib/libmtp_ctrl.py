@@ -85,6 +85,7 @@ class mtp_ctrl():
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
+        self._script_ver = ""
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
         self._fst_ver = None
         self._psu_sn = dict()
@@ -297,12 +298,31 @@ class mtp_ctrl():
 
         script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
-            script_ver = script_ver_match.group(2)
-        else:
-            script_ver = ""
-        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
+            self._script_ver = script_ver_match.group(2)
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
 
         self.cli_log_inf("MTP System Info Dump End\n", level=0)
+        return True
+
+    def fst_sys_info_disp(self):
+        self.cli_log_inf("MTPS System Info Dump:", level=0)
+
+        if not self._mgmt_cfg[0]:
+            self.cli_log_err("Unable to retrieve MTPS MGMT IP")
+            return False
+        self.cli_log_report_inf("MTPS Chassis IP: {:s}".format(self._mgmt_cfg[0]))
+
+        if not self.get_mtp_factory_location():
+            self.cli_log_err("Unable to get MTP factory location")
+            return False
+        self.cli_log_report_inf("MTPS Location: {:s}".format(self.get_mtp_factory_location()))
+
+        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        if script_ver_match:
+            self._script_ver = script_ver_match.group(2)
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
+
+        self.cli_log_inf("MTPS System Info Dump End\n", level=0)
         return True
 
 

@@ -487,7 +487,7 @@ def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["FST_CONNECT",     "MTP_TIME_SET", "FST_UPDATE"]
+    test_list = ["FST_CONNECT",     "MTP_TIME_SET", "FST_UPDATE",                                                 "FST_ID"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
@@ -551,6 +551,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "MTP_ID":
             ret = mtp_mgmt_ctrl.mtp_sys_info_disp()
+
+        elif test == "FST_ID":
+            ret = mtp_mgmt_ctrl.fst_sys_info_disp()
 
         elif test == "NIC_INIT":
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
