@@ -1343,19 +1343,15 @@ def flx_web_srv_get_uut_info(sn, stage=None):
     return resp
 
 
-def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary=[]):
+def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp_test_summary=[]):
+    import testlog
     mtp_cli_id_str = id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
 
     # Factory detected related error, don't post any report
     factory =  mtp_mgmt_ctrl.get_mtp_factory_location()
     if factory is None or factory == Factory.UNKNOWN:
         cli_inf(mtp_cli_id_str + "MTP Setup fails and not able to detect factory so no report will be generated")
-        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-        os.system(cmd)
         return
 
     cli_inf(mtp_cli_id_str + "Start posting test report")
@@ -1425,7 +1421,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
 
             block_retest = False
             for test in test_list:
-                block_retest |= is_retest_blocked(test, stage)
+                block_retest |= testlog.is_retest_blocked(test, stage)
 
 
             if FLEX_SHOP_FLOOR_CONTROL:
