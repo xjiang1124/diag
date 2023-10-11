@@ -383,7 +383,7 @@ int connect_nic(int fd, FILE *fptr)
     free((void *)res_ptr);
     return rc;
     }
-    if ( strstr(res_ptr, "elba login") ) {
+    if ( strstr(res_ptr, loginprompt) ) {
         memset(res_ptr, 0, res_len);
         rc = send_command(fd, fptr, username, res_ptr, res_len, 5);
         if ( rc ) {
@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'd':
-                if ( strlen(optarg) > 6 ) {
+                if ( strlen(optarg) > 11 ) {
                     printf("invalid asic device name\n");
                     return -1;
                 }
@@ -899,23 +899,36 @@ int main(int argc, char *argv[])
     sleep(1);
     tcflush(fd, TCIOFLUSH);
 
-    rc = get_sn(fd, fptr, sn_string);
-    if ( rc )
-        goto exit;
+    if ( strstr(loginprompt, "elba-gold") ) {
 
-    rc = check_qspi_id(fd, fptr);
-    if ( rc )
-        goto exit;
+        fprintf(fptr, "goldfw only test\n");
+        printf("goldfw only test\n");
+        rc = get_sn(fd, fptr, sn_string);
+        if ( rc )
+            goto exit;
 
-    rc = check_cpld_id(fd, fptr); 
-    if ( rc )
-        goto exit;
+        rc = check_force_gold(fd, fptr);
 
-    rc = check_force_gold(fd, fptr);
-    if ( rc )
-        goto exit;
+    } else {
 
-    rc = check_force_goldboot(fd, fptr);
+        rc = get_sn(fd, fptr, sn_string);
+        if ( rc )
+            goto exit;
+
+        rc = check_qspi_id(fd, fptr);
+        if ( rc )
+            goto exit;
+
+        rc = check_cpld_id(fd, fptr);
+        if ( rc )
+            goto exit;
+
+        rc = check_force_gold(fd, fptr);
+        if ( rc )
+            goto exit;
+
+        rc = check_force_goldboot(fd, fptr);
+    }
 
 exit:    
     close(fd);

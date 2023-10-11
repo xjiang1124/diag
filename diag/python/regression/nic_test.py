@@ -547,7 +547,7 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "sysreset.sh", ending=["Restarting system", "Boot0"])
                 self.nic_con.uart_session_stop(session)
                 session = common.session_stop(session)
-                time.sleep(10)
+                time.sleep(60)
 
         if ret == 0:
             print "=== Power cycle test passed {} iterations ===".format(iteration)

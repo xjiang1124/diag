@@ -1,0 +1,23 @@
+---
+meta:
+  name: mfg_srn
+  description: MTP SRN test
+
+config:
+  testbed       : MTP
+  job           : SRN
+
+test_types:
+  precheckin:
+    skip:
+    slots: 2
+
+  sanity:
+    skip:
+    slots: 10
+
+  regression:
+    iteration: 2
+    skip:
+    slots: 10
+

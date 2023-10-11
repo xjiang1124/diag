@@ -1,0 +1,127 @@
+---
+version: 2.0
+
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+host_mounts:
+  "/hw": "/vol/hw"
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz
+
+e2e-targets:
+  ScanDL:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: giglio
+         - name: ginestra
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  DL:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: giglio
+         - name: ginestra
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  P2C:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: giglio
+         - name: ginestra
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  SWI:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: giglio
+         - name: ginestra
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+

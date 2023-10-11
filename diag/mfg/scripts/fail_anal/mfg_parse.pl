@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.17.04282023";
+my $rev = "1.18.09282023";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -332,6 +332,12 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"CPLD_BOOT_PARTITION_FAILURE"}) {
+        $top_diag_fa_code = "CPLD_BOOT_PARTITION_FAILURE";
+        delete $diag_fa_code{"CPLD_BOOT_PARTITION_FAILURE"};
+        return;
+    }
+
     if (exists $diag_fa_code{"NIC_POWER_FAILURE_12V_LOST"}) {
         $top_diag_fa_code = "NIC_POWER_FAILURE_12V_LOST";
         delete $diag_fa_code{"NIC_POWER_FAILURE_12V_LOST"};
@@ -367,7 +373,16 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"DDR_INIT_FAILURE"};
         return;
     }
-
+    if (exists $diag_fa_code{"WRONG_CORE_FREQ"}) {
+        $top_diag_fa_code = "WRONG_CORE_FREQ";
+        delete $diag_fa_code{"WRONG_CORE_FREQ"};
+        return;
+    }
+    if (exists $diag_fa_code{"AAPL_SERDES_INIT_FAIL"}) {
+        $top_diag_fa_code = "AAPL_SERDES_INIT_FAIL";
+        delete $diag_fa_code{"AAPL_SERDES_INIT_FAIL"};
+        return;
+    }
     if (exists $diag_fa_code{"SNAKE_LOG_INCOMPLETE"} && exists $diag_fa_code{"RETEST_NEEDED"}) {
         $top_diag_fa_code = "RETEST_NEEDED";
         delete $diag_fa_code{"RETEST_NEEDED"};
@@ -434,6 +449,13 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"SW_BOOT"};
         return;
     }
+
+    if (exists $diag_fa_code{"WR_PAC2FUSE_MISMATCH"}) {
+        $top_diag_fa_code = "WR_PAC2FUSE_MISMATCH";
+        delete $diag_fa_code{"WR_PAC2FUSE_MISMATCH"};
+        return;
+    }
+
     if (exists $diag_fa_code{"EFUSE_PROG"}) {
         $top_diag_fa_code = "EFUSE_PROG";
         delete $diag_fa_code{"EFUSE_PROG"};
@@ -499,6 +521,60 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
+        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_TXDETECTRX";
+        delete $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"}) {
+        $top_diag_fa_code = "SNAKE_PBM_ECC_FAILURE";
+        delete $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_RAM_FAILURE"}) {
+        $top_diag_fa_code = "SNAKE_RAM_FAILURE";
+        delete $diag_fa_code{"SNAKE_RAM_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_MX_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_MX_LINKUP";
+        delete $diag_fa_code{"SNAKE_MX_LINKUP"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_THROUGHPUT_LOW"}) {
+        $top_diag_fa_code = "SNAKE_THROUGHPUT_LOW";
+        delete $diag_fa_code{"SNAKE_THROUGHPUT_LOW"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_CNT_MISCOMPARE"}) {
+        $top_diag_fa_code = "SNAKE_CNT_MISCOMPARE";
+        delete $diag_fa_code{"SNAKE_CNT_MISCOMPARE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_CRC_ERROR"}) {
+        $top_diag_fa_code = "SNAKE_CRC_ERROR";
+        delete $diag_fa_code{"SNAKE_CRC_ERROR"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_I2C_ERROR"}) {
+        $top_diag_fa_code = "SNAKE_I2C_ERROR";
+        delete $diag_fa_code{"SNAKE_I2C_ERROR"};
+        return;
+    }
+
     if (exists $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"}) {
         $top_diag_fa_code = "PCIE_PLL_FAILURE(0x2e)";
         delete $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"};
@@ -543,30 +619,6 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
-        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
-        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"}) {
-        $top_diag_fa_code = "SNAKE_PCIe_TXDETECTRX";
-        delete $diag_fa_code{"SNAKE_PCIe_TXDETECTRX"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_PBM_ECC_FAILURE";
-        delete $diag_fa_code{"SNAKE_PBM_ECC_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_RAM_FAILURE"}) {
-        $top_diag_fa_code = "SNAKE_RAM_FAILURE";
-        delete $diag_fa_code{"SNAKE_RAM_FAILURE"};
-        return;
-    }
-
     if (exists $diag_fa_code{"RETEST_NEEDED"}) {
         $top_diag_fa_code = "RETEST_NEEDED";
         delete $diag_fa_code{"RETEST_NEEDED"};
@@ -588,30 +640,6 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"}) {
         $top_diag_fa_code = "CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR";
         delete $diag_fa_code{"CANNOT_READ_CPLD_STATUS_DUE_TO_SMBUS_ERR"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_MX_LINKUP"}) {
-        $top_diag_fa_code = "SNAKE_MX_LINKUP";
-        delete $diag_fa_code{"SNAKE_MX_LINKUP"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_THROUGHPUT_LOW"}) {
-        $top_diag_fa_code = "SNAKE_THROUGHPUT_LOW";
-        delete $diag_fa_code{"SNAKE_THROUGHPUT_LOW"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_CNT_MISCOMPARE"}) {
-        $top_diag_fa_code = "SNAKE_CNT_MISCOMPARE";
-        delete $diag_fa_code{"SNAKE_CNT_MISCOMPARE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_CRC_ERROR"}) {
-        $top_diag_fa_code = "SNAKE_CRC_ERROR";
-        delete $diag_fa_code{"SNAKE_CRC_ERROR"};
         return;
     }
 
@@ -894,6 +922,12 @@ sub parse_snake_log {
             $diag_fa_code{"SNAKE_CRC_ERROR"} = 1;
             $err_found = 1;
         }
+        if ($err_found == 0 && $line =~ m/I2C ERROR Dev=/) {
+            if ($debug_msgs) { print "line: $line"};
+            $test_err_msg .= $line;
+            $diag_fa_code{"SNAKE_I2C_ERROR"} = 1;
+            $err_found = 1;
+        }
         if ($err_found == 0 && $line =~ m/(.*)ERROR :: (.*)/) {
             if ($debug_msgs) { print "line: $line"};
             $test_err_msg .= $line;
@@ -1067,6 +1101,13 @@ sub parse_nic_test_logs {
             {
                 if ($debug_msgs) { print "line: $line"};
                 $test_err_msg .= $line;
+            }
+            if (($line =~ m/ERROR \(avago_/) || ($line =~ m/ERROR \(spico_/)) {
+                $test_err_msg .= $line;
+            }
+            if ($line =~ m/ERROR :: elb_aapl_prbs_start ::(.*)Serdes Init failed/) {
+                $test_err_msg .= $line;
+                $diag_fa_code{"AAPL_SERDES_INIT_FAIL"} = 1;
             }
             if(($line =~ m/\s+(\w+)\s+#FAILED#/) && ($testname =~ "L1"))
             {
@@ -1575,7 +1616,8 @@ sub parse_fst_log {
     }
     while(my $line = <TR3>)
     {
-        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+        if (($line =~ m/\[NIC-$slot\]: (\d+)th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: (\d+)th: Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $fst_test_msg .= $line;
@@ -1608,6 +1650,7 @@ sub parse_mtp_and_slot_log {
     my $vmarg_low_start_linenum = 0;
     my $vmarg_high_start = 0;
     my $vmarg_high_start_linenum = 0;
+    my @lines_saved;
 
     if (!open(TR3, '<', $slotlogfile)) {
         print "Cannot open file $slotlogfile\n";
@@ -1752,14 +1795,21 @@ sub parse_mtp_and_slot_log {
             }
         }
         if ($line =~ m/\/data\/nic_util\/mvl_link\.sh/) {
-            my $line2 = <TR3>;
-            my $line3 = <TR3>;
-            if ($line3 !~ m/MVL RJ45 port link is up/) {
-                $slot_err_msg .= $line;
-                $slot_err_msg .= $line2;
-                $slot_err_msg .= $line3;
-                $diag_fa_code{"MVL_LINK_DOWN"} = 1;
+            @lines_saved = ();
+            while (my $line2 = <TR3>) {
+                if ($line2 =~ m/\#/) {
+                    print @lines_saved;
+                    if ("@lines_saved" !~ /MVL RJ45 port link is up/) {
+                        $slot_err_msg .= $line;
+                        $slot_err_msg .= join("", @lines_saved);
+                        $diag_fa_code{"MVL_LINK_DOWN"} = 1;
+                    }
+                    last;
+                } else {
+                    push(@lines_saved, $line2);
+                }
             }
+
         }
         if ($line =~ m/\/emmc_format\.sh/) {
             my $line2 = <TR3>;
@@ -1776,6 +1826,16 @@ sub parse_mtp_and_slot_log {
         if ($line =~ m/ERROR :: mc\d initialization failed w/) {
             $slot_err_msg .= $line;
             $diag_fa_code{"DDR_INIT_FAILURE"} = 1;
+        }
+        if ($line =~ m/ERROR :: elb_set_freq :: wrong core freq/) {
+            $slot_err_msg .= $line;
+            $diag_fa_code{"WRONG_CORE_FREQ"} = 1;
+        }
+        if (index($failure_code_list, "EFUSE_PROG") != -1) {
+            if ($line =~ m/ERROR :: elb_wr_pac2fuse:: Mismatch/) {
+                $slot_err_msg .= $line;
+                $diag_fa_code{"WR_PAC2FUSE_MISMATCH"} = 1;
+            }
         }
     }
     if ($slot_err_msg ne "") {
@@ -1857,7 +1917,12 @@ sub parse_mtp_and_slot_log {
                 $mtp_test_msg .= $line;
             }
         }
-
+        if (index($failure_code_list, "CPLD_BOOT_CHECK") != -1) {
+            if ($line =~ m/\[NIC-$slot\]: Incorrect CPLD boot partition/) {
+                $mtp_test_msg .= $line;
+                $diag_fa_code{"CPLD_BOOT_PARTITION_FAILURE"} = 1;
+            }
+        }
         if ($line =~ m/\[NIC-$slot\].*MVL (ACC|STUB|LINK) FAIL/) {
             $nic_status_dump = 1;
         }
@@ -1871,7 +1936,8 @@ sub parse_mtp_and_slot_log {
             $mtp_test_msg .= $line;
             $diag_fa_code{"CONSOLE_UNRESP"} = 1;
         }
-        if (($line =~ m/\[NIC-$slot\]: 3th: Pre-Post \[\w+\] result to webserver failed/) ||
+        if (($line =~ m/\[NIC-$slot\]: (\d+)th: Pre-Post \[\w+\] result to webserver failed/) ||
+            ($line =~ m/\[NIC-$slot\]: (\d+)th: Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $mtp_test_msg .= $line;
@@ -2390,6 +2456,7 @@ sub parse_mtp_diag_file {
     my $mfr_id_linenum = 0;
     my $failed_psu1_linenum = 0;
     my $failed_psu2_linenum = 0;
+    my $test_err_msg = "";
 
     if (!open(TR3, '<', $mtpdiagfile)) {
         print "Cannot open file $mtpdiagfile\n";
@@ -2424,6 +2491,15 @@ sub parse_mtp_diag_file {
                 $diag_fa_code{"PSU2_CORD_NOT_CONNECTED"} = 1;
             }
         }
+        if ($line =~ m/NO RESULT in log file or no log file found/) {
+            $test_err_msg .= $line;
+            $diag_fa_code{"NO_RESULT_IN_LOG_FILE"} = 1;
+        }
     }
     close(TR3);
+
+    if ($test_err_msg ne "") {
+        $test_err_msg .= "\n--------mtp_diag log--------: ".$mtpdiagfile."\n";
+        $all_test_msg .= $test_err_msg;
+    }
 }

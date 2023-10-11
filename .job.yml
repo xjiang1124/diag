@@ -1,6 +1,16 @@
 ---
 version: 2.0
 builds:
+  build-amd64-giglio:
+    commands: [ "sh", "-c", "cd build; make amd64 asic=giglio asiclib=unpackaged" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_giglio.tar
+  build-arm64-giglio:
+    commands: [ "sh", "-c", "cd build; make arm64 asic=giglio asiclib=unpackaged" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_arm64_giglio.tar
   build-amd64-elba:
     commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=unpackaged" ]
     owners: ["email:xin@pensando.io"]
@@ -21,6 +31,12 @@ builds:
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
+  package-giglio-mfg-script:
+    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    artifacts:
+    - /psdiag/jobd/jobd.tar.gz
+    - /psdiag/jobd/fw.tar.gz
   package-elba-mfg-script:
     commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
@@ -43,73 +59,83 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build"]
-  test/jobs/precheckin/ortano-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/monterey-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/naples25-DL:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/ortano-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/monterey-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/precheckin/naples25-P2C:
-    labels: ["CI-DIAG-Precheckin"]
-  test/jobs/sanity/ortano-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/monterey-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/naples25-DL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-DL"]
-  test/jobs/sanity/ortano-ScanDL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  test/jobs/sanity/monterey-ScanDL:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  # test/jobs/sanity/naples25-ScanDL:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-ScanDL"]
-  test/jobs/sanity/ortano-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/monterey-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/naples25-P2C:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-P2C"]
-  test/jobs/sanity/ortano-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/monterey-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/naples25-4C:
-    labels: ["CI-DIAG-Build", "CI-DIAG-Sanity", "CI-DIAG-4C"]
-  test/jobs/sanity/ortano-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/monterey-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/naples25-SWI:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-SWI"]
-  test/jobs/sanity/ortano-fst:
-    labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  # test/jobs/sanity/monterey-fst:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  # test/jobs/sanity/naples25-fst:
-  #   labels: ["CI-DIAG-Sanity", "CI-DIAG-FST"]
-  test/jobs/regression/ortano-4C:
-    labels: ["CI-DIAG-Regression"]
-  test/jobs/regression/monterey-4C:
-    labels: ["CI-DIAG-Regression"]
-  test/jobs/regression/naples25-4C:
-    labels: ["CI-DIAG-Regression"]
+  test/DL:
+    labels: ["CI-DIAG-DL"]
+  test/ScanDL:
+    labels: ["CI-DIAG-ScanDL"]
+  test/P2C:
+    labels: ["CI-DIAG-P2C"]
+  test/4C:
+    labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
+  #test/RDT:
+  #  labels: ["CI-DIAG-RDT"]
+  test/ORT:
+    labels: ["CI-DIAG-ORT"]
+  #test/SRN:
+  #  labels: ["CI-DIAG-SRN"]
+  test/SWI:
+    labels: ["CI-DIAG-SWI"]
+  test/FST:
+    labels: ["CI-DIAG-FST"]
+### NIC_TYPE TEST BUNDLE ###
+  test/ginestra:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ginestra"]
+  test/monterey:
+    labels: ["CI-DIAG-Build", "CI-DIAG-monterey"]
+  test/ortano-adicr-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
+  test/ortano-solo-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
+  test/ortano-interp-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-interp-orc"]
+  test/ortano-adi-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
+  test/ortano-ti-orc:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
+  test/naples25swm-hpe:
+    labels: ["CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
+  test/naples100:
+    labels: ["CI-DIAG-Build", "CI-DIAG-naples100"]
+### END NIC_TYPE TEST BUNDLE ###
 
 dependencies:
+  .:
+    - reference: test/FST
   test/infra:
-  - reference: test/jobs/precheckin/ortano-DL
+    - reference: test/FST
+  qa/infra:
+    - reference: test/FST
+  build:
+    - reference: asset-build
+  asset-build:
+    - reference: asset-build
+
   diag:
-  - reference: test/jobs/precheckin/ortano-DL
-  - reference: test/jobs/precheckin/monterey-DL
-  - reference: test/jobs/precheckin/naples25-DL
-  - reference: test/jobs/precheckin/ortano-P2C
-  - reference: test/jobs/precheckin/monterey-P2C
-  - reference: test/jobs/precheckin/naples25-P2C
-    exclude_dirs: ["mfg/scripts"]
-  diag/mfg/mtp_fst_test:
-  - reference: test/jobs/sanity/ortano-fst
-  qa-infra:
-  - reference: test/jobs/precheckin/ortano-DL
+    - reference: test/DL
+      exclude_dirs: ["mfg"]
+    - reference: test/P2C
+      exclude_dirs: ["mfg"]
+
+  diag/mfg:
+### NIC_TYPE DEPENDENCY ###
+    - reference: test/ginestra
+      exclude_dirs: ["scripts"]
+    - reference: test/monterey
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adicr-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-solo-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-interp-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adi-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-ti-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/naples25swm-hpe
+      exclude_dirs: ["scripts"]
+    - reference: test/naples100
+      exclude_dirs: ["scripts"]
+### END NIC_TYPE DEPENDENCY ###
+  diag/mfg/scripts:
+    - reference: test/FST

@@ -5,6 +5,7 @@ import threading
 from libdefs import *
 from libmfg_cfg import *
 import libmfg_utils
+import libmtp_utils
 
 def single_nic_test_start(mtp_mgmt_ctrl, slot, test_name):
     start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_name)
@@ -152,19 +153,17 @@ def fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary):
 def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_file_track_list, skip_test_list=[], mirror_logdir=None, skip_slot_list=[], **kwargs):
     try:
         mtpcfg_file = None
-        mtp_sn = None
         l1_sequence = None
         stop_on_err = None
         card_type = None
         swm_test_mode = None
+        mtp_sn = None
         only_test_list = []
         nic_sw_img_file_list = []
         sw_pn_list = []
         profile_cfg_file_list = []
         if "mtpcfg_file" in kwargs:
             mtpcfg_file = kwargs["mtpcfg_file"]
-        if "mtp_sn" in kwargs:
-            mtp_sn = kwargs["mtp_sn"]
         if "l1_sequence" in kwargs:
             l1_sequence = kwargs["l1_sequence"]
         if "stop_on_err" in kwargs:
@@ -173,6 +172,8 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             card_type = kwargs["card_type"]
         if "swm_test_mode" in kwargs:
             swm_test_mode = kwargs["swm_test_mode"]
+        if "mtp_sn" in kwargs:
+            mtp_sn = kwargs["mtp_sn"]
         if "only_test_list" in kwargs:
             only_test_list = kwargs["only_test_list"]
         if "nic_sw_img_file_list" in kwargs:
@@ -183,11 +184,15 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             profile_cfg_file_list = kwargs["profile_cfg_file_list"]
 
         mtp_id = mtp_mgmt_ctrl._id
+        mtp_mgmt_ctrl.set_mtp_sn(mtp_sn)
       
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         if stage == FF_Stage.FF_FST:
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
                 fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
+                return False
+        elif stage == FF_Stage.FF_SRN:
+            if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list):
                 return False
         else:
             if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
@@ -280,7 +285,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, logfile_dir, open_fi
             FF_Stage.FF_SRN:
                 {
                 "mtp_script_dir": "mtp_srn_script/",
-                "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
+                "mtp_script_pkg": "mtp_srn_script.{:s}.tar".format(mtp_id),
                 "timeout": MTP_Const.MFG_MTPSCREEN_TEST_TIMEOUT
                 }
         }
@@ -441,6 +446,13 @@ def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
         return False
     return True
 
+def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
+                                                    "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT",     "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+        return False
+    return True
+
 def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     test_list = ["FST_CONNECT",     "MTP_TIME_SET", "FST_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
@@ -498,6 +510,12 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
         elif test == "MTP_SANITY_CHECK":
             ret = mtp_mgmt_ctrl.mtp_hw_init(stage)
 
+        elif test == "I210_PRSNT_CHECK":
+            ret = libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl)
+
+        elif test == "I210_IMAGE_CHECK":
+            ret = libmtp_utils.verify_img_mtp_host_nic(mtp_mgmt_ctrl)
+
         elif test == "MTP_ID":
             ret = mtp_mgmt_ctrl.mtp_sys_info_disp()
 
@@ -506,6 +524,10 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "SCAN_NIC_INIT":
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"])
+
+        elif test == "MTP_POWERCYCLE":
+            ret  = libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl])
+            ret &= libmfg_utils.mtpid_list_poweron([mtp_mgmt_ctrl])
 
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown test {}".format(test))
@@ -559,7 +581,7 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
             rj45_nic_list = list()
             for slot in pass_nic_list:
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))
                 elif nic_type in GIGLIO_NIC_TYPE_LIST:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))

@@ -1299,6 +1299,7 @@ var DellOcp uint
 var Erase bool
 var I2cAddr16 bool
 var CustType string
+var Smbus bool
 
 func max(x, y int) (m int) {
     if x > y {

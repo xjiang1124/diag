@@ -802,6 +802,7 @@ def mtpid_list_poweron(mtp_mgmt_ctrl_list):
         mtp_mgmt_ctrl.mtp_apc_pwr_on()
         mtp_mgmt_ctrl.cli_log_inf("Power on APC, Wait {:d} seconds for system coming up".format(MTP_Const.MTP_POWER_ON_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_ON_DELAY)
+    return True
 
 
 def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
@@ -814,6 +815,7 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
         mtp_mgmt_ctrl.mtp_apc_pwr_off()
         mtp_mgmt_ctrl.cli_log_inf("Power off APC, Wait {:d} seconds for APC shutdown".format(MTP_Const.MTP_POWER_CYCLE_DELAY), level=0)
     count_down(MTP_Const.MTP_POWER_CYCLE_DELAY)
+    return True
 
 
 def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
@@ -832,7 +834,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     return image_list
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
-    if image_list is None:
+    if not image_list:
         mtp_mgmt_ctrl.cli_log_err("Copy Firmware images failed... Abort", level=0)
         return False
 
@@ -2113,15 +2115,19 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     cli_inf("---------- Report: ----------")
     # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
+    final_result = True
     for mtp_id in summary_dict.keys():
         for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
             else:
+                final_result = False
                 cli_err("{:s} {:s} {:s} FAIL".format(slot, sn, nic_type))
     cli_inf("--------- Report End --------\n")
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
+        final_result = False
+    return final_result
 
 def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
@@ -2132,7 +2138,7 @@ def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
             cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
         else:
             #one fail all fail
-            for slot, sn, nic_type, rc in summary_dict[mtp_id]:
+            for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
                 nic_cli_id_str = id_str(mtp=mtp_id, nic=int(slot), base=0)
                 if not rc:
                     result = False
@@ -2552,7 +2558,7 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
             if slot not in fail_nic_list:
                 cur_fail_list[slot] = 0
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOALI, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT]:
+                if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]:
                     continue
                 if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
@@ -3034,7 +3040,9 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "hod"
     elif nic_type == NIC_Type.ORTANO2SOLOMSFT:
         mode = "hod_1100"
-    elif nic_type == NIC_Type.ORTANO2SOLOALI:
+    elif nic_type == NIC_Type.ORTANO2SOLOS4:
+        mode = "hod_1100"
+    elif nic_type == NIC_Type.ORTANO2ADICRS4:
         mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
