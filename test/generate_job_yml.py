@@ -46,6 +46,7 @@ def write_targets(fh, asic, hardware, nic_type, stage):
         fh.write("     - build-amd64-{:s}-tot\n".format(asic))
         fh.write("     - build-arm64-{:s}-tot\n".format(asic))
     fh.write("     - package-{:s}-mfg-script\n".format(asic))
+    fh.write("     - package-fw-assets\n")
     fh.write("    deployment:\n")
     fh.write("      skip-pxe-install: true\n")
     fh.write("    resources:\n")

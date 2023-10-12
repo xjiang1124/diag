@@ -103,16 +103,16 @@ fi
 tar xzf ${PSDIAG_ROOT}/${mfg_script_dir}/${mfg_script_dir}.tar.gz -C ${PSDIAG_ROOT}
 sync
 
-if [[ -f "${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz" ]];
+if [[ -f "${PSDIAG_ROOT}/fw.tar" ]];
 then
-    ls -lt ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz
+    ls -lt ${PSDIAG_ROOT}/fw.tar
 else
-    echo "Missing ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz - ABORT"
+    echo "Missing ${PSDIAG_ROOT}/fw.tar - ABORT"
     cd ${PSDIAG_ROOT}
     tar -zcvf diag_detailed_log.tgz log
     exit 249
 fi
-tar xzf ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz -C ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/
+tar xf ${PSDIAG_ROOT}/fw.tar -C ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/
 sync
 
 cp ${PSDIAG_ROOT}/build/images/image_amd64_${asic}.tar ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/release/image_amd64_${asic}_${mfg_script_dir}.tar

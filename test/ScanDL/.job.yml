@@ -23,6 +23,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -51,6 +52,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -79,6 +81,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -107,6 +110,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -135,6 +139,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -163,6 +168,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -191,6 +197,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -219,6 +226,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -247,6 +255,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -275,6 +284,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -303,6 +313,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -331,6 +342,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -359,6 +371,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -387,6 +400,7 @@ e2e-targets:
      - build-amd64-giglio
      - build-arm64-giglio
      - package-giglio-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
