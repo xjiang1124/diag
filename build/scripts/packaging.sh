@@ -204,6 +204,14 @@ do
     #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
     #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.11.17/$asic/$arch
     
+    if [[ $asiclib == "latest" ]]
+    then
+        latest=$(ls -t /vol/builds/hourly-asic/ | head -n1)
+        rm -rf /vol/hw/diag/diag_repo/asic_tar/latest/*
+        cp /vol/builds/hourly-asic/${latest}/releases.tar.gz /vol/hw/diag/diag_repo/asic_tar/latest/
+        tar xf /vol/hw/diag/diag_repo/asic_tar/latest/releases.tar.gz -C /vol/hw/diag/diag_repo/asic_tar/latest/
+    fi
+
     if [[ $arch == "amd64" ]]
     then
         DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic_all/$asic/
@@ -227,11 +235,7 @@ do
         fi
         if [[ $asiclib == "latest" ]]
         then
-            latest=`ls -t /vol/builds/hourly-asic/ | head -n1`
             echo "Copying latest ASIC lib $latest for $asic"
-            rm -rf /vol/hw/diag/diag_repo/asic_tar/latest/*
-            cp /vol/builds/hourly-asic/${latest}/releases.tar.gz /vol/hw/diag/diag_repo/asic_tar/latest/
-            tar xf /vol/hw/diag/diag_repo/asic_tar/latest/releases.tar.gz -C /vol/hw/diag/diag_repo/asic_tar/latest/
             ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/latest/releases/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
@@ -252,8 +256,14 @@ do
         #rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
         if [[ $asiclib == "stable" ]]
         then
-            echo "Copying ASIC lib for $asic"
+            echo "Copying stable ASIC lib for $asic"
             ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
+        if [[ $asiclib == "latest" ]]
+        then
+            echo "Copying latest ASIC lib $latest for $asic"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/latest/releases/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         #echo "Copy snake CFG to $arch image"
