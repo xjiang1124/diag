@@ -38,7 +38,7 @@ do
 done
 
 # if asiclib is not specified in make command, default is "stable", we use the stable nic.tar.gz in /vol/hw, for mfg release
-# if asiclib=weekly in make command, we use the weekly build nic.tar.gz in Jenkins
+# if asiclib=latest in make command, we use the latest build nic.tar.gz in /vol/builds/hourly-asic/
 asiclib="stable"
 if [[ $# -eq 3 ]]
 then
@@ -221,8 +221,18 @@ do
         #rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
         if [[ $asiclib == "stable" ]]
         then
-            echo "Copying ASIC lib for $asic"
+            echo "Copying stable ASIC lib for $asic"
             ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
+        if [[ $asiclib == "latest" ]]
+        then
+            latest=`ls -t /vol/builds/hourly-asic/ | head -n1`
+            echo "Copying latest ASIC lib $latest for $asic"
+            rm -rf /vol/hw/diag/diag_repo/asic_tar/latest/*
+            cp /vol/builds/hourly-asic/${latest}/releases.tar.gz /vol/hw/diag/diag_repo/asic_tar/latest/
+            tar xf /vol/hw/diag/diag_repo/asic_tar/latest/releases.tar.gz -C /vol/hw/diag/diag_repo/asic_tar/latest/
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/latest/releases/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
     fi
