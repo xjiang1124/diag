@@ -2482,10 +2482,10 @@ class nic_ctrl():
                 if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
                     return False
 
-                # for CI/CD, copy independent asic lib to /data
-                if nic_asic_image:
-                    if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                        return False
+            # copy unpackaged asic lib to /data
+            if nic_asic_image:
+                if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                    return False
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)

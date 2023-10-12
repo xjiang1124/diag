@@ -519,8 +519,6 @@ class MTP_IMAGES:
 class MFG_IMAGE_FILES:
     MTP_AMD64_IMAGE = "image_amd64_elba.tar"
     MTP_ARM64_IMAGE = "image_arm64_elba.tar"
-    ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
-    ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
