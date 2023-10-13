@@ -2454,7 +2454,7 @@ class nic_ctrl():
         if emmc_utils:
             if self._nic_type == NIC_Type.NAPLES100:
                 # programmed fw does not support unpacking gzip. untar on MTP and copy one by one into /data/.
-                nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh"]
+                nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh", "nic.tar.gz"]
                 for util in nic_diag_list:
                     if not self.nic_copy_compressed_image(
                         src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
