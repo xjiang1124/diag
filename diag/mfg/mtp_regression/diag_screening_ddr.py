@@ -11,6 +11,7 @@ import copy
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from ddr_test_parameters import test2args as ddrtest2args
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
@@ -940,7 +941,7 @@ def main():
                              dbg_mode = verbosity)
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
@@ -1254,32 +1255,8 @@ def main():
             if not stop_on_err:
                 mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-            if vmarg == Voltage_Margin.low:
-                diag_sub_dir = "/lv_diag_logs/"
-                nic_sub_dir = "/lv_nic_logs/"
-                asic_sub_dir = "/lv_asic_logs/"
-            elif vmarg == Voltage_Margin.high:
-                diag_sub_dir = "/hv_diag_logs/"
-                nic_sub_dir = "/hv_nic_logs/"
-                asic_sub_dir = "/hv_asic_logs/"
-            else:
-                diag_sub_dir = "/diag_logs/"
-                nic_sub_dir = "/nic_logs/"
-                asic_sub_dir = "/asic_logs/"
-            # create log dir
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            # save the asic/diag log files
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_script_dir + diag_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            testlog.gather_dsp_logs(mtp_mgmt_ctrl, vmarg)
+
             # clean up logfiles for the next run
             cmd = "cleanup.sh"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)

@@ -36,18 +36,7 @@ from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
 import test_utils
-
-
-def logfile_close(filep_list):
-    for fp in filep_list:
-        fp.close()
-    os.system("sync")
-
-
-def logfile_cleanup(file_list):
-    for _file in file_list:
-        os.system("rm -rf {:s}".format(_file))
-
+import testlog
 
 def load_mtp_cfg(cfg_yaml=None):
     # DL/P2C MTP Chassis
@@ -237,6 +226,8 @@ def main():
     if args.swm:
         swmtestmode = args.swm
 
+    mirror_logdir = args.jobd_logdir
+
     if args.fru_mapping_file:
         ALLOWED_FRU_ONLY_FLAG = True
         fru_mapping = libmfg_utils.load_cfg_from_yaml("config/new_fru_cfg.yaml")
@@ -257,37 +248,44 @@ def main():
     mtp_id = mtpid_list[0]
     mtpid_fail_list = list()
 
-    # local log files
-    log_file_list = list()
-    log_filep_list = list()
-    log_dir = "log/"
-    log_timestamp = libmfg_utils.get_timestamp()
-    log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
-    test_log_file = log_dir + log_sub_dir + "mtp_test.log"
-    log_file_list.append(test_log_file)
-    test_log_filep = open(test_log_file, "w+", buffering=0)
-    log_filep_list.append(test_log_filep)
+    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, None, [None] * MTP_Const.MTP_SLOT_NUM, skip_slots=args.skip_slots)
 
-    if verbosity:
-        diag_log_filep = sys.stdout
+    mtp_test_summary_dict = dict()
+    mtp_test_summary_dict[mtp_id] = list()
+    mtp_test_summary = mtp_test_summary_dict[mtp_id]
+
+    ### Begin logging
+    testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+
+    mtp_start_ts = libmfg_utils.timestamp_snapshot()
+    scandl_test_result = scan_dl_test(mtp_mgmt_ctrl, mtp_test_summary, stage, args, swmtestmode, ALLOWED_FRU_ONLY_FLAG, fru_mapping, mtp_cfg_db)
+    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mtp_stop_ts - mtp_start_ts))
+
+    ### Handle test logs
+    # If MTP failed, fail all slots and dont post to FF
+    if scandl_test_result:
+        send_report = True
+    else: 
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+        send_report = False
+
+    if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, mirror_logdir, True, send_report):
+        test_utils.fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
+
+    mtp_mgmt_ctrl.mtp_chassis_shutdown()
+
+    # dump the summary
+    test_result = libmfg_utils.mfg_summary_disp(stage, mtp_test_summary_dict, mtpid_fail_list)
+
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
     else:
-        diag_log_file = log_dir + log_sub_dir + "mtp_diag.log"
-        log_file_list.append(diag_log_file)
-        diag_log_filep = open(diag_log_file, "w+", buffering=0)
-        log_filep_list.append(diag_log_filep)
+        sys.exit(1)
 
-    diag_nic_log_filep_list = list()
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        key = libmfg_utils.nic_key(slot)
-        diag_nic_log_file = log_dir + log_sub_dir + "mtp_{:s}_diag.log".format(key)
-        log_file_list.append(diag_nic_log_file)
-        diag_nic_log_filep = open(diag_nic_log_file, "w+", buffering=0)
-        log_filep_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
-    mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, skip_slots=args.skip_slots)
-
+def scan_dl_test(mtp_mgmt_ctrl, mtp_test_summary, stage, args, swmtestmode, ALLOWED_FRU_ONLY_FLAG, fru_mapping, mtp_cfg_db):
+    mtp_id = mtp_mgmt_ctrl._id
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
@@ -386,13 +384,13 @@ def main():
                 pass_rslt_list.append(nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn)
         else:
             fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, test_log_filep)
+    libmfg_utils.cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)
 
-    scan_cfg_file = log_dir + log_sub_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+    tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
     scan_cfg_filep = open(scan_cfg_file, "w+")
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
-    log_file_list.append(scan_cfg_file)
 
     # reload the barcode config file
     nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
@@ -407,9 +405,8 @@ def main():
 
     # start diag, nic_init..
     if not test_utils.mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, args.skip_test):
-        mtpid_list.remove(mtp_id)
-        logfile_close(log_filep_list)
-        return
+        # logfile_close(log_filep_list)
+        return False
 
     # construct pass_nic_list
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -440,7 +437,6 @@ def main():
                 adi_ibm_reset_slot.append(slot)                
 
     mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Started", level=0)
-    mfg_dl_start_ts = libmfg_utils.timestamp_snapshot()
 
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if slot in fail_nic_list:
@@ -786,10 +782,10 @@ def main():
         if not mtp_capability & mtp_exp_capability:
             mtp_mgmt_ctrl.cli_log_err("MTP doesn't support {:s}".format(nic_type))
             mtp_mgmt_ctrl.mtp_chassis_shutdown()
-            logfile_close(log_filep_list)
+            # logfile_close(log_filep_list)
             # cleanup the log dir
-            logfile_cleanup([log_dir+log_sub_dir])
-            return
+            # logfile_cleanup([log_dir+log_sub_dir])
+            return False
 
         if slot not in pass_nic_list:
             pass_nic_list.append(slot)
@@ -997,136 +993,38 @@ def main():
                 if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
-    # save the avs and ecc dump log files
-    log_location = log_dir+log_sub_dir
-    asic_sub_dir = "/asic_logs/"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_location + asic_sub_dir)
-    os.system(cmd)
-    ipaddr, userid, passwd = mtp_mgmt_ctrl._mgmt_cfg
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, log_location + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES)
-    libmfg_utils.network_get_file(ipaddr, userid, passwd, log_location + asic_sub_dir, MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES)
-
-    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
     # power off nic
     mtp_mgmt_ctrl.mtp_power_off_nic()
-    mtp_mgmt_ctrl.mtp_chassis_shutdown()
-    mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
-    libmfg_utils.cli_inf("MFG MTP DL Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
-    mfg_dl_summary = list()
-    retest_block_default = False
+    mtp_mgmt_ctrl.cli_log_inf("Firmware Download Process Complete", level=0)
+
 
     for slot in pass_nic_list:
-        key = libmfg_utils.nic_key(slot)
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         key = libmfg_utils.nic_key(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
             continue
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-        if not swmtestmode == Swm_Test_Mode.ALOM:
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
-        mfg_dl_summary.append([slot + 1, sn, nic_type, True, retest_block_default])
-        
+
     for slot in fail_nic_list:
         key = libmfg_utils.nic_key(slot)
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         valid = nic_fru_cfg[mtp_id][key]["VALID"]
         if str.upper(valid) != "YES":
             continue
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = nic_fru_cfg[mtp_id][key]["SN"]
-        if not swmtestmode == Swm_Test_Mode.ALOM:
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
+            alom_sn = nic_fru_cfg[mtp_id][key]["ALOM_SN"]
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-        mfg_dl_summary.append([slot + 1, sn, nic_type, False, retest_block_default])
-    logfile_close(log_filep_list)
 
-
-    for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot not in pass_nic_list and slot not in fail_nic_list:
-            mfg_dl_summary.append([slot + 1, "SKIPPED", "SLOT", True, retest_block_default])
-
-    # pkg the logfile
-    log_pkg_file = MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
-
-    # move the logs to the log root dir
-    log_hard_copy_flag = True
-    log_relative_link = None
-    for slot in fail_nic_list + pass_nic_list:
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        key = libmfg_utils.nic_key(slot)
-        valid = nic_fru_cfg[mtp_id][key]["VALID"]
-        if str.upper(valid) != "YES":
-            continue
-        sn = nic_fru_cfg[mtp_id][key]["SN"]
-        if not sn:
-            continue
-        if GLB_CFG_MFG_TEST_MODE:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-        else:
-            mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-        if log_hard_copy_flag:
-            libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-            os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-            log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
-            log_hard_copy_flag = False
-
-            qa_log_pkg_file = mfg_log_dir+os.path.basename(log_pkg_file)
-            if args.jobd_logdir:
-                dest = args.jobd_logdir + "/" + os.path.basename(qa_log_pkg_file)
-                cmd = "cp {:s} {:s}".format(qa_log_pkg_file, args.jobd_logdir)
-                os.system(cmd)
-        else:
-            libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-            chdir_cmd = "cd {:s}".format(mfg_log_dir)
-            ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
-            cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
-            os.system(cmd)
-        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-            alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
-            if not alom_sn:
-                continue
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
-            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
-            if log_hard_copy_flag:
-                libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(alom_sn, log_pkg_file))
-                os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
-                log_relative_link = "../{:s}/{:s}".format(alom_sn, os.path.basename(log_pkg_file))
-                log_hard_copy_flag = False
-            else:
-                libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(alom_sn, log_relative_link))
-                chdir_cmd = "cd {:s}".format(mfg_log_dir)
-                ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
-                cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
-                os.system(cmd)
-
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mfg_dl_start_ts, mfg_dl_stop_ts, test_log_file, stage, mfg_dl_summary)
-
-    # cleanup the log dir
-    logfile_cleanup([log_dir+log_sub_dir, log_dir+log_pkg_file])
-
-    mtp_dl_summary = dict()
-    mtp_dl_summary[mtp_id] = mfg_dl_summary
-    # dump the summary
-    test_result = libmfg_utils.mfg_summary_disp(stage, mtp_dl_summary, mtpid_fail_list)
-
-    # print return code for JobD to pick up
-    if test_result:
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    return True
 
 if __name__ == "__main__":
     main()

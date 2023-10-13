@@ -719,70 +719,6 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
 
     return True
 
-def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, logfile_dir=None, extra_script=None, extra_config=None):
-    shared_script_dir = os.path.dirname(mtp_script_dir)
-    mtp_script_dir = os.path.dirname(mtp_script_dir) + ".{:s}/".format(mtp_mgmt_ctrl._id)
-    # remove previous copy to this MTP
-    cmd = "rm -rf {:s}".format(mtp_script_dir)
-    os.system(cmd)
-    # make new staging folder for copy
-    cmd = "cp -r {:s} {:s}".format(shared_script_dir, mtp_script_dir)
-    os.system(cmd)
-    os.system("sync")
-    if extra_script:
-        cmd = "cp {:s} {:s}".format(extra_script, mtp_script_dir)
-        os.system(cmd)
-    if extra_config:
-        cmd = "cp {:s} config/".format(extra_config)
-        os.system(cmd)
-    cmd = "cp -r lib/ config/ {:s}".format(mtp_script_dir)
-    os.system(cmd)
-    if logfile_dir:
-        cmd = "cp {:s}/*.log {:s}".format(logfile_dir, mtp_script_dir)
-        os.system(cmd)
-        if str(FF_Stage.FF_DL) in logfile_dir or str(FF_Stage.FF_SWI) in logfile_dir or str(FF_Stage.FF_FST) in logfile_dir:
-            cmd = "cp {:s}/{:s} {:s}".format(logfile_dir, MTP_DIAG_Logfile.SCAN_BARCODE_FILE, mtp_script_dir)
-            os.system(cmd)
-    cmd = "tar czf {:s} {:s}".format(mtp_script_pkg, mtp_script_dir)
-    os.system(cmd)
-    # remove the lib config for the next run
-    if extra_script:
-        cmd = "rm -f {:s}/{:s}".format(mtp_script_dir, os.path.basename(extra_script))
-        os.system(cmd)
-    os.system("sync")
-
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-    # download the test script pkg
-    if not network_copy_file(ipaddr, userid, passwd, mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH):
-        mtp_mgmt_ctrl.cli_log_err("Copy Test script failed... Abort")
-        return False
-    # remove the stale test script
-    cmd = "rm -rf {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+shared_script_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
-        return False
-    # unpack the test script pkg
-    cmd = "tar zxf {:s} -C {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
-        return False
-    # move test script folder to common folder
-    cmd = "mv {:s} {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_dir, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+shared_script_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute {:s} on MTP Chassis".format(cmd), level=0)
-        return False
-    # remove the test script pkg
-    cmd = "rm -f {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+"/"+mtp_script_pkg)
-    os.system(cmd)
-    # remove the MTP-specific test script folder
-    cmd = "rm -rf {:s}".format(mtp_script_dir)
-    os.system(cmd)
-    return True
-
-
 def mtpid_list_select(mtp_cfg_db, preselect=[]):
     mtpid_list = list(mtp_cfg_db.get_mtpid_list())
     if preselect:
@@ -1011,6 +947,22 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
 
     return True
 
+def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
+    if mtp_mgmt_ctrl.barcode_scans == {}:
+        return False
+    mtp_id = mtp_mgmt_ctrl._id
+    key = nic_key(slot)
+    if key not in mtp_mgmt_ctrl.barcode_scans[mtp_id].keys():
+        return False
+    if str.upper(mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["VALID"]) != "YES":
+        return False
+    sn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["SN"]
+    pn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["PN"]
+    nic_type = get_nic_type_by_part_number(pn)
+    mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
+    mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
+    return True
+
 def fail_all_slots(mtp_mgmt_ctrl):
     """
      Call this function when failing a script BEFORE any dsp test results have come.
@@ -1019,7 +971,11 @@ def fail_all_slots(mtp_mgmt_ctrl):
     """
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not mtp_mgmt_ctrl._nic_prsnt_list[slot]:
-            continue
+            # may not have initialized prsnt_list yet. But this stage may have SCAN. 
+            # So try to load SN and NIC_TYPE from the scans.
+            # Otherwise, skip this slot
+            if not load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
+                continue
         key = nic_key(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1081,7 +1037,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1101,6 +1057,8 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
             extra_info_xml += "LOOPBACK_PORT{:s}=\"{:s}\" ".format(lpbk, lpbk_sn)
 
         extra_info_xml += "OCP_ADAPTER=\"{:s}\" ".format(ocp_adap_sn)
+
+        extra_info_xml += "MFG_SCRIPT_VER=\"{:s}\" ".format(mfg_script_ver)
 
         extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
 
@@ -1296,7 +1254,7 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
         print("Unable to connect to webserver")
         return "500"
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1312,7 +1270,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
     if not xml:
         return False
 
@@ -1345,7 +1303,7 @@ def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac=None, pn=None):
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1353,7 +1311,7 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
     if not xml:
         return -2
 
@@ -1387,502 +1345,15 @@ def flx_web_srv_get_uut_info(sn, stage=None):
     return resp
 
 
-def get_mtp_logfile(mtp_mgmt_ctrl, log_dir, mtp_id, mtp_test_summary, stage, vmarg=[], mirror_logdir=None):
-    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
-    ipaddr = mtp_mgmt_cfg[0]
-    userid = mtp_mgmt_cfg[1]
-    passwd = mtp_mgmt_cfg[2]
-
-    mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files started".format(stage), level=0)
-
-    log_timestamp = get_timestamp()
-    if stage == FF_Stage.FF_DL:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_DL_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_CFG:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_CFG_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_CFG_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_CFG_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_P2C:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_P2C_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format(stage, mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_4C_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_2C_LOG_DIR.format(stage, mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_2C_LOG_PKG_FILE.format(stage, mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_SWI:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_SWI_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SWI_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-        # copy csp files from MTP to Server
-        test_onboard_csp_log_files = MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES
-    elif stage == FF_Stage.FF_FST:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_FST_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_FST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}test_fst.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_test_fst.log".format(mtp_id)
-    elif stage == FF_Stage.FF_SRN:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_SRN_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_SRN_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_ORT:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_ORT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    elif stage == FF_Stage.FF_RDT:
-        # log subdir
-        sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
-        # log pkg filename
-        log_pkg_file = log_dir + MTP_DIAG_Logfile.MFG_RDT_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-        # onboard log files
-        test_onboard_log_files = MTP_DIAG_Logfile.ONBOARD_TEST_LOG_FILES
-        # test summary logfile
-        test_log_file = "{:s}mtp_test.log".format(log_dir+sub_dir)
-        # local copy of summary logfile
-        local_test_log_file = "log/{:s}_mtp_test.log".format(mtp_id)
-    else:
-        mtp_mgmt_ctrl.cli_log_err("Unknown FF Stage: {:s}".format(stage), level=0)
-        return None
-
-    # local dir to temporarily store test summary
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format("log/")
-    err = os.system(cmd)
-    if err:
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s}".format(cmd), level=0)
-        return None
-    # temporary dir for log files on MTP
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir+sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
-    # move onboard log files
-    cmd = "mv {:s} {:s}".format(test_onboard_log_files, log_dir+sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
-
-    # for DL/P2C/4C test, extra logfiles are needed
-    if stage == FF_Stage.FF_DL or stage == FF_Stage.FF_SWI:
-        asic_log_dir = log_dir + "asic_logs/"
-
-        if stage == FF_Stage.FF_SWI:
-            cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp_*txt"
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-            listoffile = listoffileoutput.split()
-        
-            listcspfiletoupload = list()
-            for cspfile in listoffile:
-                if 'txt' in cspfile:
-                    listcspfiletoupload.append(cspfile)
-            for cspfilepath in listcspfiletoupload:
-                cmd = "cp {:s} {:s}".format(cspfilepath, asic_log_dir)
-                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                    return None
-                csp_log_file = os.path.basename(cspfilepath)
-                mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s} to asic folder".format(csp_log_file))
-
-        cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-    elif stage == FF_Stage.FF_P2C or stage == FF_Stage.FF_SRN or stage == FF_Stage.FF_ORT or stage == FF_Stage.FF_RDT:
-        if not vmarg:
-            diag_log_dir = log_dir + "diag_logs/"
-            asic_log_dir = log_dir + "asic_logs/"
-            nic_log_dir = log_dir + "nic_logs/"
-            # move the extra logfile
-            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-        else:
-            for vmag in vmarg:
-                if vmag.lower() == "high":
-                    diag_log_dir = log_dir + "hv_diag_logs/"
-                    asic_log_dir = log_dir + "hv_asic_logs/"
-                    nic_log_dir = log_dir + "hv_nic_logs/"
-                elif vmag.lower() == "low":
-                    diag_log_dir = log_dir + "lv_diag_logs/"
-                    asic_log_dir = log_dir + "lv_asic_logs/"
-                    nic_log_dir = log_dir + "lv_nic_logs/"
-                else:
-                    diag_log_dir = log_dir + "diag_logs/"
-                    asic_log_dir = log_dir + "asic_logs/"
-                    nic_log_dir = log_dir + "nic_logs/"
-                # move the extra logfile
-                cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
-                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                    return None
-                cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                    return None
-                cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
-                if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                    mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                    return None
-
-    elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-        hv_diag_log_dir = log_dir + "hv_diag_logs/"
-        hv_asic_log_dir = log_dir + "hv_asic_logs/"
-        hv_nic_log_dir = log_dir + "hv_nic_logs/"
-        lv_diag_log_dir = log_dir + "lv_diag_logs/"
-        lv_asic_log_dir = log_dir + "lv_asic_logs/"
-        lv_nic_log_dir = log_dir + "lv_nic_logs/"
-        # move the extra logfile
-        cmd = "mv {:s} {:s}".format(hv_diag_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(hv_asic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(hv_nic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        # move the extra logfile
-        cmd = "mv {:s} {:s}".format(lv_diag_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(lv_asic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        cmd = "mv {:s} {:s}".format(lv_nic_log_dir, log_dir+sub_dir)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-            mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-            return None
-        if vmarg and "normal" in vmarg:
-            diag_log_dir = log_dir + "diag_logs/"
-            asic_log_dir = log_dir + "asic_logs/"
-            nic_log_dir = log_dir + "nic_logs/"
-            # move the extra logfile
-            cmd = "mv {:s} {:s}".format(diag_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-            cmd = "mv {:s} {:s}".format(asic_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-            cmd = "mv {:s} {:s}".format(nic_log_dir, log_dir+sub_dir)
-            if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-                mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-                return None
-    # for SWI/FST, no extra logfiles
-    else:
-        pass
-
-    logfile_list = list()
-    # pkg the onboard logs
-    cmd = MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_pkg_file, log_dir, sub_dir)
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
-
-    if not network_get_file(ipaddr, userid, passwd, local_test_log_file, test_log_file):
-        mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test summary file {:}".format(test_log_file), level=0)
-        return None
-
-    # analyze test summary logfile
-    try:
-        with open(local_test_log_file, 'r') as fp:
-            buf = fp.read()
-    except:
-        mtp_mgmt_ctrl.cli_log_err("Unable to open MTP test summary file {:}".format(test_log_file), level=0)
-        return None
-
-    nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-    nic_pass_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS)
-    nic_skip_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP)
-    fail_match = re.findall(nic_fail_reg_exp, buf)
-    pass_match = re.findall(nic_pass_reg_exp, buf)
-    skip_match = re.findall(nic_skip_reg_exp, buf)
-
-    log_hard_copy_flag = True
-    log_relative_link = None
-    temp_nic_type = None
-    csp_log_dir = None
-
-    if len(fail_match + pass_match) == 0:
-        # no cards tested, save log to UNKNOWN folder
-        fail_match = [(0, NIC_Type.UNKNOWN, NIC_Type.UNKNOWN)]
-
-    for slot, nic_type, sn in fail_match + pass_match:
-        # report doesn't have valid serial number
-        if nic_type:
-            temp_nic_type = nic_type
-        if sn == "None":
-            sn = NIC_Type.UNKNOWN
-        if stage == FF_Stage.FF_DL:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-        if stage == FF_Stage.FF_CFG:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CFG_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_CFG_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_P2C:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_P2C_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_P2C_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_4C_LOG_DIR_FMT.format(nic_type, stage, sn)
-        elif stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_2C_LOG_DIR_FMT.format(nic_type, stage, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_2C_LOG_DIR_FMT.format(nic_type, stage, sn)
-        elif stage == FF_Stage.FF_SWI:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SWI_LOG_DIR_FMT.format(nic_type, sn)
-                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_CSP_LOG_DIR_FMT.format(nic_type)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SWI_LOG_DIR_FMT.format(nic_type, sn)
-                csp_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_CSP_LOG_DIR_FMT.format(nic_type)
-        elif stage == FF_Stage.FF_FST:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_FST_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_FST_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_SRN:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_SRN_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_SRN_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_ORT:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_ORT_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_ORT_LOG_DIR_FMT.format(nic_type, sn)
-        elif stage == FF_Stage.FF_RDT:
-            if GLB_CFG_MFG_TEST_MODE:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_RDT_LOG_DIR_FMT.format(nic_type, sn)
-            else:
-                mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_RDT_LOG_DIR_FMT.format(nic_type, sn)
-        else:
-            pass
-
-        if GLB_CFG_MFG_TEST_MODE:
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
-            os.system(cmd)
-        else:
-            err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
-            if not err_code:
-                # try to change permission of the stage if this is first time created
-                # this will fail if someone else created them...ask them to chmod 777
-                os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
-                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-                    # since 4C directory is organized as /mfg_log/type/4C/4C-H/...
-                    os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
-            else:
-                # chdir from mfg_log/type/stage/sn --> mfg_log/MERGE/type/stage/sn
-                mfg_log_dir = mfg_log_dir.replace(nic_type, "MERGE/"+nic_type)
-                os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
-                os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
-                if stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_2C_H or stage == FF_Stage.FF_2C_L:
-                    os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
-
-        # copy the onboard logs only once
-        if log_hard_copy_flag:
-            qa_log_pkg_file = mfg_log_dir + os.path.basename(log_pkg_file)
-            if not network_get_file(ipaddr, userid, passwd, qa_log_pkg_file, log_pkg_file):
-                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file to {:}".format(qa_log_pkg_file), level=0)
-                continue
-
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, qa_log_pkg_file))
-
-            # It is fine to do hard copy
-            #log_hard_copy_flag = False
-            # relative link is ../sn/log_pkg_file
-            log_relative_link = "../{:s}/{:s}".format(sn, os.path.basename(log_pkg_file))
-
-            if mirror_logdir:
-                dest = mirror_logdir + "/" + os.path.basename(qa_log_pkg_file)
-                cmd = "cp {:s} {:s}".format(qa_log_pkg_file, mirror_logdir)
-                os.system(cmd)
-                mtp_mgmt_ctrl.cli_log_inf("Log also stored to {:s}".format(dest))
-
-        # create hard link
-        else:
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
-            chdir_cmd = "cd {:s}".format(mfg_log_dir)
-            ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
-            cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
-            os.system(cmd)
-        
-    if stage == FF_Stage.FF_SWI:
-        # csp log files    
-        cmd = "ls --color=never /home/diag/diag/asic/asic_src/ip/cosim/tclsh/csp*"
-     
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        listoffileoutput = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-        listoffile = listoffileoutput.split()
-        
-        listcspfiletoupload = list()
-        for cspfile in listoffile:
-            if 'txt' in cspfile:
-                listcspfiletoupload.append(cspfile)
-        for cspfilepath in listcspfiletoupload:
-            if not csp_log_dir:
-                mtp_mgmt_ctrl.cli_log_err("Unable to copy CSP log file", level=0)
-                break
-            if GLB_CFG_MFG_TEST_MODE:
-                cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(csp_log_dir)
-                os.system(cmd)
-            else:
-                err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(csp_log_dir))
-                if not err_code:
-                    os.system("chmod 777 {:s}".format(csp_log_dir+"/.."))
-                else:
-                    csp_log_dir = csp_log_dir.replace("CSP_REC", "MERGE/CSP_REC")
-                    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(csp_log_dir))
-                    os.system("chmod 777 {:s}".format(csp_log_dir+"/.."))
-            csp_log_file = csp_log_dir + os.path.basename(cspfilepath)
-            if not network_get_file(ipaddr, userid, passwd, csp_log_file, cspfilepath):
-                mtp_mgmt_ctrl.cli_log_err("Unable to copy MTP test log file {:}".format(csp_log_file), level=0)
-                continue
-            mtp_mgmt_ctrl.cli_log_inf("Collecting csp log file {:s}".format(csp_log_file))
-
-    retest_block_default = False
-
-    if stage != FF_Stage.FF_SRN:
-        for slot in skip_match:
-            mtp_test_summary.append([slot, "SKIPPED", "SLOT", True, retest_block_default])
-
-        for slot, nic_type, sn in fail_match:
-            mtp_test_summary.append([slot, sn, nic_type, False, retest_block_default])
-
-        for slot, nic_type, sn in pass_match:
-            mtp_test_summary.append([slot, sn, nic_type, True, retest_block_default])
-
-    else:
-        ret = True
-        first_rcd = True
-        for slot, nic_type, sn in fail_match:
-            if first_rcd:
-                mtp_test_summary.append([slot, sn, nic_type, False, retest_block_default])
-                first_rcd = False
-                ret = False
-        if ret:
-            for slot, nic_type, sn in pass_match:
-                if first_rcd:
-                    mtp_test_summary.append([slot, sn, nic_type, True, retest_block_default])
-
-    # clear the onboard logs
-    logfile_list.append(log_pkg_file)
-    logfile_list.append(log_dir+sub_dir)
-    #cmd = "rm -rf {:s}".format(" ".join(logfile_list))
-    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
-        mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
-        return None
-
-    mtp_mgmt_ctrl.cli_log_inf("Collecting {:s} log files complete".format(stage), level=0)
-
-    return local_test_log_file
-
-
-def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary=[]):
+def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp_test_summary=[]):
+    import testlog
     mtp_cli_id_str = id_str(mtp = mtp_id)
     duration = mtp_stop_ts - mtp_start_ts
-
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
 
     # Factory detected related error, don't post any report
     factory =  mtp_mgmt_ctrl.get_mtp_factory_location()
     if factory is None or factory == Factory.UNKNOWN:
         cli_inf(mtp_cli_id_str + "MTP Setup fails and not able to detect factory so no report will be generated")
-        cmd = "cp {:s} {:s}.bak".format(test_log_file, test_log_file)
-        os.system(cmd)
         return
 
     cli_inf(mtp_cli_id_str + "Start posting test report")
@@ -1893,6 +1364,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             mtp_psu_sn_list = dict()
             nic_loopback_sn_list = dict()
             ocp_adap_sn = ""
+            mfg_script_ver = mtp_mgmt_ctrl._script_ver
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -1952,7 +1424,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
 
             block_retest = False
             for test in test_list:
-                block_retest |= is_retest_blocked(test, stage)
+                block_retest |= testlog.is_retest_blocked(test, stage)
 
 
             if FLEX_SHOP_FLOOR_CONTROL:
@@ -1961,7 +1433,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -1978,7 +1450,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                         time.sleep(3)
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -1994,6 +1466,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
             mtp_psu_sn_list = dict()
             nic_loopback_sn_list = dict()
             ocp_adap_sn = ""
+            mfg_script_ver = mtp_mgmt_ctrl._script_ver
             test_list = list()
             test_rslt_list = list()
             err_dsc_list = list()
@@ -2050,7 +1523,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -2075,7 +1548,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, 
                                 mtp_test_summary[idx][3] = False
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, factory, mac, pn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -2630,82 +2103,6 @@ def sanity_check_setup(mtp_mgmt_ctrl, nic_list):
 
     return fail_nic_list
 
-def open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_P2C):
-    if run_from_mtp:
-        # Running python/pexpect on the MTP
-        # Fixed directory name, always cleaned up before starting
-        logfile_path = os.getcwd()
-        MODIFIER = "a+"
-    else:
-        # Running python/pexpect outside MTP
-        # Directory name contains timestamp and MTP id
-        log_dir = "log/"
-        log_timestamp = get_timestamp()
-        mtp_id = mtp_mgmt_ctrl._id
-        if stage == FF_Stage.FF_DL:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_P2C:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_P2C_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_4C_L or stage == FF_Stage.FF_4C_H or stage == FF_Stage.FF_2C_L or stage == FF_Stage.FF_2C_H:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_4C_LOG_DIR.format("4C", mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_SWI:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_SWI_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_FST:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_FST_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_SRN:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_SRN_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_ORT:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_ORT_LOG_DIR.format(mtp_id, log_timestamp)
-        elif stage == FF_Stage.FF_RDT:
-            log_sub_dir = MTP_DIAG_Logfile.MFG_RDT_LOG_DIR.format(mtp_id, log_timestamp)
-        else:
-            print("Unknown stage!")
-            return []
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
-
-        logfile_path = log_dir + log_sub_dir
-        MODIFIER = "w+"
-
-    open_file_track_list = list()
-
-    mtp_test_log_file = logfile_path + "/mtp_test.log"
-    mtp_diag_log_file = logfile_path + "/mtp_diag.log"
-    mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
-    if run_from_mtp:
-        mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
-    else:
-        mtp_diagmgr_log_file = "/tmp/mtp_diagmgr.log"
-
-    # so we dont break compatability with parser, mfg tracker, and other things
-    if stage == FF_Stage.FF_FST:
-        mtp_test_log_file = logfile_path + "/test_fst.log"
-        mtp_diag_log_file = logfile_path + "/diag_fst.log"
-
-    mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
-    open_file_track_list.append(mtp_test_log_filep)
-    mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
-    open_file_track_list.append(mtp_diag_log_filep)
-    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
-    open_file_track_list.append(mtp_diag_cmd_log_filep)
-
-    diag_nic_log_filep_list = list()
-    for slot in range(mtp_mgmt_ctrl._slots):
-        key = nic_key(slot)
-        diag_nic_log_file = logfile_path + "/mtp_{:s}_diag.log".format(key)
-        if stage == FF_Stage.FF_FST:
-            diag_nic_log_file = logfile_path + "/diag_{:s}_fst.log".format(key)
-        diag_nic_log_filep = open(diag_nic_log_file, MODIFIER, buffering=0)
-        open_file_track_list.append(diag_nic_log_filep)
-        diag_nic_log_filep_list.append(diag_nic_log_filep)
-
-    mtp_mgmt_ctrl._filep = mtp_test_log_filep
-    mtp_mgmt_ctrl._diag_filep = mtp_diag_log_filep
-    mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
-    mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
-    mtp_mgmt_ctrl._diagmgr_logfile = mtp_diagmgr_log_file
-
-    return logfile_path, open_file_track_list
-
 def mtp_power_log_start(mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("Start logging MTP syslog\n", level=0)
     mtp_syslog_handle = mtp_mgmt_ctrl.mtp_session_create()
@@ -2763,83 +2160,22 @@ def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_
     mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
     scan_cfg_filep.close()
 
-def is_retest_blocked(test, stage):
-    test = test.split("-")
-    test = test[len(test)-1]
-    if test in [
-                "NIC_POWER",
-                "SNAKE_ELBA",
-                "L1",
-                "EMMC",
-                "DDR_STRESS",
-                "I2C",
-                "RTC",
-                "EDMA"
-                ]:
-        return True
-    elif test in ["ETH_PRBS"] and stage in (FF_Stage.FF_4C_L, FF_Stage.FF_4C_H, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L):
-        return True 
-    else:
+    ## also save the scans into mtp object
+    if not read_scanned_barcodes(mtp_mgmt_ctrl):
         return False
 
-def assign_nic_retest_flag(test_log_file, mtp_test_summary, stage):
-    """
-        1. Open mtp_test.log to search for "<SN> NIC_DIAG_REGRESSION_TEST_FAIL" (usually at the end)
-        2. For those SN's failing, search for which test they failed "<SN> DIAG TEST <DSP> <TEST> <RESULT> "
-    """
-    with open(test_log_file, 'r') as fp:
-        buf = fp.read()
-
-    if MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL in buf:
-        nic_fail_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_RSLT_RE.format(MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL)
-        match = re.findall(nic_fail_reg_exp, buf)
-        for slot, sn_type, sn in match:
-            test_list = list()
-            test_rslt_list = list()
-            err_dsc_list = list()
-            nic_cli_id_str = id_str(nic=int(slot), base=0)
-            # find all test status
-            nic_test_rslt_reg_exp = MTP_DIAG_Report.NIC_DIAG_TEST_RSLT_RE.format(slot, sn)
-            sub_match = re.findall(nic_test_rslt_reg_exp, buf)
-            for dsp, test, result in sub_match:
-                # EXCLUDE PASSING TESTS
-                if result == "PASS":
-                    continue
-
-                test_list.append("{:s}-{:s}".format(dsp, test))
-                test_rslt_list.append(result)
-                err_dsc_list.append(nic_cli_id_str)
-
-            mac=None 
-            pn=None
-            nic_mac_pc_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_MAC_PN_BY_FRU_RE.format(sn)
-            matchsnformacpn = re.findall(nic_mac_pc_reg_exp, buf)
-            if matchsnformacpn:
-                mac=matchsnformacpn[0][0]
-                pn=matchsnformacpn[0][1]
-
-            if FindDellSN(sn):
-                nic_pn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU_RE.format(sn)
-                matchsn = re.findall(nic_pn_reg_exp, buf)
-                if matchsn:
-                    sn = sn[:2] + matchsn[0][:6] + sn[2:] + matchsn[0][6:]
-                else:
-                    nic_pn_reg_exp2 = MTP_DIAG_Report.NIC_DIAG_REGRESSION_PN_BY_FRU2_RE.format(sn)
-                    matchsn2 = re.findall(nic_pn_reg_exp2, buf)
-                    if matchsn2:
-                        sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
-
-            block_retest = False
-            for test in test_list:
-                block_retest |= is_retest_blocked(test, stage)
-
-            # replace the 5th field in matrix
-            if block_retest:
-                for idx in range(len(mtp_test_summary)):
-                    # locate this SN's record
-                    if mtp_test_summary[idx][1] == sn:
-                        # block it
-                        mtp_test_summary[idx][4] = True
+def read_scanned_barcodes(mtp_mgmt_ctrl):
+    import testlog
+    # load the barcode config file made earlier
+    mtp_id = mtp_mgmt_ctrl._id
+    tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+    scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+    scanned_fru_cfg_dict = load_cfg_from_yaml(scan_cfg_file)
+    if mtp_id not in scanned_fru_cfg_dict:
+        mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
+        return False
+    mtp_mgmt_ctrl.barcode_scans = scanned_fru_cfg_dict
+    return True
 
 @test_utils.semi_parallel_test_section
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):

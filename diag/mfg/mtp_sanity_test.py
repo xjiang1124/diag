@@ -11,20 +11,14 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from libdefs import NIC_Type
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import *
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libdiag_db import diag_db
 
 
 def load_mtp_cfg(cfg_yaml = None):
@@ -121,26 +115,14 @@ def main():
     for loop_cnt in range(iteration):
         current_test_rs = True
 
-        # logfiles
-        open_file_track_mtp_list = dict()
-        logfile_dir_list = dict()
-        for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
-
         mfg_start_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.cli_log_inf("LOOP CYCLE: {0} START".format((loop_cnt + 1)), level=0)
-        # power off all the test mtp
-        libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
-        # power on the mtp chassis
-        libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
 
         if not test_utils.single_mtp_test(stage,
                                           mtp_mgmt_ctrl,
                                           mfg_p2c_summary[mtp_id],
-                                          logfile_dir_list[mtp_id],
-                                          open_file_track_mtp_list[mtp_id],
                                           args.skip_test,
-                                          args.jobd_logdir,
+                                          jobd_logdir=args.jobd_logdir,
                                           mtpcfg_file=mtpcfg_file,
                                           testsuite_name=stage,
                                           swm_test_mode=swmtestmode):
@@ -148,7 +130,7 @@ def main():
 
         mfg_end_ts = libmfg_utils.timestamp_snapshot()
         mtp_mgmt_ctrl.cli_log_inf("MFG Test Duration: {0}".format(mfg_end_ts - mfg_start_ts), level=0)
-        mtp_mgmt_ctrl.cli_log_inf("MFG Test Log: {0}".format(logfile_dir_list[mtp_id]), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MFG Test Log: {0}".format(testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)), level=0)
         # result
         if current_test_rs:
             mtp_mgmt_ctrl.cli_log_inf("MFG Test Result: {0}".format("PASS"), level=0)

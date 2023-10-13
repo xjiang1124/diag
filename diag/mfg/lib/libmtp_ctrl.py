@@ -67,6 +67,7 @@ class mtp_ctrl():
         self._nic_alom_sn_list = [None] * self._slots
         self._nic_status_before_hide_list = [NIC_Status.NIC_STA_OK] * self._slots
         self._nic_sw_pn_list = [None] * self._slots
+        self.barcode_scans = dict()
 
         self._nic_thread_list = [None] * self._slots
         # lock for printing
@@ -84,6 +85,7 @@ class mtp_ctrl():
         self._os_ver = None
         self._diag_ver = None
         self._asic_ver = None
+        self._script_ver = ""
         self._swmtestmode = [Swm_Test_Mode.SWMALOM] * self._slots
         self._fst_ver = None
         self._psu_sn = dict()
@@ -97,6 +99,8 @@ class mtp_ctrl():
         self._diag_nic_filep_list = diag_nic_log_filep_list[:]
         self._diagmgr_logfile = None
         self._temppn = None
+        self._test_log_folder = None # relative path to log folder
+        self._open_file_handles = []
 
         self._cicd_run = False
 
@@ -105,7 +109,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_inf(cli_id_str + indent + msg)
@@ -117,7 +121,7 @@ class mtp_ctrl():
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         prefix = "==> "
         postfix = " <=="
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, cli_id_str + prefix + msg + postfix)
         else:
             libmfg_utils.cli_inf(cli_id_str + prefix + msg + postfix)
@@ -128,7 +132,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_err(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_err(cli_id_str + indent + msg)
@@ -139,7 +143,7 @@ class mtp_ctrl():
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_wrn(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_wrn(cli_id_str + indent + msg)
@@ -150,7 +154,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_inf(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_inf(nic_cli_id_str + indent + msg)
@@ -161,7 +165,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_err(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_err(nic_cli_id_str + indent + msg)
@@ -172,7 +176,7 @@ class mtp_ctrl():
             msg = ""
         nic_cli_id_str = libmfg_utils.id_str(mtp = self._id, nic = slot)
         indent = "    " * level
-        if self._filep:
+        if self._filep and not self._filep.closed:
             libmfg_utils.cli_log_wrn(self._filep, nic_cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_wrn(nic_cli_id_str + indent + msg)
@@ -294,12 +298,31 @@ class mtp_ctrl():
 
         script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
         if script_ver_match:
-            script_ver = script_ver_match.group(2)
-        else:
-            script_ver = ""
-        self.cli_log_report_inf("MFG Script Version: {:s}".format(script_ver))
+            self._script_ver = script_ver_match.group(2)
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
 
         self.cli_log_inf("MTP System Info Dump End\n", level=0)
+        return True
+
+    def fst_sys_info_disp(self):
+        self.cli_log_inf("MTPS System Info Dump:", level=0)
+
+        if not self._mgmt_cfg[0]:
+            self.cli_log_err("Unable to retrieve MTPS MGMT IP")
+            return False
+        self.cli_log_report_inf("MTPS Chassis IP: {:s}".format(self._mgmt_cfg[0]))
+
+        if not self.get_mtp_factory_location():
+            self.cli_log_err("Unable to get MTP factory location")
+            return False
+        self.cli_log_report_inf("MTPS Location: {:s}".format(self.get_mtp_factory_location()))
+
+        script_ver_match = re.search("image_amd64_....(.){0,2}_(.*)\.tar", MFG_IMAGE_FILES.MTP_AMD64_IMAGE)
+        if script_ver_match:
+            self._script_ver = script_ver_match.group(2)
+        self.cli_log_report_inf("MFG Script Version: {:s}".format(self._script_ver))
+
+        self.cli_log_inf("MTPS System Info Dump End\n", level=0)
         return True
 
 
@@ -313,7 +336,9 @@ class mtp_ctrl():
 
     def set_mtp_diag_logfile(self, diag_filep):
         self._diag_filep = diag_filep
+        self._mgmt_handle.logfile = None
         self._mgmt_handle.logfile_read = self._diag_filep
+        self._mgmt_handle.logfile_send = None
 
 
     def mtp_get_cmd_buf_before_sig(self):
@@ -428,6 +453,11 @@ class mtp_ctrl():
     def set_mtp_sn(self, sn):
         self._mtp_sn = sn
         self.cli_log_inf("Set MTP SN to {:s}".format(sn), level=0)
+
+    def close_file_handles(self):
+        fp_list = self._open_file_handles
+        for fp in fp_list:
+            fp.close()
 
     def _apc_model_check(self, handle):
         """

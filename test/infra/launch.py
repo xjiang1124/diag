@@ -210,6 +210,9 @@ class LaunchApp(object):
                     fh.write(barcode_scans[slot]['MAC'] + "\n")
                     if barcode_scans[slot]['PN']:
                         fh.write(barcode_scans[slot]['PN'] + "\n")
+                    if self.__testsuite.config.job == "FST":
+                        fh.write("ROT000{:02d}".format(slot) + "\n")
+
                 fh.write(f'STOP\n')
         except Exception as e:
             Logger.error(f"Failed to write {scanDL_input}: {e}")
