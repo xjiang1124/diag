@@ -59,7 +59,7 @@ then
     cp -r /data/nic/fake_root_target/nic/* $ARM_ASIC_PATH
     cp -r /data/nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl $ARM_ASIC_PATH/asic_version.txt
     rm -rf /data/nic/
-    cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    cp $ARM_ASIC_PATH/asic_lib/diag_s.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $NIC_ARM_DIR/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $NIC_ARM_DIR/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $NIC_ARM_DIR/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
