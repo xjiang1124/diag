@@ -167,13 +167,6 @@ if {$ASIC_TYPE == "GIGLIO"} {
 
 plog_msg "\n\n\n"
 plog_msg "=================="
-plog_msg "EOS check"
-plog_msg "=================="
-plog_set_verbose 2
-elb_eos_chk
-
-plog_msg "\n\n\n"
-plog_msg "=================="
 plog_msg "ARM status"
 plog_msg "=================="
 arm_hang_dbg_display
