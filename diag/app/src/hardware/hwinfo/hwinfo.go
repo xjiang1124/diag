@@ -81,6 +81,7 @@ var CpldInfo interface{}
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
+var lipariEepList = []string {"FRU", "FRU_CPU", "FRU_SWITCH"}
 
 //===============================
 // Naples100 
@@ -650,6 +651,8 @@ func init() {
     //===============================
     // Taormina
     eepromMap["TAORMINA"]          = naplesEepList
+    //Lipari
+    eepromMap["LIPARI"]            = lipariEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)

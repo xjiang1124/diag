@@ -28,19 +28,23 @@ test2args = {
         # Lacona section
         "P47930"                     : "nod_525",               #P47930-001       LACONA32 HPE
         "0X322F"                     : "nod_525",               #0X322F X/A       LACONA32 DELL
+        # Ginestra section
+        "68-0074"                    : "hod_1100",              #68-0074          Ginextra_D4
+        "68-0075"                    : "hod_1100",              #68-0075          Ginextra_D5
     },
     "DDR_BIST"         : {
         ##### For DDR_BIST test, we call 'tclsh ddr_bist.tcl', so the args here are actually for the script ddr_bist.tcl
         # Part Number                : Command Arguments List in white space seperated String, put N/A if you want to use default value; For flag only options, + means inclue this option, - means exclude this option
         # 68-0015 or 68-0015-02      : We can specify part number with two this two format, if both appear in the dict, the one with revision(68-0015-02) take priority
+        # tips for ginestra,    -vdd_margin_pct -arm_margin_pct -margin_pct (no matter vmagin high or low, both are 3 3 3 now); for ddr_freq D4 3200; D5 4800 and 5600
         "IS_SUITE_COMMON_ARGS_APPLY" : True, # Flag to indicate if using the comman test suite and test case arguments, if this key is not show up in this dict, means default to True
         "IS_CASE_COMMON_ARGS_APPLY"  : True,
-        "ARGUMENT_SPEC"              : "-sn          -slot           -hc                 -ctrl_pi        -addr_space     -dual_rank      -ddr_freq           -ddr5       -vmarg         -pc",
-        "DEFAULT"                    : "XYZ          N/A             -                   -               -               -               -                   -           normal         0",
-        "P47930"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A",
-        "0X322F"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A",
-        "68-0074"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             2400                N/A         N/A            -",
-        "68-0075"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             2400                N/A         N/A            -",
+        "ARGUMENT_SPEC"              : "-sn          -slot           -hc                 -ctrl_pi        -addr_space     -dual_rank      -ddr_freq           -ddr5       -vmarg         -pc         -vdd_margin_pct         -arm_margin_pct         -margin_pct",
+        "DEFAULT"                    : "XYZ          N/A             -                   -               -               -               -                   -           normal         0           -                       -                       -",
+        "P47930"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A         -                       -                       -",
+        "0X322F"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A         -                       -                       -",
+        "68-0074"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             3200                N/A         N/A            0           -                       -                       -",
+        "68-0075"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             5600                N/A         N/A            0           3                       3                       3",
     },
     "SNAKE_ELBA"       : {
         ##### SNAKE_ELBA Test call nic_test.py script, so args here are actually for nic_test.py, example nic_test.py -snake -slot_list='6,8' -wtime=600 -vmarg normal -snake_num=4 -dura=3 -mode=hod
@@ -48,12 +52,14 @@ test2args = {
         # 68-0015 or 68-0015-02      : We can specify part number with two this two format, if both appear in the dict, the one with revision(68-0015-02) take priority
         "IS_SUITE_COMMON_ARGS_APPLY" : True, # Flag to indicate if using the comman test suite and test case arguments, if this key is not show up in this dict, means default to True
         "IS_CASE_COMMON_ARGS_APPLY"  : True,
-        "ARGUMENT_SPEC"              : "--slot_list     -wtime              -vmarg         -snake_num        -dura         -int_lpbk",
-        "DEFAULT"                    : "N/A             600                 normal         4                 3             +",
-        "68-0015"                    : "N/A             N/A                 N/A            N/A               N/A           N/A",
-        "P47930"                     : "N/A             300                 N/A            6                 120           N/A",
-        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A",
-        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A",
-        "68-0029"                    : "N/A             600                 N/A            4                 3             +",
+        "ARGUMENT_SPEC"              : "--slot_list     -wtime              -vmarg         -snake_num        -dura         -int_lpbk        -num_retry",
+        "DEFAULT"                    : "N/A             600                 normal         4                 3             +                1",
+        "68-0015"                    : "N/A             N/A                 N/A            N/A               N/A           N/A              N/A",
+        "P47930"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
+        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
+        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
+        "68-0029"                    : "N/A             600                 N/A            4                 3             +                N/A",
+        "68-0074"                    : "N/A             600                 N/A            6                 120           +                N/A",
+        "68-0075"                    : "N/A             600                 N/A            6                 120           +                N/A",
     },
 }

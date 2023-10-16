@@ -201,6 +201,9 @@ function run_parse {
     if [[ $type =~ "NAPLES" ]]; then
         echo "Capri card"
         cp $to_loc_top/mfg_parse_capri.pl $to_loc/$card_type/mfg_parse.pl
+    elif [[ $type =~ "TAORMINA" ]]; then
+        echo "Taormina"
+        cp $to_loc_top/mfg_parse_taormina.pl $to_loc/$card_type/mfg_parse.pl
     else
         cp $to_loc_top/mfg_parse.pl $to_loc/$card_type
     fi
@@ -209,11 +212,14 @@ function run_parse {
 }
 
 function run_convert {
-    #stage=$1
-    #txt_path=$2
+    local type=$1
     parse_result="${cwd}/parse_result_${timestamp}_${log_dir}.xlsx"
     echo "Done with runnning the parse script, output is $parse_result"
-    cp $to_loc_top/convert.pl $to_loc/$card_type
+    if [[ $type =~ "TAORMINA" ]]; then
+        cp $to_loc_top/convert_taormina.pl $to_loc/$card_type/convert.pl
+    else
+        cp $to_loc_top/convert.pl $to_loc/$card_type
+    fi
     cd $to_loc/$card_type
     ./convert.pl $fa_opt $parse_result $missing_log_file $passing_log_file
 }
@@ -270,6 +276,12 @@ while read -r sn; do
             "2C-H")
             from_loc="/${src_log_dir}/$card_type/2C/2C-H/${sn}"
             ;;
+            "2C")
+            from_loc="/${src_log_dir}/$card_type/2C/${sn}"
+            ;;
+            "ORT")
+            from_loc="/${src_log_dir}/$card_type/ORT/${sn}"
+            ;;
             *)
             echo "Invalid stage $i"
             exit
@@ -324,7 +336,7 @@ while read -r sn; do
             fi
         fi
     done
-    #cat $to_loc/$card_type/testresult.txt
+    cat $to_loc/$card_type/testresult.txt
     run_parse $sn $card_type
     #cat $to_loc/$card_type/logs_fail.txt
 
@@ -353,7 +365,7 @@ if [ ! -f $existing_log_file ]; then
 fi
 
 #cp $parse_result $to_loc_top/../
-run_convert
+run_convert $card_type
 rm -f ${existing_log_file} ${missing_log_file} ${passing_log_file}
 echo "The parsing result is $parse_result"
 echo "the temporary dir: $to_loc_top$dir_name can be removed"

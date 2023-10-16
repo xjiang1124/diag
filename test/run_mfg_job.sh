@@ -144,7 +144,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
@@ -213,7 +213,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE})
+    python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
     ret_SWI=$?
     set +x
 
@@ -222,7 +222,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret_DL=$?
 
     (( ret = ret_SWI || ret_DL )) # both SWI and DL step should pass
@@ -235,7 +235,41 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_fst_test.py ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log
+    python ./mfg_fst_test.py ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    ret=$?
+fi
+
+if [[ "${JOB_TYPE}" == "ORT" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_ort_test.py for two loops"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_ort_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret=$?
+fi
+
+if [[ "${JOB_TYPE}" == "RDT" ]];
+then
+    echo "Diag Tools"
+    ls -ltr ${DIAG_IMAGE_FOLDER}
+
+    echo "ASIC Libraries "
+    ls -ltr ${ASIC_IMAGE_FOLDER}
+
+    echo "**************************************************"
+    echo " Launching mfg_rdt_test.py for two loops"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_rdt_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 

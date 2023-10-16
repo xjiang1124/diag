@@ -28,6 +28,7 @@ from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils
+import testlog
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -129,6 +130,7 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--swm", help="SWM test mode")
 
     args = parser.parse_args()
     if args.mtpid:
@@ -150,7 +152,7 @@ def main():
 
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [], skip_slots=args.skip_slots)
     # local logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_FST)
 
     mtp_mgmt_ctrl._fst_ver = mtp_capability
     if mtp_cfg_db.get_mtp_max_slots(mtp_id):
@@ -176,7 +178,8 @@ def main():
     scanned_fru_cfg = None
     if "SCAN_VERIFY" not in args.skip_test and False:
         # load the barcode config file made in toplevel
-        scan_cfg_file =  MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
         scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
         if mtp_id not in scanned_fru_cfg_dict:
             mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
@@ -262,7 +265,7 @@ def main():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), level=0)
                 start_ts = libmfg_utils.timestamp_snapshot()
                 if test == "FETCH_SN":
-                    ret = mtp_mgmt_ctrl.fst_fetch_nic_info(slot)
+                    ret = mtp_mgmt_ctrl.fst_fetch_nic_info(slot, scanned_fru=scanned_fru_cfg)
                 elif test == "PCIE_LINK":
                     ret = mtp_mgmt_ctrl.fst_check_nic_pcie(slot)
                 elif test == "SET_BOARD_CONFIG":

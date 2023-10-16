@@ -11,6 +11,7 @@ import copy
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from ddr_test_parameters import test2args as ddrtest2args
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
@@ -131,17 +132,21 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
     argsdict[slot_list_arg_name] = nic_list_param
     vmar_arg_name = "-vmarg" if "-vmarg" in argsdict else "--vmarg"
     if vmarg is not None:
-        argsdict[vmar_arg_name] = vmarg
+        n_vmarg = vmarg
+        if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
+            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+            mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, pn), level=0)
+        argsdict[vmar_arg_name] = n_vmarg
     cmd_options =  args2optionstring(argsdict)
 
     if test == "PRBS_ETH":
         cmd = "nic_test.py -prbs"
     elif test == "SNAKE_HBM":
-        cmd = "nic_test.py -snake"
+        cmd = "nic_test.py -snake -num_retry 1"
     elif test == "SNAKE_PCIE":
-        cmd = "nic_test.py -snake"
+        cmd = "nic_test.py -snake -num_retry 1"
     elif test == "SNAKE_ELBA":
-        cmd = "nic_test.py -snake"
+        cmd = "nic_test.py -snake -num_retry 1"
     elif test == "ETH_PRBS":
         cmd = "nic_test.py -prbs"
     else:
@@ -348,12 +353,10 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
         nic_thread_list = list()
 
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag DDR_BIST iteration: {:d}".format(nic_type, ite), level=0)
-        # Directely call mtp_nic_diag_init instead of call mtp_nic_diag_init after call mtp_power_cycle_nic since mtp_nic_diag_init will call 
-        # nic_test.py, which will do the power cycle.
         if ite > 1:
-            mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_NIC_DIAG_INIT To Power Cycle NIC Card and Re-init it ".format(nic_type), level=0)
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, vmargin=vmarg, nic_util=True, stop_on_err=stop_on_err):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
+            mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_POWER_CYCLE_NIC To Power Cycle Card".format(nic_type), level=0)
+            if not mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list):
+                mtp_mgmt_ctrl.mtp_diag_fail_report("Power Cycle NIC list {:s} Failed".format(str(nic_list)))
                 for slot in nic_list:
                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                         nic_test_rslt_list[slot] = False
@@ -443,6 +446,13 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
 
         for slot in nic_list[:]:
             if not nic_test_rslt_list[slot]:
+                # Post Failure check
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "=== Post Fail Check Steps Start ===>")
+                try:
+                    libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+                except Exception:
+                    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Post Fail Check Issue, Ignore")
+                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "<=== Post Fail Check Steps End ===")
                 if stop_on_err:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                     raise Exception
@@ -483,7 +493,7 @@ def diag_para_mem_edma_ddr_stress_test(mtp_mgmt_ctrl, nic_type, nic_list, test_d
         # nic_test.py, which will do the power cycle.
         if ite >= 1:
             mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_NIC_DIAG_INIT To Power Cycle NIC Card and Re-init it ".format(nic_type), level=0)
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, vmargin=vmarg, nic_util=True, stop_on_err=stop_on_err):
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, vmargin=vmarg, nic_util=True, dis_hal=True, stop_on_err=stop_on_err):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                 for slot in new_nic_list:
                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -493,6 +503,14 @@ def diag_para_mem_edma_ddr_stress_test(mtp_mgmt_ctrl, nic_type, nic_list, test_d
                 if stop_on_err:
                     mtp_mgmt_ctrl.cli_log_err("STOP_ON_ERR asserted when diag initial")
                     raise Exception
+
+        #  NIC EDMA Environment Setup
+        if not mtp_mgmt_ctrl.mtp_nic_edma_env_init(new_nic_list):
+                for slot in new_nic_list:
+                    if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                        nic_test_rslt_list[slot] = False
+                        if slot not in fail_list:
+                            fail_list.append(slot)
 
         for slot in new_nic_list:
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -923,7 +941,7 @@ def main():
                              dbg_mode = verbosity)
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
@@ -1051,7 +1069,7 @@ def main():
                     dsp = stage
 
                     # Update programmables if necessary
-                    dl_check_fail_list = diag_reg.naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
+                    dl_check_fail_list = diag_reg.naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
                     programmables_checked = True
                     for slot in dl_check_fail_list:
                         if slot in nic_list:
@@ -1237,32 +1255,8 @@ def main():
             if not stop_on_err:
                 mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-            if vmarg == Voltage_Margin.low:
-                diag_sub_dir = "/lv_diag_logs/"
-                nic_sub_dir = "/lv_nic_logs/"
-                asic_sub_dir = "/lv_asic_logs/"
-            elif vmarg == Voltage_Margin.high:
-                diag_sub_dir = "/hv_diag_logs/"
-                nic_sub_dir = "/hv_nic_logs/"
-                asic_sub_dir = "/hv_asic_logs/"
-            else:
-                diag_sub_dir = "/diag_logs/"
-                nic_sub_dir = "/nic_logs/"
-                asic_sub_dir = "/asic_logs/"
-            # create log dir
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            # save the asic/diag log files
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_script_dir + diag_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-            cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+            testlog.gather_dsp_logs(mtp_mgmt_ctrl, vmarg)
+
             # clean up logfiles for the next run
             cmd = "cleanup.sh"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)

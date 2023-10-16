@@ -12,25 +12,14 @@ import traceback
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import libmtp_utils
-from libdefs import NIC_Type
+import test_utils
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import MFG_DIAG_SIG
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
-import test_utils
 
 def load_mtp_cfg():
     # MTP Screen Chassis
@@ -59,22 +48,34 @@ def main():
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test section", nargs="*", default=[])
+    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
 
+    stage = FF_Stage.FF_SRN
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
+    l1_sequence = False
     args = parser.parse_args()
     if args.verbosity:
         verbosity = True
     if args.swm:
         swmtestmode = args.swm
+    if args.l1_seq:
+        l1_sequence = True
 
-    mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db)
+    mtpcfg_file = None
+    if args.mtpcfg:
+        mtpcfg_file = os.path.relpath(args.mtpcfg)
+        mtp_cfg_db = load_mtp_cfg(mtpcfg_file)
+    else:
+        mtp_cfg_db = load_mtp_cfg()
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()
     scan_rslt = dict()
-    mtp_sn = ""
 
     # only allow one per time
     if len(mtpid_list) > 1:
@@ -93,69 +94,7 @@ def main():
         mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
         fail_nic_list[mtp_id] = list()
 
-    # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_SRN)
-
     mfg_srn_start_ts = libmfg_utils.timestamp_snapshot()
-
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-        while True:
-            scan_rslt = mtp_mgmt_ctrl.mtp_screen_barcode_scan()
-            if scan_rslt and scan_rslt["VALID"]:
-                mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
-                break;
-            mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
-    mtp_sn = scan_rslt["MTP_SN"].strip()
-    # power on the mtp chassis
-    libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
-
-    # onnect to MTP
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="SRN-SSH", retry_with_powercycle=True):
-            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
-            mtpid_list.remove(mtp_id)
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
-
-
-    # i210
-    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):    
-        ret = libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl)
-        if not ret:
-            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-            mtpid_fail_list.append(mtp_id)
-            continue
-
-        if ret:
-            cmd = "./eeupdate64e /NIC=1 /D=Dev_Start_I210_SerdesBX_NOMNG_16Mb_A2.bin"
-            rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
-            if rs.startswith("[FAIL]:"):
-                ret = False
-                mtp_mgmt_ctrl.cli_log_err("MTP I210 command failed.{:s}".format(cmd), level=0)
-                mtpid_list.remove(mtp_id)
-                mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                mtpid_fail_list.append(mtp_id)
-                continue
-            else:
-                if "8086-1537" in rs and "8086-1533" in rs: 
-                    mtp_mgmt_ctrl.cli_log_inf("MTP I210 second command response Pass.", level=0)
-                else:
-                    mtp_mgmt_ctrl.cli_log_err("MTP I210 second command response Fail.", level=0)
-                    mtpid_list.remove(mtp_id)
-                    mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
-                    mtpid_fail_list.append(mtp_id)
-                    continue
-
-        if ret:
-            # power cycle all the test mtp
-            mtp_mgmt_ctrl.mtp_power_cycle()
 
     mtp_thread_list = list()
     mfg_srn_summary = dict()
@@ -166,13 +105,14 @@ def main():
                                                 stage,
                                                 mtp_mgmt_ctrl,
                                                 mfg_srn_summary[mtp_id],
-                                                logfile_dir_list[mtp_id],
-                                                open_file_track_mtp_list[mtp_id],
-                                                args.skip_test,
-                                                args.jobd_logdir),
+                                                args.skip_test),
                                     kwargs = ({
+                                                "mtpcfg_file": mtpcfg_file,
                                                 "swm_test_mode": swmtestmode,
-                                                "mtp_sn": mtp_sn}))
+                                                "mtpcfg_file": mtpcfg_file,
+                                                "jobd_logdir": args.jobd_logdir,
+                                                "l1_sequence": l1_sequence,
+                                                "swm_test_mode": swmtestmode}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
@@ -190,12 +130,15 @@ def main():
     mfg_srn_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("MFG MTP SCREEN Test Duration:{:s}".format(mfg_srn_stop_ts - mfg_srn_start_ts))
 
-    # power off all the test mtp
-    libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list)
-
     # dump the summary
-    libmfg_utils.mfg_summary_srn_disp(FF_Stage.FF_SRN, mfg_srn_summary, mtpid_fail_list, mtp_sn)
+    mtp_sn = mtp_mgmt_ctrl.get_mtp_sn()
+    test_result = libmfg_utils.mfg_summary_srn_disp(FF_Stage.FF_SRN, mfg_srn_summary, mtpid_fail_list, mtp_sn)
 
+    # print return code for JobD to pick up
+    if test_result:
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

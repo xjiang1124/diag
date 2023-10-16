@@ -14,6 +14,7 @@ import json
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 from libdefs import MTP_Const
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
@@ -25,6 +26,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
+from libdefs import Voltage_Margin
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -40,9 +42,9 @@ from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 
 # test cleanup.
 def mtp_test_cleanup(error_code, fp_list=None):
-    if fp_list:
-        for fp in fp_list:
-            fp.close()
+    # if fp_list:
+    #     for fp in fp_list:
+    #         fp.close()
     os.system("sync")
 
 
@@ -205,12 +207,7 @@ def naples_exec_pre_check(mtp_mgmt_ctrl, nic_type, nic_list, nic_check_list, vma
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Pre Check Start".format(nic_type), level=0)
     nic_test_list = nic_list[:]
     fail_list = list()
-    if vmarg > 0:
-        dsp = "HV_PRE_CHECK"
-    elif vmarg < 0:
-        dsp = "LV_PRE_CHECK"
-    else:
-        dsp = "PRE_CHECK"
+    dsp = "PRE_CHECK"
 
     for skipped_test in skip_testlist:
         if skipped_test in nic_check_list:
@@ -269,7 +266,7 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
             sub_test_list.remove(("NIC_ASIC","L1"))
 
     # Remove QSFP loopbacks in chamber
-    if vmarg != 0 and nic_type == NIC_Type.ORTANO2:
+    if vmarg != Voltage_Margin.normal and nic_type == NIC_Type.ORTANO2:
         if ("QSFP","I2C") in sub_test_list:
             sub_test_list.remove(("QSFP","I2C"))
 
@@ -330,78 +327,6 @@ def naples_diag_para_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list,
     else:
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel PRBS Test Complete\n".format(nic_type), level=0)
 
-    return fail_list
-
-def naples_diag_mvl_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, stop_on_err, vmarg, aapl, swmtestmode, loopback, skip_testlist):
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MVL Bash Test Start".format(nic_type), level=0)
-    
-    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-        sub_test_list = [("MVL","ACC"), ("MVL","STUB")]
-    else:
-        sub_test_list = [()]
-
-    for skipped_test in skip_testlist:
-        sub_test_list = [ (s,t) for s,t in sub_test_list if s != skipped_test ]
-        sub_test_list = [ (s,t) for s,t in sub_test_list if t != skipped_test ]
-    
-    fail_list = list()
-
-    for slot in nic_list:
-        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-            if slot not in fail_list:
-                fail_list.append(slot)
-            continue
-        for dsp, test in sub_test_list:
-            if vmarg > 0:
-                dsp_disp = "HV_" + dsp
-            elif vmarg < 0:
-                dsp_disp = "LV_" + dsp
-            else:
-                dsp_disp = dsp
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-            if dsp == "MVL" and test == "ACC":
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_acc_test(slot)
-            elif dsp == "MVL" and test == "STUB":
-                ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_stub_test(slot, loopback)
-            else:
-                ret, err_msg_list = "FAILURE", ["Not the right function for this kind of test"]
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-
-            if ret == "SUCCESS":
-                mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp_disp, test, duration))
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp_disp, test, ret, duration))
-                if not stop_on_err:
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-                    mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
-                if slot not in fail_list:
-                    fail_list.append(slot)
-
-                # only display first 3 and last 3 error messages
-                if len(err_msg_list) < 6:
-                    err_msg_disp_list = err_msg_list
-                else:
-                    err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
-                for err_msg in err_msg_disp_list:
-                    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(sn, dsp_disp, test, err_msg))
-                    if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_ERR_MSG.format(alom_sn, dsp_disp, test, err_msg))
-
-            if ret != "SUCCESS" and stop_on_err:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                raise Exception
-    
-    if GLB_CFG_MFG_TEST_MODE:
-        mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    else:
-        mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Parallel MVL DSP Test Complete\n".format(nic_type), level=0)
     return fail_list
 
 
@@ -561,7 +486,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
     return fail_list
 
-def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
+def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, vmarg, stop_on_err, swmtestmode, l1_sequence, skip_testlist):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Start".format(nic_type), level=0)
     
     for skipped_test in skip_testlist:
@@ -609,6 +534,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   stop_on_err,
                                                   vmarg,
                                                   lock,
+                                                  l1_sequence,
                                                   swmtestmode))
             nic_thread.daemon = True
             nic_thread.start()
@@ -645,6 +571,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
                                                   stop_on_err,
                                                   vmarg,
                                                   lock,
+                                                  l1_sequence,
                                                   swmtestmode))
             nic_thread.daemon = True
             nic_thread.start()
@@ -679,12 +606,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
-            dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
-            dsp_disp = "LV_" + dsp
-        else:
-            dsp_disp = dsp
+        dsp_disp = dsp
 
         test_cfg = diag_test_db.get_diag_para_test(dsp, test)
         init_cmd = None
@@ -709,7 +631,7 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
         # quick hack for parameter ETH_PRBS. need to move into yaml config
         if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type == NIC_Type.ORTANO2:
             # external loopback for P2C
-            if vmarg == 0:
+            if vmarg == Voltage_Margin.normal:
                 diag_cmd += " -p 'int_lpbk=0'"
             # internal loopback for 2C/4C
             else:
@@ -722,12 +644,13 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
 
         # Collect NIC onboard logfiles
         asic_dir_logfile_list = []
+        path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
         if dsp == "NIC_ASIC" and test == "PCIE_PRBS":
-            asic_dir_logfile_list.append("elba_PRBS_PCIE.log")
+            asic_dir_logfile_list.append(path+"elba_PRBS_PCIE.log")
         if dsp == "NIC_ASIC" and test == "ETH_PRBS":
-            asic_dir_logfile_list.append("elba_PRBS_MX.log")
+            asic_dir_logfile_list.append(path+"elba_PRBS_MX.log")
         if dsp == "NIC_ASIC" and test == "L1":
-            asic_dir_logfile_list.append("elba_arm_l1_test.log")
+            asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
 
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
@@ -797,20 +720,20 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, mtp_para_test_list, stop_on_
     return
 
 
-def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, swmtestmode):
-    if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)
-    else:
+def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_test_list, nic_test_rslt_list, stop_on_err, vmarg, lock, l1_sequence, swmtestmode):
+    if l1_sequence:
         lock.acquire()
+    else: # turbo-parallel l1
+        mtp_mgmt_ctrl.mtp_turbo_j2c_lock(slot)        
         
-
+    err_msg_list = list()
     for dsp, test in diag_seq_test_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_rslt_list[slot] = False
             continue
-        if vmarg > 0:
+        if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
-        elif vmarg < 0:
+        elif vmarg == Voltage_Margin.low:
             dsp_disp = "LV_" + dsp
         else:
             dsp_disp = dsp
@@ -826,20 +749,27 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         opts = test_cfg["OPTS"]
-        mode = get_mode_param(mtp_mgmt_ctrl, slot, test)
+        mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
         diag_cmd = diag_test_db.get_diag_seq_test_run_cmd(dsp, test, slot, opts, sn, vmarg, mode)
         rslt_cmd = diag_test_db.get_diag_seq_test_errcode_cmd(dsp, slot, opts)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
+        if dsp == "ASIC" and test == "L1":
+            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, vmarg):
+                ret = "FAIL"
+            else:
+                ret = "SUCCESS"
+        else:
+            ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_seq(slot, diag_cmd, rslt_cmd, test, init_cmd, post_cmd)
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
 
         # double check the L1 test even it pass
         if dsp == "ASIC" and test == "L1":
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            # L1 sub test count is 11, err_msg_list should be empty
-            number_of_l1_tests = 1
+            number_of_l1_tests = 9
+            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
+                number_of_l1_tests = 9
             if pass_count != number_of_l1_tests:
                 err_msg_list.append("L1 Sub Test only passed: {:d}".format(pass_count))
                 if ret == "SUCCESS":
@@ -870,26 +800,8 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             if stop_on_err:
                 break;
 
-    if False: # turbo-parallel l1
-        mtp_mgmt_ctrl.mtp_turbo_j2c_unlock(slot)
-
-        # wait for all slots to complete
-        while True in [x.locked() for x in mtp_mgmt_ctrl._para_test_lock]:
-            continue
-
+    if l1_sequence:
         if not stop_on_err:
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
-
-            for dsp, test in diag_seq_test_list:
-                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
-                    mtp_mgmt_ctrl._lock.acquire()
-                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                    mtp_mgmt_ctrl._lock.release()
-
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
-    else:
-        if not stop_on_err:
-            mtp_mgmt_ctrl.mtp_mgmt_nic_diag_sys_clean(slot)
             for dsp, test in diag_seq_test_list:
                 if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
                     mtp_mgmt_ctrl._lock.acquire()
@@ -898,6 +810,22 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
 
                     mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
         lock.release()
+
+    else: # turbo-parallel l1
+        mtp_mgmt_ctrl.mtp_turbo_j2c_unlock(slot)
+
+        # wait for all slots to complete
+        while True in [x.locked() for x in mtp_mgmt_ctrl._turbo_j2c_lock]:
+            continue
+
+        if not stop_on_err:
+            for dsp, test in diag_seq_test_list:
+                if dsp == "ASIC" and test == "L1" and not nic_test_rslt_list[slot]:
+                    mtp_mgmt_ctrl._lock.acquire()
+                    mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
+                    mtp_mgmt_ctrl._lock.release()
+
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot), err_msg_list)
 
 
 def sanity_check(mtp_cfg_db, mtp_id, mtp_mgmt_ctrl):
@@ -935,20 +863,21 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
+    parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_SRN)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpsn", help="MTP SN, like FLM0021330001, etc", required=True)
+    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
     mtp_sn = ""
     stop_on_err = False
     verbosity = False
-    stage = FF_Stage.FF_P2C
     swm_lp_boot_mode = False
+    l1_sequence = False
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -963,6 +892,8 @@ def main():
         print(" SWMTESTMODE=" + str(swmtestmode))
     if args.mtpsn:
         mtp_sn = args.mtpsn
+    if args.l1_seq:
+        l1_sequence = True
 
     fail_step = ""
     fail_desc = ""
@@ -1149,7 +1080,7 @@ def main():
                              dbg_mode = verbosity)
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
 
     try:
@@ -1178,8 +1109,8 @@ def main():
         rs = True
         mac = ""
 
-        for slot in range(10):
-            pass_nic_list.append(slot) 
+        # for slot in range(10):
+        #     pass_nic_list.append(slot) 
 
         #MTP connect
         if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="SRN-SSH", retry_with_powercycle=True):
@@ -1194,7 +1125,7 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
         if rs:
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl):
+            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
                 mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
@@ -1331,6 +1262,10 @@ def main():
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if nic_prsnt_list[slot]:
+                pass_nic_list.append(slot)
+
         if rs:
             if len(nic_prsnt_list) != 10:
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Not able to detect 10 NICs")
@@ -1384,7 +1319,7 @@ def main():
         nic_type_full_list = [NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.NAPLES25SWM, NIC_Type.VOMERO2, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, "MTP_SCREEN"]
         nic_test_full_list = [naples100_nic_list, naples25_nic_list, forio_nic_list, vomero_nic_list, naples25swm_nic_list, vomero2_nic_list, naples100ibm_nic_list, naples100hpe_nic_list, naples100dell_nic_list, naples25ocp_nic_list, naples25swmdell_nic_list, naples25swm833_nic_list, ortano_nic_list, ortano2_nic_list, pomontedell_nic_list, lacona32dell_nic_list, lacona32_nic_list, mtp_screen_nic_list]
 
-        vmarg = 0
+        vmarg = Voltage_Margin.normal
         # #power cycle
         if rs:
             nic_para_test_list = mtp_screen_para_test_list[:]
@@ -1433,7 +1368,7 @@ def main():
                     pass_nic_list.remove(slot)         
 
         # NIC test
-        if rs and not mtp_mgmt_ctrl.mtp_nic_diag_init(vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
+        if rs and not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, vmargin=vmarg, swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err):
             mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1480,6 +1415,7 @@ def main():
                                                       vmarg,
                                                       stop_on_err,
                                                       swmtestmode,
+                                                      l1_sequence,
                                                       args.skip_test)
             for slot in diag_seq_fail_list:
                 rs = False
@@ -1584,32 +1520,8 @@ def main():
         if not stop_on_err:
             mtp_mgmt_ctrl.mtp_mgmt_diag_history_clear()
 
-        if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
-            diag_sub_dir = "/lv_diag_logs/"
-            nic_sub_dir = "/lv_nic_logs/"
-            asic_sub_dir = "/lv_asic_logs/"
-        elif vmarg == MTP_Const.MFG_EDVT_HIGH_VOLT:
-            diag_sub_dir = "/hv_diag_logs/"
-            nic_sub_dir = "/hv_nic_logs/"
-            asic_sub_dir = "/hv_asic_logs/"
-        else:
-            diag_sub_dir = "/diag_logs/"
-            nic_sub_dir = "/nic_logs/"
-            asic_sub_dir = "/asic_logs/"
-        # create log dir
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + diag_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + nic_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mtp_script_dir + asic_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        # save the asic/diag log files
-        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_DIAG_LOG_FILES, mtp_script_dir + diag_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, mtp_script_dir + asic_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_NIC_LOG_FILES, mtp_script_dir + nic_sub_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        testlog.gather_dsp_logs(mtp_mgmt_ctrl, vmarg)
+
         # clean up logfiles for the next run
         cmd = "cleanup.sh"
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)

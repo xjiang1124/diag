@@ -2,32 +2,32 @@
 version: 2.0
 builds:
   build-amd64-giglio:
-    commands: [ "sh", "-c", "cd build; make amd64 asic=giglio asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=giglio asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_giglio.tar
   build-arm64-giglio:
-    commands: [ "sh", "-c", "cd build; make arm64 asic=giglio asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=giglio asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_giglio.tar
   build-amd64-elba:
-    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_elba.tar
   build-arm64-elba:
-    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_elba.tar
   build-amd64-capri:
-    commands: [ "sh", "-c", "cd build; make amd64 asic=capri asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make amd64 asic=capri asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_amd64_capri.tar
   build-arm64-capri:
-    commands: [ "sh", "-c", "cd build; make arm64 asic=capri asiclib=unpackaged" ]
+    commands: [ "sh", "-c", "cd build; make arm64 asic=capri asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
@@ -67,6 +67,12 @@ jobs:
     labels: ["CI-DIAG-P2C"]
   test/4C:
     labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
+  #test/RDT:
+  #  labels: ["CI-DIAG-RDT"]
+  test/ORT:
+    labels: ["CI-DIAG-ORT"]
+  #test/SRN:
+  #  labels: ["CI-DIAG-SRN"]
   test/SWI:
     labels: ["CI-DIAG-SWI"]
   test/FST:
@@ -93,10 +99,16 @@ jobs:
 ### END NIC_TYPE TEST BUNDLE ###
 
 dependencies:
+  .:
+    - reference: test/FST
   test/infra:
     - reference: test/FST
   qa/infra:
     - reference: test/FST
+  build:
+    - reference: asset-build
+  asset-build:
+    - reference: asset-build
 
   diag:
     - reference: test/DL
@@ -125,13 +137,5 @@ dependencies:
     - reference: test/naples100
       exclude_dirs: ["scripts"]
 ### END NIC_TYPE DEPENDENCY ###
-
-  diag/mfg/mtp_dl_script:
-    - reference: test/DL
-  diag/mfg/mtp_diag_regression:
-    - reference: test/P2C
-    - reference: test/4C
-  diag/mfg/mtp_swi_script:
-    - reference: test/SWI
-  diag/mfg/mtp_fst_script:
+  diag/mfg/scripts:
     - reference: test/FST

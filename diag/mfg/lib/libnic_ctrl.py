@@ -403,6 +403,214 @@ class nic_ctrl():
             return False
         return True
 
+    def nic_console_attach_without_login(self, consoleObj=None, maxRetry=5, timeOut=None):
+        """
+        this method send "spawn console connection" command to current self._nic_handle or passed in console connection object, so self._nic_handle become console connection.
+        if console object arugument provided, means setup console connection could be from three pin header
+        otherwise, setup conosle connection though con_connect
+        """
+
+        linux_prompts = libmfg_utils.get_linux_prompt_list()
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        console_login_screen = ""
+        if consoleObj:
+            # under construnction
+            pass
+        else:
+            for _ in range(maxRetry):
+                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, linux_prompts, timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx < 0:
+                    continue
+                con_ts = libmfg_utils.timestamp_snapshot()
+                ts_record_cmd = "#######= {:s} =#######".format(str(con_ts))
+                self._nic_handle.sendline(ts_record_cmd)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, linux_prompts, timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx < 0:
+                    continue
+                cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+                self._nic_handle.sendline(cmd)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=time_out)
+                console_login_screen += self._nic_handle.before
+                if idx >= 0:
+                    break
+            else:
+                self.nic_set_err_msg("{:s} failed in {:d} retries- occupied or missing".format(cmd, maxRetry))
+                self.nic_set_cmd_buf(console_login_screen)
+                return False
+            self.nic_set_cmd_buf(console_login_screen)
+            return True
+
+    def wait_nic_bootup(self, pc_iter, expect_str=None, consoleObj=None, timeOut=None):
+        """
+        wait for nic fw to boot up from console connection, which established from self._nic_handle or passed in console connection object.
+        return the boot screen
+        """
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY + 20   # 20 seconds is the power cycle command execution time
+        time_out *= pc_iter
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF]
+        see_expect_str = True
+        if expect_str:
+            exp_list.append(expect_str)
+            see_expect_str = False
+        nic_boot_screen = ""
+
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            if idx == 0:
+                nic_boot_screen += self._nic_handle.before
+                break
+            elif idx == 1:
+                # EOF, need re-establish console session
+                nic_boot_screen += self._nic_handle.before
+                if not self.nic_console_attach_without_login(consoleObj, time_out):
+                    nic_boot_screen += self.nic_get_cmd_buf()
+                    break
+            elif idx == 2:
+                nic_boot_screen += self._nic_handle.before + self._nic_handle.after
+                see_expect_str = True
+                break
+
+        self.nic_set_cmd_buf(nic_boot_screen)
+        return see_expect_str
+
+    def nic_console_probe_login_prompt(self, consoleObj=None, maxRetry=5, timeOut=None):
+        """
+        this method trying to probe if card boot to login prompt from console connection, which established from self._nic_handle or passed in console connection object
+        return True if see login prompt otherwise return False
+        """
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [self._nic_con_prompt, "login:", "assword:"]
+        console_login_screen = ""
+        see_login_prompt = False
+
+        # send return
+        self._nic_handle.sendline("")
+        # Forio need another enter to connect console
+        if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
+            self._nic_handle.sendline("")
+
+        retry = 1
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            # print(self._nic_handle.before)
+            if idx == 0:
+                # timeout, just send a carriage return and retry
+                console_login_screen += self._nic_handle.before
+                if retry == maxRetry:
+                    break
+                self._nic_handle.sendline("")
+                retry += 1
+                time_out = 10
+            elif idx == 1:
+                # EOF, need re-establish console session
+                console_login_screen += self._nic_handle.before
+                if self.nic_console_attach_without_login(consoleObj, maxRetry, time_out):
+                    self._nic_handle.sendline("")
+                    retry += 1
+                    continue
+                else:
+                    break
+            elif idx == 2:
+                self._nic_handle.sendline("exit")
+                continue
+            elif idx == 3 or idx == 4:
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                see_login_prompt = True
+                break
+
+        # expect extral login prompt "login:"
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=3)
+            if idx == 0:
+                break
+            else:
+                continue
+
+        self.nic_set_cmd_buf(console_login_screen)
+        if not see_login_prompt:
+            self.nic_set_err_msg("failed to probe login prompt in {:d} retries".format(maxRetry))
+            return False
+        return True
+
+    def nic_console_login(self, consoleObj=None, username=NIC_MGMT_USERNAME, password=NIC_MGMT_PASSWORD, maxRetry=5, timeOut=None):
+        """
+        this method trying to login to card with specified username and password from console connection, which established from self._nic_handle or passed in console connection object
+        """
+
+        if not self.nic_console_probe_login_prompt(consoleObj, maxRetry, timeOut):
+            return False
+
+        time_out = timeOut if timeOut else MTP_Const.NIC_CON_INIT_DELAY
+        exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [self._nic_con_prompt, "login:", "assword:"]
+        console_login_screen = ""
+        sucess_logon = False
+
+        retry = 1
+        while True:
+            idx =  self._nic_handle.expect(exp_list, timeout=time_out)
+            # print(self._nic_handle.before)
+            if idx == 0:
+                # timeout, just send a carriage return and retry
+                console_login_screen += self._nic_handle.before
+                if retry == maxRetry:
+                    break
+                self._nic_handle.sendline("")
+                retry += 1
+                time_out = 10
+            elif idx == 1:
+                # EOF, need re-establish console session
+                console_login_screen += self._nic_handle.before
+                if self.nic_console_attach_without_login(consoleObj, maxRetry, time_out):
+                    self._nic_handle.sendline("")
+                    retry += 1
+                    continue
+                else:
+                    break
+            elif idx == 2:
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                sucess_logon = True
+                break
+            elif idx == 3:
+                self._nic_handle.sendline(username)
+                console_login_screen += self._nic_handle.before + self._nic_handle.after
+                time_out = 5
+                continue
+            elif idx == 4:
+                self._nic_handle.sendline(password)
+                console_login_screen +=  self._nic_handle.before + self._nic_handle.after
+                time_out = 10
+                continue
+
+        self.nic_set_cmd_buf(console_login_screen)
+        if not sucess_logon:
+            self.nic_set_err_msg("failed to login in {:d} retries".format(maxRetry))
+            return False
+
+        if not self.nic_sync_mtp_timestamp():
+            return False
+        if not self.nic_prompt_cfg():
+            return False
+
+        return True
+
+    def nic_console_exec_cmd(self, cmd=None):
+        """
+        execute passed in command in a existing NIC console connection, which established from self._nic_handle.
+        """
+
+        rc = True
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
+            rc = False
+        self.nic_set_cmd_buf(self._nic_handle.before)
+        return rc
 
     def nic_console_attach(self):
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
@@ -516,6 +724,30 @@ class nic_ctrl():
         else:
             return True
 
+    def nic_console_test_section(func):
+        def start_end(self, *args, **kwargs):
+            if not self.nic_console_attach():
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                return False
+            ret = func(self, *args, **kwargs)
+            if not self.nic_console_detach():
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                return False
+            return ret
+        return start_end
+
+    def nic_fast_console_test_section(func):
+        def start_end(self, *args, **kwargs):
+            if not self.nic_console_attach_fast():
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                return False
+            ret = func(self, *args, **kwargs)
+            if not self.nic_console_detach_fast():
+                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                return False
+            return ret
+        return start_end
+
     def nic_send_ctrl_c(self):
         self._nic_handle.sendcontrol('c')
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
@@ -535,11 +767,8 @@ class nic_ctrl():
         self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
         self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
 
+    @nic_console_test_section
     def nic_mgmt_config(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # config the mgmt port
         cmd = MFG_DIAG_CMDS.NIC_SET_MGMT_IP_FMT.format(self._slot+101)
         self._nic_handle.sendline(cmd)
@@ -547,28 +776,18 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.after)
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         self.nic_set_status(NIC_Status.NIC_STA_OK)
         return True
 
+    @nic_console_test_section
     def nic_set_extdiag_boot(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # set default to extdiag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -578,7 +797,6 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # show and compare startup image
@@ -587,15 +805,8 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
         if expect_startup_img not in self._nic_handle.before:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
@@ -613,44 +824,29 @@ class nic_ctrl():
 
         return True
 
+    @nic_console_test_section
     def nic_erase_board_config(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # earse board config
         self._nic_handle.sendline(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         return True
 
+    @nic_console_test_section
     def nic_cpld_update_request(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # get diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # remove the potential special character
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"(goldfw)", buf)
         if not match:
-            self.nic_console_detach()
             return False
 
         #self.nic_boot_info_reset()
@@ -661,42 +857,30 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # remove the potential special character
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"(0x83)", buf)
         if not match:
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
 
+    @nic_console_test_section
     def nic_set_board_config_cert(self, cert_img, directory="/data/"):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         img_name = os.path.basename(cert_img)
         # set ibm board config
         self._nic_handle.sendline(MFG_DIAG_CMDS.SET_IBM_BOARD_CONFIG_FMT.format(directory, img_name))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # remove the potential special character
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"(Config successfully)", buf)
         if not match:
-            self.nic_console_detach()
             return False
 
         # show cert info
@@ -704,14 +888,12 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # remove the potential special character
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"(cert 1 serial: 34:f7:c4:37:67:cf:39:e7:4a:a5:6d:80:b6:b1:66:bf:29:53:f9:7f)", buf)
         if not match:
-            self.nic_console_detach()
             return False
 
         # show fwupdate -l info
@@ -719,22 +901,12 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
 
+    @nic_console_test_section
     def nic_secboot_verify(self):
-        if not self.nic_console_attach():
-            self.nic_set_err_msg("Unable to connect to NIC console")
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # send bash command elba-chk-secboot-rdy.sh and it's leading commands
         nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS.NIC_CHK_SECBOOT_FMT]
         for nic_cmd in nic_secboot_verify_cmd_list:
@@ -742,36 +914,24 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                self.nic_console_detach()
                 return False
 
         # remove the potential special character
         buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         match = re.findall(r"SUCCESS", buf)
         if not match:
-            self.nic_console_detach()
             return False          
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
 
         return True
 
+    @nic_console_test_section
     def nic_cfg_verify(self):
-        if not self.nic_console_attach():
-            self.nic_set_err_msg("Unable to connect to NIC console")
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # dump cfg0
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # dump cfg1
@@ -780,7 +940,6 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # md5sum cfg0
@@ -789,7 +948,6 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # md5sum cfg1
@@ -798,27 +956,17 @@ class nic_ctrl():
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
 
+    @nic_console_test_section
     def nic_set_diag_boot(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # set default to diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -828,7 +976,6 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # show and compare startup image
@@ -837,31 +984,20 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
         if expect_startup_img not in self._nic_handle.before:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
-        
-    def nic_set_mainfw_boot(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
 
+    @nic_console_test_section
+    def nic_set_mainfw_boot(self):
         # set default to mainfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -871,7 +1007,6 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # show and compare startup image
@@ -880,30 +1015,20 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
         if expect_startup_img not in self._nic_handle.before:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
-    def nic_set_goldfw_boot(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
 
+    @nic_console_test_section
+    def nic_set_goldfw_boot(self):
         # set default to goldfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -913,7 +1038,6 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # show and compare startup image
@@ -922,31 +1046,20 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
         if expect_startup_img not in self._nic_handle.before:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
 
+    @nic_console_test_section
     def nic_set_extos_boot(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # set default to extosa boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -956,7 +1069,6 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
 
         # show and compare startup image
@@ -965,26 +1077,15 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
             return False
         if expect_startup_img not in self._nic_handle.before:
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_console_detach()
-            return False
-
-        # detach the console connection
-        if not self.nic_console_detach():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         return True
 
-
+    @nic_console_test_section
     def nic_sw_cleanup_shutdown(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # 1. remove diag utils on NIC
         # 2. kill all processes
         # 3. sync
@@ -1012,7 +1113,6 @@ class nic_ctrl():
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
-                self.nic_console_detach()
                 return False
 
         # poweroff
@@ -1020,17 +1120,12 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
             return False
 
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_sw_shutdown(self, cloud=False, isRelC=False):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         # 1. remove diag utils on NIC
         # 2. kill all processes
         # 3. sync
@@ -1056,7 +1151,6 @@ class nic_ctrl():
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
-                self.nic_console_detach()
                 return False
 
         # poweroff ... Cloud build do not support this command & different command for Rel C
@@ -1065,17 +1159,14 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False           
         elif cloud == False:
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
             idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
-        self.nic_console_detach()
         return True
 
     def nic_set_elba_uboot_env(self, slot):
@@ -1089,11 +1180,8 @@ class nic_ctrl():
             return False
         return True
 
+    @nic_console_test_section
     def nic_sw_mode_switch(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         mode_switch_cmd_list = [MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
                                 MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
                                 "sync"]
@@ -1102,7 +1190,6 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         self._nic_handle.sendline("sysreset.sh")
@@ -1111,27 +1198,21 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
             return False
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_sw_mode_switch_verify(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1140,7 +1221,6 @@ class nic_ctrl():
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
         mode_match = re.findall(MFG_DIAG_SIG.NIC_SW_DEVICE_CHK_SIG2, cmd_buf)
@@ -1148,28 +1228,22 @@ class nic_ctrl():
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_pdsctl_system_show(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1178,24 +1252,18 @@ class nic_ctrl():
             pass
         else:
             self.nic_set_cmd_buf(cmd_buf)
-            self.nic_console_detach()
             return False
 
-        self.nic_console_detach()
         return True
 
+    @nic_fast_console_test_section
     def nic_set_i2c_after_pw_cycle(self):
-        if not self.nic_console_attach_fast():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            self.nic_set_err_msg("Unable to connect to NIC console")
-            return False
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Unable to get expected prompt")
-            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
@@ -1204,7 +1272,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_I2C_SET_FMT))
-            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -1213,7 +1280,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT))
-            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
@@ -1222,7 +1288,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT))
-            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
@@ -1231,7 +1296,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT))
-            self.nic_console_detach_fast()
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
@@ -1240,7 +1304,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             self.nic_set_err_msg("Execute command {:s} failed".format(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT))
-            self.nic_console_detach_fast()
             return False
         
         # cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -1250,48 +1313,64 @@ class nic_ctrl():
         # else:
         #     self.nic_set_cmd_buf(cmd_buf)
         #     self.nic_set_err_msg("Incorrect I2C value, expecting {:s}, got {:s}".format("0x44", cmd_buf.strip()))
-        #     self.nic_console_detach_fast()
         #     return False
 
-        self.nic_console_detach_fast()
         return True
+
+    @nic_console_test_section
+    def nic_read_firmware_image(self, smode=False):
+        if smode:
+            cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT
+        else:
+            cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_err_msg("Command {:s} failed".format(cmd))
+            return False
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"(\w+fw\w?|extdiag)", buf)
+        if match:
+            self._boot_image = match[0]
+            # check if boot image is valid
+            if self._boot_image in MFG_VALID_FW_LIST:
+                return True
+            else:
+                self.nic_set_err_msg("NIC booted from {:s} not allowed here".format(self._boot_image))
+                return False
+
+    @nic_console_test_section
+    def nic_read_kernel_version(self):
+        cmd = MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        if idx < 0:
+            self.nic_set_err_msg("Command {:s} failed".format(cmd))
+            return False
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        match = re.findall(r"SMP(?: PREEMPT)? (.* 20\d{2})", buf)
+        if match:
+            kernel_ver = match[0]
+            # check if timestamp is valid
+            try:
+                dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
+                self._kernel_timestamp = dt.strftime("%m-%d-%Y")
+                return True
+            except ValueError:
+                self.nic_set_err_msg("Invalid NIC FW kernel version")
+                return False
 
     def nic_boot_info_init(self, smode=False):
         # save boot image info into self._boot_image and self._kernel_timestamp
         loop = 0
         while loop < MTP_Const.NIC_CON_CMD_RETRY:
-            if not self.nic_console_attach():
+            if not self.nic_read_firmware_image(smode):
                 loop += 1
                 continue
-
-            if smode:
-                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
             else:
-                self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
-
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
-            if idx < 0:
-                self.nic_console_detach()
-                loop += 1
-                continue
-
-            # remove the potential special character
-            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            match = re.findall(r"(\w+fw\w?|extdiag)", buf)
-            if match:
-                self._boot_image = match[0]
-                # check if boot image is valid
-                if self._boot_image in MFG_VALID_FW_LIST:
-                    self.nic_console_detach()
-                    break
-                else:
-                    self.nic_console_detach()
-                    loop += 1
-                    continue
-            else:
-                self.nic_console_detach()
-                loop += 1
-                continue
+                break
 
         if loop >= MTP_Const.NIC_CON_CMD_RETRY:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1301,36 +1380,11 @@ class nic_ctrl():
         # get kernel build timestamp
         loop = 0
         while loop < MTP_Const.NIC_CON_CMD_RETRY:
-            if not self.nic_console_attach():
+            if not self.nic_read_kernel_version():
                 loop += 1
                 continue
-
-            self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
-            if idx < 0:
-                self.nic_console_detach()
-                loop += 1
-                continue
-
-            # remove the potential special character
-            buf = libmfg_utils.special_char_removal(self._nic_handle.before)
-            match = re.findall(r"SMP(?: PREEMPT)? (.* 20\d{2})", buf)
-            if match:
-                kernel_ver = match[0]
-                # check if timestamp is valid
-                try:
-                    dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
-                    self._kernel_timestamp = dt.strftime("%m-%d-%Y")
-                    self.nic_console_detach()
-                    break
-                except ValueError:
-                    self.nic_console_detach()
-                    loop += 1
-                    continue
             else:
-                self.nic_console_detach()
-                loop += 1
-                continue
+                break
 
         if loop >= MTP_Const.NIC_CON_CMD_RETRY:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -1729,34 +1783,31 @@ class nic_ctrl():
 
         return True
 
-    def nic_sw_profile(self, profile):
-        if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
-            return False
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
+    @nic_console_test_section
+    def nic_console_set_sw_profile(self, profile):
         nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
             return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_SW_PROFILE_FAIL_SIG in cmd_buf:
             self.nic_set_err_msg("Failed to apply profile")
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
+        return True
+
+    def nic_sw_profile(self, profile):
+        if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
+            return False
+        if not self.nic_console_set_sw_profile(profile):
+            return False
         return True
 
 
@@ -2190,7 +2241,6 @@ class nic_ctrl():
         cmd_buf = self._nic_handle.before
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
 
         self.nic_boot_info_reset()
@@ -3545,34 +3595,27 @@ class nic_ctrl():
         else:
             return [self._boot_image, self._kernel_timestamp]
 
+    @nic_console_test_section
     def nic_console_read_i2c(self, bus_num, dev_addr, reg_addr, read_data):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd = "i2cget -y {:d} {:x} {:x}".format(bus_num, dev_addr, reg_addr)
         self._nic_handle.sendline(nic_cmd)
         idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_console_detach()
             return False
         cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
 
         if len(match) >= 1:
             read_data[0] = int(match[0], 16)
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cpld_buf)
             return False
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
     def nic_get_pll_sta(self):
@@ -3648,11 +3691,8 @@ class nic_ctrl():
             return False
         return True
 
+    @nic_console_test_section
     def nic_console_read_cpld(self, reg_addr, read_data):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
@@ -3667,24 +3707,20 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         match = re.findall(r"(0x[0-9a-fA-F]+)", cpld_buf)
   
         if len(match) > 1:
             read_data[0] = int(match[1], 16)
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cpld_buf)
             return False
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
     def nic_swm_check_alom_present(self, errlist):
@@ -4434,6 +4470,7 @@ class nic_ctrl():
           18    525000000   568000000  2000000000
           19    416666666   568000000  2000000000
           20    525000000   568000000  3000000000
+          21    966666666  1262000000  3000000000
 
         """
         cmd_buf = self.nic_get_info(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
@@ -4505,12 +4542,9 @@ class nic_ctrl():
 
         return True
 
+    @nic_console_test_section
     def nic_mvl_acc_test(self):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:
-            return False
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         nic_cmd_list = list()
@@ -4527,28 +4561,21 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_MVL_ACC_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    @nic_console_test_section
     def nic_mvl_stub_test(self, loopback=True):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:
-            return False
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         nic_cmd_list = list()
@@ -4569,27 +4596,20 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_MVL_STUB_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    @nic_console_test_section
     def nic_mvl_link_test(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         if not self.nic_check_emmc_mounted():
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -4609,28 +4629,21 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_MVL_LINK_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    @nic_console_test_section
     def nic_phy_xcvr_test(self):
         if self._nic_type not in FPGA_TYPE_LIST:
-            return False
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         nic_cmd_list = list()
@@ -4646,7 +4659,6 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         nic_cmd_list = list()
@@ -4656,28 +4668,21 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_FPGA_PHY_TEST_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    @nic_console_test_section
     def nic_phy_xcvr_link_test(self):
         if self._nic_type not in FPGA_TYPE_LIST:
-            return False
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
 
         nic_cmd_list = list()
@@ -4693,7 +4698,6 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         nic_cmd_list = list()
@@ -4703,27 +4707,20 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_FPGA_PHY_LINK_TEST_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+    @nic_console_test_section
     def nic_edma_test(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
@@ -4738,7 +4735,6 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         nic_cmd_list = list()
@@ -4748,19 +4744,15 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if MFG_DIAG_SIG.NIC_EDMA_TEST_SIG in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -4782,11 +4774,8 @@ class nic_ctrl():
         else:
             return False
 
+    @nic_console_test_section
     def nic_check_rebooted(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
         nic_cmd_list.append("dmesg | tail -n20")
@@ -4798,12 +4787,10 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
 
         ret = True
@@ -4821,12 +4808,10 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = self._nic_handle.before
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
 
         # if "CARD_NAME=NIC{:d}".format(self._slot+1) in cmd_buf:
@@ -4836,7 +4821,6 @@ class nic_ctrl():
             self.nic_set_err_msg("NIC was rebooted")
             ret &= False
 
-        self.nic_console_detach()
         return ret
 
     def read_nic_temp(self, skip_reboot=False):
@@ -4854,11 +4838,8 @@ class nic_ctrl():
         self.nic_stop_test()
         return True
 
+    @nic_console_test_section
     def nic_port_counters(self):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append("halctl show port status")
         nic_cmd_list.append("halctl show port statistics --port eth1/3")    # BX port counters
@@ -4870,18 +4851,11 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
-
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_console_read_sgmii(self, port, reg_addr, read_data):
-
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
@@ -4896,30 +4870,23 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cpld_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cpld_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         match = re.findall(r"0x%x\r\n(0x[0-9a-fA-F]+)" % reg_addr, cpld_buf)
         if len(match) > 0:
             read_data[0] = int(match[0], 16)
         else:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cpld_buf)
             return False
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_console_write_sgmii(self, port, reg_addr, write_data):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
@@ -4934,12 +4901,10 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         time.sleep(5)
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
     def nic_console_enable_network_port(self):
@@ -5028,11 +4993,8 @@ class nic_ctrl():
 
         return True
 
+    @nic_console_test_section
     def nic_console_ping(self, to_slot):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         ipaddr = libmfg_utils.get_nic_ip_addr(to_slot)
 
         nic_cmd_list = list()
@@ -5043,24 +5005,21 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
 
         match = re.findall(r" 0% packet loss", cmd_buf)
         if match:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             return True
 
-        self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
         return False
 
+    @nic_console_test_section
     def nic_console_read_uboot(self):
         exp_boot0_version = ""
         exp_golduboot_version = ""
@@ -5068,22 +5027,16 @@ class nic_ctrl():
         if self._nic_type in FPGA_TYPE_LIST:
             exp_boot0_version = NIC_IMAGES.uboot_dat[self._nic_type]
 
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         for loop in range(0,2):
             nic_cmd = "fwupdate -l"
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             if not cmd_buf:
                 self.nic_set_err_msg("Buffer empty")
-                self.nic_console_detach()
                 return False
         
             try:
@@ -5091,7 +5044,6 @@ class nic_ctrl():
 
                 if exp_boot0_version != "" and 'boot0' not in fw_info:
                     self.nic_set_err_msg("Incorrect uboot type")
-                    self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
 
@@ -5099,7 +5051,6 @@ class nic_ctrl():
                     got_boot0_version = str(fw_info['boot0']['image']['image_version'])
                     if got_boot0_version != exp_boot0_version:
                         self.nic_set_err_msg("Incorrect boot0 version: {:s}, expecting: {:s}".format(got_boot0_version, exp_boot0_version))
-                        self.nic_console_detach()
                         self.nic_set_cmd_buf(cmd_buf)
                         return False
 
@@ -5107,7 +5058,6 @@ class nic_ctrl():
                     got_golduboot_version = str(fw_info['goldfw']['uboot']['software_version'])
                     if got_golduboot_version != exp_golduboot_version:
                         self.nic_set_err_msg("Incorrect uboot version")
-                        self.nic_console_detach()
                         self.nic_set_cmd_buf(cmd_buf)
                         return False
 
@@ -5118,16 +5068,15 @@ class nic_ctrl():
                     # weird characters read
                     self.nic_set_err_msg("Couldn't read uboot version")
                     self.nic_set_err_msg(traceback.format_exc())
-                    self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
                 else:
                     continue
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
+    @nic_console_test_section
     def nic_console_read_secure_boot_keys(self):
         """
           "extosa": {
@@ -5142,29 +5091,22 @@ class nic_ctrl():
         if self._nic_type not in FPGA_TYPE_LIST:
             return False
 
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         for loop in range(0,2):
             nic_cmd = "fwupdate -l"
             self._nic_handle.sendline(nic_cmd)
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             if not cmd_buf:
                 self.nic_set_err_msg("Buffer empty")
-                self.nic_console_detach()
                 return False
         
             try:
                 fw_info = json.loads(r'{}'.format(self.nic_hide_prompt(cmd_buf.split("fwupdate -l")[1])))
                 if 'extosa' not in fw_info:
                     self.nic_set_err_msg("Missing extosa image")
-                    self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
 
@@ -5172,7 +5114,6 @@ class nic_ctrl():
                     got_secure_boot = str(fw_info['extosa']['kernel_fit']['secure_boot'])
                     if got_secure_boot != exp_secure_boot:
                         self.nic_set_err_msg("Incorrect secure_boot value: {:s}, expecting: {:s}".format(got_secure_boot, exp_secure_boot))
-                        self.nic_console_detach()
                         self.nic_set_cmd_buf(cmd_buf)
                         return False
 
@@ -5180,7 +5121,6 @@ class nic_ctrl():
                     got_secure_boot_keys = str(fw_info['extosa']['kernel_fit']['secure_boot_keys'])
                     if got_secure_boot_keys != exp_secure_boot_keys:
                         self.nic_set_err_msg("Incorrect secure_boot_keys value: {:s}, expecting: {:s}".format(got_secure_boot_keys, exp_secure_boot_keys))
-                        self.nic_console_detach()
                         self.nic_set_cmd_buf(cmd_buf)
                         return False
 
@@ -5191,14 +5131,12 @@ class nic_ctrl():
                     # weird characters read
                     self.nic_set_err_msg("Couldn't read extosa secure_boot fields")
                     self.nic_set_err_msg(traceback.format_exc())
-                    self.nic_console_detach()
                     self.nic_set_cmd_buf(cmd_buf)
                     return False
                 else:
                     continue
 
         self.nic_set_cmd_buf(self._nic_handle.before)
-        self.nic_console_detach()
         return True
 
     def nic_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
@@ -5324,12 +5262,8 @@ class nic_ctrl():
 
         return True
 
+    @nic_console_test_section
     def nic_console_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-
         nic_cmd_list = list()
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd4 {:s}".format(d4_val))
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd3 {:s}".format(d3_val))
@@ -5339,7 +5273,6 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
 
         if vddq_prog:
@@ -5352,7 +5285,6 @@ class nic_ctrl():
                 idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
-                    self.nic_console_detach()
                     return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
@@ -5371,20 +5303,13 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
     
-        self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
+    @nic_console_test_section
     def nic_console_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
-
-
         ### check frequency set ###
         nic_cmd_list = list()
         nic_cmd_list.append("i2cget -y 0 0x1c 0xd3")
@@ -5393,15 +5318,12 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if d3_val not in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Incorrect VDD_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
             return False
@@ -5416,15 +5338,12 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if d4_val not in cmd_buf:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Incorrect VDD_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
             return False
@@ -5439,15 +5358,12 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
-                self.nic_console_detach()
                 return False
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
-            self.nic_console_detach()
             return False
         if any(x in cmd_buf for x in ["ddr_freq", "ddr_use_hardcoded_training", "ddr_vdd_margin", "ddr_ecc_writeback", "ddr_periodic_trg_en"]):
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("DDR fwenv setting not cleared")
             return False
@@ -5462,15 +5378,12 @@ class nic_ctrl():
                 idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
-                    self.nic_console_detach()
                     return False
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             if not cmd_buf:
                 self.nic_set_err_msg("Buffer empty")
-                self.nic_console_detach()
                 return False
             if d3_val not in cmd_buf:
-                self.nic_console_detach()
                 self.nic_set_cmd_buf(cmd_buf)
                 self.nic_set_err_msg("Incorrect VDDQ_DDR switching freq, expecting {:s}, got {:s}".format(d3_val, cmd_buf))
                 return False
@@ -5485,20 +5398,16 @@ class nic_ctrl():
                 idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
-                    self.nic_console_detach()
                     return False
             cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             if not cmd_buf:
                 self.nic_set_err_msg("Buffer empty")
-                self.nic_console_detach()
                 return False
             if d4_val not in cmd_buf:
-                self.nic_console_detach()
                 self.nic_set_cmd_buf(cmd_buf)
                 self.nic_set_err_msg("Incorrect VDDQ_DDR margin, expecting {:s}, got {:s}".format(d4_val, cmd_buf))
                 return False
 
-        self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
@@ -5547,11 +5456,8 @@ class nic_ctrl():
 
         return True
 
+    @nic_console_test_section
     def nic_read_transceiver_sn(self, port):
-        if not self.nic_console_attach():
-            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-            return False
-
         if port not in ("0","1","2"):
             self.nic_set_err_msg("Script error: invalid port specified")
             return False
@@ -5565,26 +5471,47 @@ class nic_ctrl():
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_set_err_msg("Can't read transceiver EEPROM")
-                self.nic_console_detach()
                 return False
 
         cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             self.nic_set_err_msg("No output when reading loopback transceiver EEPROM")
-            self.nic_console_detach()
             return False
 
         sn_match = re.search("Bus %s: SN (.*)" % port, cmd_buf)
         if sn_match is None or len(sn_match.groups()) == 0:
-            self.nic_console_detach()
             self.nic_set_cmd_buf(cmd_buf)
             self.nic_set_err_msg("Failed to parse Port {:s} loopback transceiver EEPROM".format(port))
             return False
         self._loopback_sn[port] = sn_match.group(1).strip()
     
-        self.nic_console_detach()
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
+    @nic_console_test_section
+    def nic_console_call_sysresetsh(self, ending="login", checkPoints=[]):
+        """
+        Excute systeset.sh command in new establishe console session.
+        """
 
+        self._nic_handle.sendline("sysreset.sh")
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [ending], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        self.nic_set_cmd_buf(self._nic_handle.before)
+
+        if idx < 0:
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+            return False
+
+        # remove the potential special character
+        buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(buf)
+
+        # check checkpoints
+        for check_point in checkPoints:
+            match = re.findall(r"{:s}".format(check_point), buf)
+            if not match:
+                return False
+
+        return True

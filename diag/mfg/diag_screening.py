@@ -6,10 +6,14 @@ import os
 import time
 import argparse
 import threading
+import json
 
 sys.path.append(os.path.relpath("lib"))
+sys.path.append(os.path.relpath("mtp_regression"))
 import libmfg_utils
 import libmtp_utils
+import test_utils
+import testlog
 from ddr_test_parameters import test2args
 from libdefs import NIC_Type
 from libdefs import Voltage_Margin
@@ -43,8 +47,7 @@ def load_mtp_cfg(suite_name, cfg_yaml=None):
         "2C"   : "4c_mtp_chassis_cfg.yaml",
         "4C"   : "4c_mtp_chassis_cfg.yaml",
         "SWI"  : "swi_mtp_chassis_cfg.yaml",
-        "FST"  : "fst_mtps_chassis_cfg.yaml",
-        "DDR"  : ""
+        "FST"  : "fst_mtps_chassis_cfg.yaml"
     }
     mtp_chassis_cfg_file_list = list()
     if not GLB_CFG_MFG_TEST_MODE:
@@ -122,15 +125,8 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.cli_log_inf("DDR Test At {:s} Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-        test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage, vmarg)
-        if not test_log_file:
-            mtp_mgmt_ctrl.cli_log_err("MTP Collect {:s} Test result failed".format(stage), level=0)
-            return
-        libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-        if GLB_CFG_MFG_TEST_MODE:
-            libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-        cmd = "rm -rf {:s}".format(test_log_file)
-        os.system(cmd)
+        if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+            mtp_mgmt_ctrl.cli_log_err("MTP Save {:s} DDR Test result failed".format(stage), level=0)
 
         mfg_4c_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("DDR Test At {:s} Test Duration:{:s}".format(env_temp, mfg_4c_stop_ts - mfg_4c_start_ts))
@@ -190,18 +186,8 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(
-        mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, stage)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err(
-            "MTP Collect {:s} Test result failed".format(stage), level=0)
-        return
-    libmfg_utils.assign_nic_retest_flag(test_log_file, mtp_test_summary, stage)
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts,
-                                mtp_stop_ts, test_log_file, stage, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+    if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+        mtp_mgmt_ctrl.cli_log_err("MTP Save EMMC Test result failed", level=0)
 
     mfg_emmc_stop_ts = libmfg_utils.timestamp_snapshot()
     libmfg_utils.cli_inf("EMMC Validation Test At {:s} Test Duration:{:s}".format(
@@ -214,6 +200,61 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     # May need process data here
     #
     #
+
+    return
+
+def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mtp_test_summary, new_cpld_files, stop_on_err):
+
+    if fail_nic_list:
+        fail_slots = " --fail-slots "
+        fail_slots += ' '.join(map(str, fail_nic_list))
+    else:
+        fail_slots = ""
+
+    mfg_cpld_start_ts = libmfg_utils.timestamp_snapshot()
+    stage = FF_Stage.FF_P2C
+    swm_test_mode = "sw_detect"
+
+    # force stage to DL to update MTP CPLD image files specified in libmfg_cfg.py, using the libmfg_cfg.py specified cpld image as downgrade target
+    if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, FF_Stage.FF_DL):
+        test_utils.fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
+        return False
+
+    # copy new version of CPLD binary files, which will be use as upgrade target
+    if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, new_cpld_files):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Sync new CPLD Binary files with MTP failed, test abort...")
+        return
+
+    # go to mtp_regression directory and Start the regression
+    cmd = "cd {:s}".format(mtp_script_dir)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+    mtp_start_ts = libmfg_utils.timestamp_snapshot()
+    mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+    cmd = "./diag_screening_cpld.py --mtpid {:s} --stage {:s} --swm {:s}".format(mtp_id, stage, swm_test_mode)
+
+    if fail_slots:
+        cmd += fail_slots
+    if stop_on_err:
+        cmd += " --stop_on_error"
+
+    mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("CPLD Validation Test Start ...", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
+    mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
+    mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
+    mtp_mgmt_ctrl.cli_log_inf("CPLD Validation Test At {:s} Complete".format(stage), level=0)
+    mtp_stop_ts = libmfg_utils.timestamp_snapshot()
+
+    if not testlog.save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
+        mtp_mgmt_ctrl.cli_log_err("MTP Save EMMC Test result failed", level=0)
+
+    mfg_cpld_stop_ts = libmfg_utils.timestamp_snapshot()
+    libmfg_utils.cli_inf("CPLD Validation Test Test Duration:{:s}".format(mfg_cpld_stop_ts - mfg_cpld_start_ts))
+    libmfg_utils.mfg_summary_disp(stage, {mtp_id: mtp_test_summary}, [])
+
+    # mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
     return
 
@@ -333,7 +374,7 @@ def run_ddr_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # power off all the test mtp
     libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -379,7 +420,7 @@ def run_ddr_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         ddr_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("DDR"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("DDR"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -527,10 +568,10 @@ def run_emmc_test_suite(args):
     # Copy script, config file on to each MTP Chassis
     mtp_diag_screening_script_dir = "mtp_regression/"
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        ddr_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
+        emmc_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf(
             "Start deploy MTP {:s} Test script".format("EMMC"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg, logfile_dir_list[mtp_id]):
             mtp_mgmt_ctrl.cli_log_err(
                 "Deploy MTP {:s} Test script failed".format("EMMC"), level=0)
             mtpid_list.remove(mtp_id)
@@ -568,6 +609,171 @@ def run_emmc_test_suite(args):
                 mtp_thread_list.remove(mtp_thread)
         time.sleep(5)
 
+def run_cpld_test_suite(args):
+    test_suite = args.suite.upper()
+    verbosity = args.verbosity
+    stop_on_error = args.stop_on_error
+    cli_mtpid_list = args.mtpid
+    latest_cpld_json = args.cpldfile
+
+    mtp_cfg_db = load_mtp_cfg(test_suite)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, cli_mtpid_list)
+    mtpid_fail_list = list()
+    mtp_mgmt_ctrl_list = list()
+    fail_nic_list = dict()
+    nic_sn_list = dict()
+    invalid_nic_list = dict()
+
+    # Get New CPLD binary file list
+    new_cpld_json_dict = libmtp_utils.load_cpld_info_json(latest_cpld_json, verbosity)
+    if not new_cpld_json_dict:
+        print("Failed to Load CPLD JSON file, abort...")
+        return False
+    new_cpld_files_path = libmtp_utils.generate_cpld_img_full_path_list(new_cpld_json_dict, verbosity)
+    if not new_cpld_files_path:
+        print("Failed to Got CPLD Binary file name and path from JSON file, abort...")
+        return False
+    new_cpld_files = [os.path.basename(file) for file in new_cpld_files_path]
+
+    # Copy New CPLD image files to the script running directory, since existing architecture will delivery these images to every MTP from this directory
+    dest_dir = os.getcwd() + os.sep + "release"
+    for src_file in new_cpld_files_path:
+        try:
+            rc = os.system("cp {:s} {:s}".format(src_file, dest_dir))
+        except OSError as Err:
+            print(str(Err))
+            print("Copy {:s} to {:s} run into OSError Exceprion, abort...".format(src_file, dest_dir))
+            return False
+        else:
+            if rc == 0:
+                if verbosity:
+                    print("Copied {:s} to {:s}".format(src_file, dest_dir))
+            else:
+                print("Copy {:s} to {:s} run into CMD failed, abort...".format(src_file, dest_dir))
+                return False
+
+    # init mtp_ctrl list
+    for mtp_id in mtpid_list:
+        if verbosity:
+            diag_log_filep = sys.stdout
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
+        else:
+            diag_log_filep = None
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(
+            mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list)
+        mtp_mgmt_ctrl_list.append(mtp_mgmt_ctrl)
+        fail_nic_list[mtp_id] = list()
+        nic_sn_list[mtp_id] = list()
+        invalid_nic_list[mtp_id] = list()
+
+    # logfiles
+    open_file_track_mtp_list = dict()
+    logfile_dir_list = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(
+            mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
+
+    # power off all the test mtp
+    # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
+    # power on the mtp chassis
+    # libmfg_utils.mtpid_list_poweron(mtp_mgmt_ctrl_list)
+
+    # Connect to MTP
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        if not mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, prompt_id="CPLD-SSH", retry_with_powercycle=True):
+            mtp_mgmt_ctrl.cli_log_err("Unable to connect MTP Chassis. Abort test", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+            continue
+        mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
+        mtp_mgmt_ctrl.mtp_get_memory_size()
+
+    # Sync timestamp to server
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        timestamp_str = str(libmfg_utils.timestamp_snapshot())
+        if not mtp_mgmt_ctrl.mtp_mgmt_set_date(timestamp_str):
+            mtp_mgmt_ctrl.cli_log_err(
+                "MTP Chassis timestamp sync failed", level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP Chassis timestamp sync'd", level=0)
+
+    # type check
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot in fail_nic_list[mtp_id]:
+                continue
+            test = "NIC_TYPE"
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+            ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
+            duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+            if not ret:
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, "CPLD", test, "FAILED", duration))
+                if slot not in fail_nic_list[mtp_id]:
+                    fail_nic_list[mtp_id].append(slot)
+
+    # close file handles
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+    for mtp_id in mtpid_fail_list:
+        mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+
+    # Copy script, config file on to each MTP Chassis
+    mtp_diag_screening_script_dir = "mtp_regression/"
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
+        cpld_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("CPLD"), level=0)
+        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, cpld_script_pkg, logfile_dir_list[mtp_id]):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("CPLD"), level=0)
+            mtpid_list.remove(mtp_id)
+            mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
+            mtpid_fail_list.append(mtp_id)
+        else:
+            mtp_mgmt_ctrl.cli_log_inf(
+                "Deploy MTP {:s} Test script complete".format("CPLD"), level=0)
+
+    mtp_thread_list = list()
+    cpld_test_summary = dict()
+    for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list, mtp_mgmt_ctrl_list):
+        cpld_test_summary[mtp_id] = list()
+        mtp_thread = threading.Thread(target=single_mtp_cpld_test, args=(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH+mtp_diag_screening_script_dir,
+                                                                         mtp_mgmt_ctrl,
+                                                                         mtp_id,
+                                                                         fail_nic_list[mtp_id],
+                                                                         cpld_test_summary[mtp_id],
+                                                                         new_cpld_files,
+                                                                         stop_on_error))
+        mtp_thread.daemon = True
+        mtp_thread.start()
+        mtp_thread_list.append(mtp_thread)
+        time.sleep(2)
+
+    # monitor all the thread
+    while True:
+        if len(mtp_thread_list) == 0:
+            break
+        for mtp_thread in mtp_thread_list[:]:
+            if not mtp_thread.is_alive():
+                mtp_thread.join()
+                mtp_thread_list.remove(mtp_thread)
+        time.sleep(5)
+
+    #diag_reg.mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_PASS, open_file_track_mtp_list[mtp_id])
+    # dump the summary
+    # test_result = libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
+    # print return code for JobD to pick up
+    # if test_result:
+    #     sys.exit(0)
+    # else:
+    #     sys.exit(1)
 
 def run_dl_tests(args):
 
@@ -601,6 +807,7 @@ if __name__ == "__main__":
     #parser_ddr = subparsers.add_parser('ddr', aliases=["DDR", "dDr"], help='invoke DDR memory test suite')
     parser_ddr = subparsers.add_parser('ddr', help='invoke DDR Validation test suite')
     parser_emmc = subparsers.add_parser('emmc', help='invoke EMMC Validation test suite')
+    parser_cpld = subparsers.add_parser('cpld', help='invoke CPLD Validation test suite')
     parser_dl = subparsers.add_parser('dl', help='invoke Download test suite')
     parser_p2c = subparsers.add_parser('p2c', help='invoke Pre 2 Coner test suite')
     parser_4c = subparsers.add_parser('4c', help='invoke 4 Coner test suite')
@@ -629,6 +836,12 @@ if __name__ == "__main__":
     parser_emmc.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
     parser_emmc.add_argument("-cfg", "--cfgyaml", help="Test case config file for EMMC Validation test suite, default to %(default)s", default="./config/emmc_test_suite.yaml")
     parser_emmc.set_defaults(func=run_emmc_test_suite)
+
+    parser_cpld.add_argument("--verbosity", help="Increase output verbosity", action='store_true', default=False)
+    parser_cpld.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser_cpld.add_argument("-cfile", "--cpldfile", help="Validation Target The New CPLD Binary files information Json files, default to %(default)s", default="config/latest_release_cpld_4validation.json")
+    parser_cpld.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
+    parser_cpld.set_defaults(func=run_cpld_test_suite)
 
     parser_dl.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser_dl.add_argument("-r", "--rework", help="Call rework script", action='store_true')

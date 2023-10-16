@@ -1,0 +1,31 @@
+---
+meta:
+  name: mfg_rdt
+  description: Mfg RDT test at room temp
+
+config:
+  testbed       : MTP
+  job           : RDT
+
+test_types:
+  precheckin:
+    iteration: 2
+    skip:
+      #- L1 
+      #- EDMA 
+      #- SNAKE_ELBA
+      #- SNAKE_PCIE
+      #- SNAKE_HBM
+      #- ARM_PRBS
+    slots: 2
+
+  sanity:
+    skip:
+    iteration: 2
+    slots: 2
+
+  regression:
+    iteration: 2
+    skip:
+    slots: 2
+
