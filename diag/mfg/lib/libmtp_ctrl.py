@@ -4915,6 +4915,7 @@ class mtp_ctrl():
                     if sn not in sn2slot:
                         self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Aborting ...".format(sn), level=0)
                         rc = False
+                        continue
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
                     phy_present_sn_list.append(sn)
@@ -4924,11 +4925,9 @@ class mtp_ctrl():
             # Validate if there is scanned card not physical present
             for sn in sn2slot:
                 if sn not in phy_present_sn_list:
-                    key = libmfg_utils.nic_key(slot)
-                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Aborting ...".format(key, sn), level=0)
-                    rc = False
-            if not rc:
-                return rc
+                    key = libmfg_utils.nic_key(sn2slot[sn])
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, May Because Card Not Bootup, Fail This Card Out and Continue Test".format(key, sn), level=0)
+                    self.mtp_set_nic_status_fail(sn2slot[sn], skip_fa=True)
             if not phy_present_slot_list:
                 phy_present_slot_list = range(len(bus_list_match))
         else:
