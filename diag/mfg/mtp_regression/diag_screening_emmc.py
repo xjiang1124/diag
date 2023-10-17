@@ -11,6 +11,7 @@ import csv
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import testlog
 import mtp_diag_regression as diag_reg
 from emmc_test_parameters import test2args as emmctest2args
 from diag_screening_ddr import get_test_arguments
@@ -561,7 +562,7 @@ def main():
                             dbg_mode = verbosity)
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
