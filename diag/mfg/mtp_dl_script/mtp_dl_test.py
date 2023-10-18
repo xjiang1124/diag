@@ -32,6 +32,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
+import testlog
 
 
 def logfile_close(filep_list):
@@ -227,7 +228,7 @@ def main():
 
     mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, sys.stdout, None, [], skip_slots=args.skip_slots)
     # local logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=FF_Stage.FF_DL)
 
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
@@ -441,7 +442,8 @@ def main():
         tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
         if "SCAN_VERIFY" not in args.skip_test:
             # load the barcode config file made in toplevel
-            scan_cfg_file = mtp_script_dir + "/" + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
             scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
             if mtp_id not in scanned_fru_cfg_dict:
                 mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
@@ -460,10 +462,11 @@ def main():
             mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp)
 
         # write and reload the barcode config file
-        # with open(MTP_DIAG_Logfile.SCAN_BARCODE_FILE, "w+") as fru_cfg_filep:
-        with open(MTP_DIAG_Logfile.SCAN_BARCODE_FILE, "w") as fru_cfg_filep:
+        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+        with open(scan_cfg_file, "w") as fru_cfg_filep:
             mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
-        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
         # enter in failures from construct_nic_fru_config
         for slot in range(MTP_Const.MTP_SLOT_NUM):

@@ -37,6 +37,14 @@ do
     echo "asic: $asic"
 done
 
+# if asiclib is not specified in make command, default is "stable", we use the stable nic.tar.gz in /vol/hw, for mfg release
+# if asiclib=latest in make command, we use the latest build nic.tar.gz in /vol/builds/hourly-asic/
+asiclib="stable"
+if [[ $# -eq 3 ]]
+then
+    asiclib=$3
+fi
+
 echo "============================================"
 echo "Start packaging Diag environment for $arch"
 
@@ -193,24 +201,45 @@ do
 
     DIAG_ASIC_PATH=$TOP_DIR/asic_repo/$asic/$arch
     #SNAKE_CFG_PATH=/vol/hw/diag/diag_repo/snake_configs/
-    ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
+    #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
     #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.11.17/$asic/$arch
     
+    if [[ $asiclib == "latest" ]]
+    then
+        latest=$(ls -t /vol/builds/hourly-asic/ | head -n1)
+        rm -rf $BUILD_DIR/latest/
+        mkdir -p $BUILD_DIR/latest/
+        cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
+        tar xf $BUILD_DIR/latest/releases.tar.gz -C $BUILD_DIR/latest/
+    fi
+
     if [[ $arch == "amd64" ]]
     then
         DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic_all/$asic/
     
-        mkdir -p $DIAG_ASIC_PATH
+        #mkdir -p $DIAG_ASIC_PATH
         mkdir -p $DIAG_ASIC_IMG_PATH
     
-        echo "Update ASIC lib"
-        rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+        #echo "Update ASIC lib"
+        #rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
         
-        echo "Copy ASIC lib to $arch image"
-        rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
+        #echo "Copy ASIC lib to $arch image"
+        #rsync -r $DIAG_ASIC_PATH/ $DIAG_ASIC_IMG_PATH/
     
         #echo "Copy snake CFG to $arch image"
         #rsync -r $SNAKE_CFG_PATH/ $TEMP_DIR/
+        if [[ $asiclib == "stable" ]]
+        then
+            echo "Copying stable ASIC lib for $asic"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
+        if [[ $asiclib == "latest" ]]
+        then
+            echo "Copying latest ASIC lib $latest for $asic"
+            ASIC_IMG="$BUILD_DIR/latest/releases/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
     fi
     
     if [[ $arch == "arm64" ]]
@@ -219,43 +248,54 @@ do
         ARM_ASIC_PATH=$DIAG_ASIC_IMG_PATH/$asic/
        
         mkdir -p $ARM_ASIC_PATH
-        mkdir -p $DIAG_ASIC_PATH
+        #mkdir -p $DIAG_ASIC_PATH
     
-        echo "Update ASIC lib"
-        rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
+        #echo "Update ASIC lib"
+        #rsync -r $ASIC_REPO_PATH/* $DIAG_ASIC_PATH/
     
-        echo "Copy ASIC lib to $arch image"
-        rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
-    
+        #echo "Copy ASIC lib to $arch image"
+        #rsync -r $DIAG_ASIC_PATH/* $ARM_ASIC_PATH/
+        if [[ $asiclib == "stable" ]]
+        then
+            echo "Copying stable ASIC lib for $asic"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
+        if [[ $asiclib == "latest" ]]
+        then
+            echo "Copying latest ASIC lib $latest for $asic"
+            ASIC_IMG="$BUILD_DIR/latest/releases/nic_${arch}_${asic}.tar.gz"
+            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+        fi
         #echo "Copy snake CFG to $arch image"
         #cp -r $SNAKE_CFG_PATH/* $DIAG_ASIC_IMG_PATH
     
         echo "Copy aapl $arch image"
         cp -r $TOP_DIR/diag/scripts/asic/aapl/ $DIAG_ASIC_IMG_PATH
     
-        cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        #cp $ARM_ASIC_PATH/asic_lib/diag.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
         cp $TOP_DIR/diag/python/regression/arm_nic/* $DIAG_ASIC_IMG_PATH/
         cp $TOP_DIR/diag/python/regression/scripts/dft_profile_nic $DIAG_ASIC_IMG_PATH/
         cp $TOP_DIR/diag/python/regression/scripts/nic_config.sh $DIAG_ASIC_IMG_PATH/
         cp $TOP_DIR/diag/python/regression/scripts/rtc_sanity.sh $DIAG_ASIC_IMG_PATH/
         cp $TOP_DIR/diag/scripts/vmarg.sh $DIAG_ASIC_IMG_PATH/
-        cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/elb_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/gig_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/elb_arm*tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-        cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $TOP_DIR/diag/scripts/asic/snake.h.a.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/snake.p.a.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/prbs.p.a.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/prbs.e.a.forio.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/snake_all.tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/elb_efuse_prog.tcl $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/scripts/asic/gig_efuse_prog.tcl $DIAG_ASIC_IMG_PATH/
+        cp $TOP_DIR/diag/scripts/asic/elb_arm*tcl $DIAG_ASIC_IMG_PATH
+        cp $TOP_DIR/diag/scripts/asic/nic_prbs.sh $DIAG_ASIC_IMG_PATH
     fi
 
-    if [[ $arch == "arm64" ]]
-    then
-        echo "Generate nic_arm.tar"
-        cd $TEMP_DIR_TOP; tar czf $IMG_DIR/nic_arm_$asic.tar nic_arm/ 
-    fi
+    #if [[ $arch == "arm64" ]]
+    #then
+    #    echo "Generate nic_arm.tar"
+    #    cd $TEMP_DIR_TOP; tar czf $IMG_DIR/nic_arm_$asic.tar nic_arm/ 
+    #fi
     
     echo "ASIC file -- Done"
     
@@ -279,5 +319,6 @@ do
     echo "--------------------"
     echo "Cleaning up"
     rm -rf $BUILD_DIR/temp_$asic/$arch
+    rm -rf $BUILD_DIR/latest/
     echo "Clean up -- Done"
 done

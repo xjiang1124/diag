@@ -16,6 +16,17 @@ DIAG_HOME=/home/diag
 DIAG_DIR=/home/diag/diag
 ln -sf /fs/nos/home_diag $DIAG_HOME
 
+echo "Untar ASIC lib"
+ASIC_IMG=$DIAG_HOME/nic.tar.gz
+asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
+asic=$(echo $asic_type | awk '{print toupper($0)}')
+echo "ASIC: $asic"
+chmod -R 755 $DIAG_DIR/asic_all/$asic/
+tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+rm -rf $DIAG_DIR/asic_all/$asic/nic
+
 mkdir -p $DIAG_DIR/log/
 rmmod ftdi_sio
 

@@ -92,10 +92,12 @@ unsigned char lsc_acc_mode_cmd[]		= {0xC6, 0x8, 0x0, 0x0};
 unsigned char lsc_erase_cmd[]			= {0x0E, 0x4, 0x0, 0x0};
 unsigned char lsc_erase0_cmd[]			= {0x0E, 0x0, 0x1, 0x0};
 unsigned char lsc_erase1_cmd[]			= {0x0E, 0x0, 0x2, 0x0};
+unsigned char lsc_erase_ufm3_cmd[]              = {0xCB, 0x0, 0x20, 0x0};
 unsigned char lsc_erase_fea_cmd[]		= {0x0E, 0x4, 0x0, 0x0};
 unsigned char lsc_init_cmd[]			= {0x46, 0x0, 0x0, 0x0};
 unsigned char lsc_init0_cmd[]			= {0x46, 0x0, 0x1, 0x0};
 unsigned char lsc_init1_cmd[]			= {0x46, 0x0, 0x2, 0x0};
+unsigned char lsc_init_ufm3_cmd[]               = {0x47, 0x0, 0x20, 0x0};
 unsigned char lsc_init_fea_cmd[]		= {0x46, 0x0, 0x4, 0x0};
 unsigned char lsc_disable_cmd[]			= {0x26, 0x0, 0x0};
 unsigned char lsc_prog_done_cmd[]		= {0x5E, 0x0, 0x0, 0x0};
@@ -232,6 +234,7 @@ cpld_read(uint8_t addr)
     msg[0].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 1;
+    msg[1].speed_hz = 5000000;
 
     fd = e_open(spidev_path0, O_RDWR, 0);
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
@@ -371,6 +374,8 @@ static int flash_init(uint32_t fd, int region)
         status = cpld_write_flash(fd, lsc_init1_cmd, sizeof(lsc_init_cmd));
     else if ( region == 4 )
         status = cpld_write_flash(fd, lsc_init_fea_cmd, sizeof(lsc_init_cmd));
+    else if ( region == 6 )
+        status = cpld_write_flash(fd, lsc_init_ufm3_cmd, sizeof(lsc_init_cmd));
     else
 	printf("Invalid region to init\n");
 
@@ -410,7 +415,7 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     uint32_t count = 0;
 
     txbuf[0] = 0x73;
-    txbuf[1] = 0x00;
+    txbuf[1] = 0x10;
     txbuf[2] = 0;
     txbuf[3] = 1;
 
@@ -419,13 +424,13 @@ static int flash_read(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
-    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 16;
+    msg[1].speed_hz = 5000000;
 
     do {
         if ( size < 16 ) {
-            msg[1].len = size;
+            msg[1].len = 16;
             e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
 	    memcpy(buf, rxbuf, size);
 	    size = 0;
@@ -459,9 +464,9 @@ static int flash_read_fea(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
-    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 20;
+    msg[1].speed_hz = 5000000;
 
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
     memcpy(buf, rxbuf+4, 16);
@@ -472,18 +477,18 @@ static int flash_read_fea(uint32_t fd, uint8_t *buf, uint32_t size)
     msg[0].len = 4;
     /* msg[0].speed_hz = 12000000; */
     msg[0].speed_hz = 5000000;
-    msg[1].speed_hz = 5000000;
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 4;
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
     memcpy(buf+12, rxbuf, 4);
+    msg[1].speed_hz = 5000000;
 
     return status;
 }
 
 static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
 {
-    uint32_t status = 0;
+    uint32_t status = 1;
     uint8_t wr_buf[20] = {0x70, 0x0, 0x0, 0x1};
     int row = 0;
 
@@ -491,6 +496,8 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
         status = cpld_write_flash(fd, lsc_init0_cmd, sizeof(lsc_init_cmd));
     else if ( region == 1 )
         status = cpld_write_flash(fd, lsc_init1_cmd, sizeof(lsc_init_cmd));
+    else if ( region == 6 )
+        status = cpld_write_flash(fd, lsc_init_ufm3_cmd, sizeof(lsc_init_cmd));
     else if ( region == 4 ) {
         status = cpld_write_flash(fd, lsc_init_fea_cmd, sizeof(lsc_init_cmd));
         wr_buf[0] = 0xE4;
@@ -505,6 +512,7 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
         return status;
     }
     usleep(1000);
+    printf("program region %d size %d buffer size %d\n", region, size, size % FLASH_TRANS_SIZE);
     do {
         if ( size / FLASH_TRANS_SIZE == 0 ) {
 	    if ( region == 0 || region == 1 ) {
@@ -525,7 +533,11 @@ static int flash_program(uint32_t fd, uint8_t* buf, uint32_t size, int region)
 
         usleep(1000);
         buf = buf + FLASH_TRANS_SIZE;
-        size -= FLASH_TRANS_SIZE;
+        if ( size <= FLASH_TRANS_SIZE ) {
+            printf("end of programming\n");
+            size = 0;
+        } else
+            size -= FLASH_TRANS_SIZE;
     } while ( size > 0 );
 
     return status;
@@ -582,11 +594,11 @@ static int flash_id(uint32_t fd, char *id) {
     msg[0].tx_buf = (intptr_t)lsc_idcode_cmd;
     msg[0].len = 4;
     msg[0].speed_hz = 5000000; 
-    msg[1].speed_hz = 5000000; 
     /* msg[0].speed_hz = 12000000; */
 
     msg[1].rx_buf = (intptr_t)rxbuf;
     msg[1].len = 4;
+    msg[1].speed_hz = 5000000; 
 
     e_ioctl(fd, SPI_IOC_MESSAGE(2), msg);
     for( int i = 0; i < 4; i++ ) {
@@ -837,7 +849,9 @@ struct cpld_region cpld_region_list[] = {
     {"ufm0", 2, 57312},
     {"ufm1", 3, 57312},
     {"fea", 4, 16},
-    {"", 0, 0}
+    {"ufm2", 5, 57312},
+    {"ufm3", 6, 16},
+    {"", -1, -1}
 };
 
 char xo3d_id[4] = {0x21, 0x2e, 0x30, 0x43};
@@ -861,9 +875,9 @@ static void
 usage(void)
 {
     printf("cpld (-r addr | -w addr data | -wf addr data offset mask)\n");
-    printf("cpld (-prog input_file region(cfg0/cfg1/ufm0/ufm1/fea) ) \n");
-    printf("cpld (-file output_file region(cfg0/cfg1/ufm0/ufm1/fea) )  \n");
-    printf("cpld (-erase region(cfg0/cfg1/ufm0/umf1/fea) ) \n");
+    printf("cpld (-prog input_file region(cfg0/cfg1/ufm0/ufm1/ufm2/ufm3/fea) ) \n");
+    printf("cpld (-file output_file region(cfg0/cfg1/ufm0/ufm1/ufm2/ufm3/fea) )  \n");
+    printf("cpld (-erase region(cfg0/cfg1/ufm0/ufm1/ufm2/ufm3/fea) ) \n");
     printf("cpld (-refresh | -id)\n");
     printf("cpld (-mdiord addr phy | -mdiowr addr phy | -smird addr phy | -smiwr addr phy data | -cnt port)\n");
     printf("cpld (-led [green|yellow] [on|off])\n");
@@ -929,7 +943,7 @@ main(int argc, char *argv[])
 
         cfgRegion = get_region_index_from_name(argv[3]);
 	cpldSize = cpld_region_list[cfgRegion].size;
-	if ( cfgRegion == 4 ) {
+	if ( cfgRegion == 4 || cfgRegion == 6 ) {
         } else if ( cfgRegion > 1 || cfgRegion < 0 ) {
             printf("Region function has not been implemented yet\n");
 	    return -1;
@@ -1006,6 +1020,7 @@ main(int argc, char *argv[])
         FILE* fptr = fopen(argv[2], "wb");
     	uint8_t *buf;
     	uint8_t *cpld_data;
+        int cpldSize;
         int cfgRegion;
 
         if ( fptr == NULL ) {
@@ -1014,7 +1029,9 @@ main(int argc, char *argv[])
         }
 
         cfgRegion = get_region_index_from_name(argv[3]);
-	if ( cfgRegion == 4 ) {
+        cpldSize = cpld_region_list[cfgRegion].size;
+        printf("reading region %d size %d\n", cfgRegion, cpldSize);
+	if ( cfgRegion == 4 || cfgRegion == 6 ) {
         } else if ( cfgRegion > 1 ) {
             printf("Invalid Region\n");
 	    return -1;
@@ -1030,8 +1047,8 @@ main(int argc, char *argv[])
     	    flash_read_fea(fd, cpld_data, 16);
     	    fwrite(buf, 16, 1, fptr);
 	} else {
-    	    flash_read(fd, cpld_data, 200656);
-    	    fwrite(buf, 200656, 1, fptr);
+    	    flash_read(fd, cpld_data, cpldSize);
+    	    fwrite(buf, cpldSize, 1, fptr);
 	}
     	flash_disable(fd);
 	free(buf);

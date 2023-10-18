@@ -11,24 +11,15 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
-from libdefs import NIC_Type
+import test_utils
+import testlog
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Error
-from libdefs import MTP_DIAG_Report
-from libdefs import MTP_DIAG_Logfile
-from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
-from libmfg_cfg import NIC_IMAGES
-from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
-from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdiag_db import diag_db
-import test_utils
+from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 
 def load_mtp_cfg():
     # DL/P2C MTP Chassis
@@ -143,14 +134,9 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
     mtp_mgmt_ctrl.cli_log_inf("MFG P2C Test Complete", level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
-    test_log_file = libmfg_utils.get_mtp_logfile(mtp_mgmt_ctrl, mtp_script_dir, mtp_id, mtp_test_summary, FF_Stage.FF_P2C)
-    if not test_log_file:
-        mtp_mgmt_ctrl.cli_log_err("MTP Collect P2C Test result failed", level=0)
+    if not save_logs(mtp_mgmt_ctrl, stage, mtp_test_summary, mtp_start_ts, mtp_stop_ts, None, False, True):
         return
-    if GLB_CFG_MFG_TEST_MODE:
-        libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, FF_Stage.FF_P2C, mtp_test_summary)
-    cmd = "rm -rf {:s}".format(test_log_file)
-    os.system(cmd)
+
     return
 
 
@@ -197,10 +183,8 @@ def main():
         fail_nic_list[mtp_id] = list()
 
     # logfiles
-    open_file_track_mtp_list = dict()
-    logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
+        testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
 
     mfg_p2c_start_ts = libmfg_utils.timestamp_snapshot()
 
@@ -234,9 +218,7 @@ def main():
 
         # close file handles
         for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
-        for mtp_id in mtpid_fail_list:
-            mtp_test_cleanup(open_file_track_mtp_list[mtp_id])
+            mtp_test_cleanup(mtp_mgmt_ctrl)
 
         # # Copy script, config file on to each MTP Chassis
         # mtp_p2c_script_dir = "mtp_regression/"
