@@ -2452,9 +2452,17 @@ class nic_ctrl():
     def nic_setup_diag_img(self, nic_diag_image, nic_asic_image="", emmc_utils=False):
         # if emmc_utils: arm64 diag image on NIC will be updated
         if emmc_utils:
+            nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh", "nic.tar.gz"]
+
+            # clear out old extracted lib
+            nic_cmd_list = list()
+            for util in nic_diag_list:
+                nic_cmd_list.append("rm -r /data/{:s}".format(util))
+            if not self.nic_exec_cmds(nic_cmd_list):
+                return False
+
             if self._nic_type == NIC_Type.NAPLES100:
                 # programmed fw does not support unpacking gzip. untar on MTP and copy one by one into /data/.
-                nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh"]
                 for util in nic_diag_list:
                     if not self.nic_copy_compressed_image(
                         src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
