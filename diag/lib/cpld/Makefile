@@ -13,7 +13,7 @@ libacc:
 
 libacc_v2:
 	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
-	$(CMPL) -L../third-party -lftd2xx -I../../include -c acc_v2.c
+	$(CMPL) -L../third-party -lftd2xx -I../../include -c -fPIC acc_v2.c
 	ar rs libacc_v2.a acc_v2.o
 	ar rs ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc_v2.a acc_v2.o
 
@@ -30,5 +30,5 @@ libacc_mtp:
 	cp libacc_mtp.so ${GOPATH}/pkg/linux_$(ARCH)/clib/.
 
 clean:
-	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a libacc_v2.a libacc_mtp.so libacc_turbo.so *.o *.a *.so
+	rm -rf libacc.a libacc_v2.a libacc_mtp.so libacc_turbo.so 
 

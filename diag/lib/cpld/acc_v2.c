@@ -757,6 +757,33 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     	printf("Read failed due to operation failed!\n");
     else if(ftStatus == 2)
     {
+        printf("Retry on frame corruption!\n");
+        jtag_recover();
+
+    	//resend response after 1 second;
+        ftStatus = jtag_reset(inst);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+        ftStatus = jtag_enable(inst);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+        ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
+        ftStatus = sendJtagCommand(ftHandle, cpu_rd, sizeof cpu_rd);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
+        ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
     	//resend response after 1 second;
         ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
         if (ftStatus != FT_OK)
@@ -780,7 +807,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         ftStatus = queue_read(ftHandle, data);
         if(ftStatus == 2) {
             printf("Read failed due to corruption in resend!\n");
-            jtag_recover();
+            // jtag_recover();
         }
         else if(ftStatus == 4)
             printf("Read failed due to operation failed in resend!\n");
@@ -983,7 +1010,33 @@ DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag)
         	printf("Read failed due to operation failed!\n");
     else if(ftStatus == 2)
     {
+        printf("Retry on frame corruption!\n");
+        jtag_recover();
+
     	//resend response after 1 second;
+        ftStatus = jtag_reset(inst);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+        ftStatus = jtag_enable(inst);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+        ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
+        ftStatus = sendJtagCommand(ftHandle, cpu_rd, sizeof cpu_rd);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
+        ftStatus = sendJtagCommand(ftHandle, tms_high, sizeof tms_high);
+        if (ftStatus != FT_OK) {
+            return ftStatus;
+        }
+
         ftStatus = sendJtagCommand(ftHandle, tms_low, sizeof tms_low);
         if (ftStatus != FT_OK)
         {
@@ -1006,7 +1059,6 @@ DWORD jtag_read(DWORD inst, ULONGLONG address, DWORD flag)
         ftStatus = queue_read(ftHandle, &data);
         if(ftStatus == 2) {
             printf("Read failed due to corruption in resend!\n");
-            jtag_recover();
         }
         else if(ftStatus == 4)
             printf("Read failed due to operation failed in resend!\n");
@@ -1220,7 +1272,7 @@ FT_STATUS jtag_init(DWORD portNum)
     DWORD driverVersion = 0;
     gPortNum = portNum;
 
-    printf("04/21/21 -- port number = %x\n", portNum);
+    printf("10/16/23 -- port number = %x\n", portNum);
     if ( portNum < 255 ) {
         if ( ftHandle == NULL ) {
             if ( portNum >= 20 ) {
@@ -1238,10 +1290,13 @@ FT_STATUS jtag_init(DWORD portNum)
         if ( verbosity )
             printf("Using portNum as LocId\n");
         haps = 0;
+        /*
         jtag_get_device_handle_by_locID(portNum, &handle_t);
         if ( handle_t != 0 )
             ftHandle = handle_t;
 	else 
+        */
+        if ( ftHandle == NULL )
     	    ftStatus = FT_OpenEx(portNum, FT_OPEN_BY_LOCATION,  &ftHandle);
     }
 

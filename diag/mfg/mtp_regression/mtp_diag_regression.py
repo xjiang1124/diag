@@ -415,7 +415,7 @@ def naples_diag_ncsi_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, para_test_
     for slot in nic_test_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_list.remove(slot)
-            if slot not in fail_nic_list:
+            if slot not in fail_list:
                 fail_list.append(slot)
 
     for test in para_test_list:
