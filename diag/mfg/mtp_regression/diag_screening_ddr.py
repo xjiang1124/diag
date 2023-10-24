@@ -899,6 +899,7 @@ def main():
     test_cfg_file[NIC_Type.ORTANO2ADIMSFT] = "config/ortanoadi_msft_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICR] = "config/ortanoadi_cr_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2ADICRMSFT] = "config/ortanoadi_cr_msft_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.ORTANO2ADICRS4] = "config/ortanoadi_cr_s4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2INTERP] = "config/ortanoi_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLO] = "config/ortanos_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.ORTANO2SOLOORCTHS] = "config/ortanos_ths_mtp_test_cfg.yaml"

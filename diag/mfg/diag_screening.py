@@ -121,6 +121,7 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+        testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
         mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
         mtp_mgmt_ctrl.cli_log_inf("DDR Test At {:s} Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -420,7 +421,7 @@ def run_ddr_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         ddr_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("DDR"), level=0)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("DDR"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -571,7 +572,7 @@ def run_emmc_test_suite(args):
         emmc_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf(
             "Start deploy MTP {:s} Test script".format("EMMC"), level=0)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg):
             mtp_mgmt_ctrl.cli_log_err(
                 "Deploy MTP {:s} Test script failed".format("EMMC"), level=0)
             mtpid_list.remove(mtp_id)
@@ -731,7 +732,7 @@ def run_cpld_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         cpld_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("CPLD"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, cpld_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, cpld_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("CPLD"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
