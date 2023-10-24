@@ -646,13 +646,15 @@ def diag_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, v
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
-                if not stop_on_err:
-                    nic_test_list.remove(slot)
-                    #for DDR validation test, set skip_vrm_check to False so that command 'nic_sts.tcl SN slotID skip_vrm_check' using the default
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], False)
                 if stop_on_err:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
                     raise Exception
+                else:
+                    # continue running rest test on the failed card
+                    # nic_test_list.remove(slot)
+                    #for DDR validation test, set skip_vrm_check to False so that command 'nic_sts.tcl SN slotID skip_vrm_check' using the default
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], False)
+
                 if slot not in fail_list:
                     fail_list.append(slot)
                 fail_slot_test_list.append((slot, test))
@@ -662,16 +664,6 @@ def diag_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, v
                 if slot not in test_fail_list:
                     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-            # Post Failure check
-            if fail_list:
-                mtp_mgmt_ctrl.cli_log_inf("=== Post Fail Check Steps Start ===>")
-                try:
-                    for slot in fail_list[:]:
-                        libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
-                except Exception:
-                    mtp_mgmt_ctrl.cli_log_inf("Post Fail Check Issue, Ignore")
-                mtp_mgmt_ctrl.cli_log_inf("<=== Post Fail Check Steps End ===")
 
         if GLB_CFG_MFG_TEST_MODE:
             mtp_mgmt_ctrl.cli_log_report_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
