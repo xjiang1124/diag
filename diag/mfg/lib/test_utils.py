@@ -585,11 +585,11 @@ def nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, skip_test_list):
 
     test_list.append("NIC_TYPE")
 
-    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
+    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT):
         test_list.append("SANITY_CHECK_SETUP")
-    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
+    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT):
         test_list.append("QSFP_SANITY_CHECK")
-    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H):
+    if stage in (FF_Stage.FF_P2C, FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_ORT, FF_Stage.FF_RDT):
         test_list.append("RJ45_SANITY_CHECK")
     return nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list, skip_test_list)
 
