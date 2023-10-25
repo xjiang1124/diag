@@ -1687,45 +1687,6 @@ class nic_ctrl():
 
         return True
 
-    def nic_copy_compressed_image(self, src_directory, src_img, dst_directory, timeout=MTP_Const.OS_CMD_DELAY):
-        """
-        Send file to NIC from MTP.
-
-        Same function as nic_copy_image but uses ssh connection to transfer characters, 
-        while doing tar & untar before & after. Tar on MTP and untar on NIC.
-        """
-        signatures = ["No such file", "Exiting with failure"]
-        cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, libmfg_utils.get_nic_ip_addr(self._slot), libmfg_utils.get_ssh_option(), dst_directory)
-        self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
-        if idx < 0:
-            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg("Couldn't get password prompt")
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        if idx == 0 or idx == 1:
-            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
-            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
-            return False
-
-        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg("NIC hung while copying")
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        if idx == 0 or idx == 1:
-            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
-            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
-            return False
-
-        # send a sync on NIC
-        self.nic_exec_cmds(["ls -l {:s}/{:s}".format(dst_directory, src_img)])
-
-        return True
-
     def nic_verify_fpga(self, cpld_img, partition=""):
         if not self.nic_copy_image(cpld_img):
             return False
@@ -2461,31 +2422,20 @@ class nic_ctrl():
             if not self.nic_exec_cmds(nic_cmd_list):
                 return False
 
-            if self._nic_type == NIC_Type.NAPLES100:
-                # programmed fw does not support unpacking gzip. untar on MTP and copy one by one into /data/.
-                for util in nic_diag_list:
-                    if not self.nic_copy_compressed_image(
-                        src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
-                        src_img=util,
-                        dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
-                        timeout=180):
-                        return False
+            # copy image_arm64 from MTP and untar it into /data/
+            if not self.nic_copy_image(nic_diag_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                return False
 
-            else:
-                # copy image_arm64 from MTP and untar it into /data/
-                if not self.nic_copy_image(nic_diag_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
+            nic_cmd_list.append(nic_cmd)
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
+                return False
+
+            # copy unpackaged asic lib to /data
+            if nic_asic_image:
+                if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
                     return False
-
-                nic_cmd_list = list()
-                nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
-                nic_cmd_list.append(nic_cmd)
-                if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
-                    return False
-
-                # for CI/CD, copy independent asic lib to /data
-                if nic_asic_image:
-                    if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                        return False
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)

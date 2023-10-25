@@ -268,6 +268,8 @@ class LaunchApp(object):
                                       x.get("Release", None) == GlobalOptions.diag_tool_version and
                                       x.get("Asic", None) == GlobalOptions.asic, manifest.get("MfgDiagImages", [])))
 
+            self.__settings["ASIC"] = GlobalOptions.asic
+
             if diag_images and diag_images[0].get("Images", None):
                 imgs = diag_images[0].get("Images")
                 self.__settings['DIAG_AMD64_IMAGE_PATH'] = os.path.join(GlobalOptions.diag_images, imgs.get("AMD64"))
@@ -276,24 +278,6 @@ class LaunchApp(object):
             else:
                 Logger.error("Could not load diag images from image-manifest:")
                 Logger.error(diag_images)
-                return defs.Result.INFRA_FAILURE
-
-            asic_images = list(filter(lambda x:
-                                      x.get("Release", None) == GlobalOptions.asic_lib_version and
-                                      x.get("Asic", None) == GlobalOptions.asic, manifest.get("AsicLibraries", [])))
-
-            if asic_images and asic_images[0].get("Images", None):
-                imgs = asic_images[0].get("Images")
-                self.__settings['ASIC_AMD64_IMAGE_PATH'] = os.path.join(GlobalOptions.asic_images, 
-                                                                        GlobalOptions.asic, 
-                                                                        imgs.get("AMD64"))
-                self.__settings['ASIC_ARM64_IMAGE_PATH'] = os.path.join(GlobalOptions.asic_images, 
-                                                                        GlobalOptions.asic, 
-                                                                        imgs.get("ARM64"))
-                self.__settings['ASIC_IMAGE_FOLDER'] = os.path.join(GlobalOptions.asic_images, GlobalOptions.asic)
-            else:
-                Logger.error("Could not load asic images from image-manifest:")
-                Logger.error(asic_images)
                 return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS

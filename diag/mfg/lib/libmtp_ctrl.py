@@ -102,8 +102,6 @@ class mtp_ctrl():
         self._test_log_folder = None # relative path to log folder
         self._open_file_handles = []
 
-        self._cicd_run = False
-
     def cli_log_inf(self, msg, level = 1):
         if msg is None:
             msg = ""
@@ -3550,11 +3548,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
 
         nic_diag_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if self._cicd_run:
-            nic_asic_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ASIC_ARM64_IMAGE
-        else:
-            nic_asic_image = ""
-        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, nic_asic_image, nic_utils):
+
+        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, "", nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
