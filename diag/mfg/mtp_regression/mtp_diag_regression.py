@@ -786,6 +786,8 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
         if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
             asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+        if dsp == "MEM" and test == "DDR_STRESS":
+            asic_dir_logfile_list.append("/data/nic_util/" + "stressapptest.log")
 
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
