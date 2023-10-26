@@ -24,6 +24,7 @@ from libdefs import FLEX_TWO_WAY_COMM
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
+from libmfg_cfg import FST_SCAN_ENABLE
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -176,7 +177,7 @@ def main():
 
     # load scanned fru
     scanned_fru_cfg = None
-    if "SCAN_VERIFY" not in args.skip_test and False:
+    if "SCAN_VERIFY" not in args.skip_test and FST_SCAN_ENABLE:
         # load the barcode config file made in toplevel
         tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
         scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
@@ -226,6 +227,9 @@ def main():
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(mtp_mgmt_ctrl._slots):
             if not nic_prsnt_list[slot]:
+                continue
+            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot) and slot not in fail_nic_list:
+                fail_nic_list.append(slot)
                 continue
             pass_nic_list.append(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)

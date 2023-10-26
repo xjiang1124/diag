@@ -1272,7 +1272,7 @@ FT_STATUS jtag_init(DWORD portNum)
     DWORD driverVersion = 0;
     gPortNum = portNum;
 
-    printf("09/29/23 -- port number = %x\n", portNum);
+    printf("10/16/23 -- port number = %x\n", portNum);
     if ( portNum < 255 ) {
         if ( ftHandle == NULL ) {
             if ( portNum >= 20 ) {
@@ -1290,10 +1290,13 @@ FT_STATUS jtag_init(DWORD portNum)
         if ( verbosity )
             printf("Using portNum as LocId\n");
         haps = 0;
+        /*
         jtag_get_device_handle_by_locID(portNum, &handle_t);
         if ( handle_t != 0 )
             ftHandle = handle_t;
 	else 
+        */
+        if ( ftHandle == NULL )
     	    ftStatus = FT_OpenEx(portNum, FT_OPEN_BY_LOCATION,  &ftHandle);
     }
 

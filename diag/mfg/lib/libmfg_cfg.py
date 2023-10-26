@@ -7,6 +7,7 @@ FLEX_SHOP_FLOOR_CONTROL = False
 MFG_BYPASS_PSU_CHECK = False
 RUNNING_EDVT = False
 ENABLE_SCAN_VERIFY = True
+FST_SCAN_ENABLE = False
 
 class NIC_IMAGES:
     ### IMAGES VERSION CONTROL FOR DL AND SWI:
@@ -518,8 +519,6 @@ class MTP_IMAGES:
 class MFG_IMAGE_FILES:
     MTP_AMD64_IMAGE = "image_amd64_elba.tar"
     MTP_ARM64_IMAGE = "image_arm64_elba.tar"
-    ASIC_AMD64_IMAGE = "nic_x86_64.tar.gz"
-    ASIC_ARM64_IMAGE = "nic_aarch64.tar.gz"
     
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"

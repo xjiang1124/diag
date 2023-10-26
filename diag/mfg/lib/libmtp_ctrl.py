@@ -102,8 +102,6 @@ class mtp_ctrl():
         self._test_log_folder = None # relative path to log folder
         self._open_file_handles = []
 
-        self._cicd_run = False
-
     def cli_log_inf(self, msg, level = 1):
         if msg is None:
             msg = ""
@@ -3550,11 +3548,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
 
         nic_diag_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if self._cicd_run:
-            nic_asic_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ASIC_ARM64_IMAGE
-        else:
-            nic_asic_image = ""
-        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, nic_asic_image, nic_utils):
+
+        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, "", nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -4915,6 +4910,7 @@ class mtp_ctrl():
                     if sn not in sn2slot:
                         self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Aborting ...".format(sn), level=0)
                         rc = False
+                        continue
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
                     phy_present_sn_list.append(sn)
@@ -4924,11 +4920,9 @@ class mtp_ctrl():
             # Validate if there is scanned card not physical present
             for sn in sn2slot:
                 if sn not in phy_present_sn_list:
-                    key = libmfg_utils.nic_key(slot)
-                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Aborting ...".format(key, sn), level=0)
-                    rc = False
-            if not rc:
-                return rc
+                    key = libmfg_utils.nic_key(sn2slot[sn])
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, May Because Card Not Bootup, Fail This Card Out and Continue Test".format(key, sn), level=0)
+                    self.mtp_set_nic_status_fail(sn2slot[sn], skip_fa=True)
             if not phy_present_slot_list:
                 phy_present_slot_list = range(len(bus_list_match))
         else:

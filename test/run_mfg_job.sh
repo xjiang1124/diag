@@ -27,8 +27,7 @@ echo "**************************************************"
 python3 ${PSDIAG_ROOT}/test/infra/launch.py \
     --cfg-folder ${PSDIAG_ROOT}/diag/mfg/config \
     --image-manifest ${PSDIAG_ROOT}/test/manifests/latest.json \
-    --diag-images ${PSDIAG_ROOT}/build/images \
-    --asic-images ${PSDIAG_ROOT}/releases $@
+    --diag-images ${PSDIAG_ROOT}/build/images $@
 ret=$?
 
 if [[ "$ret" != "0" ]];
@@ -90,7 +89,7 @@ echo " Unpack mfg script"
 echo "**************************************************"
 cd ${PSDIAG_ROOT}
 mfg_script_dir=jobd
-asic=$(basename ${ASIC_IMAGE_FOLDER})
+asic=$ASIC
 
 if [[ -f "${PSDIAG_ROOT}/${mfg_script_dir}/${mfg_script_dir}.tar.gz" ]];
 then
@@ -136,9 +135,6 @@ then
     echo "Diag Tools"
     ls -ltr ${DIAG_IMAGE_FOLDER}
 
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_dl_test.py"
     echo "**************************************************"
@@ -152,9 +148,6 @@ if [[ "${JOB_TYPE}" == "ScanDL" ]];
 then
     echo "Diag Tools"
     ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
 
     echo "**************************************************"
     echo " Launching mfg_scan_dl_test.py"

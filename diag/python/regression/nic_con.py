@@ -741,6 +741,12 @@ class nic_con:
                     session.send(chr(3))
                     session.expect("#")
 
+            if asic_type == "GIGLIO_CPLD":
+                cmd = "sed -i 's/\"port_num\" : \"8\", \"mac_id\" : \"1\"/\"port_num\" : \"8\", \"mac_id\" : \"2\"/' /nic/conf/catalog_hw_board_id_0x03610001.json"
+                self.uart_session_cmd(session, cmd)
+                cmd = "sed -i 's/\"port_num\" : \"9\", \"mac_id\" : \"2\"/\"port_num\" : \"9\", \"mac_id\" : \"1\"/' /nic/conf/catalog_hw_board_id_0x03610001.json"
+                self.uart_session_cmd(session, cmd)
+
             session.sendline("ifconfig -a")
             session.expect("\#")
             temp = session.after

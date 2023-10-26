@@ -30,5 +30,5 @@ libacc_mtp:
 	cp libacc_mtp.so ${GOPATH}/pkg/linux_$(ARCH)/clib/.
 
 clean:
-	rm -rf ${GOPATH}/pkg/linux_$(ARCH)/clib/libacc.a libacc_v2.a libacc_mtp.so libacc_turbo.so *.o *.a *.so
+	rm -rf libacc.a libacc_v2.a libacc_mtp.so libacc_turbo.so 
 
