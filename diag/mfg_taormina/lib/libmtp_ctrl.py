@@ -7006,9 +7006,9 @@ class mtp_ctrl():
             self.cli_log_err("BIOS init failed", level=0)
             return False
 
-        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
+        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, timeout=100)
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("{:s} failed".format(cmd, timeout=100), level=0)
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
             return False
 
         self.tor_info_disp()
