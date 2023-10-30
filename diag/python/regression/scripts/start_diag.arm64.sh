@@ -39,9 +39,9 @@ echo "nic_name: $nic_name"
 echo "export $nic_name" >> /etc/profile
 
 source /etc/profile
-#sh $DIAG_DIR/python/regression/scripts/nic_config.sh
-#sh $DIRG_DIR/python/regression/scripts/rtc_sanity.sh
-sh /data/nic_arm/rtc_sanity.sh
+sh $DIAG_DIR/python/regression/scripts/nic_config.sh
+sh $DIAG_DIR/python/regression/scripts/rtc_sanity.sh
+#sh /data/nic_arm/rtc_sanity.sh
 
 echo "Preparing diag environment -- Done"
 
