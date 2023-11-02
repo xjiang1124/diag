@@ -2644,11 +2644,11 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic asic version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_asic_ver = match[0]
+            self._diag_asic_ver = match
         else:
-            self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
+            self.nic_set_err_msg("Unable to find nic asic version")
             return False
 
         if self._nic_type in GIGLIO_NIC_TYPE_LIST:
@@ -2662,9 +2662,9 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic utils version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_util_ver = match[0]
+            self._diag_util_ver = match
         else:
             self.nic_set_err_msg("Unable to find nic utils version")
             return False
@@ -2675,9 +2675,9 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic diag version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_ver = match[0]
+            self._diag_ver = match
         else:
             self.nic_set_err_msg("Unable to find nic diag version")
             return False

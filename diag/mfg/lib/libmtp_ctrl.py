@@ -1261,29 +1261,35 @@ class mtp_ctrl():
             return False
 
         # MTP Diag image version
+        if not self.mtp_init_diag_img_version():
+            return False
+
+        # MTP ASIC image version
+        if not self.mtp_init_diag_asiclib_version():
+            return False
+
+        return True
+
+    def mtp_init_diag_img_version(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get diag image version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._diag_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get diag image version", level = 0)
+        self._diag_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._diag_ver:
+            self.cli_log_err("Failed to find diag image version", level = 0)
             return False
+        return True
 
-        # MTP ASIC image version
+    def mtp_init_diag_asiclib_version(self):
         cmd = MFG_DIAG_CMDS.MTP_ASIC_VERSION_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
             self.cli_log_err("Failed to get asic util version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._asic_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get asic util version", level = 0)
+        self._asic_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._asic_ver:
+            self.cli_log_err("Failed to find asic util version", level = 0)
             return False
-
         return True
 
     def mtp_get_asic_support(self):
