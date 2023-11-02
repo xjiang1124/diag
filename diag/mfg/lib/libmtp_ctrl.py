@@ -6587,7 +6587,7 @@ class mtp_ctrl():
     def mtp_nic_port_counters(self, slot):
         self.cli_log_slot_inf(slot, "Dumping port counters")
         if not self._nic_ctrl_list[slot].nic_port_counters():
-            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True
