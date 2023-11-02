@@ -196,7 +196,7 @@ var GinestraD5Tbl = []I2cInfo {
     I2cInfo {"PCIE_FRU",        "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 
     I2cInfo {"FRU",             "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"TSENSOR",         "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR",         "TMPADICOM", 0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},//to support second source part
     I2cInfo {"RTC",             "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"GIG0_CORE",       "TPS53688",  0x2,   0x62,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"GIG0_ARM",        "TPS53688",  0x2,   0x62,    0x1,    "HUB_NONE",  0,    0},
