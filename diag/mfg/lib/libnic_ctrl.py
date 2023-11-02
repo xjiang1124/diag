@@ -164,7 +164,7 @@ class nic_ctrl():
 
         return info_buf
 
-    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY_10):
         """
         try to set vaiable PS1 to '[$(date +%Y-%m-%d_%H:%M:%S)]\u# '
         return False if timeout, otherwise return True
