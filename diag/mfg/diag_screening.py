@@ -183,6 +183,7 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
     mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
     mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -244,6 +245,7 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
     mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
     mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
     mtp_mgmt_ctrl.cli_log_inf("CPLD Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -384,7 +386,7 @@ def run_ddr_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
+        if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -523,8 +525,7 @@ def run_emmc_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(
-            mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # power off all the test mtp
     #libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -533,7 +534,7 @@ def run_emmc_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
+        if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -672,8 +673,7 @@ def run_cpld_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(
-            mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
 
     # power off all the test mtp
     # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
