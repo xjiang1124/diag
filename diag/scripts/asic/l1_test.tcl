@@ -17,13 +17,14 @@ set simplified [lindex $argv 8]
 set ddr_hc_training [lindex $argv 9]
 set run_ddr_test    [lindex $argv 10]
 set logEn    [lindex $argv 11]
+set pct    [lindex $argv 12]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct"
 set err_cnt 0
 
 set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -78,7 +79,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
             set l1_cmd "gig_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 3200 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
             source .tclrc.diag.gig
         } elseif { $card_type == "GINESTRA_D5" } {
-            set l1_cmd "gig_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 5600 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
+            set l1_cmd "gig_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 5600 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test $pct $pct $pct"
             source .tclrc.diag.gig
         } else {
             set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
