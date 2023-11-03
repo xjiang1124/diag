@@ -493,7 +493,7 @@ def diag_para_mem_edma_ddr_stress_test(mtp_mgmt_ctrl, nic_type, nic_list, test_d
         # nic_test.py, which will do the power cycle.
         if ite >= 1:
             mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_NIC_DIAG_INIT To Power Cycle NIC Card and Re-init it ".format(nic_type), level=0)
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, vmargin=vmarg, nic_util=True, dis_hal=True, stop_on_err=stop_on_err):
+            if not mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, vmargin=vmarg, nic_util=False, dis_hal=True, stop_on_err=stop_on_err):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                 for slot in new_nic_list:
                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
@@ -644,6 +644,7 @@ def diag_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, v
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if card_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                    alom_sn = "DEADBEEF"
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                 if stop_on_err:
@@ -678,7 +679,7 @@ def diag_exec_mtp_para_test_multiple_times(mtp_mgmt_ctrl, nic_type, nic_list, pa
     new_nic_list = nic_list[:]
     fail_slot_test_list = list()
     for ite in range(1, iterations+1):
-        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag {:s} {:s} Test In {:d}th Power Cycle Iteration".format(nic_type, "MEM", "SNAKE", ite), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} DDR Validation: 'SNAKE Test' In {:d}th Power Cycle Iteration".format(nic_type, ite), level=0)
         # Directely call mtp_nic_diag_init instead of call mtp_nic_diag_init after call mtp_power_cycle_nic since mtp_nic_diag_init will call 
         # nic_test.py, which will do the power cycle.
         if ite > 1:
@@ -687,15 +688,16 @@ def diag_exec_mtp_para_test_multiple_times(mtp_mgmt_ctrl, nic_type, nic_list, pa
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
                 for slot in new_nic_list:
                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                        new_nic_list.remove(slot)
                         if slot not in fail_list:
                             fail_list.append(slot)
-                if stop_on_err:
-                    mtp_mgmt_ctrl.cli_log_err("STOP_ON_ERR asserted when diag initial")
-                    raise Exception
+                        if stop_on_err:
+                            new_nic_list.remove(slot)
+                # if stop_on_err:
+                #     mtp_mgmt_ctrl.cli_log_err("STOP_ON_ERR asserted when diag initial")
+                #     raise Exception
 
         for ite_pc in range(1, iterations_per_pc+1):
-            mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Running DDR MEM SNAKE test at iteration {:d} ".format(nic_type, ite_pc), level=0)
+            mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Running DDR Validation: 'SNAKE Test' at iteration {:d} In {:d}th Power Cycle Loop".format(nic_type, ite_pc, ite), level=0)
             mtp_para_fail_list, fstl = diag_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                                nic_type,
                                                                new_nic_list,
@@ -706,10 +708,11 @@ def diag_exec_mtp_para_test_multiple_times(mtp_mgmt_ctrl, nic_type, nic_list, pa
                                                                skip_testlist)
             for slot in mtp_para_fail_list:
                 if slot in new_nic_list:
+                    # if stop_on_err:
+                    #     mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                    #     raise Exception
                     if stop_on_err:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
-                        raise Exception
-                    new_nic_list.remove(slot)
+                        new_nic_list.remove(slot)
                 if slot not in fail_list:
                     fail_list.append(slot)
                     fail_slot_test_list += fstl

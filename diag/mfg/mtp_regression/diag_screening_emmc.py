@@ -669,7 +669,7 @@ def main():
             dsp = stage
 
             # Update programmables if necessary
-            dl_check_fail_list = diag_reg.naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
+            dl_check_fail_list = diag_reg.naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
             programmables_checked = True
             for slot in dl_check_fail_list:
                 if slot not in fail_nic_list:

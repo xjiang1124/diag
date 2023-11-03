@@ -212,10 +212,10 @@ def cpld_and_diag_boot_log_parser(mtp_mgmt_ctrl, slot,  logstring=None, occurren
 
     if bootCheckStr:
         if len(boot_check_strings) < occurrences:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "The Signature String '{:s}' show up in boot Log occurn {:d},  not meet expected occurrences: {:d}".format(bootCheckStr, len(boot_check_strings), occurrences))
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, 'The Signature String "{:s}" show up in boot Log occurn {:d},  not meet expected occurrences: {:d}'.format(bootCheckStr, len(boot_check_strings), occurrences))
             result = False
         else:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Boot String: {:s} founded in given diag boot log and meet expected occurrences'.format(bootCheckStr))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, 'Boot String: "{:s}" founded in given diag boot log and meet expected occurrences'.format(bootCheckStr))
 
     if cpldMajorVer:
         if len(cpld_major_vers) != occurrences:
