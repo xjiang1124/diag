@@ -769,6 +769,44 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     return image_list
 
+def rgx_extract_commit_date(buf):
+    match = re.findall(r"Date: +(.*20\d{2})", buf)
+    if match:
+        return match[0]
+    else:
+        return None
+
+def read_amd64_img_version(mtp_mgmt_ctrl, diag_img_tarball):
+    cmd = "tar xfO {:s} diag/scripts/version.txt | head".format(diag_img_tarball)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd), level=0)
+        return None
+    return rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+
+def read_asiclib_version(mtp_mgmt_ctrl, diag_img_tarball):
+    cmd = "tar xfO {:s} nic.tar.gz | tar xzO nic/asic_src/ip/cosim/tclsh/.git_rev.tcl | head".format(diag_img_tarball)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd), level=0)
+        return None
+    return rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+
+def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
+    # wrong diag binaries
+    mtp_mgmt_ctrl.mtp_init_diag_img_version()
+    cur_version = mtp_mgmt_ctrl.mtp_get_sw_version()
+    new_version = read_amd64_img_version(mtp_mgmt_ctrl, new_mtp_image)
+    if new_version != cur_version:
+        return False
+
+    # or wrong asiclib
+    mtp_mgmt_ctrl.mtp_init_diag_asiclib_version()
+    cur_version = mtp_mgmt_ctrl.mtp_get_asic_version()
+    new_version = read_asiclib_version(mtp_mgmt_ctrl, new_mtp_image)
+    if new_version != cur_version:
+        return False
+
+    return True
+
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
     if not image_list:
         mtp_mgmt_ctrl.cli_log_err("Copy Firmware images failed... Abort", level=0)
@@ -813,8 +851,6 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
 
     return True
 
-
-
 def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMAGE, nic_image=MFG_IMAGE_FILES.MTP_ARM64_IMAGE, force_update=False):
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(mtp_image), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Looking for {:s}".format(nic_image), level=0)
@@ -847,13 +883,32 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
     mtp_usrid = mtp_mgmt_cfg[1]
     mtp_passwd = mtp_mgmt_cfg[2]
     remote_dir = "/home/diag/"
-
     image_on_mtp = mtp_mgmt_ctrl.mtp_diag_get_img_files()
-    if not force_update and mtp_image in image_on_mtp and nic_image in image_on_mtp:
-        if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
-            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
-            mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
-            return True
+
+    ### Update logic
+    update_needed = False
+    if force_update:
+        update_needed = True
+
+    # check for file present
+    elif mtp_image not in image_on_mtp or nic_image not in image_on_mtp:
+        mtp_mgmt_ctrl.cli_log_inf("Image files not present...updating", level=0)
+        update_needed = True
+
+    # compare checksum
+    elif need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) \
+      or need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
+        mtp_mgmt_ctrl.cli_log_inf("Older tarball on MTP...updating", level=0)
+        update_needed = True
+
+    # check previously loaded version on MTP
+    elif not running_diag_img_match(mtp_mgmt_ctrl, mtp_image):
+        mtp_mgmt_ctrl.cli_log_inf("Loaded diag image doesn't match...updating", level=0)
+        update_needed = True
+
+    if not update_needed:
+        mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
+        return True
 
     # cleanup the stale diag images
     cmd = "rm -f /home/diag/image_a*.tar"
