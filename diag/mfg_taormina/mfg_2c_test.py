@@ -156,7 +156,7 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             # Access MES data
             mtp_mgmt_ctrl.cli_log_inf("Access MES data", level=0)
             mes_obj.store_mgmt_ctrl(mtp_mgmt_ctrl)
-            ret = mes_obj.pull_mes_info(mtp_mgmt_ctrl._sn)
+            ret = mes_obj.pull_mes_info(scan_rslt[uut_id]['UUT_SN'])
 
         elif test == "OK_TEST_STN_CHK":
             # Verify if UUT is allowed to undergo this test station
@@ -164,6 +164,8 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             if not ret:
                 mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + FF_Stage.FF_2C,
                     level=0)
+                mtp_mgmt_ctrl.cli_log_inf("TEST STATION EXPECTED: " + \
+                    mes_obj.get_mes_next_test_station(), level=0)
                 mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                 mes_obj.clear_push_to_mes()
                 return

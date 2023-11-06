@@ -4658,6 +4658,30 @@ class mtp_ctrl():
                 return False
             else:
                 return True
+        elif test == "RETIMER_TOR":
+            error = False
+
+            if vmarg < 0:
+                return True
+
+            #switch td3 retimer_temperatures
+            cmd = "./switch td3 retimer_temperatures"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout):
+                error = True
+                self.cli_log_err("{:s} failed".format(cmd))
+
+            #devmgr -status
+            cmd = "./devmgr -status"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout):
+                error = True
+                self.cli_log_err("{:s} failed".format(cmd))
+
+            if error:
+                return False
+            else:
+                return True
         elif test == "PCI_TOR":
             cmd = "./switch cpu pciscan"
             test_timeout = self.get_test_timeout(cmd, test)
@@ -4704,12 +4728,14 @@ class mtp_ctrl():
             return 360
         elif test in ("PRBS_TOR"):
             return 180
+        elif test in ("RETIMER_TOR"):
+            return 30
         elif test in ("ELBA_ARM_MEMORY"):
             return 360
         elif test in ("ELBA_EDMA_TEST"):
             return 360
         elif test in ("PCI_TOR"):
-            return 30    
+            return 30
         elif test in ("TD3DIAG"):
             return 360
         elif test in ("L1"):

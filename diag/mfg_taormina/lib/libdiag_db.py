@@ -80,6 +80,8 @@ class diag_db():
                     # single Test enabled as True/False
                     if dsptest:
                         self._mtp_para_test_list.append(dsp)
+                    if dsp in ["PRBS_TOR"]:
+                        self._mtp_para_test_list.append("RETIMER_TOR")
                 elif type(dsptest) is dict:
                     # dsp: [testlist] with params
                     for test in dsptest:

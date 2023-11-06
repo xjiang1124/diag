@@ -210,6 +210,8 @@ def single_uut_fw_program(stage,
                 ret = mes_obj.verify_next_test_station(stage)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
+                    mtp_mgmt_ctrl.cli_log_inf("TEST STATION EXPECTED: " + \
+                        mes_obj.get_mes_next_test_station(), level=0)
                     mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                     mes_obj.clear_push_to_mes()
                     return
