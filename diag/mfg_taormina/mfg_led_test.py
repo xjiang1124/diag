@@ -400,6 +400,9 @@ def single_uut_led_checks(stage,
         mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("MFG LED Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
 
+        # compile error messages
+        liblog.collect_err_msg(mtp_mgmt_ctrl)
+
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
 

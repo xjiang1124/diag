@@ -709,6 +709,9 @@ def single_uut_fw_program(stage,
         mfg_swi_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("MFG SWI Test Duration:{:s}".format(mfg_swi_stop_ts - mfg_swi_start_ts))
 
+        # compile error messages
+        liblog.collect_err_msg(mtp_mgmt_ctrl)
+
         pass_or_fail = ""
         if uut_id in pass_uut_list:
             pass_or_fail = "PASS"

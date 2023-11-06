@@ -114,6 +114,8 @@ class mtp_ctrl():
 
         self._pass_timestamp = ''
 
+        self._err_msg_list = []
+
         self._taa_sn = ''
         self._taa_country_code = 'US'
 
@@ -203,6 +205,14 @@ class mtp_ctrl():
     def get_passmark_timestamp(self):
         return self._pass_timestamp
 
+    def set_err_msg(self, err_msg):
+        if isinstance(err_msg, str):
+            self._err_msg_list.append(err_msg)
+        elif isinstance(err_msg, list):
+            self._err_msg_list = self._err_msg_list[:] + err_msg
+
+    def get_err_msg(self):
+        return self._err_msg_list
 
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)

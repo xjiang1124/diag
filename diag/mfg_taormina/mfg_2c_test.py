@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -610,6 +611,9 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_
             mes_obj.save_res_passmark("N/A")
 
             mes_obj.push_results_to_mes()
+
+    # compile error messages
+    liblog.collect_err_msg(mtp_mgmt_ctrl, vmarg)
 
     # Package this UUT's logfile
     log_sub_dir = os.path.basename(os.path.dirname(log_dir))

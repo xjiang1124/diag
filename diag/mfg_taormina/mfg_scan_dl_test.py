@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -730,6 +731,9 @@ def single_uut_fw_program(stage,
         # all_slots_hist["MEMTUN_INIT"] = mtp_mgmt_ctrl.tor_nic_memtun_init(operation=PRINT_TEST_HISTORY)
         # all_slots_hist["NIC_PROFILE_CONFIG"] = mtp_mgmt_ctrl.tor_nic_Setup_device_config(operation=PRINT_TEST_HISTORY)
         # print(all_slots_hist)
+
+        # compile error messages
+        liblog.collect_err_msg(mtp_mgmt_ctrl)
 
         if uut_id in pass_uut_list:
             if stage == "DL2":
