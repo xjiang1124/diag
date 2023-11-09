@@ -679,7 +679,7 @@ def single_uut_2c_test(stage,
 
     try:
         for idx, stage in enumerate([FF_Stage.FF_2C_HV, FF_Stage.FF_2C_LV]):
-            if stage in skip_testlist:
+            if str(stage) in skip_testlist:
                 continue
 
             if stage == FF_Stage.FF_2C_HV:
