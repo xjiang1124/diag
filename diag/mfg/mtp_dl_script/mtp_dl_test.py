@@ -276,6 +276,91 @@ def main():
 
         dsp = FF_Stage.FF_DL
 
+        mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
+        for slot in range(MTP_Const.MTP_SLOT_NUM):
+            if slot in fail_nic_list:
+                continue
+            key = libmfg_utils.nic_key(slot)
+            valid = nic_fru_cfg[mtp_id][key]["VALID"]
+            if str.upper(valid) != "YES":
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
+                continue
+
+            sn = nic_fru_cfg[mtp_id][key]["SN"]
+            mac = nic_fru_cfg[mtp_id][key]["MAC"]
+            pn = nic_fru_cfg[mtp_id][key]["PN"]
+            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+            mac_ui = libmfg_utils.mac_address_format(mac)
+            alom_sn = None
+            alom_pn = None
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+               if "SN_ALOM" in nic_fru_cfg[mtp_id][key]:
+                   alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+                   alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+
+            riser_sn = None
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
+                riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
+
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+
+            print("")
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
+            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
+            else:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
+            if nic_type == NIC_Type.NAPLES25OCP:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
+
+            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, dsp)
+            for image_name, image_file_path in dl_image_dict.items():
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
+            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
+
+
+        if not args.scandl:
+            tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
+            if "SCAN_VERIFY" not in args.skip_test:
+                # load the barcode config file made in toplevel
+                scanned_fru_cfg_dict = nic_fru_cfg
+                if mtp_id not in scanned_fru_cfg_dict:
+                    mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
+                    # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
+                    scanned_fru_cfg = dict()
+                    for slot in range(MTP_Const.MTP_SLOT_NUM):
+                        key = libmfg_utils.nic_key(slot)
+                        if not nic_prsnt_list[slot]:
+                            continue
+                        if slot not in fail_nic_list:
+                            fail_nic_list.append(slot)
+                        if slot in pass_nic_list:
+                            pass_nic_list.remove(slot)
+                else:
+                    scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
+                mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp)
+
+            # write and reload the barcode config file
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            with open(scan_cfg_file, "w") as fru_cfg_filep:
+                mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+
+            # enter in failures from construct_nic_fru_config
+            for slot in range(MTP_Const.MTP_SLOT_NUM):
+                key = libmfg_utils.nic_key(slot)
+                if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+                    if not nic_prsnt_list[slot]:
+                        continue
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+
         #identify adi ibm pass slot
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
@@ -448,47 +533,6 @@ def main():
         if "CONSOLE_BOOT" not in args.skip_test:
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
-        if not args.scandl:
-            tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
-            if "SCAN_VERIFY" not in args.skip_test:
-                # load the barcode config file made in toplevel
-                scanned_fru_cfg_dict = nic_fru_cfg
-                if mtp_id not in scanned_fru_cfg_dict:
-                    mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-                    # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
-                    scanned_fru_cfg = dict()
-                    for slot in range(MTP_Const.MTP_SLOT_NUM):
-                        key = libmfg_utils.nic_key(slot)
-                        if not nic_prsnt_list[slot]:
-                            continue
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        if slot in pass_nic_list:
-                            pass_nic_list.remove(slot)
-                else:
-                    scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
-                mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp)
-
-            # write and reload the barcode config file
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            with open(scan_cfg_file, "w") as fru_cfg_filep:
-                mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-
-            # enter in failures from construct_nic_fru_config
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                key = libmfg_utils.nic_key(slot)
-                if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
-                    if not nic_prsnt_list[slot]:
-                        continue
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-
-        mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
-
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
@@ -497,41 +541,6 @@ def main():
             if str.upper(valid) != "YES":
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
-
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
-            mac_ui = libmfg_utils.mac_address_format(mac)
-            alom_sn = None
-            alom_pn = None
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-               if "SN_ALOM" in nic_fru_cfg[mtp_id][key]:
-                   alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                   alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
-
-            riser_sn = None
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
-                riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-            print("")
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-            if nic_type == NIC_Type.NAPLES25OCP:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
-
-            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, dsp)
-            for image_name, image_file_path in dl_image_dict.items():
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
