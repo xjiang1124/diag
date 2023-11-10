@@ -261,63 +261,6 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
 
     return
 
-
-def get_test_arguments(test_case_name=None, part_number=None):
-
-    if test_case_name is None:
-        return None
-    test_case = test_case_name
-    if test_case not in test2args:
-        return None
-    partnumber = part_number if part_number else "DEFAULT"
-    no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
-
-    argdict = dict()
-    # load test_case arguments
-    for idx, argument in enumerate(test2args[test_case]["ARGUMENT_SPEC"].split()):
-        if  partnumber in test2args[test_case]:
-            value = test2args[test_case][partnumber].split()[idx]
-            if value.upper() == "N/A":
-                value = test2args[test_case]["DEFAULT"].split()[idx]
-        elif no_rev_partnumber in test2args[test_case]:
-            value = test2args[test_case][no_rev_partnumber].split()[idx]
-            if value.upper() == "N/A":
-                value = test2args[test_case]["DEFAULT"].split()[idx]
-        else:
-            value = test2args[test_case]["DEFAULT"].split()[idx]
-        argdict[argument] = value
-    # load test case level common arguments
-    apply_test_case_arg = test2args[test_case].get("IS_CASE_COMMON_ARGS_APPLY", True)
-    if apply_test_case_arg and "ARGUMENT_SPEC" in test2args["TEST_CASE_COMMON"]:
-        for idx, argument in enumerate(test2args["TEST_CASE_COMMON"]["ARGUMENT_SPEC"].split()):
-            if  partnumber in test2args["TEST_CASE_COMMON"]:
-                value = test2args["TEST_CASE_COMMON"][partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            elif no_rev_partnumber in test2args["TEST_CASE_COMMON"]:
-                value = test2args["TEST_CASE_COMMON"][no_rev_partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            else:
-                value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
-    # load test suite level common arguments
-    apply_test_suite_arg = test2args[test_case].get("IS_SUITE_COMMON_ARGS_APPLY", True)
-    if apply_test_suite_arg and "ARGUMENT_SPEC" in test2args["TEST_SUITE_COMMON"]:
-        for idx, argument in enumerate(test2args["TEST_SUITE_COMMON"]["ARGUMENT_SPEC"].split()):
-            if  partnumber in test2args["TEST_SUITE_COMMON"]:
-                value = test2args["TEST_SUITE_COMMON"][partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            elif no_rev_partnumber in test2args["TEST_SUITE_COMMON"]:
-                value = test2args["TEST_SUITE_COMMON"][no_rev_partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            else:
-                value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
-    return argdict
-
 def run_ddr_test_suite(args):
     verbosity = args.verbosity
     parameter_cfg_yaml = args.cfgyaml

@@ -386,7 +386,7 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
                 cmd = "./fio "
             elif "STRESSAPPTEST" in test:
                 cmd = "./stressapptest_arm "
-                tout = int(argsdict["-s"]) + 300
+                tout = max([int(arg_s_val) for arg_s_val in argsdict["-s"]]) + 300
             else:
                 return 
             cmd += cmd_options
