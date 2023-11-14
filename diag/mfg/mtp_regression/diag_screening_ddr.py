@@ -46,6 +46,8 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
     argdict = dict()
     # load test_case arguments
     for idx, argument in enumerate(test2args[test_case]["ARGUMENT_SPEC"].split()):
+        # same command line option may have differnce value, such as stressapptest_arm -M 400  -f file.1 -f file.2 -s
+        values = []
         if  partnumber in test2args[test_case]:
             value = test2args[test_case][partnumber].split()[idx]
             if value.upper() == "N/A":
@@ -56,11 +58,16 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
                 value = test2args[test_case]["DEFAULT"].split()[idx]
         else:
             value = test2args[test_case]["DEFAULT"].split()[idx]
-        argdict[argument] = value
+        values.append(value)
+        if argument in argdict:
+            argdict[argument] += values
+        else:
+            argdict[argument] = values
     # load test case level common arguments
     apply_test_case_arg = test2args[test_case].get("IS_CASE_COMMON_ARGS_APPLY", True)
     if apply_test_case_arg and "ARGUMENT_SPEC" in test2args["TEST_CASE_COMMON"]:
         for idx, argument in enumerate(test2args["TEST_CASE_COMMON"]["ARGUMENT_SPEC"].split()):
+            values = []
             if  partnumber in test2args["TEST_CASE_COMMON"]:
                 value = test2args["TEST_CASE_COMMON"][partnumber].split()[idx]
                 if value.upper() == "N/A":
@@ -71,11 +78,16 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
                     value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
             else:
                 value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
+            values.append(value)
+            if argument in argdict:
+                argdict[argument] += values
+            else:
+                argdict[argument] = values
     # load test suite level common arguments
     apply_test_suite_arg = test2args[test_case].get("IS_SUITE_COMMON_ARGS_APPLY", True)
     if apply_test_suite_arg and "ARGUMENT_SPEC" in test2args["TEST_SUITE_COMMON"]:
         for idx, argument in enumerate(test2args["TEST_SUITE_COMMON"]["ARGUMENT_SPEC"].split()):
+            values = []
             if  partnumber in test2args["TEST_SUITE_COMMON"]:
                 value = test2args["TEST_SUITE_COMMON"][partnumber].split()[idx]
                 if value.upper() == "N/A":
@@ -86,7 +98,11 @@ def get_test_arguments(test_case_name=None, part_number=None, test2args=ddrtest2
                     value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
             else:
                 value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
+            values.append(value)
+            if argument in argdict:
+                argdict[argument] += values
+            else:
+                argdict[argument] = values
     return argdict
 
 def args2optionstring(argdict):
@@ -94,14 +110,15 @@ def args2optionstring(argdict):
     this function to handle some args which have a value of + or - in config file, inidate this args exist or not 
     """
     args_str = ""
-    for k, v in argdict.items():
-        if v == "+":
-            args_str += " {:s}".format(k)
-        elif v == "-":
-            pass
-        else:
-            args_str += " {:s}".format(k)
-            args_str += " {:s}".format(str(v))
+    for k, valuses in argdict.items():
+        for v in valuses:
+            if v == "+":
+                args_str += " {:s}".format(k)
+            elif v == "-":
+                pass
+            else:
+                args_str += " {:s}".format(k)
+                args_str += " {:s}".format(str(v))
     return args_str
 
 def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
@@ -129,14 +146,14 @@ def mtp_mgmt_run_nic_test_py(mtp_mgmt_ctrl, test, nic_list, vmarg=None):
     argsdict = get_test_arguments(test, pn)
     nic_list_param = ",".join(str(slot+1) for slot in nic_list)
     slot_list_arg_name = "-slot_list" if "-slot_list" in argsdict else "--slot_list"
-    argsdict[slot_list_arg_name] = nic_list_param
+    argsdict[slot_list_arg_name] = [nic_list_param]
     vmar_arg_name = "-vmarg" if "-vmarg" in argsdict else "--vmarg"
     if vmarg is not None:
         n_vmarg = vmarg
         if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, pn), level=0)
-        argsdict[vmar_arg_name] = n_vmarg
+        argsdict[vmar_arg_name] = [n_vmarg]
     cmd_options =  args2optionstring(argsdict)
 
     if test == "PRBS_ETH":
@@ -185,6 +202,7 @@ def mtp_run_ddr_bist(mtp_mgmt_ctrl, slot=None, ddr_bist_cmdline_args_str=None):
     cmd = "tclsh ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
     if mtp_mgmt_ctrl._nic_ctrl_list[slot]._asic_type == "giglio":
         cmd = "tclsh gig_ddr_bist.tcl {:s}".format(ddr_bist_cmdline_args_str)
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Calling command: {:s}".format(cmd))
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
         rs = False
         cmd_buf = mtp_mgmt_ctrl.mtp_get_nic_cmd_buf(slot)
@@ -218,14 +236,14 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
         argsdict = copy.deepcopy(get_test_arguments(test_case_name, pn))
         slot_arg_name = "-slot" if "-slot" in argsdict else "--slot"
-        argsdict[slot_arg_name] = slot + 1
+        argsdict[slot_arg_name] = [slot + 1]
         sn_arg_name = "-sn" if "-sn" in argsdict else "--sn"
-        argsdict[sn_arg_name] = sn
+        argsdict[sn_arg_name] = [sn]
         vmar_arg_name = "-vmarg" if "-vmarg" in argsdict else "--vmarg"
         if vmarg is not None:
-            argsdict[vmar_arg_name] = vmarg
+            argsdict[vmar_arg_name] = [vmarg]
         ddr_bist_cmdline_args_str =  args2optionstring(argsdict)
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "ddr_bist args string: {:s}".format(ddr_bist_cmdline_args_str))
+        # mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "ddr_bist args string: {:s}".format(ddr_bist_cmdline_args_str))
         dsp = "DDR_SUITE"
         if vmarg == Voltage_Margin.high:
             dsp_disp = "HV_" + dsp
@@ -236,7 +254,7 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
 
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, "DDR_BIST"))
         for iter in range(1, int(iteration)+1):
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Sub-iteration: {:d} in {:d}th power cycle loop ......".format(iter, power_cycle_count))
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Internal Iteration: {:d} Within {:d}th Power Cycle Loop Iteration".format(iter, power_cycle_count))
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 nic_test_rslt_list[slot] = False
                 break
@@ -352,7 +370,7 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
 
         nic_thread_list = list()
 
-        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag DDR_BIST iteration: {:d}".format(nic_type, ite), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag DDR_BIST Test Iteration: {:d} (Power Cycle Per Iteration)".format(nic_type, ite), level=0)
         if ite > 1:
             mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_POWER_CYCLE_NIC To Power Cycle Card".format(nic_type), level=0)
             if not mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list):
