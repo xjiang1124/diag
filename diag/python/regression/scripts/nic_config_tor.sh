@@ -70,6 +70,7 @@ then
     cp $NIC_ARM_DIR/gig_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $NIC_ARM_DIR/elb_arm*tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
     cp $NIC_ARM_DIR/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+    sync;sync;sync
 fi
 echo "nic_config done"
 
