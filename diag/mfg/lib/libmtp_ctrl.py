@@ -2864,7 +2864,7 @@ class mtp_ctrl():
             if software_pn != "90-0016-0004":
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
-            if software_pn != "90-0019-0001":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
             if software_pn != "90-0021-0001":
@@ -2876,7 +2876,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0090":     #ORTANO2 SOLO MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0092":     #ORTANO2 (ADI CR/ SOLO) S4
             if software_pn != "90-0022-0001":
@@ -2885,7 +2885,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0074":     #GINESTRA_D4
             if software_pn != "90-0023-0001":
@@ -3480,11 +3480,11 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
         return True
 
-    def mtp_copy_nic_emmc(self, slot, emmc_img):
-        if not self._nic_ctrl_list[slot].nic_copy_emmc(emmc_img):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+    def mtp_copy_nic_copy_file(self, slot, filename, directory="/data/"):
+        if not self._nic_ctrl_list[slot].nic_copy_image(filename, directory):
+            self.cli_log_slot_inf_lock(slot, "Copy File {:s} to NIC {:d} {:s} Failed".format(filename, slot, directory))
             return False
-            
+
         return True
         
     def mtp_set_nic_sw_boot(self, slot, emmc_img):

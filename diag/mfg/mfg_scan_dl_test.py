@@ -918,24 +918,24 @@ def scan_dl_test(mtp_mgmt_ctrl, mtp_test_summary, stage, args, swmtestmode, ALLO
             exp_assettag = 'C0'
     
         # nic power status check
-        test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+        test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "AVS_SET"]
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.NAPLES25:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "AVS_SET"]
         if nic_type == NIC_Type.NAPLES25SWM:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "AVS_SET"]
             if swmtestmode == Swm_Test_Mode.ALOM:
-                test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY"]
+                test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_ALOM_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC"]
         if nic_type == NIC_Type.ORTANO:
             test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY"]
         if nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "FEA_VERIFY", "L1_ESEC_PROG"]
         if nic_type in FPGA_TYPE_LIST:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "FPGA_PROG_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
         if nic_type in GIGLIO_NIC_TYPE_LIST:
-            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+            test_list = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "CP_DIAGFW_TO_EMMC", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)
@@ -972,6 +972,10 @@ def scan_dl_test(mtp_mgmt_ctrl, mtp_test_summary, stage, args, swmtestmode, ALLO
             # set avs
             elif test == "AVS_SET":
                 ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
+            # keep an copy of diagfw in emmc, just incase we need recover it if mgmt fail and dongle is not available
+            # not put DL results to fail even if the copy image to emmc failed.
+            elif test == "CP_DIAGFW_TO_EMMC":
+                mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, qspi_img_file)
             else:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                 continue
