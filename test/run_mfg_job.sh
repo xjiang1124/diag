@@ -129,6 +129,8 @@ echo "**************************************************"
 
 
 cd ${PSDIAG_ROOT}/${mfg_script_dir}/mfg
+echo "Diag Tools"
+ls -ltr ${DIAG_IMAGE_FOLDER}
 
 if [[ "${JOB_TYPE}" != "ScanDL" && "${JOB_TYPE}" != "FST" ]];
 then
@@ -139,13 +141,12 @@ then
     set -x
     python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
+else
+    ret=0
 fi
 
-if [[ "${JOB_TYPE}" == "DL" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "DL" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_dl_test.py"
     echo "**************************************************"
@@ -157,9 +158,6 @@ fi
 
 if [[ "${JOB_TYPE}" == "ScanDL" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_scan_dl_test.py"
     echo "**************************************************"
@@ -169,14 +167,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "P2C" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "P2C" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_p2c_test.py"
     echo "**************************************************"
@@ -186,14 +178,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "4C" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "4C" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_4c_test.py --low-temp"
     echo "**************************************************"
@@ -204,14 +190,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "SWI" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "SWI" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_swi_test.py"
     echo "**************************************************"
@@ -232,14 +212,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "ORT" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "ORT" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_ort_test.py for two loops"
     echo "**************************************************"
@@ -249,14 +223,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "RDT" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "RDT" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_rdt_test.py for two loops"
     echo "**************************************************"
