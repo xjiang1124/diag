@@ -130,6 +130,17 @@ echo "**************************************************"
 
 cd ${PSDIAG_ROOT}/${mfg_script_dir}/mfg
 
+if [[ "${JOB_TYPE}" != "ScanDL" && "${JOB_TYPE}" != "FST" ]];
+then
+    echo "**************************************************"
+    echo " Launching ScanDL to restore card before test"
+    echo "**************************************************"
+
+    set -x
+    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    ret=$?
+fi
+
 if [[ "${JOB_TYPE}" == "DL" ]];
 then
     echo "Diag Tools"
@@ -207,18 +218,7 @@ then
 
     set -x
     python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
-    ret_SWI=$?
-    set +x
-
-    echo "**************************************************"
-    echo " Launching mfg_dl_test.py to restore card for next job"
-    echo "**************************************************"
-
-    set -x
-    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
-    ret_DL=$?
-
-    (( ret = ret_SWI || ret_DL )) # both SWI and DL step should pass
+    ret=$?
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];
