@@ -386,7 +386,7 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
                 cmd = "./fio "
             elif "STRESSAPPTEST" in test:
                 cmd = "./stressapptest_arm "
-                tout = int(argsdict["-s"]) + 300
+                tout = max([int(arg_s_val) for arg_s_val in argsdict["-s"]]) + 300
             else:
                 return 
             cmd += cmd_options
@@ -669,7 +669,7 @@ def main():
             dsp = stage
 
             # Update programmables if necessary
-            dl_check_fail_list = diag_reg.naples_update_prog(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
+            dl_check_fail_list = diag_reg.naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, fail_nic_list, [], dsp, stop_on_err)
             programmables_checked = True
             for slot in dl_check_fail_list:
                 if slot not in fail_nic_list:

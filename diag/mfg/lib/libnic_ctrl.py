@@ -164,7 +164,7 @@ class nic_ctrl():
 
         return info_buf
 
-    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+    def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY_10):
         """
         try to set vaiable PS1 to '[$(date +%Y-%m-%d_%H:%M:%S)]\u# '
         return False if timeout, otherwise return True
@@ -1132,17 +1132,23 @@ class nic_ctrl():
         # 4. umount
         emmc_fsck_cmd = MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT
         emmc_mount_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
-        nic_shutdown_cmd_list = [emmc_fsck_cmd,
-                                 emmc_mount_cmd,
+        nic_shutdown_cmd_list = [emmc_fsck_cmd]
+
+        # Rahul: also only for msft remove the mount command as well
+        if self._nic_type not in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
+            nic_shutdown_cmd_list.append(emmc_mount_cmd)
+
+        nic_shutdown_cmd_list += [
                                  MFG_DIAG_CMDS.NIC_IMG_DISP_FMT,
                                  MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT,
                                  MFG_DIAG_CMDS.NIC_DIAG_CLEANUP_FMT,
                                  MFG_DIAG_CMDS.NIC_EMMC_LS_FMT,
                                  MFG_DIAG_CMDS.NIC_KILL_PROCESS_FMT,
                                  MFG_DIAG_CMDS.NIC_SYNC_FS_FMT,
-                                 MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT]
+                                 MFG_DIAG_CMDS.NIC_SW_UMOUNT_FMT
+                                 ]
 
-        if self._nic_type == NIC_Type.ORTANO2ADIMSFT:
+        if self._nic_type in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
             nic_shutdown_cmd_list.pop()
             nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
             nic_shutdown_cmd_list.append(MFG_DIAG_CMDS.NIC_SYNC_FS_FMT)
@@ -1152,6 +1158,11 @@ class nic_ctrl():
             idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 return False
+
+        # Rahul: use penvisorctl command if it msft since msft using use penvisor container and just poweroff if non msft
+        # so force isRelC to True so that following call MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT
+        if  self._nic_type in [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT]:
+            isRelC = True
 
         # poweroff ... Cloud build do not support this command & different command for Rel C
         if isRelC == True:
@@ -1684,45 +1695,6 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
-
-        return True
-
-    def nic_copy_compressed_image(self, src_directory, src_img, dst_directory, timeout=MTP_Const.OS_CMD_DELAY):
-        """
-        Send file to NIC from MTP.
-
-        Same function as nic_copy_image but uses ssh connection to transfer characters, 
-        while doing tar & untar before & after. Tar on MTP and untar on NIC.
-        """
-        signatures = ["No such file", "Exiting with failure"]
-        cmd = MFG_DIAG_CMDS.NIC_SCP_COMPRESSED_FMT.format(src_directory, src_img, NIC_MGMT_USERNAME, libmfg_utils.get_nic_ip_addr(self._slot), libmfg_utils.get_ssh_option(), dst_directory)
-        self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + ["assword:"], timeout=MTP_Const.SSH_PASSWORD_DELAY)
-        if idx < 0:
-            libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg("Couldn't get password prompt")
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        if idx == 0 or idx == 1:
-            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
-            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
-            return False
-
-        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, signatures + [self._nic_prompt], timeout=MTP_Const.OS_CMD_DELAY)
-        if idx < 0:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            self.nic_set_err_msg("NIC hung while copying")
-            self.nic_set_cmd_buf(self._nic_handle.before)
-            return False
-        if idx == 0 or idx == 1:
-            self.nic_set_err_msg("Missing file {:s}".format(src_directory+"/"+src_img))
-            self.nic_set_cmd_buf(self._nic_handle.before + signatures[idx])
-            return False
-
-        # send a sync on NIC
-        self.nic_exec_cmds(["ls -l {:s}/{:s}".format(dst_directory, src_img)])
 
         return True
 
@@ -2452,32 +2424,29 @@ class nic_ctrl():
     def nic_setup_diag_img(self, nic_diag_image, nic_asic_image="", emmc_utils=False):
         # if emmc_utils: arm64 diag image on NIC will be updated
         if emmc_utils:
-            if self._nic_type == NIC_Type.NAPLES100:
-                # programmed fw does not support unpacking gzip. untar on MTP and copy one by one into /data/.
-                nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh"]
-                for util in nic_diag_list:
-                    if not self.nic_copy_compressed_image(
-                        src_directory=MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH,
-                        src_img=util,
-                        dst_directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH,
-                        timeout=180):
-                        return False
+            nic_diag_list = ["diag", "nic_arm", "nic_util", "start_diag.arm64.sh", "nic.tar.gz"]
 
-            else:
-                # copy image_arm64 from MTP and untar it into /data/
-                if not self.nic_copy_image(nic_diag_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+            # clear out old extracted lib
+            nic_cmd_list = list()
+            for util in nic_diag_list:
+                nic_cmd_list.append("rm -r /data/{:s}".format(util))
+            if not self.nic_exec_cmds(nic_cmd_list):
+                return False
+
+            # copy image_arm64 from MTP and untar it into /data/
+            if not self.nic_copy_image(nic_diag_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+                return False
+
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
+            nic_cmd_list.append(nic_cmd)
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
+                return False
+
+            # copy unpackaged asic lib to /data
+            if nic_asic_image:
+                if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
                     return False
-
-                nic_cmd_list = list()
-                nic_cmd = MFG_DIAG_CMDS.NIC_UNTAR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+os.path.basename(nic_diag_image), MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH)
-                nic_cmd_list.append(nic_cmd)
-                if not self.nic_exec_cmds(nic_cmd_list, timeout=300):
-                    return False
-
-                # for CI/CD, copy independent asic lib to /data
-                if nic_asic_image:
-                    if not self.nic_copy_image(nic_asic_image, MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
-                        return False
 
         nic_cmd_list = list()
         nic_cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_PATH)
@@ -2686,11 +2655,11 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic asic version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_asic_ver = match[0]
+            self._diag_asic_ver = match
         else:
-            self.nic_set_err_msg("Unable to find nic asic version. Is this MTP converted for this ASIC?")
+            self.nic_set_err_msg("Unable to find nic asic version")
             return False
 
         if self._nic_type in GIGLIO_NIC_TYPE_LIST:
@@ -2704,9 +2673,9 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic utils version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_util_ver = match[0]
+            self._diag_util_ver = match
         else:
             self.nic_set_err_msg("Unable to find nic utils version")
             return False
@@ -2717,9 +2686,9 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Unable to get nic diag version")
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", cmd_buf)
+        match = libmfg_utils.rgx_extract_commit_date(cmd_buf)
         if match:
-            self._diag_ver = match[0]
+            self._diag_ver = match
         else:
             self.nic_set_err_msg("Unable to find nic diag version")
             return False

@@ -31,6 +31,28 @@ builds:
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_capri.tar
+
+  build-amd64-giglio-tot:
+    commands: [ "sh", "-c", "cd build; make amd64 asic=giglio asiclib=latest" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_giglio.tar
+  build-arm64-giglio-tot:
+    commands: [ "sh", "-c", "cd build; make arm64 asic=giglio asiclib=latest" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_arm64_giglio.tar
+  build-amd64-elba-tot:
+    commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=latest" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_amd64_elba.tar
+  build-arm64-elba-tot:
+    commands: [ "sh", "-c", "cd build; make arm64 asic=elba asiclib=latest" ]
+    owners: ["email:xin@pensando.io"]
+    artifacts:
+    - /psdiag/build/images/image_arm64_elba.tar
+
   package-giglio-mfg-script:
     commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
@@ -97,6 +119,22 @@ jobs:
   test/naples100:
     labels: ["CI-DIAG-Build", "CI-DIAG-naples100"]
 ### END NIC_TYPE TEST BUNDLE ###
+### NIC_TYPE ASIC TEST BUNDLE ###
+  test-asic/ginestra:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ginestra"]
+  test-asic/monterey:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-monterey"]
+  test-asic/ortano-adicr-orc:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-orc"]
+  test-asic/ortano-solo-orc:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-orc"]
+  test-asic/ortano-interp-orc:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-interp-orc"]
+  test-asic/ortano-adi-orc:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-orc"]
+  test-asic/ortano-ti-orc:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-ti-orc"]
+### END NIC_TYPE ASIC TEST BUNDLE ###
 
 dependencies:
   .:

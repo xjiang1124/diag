@@ -3,19 +3,18 @@
 import sys
 import os
 import time
-import re
 import argparse
 import threading
 import traceback
-import copy
-import json
-import yaml
+import binascii
+import random
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import libmtp_utils
 import image_control
-from ddr_test_parameters import test2args as ddrtest2args
+import crc8
+import testlog
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
 from libdefs import NIC_Type
@@ -27,9 +26,6 @@ from libdefs import Swm_Test_Mode
 from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
-from libdefs import Voltage_Margin
-from libdefs import MFG_DIAG_SIG
-from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import *
@@ -39,7 +35,7 @@ def single_nic_qsfp_read_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, ds
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test_case_name))
     start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_case_name)
-    qsfp_ports_sn = {"1": "", "2": ""}
+    qsfp_ports_sn = {"0": "", "1": ""}
     ret = True
 
     # build the refernce qsfp serial number
@@ -75,7 +71,7 @@ def single_nic_qsfp_read_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, ds
         if sn_count != read_cycles:
             ret = False
             nic_test_rslt_list[slot] = False
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Read back QSFP SN counts {:d} not matche read cycles {:d}".foramt(sn_count, read_cycles))
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Read back QSFP SN counts {:d} not matche read cycles {:d}".format(sn_count, read_cycles))
             if stop_on_err:
                 break
         lines = []
@@ -89,6 +85,216 @@ def single_nic_qsfp_read_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, ds
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Read back Error SNs: {:s}".format(str(lines)))
             if stop_on_err:
                 break
+
+    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test_case_name, start_ts)
+    if not ret:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test_case_name, "FAILED", duration))
+    else:
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test_case_name, duration))
+    return ret
+
+def binary_file_2_hexstr(mtp_mgmt_ctrl, slot, binaryfile=None):
+    """
+    read out the give binary file an convert it to hex string
+    return the hexstring
+    """
+
+    try:
+        with open(binaryfile, "rb") as f1:
+            bytearray_file1 = bytearray(f1.read())
+            f1.close()
+    except Exception as Err:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Open Read Binaryfile {:s} Failed with Error: {:s}".format(binaryfile, str(Err)))
+        return False
+
+    if not binaryfile:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Give Binaryfile {:s} is Empty".format(binaryfile))
+        return False
+    return binascii.hexlify(bytearray_file1)
+
+def binary_file_compare(mtp_mgmt_ctrl, slot, binaryfile1=None, binaryfile2=None):
+    """
+    compare two binary files byte to byte
+    if two binary files same, return True, otherwise return False.
+    """
+
+    if not binaryfile1 or not binaryfile2:
+        return False
+
+    hexstr_file1 = binary_file_2_hexstr(mtp_mgmt_ctrl, slot, binaryfile1)
+    if not hexstr_file1:
+        return False
+    hexstr_file2 = binary_file_2_hexstr(mtp_mgmt_ctrl, slot, binaryfile2)
+    if not hexstr_file2:
+        return False
+
+    if hexstr_file1 == hexstr_file2:
+        return True
+
+    compare_res = []
+    min_lenth = min(len(hexstr_file1), len(hexstr_file2))
+    for i in range(min_lenth):
+        if  i % 2 != 0:
+            continue
+        j = i + 2
+        if j > min_lenth:
+            j = -1
+        if hexstr_file1[i:j] == hexstr_file2[i:j]:
+            compare_res.append(hexstr_file1[i:j])
+        else:
+            compare_res.append(hexstr_file1[i:j] + "|" +  hexstr_file2[i:j])
+    mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, " ".join(compare_res))
+    return False
+
+def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp, test_case_name):
+
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test_case_name))
+    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_case_name)
+    #prog_cmd_list = ["cpldapp -writeflash {:s} {:s}", "/data/nic_util/xo3dcpld -prog {:s} {:s}"]
+    prog_cmd_list = ["/data/nic_util/xo3dcpld -prog {:s} {:s}"]
+    partition = "ufm3"
+    orginal_ufm3_dump_file_name = "{:s}_read.bin".format(partition)
+    tmp_test_bin_file = "{:s}_tmp_test.bin".format(partition)
+    tmp_test_readback_bin_file = "{:s}_tmp_test_readback.bin".format(partition)
+    ret = True
+
+    # save current UFM3 values by dump it into a file
+    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_dump_cpld(partition, file_path=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + orginal_ufm3_dump_file_name):
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Dump NIC Original CPLD internal flash UFM3 failed")
+        mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
+        nic_test_rslt_list[slot] = False
+        return False
+    # copy dumped binary file to MTP
+    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_copy_file_from_nic(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + orginal_ufm3_dump_file_name, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + orginal_ufm3_dump_file_name):
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Copy dumped binary file to MTP Failed, Source File is {:s}".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + orginal_ufm3_dump_file_name))
+        mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
+        nic_test_rslt_list[slot] = False
+        return False
+
+    orginal_ufm3_hex = binary_file_2_hexstr(mtp_mgmt_ctrl, slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + orginal_ufm3_dump_file_name)
+    if not orginal_ufm3_hex:
+        nic_test_rslt_list[slot] = False
+        return False
+    orginal_ufm3_hex_list = [orginal_ufm3_hex[i:i+2] for i in range(0, len(orginal_ufm3_hex), 2)]
+    ufm3_byte_length = len(orginal_ufm3_hex_list) # should be 16
+
+    # [UFM3_data14, UFM3_data13, ... UFM3_data0, crc8]
+    test_values = list()
+    # exclude crc8 Byte since we need re-calculate crc8
+    test_values.append(["01"] + ["00"] * (ufm3_byte_length - 2))  # enbale sec pattern
+    test_values.append(["00"] * (ufm3_byte_length - 1))  # disable sec pattern
+    test_values.append(["aa"] * (ufm3_byte_length - 1))  # random pattern
+    test_values.append(["55"] * (ufm3_byte_length - 1))  # random pattern
+    test_values.append(["ff"] * (ufm3_byte_length - 1))
+    test_values.append(orginal_ufm3_hex_list[:-1])
+
+    crc8hash = crc8.crc8()
+    for test_index, test_value in enumerate(test_values):
+        # calculate crc8
+        crc8hash.reset()
+        crc8hash.update(binascii.unhexlify("".join(test_value)))
+        crc8_checksum = crc8hash.hexdigest()
+        binary_line = test_value + [crc8_checksum]
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, str(binary_line))
+        # create binary file
+        try:
+            with open(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_bin_file, "wb") as f:
+                f.write(binascii.unhexlify("".join(binary_line)))
+                f.flush()
+                f.close()
+        except Exception as Err:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, str(Err))
+            nic_test_rslt_list[slot] = False
+            return False
+        # copy the binary to nic
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_copy_image(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_bin_file, directory=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH):
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Copy Generated binary file to NIC Failed, Source File is {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_bin_file))
+            mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
+            nic_test_rslt_list[slot] = False
+            return False
+        # program UFM3
+        progCmd = random.choice(prog_cmd_list).format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + tmp_test_bin_file, "ufm3")
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, progCmd)
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([progCmd], timeout=MTP_Const.OS_CMD_DELAY):
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
+        if "xo3dcpld" in prog_cmd_list and "Invalid region to erase" in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program UFM3 NOT SUPPORTED by current version of xo3dcpld utility")
+            nic_test_rslt_list[slot] = False
+            return False
+        if "end of programming" not in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
+        # dump UFM3 back to a binary file
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_dump_cpld(partition, file_path=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + tmp_test_readback_bin_file):
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Read Back NIC CPLD internal flash UFM3 failed")
+            mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
+            nic_test_rslt_list[slot] = False
+            return False
+        # copy dumped binary file to MTP
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_copy_file_from_nic(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + tmp_test_readback_bin_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_readback_bin_file):
+            return False
+        # compare two binary file
+        if not binary_file_compare(mtp_mgmt_ctrl, slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_bin_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_readback_bin_file):
+            nic_test_rslt_list[slot] = False
+            return False
+        # enable cpld to access ufm3
+        # """
+        #     Write to spi/smbus reg 0xc0[0] =1 to enable cpld to access ufm3 or trigger the following 4 cases to enable hard power cycle the ASIC power( make sure reg 0xc0 [0]  = 0 when disable the MUX access for this SPI UFM module)
+        #     AC power cycle
+        #     GPIO 3 power cycle
+        #     Voltage Regulator thermal trip fault
+        #     PUF error
+        # """
+        cmd = "cpldapp -w 0xc0 0x01"
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
+        # read back 'UFM3 Read debug' register and compare with specified test UFM data
+        # reverse binary_line, so that it's easy to compate with register value. [crc8, UFM3_data0,.. UFM3_data14]
+        # reister 0xC1 is CRC byte, 0xc2 is UFM3_data0, ... 0xcf is UFM3_data13 0xd0 is UFM3_data14
+        ufm3_data_reg_base = 0xc1
+        for index, ufm3_data in enumerate(binary_line[::-1]):
+            cmd = "cpldapp -r 0x{:02x}".format(ufm3_data_reg_base + index)
+            if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+                nic_test_rslt_list[slot] = False
+                return False
+            ufm3_read_debug_reg_val = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf().split("\n")[1].strip("\r")
+            if int(ufm3_read_debug_reg_val, 16) != int(ufm3_data, 16):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Value {:02x} from UFM3 Read debug NOT match Value {:02x} from dumped bin file".format(ufm3_read_debug_reg_val, ufm3_data))
+                nic_test_rslt_list[slot] = False
+                return False
+        # check register 0xD2
+        cmd = "cpldapp -r 0xd2"
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
+        ufm3_read_debug_reg_val = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf().split("\n")[1].strip("\r")
+        # check bit2 crc checkout, 1 means crc check error
+        if (int(ufm3_read_debug_reg_val, 16) & 0b00000100):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD2 bit2 check failed")
+            nic_test_rslt_list[slot] = False
+            return False
+        # only check for esec enable test pattern
+        if test_index == 0:
+            # check bit2 hw lock checkout
+            if not (int(ufm3_read_debug_reg_val, 16) & 0b00000010):
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD2 bit1 check failed")
+                nic_test_rslt_list[slot] = False
+                return False
+        # recover register 0xc0
+        cmd = "cpldapp -w 0xc0 0x00"
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
 
     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test_case_name, start_ts)
     if not ret:
@@ -136,6 +342,52 @@ def cpld_qsfp_sn_read_stress_test(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_c
                                                 test_case_name,
                                                 stop_on_err,
                                                 read_cycles))
+        nic_thread.daemon = True
+        nic_thread.start()
+        nic_thread_list.append(nic_thread)
+
+    while True:
+        if len(nic_thread_list) == 0:
+            break
+        for nic_thread in nic_thread_list[:]:
+            if not nic_thread.is_alive():
+                ret = nic_thread.join()
+                nic_thread_list.remove(nic_thread)
+        time.sleep(5)
+
+    for slot in new_nic_list:
+        if not nic_test_rslt_list[slot]:
+            if slot not in fail_list:
+                fail_list.append(slot)
+            if stop_on_err:
+                if stop_on_err:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "STOP_ON_ERR asserted")
+                    raise Exception
+            new_nic_list.remove(slot)
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} {:s} {:s} Complete\n".format(nic_type, dsp, test_case_name), level=0)
+    return fail_list
+
+def ufm3_read_write_stress_test_from_spi(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_case_name, stop_on_err):
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} {:s} {:s} Start....".format(nic_type, dsp, test_case_name), level=0)
+    fail_list = list()
+    new_nic_list = nic_list[:]
+    nic_thread_list = list()
+    nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
+
+    for slot in new_nic_list:
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            nic_test_rslt_list[slot] = False
+            if slot not in fail_list:
+                fail_list.append(slot)
+            continue
+        nic_thread = threading.Thread(target = single_nic_ufm3_rw_stress_test,
+                                        args = (mtp_mgmt_ctrl,
+                                                slot,
+                                                nic_test_rslt_list,
+                                                dsp,
+                                                test_case_name))
         nic_thread.daemon = True
         nic_thread.start()
         nic_thread_list.append(nic_thread)
@@ -362,7 +614,7 @@ def main():
         return 
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage):
@@ -543,10 +795,22 @@ def main():
                             return
         mtp_mgmt_ctrl.cli_log_inf("\n",  level=0)
 
-        test_case_list = ["PROGRAM_SPECIAL_BOOT0", "UPGRADE_DOWNGRADE_UTILITY_FUNCTION_STRESS_AND_FAILSAFE_NEGTIVE", "QSFP_SN_READ_STRESS",  "GPIO3_POWER_CYCLE", "3V3_POWER_CYCLE", "AC_POWER_CYCLE", "RECOVER_BOOT0"]
+        test_case_list = ["PROGRAM_SPECIAL_BOOT0", "UPGRADE_DOWNGRADE_UTILITY_FUNCTION_STRESS_AND_FAILSAFE_NEGTIVE", "QSFP_SN_READ_STRESS",  "GPIO3_POWER_CYCLE", "3V3_POWER_CYCLE", "AC_POWER_CYCLE"]
         for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
             if not nic_list:
                 continue
+            # determin the 6-digits pn for nic_list of this card type
+            for slot in nic_list:
+                pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot) # get the PN format like this 68-0015-02 01 or 0X322F X/A
+                pn = pn.split()[0]
+                first6_pn = pn[0:7] if "-" in pn else pn[0:6]
+                pn = first6_pn
+                if pn:
+                    break
+            if new_cpld_json_dict[pn]["working_imge"]["name"].encode("ascii","ignore") == new_cpld_json_dict[pn]["secure_imge"]["name"].encode("ascii","ignore") and new_cpld_json_dict[pn]["working_imge"]["sha512sum"].encode("ascii","ignore") == new_cpld_json_dict[pn]["secure_imge"]["sha512sum"].encode("ascii","ignore"):
+                test_case_list.append("UFM3_RW_STRESS_FROM_SPI")
+            test_case_list.append("RECOVER_BOOT0")
+
             for test_case in test_case_list:
                 if test_case in ("UPGRADE_DOWNGRADE_UTILITY_FUNCTION_STRESS_AND_FAILSAFE_NEGTIVE", "3V3_POWER_CYCLE", "GPIO3_POWER_CYCLE", "AC_POWER_CYCLE"):
                     ##########################################################################################################################################################
@@ -598,16 +862,30 @@ def main():
                     ##########################################################################################################################################################
                     if nic_list:
                         # get special_boot0_img_file name
-                        for slot in nic_list:
-                            pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot) # get the PN format like this 68-0015-02 01 or 0X322F X/A
-                            pn = pn.split()[0]
-                            first6_pn = pn[0:7] if "-" in pn else pn[0:6]
-                            pn = first6_pn
-                            if pn:
-                                break
                         special_boot0_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["special_boot0_imge"]["name"].encode("ascii","ignore")
                         boot0_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
                         testing_fail_list = cpld_programe_boot0(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_case, stop_on_err, special_boot0_img_file, boot0_installer_file)
+                        for slot in testing_fail_list:
+                            if slot in nic_list and stop_on_err:
+                                nic_list.remove(slot)
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            if slot in pass_nic_list:
+                                pass_nic_list.remove(slot)
+                elif test_case == "UFM3_RW_STRESS_FROM_SPI":
+                    ##########################################################################################################################################################
+                    #  CPLD internal flash UFM3 read and write stress tests from SPI
+                    ##########################################################################################################################################################
+                        if not mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, nic_util=True, stop_on_err=stop_on_err):
+                            for slot in nic_list:
+                                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                    if slot in nic_list and stop_on_err:
+                                        nic_list.remove(slot)
+                                    if slot not in fail_nic_list:
+                                        fail_nic_list.append(slot)
+                                    if slot in pass_nic_list:
+                                        pass_nic_list.remove(slot)
+                        testing_fail_list = ufm3_read_write_stress_test_from_spi(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_case, stop_on_err)
                         for slot in testing_fail_list:
                             if slot in nic_list and stop_on_err:
                                 nic_list.remove(slot)

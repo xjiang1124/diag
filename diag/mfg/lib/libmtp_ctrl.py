@@ -102,8 +102,6 @@ class mtp_ctrl():
         self._test_log_folder = None # relative path to log folder
         self._open_file_handles = []
 
-        self._cicd_run = False
-
     def cli_log_inf(self, msg, level = 1):
         if msg is None:
             msg = ""
@@ -1263,29 +1261,35 @@ class mtp_ctrl():
             return False
 
         # MTP Diag image version
+        if not self.mtp_init_diag_img_version():
+            return False
+
+        # MTP ASIC image version
+        if not self.mtp_init_diag_asiclib_version():
+            return False
+
+        return True
+
+    def mtp_init_diag_img_version(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get diag image version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._diag_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get diag image version", level = 0)
+        self._diag_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._diag_ver:
+            self.cli_log_err("Failed to find diag image version", level = 0)
             return False
+        return True
 
-        # MTP ASIC image version
+    def mtp_init_diag_asiclib_version(self):
         cmd = MFG_DIAG_CMDS.MTP_ASIC_VERSION_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
             self.cli_log_err("Failed to get asic util version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._asic_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get asic util version", level = 0)
+        self._asic_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._asic_ver:
+            self.cli_log_err("Failed to find asic util version", level = 0)
             return False
-
         return True
 
     def mtp_get_asic_support(self):
@@ -2860,7 +2864,7 @@ class mtp_ctrl():
             if software_pn != "90-0016-0004":
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
-            if software_pn != "90-0019-0001":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
             if software_pn != "90-0021-0001":
@@ -2872,7 +2876,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0090":     #ORTANO2 SOLO MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0092":     #ORTANO2 (ADI CR/ SOLO) S4
             if software_pn != "90-0022-0001":
@@ -2881,7 +2885,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0074":     #GINESTRA_D4
             if software_pn != "90-0023-0001":
@@ -3476,11 +3480,11 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
         return True
 
-    def mtp_copy_nic_emmc(self, slot, emmc_img):
-        if not self._nic_ctrl_list[slot].nic_copy_emmc(emmc_img):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+    def mtp_copy_nic_copy_file(self, slot, filename, directory="/data/"):
+        if not self._nic_ctrl_list[slot].nic_copy_image(filename, directory):
+            self.cli_log_slot_inf_lock(slot, "Copy File {:s} to NIC {:d} {:s} Failed".format(filename, slot, directory))
             return False
-            
+
         return True
         
     def mtp_set_nic_sw_boot(self, slot, emmc_img):
@@ -3550,11 +3554,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, msg)
 
         nic_diag_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.MTP_ARM64_IMAGE
-        if self._cicd_run:
-            nic_asic_image = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + MFG_IMAGE_FILES.ASIC_ARM64_IMAGE
-        else:
-            nic_asic_image = ""
-        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, nic_asic_image, nic_utils):
+
+        if not self._nic_ctrl_list[slot].nic_setup_diag_img(nic_diag_image, "", nic_utils):
             self.cli_log_slot_err_lock(slot, "{:s} failed".format(msg))
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -4915,6 +4916,7 @@ class mtp_ctrl():
                     if sn not in sn2slot:
                         self.cli_log_err("Physical Inserted Card {:s} NOT Scanned, Test Aborting ...".format(sn), level=0)
                         rc = False
+                        continue
                     phy_slot = sn2slot[sn]
                     phy_present_slot_list.append(phy_slot)
                     phy_present_sn_list.append(sn)
@@ -4924,11 +4926,9 @@ class mtp_ctrl():
             # Validate if there is scanned card not physical present
             for sn in sn2slot:
                 if sn not in phy_present_sn_list:
-                    key = libmfg_utils.nic_key(slot)
-                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, Test Aborting ...".format(key, sn), level=0)
-                    rc = False
-            if not rc:
-                return rc
+                    key = libmfg_utils.nic_key(sn2slot[sn])
+                    self.cli_log_err("Scanned Card {:s} {:s} NOT Physical Present, May Because Card Not Bootup, Fail This Card Out and Continue Test".format(key, sn), level=0)
+                    self.mtp_set_nic_status_fail(sn2slot[sn], skip_fa=True)
             if not phy_present_slot_list:
                 phy_present_slot_list = range(len(bus_list_match))
         else:
@@ -6593,7 +6593,7 @@ class mtp_ctrl():
     def mtp_nic_port_counters(self, slot):
         self.cli_log_slot_inf(slot, "Dumping port counters")
         if not self._nic_ctrl_list[slot].nic_port_counters():
-            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True

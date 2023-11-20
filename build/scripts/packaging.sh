@@ -206,11 +206,11 @@ do
     
     if [[ $asiclib == "latest" ]]
     then
-        latest=$(ls -t /vol/builds/hourly-asic/ | head -n1)
+        #latest=$(ls -t /vol/builds/hourly-asic/ | head -n1)
         rm -rf $BUILD_DIR/latest/
         mkdir -p $BUILD_DIR/latest/
-        cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
-        tar xf $BUILD_DIR/latest/releases.tar.gz -C $BUILD_DIR/latest/
+        #cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
+        cp /vol/hw/diag/diag_images/jenkins/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
     fi
 
     if [[ $arch == "amd64" ]]
@@ -231,13 +231,13 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying stable ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         if [[ $asiclib == "latest" ]]
         then
-            echo "Copying latest ASIC lib $latest for $asic"
-            ASIC_IMG="$BUILD_DIR/latest/releases/nic_${arch}_${asic}.tar.gz"
+            echo "Copying latest ASIC lib for $asic"
+            ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
     fi
@@ -258,13 +258,13 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying stable ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_tar/nic_${arch}_${asic}.tar.gz"
+            ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         if [[ $asiclib == "latest" ]]
         then
-            echo "Copying latest ASIC lib $latest for $asic"
-            ASIC_IMG="$BUILD_DIR/latest/releases/nic_${arch}_${asic}.tar.gz"
+            echo "Copying latest ASIC lib for $asic"
+            ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         #echo "Copy snake CFG to $arch image"

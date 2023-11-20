@@ -415,7 +415,7 @@ def naples_diag_ncsi_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, para_test_
     for slot in nic_test_list:
         if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
             nic_test_list.remove(slot)
-            if slot not in fail_nic_list:
+            if slot not in fail_list:
                 fail_list.append(slot)
 
     for test in para_test_list:
@@ -786,6 +786,8 @@ def single_nic_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_para_test
             asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
         if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
             asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+        if dsp == "MEM" and test == "DDR_STRESS":
+            asic_dir_logfile_list.append("/data/nic_util/" + "stressapptest.log")
 
         if asic_dir_logfile_list:
             if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
@@ -1325,12 +1327,6 @@ def main():
                 skip_nic_list.append(slot)
 
         nic_type_prsnt_list = [type_present for type_present,nic_present in zip(nic_type_full_list, nic_test_full_list) if nic_present]
-
-        # if CI/CD run:
-        if args.mtpcfg:
-            for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                for slot in nic_list:
-                    mtp_mgmt_ctrl._nic_ctrl_list[slot]._cicd_run = True
 
         # check if MTP support present NIC
         mtp_mgmt_ctrl.cli_log_inf("MTP Diag Regression compatibility check started", level=0)
@@ -2110,10 +2106,6 @@ def main():
             if card_type == NIC_Type.NAPLES25SWM and (swmtestmode == Swm_Test_Mode.ALOM):
                 alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
                 mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-
-        for slot in skip_nic_list:
-            key = libmfg_utils.nic_key(slot)
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP), level=0)
 
     except Exception as e:
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)

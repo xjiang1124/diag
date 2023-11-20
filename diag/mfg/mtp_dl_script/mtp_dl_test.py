@@ -789,22 +789,22 @@ def main():
                 exp_assettag = 'C0'
                 hpe_pn = "000000-000"
 
-            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+            testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "AVS_SET"]
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "AVS_SET"]
             elif nic_type == NIC_Type.NAPLES25SWM:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "REWORK_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "FEA_VERIFY", "L1_ESEC_PROG"]
             elif nic_type in FPGA_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FPGA_PROG_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "FPGA_PROG_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in ELBA_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "L1_ESEC_PROG", "AVS_SET"]
             elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
+                testlist = ["NIC_POWER", "NIC_PRSNT", "NIC_DIAG_BOOT", "FRU_VERIFY", "CPLD_VERIFY", "DIAGFW_STORE", "FEA_VERIFY", "L1_ESEC_PROG", "AVS_SET"]
             for skip_test in args.skip_test:
                 if skip_test in testlist:
                     testlist.remove(skip_test)
@@ -849,6 +849,10 @@ def main():
                 # set avs
                 elif test == "AVS_SET":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs(slot)
+                # keep an copy of diagfw in emmc, just incase we need recover it if mgmt fail and dongle is not available
+                # not put DL results to fail even if the copy image to emmc failed.
+                elif test == "DIAGFW_STORE":
+                    mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, qspi_img_file)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue

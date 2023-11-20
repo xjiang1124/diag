@@ -121,6 +121,7 @@ def single_mtp_ddr_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_l
         mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+        testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
         mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
         mtp_mgmt_ctrl.cli_log_inf("DDR Test At {:s} Complete".format(stage), level=0)
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -182,6 +183,7 @@ def single_mtp_emmc_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, stage, fail_nic_
     mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
     mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
     mtp_mgmt_ctrl.cli_log_inf("EMMC Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -243,6 +245,7 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
     mtp_mgmt_ctrl.cli_log_inf("Calling Command {:s}".format(cmd), level=0)
     mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_4C_TEST_TIMEOUT)
     mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
+    testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)
     mtp_mgmt_ctrl.cli_log_inf("\n", level=0)
     mtp_mgmt_ctrl.cli_log_inf("CPLD Validation Test At {:s} Complete".format(stage), level=0)
     mtp_stop_ts = libmfg_utils.timestamp_snapshot()
@@ -257,63 +260,6 @@ def single_mtp_cpld_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, m
     # mtp_mgmt_ctrl.mtp_chassis_shutdown()
 
     return
-
-
-def get_test_arguments(test_case_name=None, part_number=None):
-
-    if test_case_name is None:
-        return None
-    test_case = test_case_name
-    if test_case not in test2args:
-        return None
-    partnumber = part_number if part_number else "DEFAULT"
-    no_rev_partnumber =  "-".join(partnumber.split("-")[0:2])
-
-    argdict = dict()
-    # load test_case arguments
-    for idx, argument in enumerate(test2args[test_case]["ARGUMENT_SPEC"].split()):
-        if  partnumber in test2args[test_case]:
-            value = test2args[test_case][partnumber].split()[idx]
-            if value.upper() == "N/A":
-                value = test2args[test_case]["DEFAULT"].split()[idx]
-        elif no_rev_partnumber in test2args[test_case]:
-            value = test2args[test_case][no_rev_partnumber].split()[idx]
-            if value.upper() == "N/A":
-                value = test2args[test_case]["DEFAULT"].split()[idx]
-        else:
-            value = test2args[test_case]["DEFAULT"].split()[idx]
-        argdict[argument] = value
-    # load test case level common arguments
-    apply_test_case_arg = test2args[test_case].get("IS_CASE_COMMON_ARGS_APPLY", True)
-    if apply_test_case_arg and "ARGUMENT_SPEC" in test2args["TEST_CASE_COMMON"]:
-        for idx, argument in enumerate(test2args["TEST_CASE_COMMON"]["ARGUMENT_SPEC"].split()):
-            if  partnumber in test2args["TEST_CASE_COMMON"]:
-                value = test2args["TEST_CASE_COMMON"][partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            elif no_rev_partnumber in test2args["TEST_CASE_COMMON"]:
-                value = test2args["TEST_CASE_COMMON"][no_rev_partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            else:
-                value = test2args["TEST_CASE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
-    # load test suite level common arguments
-    apply_test_suite_arg = test2args[test_case].get("IS_SUITE_COMMON_ARGS_APPLY", True)
-    if apply_test_suite_arg and "ARGUMENT_SPEC" in test2args["TEST_SUITE_COMMON"]:
-        for idx, argument in enumerate(test2args["TEST_SUITE_COMMON"]["ARGUMENT_SPEC"].split()):
-            if  partnumber in test2args["TEST_SUITE_COMMON"]:
-                value = test2args["TEST_SUITE_COMMON"][partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            elif no_rev_partnumber in test2args["TEST_SUITE_COMMON"]:
-                value = test2args["TEST_SUITE_COMMON"][no_rev_partnumber].split()[idx]
-                if value.upper() == "N/A":
-                    value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            else:
-                value = test2args["TEST_SUITE_COMMON"]["DEFAULT"].split()[idx]
-            argdict[argument] = value
-    return argdict
 
 def run_ddr_test_suite(args):
     verbosity = args.verbosity
@@ -383,7 +329,7 @@ def run_ddr_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
+        if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -420,7 +366,7 @@ def run_ddr_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         ddr_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("DDR"), level=0)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, ddr_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("DDR"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
@@ -522,8 +468,7 @@ def run_emmc_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(
-            mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
 
     # power off all the test mtp
     #libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -532,7 +477,7 @@ def run_emmc_test_suite(args):
 
     # Connect to MTP
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        if not libmfg_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, args.skip_test):
+        if not test_utils.mtp_common_setup_fpo(mtp_mgmt_ctrl, stage):
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
             mtpid_fail_list.append(mtp_id)
@@ -571,7 +516,7 @@ def run_emmc_test_suite(args):
         emmc_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf(
             "Start deploy MTP {:s} Test script".format("EMMC"), level=0)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, emmc_script_pkg):
             mtp_mgmt_ctrl.cli_log_err(
                 "Deploy MTP {:s} Test script failed".format("EMMC"), level=0)
             mtpid_list.remove(mtp_id)
@@ -671,8 +616,7 @@ def run_cpld_test_suite(args):
     open_file_track_mtp_list = dict()
     logfile_dir_list = dict()
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
-        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = libmfg_utils.open_logfiles(
-            mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
+        logfile_dir_list[mtp_id], open_file_track_mtp_list[mtp_id] = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=FF_Stage.FF_P2C)
 
     # power off all the test mtp
     # libmfg_utils.mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=False)
@@ -731,7 +675,7 @@ def run_cpld_test_suite(args):
     for mtp_id, mtp_mgmt_ctrl in zip(mtpid_list[:], mtp_mgmt_ctrl_list[:]):
         cpld_script_pkg = "mtp_diag_screening_script.{:s}.tar".format(mtp_id)
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format("CPLD"), level=0)
-        if not libmfg_utils.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, cpld_script_pkg, logfile_dir_list[mtp_id]):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_diag_screening_script_dir, cpld_script_pkg):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format("CPLD"), level=0)
             mtpid_list.remove(mtp_id)
             mtp_mgmt_ctrl_list.remove(mtp_mgmt_ctrl)
