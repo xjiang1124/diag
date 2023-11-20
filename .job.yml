@@ -81,6 +81,8 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build"]
+  test/ScanDL:
+    labels: ["CI-DIAG-ScanDL"]
   test/DL:
     labels: ["CI-DIAG-DL"]
   test/P2C:
