@@ -87,10 +87,8 @@ class PART_NUMBERS_MATCH:
     ORTANO2ADI_CR_PN_FMT = r"68-0049-0[1-9]{1} [A-Z0-9]{2}"                                         #68-0049-03 A0    ORTANO2ADI CR
     ORTANO2ADI_CR_MSFT_PN_FMT = r"68-0091-0[1-9]{1} [A-Z0-9]{2}"                                    #68-0091-01 A0    ORTANO2ADI CR MICROSOFT
     ORTANO2ADI_CR_S4_PN_FMT = r"68-0092-0[1-9]{1} [A-Z0-9]{2}"                                      #68-0092-01 A0    ORTANO2ADI CR S4
-    # GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
-    # GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
-    GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1}"                                           #68-0074-01 01    GINESTRA_D4
-    GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1}"                                           #68-0075-01 01    GINESTRA_D5
+    GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
+    GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
