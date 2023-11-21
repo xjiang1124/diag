@@ -392,6 +392,8 @@ static int flash_erase(uint32_t fd, int region)
         status = cpld_write_flash(fd, lsc_erase1_cmd, sizeof(lsc_erase_cmd));
     else if ( region == 4 )
         status = cpld_write_flash(fd, lsc_erase_fea_cmd, sizeof(lsc_erase_cmd));
+    else if ( region == 6 )
+        status = cpld_write_flash(fd, lsc_erase_ufm3_cmd, sizeof(lsc_erase_cmd));
     else
         printf("Invalid region to erase\n");
     sleep(10);
