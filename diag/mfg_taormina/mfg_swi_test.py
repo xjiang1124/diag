@@ -12,6 +12,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -233,7 +234,8 @@ def single_uut_fw_program(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -466,7 +468,8 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                 break
             else:
@@ -502,19 +505,7 @@ def single_uut_fw_program(stage,
                         ret = mtp_mgmt_ctrl.tor_nic_config_erase(slot)
                     else:
                         mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
-                        if uut_id not in fail_uut_list:
-                            fail_uut_list.append(uut_id)
-                        if uut_id in pass_uut_list:
-                            pass_uut_list.remove(uut_id)
-
-                        # FAIL: Save the following to be uploaded to MES later:
-                        # - Test Fail Mode
-                        # - Test Fail Signature
-                        if isinstance(mes_obj, MES):
-                            mes_obj.save_res_fail_mode("Unknown SWI subtest")
-                            mes_obj.save_res_fail_signature(error_msg)
-
-                        break
+                        continue
                     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                     if not ret:
                         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
@@ -528,7 +519,8 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode(test)
-                            mes_obj.save_res_fail_signature(error_msg)
+                            mes_obj.save_res_fail_signature(
+                                collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                         break
                     else:
@@ -569,7 +561,8 @@ def single_uut_fw_program(stage,
                     # - Test Fail Signature
                     if isinstance(mes_obj, MES):
                         mes_obj.save_res_fail_mode(test)
-                        mes_obj.save_res_fail_signature(error_msg)
+                        mes_obj.save_res_fail_signature(
+                            collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                     break
                 else:
@@ -604,19 +597,7 @@ def single_uut_fw_program(stage,
                         ret = mtp_mgmt_ctrl.tor_nic_sw_cleanup(slot)
                     else:
                         mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
-                        if uut_id not in fail_uut_list:
-                            fail_uut_list.append(uut_id)
-                        if uut_id in pass_uut_list:
-                            pass_uut_list.remove(uut_id)
-
-                        # FAIL: Save the following to be uploaded to MES later:
-                        # - Test Fail Mode
-                        # - Test Fail Signature
-                        if isinstance(mes_obj, MES):
-                            mes_obj.save_res_fail_mode("Unknown SWI subtest")
-                            mes_obj.save_res_fail_signature(error_msg)
-
-                        break
+                        continue
                     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                     if not ret:
                         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
@@ -630,7 +611,8 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode(test)
-                            mes_obj.save_res_fail_signature(error_msg)
+                            mes_obj.save_res_fail_signature(
+                                collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                         break
                     else:
@@ -666,7 +648,8 @@ def single_uut_fw_program(stage,
                     # - Test Fail Signature
                     if isinstance(mes_obj, MES):
                         mes_obj.save_res_fail_mode(test)
-                        mes_obj.save_res_fail_signature(error_msg)
+                        mes_obj.save_res_fail_signature(
+                            collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                     break
                 else:
@@ -684,7 +667,8 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program SWI passmark')
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl))
 
         if uut_id not in fail_uut_list and isinstance(mes_obj, MES):
             # PASS: Save the following to be uploaded to MES later:
@@ -708,9 +692,6 @@ def single_uut_fw_program(stage,
 
         mfg_swi_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("MFG SWI Test Duration:{:s}".format(mfg_swi_stop_ts - mfg_swi_start_ts))
-
-        # compile error messages
-        liblog.collect_err_msg(mtp_mgmt_ctrl)
 
         pass_or_fail = ""
         if uut_id in pass_uut_list:
@@ -751,6 +732,23 @@ def single_uut_fw_program(stage,
         if uut_id in pass_uut_list:
             pass_uut_list.remove(uut_id)
         exit_fail(mtp_mgmt_ctrl, log_filep_list, traceback.print_exc())
+
+def collect_fail_signature(mtp_mgmt_ctrl, subtest="", error_msg=""):
+    '''
+    Returns a string of the respective fail signature delimited by a newline
+    '''
+
+    collect_fail_sig_list = []
+    if error_msg:
+        collect_fail_sig_list.append(error_msg)
+
+    liblog.collect_err_msg(mtp_mgmt_ctrl, subtest)
+
+    if len(mtp_mgmt_ctrl.get_err_msg()):
+        collect_fail_sig_list.extend(mtp_mgmt_ctrl.get_err_msg())
+
+    return str("\n".join(collect_fail_sig_list))
+
 
 def main():
     parser = argparse.ArgumentParser(description="MFG SWI Test", formatter_class=argparse.RawTextHelpFormatter)

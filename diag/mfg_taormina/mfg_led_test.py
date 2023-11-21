@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -235,7 +236,8 @@ def single_uut_led_checks(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -351,7 +353,8 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                 break
             else:
@@ -374,7 +377,7 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program LED passmark')
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
             else:
                 # PASS: Save the following to be uploaded to MES later:
@@ -399,9 +402,6 @@ def single_uut_led_checks(stage,
 
         mfg_dl_stop_ts = libmfg_utils.timestamp_snapshot()
         libmfg_utils.cli_inf("MFG LED Test Duration:{:s}".format(mfg_dl_stop_ts - mfg_dl_start_ts))
-
-        # compile error messages
-        liblog.collect_err_msg(mtp_mgmt_ctrl)
 
         if uut_id in pass_uut_list:
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(uut_id, card_type, sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_PASS), level=0)
@@ -438,6 +438,23 @@ def single_uut_led_checks(stage,
         if uut_id in pass_uut_list:
             pass_uut_list.remove(uut_id)
         exit_fail(mtp_mgmt_ctrl, log_filep_list, traceback.print_exc())
+
+def collect_fail_signature(mtp_mgmt_ctrl, subtest="", error_msg=""):
+    '''
+    Returns a string of the respective fail signature delimited by a newline
+    '''
+
+    collect_fail_sig_list = []
+    if error_msg:
+        collect_fail_sig_list.append(error_msg)
+
+    liblog.collect_err_msg(mtp_mgmt_ctrl, subtest)
+
+    if len(mtp_mgmt_ctrl.get_err_msg()):
+        collect_fail_sig_list.extend(mtp_mgmt_ctrl.get_err_msg())
+
+    return str("\n".join(collect_fail_sig_list))
+
 
 def main():
     parser = argparse.ArgumentParser(description="MFG LED Test", formatter_class=argparse.RawTextHelpFormatter)

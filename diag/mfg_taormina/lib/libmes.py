@@ -90,9 +90,11 @@ class MES():
     def save_res_passmark(self, passmark):
         self.results_for_mes['Passmark_Timestamp'] = passmark
     def save_res_fail_mode(self, fail_mode):
-        self.results_for_mes['Test_Fail_Mode'] = fail_mode
+        if self.results_for_mes['Test_Fail_Mode'] == 'N/A':
+            self.results_for_mes['Test_Fail_Mode'] = fail_mode
     def save_res_fail_signature(self, fail_signature):
-        self.results_for_mes['Test_Fail_Signature'] = fail_signature
+        if self.results_for_mes['Test_Fail_Signature'] == 'N/A':
+            self.results_for_mes['Test_Fail_Signature'] = fail_signature
     def save_res_test_location(self, test_location):
         self.results_for_mes['Test_Rack'] = test_location
     def save_res_cxos_version(self, cxos_version):
@@ -515,7 +517,7 @@ class MES():
         self.get_mgmt_ctrl().cli_log_inf("Op ID      : " + operator_id)
         self.get_mgmt_ctrl().cli_log_inf("Passmark   : " + passmark_timestamp)
         self.get_mgmt_ctrl().cli_log_inf("Fail Mode  : " + fail_mode)
-        self.get_mgmt_ctrl().cli_log_inf("Fail Sig   : " + fail_signature)
+        self.get_mgmt_ctrl().cli_log_inf("Fail Sig   : \n" + fail_signature)
         self.get_mgmt_ctrl().cli_log_inf("Test Loc   : " + test_rack)
         self.get_mgmt_ctrl().cli_log_inf("Ship OS ver: " + cxos_version)
 

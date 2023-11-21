@@ -225,7 +225,8 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             # - Test Fail Signature
             if isinstance(mes_obj, MES):
                 mes_obj.save_res_fail_mode(test)
-                mes_obj.save_res_fail_signature(error_msg)
+                mes_obj.save_res_fail_signature(
+                    collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
             return False
 
@@ -246,7 +247,8 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
         # - Test Fail Signature
         if isinstance(mes_obj, MES):
             mes_obj.save_res_fail_mode("Unable to connect to UUT")
-            mes_obj.save_res_fail_signature(error_msg)
+            mes_obj.save_res_fail_signature(
+                collect_fail_signature(mtp_mgmt_ctrl))
 
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
@@ -287,7 +289,8 @@ def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
             # - Test Fail Signature
             if isinstance(mes_obj, MES):
                 mes_obj.save_res_fail_mode(test)
-                mes_obj.save_res_fail_signature(error_msg)
+                mes_obj.save_res_fail_signature(
+                    collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
             return False
 
     return True
@@ -382,7 +385,6 @@ def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist, mes_obj):
     else:
         dsp = "PRE_CHECK"
 
-    collect_testlist = ""
     error_msg = ""
     for test in test_list:
         sn = mtp_mgmt_ctrl._sn
@@ -400,9 +402,9 @@ def tor_precheck_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist, mes_obj):
             # - Test Fail Mode
             # - Test Fail Signature
             if isinstance(mes_obj, MES):
-                collect_testlist += test + "|"
-                mes_obj.save_res_fail_mode(collect_testlist)
-                mes_obj.save_res_fail_signature(error_msg)
+                mes_obj.save_res_fail_mode(test)
+                mes_obj.save_res_fail_signature(
+                    collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
     return test_rslt
 
@@ -434,7 +436,8 @@ def tor_diag_binary_test(mtp_mgmt_ctrl, vmarg, test_list, skip_testlist, mes_obj
             # - Test Fail Signature
             if isinstance(mes_obj, MES):
                 mes_obj.save_res_fail_mode(test)
-                mes_obj.save_res_fail_signature(error_msg)
+                mes_obj.save_res_fail_signature(
+                    collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
             mtp_mgmt_ctrl.tor_dsp_failure_dump()
             if mtp_mgmt_ctrl.hard_failure():
@@ -508,7 +511,8 @@ def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testli
             # - Test Fail Signature
             if isinstance(mes_obj, MES):
                 mes_obj.save_res_fail_mode(test)
-                mes_obj.save_res_fail_signature(error_msg)
+                mes_obj.save_res_fail_signature(
+                    collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
             # only display first 3 and last 3 error messages
             if len(err_msg_list) < 6:
@@ -611,9 +615,6 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_
             mes_obj.save_res_passmark("N/A")
 
             mes_obj.push_results_to_mes()
-
-    # compile error messages
-    liblog.collect_err_msg(mtp_mgmt_ctrl, vmarg)
 
     # Package this UUT's logfile
     log_sub_dir = os.path.basename(os.path.dirname(log_dir))
@@ -725,7 +726,7 @@ def single_uut_2c_test(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode("Failed Diag Init")
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
                 save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
@@ -783,7 +784,7 @@ def single_uut_2c_test(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode("Failed to voltage margin UUT")
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
                 save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
@@ -797,7 +798,7 @@ def single_uut_2c_test(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode("Failed NIC Diag Environment Initialization")
-                    mes_obj.save_res_fail_signature(error_msg)
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
                 save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
                 continue
@@ -881,7 +882,7 @@ def single_uut_2c_test(stage,
                             # - Test Fail Signature
                             if isinstance(mes_obj, MES):
                                 mes_obj.save_res_fail_mode('Failed to program 2C passmark')
-                                mes_obj.save_res_fail_signature(error_msg)
+                                mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
                         else:
                             # PASS: Save the following to be uploaded to MES later:
                             # - Passmark Timestamp
@@ -924,6 +925,23 @@ def single_uut_2c_test(stage,
             # reboot to get last session's logs
             mtp_mgmt_ctrl.tor_boot_select(1)
             mtp_mgmt_ctrl.save_prev_sys_logs()
+
+def collect_fail_signature(mtp_mgmt_ctrl, subtest="", error_msg=""):
+    '''
+    Returns a string of the respective fail signature delimited by a newline
+    '''
+
+    collect_fail_sig_list = []
+    if error_msg:
+        collect_fail_sig_list.append(error_msg)
+
+    liblog.collect_err_msg(mtp_mgmt_ctrl, subtest)
+
+    if len(mtp_mgmt_ctrl.get_err_msg()):
+        collect_fail_sig_list.extend(mtp_mgmt_ctrl.get_err_msg())
+
+    return str("\n".join(collect_fail_sig_list))
+
 
 def main():
     parser = argparse.ArgumentParser(description="MFG SWI Test", formatter_class=argparse.RawTextHelpFormatter)
