@@ -459,7 +459,7 @@ func init() {
     ginestraD5DispStaList["DDR_VDDQ"]  = tps53830.DispStatus
     ginestraD5DispStaList["DDR_VPP"]  = tps53830.DispStatus
     ginestraD5DispStaList["VDD_DDR"]  = tps549a20.DispStatus
-    ginestraD5DispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
+    ginestraD5DispStaList["TSENSOR"]   = tmpadicom.DispStatus
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)

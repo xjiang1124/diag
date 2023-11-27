@@ -1636,9 +1636,8 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
-                        # copy logfiles out
-                        if nic_list and not stop_on_err:
-
+                        # re-init diag preparing for next Parallel DSP Test, And copy logfiles out
+                        if nic_list:
                             # include failed slots
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_hide_nic_status(slot)
@@ -2106,10 +2105,6 @@ def main():
             if card_type == NIC_Type.NAPLES25SWM and (swmtestmode == Swm_Test_Mode.ALOM):
                 alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
                 mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
-
-        for slot in skip_nic_list:
-            key = libmfg_utils.nic_key(slot)
-            mtp_mgmt_ctrl.cli_log_inf("{:s} {:s}".format(key, MTP_DIAG_Report.NIC_DIAG_REGRESSION_SKIP), level=0)
 
     except Exception as e:
         libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)

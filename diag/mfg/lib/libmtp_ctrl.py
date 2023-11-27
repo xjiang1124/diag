@@ -1261,29 +1261,35 @@ class mtp_ctrl():
             return False
 
         # MTP Diag image version
+        if not self.mtp_init_diag_img_version():
+            return False
+
+        # MTP ASIC image version
+        if not self.mtp_init_diag_asiclib_version():
+            return False
+
+        return True
+
+    def mtp_init_diag_img_version(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_VERSION_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to get diag image version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._diag_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get diag image version", level = 0)
+        self._diag_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._diag_ver:
+            self.cli_log_err("Failed to find diag image version", level = 0)
             return False
+        return True
 
-        # MTP ASIC image version
+    def mtp_init_diag_asiclib_version(self):
         cmd = MFG_DIAG_CMDS.MTP_ASIC_VERSION_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
             self.cli_log_err("Failed to get asic util version", level = 0)
             return False
-        match = re.findall(r"Date: +(.*20\d{2})", self.mtp_get_cmd_buf())
-        if match:
-            self._asic_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get asic util version", level = 0)
+        self._asic_ver = libmfg_utils.rgx_extract_commit_date(self.mtp_get_cmd_buf())
+        if not self._asic_ver:
+            self.cli_log_err("Failed to find asic util version", level = 0)
             return False
-
         return True
 
     def mtp_get_asic_support(self):
@@ -2858,7 +2864,7 @@ class mtp_ctrl():
             if software_pn != "90-0016-0004":
                 return False
         elif naples_pn[0:7] == "68-0034":     #ORTANO2 ADI MICROSOFT
-            if software_pn != "90-0019-0001":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0029":     #ORTANO2 INTERPOSER
             if software_pn != "90-0021-0001":
@@ -2870,7 +2876,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0090":     #ORTANO2 SOLO MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0092":     #ORTANO2 (ADI CR/ SOLO) S4
             if software_pn != "90-0022-0001":
@@ -2879,7 +2885,7 @@ class mtp_ctrl():
             if software_pn != "90-0021-0001":
                 return False
         elif naples_pn[0:7] == "68-0091":     #ORTANO2 ADI CR MICROSOFT
-            if software_pn != "90-0020-0003":
+            if software_pn != "90-0019-0002":
                 return False
         elif naples_pn[0:7] == "68-0074":     #GINESTRA_D4
             if software_pn != "90-0023-0001":
@@ -3474,11 +3480,11 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Uboot is OK - no update needed")
         return True
 
-    def mtp_copy_nic_emmc(self, slot, emmc_img):
-        if not self._nic_ctrl_list[slot].nic_copy_emmc(emmc_img):
-            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+    def mtp_copy_nic_copy_file(self, slot, filename, directory="/data/"):
+        if not self._nic_ctrl_list[slot].nic_copy_image(filename, directory):
+            self.cli_log_slot_inf_lock(slot, "Copy File {:s} to NIC {:d} {:s} Failed".format(filename, slot, directory))
             return False
-            
+
         return True
         
     def mtp_set_nic_sw_boot(self, slot, emmc_img):
@@ -6587,7 +6593,7 @@ class mtp_ctrl():
     def mtp_nic_port_counters(self, slot):
         self.cli_log_slot_inf(slot, "Dumping port counters")
         if not self._nic_ctrl_list[slot].nic_port_counters():
-            self.mtp_dump_err_msg(self.mtp_get_nic_cmd_buf(slot))
+            self.mtp_dump_nic_err_msg(slot)
             return False
 
         return True

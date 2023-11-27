@@ -14,6 +14,7 @@ import libmfg_utils
 import libmtp_utils
 import image_control
 import crc8
+import testlog
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
 from libdefs import NIC_Type
@@ -217,6 +218,11 @@ def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp,
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, progCmd)
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([progCmd], timeout=MTP_Const.OS_CMD_DELAY):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
+            return False
+        if "xo3dcpld" in prog_cmd_list and "Invalid region to erase" in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program UFM3 NOT SUPPORTED by current version of xo3dcpld utility")
             nic_test_rslt_list[slot] = False
             return False
         if "end of programming" not in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
@@ -608,7 +614,7 @@ def main():
         return 
 
     # logfiles
-    mtp_script_dir, open_file_track_list = libmfg_utils.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True)
+    mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
     try:
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage):
