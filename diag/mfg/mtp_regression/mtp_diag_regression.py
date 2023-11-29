@@ -1636,9 +1636,8 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
-                        # copy logfiles out
-                        if nic_list and not stop_on_err:
-
+                        # re-init diag preparing for next Parallel DSP Test, And copy logfiles out
+                        if nic_list:
                             # include failed slots
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_hide_nic_status(slot)
