@@ -38,7 +38,7 @@ class arm_prbs:
             self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
             vmarg = vmarg.replace('_', ' ')
             self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
-            self.nic_con.uart_session_cmd(session, "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/nic_prbs.sh {} {} {} &".format(mode, dura, lpbk))
+            self.nic_con.uart_session_cmd(session, "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/nic_prbs.sh {} {} {} 2>&1 > /data/nic_util/asicutil_{}.log &".format(mode, dura, lpbk, mode))
             self.nic_con.uart_session_stop(session)
 
             print "=== NIC arm {} prbs on slot {} started ===".format(mode, slot)
