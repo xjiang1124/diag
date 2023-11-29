@@ -7,6 +7,7 @@ import pexpect
 import os
 import re
 import sys
+import time
 
 from collections import OrderedDict
 from time import sleep
@@ -96,7 +97,7 @@ class arm_prbs:
         print "=== ARM {} PRBS Checking result on slot {} Done ===".format(mode, slot)
         return ret
 
-    def arm_prbs(self, slot_list=[], wait_time=300, vmargin='normal', lpbk=0, dura=60, poly="PRBS31", mode="PCIE", no_pwr_cycle=False):
+    def arm_prbs(self, slot_list=[], wait_time=300, vmargin='normal', lpbk=0, dura=60, poly="PRBS31", mode="PCIE", no_pwr_cycle=False, num_retry=2):
         print "=== ARM {} PRBS {} {} {}".format(mode, dura, lpbk, vmargin)
         if len(slot_list) == 0:
             print "No nic specified -- Exit"
@@ -126,18 +127,25 @@ class arm_prbs:
         print "Wait for {}s before checking result".format(wait_time)
         sleep(wait_time)
 
-        print "Checking result:"
-        for slot in slot_list:
-            if test_result[slot] != "NO RESULT":
-                continue
+        done_count = 0
+        for retry_idx in range(num_retry):
+            print "Checking result {}:".format(retry_idx)
+            for slot in slot_list:
+                if test_result[slot] != "NO RESULT":
+                    continue
 
-            test_sts = self.test_check(int(slot), mode)
-            if test_sts == 0:
-                print "=== Result at Slot {}: Passed".format(slot)
-                test_result[slot] = "PASSED"
-            if test_sts == 1:
-                print "=== Result at Slot {}: Failed".format(slot)
-                test_result[slot] = "FAILED"
+                test_sts = self.test_check(int(slot), mode)
+                if test_sts == 0:
+                    print "=== Result at Slot {}: Passed".format(slot)
+                    test_result[slot] = "PASSED"
+                    done_count = done_count + 1
+                if test_sts == 1:
+                    print "=== Result at Slot {}: Failed".format(slot)
+                    test_result[slot] = "FAILED"
+                    done_count = done_count + 1
+            if done_count == len(slot_list):
+                break
+            time.sleep(20)
 
         # Print result
         print "\n====== NIC ARM {} PRBS TEST RESULT: ======".format(mode)
@@ -163,6 +171,8 @@ if __name__ == "__main__":
     parser.add_argument("-dura", "--dura", help="Duration", type=int, default=60)
     parser.add_argument("-poly", "--poly", help="Polynomial", type=str, default="PRBS31")
     parser.add_argument("-mode", "--mode", help="PRBS Type", type=str, default="PCIE")
+    parser.add_argument("-num_retry", "--num_retry", help="Number of retries", type=int, default=2)
+
 
     args = parser.parse_args()
 
@@ -179,5 +189,5 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.arm_prbs == True:
-        test.arm_prbs(slot_list, args.wait_time, args.vmarg, args.lpbk, args.dura, args.poly, args.mode, args.no_pwr_cycle)
+        test.arm_prbs(slot_list, args.wait_time, args.vmarg, args.lpbk, args.dura, args.poly, args.mode, args.no_pwr_cycle, args.num_retry)
         sys.exit()
