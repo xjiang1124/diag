@@ -119,7 +119,7 @@ int write_gpios(int gpio, uint32_t data)
 static void usage(void)
 {
     printf("gpioacc -r gpio_num\n");
-    printf("gpioacc -r gpio_num value\n");
+    printf("gpioacc -w gpio_num value\n");
     exit(1);
 }
 
