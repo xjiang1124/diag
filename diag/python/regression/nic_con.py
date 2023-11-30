@@ -95,8 +95,8 @@ class nic_con:
         if i != 0:
             ret = -1
         session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
         return ret
