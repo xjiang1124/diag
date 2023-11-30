@@ -38,6 +38,8 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("    area:\n")
     fh.write("    sub-area:\n")
     fh.write("    feature:\n")
+    if stage == "4C":
+        fh.write("    max-duration: 24h\n")
     fh.write("    build-dependencies:\n")
     if job_set == "diag":
         fh.write("     - build-amd64-{:s}\n".format(asic))
