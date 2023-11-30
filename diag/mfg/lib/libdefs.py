@@ -64,6 +64,7 @@ class FF_Stage(Enum):
     FF_SRN = "SRN"
     FF_ORT = "ORT"
     FF_RDT = "RDT"
+    SCAN_DL = "ScanDL"
     QA = "CI-CD"
 
     def __str__(self):

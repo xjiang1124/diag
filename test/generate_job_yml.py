@@ -1,6 +1,6 @@
 import sys, os
 
-EXCLUDE_FROM_PRECHECKIN=["4C", "ORT", "RDT", "SRN"]
+EXCLUDE_FROM_PRECHECKIN=["ScanDL", "4C", "ORT", "RDT", "SRN"]
 
 cwd = os.path.basename(os.getcwd())
 if cwd == "test-asic":

@@ -14,7 +14,7 @@ logfiles:
 
 e2e-targets:
   DL:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-interp-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -33,7 +33,7 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: elba
-         - name: ortano-interp
+         - name: ortano-ti
            value: yes
     provision:
       username: diag
@@ -42,7 +42,7 @@ e2e-targets:
         BmOs: linux
 
   P2C:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-interp-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -61,7 +61,7 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: elba
-         - name: ortano-interp
+         - name: ortano-ti
            value: yes
     provision:
       username: diag
@@ -70,7 +70,7 @@ e2e-targets:
         BmOs: linux
 
   SWI:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-interp-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -89,7 +89,7 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: elba
-         - name: ortano-interp
+         - name: ortano-ti
            value: yes
     provision:
       username: diag
