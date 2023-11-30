@@ -258,7 +258,8 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying stable ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}.tar.gz"
+            #ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}.tar.gz"
+            ASIC_IMG="/vol/dump/yanmin/workspace/giglio_arm64/ip/cosim/diag_gig/nic.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         if [[ $asiclib == "latest" ]]
