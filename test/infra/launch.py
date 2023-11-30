@@ -299,6 +299,13 @@ class LaunchApp(object):
                 test_args += f"--iteration {getattr(test_spec, 'iteration', 1)} "
             if hasattr(test_spec, 'skip') and test_spec.skip != None:
                 skip_list = " ".join(test_spec.skip)
+                # Special args for particular nic_type
+                ############################################
+                nic_type = self.__testsuite.config.card_type
+                test_stage = self.__testsuite.config.job
+                if "naples25swm" in nic_type.lower() and test_stage.upper() in ("P2C", "4C"):
+                    skip_list += " SNAKE_HBM"
+                ############################################
                 test_args += f" --skip-test {skip_list}"
             self.__settings["TEST_ARGS"] = test_args
 
