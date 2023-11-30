@@ -169,7 +169,7 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
                     mes_obj.get_mes_next_test_station(), level=0)
                 mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                 mes_obj.clear_push_to_mes()
-                return
+                return False, test
             else:
                 mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + FF_Stage.FF_2C, level=0)
 
@@ -228,7 +228,7 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
                 mes_obj.save_res_fail_signature(
                     collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
-            return False
+            return False, test
 
         if test == "USB_PRESENT_CHECK":
             if ret:
@@ -250,10 +250,10 @@ def single_tor_setup(mtp_mgmt_ctrl, uut_id, dsp, mes_obj, scan_rslt, skip_test):
             mes_obj.save_res_fail_signature(
                 collect_fail_signature(mtp_mgmt_ctrl))
 
-        return False
+        return False, ""
     mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
-    return True
+    return True, ""
 
 def single_tor_diag_update(mtp_mgmt_ctrl, uut_id, dsp, skip_test):
     error_msg = ""
@@ -529,7 +529,8 @@ def tor_diag_dsp_test(mtp_mgmt_ctrl, vmarg, diag_test_db, test_list, skip_testli
 
     return test_rslt
 
-def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj):
+def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj,
+    force_save_fail_to_mes=False):
     rslt = True
     if vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
         diag_sub_dir = "/lv_diag_logs/"
@@ -609,7 +610,7 @@ def save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_
         # - Test Status
         # - Test End Time
         # - (Clear the passmark just in case)
-        if isinstance(mes_obj, MES) and vmarg == MTP_Const.MFG_EDVT_LOW_VOLT:
+        if isinstance(mes_obj, MES) and (vmarg == MTP_Const.MFG_EDVT_LOW_VOLT or force_save_fail_to_mes):
             mes_obj.save_res_test_status("FAIL")
             mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
             mes_obj.save_res_passmark("N/A")
@@ -680,7 +681,7 @@ def single_uut_2c_test(stage,
 
     try:
         for idx, stage in enumerate([FF_Stage.FF_2C_HV, FF_Stage.FF_2C_LV]):
-            if str(stage) in skip_testlist:
+            if stage in skip_testlist:
                 continue
 
             if stage == FF_Stage.FF_2C_HV:
@@ -700,12 +701,30 @@ def single_uut_2c_test(stage,
                 if "USB_PRESENT_CHECK" not in skip_testlist:
                     skip_testlist.append("USB_PRESENT_CHECK")
 
-            if not single_tor_setup(mtp_mgmt_ctrl, uut_id, stage, mes_obj, scan_rslt,
-                skip_testlist):
+            status, test = single_tor_setup(mtp_mgmt_ctrl, uut_id, stage, mes_obj, scan_rslt,
+                skip_testlist)
+            if not status:
                 uut_test_rslt_list[uut_id] = False
                 uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
-                save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
-                continue
+                if test in [
+                    "MES_ACCESS",
+                    "OK_TEST_STN_CHK",
+                    "MES_SCAN_INPUT_CHK",
+                    "MES_EEPROM_CHK",
+                    "PRESENT_CHECK",
+                    "LINK_CHECK",
+                    "USB_PRESENT_CHECK",
+                    ]:
+                    # If any of the subtests above fails during 2C-HV (or 2C-LV),
+                    # log the failure and terminate the entire 2C test station immediately
+                    save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj,
+                        force_save_fail_to_mes=True)
+                    break
+                else:
+                    # otherwise log the failure and continue to 2C-LV or wrap-up, depending on where
+                    # the script is at
+                    save_2c_logs(mtp_mgmt_ctrl, vmarg, uut_test_rslt_list, uut_id, log_dir, mes_obj)
+                    continue
             uut_sn_list[uut_id] = mtp_mgmt_ctrl._sn
 
             if idx == 0:
