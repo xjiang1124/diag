@@ -61,6 +61,11 @@ def main():
         verbosity = False
     stage=FF_Stage.FF_SWI
 
+    if args.sw_pn:
+        sw_pn_list = args.sw_pn
+    else:
+        sw_pn_list = libmfg_utils.sw_pn_scan()
+
     mtpcfg_file = None
     if args.mtpcfg:
         mtpcfg_file = os.path.relpath(args.mtpcfg)
@@ -105,7 +110,7 @@ def main():
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
-                                                "sw_pn_list": args.sw_pn}))
+                                                "sw_pn_list": sw_pn_list}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
