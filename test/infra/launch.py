@@ -301,7 +301,7 @@ class LaunchApp(object):
                 skip_list = " ".join(test_spec.skip)
                 # Special args for particular nic_type
                 ############################################
-                nic_type = self.__testsuite.config.card_type
+                nic_type = GlobalOptions.nic_type.lower()
                 test_stage = self.__testsuite.config.job
                 if "naples25swm" in nic_type.lower() and test_stage.upper() in ("P2C", "4C"):
                     skip_list += " SNAKE_HBM"
