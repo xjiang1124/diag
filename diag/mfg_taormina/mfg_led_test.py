@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -104,6 +105,7 @@ def single_uut_led_checks(stage,
     mac = fru_cfg["MAC"]
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
+    error_msg = ""
 
     # Prepare local log files
     log_filep_list = list()
@@ -176,8 +178,8 @@ def single_uut_led_checks(stage,
         testlist = ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT"]
 
         if isinstance(mes_obj, MES):
-            # Add MES tasks, if applicable
-            testlist.extend(["MES_ACCESS", "OK_TEST_STN_CHK"])
+            # Add MES tasks in front, if applicable
+            testlist = ["MES_ACCESS", "OK_TEST_STN_CHK",] + testlist
 
         for test in testlist:
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
@@ -197,15 +199,18 @@ def single_uut_led_checks(stage,
                 # Access MES data
                 mtp_mgmt_ctrl.cli_log_inf("Access MES data", level=0)
                 mes_obj.store_mgmt_ctrl(mtp_mgmt_ctrl)
-                ret = mes_obj.pull_mes_info(mtp_mgmt_ctrl._sn)
+                ret = mes_obj.pull_mes_info(scan_rslt[uut_id]['UUT_SN'])
 
             elif test == "OK_TEST_STN_CHK":
                 # Verify if UUT is allowed to undergo this test station
                 ret = mes_obj.verify_next_test_station("LED TEST")
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
+                    mtp_mgmt_ctrl.cli_log_inf("TEST STATION EXPECTED: " + \
+                        mes_obj.get_mes_next_test_station(), level=0)
                     mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                     mes_obj.clear_push_to_mes()
+                    return
                 else:
                     mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
@@ -231,7 +236,8 @@ def single_uut_led_checks(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature("TBD")
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -347,7 +353,8 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                 break
             else:
@@ -370,7 +377,7 @@ def single_uut_led_checks(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program LED passmark')
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
             else:
                 # PASS: Save the following to be uploaded to MES later:
@@ -432,6 +439,23 @@ def single_uut_led_checks(stage,
             pass_uut_list.remove(uut_id)
         exit_fail(mtp_mgmt_ctrl, log_filep_list, traceback.print_exc())
 
+def collect_fail_signature(mtp_mgmt_ctrl, subtest="", error_msg=""):
+    '''
+    Returns a string of the respective fail signature delimited by a newline
+    '''
+
+    collect_fail_sig_list = []
+    if error_msg:
+        collect_fail_sig_list.append(error_msg)
+
+    liblog.collect_err_msg(mtp_mgmt_ctrl, subtest)
+
+    if len(mtp_mgmt_ctrl.get_err_msg()):
+        collect_fail_sig_list.extend(mtp_mgmt_ctrl.get_err_msg())
+
+    return str("\n".join(collect_fail_sig_list))
+
+
 def main():
     parser = argparse.ArgumentParser(description="MFG LED Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -439,6 +463,8 @@ def main():
     parser.add_argument("--LED", "-LED", "--led", "-led", "-1", help="station to LED test", action="store_true")
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
     parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
+    parser.add_argument("--operator", help="specify Operator name")
+
 
     args = parser.parse_args()
     if args.verbosity:
@@ -459,8 +485,11 @@ def main():
         # Save the following to be uploaded to MES later:
         # - Test Start Time
         # - Test Station
+        # - Operator ID
         mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
         mes_obj.save_res_test_station("LED TEST")
+        if args.operator:
+            mes_obj.save_res_operator_id(args.operator)
 
 
     TAORMINA_TEST = True

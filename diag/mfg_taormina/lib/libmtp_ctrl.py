@@ -114,6 +114,8 @@ class mtp_ctrl():
 
         self._pass_timestamp = ''
 
+        self._err_msg_list = []
+
         self._taa_sn = ''
         self._taa_country_code = 'US'
 
@@ -203,6 +205,14 @@ class mtp_ctrl():
     def get_passmark_timestamp(self):
         return self._pass_timestamp
 
+    def set_err_msg(self, err_msg):
+        if isinstance(err_msg, str):
+            self._err_msg_list.append(err_msg)
+        elif isinstance(err_msg, list):
+            self._err_msg_list = self._err_msg_list[:] + err_msg
+
+    def get_err_msg(self):
+        return self._err_msg_list
 
     def cli_log_inf(self, msg, level = 1):
         cli_id_str = libmfg_utils.id_str(mtp = self._id)
@@ -4658,6 +4668,30 @@ class mtp_ctrl():
                 return False
             else:
                 return True
+        elif test == "RETIMER_TOR":
+            error = False
+
+            if vmarg < 0:
+                return True
+
+            #switch td3 retimer_temperatures
+            cmd = "./switch td3 retimer_temperatures"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout):
+                error = True
+                self.cli_log_err("{:s} failed".format(cmd))
+
+            #devmgr -status
+            cmd = "./devmgr -status"
+            test_timeout = self.get_test_timeout(cmd, test)
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=test_timeout):
+                error = True
+                self.cli_log_err("{:s} failed".format(cmd))
+
+            if error:
+                return False
+            else:
+                return True
         elif test == "PCI_TOR":
             cmd = "./switch cpu pciscan"
             test_timeout = self.get_test_timeout(cmd, test)
@@ -4704,12 +4738,14 @@ class mtp_ctrl():
             return 360
         elif test in ("PRBS_TOR"):
             return 180
+        elif test in ("RETIMER_TOR"):
+            return 30
         elif test in ("ELBA_ARM_MEMORY"):
             return 360
         elif test in ("ELBA_EDMA_TEST"):
             return 360
         elif test in ("PCI_TOR"):
-            return 30    
+            return 30
         elif test in ("TD3DIAG"):
             return 360
         elif test in ("L1"):
@@ -5620,7 +5656,35 @@ class mtp_ctrl():
             sys.stdout.flush()
             time.sleep(5)
 
-        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+
+        # Display and validate "show environment" output
+        error_msg = ""
+        if self._use_usb_console:
+            self.mtp_mgmt_exec_cmd("vtysh -c \"show environment\"", timeout=10)
+
+        else:
+            self.mtp_mgmt_exec_cmd("vtysh -c \"no page\"", timeout=10)
+
+            status, err_msg = self.validate_environment_fans()
+            if not status:
+                error_msg += err_msg
+
+            status, err_msg = self.validate_environment_led()
+            if not status:
+                error_msg += err_msg
+
+            status, err_msg = self.validate_environment_psu()
+            if not status:
+                error_msg += err_msg
+
+            status, err_msg = self.validate_environment_temperature()
+            if not status:
+                error_msg += err_msg
+
+            if error_msg:
+                error_msg = error_msg.rstrip("|")
+                return False
+
 
         if not elba0_ready:
             self.cli_log_slot_err(0, "Elba0 initialization timed out")
@@ -6557,7 +6621,7 @@ class mtp_ctrl():
         }
 
         eeprom2_fields = {
-            "assembly_info pca_rev": "0x02",
+            "assembly_info pca_rev": "0x03",
             "assembly_info rework_rev": "0x01",
             "assembly_info bom_rev": "0x01",
             "assembly_info num_of_prgm_dev": "13",
@@ -6639,7 +6703,7 @@ class mtp_ctrl():
 
 
         eeprom2_fields = {
-            "pca_rev": "0x02",
+            "pca_rev": "0x03",
             "rework_rev": "0x01",
             "bom_rev": "0x01",
             "num_of_prgm_dev": "13",
@@ -6978,9 +7042,9 @@ class mtp_ctrl():
             self.cli_log_err("BIOS init failed", level=0)
             return False
 
-        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH)
+        cmd = "{:s}fpgautil inventory".format(MTP_DIAG_Path.ONBOARD_TOR_EEUPDATE_PATH, timeout=100)
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("{:s} failed".format(cmd, timeout=100), level=0)
+            self.cli_log_err("{:s} failed".format(cmd), level=0)
             return False
 
         self.tor_info_disp()
@@ -8878,3 +8942,261 @@ class mtp_ctrl():
             return False, ""
 
         return True, eeprom_data
+
+
+    def validate_environment_fans(self):
+        '''
+        Method which displays and validates the UUT's Fan tray and
+        Fan information
+
+        Returns True or False. If False, return error message(s)
+
+        10000# show environment fan
+
+        Fan tray information
+        ------------------------------------------------------------------------------
+        Name  Description                           Status        Serial Number  Fans
+        ------------------------------------------------------------------------------
+        1/1   R8R54A Aruba B2F Fan                  ready         N/A            2
+        1/2   R8R54A Aruba B2F Fan                  ready         N/A            2
+        1/3   R8R54A Aruba B2F Fan                  ready         N/A            2
+        1/4   R8R54A Aruba B2F Fan                  ready         N/A            2
+        1/5   R8R54A Aruba B2F Fan                  ready         N/A            2
+        1/6   R8R54A Aruba B2F Fan                  ready         N/A            2
+
+        Fan information
+        ------------------------------------------------------------------------------
+        Location-      Product  Serial Number  Speed   Direction      Status  RPM
+        Mbr/Slot/Fan   Name
+        ------------------------------------------------------------------------------
+        PSU-1/1/1      N/A      N/A            N/A     back-to-front  ok      5320
+        PSU-1/2/1      N/A      N/A            N/A     back-to-front  ok      5864
+        Tray-1/1/1     N/A      N/A            slow    back-to-front  ok      19852
+        Tray-1/1/2     N/A      N/A            slow    back-to-front  ok      17252
+        Tray-1/2/1     N/A      N/A            slow    back-to-front  ok      19780
+        Tray-1/2/2     N/A      N/A            slow    back-to-front  ok      17307
+        Tray-1/3/1     N/A      N/A            slow    back-to-front  ok      20000
+        Tray-1/3/2     N/A      N/A            slow    back-to-front  ok      17532
+        Tray-1/4/1     N/A      N/A            slow    back-to-front  ok      19780
+        Tray-1/4/2     N/A      N/A            slow    back-to-front  ok      17197
+        Tray-1/5/1     N/A      N/A            slow    back-to-front  ok      20300
+        Tray-1/5/2     N/A      N/A            slow    back-to-front  ok      17363
+        Tray-1/6/1     N/A      N/A            slow    back-to-front  ok      20074
+        Tray-1/6/2     N/A      N/A            slow    back-to-front  ok      17419
+        '''
+
+        error_msg = ""
+        capture_output = ""
+
+        msg = "Validate Fan tray and Fan environment info"
+        self.cli_log_inf(msg, level=0)
+        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment fan\"", timeout=10)
+        capture_output = self._cmd_buf
+
+        # Parse Fan tray information
+        for line in capture_output.split("\n"):
+            if not re.search(r'^\d\/\d', line):
+                continue
+            try:
+                name, desc, status, sn, fans = \
+                    re.split(r'\s{2,}', line.strip())
+                if status not in ['ready']:
+                    msg = "Detected Fan tray status issue on " + name + " " + desc
+                    error_msg += msg + "|"
+                    self.cli_log_err(msg)
+            except:
+                msg = "Unable to parse Fan tray information"
+                error_msg += msg + "|"
+                self.cli_log_err(msg)
+                break
+
+        # --------------------------------------------------------------------------
+
+        # Parse Fan information
+        for line in capture_output.split("\n"):
+            if not re.search(r'^(PSU\-|Tray\-)', line):
+                continue
+            try:
+                location, prod_name, sn, speed, direction, status, rpm = \
+                    re.split(r'\s{2,}', line.strip())
+                if status not in ['ok']:
+                    msg = "Detected Fan status issue on " + location
+                    error_msg += msg + "|"
+                    self.cli_log_err(msg)
+            except:
+                msg = "Unable to parse Fan information"
+                error_msg += msg + "|"
+                self.cli_log_err(msg)
+                break
+
+        if error_msg:
+            return False, error_msg
+        else:
+            msg = "Fan tray and Fan environment is OK"
+            self.cli_log_inf(msg, level=0)
+            return True, ""
+
+
+    def validate_environment_led(self):
+        '''
+        Method which displays and validates the UUT's LED information
+
+        Returns True or False. If False, return error message(s)
+
+        10000# show environment led
+        Mbr/Name       State        Status
+        ----------------------------------
+        1/locator      off          ok
+        '''
+
+        error_msg = ""
+        capture_output = ""
+
+        msg = "Validate LED environment info"
+        self.cli_log_inf(msg, level=0)
+        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment led\"", timeout=10)
+        capture_output = self._cmd_buf
+
+        # Parse LED information
+        for line in capture_output.split("\n"):
+            if not re.search(r'^\d\/', line):
+                continue
+            try:
+                mbr_name, state, status = \
+                    re.split(r'\s{2,}', line.strip())
+                if status not in ['ok']:
+                    msg = "Detected LED status issue on " + mbr_name
+                    error_msg += msg + "|"
+                    self.cli_log_err(msg)
+            except:
+                msg = "Unable to parse LED information"
+                error_msg += msg + "|"
+                self.cli_log_err(msg)
+                break
+
+        if error_msg:
+            return False, error_msg
+        else:
+            msg = "LED environment is OK"
+            self.cli_log_inf(msg, level=0)
+            return True, ""
+
+
+    def validate_environment_psu(self):
+        '''
+        Method which displays and validates the UUT's PSU information
+
+        Returns True or False. If False, return error message(s)
+
+        # 10000# show environment power-supply
+        # ------------------------------------------------------------------------------
+        #          Product  Serial            PSU            Input   Voltage    Wattage
+        # Mbr/PSU  Number   Number            Status         Type    Range      Maximum
+        # ------------------------------------------------------------------------------
+        # 1/1      R8R52A   KFYD2202001224    OK             AC      100V-240V  800
+        # 1/2      R8R52A   KFYD2202000729    OK             AC      100V-240V  800
+        '''
+
+        error_msg = ""
+        capture_output = ""
+
+        msg = "Validate PSU environment info"
+        self.cli_log_inf(msg, level=0)
+        self.mtp_mgmt_exec_cmd("vtysh -c \"show environment power-supply\"", timeout=10)
+        capture_output = self._cmd_buf
+
+        # Parse PSU information
+        for line in capture_output.split("\n"):
+            if not re.search(r'^\d\/', line):
+                continue
+            try:
+                mbr_name, prod_nmr, sn, status, input_type, volt_range, watt_max = \
+                    re.split(r'\s{2,}', line.strip())
+                if status not in ['OK']:
+                    msg = "Detected PSU status issue on " + mbr_name + " " + sn
+                    error_msg += msg + "|"
+                    self.cli_log_err(msg)
+            except:
+                msg = "Unable to parse PSU information"
+                error_msg += msg + "|"
+                self.cli_log_err(msg)
+                break
+
+        if error_msg:
+            return False, error_msg
+        else:
+            msg = "PSU environment is OK"
+            self.cli_log_inf(msg, level=0)
+            return True, ""
+
+
+    def validate_environment_temperature(self):
+        '''
+        Method which displays and validates the UUT's Temperature information
+
+        Returns True or False. If False, return error message(s)
+
+        10000# show environment temperature
+        Temperature information
+        ------------------------------------------------------------------------------
+                                                             Current
+        Mbr/Slot-Sensor                 Module Type        temperature  Status
+        ------------------------------------------------------------------------------
+        1/1-PHY-DSM0-01-02              line-card-module     55.00 C    normal
+        1/1-PHY-DSM0-03-04              line-card-module     54.00 C    normal
+        1/1-PHY-DSM1-01-02              line-card-module     50.00 C    normal
+        1/1-PHY-DSM1-03-04              line-card-module     52.00 C    normal
+        1/1-Switch-ASIC_Internal        line-card-module     36.50 C    normal
+
+        1/1-Back-Side                   management-module    25.00 C    normal
+        1/1-CPU-Zone-1                  management-module    49.00 C    normal
+        1/1-Front-Side-1                management-module    34.50 C    normal
+        1/1-Front-Side-2                management-module    34.94 C    normal
+        1/1-VREG-CPU                    management-module    45.44 C    normal
+        1/1-VREG-TD3                    management-module    45.62 C    normal
+
+        1/1-DSM                         dss-module           59.00 C    normal
+        1/2-DSM                         dss-module           59.00 C    normal
+        '''
+
+        total_attempts = 3
+        error_msg = ""
+        capture_output = ""
+
+        libmfg_utils.count_down(30)
+        for attempt in range(1, total_attempts+1):
+            msg = "Attempt " + str(attempt) + " of " + str(total_attempts) + ": "
+            msg += "Validate Temperature environment info"
+            self.cli_log_inf(msg, level=0)
+            self.mtp_mgmt_exec_cmd("vtysh -c \"show environment temperature\"", timeout=10)
+            capture_output = self._cmd_buf
+            if 'uninitialized' in capture_output:
+                msg = "Detected uninitialized sensors"
+                self.cli_log_err(msg)
+                libmfg_utils.count_down(20)
+            else:
+                break
+
+        # Parse Temperature information
+        for line in capture_output.split("\n"):
+            if not re.search(r'^\d\/\d', line):
+                continue
+            try:
+                mbr_name, module_name, temperature, status = \
+                    re.split(r'\s{2,}', line.strip())
+                if status not in ['normal']:
+                    msg = "Detected Temperature status issue on " + mbr_name
+                    error_msg += msg + "|"
+                    self.cli_log_err(msg)
+            except:
+                msg = "Unable to parse Temperature information"
+                error_msg += msg + "|"
+                self.cli_log_err(msg)
+                break
+
+        if error_msg:
+            return False, error_msg
+        else:
+            msg = "Temperature environment is OK"
+            self.cli_log_inf(msg, level=0)
+            return True, ""
