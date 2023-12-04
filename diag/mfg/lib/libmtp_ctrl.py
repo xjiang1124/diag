@@ -7029,11 +7029,12 @@ class mtp_ctrl():
                     pass_nic_list.remove(slot)
             return False
         if "failed;" in self.mtp_get_cmd_buf():
+            duration = self.log_test_stop(test, start_ts)
             match = re.search("failed slots: *([0-9,]+)", self.mtp_get_cmd_buf())
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
-                    self.log_slot_test_stop(slot, test, start_ts)
+                    duration = self.log_slot_test_stop(slot, test, start_ts)
                     sn = self.mtp_get_nic_sn(int(slot))
                     self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                     self.mtp_set_nic_status_fail(slot)

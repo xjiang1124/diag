@@ -248,6 +248,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
     stop_on_err   = kwargs.get("stop_on_err", False)
     mirror_logdir = kwargs.get("jobd_logdir", None)
     swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
+    testsuite     = kwargs.get("testsuite_name", stage)
 
     for loop_idx in range(1, loop_cnt+1):
         ### Begin logging
@@ -255,7 +256,10 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
 
         ### Barcode scanning
         if loop_idx == 1:
-            if stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
+            if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
+                libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
+
+            elif stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
                 if not ENABLE_SCAN_VERIFY:
                     skip_test_list.append("SCAN_VERIFY")
 
@@ -339,6 +343,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         stop_on_err   = kwargs.get("stop_on_err", False)
         card_type     = kwargs.get("card_type",   None)
         swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
+        testsuite     = kwargs.get("testsuite_name", stage)
         only_test_list        = kwargs.get("only_test_list",        [])
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn_list",            [])
@@ -373,6 +378,9 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         #     test_cmd_args += " --fail-slots "
         #     test_cmd_args += ' '.join(map(str,fail_nic_list))
         ######
+        if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
+            test_cmd_args += " --scandl"
+
         if stage == FF_Stage.FF_SWI:
             img_opts = ""
             for nic_sw_img_file in nic_sw_img_file_list:
@@ -398,7 +406,13 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
 
-        if stage == FF_Stage.FF_FST:
+        if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+            if not mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, nic_fru_cfg, skip_test_list):
+                return False
+        elif stage == FF_Stage.FF_FST:
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
                 return False
         elif stage == FF_Stage.FF_SRN:
@@ -464,6 +478,12 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+        return False
+    return True
+
+def mtp_common_setup_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
+    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
 

@@ -103,16 +103,16 @@ fi
 tar xzf ${PSDIAG_ROOT}/${mfg_script_dir}/${mfg_script_dir}.tar.gz -C ${PSDIAG_ROOT}
 sync
 
-if [[ -f "${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz" ]];
+if [[ -f "${PSDIAG_ROOT}/fw.tar" ]];
 then
-    ls -lt ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz
+    ls -lt ${PSDIAG_ROOT}/fw.tar
 else
-    echo "Missing ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz - ABORT"
+    echo "Missing ${PSDIAG_ROOT}/fw.tar - ABORT"
     cd ${PSDIAG_ROOT}
     tar -zcvf diag_detailed_log.tgz log
     exit 249
 fi
-tar xzf ${PSDIAG_ROOT}/${mfg_script_dir}/fw.tar.gz -C ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/
+tar xf ${PSDIAG_ROOT}/fw.tar -C ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/
 sync
 
 cp ${PSDIAG_ROOT}/build/images/image_amd64_${asic}.tar ${PSDIAG_ROOT}/${mfg_script_dir}/mfg/release/image_amd64_${asic}_${mfg_script_dir}.tar
@@ -129,12 +129,24 @@ echo "**************************************************"
 
 
 cd ${PSDIAG_ROOT}/${mfg_script_dir}/mfg
+echo "Diag Tools"
+ls -ltr ${DIAG_IMAGE_FOLDER}
 
-if [[ "${JOB_TYPE}" == "DL" ]];
+if [[ "${JOB_TYPE}" != "ScanDL" && "${JOB_TYPE}" != "FST" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
+    echo "**************************************************"
+    echo " Launching ScanDL to restore card before test"
+    echo "**************************************************"
 
+    set -x
+    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    ret=$?
+else
+    ret=0
+fi
+
+if [[ $ret == 0 && "${JOB_TYPE}" == "DL" ]];
+then
     echo "**************************************************"
     echo " Launching mfg_dl_test.py"
     echo "**************************************************"
@@ -146,9 +158,6 @@ fi
 
 if [[ "${JOB_TYPE}" == "ScanDL" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_scan_dl_test.py"
     echo "**************************************************"
@@ -158,14 +167,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "P2C" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "P2C" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_p2c_test.py"
     echo "**************************************************"
@@ -175,14 +178,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "4C" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "4C" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_4c_test.py --low-temp"
     echo "**************************************************"
@@ -193,32 +190,15 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "SWI" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "SWI" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_swi_test.py"
     echo "**************************************************"
 
     set -x
     python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
-    ret_SWI=$?
-    set +x
-
-    echo "**************************************************"
-    echo " Launching mfg_dl_test.py to restore card for next job"
-    echo "**************************************************"
-
-    set -x
-    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
-    ret_DL=$?
-
-    (( ret = ret_SWI || ret_DL )) # both SWI and DL step should pass
+    ret=$?
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];
@@ -232,14 +212,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "ORT" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "ORT" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_ort_test.py for two loops"
     echo "**************************************************"
@@ -249,14 +223,8 @@ then
     ret=$?
 fi
 
-if [[ "${JOB_TYPE}" == "RDT" ]];
+if [[ $ret == 0 && "${JOB_TYPE}" == "RDT" ]];
 then
-    echo "Diag Tools"
-    ls -ltr ${DIAG_IMAGE_FOLDER}
-
-    echo "ASIC Libraries "
-    ls -ltr ${ASIC_IMAGE_FOLDER}
-
     echo "**************************************************"
     echo " Launching mfg_rdt_test.py for two loops"
     echo "**************************************************"

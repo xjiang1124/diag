@@ -387,6 +387,7 @@ class nic_test_v2:
                 session = common.session_start()
                 ret = self.nic_con.uart_session_start(session, numRetry=1)
                 if ret != 0:
+                    self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
                     continue
 

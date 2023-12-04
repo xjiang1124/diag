@@ -62,7 +62,7 @@ def cli_err(err):
 
 
 def cli_wrn(err):
-    print("\033[1;91m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
+    print("\033[0;33m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
 
 
 def cli_log_inf(fp, info):

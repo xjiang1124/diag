@@ -54,23 +54,25 @@ builds:
     - /psdiag/build/images/image_arm64_elba.tar
 
   package-giglio-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
+    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
-    - /psdiag/jobd/fw.tar.gz
   package-elba-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
+    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
-    - /psdiag/jobd/fw.tar.gz
   package-capri-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=capri working_dir=/psdiag bash -ex ./mfg-release-script.sh" ]
+    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=capri working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
-    - /psdiag/jobd/fw.tar.gz
+  package-fw-assets:
+    commands: [ "sh", "-c", "working_dir=/psdiag bash -ex qa-infra/package-fw.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    artifacts:
+    - /psdiag/fw.tar
 
 queue_name: asic
 image:
@@ -80,11 +82,11 @@ host_mounts:
 
 jobs:
   asset-build:
-    labels: ["CI-DIAG-Build"]
-  test/DL:
-    labels: ["CI-DIAG-DL"]
+    labels: ["CI-DIAG-Build", "CI-DIAG-Release"]
   test/ScanDL:
     labels: ["CI-DIAG-ScanDL"]
+  test/DL:
+    labels: ["CI-DIAG-DL"]
   test/P2C:
     labels: ["CI-DIAG-P2C"]
   test/4C:
@@ -104,8 +106,22 @@ jobs:
     labels: ["CI-DIAG-Build", "CI-DIAG-ginestra"]
   test/monterey:
     labels: ["CI-DIAG-Build", "CI-DIAG-monterey"]
+  test/ortano-adicr-s4:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-s4"]
+  test/ortano-solo-s4:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-s4"]
+  test/ortano-adi-ibm:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-ibm"]
+  test/ortano-adicr-msft:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-msft"]
+  test/ortano-solo-msft:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-msft"]
+  test/ortano-adi-msft:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
   test/ortano-adicr-orc:
     labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
+  test/ortano-solo-orc_th:
+    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc_th"]
   test/ortano-solo-orc:
     labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
   test/ortano-interp-orc:
@@ -124,6 +140,18 @@ jobs:
     labels: ["CI-ASIC-TOT", "CI-ASIC-ginestra"]
   test-asic/monterey:
     labels: ["CI-ASIC-TOT", "CI-ASIC-monterey"]
+  test-asic/ortano-adicr-s4:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-s4"]
+  test-asic/ortano-solo-s4:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-s4"]
+  test-asic/ortano-adi-ibm:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-ibm"]
+  test-asic/ortano-adicr-msft:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-msft"]
+  test-asic/ortano-solo-msft:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-msft"]
+  test-asic/ortano-adi-msft:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-msft"]
   test-asic/ortano-adicr-orc:
     labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-orc"]
   test-asic/ortano-solo-orc:
@@ -149,8 +177,6 @@ dependencies:
     - reference: asset-build
 
   diag:
-    - reference: test/DL
-      exclude_dirs: ["mfg"]
     - reference: test/P2C
       exclude_dirs: ["mfg"]
 
@@ -160,7 +186,21 @@ dependencies:
       exclude_dirs: ["scripts"]
     - reference: test/monterey
       exclude_dirs: ["scripts"]
+    - reference: test/ortano-adicr-s4
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-solo-s4
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adi-ibm
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adicr-msft
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-solo-msft
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-adi-msft
+      exclude_dirs: ["scripts"]
     - reference: test/ortano-adicr-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/ortano-solo-orc_th
       exclude_dirs: ["scripts"]
     - reference: test/ortano-solo-orc
       exclude_dirs: ["scripts"]
