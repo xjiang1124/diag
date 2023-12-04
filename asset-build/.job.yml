@@ -3,14 +3,36 @@ version: 2.0
 queue_name: asic
 
 targets:
-  push_diag_toolset:
-    commands: [ "sh", "-c", "cd /psdiag/asset-build; ./push_build.sh"]
+  release-capri-mfg-script:
+    commands: [ "sh", "-c", "cd /psdiag/asset-build; ASIC=capri ./push_build.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    build-dependencies:
+    - build-amd64-capri
+    - build-arm64-capri
+    - package-capri-mfg-script
+
+  release-elba-mfg-script:
+    commands: [ "sh", "-c", "cd /psdiag/asset-build; ASIC=elba ./push_build.sh" ]
     owners: ["email:nabeel@pensando.io"]
     build-dependencies:
     - build-amd64-elba
     - build-arm64-elba
-    - build-amd64-capri
-    - build-arm64-capri
+    - package-elba-mfg-script
+
+  release-giglio-mfg-script:
+    commands: [ "sh", "-c", "cd /psdiag/asset-build; ASIC=giglio ./push_build.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    build-dependencies:
+    - build-amd64-giglio
+    - build-arm64-giglio
+    - package-giglio-mfg-script
+
+  release-fw-assets:
+    commands: [ "sh", "-c", "cd /psdiag/asset-build; ./push_fw_assets.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    build-dependencies:
+    - package-fw-assets
+
 image:
   bind_dir: "/psdiag"
   work_dir: "/psdiag/asset-build"

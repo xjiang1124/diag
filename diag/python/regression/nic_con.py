@@ -51,12 +51,12 @@ class nic_con:
             #time.sleep(15)
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
         session.sendline("date -s " + currentTime)
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
         session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
 
@@ -91,12 +91,12 @@ class nic_con:
 
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
         session.sendline("date -s " + currentTime)
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
         session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], timeout)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
         return ret
@@ -128,12 +128,12 @@ class nic_con:
 
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
         session.sendline("date -s " + currentTime)
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:
             return -1
         session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15) # expect the # in my send command
-        i = session.expect(["# ", pexpect.TIMEOUT, pexpect.EOF], 15)
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15) # expect the # in my send command
+        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:
             return -1
         return 0

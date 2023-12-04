@@ -933,6 +933,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             post_cmd = test_cfg["POST"]
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         opts = test_cfg["OPTS"]
         mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
@@ -941,8 +942,13 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        n_vmarg = vmarg
+        if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
+            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+            mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
+
         if dsp == "ASIC" and test == "L1":
-            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, vmarg):
+            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg):
                 ret = "FAIL"
             else:
                 ret = "SUCCESS"

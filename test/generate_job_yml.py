@@ -38,6 +38,8 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("    area:\n")
     fh.write("    sub-area:\n")
     fh.write("    feature:\n")
+    if stage == "4C":
+        fh.write("    max-duration: 24h\n")
     fh.write("    build-dependencies:\n")
     if job_set == "diag":
         fh.write("     - build-amd64-{:s}\n".format(asic))
@@ -46,6 +48,7 @@ def write_targets(fh, asic, hardware, nic_type, stage):
         fh.write("     - build-amd64-{:s}-tot\n".format(asic))
         fh.write("     - build-arm64-{:s}-tot\n".format(asic))
     fh.write("     - package-{:s}-mfg-script\n".format(asic))
+    fh.write("     - package-fw-assets\n")
     fh.write("    deployment:\n")
     fh.write("      skip-pxe-install: true\n")
     fh.write("    resources:\n")

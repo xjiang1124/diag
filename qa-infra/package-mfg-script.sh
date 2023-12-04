@@ -47,6 +47,10 @@ if [[ ${mfg_folder} == "mfg_taormina" ]]; then
     sed -i "s/AMD64_IMG\[\"ELBA\"\] = \".*\.tar\"/AMD64_IMG\[\"ELBA\"\] = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
     sed -i "s/ARM64_IMG\[\"ELBA\"\] = \".*\.tar\"/ARM64_IMG\[\"ELBA\"\] = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
 else
+    # sed -i "s/arm64_img\[\".*ELBA\"\] = \".*\.tar\"/arm64_img\[\".*ELBA\"\] = \"image_arm64_elba_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+    # sed -i "s/amd64_img\[\".*ELBA\"\] = \".*\.tar\"/amd64_img\[\".*ELBA\"\] = \"image_amd64_elba_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+    # sed -i "s/arm64_img\[\".*CAPRI\"\] = \".*\.tar\"/arm64_img\[\".*CAPRI\"\] = \"image_arm64_capri_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
+    # sed -i "s/amd64_img\[\".*CAPRI\"\] = \".*\.tar\"/amd64_img\[\".*CAPRI\"\] = \"image_amd64_capri_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
     sed -i "s/MTP_ARM64_IMAGE = \".*\.tar\"/MTP_ARM64_IMAGE = \"image_arm64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
     sed -i "s/MTP_AMD64_IMAGE = \".*\.tar\"/MTP_AMD64_IMAGE = \"image_amd64_${asic_type}_${release_name}\.tar\"/g" $mfg_script_dir/lib/libmfg_cfg.py
 fi
@@ -66,39 +70,4 @@ rm -f ${release_name}.tar.gz
 tar czf ${release_name}.tar.gz ${release_name}/*
 mv ${release_name}.tar.gz ${release_name}/
 
-## COPY NIC IMAGES
-image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
-for f in $image_files; do
-    if [[ ${mfg_folder} == "mfg_taormina" || ${mfg_folder} == "mfg_lipari" ]]; then
-        cp --preserve=timestamps /tftpboot/nabeel/$f $mfg_script_dir/tftpboot/
-    else
-        cp --preserve=timestamps /vol/hw/diag/mfg_release/prog/$f $mfg_script_dir/release
-    fi
-done
-
-## CREATE SW PN LINKS
-cd $mfg_script_dir/release
-rm -f 90-*
-for swpn in $(grep -o "90-....-[0-9A-Za-z]*" ../lib/libmtp_ctrl.py); do 
-    img_src="/vol/hw/diag/mfg_release/prog"
-    if [ -e $img_src/$swpn ]; then 
-        fn=$(ls -l $img_src/$swpn | awk '{print $NF}'); 
-        if [ ! -e $swpn ]; then
-            cp --preserve=timestamps $img_src/$fn ./
-            ln -s $fn $swpn
-        fi
-    fi
-done
-
-## TAR THE FW IMAGES
-cd ${mfg_script_dir}
-tar czf fw.tar.gz release/ --remove-files
-mv fw.tar.gz ../
-if [[ ${mfg_folder} == "mfg_taormina" || ${mfg_folder} == "mfg_lipari" ]]; then
-	tar czf tftpboot.tar.gz tftpboot/ --remove-files
-	mv tftpboot.tar.gz ../
-fi
-
-sync
-
-echo "Release available at: ${jenkins_dir}/${release_name}"
+echo "Script package available at: ${jenkins_dir}/${release_name}"
