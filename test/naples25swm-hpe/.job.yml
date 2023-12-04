@@ -23,6 +23,7 @@ e2e-targets:
      - build-amd64-capri
      - build-arm64-capri
      - package-capri-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -51,6 +52,7 @@ e2e-targets:
      - build-amd64-capri
      - build-arm64-capri
      - package-capri-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -79,6 +81,7 @@ e2e-targets:
      - build-amd64-capri
      - build-arm64-capri
      - package-capri-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
