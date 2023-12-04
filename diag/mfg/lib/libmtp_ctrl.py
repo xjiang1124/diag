@@ -5393,7 +5393,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default extdiag boot")
         return True
 
-    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
+    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg, edvt_loop_idx=1):
         nic_fail_list = list()
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5411,7 +5411,7 @@ class mtp_ctrl():
                     partnumber = nic_controller._pn
                     break
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "PRBS_ETH":
             cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
@@ -5442,9 +5442,17 @@ class mtp_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
 
-            # 2C/4C = internal loopback
-            if vmarg != Voltage_Margin.normal:
-                cmd += " -int_lpbk"
+            # when running EDVT, cover both external loopback and internal loopback
+            if RUNNING_EDVT:
+                if edvt_loop_idx % 2 == 0:
+                    self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with external loopback".format(test, edvt_loop_idx), level=0)
+                else:
+                    self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with internal loopback".format(test, edvt_loop_idx), level=0)
+                    cmd += " -int_lpbk"
+            else:
+                # 2C/4C = internal loopback
+                if vmarg != Voltage_Margin.normal:
+                    cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
             slot = nic_list[0]
@@ -5457,9 +5465,17 @@ class mtp_ctrl():
                     cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
                 elif nic_type in GIGLIO_NIC_TYPE_LIST:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, n_vmarg)
-                # 2C/4C = internal loopback
-                if vmarg != Voltage_Margin.normal:
-                    cmd += " -int_lpbk"
+                # when running EDVT, cover both external loopback and internal loopback
+                if RUNNING_EDVT:
+                    if edvt_loop_idx % 2 == 0:
+                        self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with external loopback".format(test, edvt_loop_idx), level=0)
+                    else:
+                        self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with internal loopback".format(test, edvt_loop_idx), level=0)
+                        cmd += " -int_lpbk"
+                else:
+                    # 2C/4C = internal loopback
+                    if vmarg != Voltage_Margin.normal:
+                        cmd += " -int_lpbk"
         elif test == "ARM_L1":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -5525,7 +5541,7 @@ class mtp_ctrl():
                     partnumber = nic_controller._pn
                     break
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "RMII_LINKUP":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)

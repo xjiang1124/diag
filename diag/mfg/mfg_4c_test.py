@@ -17,6 +17,7 @@ from libdefs import MTP_Const
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import RUNNING_EDVT
 
 
 def load_mtp_cfg(cfg_yaml=None):
@@ -94,6 +95,13 @@ def main():
     nic_sn_list = dict()
     invalid_nic_list = dict()
 
+    # delete last temperaor log
+    if RUNNING_EDVT:
+        try:
+            os.remove("EDVT_LOG_FILENAME.log")
+        except Exception as Err:
+            pass
+
     # init mtp_ctrl list
     for mtp_id in mtpid_list:
         if verbosity:
@@ -163,6 +171,15 @@ def main():
 
     # dump the summary
     test_result = libmfg_utils.mfg_summary_disp(stage, mfg_4c_summary, mtpid_fail_list)
+
+    if RUNNING_EDVT:
+        try:
+            with open("EDVT_LOG_FILENAME.log", 'r') as edvt_log_filename:
+                for line in edvt_log_filename:
+                    print(line)
+            os.remove("EDVT_LOG_FILENAME.log")
+        except Exception as Err:
+            print("Ignore log file ")
 
     # print return code for JobD to pick up
     if test_result:

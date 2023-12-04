@@ -561,7 +561,15 @@ def upload_nic_logfile(mtp_mgmt_ctrl, stage, nic_type, sn, mirror_logdir, logs_l
     logfile_parent = get_logfile_parent(mtp_mgmt_ctrl)
     log_pkg_file = get_logfile_pkg_name(mtp_mgmt_ctrl)
     log_upload_path = os.path.join(mfg_log_dir, log_pkg_file)
-
+    # save all final gz log filename in a file for EDVT
+    if RUNNING_EDVT:
+        try:
+            with open("EDVT_LOG_FILENAME.log", 'a+') as edvt_log_filename:
+                cli_id_str = libmfg_utils.id_str(mtp = mtp_mgmt_ctrl._id)
+                edvt_log_filename.write("{:s} {:s} {:s}\n".format(cli_id_str, sn, log_upload_path))
+        except Exception as Err:
+            mtp_mgmt_ctrl.cli_log_inf("Somthing Wrong when save final edvt log, ignore")
+            print(Err)
     mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, log_upload_path))
 
     if GLB_CFG_MFG_TEST_MODE:
