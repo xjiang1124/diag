@@ -139,7 +139,8 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    # need to pass --iteration=1 to unset any iteration arg passed in TEST_ARGS
+    python ./mfg_scan_dl_test.py ${TEST_ARGS} --iteration=1 --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 else
     ret=0
