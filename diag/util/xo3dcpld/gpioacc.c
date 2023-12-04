@@ -53,7 +53,6 @@ static int read_gpios(int gpio)
         return -12;
     }
 
-    hr.flags = GPIOHANDLE_REQUEST_INPUT;
     hr.lines = 1;
     if ( ioctl(fd, GPIO_GET_LINEHANDLE_IOCTL, &hr) < 0 ) {
         printf("GPIO Get Line-Hdl ioctl failed\n");
@@ -61,13 +60,13 @@ static int read_gpios(int gpio)
         return -13;
     }
     close(fd);
-    if ( ioctl(hr.fd, GPIOHANDLE_GET_LINE_VALUES_IOCTL, &hd) < 0 ) {
-        printf("GPIO Set Line ioctl failed\n");
+
+    if ( ioctl(hr.fd, GPIOHANDLE_GET_LINE_VALUES_IOCTL, &hd.values[0]) < 0 ) {
+        printf("GPIO Get Line value ioctl failed\n");
         close(hr.fd);
         return -14;
     }
     close(hr.fd);
-    printf("gpip %d value is %d\n", gpio, hd.values[0]);
     return hd.values[0];
 }
 
