@@ -64,7 +64,7 @@ def main():
     if args.sw_pn:
         sw_pn_list = args.sw_pn
     else:
-        sw_pn_list = libmfg_utils.sw_pn_scan()
+        sw_pn_list = [libmfg_utils.sw_pn_scan(),]
 
     mtpcfg_file = None
     if args.mtpcfg:
