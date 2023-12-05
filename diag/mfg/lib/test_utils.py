@@ -149,6 +149,13 @@ def get_test_constants(stage, mtp_id):
             "script_cmd": "./mtp_dl_test.py",
             "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             },
+        FF_Stage.SCAN_DL:
+            {
+            "mtp_script_dir": "mtp_dl_script/",
+            "mtp_script_pkg": "mtp_dl_script.{:s}.tar".format(mtp_id),
+            "script_cmd": "./mtp_dl_test.py --scandl",
+            "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
+            },
         FF_Stage.FF_P2C:
             {
             "mtp_script_dir": "mtp_regression/",
@@ -218,6 +225,13 @@ def get_test_constants(stage, mtp_id):
             "mtp_script_pkg": "mtp_srn_script.{:s}.tar".format(mtp_id),
             "script_cmd": "./mtp_screen_regression.py",
             "timeout": MTP_Const.MFG_MTPSCREEN_TEST_TIMEOUT
+            },
+        FF_Stage.CONVERT:
+            {
+            "mtp_script_dir": "nic_convert_script/",
+            "mtp_script_pkg": "nic_convert_script.{:s}.tar".format(mtp_id),
+            "script_cmd": "./nic_convert_test.py",
+            "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             }
     }
     if stage not in testsuite_config.keys():
@@ -256,7 +270,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
 
         ### Barcode scanning
         if loop_idx == 1:
-            if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
+            if stage == FF_Stage.FF_DL and testsuite in (FF_Stage.SCAN_DL, FF_Stage.CONVERT):
                 libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
 
             elif stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
@@ -376,9 +390,6 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         #     test_cmd_args += " --fail-slots "
         #     test_cmd_args += ' '.join(map(str,fail_nic_list))
         ######
-        if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
-            test_cmd_args += " --scandl"
-
         if stage == FF_Stage.FF_SWI:
             img_opts = ""
             for nic_sw_img_file in nic_sw_img_file_list:
@@ -404,7 +415,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
 
-        if stage == FF_Stage.FF_DL and testsuite == FF_Stage.SCAN_DL:
+        if stage == FF_Stage.FF_DL and testsuite in (FF_Stage.SCAN_DL, FF_Stage.CONVERT):
             tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
             scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
             nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
@@ -440,7 +451,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         ####### COPY script, config file on to each MTP Chassis
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(stage, mtp_id)
+        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(testsuite, mtp_id)
         if mtp_script_dir is None:
             return False
         mtp_test_cleanup(mtp_mgmt_ctrl) # Close file handles before zip

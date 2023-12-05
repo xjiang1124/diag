@@ -199,6 +199,9 @@ then
     set -x
     python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
     ret=$?
+    if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
+    python ./mfg_convert_nic.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    fi
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];

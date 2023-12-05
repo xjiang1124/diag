@@ -65,6 +65,7 @@ class FF_Stage(Enum):
     FF_ORT = "ORT"
     FF_RDT = "RDT"
     SCAN_DL = "ScanDL"
+    CONVERT = "CONVERT"
     QA = "CI-CD"
 
     def __str__(self):
