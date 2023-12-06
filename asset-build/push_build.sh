@@ -62,23 +62,24 @@ cd /release; asset-push --remote-name ${ASIC}_${RELEASE}.tar.gz builds hourly-di
 
 set +x
 echo
-echo "# ${RELEASE} RELEASE NOTES"
-echo "# --------------------"
+echo "---------------------"
+echo "${RELEASE} RELEASE NOTES"
+echo "---------------------"
 echo
-echo "## DIAG VERSION"
-echo "## ============"
+echo "DIAG VERSION"
+echo "============"
 cat /release/${ASIC}_${RELEASE}/DIAG_VERSION
 echo
-echo "## ASIC VERSION"
-echo "## ============"
+echo "ASIC VERSION"
+echo "============"
 cat /release/${ASIC}_${RELEASE}/ASIC_VERSION
 echo
-echo "## TARGETS"
-echo "## ======="
+echo "TARGETS"
+echo "======="
 cat /release/${ASIC}_${RELEASE}/TARGETS
 echo
-echo "## CHANGES"
-echo "## ======="
+echo "CHANGES"
+echo "======="
 cat /release/${ASIC}_${RELEASE}/CHANGES.md
 cat /release/${ASIC}_${RELEASE}/GITLOG
 echo
