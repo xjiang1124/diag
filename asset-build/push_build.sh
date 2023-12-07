@@ -47,7 +47,7 @@ tar xfO ${amd64img} diag/scripts/version.txt | head > /release/${ASIC}_${RELEASE
 tar xfO ${arm64img} nic.tar.gz | tar xzO nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl > /release/${ASIC}_${RELEASE}/ASIC_VERSION
 
 echo "Collect release targets"
-grep ${ASIC} /psdiag/test/jobs.cfg | grep -v "#" | awk -F"\t" '{c=$NF;$NF=$(NF-1)=$(NF-2)=""; print c,$0}' | column -t > /release/${ASIC}_${RELEASE}/TARGETS
+grep ${ASIC} /psdiag/test/jobs.cfg | grep -v "#" | awk -F"\t" '{$(NF-1)=$(NF-2)=""; OFS="\t"; $1=$1; print}' > /release/${ASIC}_${RELEASE}/TARGETS
 
 echo "Collect release changelist"
 cp /psdiag/diag/mfg/CHANGES.md /release/${ASIC}_${RELEASE}/CHANGES.md
@@ -62,23 +62,24 @@ cd /release; asset-push --remote-name ${ASIC}_${RELEASE}.tar.gz builds hourly-di
 
 set +x
 echo
-echo "# ${RELEASE} RELEASE NOTES"
-echo "# --------------------"
+echo "---------------------"
+echo "${RELEASE} RELEASE NOTES"
+echo "---------------------"
 echo
-echo "## DIAG VERSION"
-echo "## ============"
+echo "DIAG VERSION"
+echo "============"
 cat /release/${ASIC}_${RELEASE}/DIAG_VERSION
 echo
-echo "## ASIC VERSION"
-echo "## ============"
+echo "ASIC VERSION"
+echo "============"
 cat /release/${ASIC}_${RELEASE}/ASIC_VERSION
 echo
-echo "## TARGETS"
-echo "## ======="
+echo "TARGETS"
+echo "======="
 cat /release/${ASIC}_${RELEASE}/TARGETS
 echo
-echo "## CHANGES"
-echo "## ======="
+echo "CHANGES"
+echo "======="
 cat /release/${ASIC}_${RELEASE}/CHANGES.md
 cat /release/${ASIC}_${RELEASE}/GITLOG
 echo
