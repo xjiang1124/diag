@@ -9,6 +9,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Type
 from libdefs import Voltage_Margin
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+from libmfg_cfg import RUNNING_EDVT
 
 
 QA_LOG_DIR          = "/vol/hw/diag/diag_qa/regression_log/"

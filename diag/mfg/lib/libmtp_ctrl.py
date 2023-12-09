@@ -1571,7 +1571,7 @@ class mtp_ctrl():
 
         return rc
 
-    def mtp_fan_init(self, fan_spd):
+    def mtp_fan_init(self, fan_pwm):
         rc = True
         # Fan present test
         cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
@@ -1597,18 +1597,77 @@ class mtp_ctrl():
             return rc
 
         # Fan speed set
-        self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_spd))
-        cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_spd)
+        self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
+        cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_pwm)
         rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if not rc:
-            self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_spd))
+            self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
+            return rc
+        self._fanspd = fan_pwm          # update class variable
 
-        self._fanspd = fan_spd          # update class variable
-
-        # Fan status dump
+        # fan speed verify after set
+        fan_read_ite = 1
+        fan_read_interval = 10
+        fan1_spd_chk_ret = False
+        fan2_spd_chk_ret = False
+        fan3_spd_chk_ret = False
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-            rc = False
+        while fan_read_ite <= 6:
+            self.cli_log_inf("Wait for {:d}th {:d} seconds, before check fan speed".format(fan_read_ite, fan_read_interval))
+            libmfg_utils.count_down(fan_read_interval)
+            fan_read_ite += 1
+
+            # Fan status dump
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                self.cli_log_err("Read fan speed failed by command {:s}".format(cmd))
+                rc = False
+                break
+
+            # Fan speed verify, if PWM 60%, RPM = 6000 +-20%; if PWM 100%, RPM >= 9000
+            matcher = re.search(r'FAN\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+            if not matcher:
+                self.cli_log_err("Parse Read Fan speed command output failed")
+                rc = False
+                break
+            fan1_inlet = int(matcher.group(1))
+            fan1_outlet = int(matcher.group(2))
+            fan2_inlet = int(matcher.group(3))
+            fan2_outlet = int(matcher.group(4))
+            fan3_inlet = int(matcher.group(5))
+            fan3_outlet = int(matcher.group(6))
+
+            if fan_pwm == 60:
+                if abs(fan1_inlet -6000) <= 6000 * 0.2 and  abs(fan1_outlet -6000) <= 6000 * 0.2:
+                    fan1_spd_chk_ret = True
+                if abs(fan2_inlet -6000) <= 6000 * 0.2 and  abs(fan2_outlet -6000) <= 6000 * 0.2:
+                    fan2_spd_chk_ret = True
+                if abs(fan3_inlet -6000) <= 6000 * 0.2 and  abs(fan3_outlet -6000) <= 6000 * 0.2:
+                    fan3_spd_chk_ret = True
+            elif fan_pwm == 100:
+                if (fan1_inlet -9000) >= 0 and (fan1_outlet -9000) >=0:
+                    fan1_spd_chk_ret = True
+                if (fan2_inlet -9000) >= 0 and (fan2_outlet -9000) >=0:
+                    fan2_spd_chk_ret = True
+                if (fan3_inlet -9000) >= 0 and (fan3_outlet -9000) >=0:
+                    fan3_spd_chk_ret = True
+            else:
+                # Not verify fan rpm for other pwm currently, just baseline check, rpm >=1000
+                if (fan1_inlet -1000) >= 0 and (fan1_outlet -1000) >=0:
+                    fan1_spd_chk_ret = True
+                if (fan2_inlet -1000) >= 0 and (fan2_outlet -1000) >=0:
+                    fan2_spd_chk_ret = True
+                if (fan3_inlet -1000) >= 0 and (fan3_outlet -1000) >=0:
+                    fan3_spd_chk_ret = True
+
+            if fan1_spd_chk_ret and fan2_spd_chk_ret and fan2_spd_chk_ret:
+                break
+
+        for fan_idx, fan_spd_chk_ret in enumerate([fan1_spd_chk_ret, fan2_spd_chk_ret, fan3_spd_chk_ret]):
+            if not fan_spd_chk_ret:
+                self.cli_log_err("FAN{:d} Speed at PWM {:d} verify FAIL".format(fan_idx+1, fan_pwm))
+                rc = False
+            else:
+                self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
 
         return rc
 

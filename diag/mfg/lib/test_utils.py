@@ -357,7 +357,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### TRANSLATE toplevel args to script args 
         test_cmd_args = ""
         test_cmd_args += " --mtpid {:s}".format(mtp_id)
-        test_cmd_args += " --loop_idx {:d}".format(loop_idx)
+        if stage in [FF_Stage.FF_P2C, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_ORT, FF_Stage.FF_RDT]:
+            test_cmd_args += " --loop_idx {:d}".format(loop_idx)
         if swm_test_mode:
             test_cmd_args += " --swm {:s}".format(swm_test_mode)
         if skip_test_list:
