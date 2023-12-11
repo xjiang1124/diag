@@ -310,7 +310,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
 
         ### Deploy & run the test
         mtp_start_ts = libmfg_utils.timestamp_snapshot()
-        single_test_result = single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *args, **kwargs)
+        single_test_result = single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, loop_idx=loop_idx, *args, **kwargs)
         # False only if MTP setup fails. NIC failure is captured in mtp_test_summary
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
@@ -362,6 +362,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn_list",            [])
         profile_cfg_file_list = kwargs.get("profile_cfg_file_list", [None]) # multiple profiles not supported
+        loop_idx = kwargs.get("loop_idx", 1) # loop index if running the script multiple iterations
 
         if stage == FF_Stage.FF_SWI:
             if not handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
@@ -370,6 +371,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### TRANSLATE toplevel args to script args 
         test_cmd_args = ""
         test_cmd_args += " --mtpid {:s}".format(mtp_id)
+        if stage in [FF_Stage.FF_P2C, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_ORT, FF_Stage.FF_RDT]:
+            test_cmd_args += " --loop_idx {:d}".format(loop_idx)
         if swm_test_mode:
             test_cmd_args += " --swm {:s}".format(swm_test_mode)
         if skip_test_list:

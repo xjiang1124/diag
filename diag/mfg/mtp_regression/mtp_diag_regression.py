@@ -471,7 +471,7 @@ def naples_diag_ncsi_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, para_test_
 
     return fail_list
 
-def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
+def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist, edvt_loop_idx=1):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
 
     for skipped_test in skip_testlist:
@@ -534,7 +534,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
             mtp_start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-            ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
+            ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg, edvt_loop_idx)
             
             duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
             for slot in nic_test_list[:]:
@@ -1136,6 +1136,7 @@ def main():
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--loop_idx", help="current loop index of uplevel loop calls; if MFG, this argument not used; if EDVT, for snake and eth_prbs, odd index internal loopback, even external loopback", default=1, type=int)
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
@@ -1144,6 +1145,7 @@ def main():
     l1_sequence = False
     stage = FF_Stage.FF_P2C
     swm_lp_boot_mode = False
+    loop_idx = args.loop_idx
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -1633,7 +1635,8 @@ def main():
                                                                            vmarg,
                                                                            stop_on_err,
                                                                            swmtestmode,
-                                                                           args.skip_test)
+                                                                           args.skip_test,
+                                                                           loop_idx)
                             for slot in mtp_para_fail_list:
                                 if slot in nic_list and stop_on_err:
                                     nic_list.remove(slot)
