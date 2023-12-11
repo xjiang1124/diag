@@ -248,6 +248,7 @@ class LaunchApp(object):
 
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
+        self.__settings["NIC_TYPE"] = GlobalOptions.nic_type.lower()
         try:
             with open(os.path.join(GlobalOptions.topdir, "env.sh"), "w") as fh:
                 for var, value in self.__settings.items():
