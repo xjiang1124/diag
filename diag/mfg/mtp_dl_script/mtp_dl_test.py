@@ -281,7 +281,7 @@ def main():
             tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
             if "SCAN_VERIFY" not in args.skip_test:
                 # load the barcode config file made in toplevel
-                scanned_fru_cfg_dict = nic_fru_cfg
+                scanned_fru_cfg_dict = tmp_fru_cfg
                 if mtp_id not in scanned_fru_cfg_dict:
                     mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
                     # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
