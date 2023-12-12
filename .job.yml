@@ -103,37 +103,37 @@ jobs:
     labels: ["CI-DIAG-FST"]
 ### NIC_TYPE TEST BUNDLE ###
   test/ginestra:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ginestra"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ginestra"]
   test/monterey:
-    labels: ["CI-DIAG-Build", "CI-DIAG-monterey"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-monterey"]
   test/ortano-adicr-s4:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-s4"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-s4"]
   test/ortano-solo-s4:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-s4"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-s4"]
   test/ortano-adi-ibm:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-ibm"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-ibm"]
   test/ortano-adicr-msft:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-msft"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-msft"]
   test/ortano-solo-msft:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-msft"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-msft"]
   test/ortano-adi-msft:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
   test/ortano-adicr-orc:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
   test/ortano-solo-orc_th:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc_th"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc_th"]
   test/ortano-solo-orc:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
   test/ortano-interp-orc:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-interp-orc"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-interp-orc"]
   test/ortano-adi-orc:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
   test/ortano-ti-orc:
-    labels: ["CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
   test/naples25swm-hpe:
-    labels: ["CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
   test/naples100:
-    labels: ["CI-DIAG-Build", "CI-DIAG-naples100"]
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples100"]
 ### END NIC_TYPE TEST BUNDLE ###
 ### NIC_TYPE ASIC TEST BUNDLE ###
   test-asic/ginestra:

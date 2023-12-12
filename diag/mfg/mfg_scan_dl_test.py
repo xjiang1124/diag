@@ -56,6 +56,7 @@ def main():
     parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--jobd_logdir", "--logdir", help="Store final log to different path", default=None)
+    parser.add_argument("--iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
 
     verbosity = False
     args = parser.parse_args()
@@ -112,7 +113,8 @@ def main():
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": FF_Stage.SCAN_DL,
-                                                "swm_test_mode": swmtestmode}))
+                                                "swm_test_mode": swmtestmode,
+                                                "iteration": args.iteration}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

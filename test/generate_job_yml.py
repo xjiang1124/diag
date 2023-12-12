@@ -158,7 +158,7 @@ def update_root_job_yml():
                 if job_set == "diag":
                     if "### NIC_TYPE TEST BUNDLE ###" in rline:
                         new_line  = f"  test/{nic_type}:\n"
-                        new_line += f"    labels: [\"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
+                        new_line += f"    labels: [\"CI-DIAG-Model\", \"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
                         rline += new_line
                     if "### NIC_TYPE DEPENDENCY ###" in rline:
                         new_line  = f"    - reference: test/{nic_type}\n"
