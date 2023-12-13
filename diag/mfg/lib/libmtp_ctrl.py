@@ -2054,7 +2054,7 @@ class mtp_ctrl():
             return False
         self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
 
-        # mtp sensor test, make sure two inlet sensor reading difference is less than 5
+        # mtp sensor test, make sure two inlet sensor reading difference is less than 10
         if not self.mtp_inlet_sensor_test():
             self.cli_log_err("MTP temp sensor test failed")
             return False
@@ -2105,7 +2105,7 @@ class mtp_ctrl():
     def mtp_inlet_sensor_test(self):
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("MTP Inlet sensor test failed")
+            self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
             return False
 
         # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
@@ -2119,7 +2119,7 @@ class mtp_ctrl():
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-                self.cli_log_err("MTP Inlet sensor test failed")
+                self.cli_log_err("MTP Inlet sensor test failed, the difference between inlet1 reading {:.2f} and inlet2 reading {:.2f} is more than 10".format(inlet_1, inlet_2))
                 return False
             else:
                 self.cli_log_inf("MTP Inlet sensor test passed")
@@ -2127,7 +2127,7 @@ class mtp_ctrl():
             return True
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP Inlet sensor test failed")
+            self.cli_log_err("MTP Inlet sensor test failed, command output Not Match sensor reading search pattern")
             return False
 
 
@@ -7329,9 +7329,11 @@ class mtp_ctrl():
 
         try:
             pn = fru["board-assembly-area"]
+            pn = pn.strip()
         except KeyError:
             try:
                 pn = fru["part-number"]
+                pn = pn.strip()
             except KeyError:
                 self.cli_log_slot_err(slot, "Unable to parse part-number from FRU")
                 pn = ""
@@ -7360,7 +7362,7 @@ class mtp_ctrl():
                 return False
             else:
                 self.cli_log_slot_inf(slot, "MAC = {:s}".format(mac))
-            if mac.lower() not in scanned_mac:
+            if mac.replace(":", "").lower() not in scanned_mac:
                 self.cli_log_slot_err(slot, "MAC {:s} read from FRU file /tmp/fru.json not in scanned MAC list: {:s}".format(mac, str(scanned_mac)))
                 return False
 
