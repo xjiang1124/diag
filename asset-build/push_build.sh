@@ -40,12 +40,47 @@ echo " 3/3 Repack mfg script"
 echo "**************************************************"
 set -x
 
-# collect versions for images
+echo "Collect image versions"
 amd64img=/psdiag/build/images/image_amd64_${ASIC}.tar
 arm64img=/psdiag/build/images/image_arm64_${ASIC}.tar
-tar xfO ${amd64img} diag/scripts/version.txt > /release/${ASIC}_${RELEASE}/diag_version
-tar xfO ${arm64img} nic.tar.gz | tar xzO nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl > /release/${ASIC}_${RELEASE}/asic_version
+tar xfO ${amd64img} diag/scripts/version.txt | head > /release/${ASIC}_${RELEASE}/DIAG_VERSION
+tar xfO ${arm64img} nic.tar.gz | tar xzO nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl > /release/${ASIC}_${RELEASE}/ASIC_VERSION
+
+echo "Collect release targets"
+grep ${ASIC} /psdiag/test/jobs.cfg | grep -v "#" | awk -F"\t" '{$(NF-1)=$(NF-2)=""; OFS="\t"; $1=$1; print}' > /release/${ASIC}_${RELEASE}/TARGETS
+
+echo "Collect release changelist"
+cp /psdiag/CHANGES.md /release/${ASIC}_${RELEASE}/CHANGES.md
+if [[ $(wc -l /release/${ASIC}_${RELEASE}/CHANGES.md) < 1 ]]; then
+    echo "CHANGES.md looks empty. Aborting release"
+    exit -1
+fi
+/psdiag/asset-build/generate_diff.sh > /release/${ASIC}_${RELEASE}/GITLOG
 
 ls -l /release/*
 cd /release; asset-push --remote-name ${ASIC}_${RELEASE}.tar.gz builds hourly-diag ${RELEASE} ${ASIC}_${RELEASE}
+
+set +x
+echo
+echo "---------------------"
+echo "${RELEASE} RELEASE NOTES"
+echo "---------------------"
+echo
+echo "DIAG VERSION"
+echo "============"
+cat /release/${ASIC}_${RELEASE}/DIAG_VERSION
+echo
+echo "ASIC VERSION"
+echo "============"
+cat /release/${ASIC}_${RELEASE}/ASIC_VERSION
+echo
+echo "TARGETS"
+echo "======="
+cat /release/${ASIC}_${RELEASE}/TARGETS
+echo
+echo "CHANGES"
+echo "======="
+cat /release/${ASIC}_${RELEASE}/CHANGES.md
+cat /release/${ASIC}_${RELEASE}/GITLOG
+echo
 echo "Release available at /vol/builds/hourly-diag/${RELEASE}"

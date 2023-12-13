@@ -139,7 +139,8 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    # need to pass --iteration=1 to unset any iteration arg passed in TEST_ARGS
+    python ./mfg_scan_dl_test.py ${TEST_ARGS} --iteration=1 --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 else
     ret=0
@@ -199,6 +200,9 @@ then
     set -x
     python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
     ret=$?
+    if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
+    python ./mfg_convert_nic.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    fi
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];

@@ -112,7 +112,7 @@ def main():
                                     kwargs = ({
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "jobd_logdir": args.jobd_logdir,
-                                                "testsuite_name": FF_Stage.SCAN_DL,
+                                                "testsuite_name": FF_Stage.CONVERT,
                                                 "swm_test_mode": swmtestmode,
                                                 "iteration": args.iteration}))
         mtp_thread.daemon = True

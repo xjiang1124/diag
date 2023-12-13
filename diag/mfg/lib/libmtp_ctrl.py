@@ -3036,6 +3036,7 @@ class mtp_ctrl():
             return False
 
         self.cli_log_slot_inf(slot, "Set boot diagfw")
+        self._nic_ctrl_list[slot].nic_boot_info_reset()
         return True
 
     def mtp_program_nic_adi_ibm_cpld(self, slot, cpld_img, dl_step=True):
