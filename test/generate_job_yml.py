@@ -5,8 +5,11 @@ EXCLUDE_FROM_PRECHECKIN=["ScanDL", "4C", "ORT", "RDT", "SRN"]
 cwd = os.path.basename(os.getcwd())
 if cwd == "test-asic":
     job_set = "asic"
-else:
+elif "DEV" in os.environ.keys():
     job_set = "diag"
+else:
+    job_set = "modeling"
+    EXCLUDE_FROM_PRECHECKIN = ["ScanDL", "SRN"]
 
 def write_headers(fh):
     fh.write("---\n")
@@ -41,7 +44,9 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     if stage == "4C":
         fh.write("    max-duration: 24h\n")
     fh.write("    build-dependencies:\n")
-    if job_set == "diag":
+    if stage == "FST":
+        pass
+    elif job_set == "diag":
         fh.write("     - build-amd64-{:s}\n".format(asic))
         fh.write("     - build-arm64-{:s}\n".format(asic))
     elif job_set == "asic":
@@ -118,7 +123,7 @@ def test_bundle_by_nic_type():
             if line.startswith("#"):
                 continue
             *stages, asic, hardware, nic_type = line.split("\t")
-            
+
             os.system(f"mkdir -p {nic_type}/")
             job_yml_file = f"{nic_type}/.job.yml"
             fh = open(job_yml_file, "w")
@@ -132,9 +137,22 @@ def test_bundle_by_nic_type():
                 write_targets(fh, asic, hardware, nic_type, stage)
             fh.close()
 
+def write_FST_test_bundle():
+    # always keep FST test even if ortano-ti-orc is skipped
+    # since infra tests depend on it
+    os.system("rm -r FST")
+    stage, asic, hardware, nic_type = "FST", "elba", "ortano-ti", "ortano-ti-orc"
+
+    write_stage_headers(stage)
+    job_yml_file = "{:s}/.job.yml".format(stage)
+    fh = open(job_yml_file, "a")
+    fh.write("  {:s}:\n".format(nic_type))
+    write_targets(fh, asic, hardware, nic_type, stage)
+    fh.close()
+
 def update_root_job_yml():
     ### remove old lines
-    if job_set == "diag":
+    if job_set == "diag" or job_set == "modeling":
         sections = [ "NIC_TYPE TEST BUNDLE", "NIC_TYPE DEPENDENCY" ]
     elif job_set == "asic":
         sections = [ "NIC_TYPE ASIC TEST BUNDLE" ]
@@ -155,7 +173,7 @@ def update_root_job_yml():
 
             ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
             for rline in fileinput.FileInput("../.job.yml", inplace=True):
-                if job_set == "diag":
+                if job_set == "diag" or job_set == "modeling":
                     if "### NIC_TYPE TEST BUNDLE ###" in rline:
                         new_line  = f"  test/{nic_type}:\n"
                         new_line += f"    labels: [\"CI-DIAG-Model\", \"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
@@ -176,7 +194,12 @@ if job_set == "diag":
     test_bundle_by_stage()
     update_root_job_yml()
 
+elif job_set == "modeling":
+    test_bundle_by_nic_type()
+    update_root_job_yml()    
+
 elif job_set == "asic":
     test_bundle_by_nic_type()
     update_root_job_yml()
 
+write_FST_test_bundle()
