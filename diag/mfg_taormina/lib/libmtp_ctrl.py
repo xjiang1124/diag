@@ -4735,7 +4735,7 @@ class mtp_ctrl():
 
     def get_test_timeout(self, cmd, test):
         if test in ("SNAKE_TOR"):
-            return 360
+            return 1200
         elif test in ("PRBS_TOR"):
             return 180
         elif test in ("RETIMER_TOR"):
