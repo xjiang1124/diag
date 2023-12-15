@@ -323,7 +323,7 @@ def part_number_match(pn, regex):
     return re.match(regex, pn) is not None
 
 def rot_cable_serial_number_validate(tmp):
-    return re.match(r'^ROT\d{5}$', tmp)
+    return re.match(r'^ROT-\d{5}$', tmp)
 
 def part_number_match_rot_require_list(pn):
 
