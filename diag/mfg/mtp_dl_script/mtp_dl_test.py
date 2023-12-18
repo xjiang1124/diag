@@ -234,13 +234,19 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
+    mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
+
     try:
-        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)    
+        # read scanned barcode file except when we're skipping in dev environment
+        scanned_nic_fru_cfg = dict()
+        scanned_nic_fru_cfg[mtp_id] = dict()
+        if args.scandl or "SCAN_VERIFY" not in args.skip_test:
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            scanned_nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
 
         if args.scandl:
-            if not test_utils.mtp_common_setup_scandl(mtp_mgmt_ctrl, FF_Stage.FF_DL, nic_fru_cfg, args.skip_test):
+            if not test_utils.mtp_common_setup_scandl(mtp_mgmt_ctrl, FF_Stage.FF_DL, scanned_nic_fru_cfg, args.skip_test):
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 logfile_close(open_file_track_list)
                 return
@@ -276,14 +282,33 @@ def main():
 
         dsp = FF_Stage.FF_DL
 
-        mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Started", level=0)
+        if args.scandl:
+            nic_fru_cfg = scanned_nic_fru_cfg
+        else:
+            # read in current FRU
+            nic_fru_cfg = dict()
+            nic_fru_cfg[mtp_id] = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
+            # failures from construct_nic_fru_config
+            for slot in pass_nic_list:
+                key = libmfg_utils.nic_key(slot)
+                if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+
+        if not args.scandl:
+            if "SCAN_VERIFY" not in args.skip_test:
+                mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg[mtp_id], scanned_nic_fru_cfg[mtp_id], pass_nic_list, fail_nic_list, dsp)
+
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
             if str.upper(valid) != "YES":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
 
             sn = nic_fru_cfg[mtp_id][key]["SN"]
@@ -320,46 +345,6 @@ def main():
             for image_name, image_file_path in dl_image_dict.items():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
-
-
-        if not args.scandl:
-            tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
-            if "SCAN_VERIFY" not in args.skip_test:
-                # load the barcode config file made in toplevel
-                scanned_fru_cfg_dict = nic_fru_cfg
-                if mtp_id not in scanned_fru_cfg_dict:
-                    mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-                    # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
-                    scanned_fru_cfg = dict()
-                    for slot in range(MTP_Const.MTP_SLOT_NUM):
-                        key = libmfg_utils.nic_key(slot)
-                        if not nic_prsnt_list[slot]:
-                            continue
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        if slot in pass_nic_list:
-                            pass_nic_list.remove(slot)
-                else:
-                    scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
-                mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp)
-
-            # write and reload the barcode config file
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            with open(scan_cfg_file, "w") as fru_cfg_filep:
-                mtp_mgmt_ctrl.gen_barcode_config_file(fru_cfg_filep, tmp_fru_cfg)
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-
-            # enter in failures from construct_nic_fru_config
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                key = libmfg_utils.nic_key(slot)
-                if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
-                    if not nic_prsnt_list[slot]:
-                        continue
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
 
         #identify adi ibm pass slot
         for slot in range(MTP_Const.MTP_SLOT_NUM):
@@ -539,7 +524,6 @@ def main():
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
             if str.upper(valid) != "YES":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
 
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -779,7 +763,6 @@ def main():
             key = libmfg_utils.nic_key(slot)
             valid = nic_fru_cfg[mtp_id][key]["VALID"]
             if str.upper(valid) != "YES":
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
 
             # DL Verify process
