@@ -1,10 +1,11 @@
-package mp8796
+package mp2975
 
 import (
     "fmt"
     "math"
     "common/cli"
     "common/errType"
+    "hardware/i2cinfo"
     "protocol/pmbus"
     "protocol/smbus"
 )
@@ -21,17 +22,73 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
     }
     defer smbus.Close()
 
+    //page is always 0 for vin
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, 0x00)
+    if err != errType.SUCCESS {
+        return
+    }
+
     VIN, err = pmbus.ReadWord(devName, READ_VIN)
     if err != errType.SUCCESS {
         return
     }
 
-    //25mV/LSB --> 0.025
-    expOutFloat := float64(VIN) * 0.025 
-    intpart, div := math.Modf(expOutFloat)
+    integer, dec, err =  pmbus.Linear11(VIN)
+    return
+}
 
-    integer = uint64(intpart)
-    dec = uint64(div*1000)
+
+func ReadIin(devName string) (integer uint64, dec uint64, err int) {
+    var IIN uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    //page is always 0 for Iin
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, 0x00)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    IIN, err = pmbus.ReadWord(devName, READ_IIN)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    integer, dec, err =  pmbus.Linear11(IIN)
+    return
+}
+
+
+func ReadPin(devName string) (integer uint64, dec uint64, err int) {
+    var PIN uint16
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    //page is always 0 for Pin
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, 0x00)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    PIN, err = pmbus.ReadWord(devName, READ_PIN)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    //direct in 1A per lsb
+    integer = uint64(PIN)
+    dec = 0
     return
 }
 
@@ -46,13 +103,25 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     }
     defer pmbus.Close()
 
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
+
     VOUT, err = pmbus.ReadWord(devName, READ_VOUT)
     if err != errType.SUCCESS {
         return
     }
 
-    //1.25mV/LSB    0.00125
-    expOutFloat := float64(VOUT) * 0.00125
+    //direct in 1mv parts
+    expOutFloat := float64(VOUT) 
+    expOutFloat = expOutFloat / 1000
     intpart, div := math.Modf(expOutFloat)
 
     integer = uint64(intpart)
@@ -71,39 +140,58 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     }
     defer pmbus.Close()
 
+    page, err := i2cinfo.GetPage(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
+    if err != errType.SUCCESS {
+        return
+    }
+
     IOUT, err = pmbus.ReadWord(devName, READ_IOUT)
     if err != errType.SUCCESS {
         return
     }
 
-    //62.5mA/LSB   0.0625
-    expOutFloat := float64(IOUT) *  0.0625
-    intpart, div := math.Modf(expOutFloat)
-
-    integer = uint64(intpart)
-    dec = uint64(div*1000)
+    //direct in 1A per lsb
+    integer = uint64(IOUT)
+    dec = 0
     return
 }
 
 
 
 func ReadPout(devName string) (integer uint64, dec uint64, err int) {
-    voutInt, voutFrac, err := ReadVout(devName)
+    var POUT uint16
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    page, err := i2cinfo.GetPage(devName)
     if err != errType.SUCCESS {
         return
     }
-    ioutInt, ioutFrac, err := ReadIout(devName)
+
+    // Write page register
+    err = pmbus.WriteByte(devName, pmbus.PAGE, page)
     if err != errType.SUCCESS {
         return
     }
 
-    voutFloat := float64(voutInt) + float64(voutFrac)/1000
-    ioutFloat := float64(ioutInt) + float64(ioutFrac)/1000
-    poutFloat := voutFloat * ioutFloat
+    POUT, err = pmbus.ReadWord(devName, READ_POUT)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    integer = uint64(poutFloat)
-    dec = uint64((poutFloat - float64(uint64(poutFloat)))*1000)
-
+    //direct in 1W per lsb
+    integer = uint64(POUT)
+    dec = 0
     return
 }
 
@@ -172,7 +260,8 @@ func DispVoltWattAmp(devName string) (err int) {
 
 func DispStatus(devName string) (err int) {
 
-    vrmTitle := []string {"VIN", "VOUT", "IOUT", "POUT", "STATUS"}
+    
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -188,13 +277,12 @@ func DispStatus(devName string) (err int) {
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    dig, frac, err := ReadVin(devName)
+    dig, frac, _ := ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
     if err != errType.SUCCESS {
         return;
     }
-
 
     dig, frac, _ = ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
@@ -204,7 +292,15 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPout(devName)
+    dig, frac, err = ReadPin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadVin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadIin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
