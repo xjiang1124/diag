@@ -2531,14 +2531,14 @@ class mtp_ctrl():
         core_pll_lock = reg26_data & 0x1
         cpu_pll_lock = reg26_data & 0x2
         flash_pll_lock = reg26_data & 0x4
-        proto_mode = reg26_data & 0x20
+        proto_mode_disabled = reg26_data & 0x20
         if not core_pll_lock:
             self.cli_log_slot_err(slot, "ASIC core pll is not locked")
         if not cpu_pll_lock:
             self.cli_log_slot_err(slot, "ASIC cpu pll is not locked")
         if not flash_pll_lock:
             self.cli_log_slot_err(slot, "ASIC flash pll is not locked")
-        if proto_mode:
+        if not proto_mode_disabled:
             self.cli_log_slot_err(slot, "ASIC proto mode is set")
 
         reg28_data = reg_data_list[1]
@@ -5071,6 +5071,7 @@ class mtp_ctrl():
          Differentiate ortano by PN
          - 68-0015: Oracle version -> return False
          - 68-0021: Pensando version -> return True
+         - 68-0090: Solo microsoft  -> return True
          - any other -> return False with err msg
         """
         if self._nic_type_list[slot] != NIC_Type.ORTANO2:
@@ -5081,7 +5082,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Unknown PN for Ortano")
             return False
         microsoft_pn = re.match(PART_NUMBERS_MATCH.ORTANO2_PEN_PN_FMT, slot_pn)
-        if microsoft_pn:
+        solo_microsoft_pn = re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_MSFT_PN_FMT, slot_pn)
+
+        if microsoft_pn or solo_microsoft_pn:
             return True
         else:
             return False
