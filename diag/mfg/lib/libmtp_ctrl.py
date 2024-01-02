@@ -1571,7 +1571,7 @@ class mtp_ctrl():
 
         return rc
 
-    def mtp_fan_init(self, fan_spd):
+    def mtp_fan_init(self, fan_pwm):
         rc = True
         # Fan present test
         cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
@@ -1597,18 +1597,77 @@ class mtp_ctrl():
             return rc
 
         # Fan speed set
-        self.cli_log_inf("Set FAN Speed to {:d}%".format(fan_spd))
-        cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_spd)
+        self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
+        cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_pwm)
         rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
         if not rc:
-            self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_spd))
+            self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
+            return rc
+        self._fanspd = fan_pwm          # update class variable
 
-        self._fanspd = fan_spd          # update class variable
-
-        # Fan status dump
+        # fan speed verify after set
+        fan_read_ite = 1
+        fan_read_interval = 10
+        fan1_spd_chk_ret = False
+        fan2_spd_chk_ret = False
+        fan3_spd_chk_ret = False
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-            rc = False
+        while fan_read_ite <= 6:
+            self.cli_log_inf("Wait for {:d}th {:d} seconds, before check fan speed".format(fan_read_ite, fan_read_interval))
+            libmfg_utils.count_down(fan_read_interval)
+            fan_read_ite += 1
+
+            # Fan status dump
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                self.cli_log_err("Read fan speed failed by command {:s}".format(cmd))
+                rc = False
+                break
+
+            # Fan speed verify, if PWM 60%, RPM = 6000 +-20%; if PWM 100%, RPM >= 9000
+            matcher = re.search(r'FAN\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+            if not matcher:
+                self.cli_log_err("Parse Read Fan speed command output failed")
+                rc = False
+                break
+            fan1_inlet = int(matcher.group(1))
+            fan1_outlet = int(matcher.group(2))
+            fan2_inlet = int(matcher.group(3))
+            fan2_outlet = int(matcher.group(4))
+            fan3_inlet = int(matcher.group(5))
+            fan3_outlet = int(matcher.group(6))
+
+            if fan_pwm == 60:
+                if abs(fan1_inlet -6000) <= 6000 * 0.2 and  abs(fan1_outlet -6000) <= 6000 * 0.2:
+                    fan1_spd_chk_ret = True
+                if abs(fan2_inlet -6000) <= 6000 * 0.2 and  abs(fan2_outlet -6000) <= 6000 * 0.2:
+                    fan2_spd_chk_ret = True
+                if abs(fan3_inlet -6000) <= 6000 * 0.2 and  abs(fan3_outlet -6000) <= 6000 * 0.2:
+                    fan3_spd_chk_ret = True
+            elif fan_pwm == 100:
+                if (fan1_inlet -9000) >= 0 and (fan1_outlet -9000) >=0:
+                    fan1_spd_chk_ret = True
+                if (fan2_inlet -9000) >= 0 and (fan2_outlet -9000) >=0:
+                    fan2_spd_chk_ret = True
+                if (fan3_inlet -9000) >= 0 and (fan3_outlet -9000) >=0:
+                    fan3_spd_chk_ret = True
+            else:
+                # Not verify fan rpm for other pwm currently, just baseline check, rpm >=1000
+                if (fan1_inlet -1000) >= 0 and (fan1_outlet -1000) >=0:
+                    fan1_spd_chk_ret = True
+                if (fan2_inlet -1000) >= 0 and (fan2_outlet -1000) >=0:
+                    fan2_spd_chk_ret = True
+                if (fan3_inlet -1000) >= 0 and (fan3_outlet -1000) >=0:
+                    fan3_spd_chk_ret = True
+
+            if fan1_spd_chk_ret and fan2_spd_chk_ret and fan2_spd_chk_ret:
+                break
+
+        for fan_idx, fan_spd_chk_ret in enumerate([fan1_spd_chk_ret, fan2_spd_chk_ret, fan3_spd_chk_ret]):
+            if not fan_spd_chk_ret:
+                self.cli_log_err("FAN{:d} Speed at PWM {:d} verify FAIL".format(fan_idx+1, fan_pwm))
+                rc = False
+            else:
+                self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
 
         return rc
 
@@ -1995,7 +2054,7 @@ class mtp_ctrl():
             return False
         self.cli_log_inf("Environment temperature is reached, current inlet reading is {:2.2f}".format(inlet))
 
-        # mtp sensor test, make sure two inlet sensor reading difference is less than 5
+        # mtp sensor test, make sure two inlet sensor reading difference is less than 10
         if not self.mtp_inlet_sensor_test():
             self.cli_log_err("MTP temp sensor test failed")
             return False
@@ -2046,7 +2105,7 @@ class mtp_ctrl():
     def mtp_inlet_sensor_test(self):
         cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("MTP Inlet sensor test failed")
+            self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
             return False
 
         # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
@@ -2060,7 +2119,7 @@ class mtp_ctrl():
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
                 self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-                self.cli_log_err("MTP Inlet sensor test failed")
+                self.cli_log_err("MTP Inlet sensor test failed, the difference between inlet1 reading {:.2f} and inlet2 reading {:.2f} is more than 10".format(inlet_1, inlet_2))
                 return False
             else:
                 self.cli_log_inf("MTP Inlet sensor test passed")
@@ -2068,7 +2127,7 @@ class mtp_ctrl():
             return True
         else:
             self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP Inlet sensor test failed")
+            self.cli_log_err("MTP Inlet sensor test failed, command output Not Match sensor reading search pattern")
             return False
 
 
@@ -2977,6 +3036,7 @@ class mtp_ctrl():
             return False
 
         self.cli_log_slot_inf(slot, "Set boot diagfw")
+        self._nic_ctrl_list[slot].nic_boot_info_reset()
         return True
 
     def mtp_program_nic_adi_ibm_cpld(self, slot, cpld_img, dl_step=True):
@@ -5393,7 +5453,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default extdiag boot")
         return True
 
-    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg):
+    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg, edvt_loop_idx=1):
         nic_fail_list = list()
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5411,7 +5471,7 @@ class mtp_ctrl():
                     partnumber = nic_controller._pn
                     break
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "PRBS_ETH":
             cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_TEST_FMT.format(nic_list_param, n_vmarg)
@@ -5442,9 +5502,17 @@ class mtp_ctrl():
             else:
                 cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_FMT.format(nic_list_param, n_vmarg)
 
-            # 2C/4C = internal loopback
-            if vmarg != Voltage_Margin.normal:
-                cmd += " -int_lpbk"
+            # when running EDVT, cover both external loopback and internal loopback
+            if RUNNING_EDVT:
+                if edvt_loop_idx % 2 == 0:
+                    self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with external loopback".format(test, edvt_loop_idx), level=0)
+                else:
+                    self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with internal loopback".format(test, edvt_loop_idx), level=0)
+                    cmd += " -int_lpbk"
+            else:
+                # 2C/4C = internal loopback
+                if vmarg != Voltage_Margin.normal:
+                    cmd += " -int_lpbk"
 
         elif test == "ETH_PRBS":
             slot = nic_list[0]
@@ -5457,9 +5525,17 @@ class mtp_ctrl():
                     cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
                 elif nic_type in GIGLIO_NIC_TYPE_LIST:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_GIGLIO_FMT.format(nic_list_param, n_vmarg)
-                # 2C/4C = internal loopback
-                if vmarg != Voltage_Margin.normal:
-                    cmd += " -int_lpbk"
+                # when running EDVT, cover both external loopback and internal loopback
+                if RUNNING_EDVT:
+                    if edvt_loop_idx % 2 == 0:
+                        self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with external loopback".format(test, edvt_loop_idx), level=0)
+                    else:
+                        self.cli_log_inf("Running EDVT of Test: {:s} at Iteration {:d} with internal loopback".format(test, edvt_loop_idx), level=0)
+                        cmd += " -int_lpbk"
+                else:
+                    # 2C/4C = internal loopback
+                    if vmarg != Voltage_Margin.normal:
+                        cmd += " -int_lpbk"
         elif test == "ARM_L1":
             slot = nic_list[0]
             nic_type = self.mtp_get_nic_type(slot)
@@ -5525,7 +5601,7 @@ class mtp_ctrl():
                     partnumber = nic_controller._pn
                     break
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(partnumber)
-            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber))
+            self.cli_log_inf("Vmargin is: {:s} After Apply Percentage, which Got Using Part Number: {:s}".format(n_vmarg, partnumber), level=0)
 
         if test == "RMII_LINKUP":
             cmd = MFG_DIAG_CMDS.MTP_NCSI_RMII_LINKUP_FMT.format(nic_list_param, n_vmarg)
@@ -6607,11 +6683,11 @@ class mtp_ctrl():
             key = libmfg_utils.nic_key(slot)
             temp_fru_cfg[key] = dict()
             if slot in fail_nic_list or not self.mtp_check_nic_status(slot):
-                temp_fru_cfg[key]["VALID"] = False
+                temp_fru_cfg[key]["VALID"] = "No"
                 continue
             if self.mtp_nic_check_prsnt(slot):
                 nic_type = self.mtp_get_nic_type(slot)
-                temp_fru_cfg[key]["VALID"] = True
+                temp_fru_cfg[key]["VALID"] = "Yes"
                 temp_fru_cfg[key]["TS"] = libmfg_utils.get_fru_date()
                 nic_fru_info = self.mtp_get_nic_fru(slot)
                 if nic_fru_info:
@@ -6623,6 +6699,7 @@ class mtp_ctrl():
                         temp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
                         temp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
                 else:
+                    temp_fru_cfg[key]["VALID"] = "No"
                     temp_fru_cfg[key]["SN"] = "DEADBEEF"
                     temp_fru_cfg[key]["MAC"] = "DEADBEEF"
                     temp_fru_cfg[key]["PN"] = "DEADBEEF"
@@ -6630,11 +6707,11 @@ class mtp_ctrl():
                         temp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
                         temp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
             else:
-                temp_fru_cfg[key]["VALID"] = False
+                temp_fru_cfg[key]["VALID"] = "No"
 
         return temp_fru_cfg
 
-    def mtp_scan_verify(self, temp_fru_cfg, scan_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=False):
+    def mtp_scan_verify(self, read_fru_cfg, scan_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=False):
         fru_reprogram_list = list()
 
         test = "SCAN_VERIFY"
@@ -6645,7 +6722,7 @@ class mtp_ctrl():
                 continue
             if not self.mtp_check_nic_status(slot):
                 continue
-            if not temp_fru_cfg[key]["VALID"]:
+            if str.upper(read_fru_cfg[key]["VALID"]) == "No":
                 continue
             if scan_fru_cfg[key]["VALID"] == 'No':
                 self.cli_log_slot_err_lock(slot, "Missing scan for this slot")
@@ -6655,12 +6732,12 @@ class mtp_ctrl():
                     pass_nic_list.remove(slot)
                 self.mtp_set_nic_status_fail(slot, skip_fa=True)
                 duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(temp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
                 continue
 
             for item in ["SN", "MAC", "PN"]:
                 expected = scan_fru_cfg[key][item]
-                received = temp_fru_cfg[key][item]
+                received = read_fru_cfg[key][item]
 
                 if expected != received:
                     if item == "PN" and ignore_pn_rev:
@@ -6681,9 +6758,9 @@ class mtp_ctrl():
             duration = self.log_slot_test_stop(slot, test, start_ts)
 
             if slot in fail_nic_list:
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(temp_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
             else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(temp_fru_cfg[key]["SN"], dsp, test, duration))
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(read_fru_cfg[key]["SN"], dsp, test, duration))
 
         return fru_reprogram_list
 
@@ -7254,9 +7331,11 @@ class mtp_ctrl():
 
         try:
             pn = fru["board-assembly-area"]
+            pn = pn.strip()
         except KeyError:
             try:
                 pn = fru["part-number"]
+                pn = pn.strip()
             except KeyError:
                 self.cli_log_slot_err(slot, "Unable to parse part-number from FRU")
                 pn = ""
@@ -7285,7 +7364,7 @@ class mtp_ctrl():
                 return False
             else:
                 self.cli_log_slot_inf(slot, "MAC = {:s}".format(mac))
-            if mac.lower() not in scanned_mac:
+            if mac.replace(":", "").lower() not in scanned_mac:
                 self.cli_log_slot_err(slot, "MAC {:s} read from FRU file /tmp/fru.json not in scanned MAC list: {:s}".format(mac, str(scanned_mac)))
                 return False
 
