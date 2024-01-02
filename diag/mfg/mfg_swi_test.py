@@ -61,11 +61,6 @@ def main():
         verbosity = False
     stage=FF_Stage.FF_SWI
 
-    if args.sw_pn:
-        sw_pn_list = args.sw_pn
-    else:
-        sw_pn_list = [libmfg_utils.sw_pn_scan(),]
-
     mtpcfg_file = None
     if args.mtpcfg:
         mtpcfg_file = os.path.relpath(args.mtpcfg)
@@ -92,6 +87,11 @@ def main():
         fail_nic_list[mtp_id] = list()
         nic_sn_list[mtp_id] = list()
         invalid_nic_list[mtp_id] = list()
+
+    if args.sw_pn:
+        sw_pn_list = args.sw_pn
+    else:
+        sw_pn_list = [libmfg_utils.sw_pn_scan(),]
 
     mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 
