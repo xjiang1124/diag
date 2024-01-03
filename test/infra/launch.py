@@ -211,7 +211,7 @@ class LaunchApp(object):
                     if barcode_scans[slot]['PN']:
                         fh.write(barcode_scans[slot]['PN'] + "\n")
                     if self.__testsuite.config.job == "FST":
-                        fh.write("ROT000{:02d}".format(slot) + "\n")
+                        fh.write("ROT-000{:02d}".format(slot) + "\n")
 
                 fh.write(f'STOP\n')
         except Exception as e:
