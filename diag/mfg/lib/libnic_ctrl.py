@@ -1375,6 +1375,8 @@ class nic_ctrl():
 
     def nic_boot_info_init(self, smode=False):
         # save boot image info into self._boot_image and self._kernel_timestamp
+        previouse_card_status = self.nic_check_status()
+
         loop = 0
         while loop < MTP_Const.NIC_CON_CMD_RETRY:
             if not self.nic_read_firmware_image(smode):
@@ -1387,6 +1389,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
+        elif previouse_card_status:
+            self.nic_set_status(NIC_Status.NIC_STA_OK)
 
         # get kernel build timestamp
         loop = 0
@@ -1401,6 +1405,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
+        elif previouse_card_status:
+            self.nic_set_status(NIC_Status.NIC_STA_OK)
 
         return True
 
