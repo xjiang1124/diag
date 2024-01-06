@@ -4735,7 +4735,7 @@ class mtp_ctrl():
 
     def get_test_timeout(self, cmd, test):
         if test in ("SNAKE_TOR"):
-            return 360
+            return 1200
         elif test in ("PRBS_TOR"):
             return 180
         elif test in ("RETIMER_TOR"):
@@ -5586,7 +5586,7 @@ class mtp_ctrl():
             self.mtp_mgmt_exec_cmd("ovs-appctl -t hpe-cardd park_chassis 1", timeout=10)
 
             # get IP
-            if not self.tor_get_ip():
+            if not self.tor_mgmt_init(svos_boot=False):
                 self.cli_log_err("Failed to obtain IP", level=0)
                 self.log_debug_msg("cmd_buf: {}".format(self._cmd_buf))
                 return False
@@ -6201,8 +6201,10 @@ class mtp_ctrl():
         if booted in svos, need to trigger ip dhcp.
         in halonos, ip acquired at startup.
         """
-        retries = 3
+        retries = 20
         while retries >= 0:
+            if retries > 5:
+                time.sleep(5) # start adding delay after 5 retries
             if retries == 0:
                 self.cli_log_err(self.mtp_get_cmd_buf())
                 return False
@@ -6214,7 +6216,7 @@ class mtp_ctrl():
                 if not self.mtp_mgmt_exec_cmd("svcli", timeout=30):
                     self.cli_log_err("Couldn't run command ip dhcp")
                     continue
-                if not self.mtp_mgmt_exec_cmd("ip dhcp", timeout=30):
+                if not self.mtp_mgmt_exec_cmd("ip dhcp", timeout=120):
                     self.cli_log_err("Couldn't run command ip dhcp")
                     continue
                 if not self.mtp_mgmt_exec_cmd("ip show", sig_list=["IP Address"], timeout=30):
