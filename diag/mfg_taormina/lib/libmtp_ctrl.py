@@ -9202,3 +9202,65 @@ class mtp_ctrl():
             msg = "Temperature environment is OK"
             self.cli_log_inf(msg, level=0)
             return True, ""
+
+    def set_3v3_vref_trim(self, unmargined=False):
+        cmd = "devmgr -status"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+            self.cli_log_err("{:s} command failed", level=0)
+            return False
+
+        if unmargined: #clear out vref trim back to 3.3V
+            cmd = "fpgautil i2c 0 1 8 w 0xd4 0 0"
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} command failed", level=0)
+                return False
+            cmd = "fpgautil i2c 0 1 8 w 0x15"
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} command failed", level=0)
+                return False
+
+        else: #set to 3.46V
+            cmd = "switch cpu 3v3fix"
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+                self.cli_log_err("{:s} command failed", level=0)
+                return False
+            cmd_buf = self.mtp_get_cmd_buf()
+            if "3v3fix PASSED" not in cmd_buf:
+                self.cli_log_err("Failed to set 3v3 VREF trim", level=0)
+                return False
+
+        cmd = "devmgr -status"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+            self.cli_log_err("{:s} command failed", level=0)
+            return False
+
+        return True
+
+    def verify_3v3_vref_trim(self, unmargined=False):
+        """
+        [INFO]    [2024-01-06-02:45:36.508] NAME                POUT      VOUT      IOUT      STATUS
+        [INFO]    [2024-01-06-02:45:36.513] P3V3                44.789    3.429     13.062    0x0
+        """
+        cmd = "devmgr -status"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=120):
+            self.cli_log_err("{:s} command failed", level=0)
+            return False
+
+        cmd_buf = self.mtp_get_cmd_buf()
+        match = re.search(r" P3V3 +[0-9\.]+ +([0-9\.]+) *", cmd_buf)
+        if match:
+            voltage = float(match.group(1))
+        else:
+            self.cli_log_err("Unable to get current 3.3V readout", level=0)
+            return False
+
+        if not unmargined:
+            # what's an acceptable voltage range? varies from board to board. will just make sure it's not set exact 3.30 for now.
+            if voltage > 3.30:
+                return True
+        else:
+            if voltage < 3.40:
+                return True
+
+        self.cli_log_err("Incorrect voltage for P3V3 read as {:f}".format(voltage), level=0)
+        return False
