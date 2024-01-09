@@ -327,6 +327,8 @@ def single_uut_fw_program(stage,
                         "MES_MFG_EEPROM_CHK",
                         "DIAG_INIT",
                         "TD_GEARBOX_VERIFY",
+                        "3V3_FIX",
+                        "3V3_FIX_VERIFY",
                         "TD_AVS_SET"
                         ]
         for skipped_test in skip_testlist:
@@ -466,6 +468,10 @@ def single_uut_fw_program(stage,
             elif test == "BIOS_CONFIG_TPM":
                 ret = mtp_mgmt_ctrl.tor_bios_config_tpm()
 
+            elif test == "3V3_FIX":
+                ret = mtp_mgmt_ctrl.set_3v3_vref_trim()
+            elif test == "3V3_FIX_VERIFY":
+                ret = mtp_mgmt_ctrl.verify_3v3_vref_trim()
 
             elif test == "TD_AVS_SET":
                 ret = mtp_mgmt_ctrl.tor_td_avs_set()

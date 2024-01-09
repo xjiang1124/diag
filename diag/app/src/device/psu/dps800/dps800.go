@@ -191,6 +191,68 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
+/************************************************************************
+* 
+* Return 0 if no warning of fault.  Non zero if warning of fault is set
+* 
+* 
+*************************************************************************/ 
+func ReadFanWarnFault(devName string) (WarnFault uint32, err int) {
+    var FanStatus uint8
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    FanStatus, err = pmbus.ReadByte(devName, STATUS_FANS_1_2)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    WarnFault = 0
+    if (FanStatus & STATUS_FAN_FAULT) == STATUS_FAN_FAULT {
+        WarnFault = 1
+    }
+    if (FanStatus & STATUS_FAN_WARN) == STATUS_FAN_WARN {
+        WarnFault = 1
+    }
+
+    return
+
+
+}
+
+
+func ReadFanSpeed(devName string) (rpm uint32, err int) {
+    var FanConfig uint8
+    var FanSpeed uint16
+    err = pmbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer pmbus.Close()
+
+    FanConfig, err = pmbus.ReadByte(devName, FAN_CONFIG_1_2)
+    if err != errType.SUCCESS {
+        return
+    }
+    FanSpeed, err = pmbus.ReadWord(devName, READ_FAN_SPEED_1)
+    if err != errType.SUCCESS {
+        return
+    }
+    rpm =  uint32(FanSpeed)
+    //Check if it's 2 pulses per revolution
+    if FanConfig & 0x30 == 0x01 { 
+        rpm = rpm / 2
+    }
+
+    return
+}
+
+
 func ReadTemp(devName string, sensorNumber uint32) (integer uint64, dec uint64, err int) {
     var TEMP uint16
     var reg uint32

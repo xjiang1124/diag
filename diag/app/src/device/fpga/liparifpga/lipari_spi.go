@@ -131,7 +131,6 @@ func Spi_check_tx_fifo_empty(spiNumber uint32) (err error) {
     //check status reg for status on tx data drain
     for x=0; x<timeout; x++ {
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
         if (data32 & SPI_STA_TXFIFO_EMPTY) == SPI_STA_TXFIFO_EMPTY {
             break;
         }
@@ -152,7 +151,6 @@ func Spi_check_tx_complete(spiNumber uint32) (err error) {
     //check status reg for status on tx data drain
     for x=0; x<timeout; x++ {
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
         if (data32 & SPI_STA_TRANSMIT_COMPL) == SPI_STA_TRANSMIT_COMPL {
             break;
         }
@@ -173,7 +171,6 @@ func Spi_check_tx_drain(spiNumber uint32) (err error) {
     //check status reg for status on tx data drain
     for x=0; x<timeout; x++ {
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
         if (data32 & SPI_STA_TOE) == SPI_STA_TOE {   //transmit overrun error
             err = fmt.Errorf("ERROR Spi_check_tx_drain. Spi-%d, TRANSMIT OVERRUN ERROR SET.  Status Reg = 0x%x\n", spiNumber, data32)
             cli.Printf("e", "%s", err)
@@ -198,7 +195,6 @@ func Spi_check_rx_ready(spiNumber uint32) (err error) {
     //check status reg for status on tx data drain
     for x=0; x<timeout; x++ {
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))    
         if (data32 & SPI_STA_ROE) == SPI_STA_ROE {   //receive overrun error
             err = fmt.Errorf("ERROR Spi_check_rx_ready. Spi-%d, RECEIVE OVERRUN ERROR SET.  Status Reg = 0x%x\n", spiNumber, data32)
             cli.Printf("e", "%s", err)
@@ -217,13 +213,11 @@ func Spi_check_rx_ready(spiNumber uint32) (err error) {
 }
 
 
-//This is for Ebla's Flash (Spi 6/7) with FPGA C or higher 
 func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
     var timeout, x uint32 = 100, 0
     var statsreg uint32
 
     for x=0; x<timeout; x++ {
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_RXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)))
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_RXDATA_OFFSET)
         if ((data32 & 0xC0000000) > 0) {
             //time.Sleep(time.Duration(150) * time.Nanosecond)
@@ -232,7 +226,6 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
         
         //Just capture a snapshot of the status reg in case the read times out so we have an initial snap shot for debug
         if x == 0 {
-            //statsreg, _ = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
             statsreg, _ = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
         }
         //Poll sleep
@@ -254,19 +247,12 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
     var ChkTxDrain uint32 = 0
 
 
-    //for i:=0; i<len(opCode);i++ {
-    //    fmt.Printf(" %.02x", opCode[i])
-    //}
-    //fmt.Printf("\n0x%.08x\n",  uint32(opCode[0] | (opCode[1]<<8) | (opCode[2]<<16) | (opCode[3]<<24)))
-    //fmt.Printf("Spi MB Address=0x%.08x\n", SpiTable[spiNumber].spiMBaddr)
-
-    if spiNumber >= SPI_NUMB_BUSES {
+        if spiNumber >= SPI_NUMB_BUSES {
         err = fmt.Errorf("ERROR lipari_spi_generic_transaction. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
         cli.Printf("e", "%s", err)
         return
     }
     data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-    //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
 
     if (data32 & SPI_STA_FIFO_SUPPORT) == SPI_STA_FIFO_SUPPORT {   //Newer SPI Method that supports FIFO
         var FIFORDLENGTH uint32 = (32 * 256)  //8K
@@ -279,21 +265,14 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET, 0x00)    //clear status
 
         data32, err = LipariReadU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
-        //data32, err = TaorReadU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)))
         if (data32 & SPI_STA_TMT_RDY) != SPI_STA_TMT_RDY {
             err = fmt.Errorf("ERROR lipari_spi_generic_transaction. Spi-%d, TX FIFO IS NOT EMPTY AT START OF TRANSACTION.  Status Reg = 0x%x\n", spiNumber, data32)
             cli.Printf("e", "%s", err)
             goto SPI_TRANSACTION_END
         }
         for i:=0; i<wr_length; i++ {
-
-//const SPI_TXDATA4B_OFFSET          uint64 = 0x04
-//const SPI_TXDATA2B_OFFSET          uint64 = 0x08
-//const SPI_TXDATA1B_OFFSET          uint64 = 0x0C
-            //LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_TXDATA4B_OFFSET, uint32(opCode[0] | (opCode[i+1]<<8) | (opCode[i+2]<<16) | (opCode[i+3]<<24)) )    //clear status
             LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_TXDATA1B_OFFSET, uint32(opCode[i]))    //clear status
             //time.Sleep(time.Duration(2) * time.Microsecond)
-            //TaorWriteU8(SPI_FPGA_DOMAIN, (D2_SPI0_TXDATA_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (opCode[i]))
             if (i!=0) && ((i%1024) == 0) {
                 ChkTxDrain = 1
             }
@@ -306,7 +285,6 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
                         tmpRdLength = rdLength
                     } 
                     LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, (0x400 | (tmpRdLength << 16)))
-                    //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //SET READ SIZE IF WE NEED TO READ
                 }
             }
 
@@ -322,7 +300,6 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
 
         //clear status
         LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET, 0x00)
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_STATUS_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)
 
         //read data if we need to do reads
         rdLength = rdLength + 1
@@ -332,7 +309,6 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
                 cli.Printf("e", "lipari_spi_generic_transaction -> Spi_Read_Data Failed.  i=%d\n", i)
                 goto SPI_TRANSACTION_END
             }
-            //fmt.Printf("I=%d, data32=0x%.08x\n", i, data32)
             rdData = append(rdData, byte(data32))
             if ((data32 & 0xC0000000) == 0x80000000) {
                 rdData = append(rdData, byte((data32>>8)))
@@ -350,8 +326,7 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
                 } else {
                     tmpRdLength = ((rdLength-1) % FIFORDLENGTH)
                 }
-                LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, (0x400 | (tmpRdLength << 16)))
-                //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , (0x400 | (tmpRdLength << 16)) )  //pipe in next read length
+                LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, (0x400 | (tmpRdLength << 16))) //pipe in next read length
             } 
              
         }
@@ -366,11 +341,9 @@ func lipari_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
         }
         
 SPI_TRANSACTION_END:
-        LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00)
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_CONTROL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x00)  //turn off spi output
-        LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_MUXSEL_OFFSET, 0x01)
-        //TaorWriteU32(SPI_FPGA_DOMAIN, (D2_SPI0_MUXSEL_REG + uint64(SPI_SLICE_SZ * spiNumber)) , 0x01)  //turn mux select to FPGA off
-
+        LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00) //turn off spi output
+        LipariWriteU32(SpiTable[spiNumber].fpgaNumber, SpiTable[spiNumber].spiMBaddr + SPI_MUXSEL_OFFSET, 0x01)  //turn mux select to FPGA off
+        
 
 
     } 
