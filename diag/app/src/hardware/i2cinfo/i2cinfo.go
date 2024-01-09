@@ -300,6 +300,30 @@ var TaorElbaTbl = []I2cInfo {
     I2cInfo {"ELB0_ARM",       "TPS53659A", 0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
 }
 
+var LipariElbaTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"VDD_DDR",        "MP8796",    0x0,   0x30,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "MP8796",    0x0,   0x31,    0x0,    "HUB_NONE",  0,    0},
+    //I2cInfo {"PWRMONITOR",        "INA231",    0x0,   0x40,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"ELB0_CORE",      "MP2975",    0x0,   0x62,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "MP2975",    0x0,   0x62,    0x1,    "HUB_NONE",  0,    0},
+}
+
+var MtFujiElbaTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    0},   //Cisco uses 8-bit FRU 
+    I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR1",       "TMP451",    0x0,   0x4E,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDD_DDR",        "LTC3882",   0x0,   0x44,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"VDDQ_DDR",       "LTC3882",   0x0,   0x44,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE",      "LTC3882",   0x0,   0x55,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE1",     "LTC3882",   0x0,   0x55,    0x1,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_CORE2",     "LTC3882",   0x0,   0x66,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"ELB0_ARM",       "LTC3882",   0x0,   0x66,    0x1,    "HUB_NONE",  0,    0},
+}
+
+
 var LaconaMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
@@ -500,7 +524,9 @@ var TaorTbl = []I2cInfo {
     I2cInfo {"CPLD_ELBA1",      "MACHXO3",    3,   0x4A,    0x0,    "FPGA_HUB_2_3",  3,    I2C_TEST_ENABLE},
     //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
     I2cInfo {"TSENSOR-CPU",      "XeonD",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
-    I2cInfo {"TSENSOR-BCM",      "TD3",       2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-GB",       "Gearbox",   2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-RETIMER",  "Retimer",   2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
+    I2cInfo {"TSENSOR-TD3",      "TD3",       2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"TSENSOR-ASIC0",    "ELBA0",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     I2cInfo {"TSENSOR-ASIC1",    "ELBA1",     2,   0x44,    0x0,    "FPGA_HUB_1_0",  0,    0},
     //END NON EXISTENT I2C DEVICES
@@ -678,7 +704,7 @@ func init() {
     LaconaMtpTbl = append(LaconaMtpTbl, MtpHubI2cTbl...)
     LaconaDellMtpTbl = append(LaconaDellMtpTbl, MtpHubI2cTbl...)
     GinestraMtpTbl = append(GinestraMtpTbl, MtpHubI2cTbl...)
-
+fmt.Printf("CARD_TYPE=%s\n", CardType);
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
        CardType == "NAPLES100IBM" ||
@@ -753,6 +779,10 @@ func init() {
     } else if CardType == "LIPARI" {
         I2cTbl = LipariTbl
         I2cFpgaTbl = LipariI2cFpgaTbl
+    } else if CardType == "LIPARIELBA" {
+        I2cTbl = LipariElbaTbl
+    } else if CardType == "MTFUJIELBA" {
+        I2cTbl = MtFujiElbaTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -828,7 +858,6 @@ func SwitchI2cTbl(uutName string) (err int) {
     if err != errType.SUCCESS {
         return
     }
-
     if uutType == "UUT_NONE" {
         CurI2cTbl = I2cTbl
         return

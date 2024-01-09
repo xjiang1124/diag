@@ -145,7 +145,7 @@ const BCM_SCRIPT_FILE_NAME  =  "/bcm_shell_execute_cmd.py"
 const BCM_SCRIPT_FILE_NAME_W_EXIT  =  "/bcm_shell_execute_cmd_w_exit.py"
 
 
-const TD3_MAX_TEMP = 100
+const TD3_MAX_TEMP = 80
 
 // Port Map Data Structure
 type PortMap struct {
@@ -238,14 +238,24 @@ var TaorPortMap = []PortMap {
     PortMap{52, 115, "ce11", 0, -6, 73, 0}, //Front Panel Port 52 100G
     PortMap{53, 1  , "ce0", 0, -6, 73, 0},  //Front Panel Port 53 100G
  
-    PortMap{54, 9  , "ce1",  0, 0, 60, 0},  //Internal Port to ELBA0.3 100G   PHY U1_G0 (LANE 0xF0)
-    PortMap{55, 91 , "ce9",  0, 0, 60, 0},  //Internal Port to ELBA0.2 100G   PHY U1_G0 (LANE 0x0F)
-    PortMap{56, 95 , "ce10", 1, 0, 60, 0},  //Internal Port to ELBA1.3 100G   PHY U1_G2 (LANE 0xF0)
-    PortMap{57, 13 , "ce2",  1, 0, 60, 0},  //Internal Port to ELBA1.2 100G   PHY U1_G2 (LANE 0x0F)
-    PortMap{58, 123, "ce12", 0, 0, 60, 0},  //Internal Port to ELBA0.0 100G   PHY U1_G1 (LANE 0x0F)
-    PortMap{59, 127, "ce13", 1, 0, 60, 0},  //Internal Port to ELBA1.1 100G   PHY U1_G3 (LANE 0xF0)
-    PortMap{60, 33,  "ce3",  0, 0, 60, 0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 (LANE 0xF0)
-    PortMap{61, 37,  "ce4",  1, 0, 60, 0},  //Internal Port to ELBA1.0 100G   PHY U1_G3 (LANE 0x0F)
+    PortMap{54, 123, "ce12", 0, 0, 60, 0},  //Internal Port to ELBA0.0 100G   PHY U1_G1 (LANE 0x0F)      ELBA0-Eth1/1/1
+    PortMap{55, 33,  "ce3",  0, 0, 60, 0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 (LANE 0xF0)      ELBA0-Eth1/1/3
+    PortMap{56, 91 , "ce9",  0, 0, 60, 0},  //Internal Port to ELBA0.2 100G   PHY U1_G0 (LANE 0x0F)      ELBA0-Eth1/2/1
+    PortMap{57, 9  , "ce1",  0, 0, 60, 0},  //Internal Port to ELBA0.3 100G   PHY U1_G0 (LANE 0xF0)      ELBA0-Eth1/2/3 
+    PortMap{58, 37,  "ce4",  1, 0, 60, 0},  //Internal Port to ELBA1.0 100G   PHY U1_G3 (LANE 0x0F)      ELBA1-Eth1/1/1
+    PortMap{59, 127, "ce13", 1, 0, 60, 0},  //Internal Port to ELBA1.1 100G   PHY U1_G3 (LANE 0xF0)      ELBA1-Eth1/1/3
+    PortMap{60, 13 , "ce2",  1, 0, 60, 0},  //Internal Port to ELBA1.2 100G   PHY U1_G2 (LANE 0x0F)      ELBA1-Eth1/2/1
+    PortMap{61, 95 , "ce10", 1, 0, 60, 0},  //Internal Port to ELBA1.3 100G   PHY U1_G2 (LANE 0xF0)      ELBA1-Eth1/2/3
+
+
+//    PortMap{54, 9  , "ce1",  0, 0, 60, 0},  //Internal Port to ELBA0.3 100G   PHY U1_G0 (LANE 0xF0)      ELBA0-Eth1/2/3 
+//    PortMap{55, 91 , "ce9",  0, 0, 60, 0},  //Internal Port to ELBA0.2 100G   PHY U1_G0 (LANE 0x0F)      ELBA0-Eth1/2/1
+//    PortMap{56, 95 , "ce10", 1, 0, 60, 0},  //Internal Port to ELBA1.3 100G   PHY U1_G2 (LANE 0xF0)      ELBA1-Eth1/2/3
+//    PortMap{57, 13 , "ce2",  1, 0, 60, 0},  //Internal Port to ELBA1.2 100G   PHY U1_G2 (LANE 0x0F)      ELBA1-Eth1/2/1
+//    PortMap{58, 123, "ce12", 0, 0, 60, 0},  //Internal Port to ELBA0.0 100G   PHY U1_G1 (LANE 0x0F)      ELBA0-Eth1/1/1
+//    PortMap{59, 127, "ce13", 1, 0, 60, 0},  //Internal Port to ELBA1.1 100G   PHY U1_G3 (LANE 0xF0)      ELBA1-Eth1/1/3
+//    PortMap{60, 33,  "ce3",  0, 0, 60, 0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 (LANE 0xF0)      ELBA0-Eth1/1/3
+//    PortMap{61, 37,  "ce4",  1, 0, 60, 0},  //Internal Port to ELBA1.0 100G   PHY U1_G3 (LANE 0x0F)      ELBA1-Eth1/1/1
 }
 
 
@@ -780,7 +790,7 @@ func DispStatus(devName string) (err int) {
     }
     cli.Println("i", tmpStr)
    
-    gbTemp, err = GearboxGetTemperatures()
+    gbTemp, err = GearboxGetTemperatures("GEARBOX")
     if err != errType.SUCCESS {
         return err
     }
@@ -791,7 +801,7 @@ func DispStatus(devName string) (err int) {
     }
     cli.Println("i", tmpStr)
 
-    retTemp, err = RetimerGetTemperatures()
+    retTemp, err = RetimerGetTemperatures("RETIMER")
     if err != errType.SUCCESS {
         return err
     }
@@ -802,6 +812,26 @@ func DispStatus(devName string) (err int) {
     }
     cli.Println("i", tmpStr)
 
+    return
+}
+
+
+/****************************************************************************
+* Get the RX Byte Count Statistics for all ports 
+* Saves a lot of time by not reading them one port at a time due 
+* to telneting into bcm shell to run command
+* 
+*****************************************************************************/ 
+func PrintPortRmonStats(port int) (err int) {
+    var output string
+    shellcmd := fmt.Sprintf("show c Same %s", TaorPortMap[port].Name)
+    output, err = ExecBCMshellCMD(shellcmd, 5)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    
+    cli.Printf("i", "\n%s\n", output)
     return
 }
 
@@ -2324,7 +2354,7 @@ func CheckForRevA_Gearbox() (err int) {
 }
 
 //Return the temperature of all 3 retimers at once
-func GearboxGetTemperatures() (temperature []float64, err int) {
+func GearboxGetTemperatures(devName string) (temperature []float64, err int) {
     var output, command string
     var strapping uint32
     err = errType.SUCCESS
@@ -2360,7 +2390,7 @@ func GearboxGetTemperatures() (temperature []float64, err int) {
 
 
 //Return the temperature of all 3 retimers at once
-func RetimerGetTemperatures() (temperature []float64, err int) {
+func RetimerGetTemperatures(devName string) (temperature []float64, err int) {
     var output, command string
     var strapping uint32
     err = errType.SUCCESS

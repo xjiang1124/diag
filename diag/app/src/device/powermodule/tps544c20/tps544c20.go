@@ -4,6 +4,7 @@ import (
     "fmt"
     //"os"
     //"cardinfo"
+    "time"
     "common/cli"
     "common/errType"
     "protocol/pmbus"
@@ -51,6 +52,54 @@ func I2cTest(devname string) (err int) {
     return
 }
 
+/********************************************************************************
+* 
+* Need to set Taormina's 3V3 higher due to a problem with a serdes clock buffer 
+* The clock buffer seems to behave better with higher 3.3V voltage. 
+* Want to bump it 5% to ~  3.465
+* 
+*********************************************************************************/ 
+func TaorminaSetVrefTrim(devName string) (err int) {
+    var vref_trim uint16
+
+    if devName != "P3V3" {
+        err = errType.FAIL
+        cli.Printf("e", "Device-%s is not a valid device for setting the vref_trim.\n", devName)
+        return
+    }
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+
+    vref_trim, err = pmbus.ReadWord(devName, VREF_TRIM)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read %s VREF_TRIM register", devName)
+        return
+    }
+    if vref_trim == 0x0E {
+        cli.Printf("i", "3.3V is already trimmed. VREFTIME=0x%02x Exiting\n", vref_trim)
+        return                                                           
+    } else {
+        err = pmbus.WriteWord(devName, VREF_TRIM, 0x0E)
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to write %s VREF_TRIM register", devName)
+            return
+        }
+        time.Sleep(time.Duration(300) * time.Millisecond)
+        err = pmbus.SendByte(devName, STORE_USER_ALL) 
+        if err != errType.SUCCESS {
+            cli.Println("e", "Failed to send Byte to %s STORE_USER_ALL register", devName)
+            return
+        } 
+        cli.Printf("i", "3.3V trim set 0x0E. Store User All performed to save setting.  Exiting\n")
+    } 
+    return
+}
 
 func ReadStatus(devName string) (status uint16, err int) {
     err = smbus.Open(devName)
