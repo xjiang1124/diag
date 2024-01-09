@@ -336,8 +336,8 @@ func updateYaml (resultStr string) (err int) {
         err = errType.FAIL
         return
     }
+    f.Sync() 
     f.Close()
-    runCmd.Run("", "", "sync")
 
     dcli.Println("i", "Result in YAML file")
     return
