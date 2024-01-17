@@ -1,12 +1,9 @@
 /*
- * acclib.h
+ * accpcie.h
  *
- *  Created on: Jan 9, 2018
- *      Author: xiaodhu
+ *  Created on: Feb 13, 2023
+ *      Author: David Wang 
  */
-
-#ifndef RELEASE_EXAMPLES_LOOPBACK_ACC_H_
-#define RELEASE_EXAMPLES_LOOPBACK_ACC_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 typedef unsigned int            ULONG;
 typedef ULONG                   *PULONG;
@@ -39,6 +37,8 @@ enum {
         FT_READ_FAILURE,
         FT_RESP_TIMEOUT,
         FT_INVALID_RESP,
+        FT_PORT_TAKEN,
+        FT_ERROR_LOCKPORT,
         FT_ERROR_ID,
 };
 
@@ -51,20 +51,33 @@ enum {
 
 #define J2C_VALID_BIT   0x10000
 #define J2C_ID_BIT      0x20000
+#define J2C_SEM_BIT     0x00001
 
-#define J2C_0_CMD_REG    0xB00
-#define J2C_0_STAT_REG   0xB04
-#define J2C_0_ADDR0_REG  0xB08
-#define J2C_0_ADDR1_REG  0xB0C
-#define J2C_0_TXDATA_REG 0xB10
-#define J2C_0_RXDATA_REG 0xB14
-#define J2C_0_SEM_REG    0xB18
-#define J2C_0_MAGIC_REG  0xB1C
+#define J2C_0_OFFSET     0xB00
+#define J2C_0_CMD_REG    0x000
+#define J2C_0_STAT_REG   0x004
+#define J2C_0_ADDR0_REG  0x008
+#define J2C_0_ADDR1_REG  0x00C
+#define J2C_0_TXDATA_REG 0x010
+#define J2C_0_RXDATA_REG 0x014
+#define J2C_0_SEM_REG    0x018
+#define J2C_0_MAGIC_REG  0x01C
 
-#define UART_0_RXDATA_REG 0x1000
-#define UART_0_TXDATA_REG 0x1004
-#define UART_0_STAT_REG   0x1008
-#define UART_0_CTRL_REG   0x100C
+//CSCO 0x10020, 0x11020, 0x12020, 0x13020
+#define MTFUJI_JTAG0_BASE       0x10020
+#define MTFUJI_JTAG_STRIDE       0x1000
+
+
+#define UART_0_OFFSET     0x1000
+#define UART_INST_OFFSET  0x0100
+#define UART_0_RXDATA_REG 0x0000
+#define UART_0_TXDATA_REG 0x0004
+#define UART_0_STAT_REG   0x0008
+#define UART_0_CTRL_REG   0x000C
+
+#define UART_RESET_TXFIFO 0x0001
+#define UART_RESET_RXFIFO 0x0002
+#define UART_EN_INTERRUPT 0x0010
 
 #ifndef DWORD
 #define DWORD unsigned int 
@@ -82,57 +95,27 @@ enum {
 #define BYTE unsigned char
 #endif
 
+#ifndef uint32_t
+#define uint32_t unsigned int
+#endif
+
 extern FT_HANDLE ftHandle;
 
-extern BYTE 	OutputBuffer[512];
-extern DWORD	dwNumBytesToSend;
-extern DWORD	dwNumBytesSent;
-extern DWORD 	dwNumBytesRead;
-
+ULONGLONG xtoi(char *hexstring);
+int FindPlatform(ULONGLONG * bar, uint32_t * entry);
+ULONGLONG show_bar(void);
 FT_STATUS jtag_init(DWORD portNum);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
-void jtag_close();
+FT_STATUS jtag_wg(ULONGLONG address, DWORD data);
+FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
 FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
-
-ULONGLONG xtoi(char *hexstring);
-void queue_clear(FT_HANDLE ftHandle);
-int queue_read(FT_HANDLE ftHandle, DWORD* data);
-FT_STATUS sendJtagCommand(FT_HANDLE ftHandle, BYTE *sequence, const size_t length);
-void spi_csena();
-void spi_csdis();
+void set_verbosity(int);
+void set_bar(ULONGLONG);
+void jtag_close();
 FT_STATUS spi_reg_init();
-FT_STATUS spi_mdio_init();
-FT_STATUS spi_flash_init();
-FT_STATUS jtag_flash_init();
-FT_STATUS spi_init();
 FT_STATUS spi_wr(BYTE address, BYTE data);
 FT_STATUS spi_rd(BYTE address, BYTE* data);
-FT_STATUS cpld_csena();
-FT_STATUS cpld_csdis();
-FT_STATUS flash_id_check();
-FT_STATUS cpld_flash_wr(BYTE* data, int size);
-FT_STATUS cpld_flash_wr_clear(BYTE* data, int size);
-FT_STATUS cpld_flash_rd(BYTE* data, int size);
-int flash_enable();
-int flash_init();
-int flash_disable();
-int flash_check_status();
-int flash_program(BYTE* buf, int size);
-int flash_erase();
-int flash_read(BYTE* buf, DWORD size);
-int flash_program_done();
-int flash_refresh();
-FT_STATUS mdio_wr(DWORD instance, DWORD dev_addr, DWORD offset, DWORD data);
-FT_STATUS mdio_rd(DWORD instance, DWORD dev_addr, DWORD offset, DWORD* data);
-unsigned int cpld_program(char* file_name);
-unsigned int cpld_read(char* file_name);
 void ftHandle_close();
 
-extern char*	lock_file;
-extern int		lock_fd;
-extern struct stat st0;
-extern struct stat st1;
-
-#endif /* RELEASE_EXAMPLES_LOOPBACK_ACC_H_ */

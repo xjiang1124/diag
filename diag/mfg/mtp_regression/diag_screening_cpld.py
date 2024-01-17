@@ -296,6 +296,23 @@ def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp,
             nic_test_rslt_list[slot] = False
             return False
 
+    # prog back original ufm3 dump, if original ufm3 are all FF, we have recovert it by direct prog the bin without cal checksum.
+    progCmd = random.choice(prog_cmd_list).format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + orginal_ufm3_dump_file_name, "ufm3")
+    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, progCmd)
+    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([progCmd], timeout=MTP_Const.OS_CMD_DELAY):
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+        nic_test_rslt_list[slot] = False
+        return False
+    if "xo3dcpld" in prog_cmd_list and "Invalid region to erase" in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program UFM3 NOT SUPPORTED by current version of xo3dcpld utility")
+        nic_test_rslt_list[slot] = False
+        return False
+    if "end of programming" not in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+        nic_test_rslt_list[slot] = False
+        return False
+
     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test_case_name, start_ts)
     if not ret:
         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test_case_name, "FAILED", duration))

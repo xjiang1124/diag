@@ -20,9 +20,8 @@ e2e-targets:
     sub-area:
     feature:
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:

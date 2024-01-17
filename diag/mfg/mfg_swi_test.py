@@ -88,6 +88,11 @@ def main():
         nic_sn_list[mtp_id] = list()
         invalid_nic_list[mtp_id] = list()
 
+    if args.sw_pn:
+        sw_pn_list = args.sw_pn
+    else:
+        sw_pn_list = [libmfg_utils.sw_pn_scan(),]
+
     mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 
     mtp_thread_list = list()
@@ -105,7 +110,7 @@ def main():
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
-                                                "sw_pn_list": args.sw_pn}))
+                                                "sw_pn_list": sw_pn_list}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

@@ -211,7 +211,7 @@ class LaunchApp(object):
                     if barcode_scans[slot]['PN']:
                         fh.write(barcode_scans[slot]['PN'] + "\n")
                     if self.__testsuite.config.job == "FST":
-                        fh.write("ROT000{:02d}".format(slot) + "\n")
+                        fh.write("ROT-000{:02d}".format(slot) + "\n")
 
                 fh.write(f'STOP\n')
         except Exception as e:
@@ -248,6 +248,7 @@ class LaunchApp(object):
 
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
+        self.__settings["NIC_TYPE"] = GlobalOptions.nic_type.lower()
         try:
             with open(os.path.join(GlobalOptions.topdir, "env.sh"), "w") as fh:
                 for var, value in self.__settings.items():
@@ -299,6 +300,13 @@ class LaunchApp(object):
                 test_args += f"--iteration {getattr(test_spec, 'iteration', 1)} "
             if hasattr(test_spec, 'skip') and test_spec.skip != None:
                 skip_list = " ".join(test_spec.skip)
+                # Special args for particular nic_type
+                ############################################
+                nic_type = GlobalOptions.nic_type.lower()
+                test_stage = self.__testsuite.config.job
+                if "naples25swm" in nic_type.lower() and test_stage.upper() in ("P2C", "4C"):
+                    skip_list += " SNAKE_HBM"
+                ############################################
                 test_args += f" --skip-test {skip_list}"
             self.__settings["TEST_ARGS"] = test_args
 

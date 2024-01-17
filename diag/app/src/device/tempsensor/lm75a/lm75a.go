@@ -74,14 +74,14 @@ func I2cTest(devName string) (err int) {
         return
     }
     
-    data16, err = smbus_read16(devName, LM75_ID_REG)
+    data16, err = smbus_read16(devName, LM75_TEMPERATURE_REG)
     if err != errType.SUCCESS {
         cli.Printf("e", " i2cTest:  Read reg-0x%x failed\n", LM75_TEMPERATURE_REG)
         return
     }
     data16 = swap_uint16(data16)
     if (data16 & (^(temp_mask))) != 0x00 {
-        cli.Printf("e", " LM75 Register %s is incorrect.  Expect Lower 7 bits to be 0.  Read 0x%x\n", LM75_TEMPERATURE_REG, data16)
+        cli.Printf("e", " LM75 Register %d is incorrect.  Expect Lower 7 bits to be 0.  Read 0x%x\n", LM75_TEMPERATURE_REG, data16)
         err = errType.FAIL
         return
     }

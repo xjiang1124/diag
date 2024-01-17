@@ -11,6 +11,7 @@ import traceback
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
+import liblog
 from libdefs import NIC_Type
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import UUT_Type
@@ -99,6 +100,7 @@ def single_uut_fw_program(stage,
     pn = fru_cfg["PN"]
     prog_date = str(fru_cfg["TS"])
     edc = fru_cfg["EDC"]
+    error_msg = ""
 
     # Prepare local log files
     log_filep_list = list()
@@ -181,8 +183,8 @@ def single_uut_fw_program(stage,
         testlist = ["SVOS_BOOT", "CONSOLE_CLEAR", "CONSOLE_CONNECT",]
 
         if isinstance(mes_obj, MES):
-            # Add MES tasks, if applicable
-            testlist.extend(["MES_ACCESS", "OK_TEST_STN_CHK",])
+            # Add MES tasks in front, if applicable
+            testlist = ["MES_ACCESS", "OK_TEST_STN_CHK",] + testlist
 
         for test in testlist:
             start_ts = mtp_mgmt_ctrl.log_test_start(test)
@@ -209,8 +211,11 @@ def single_uut_fw_program(stage,
                 ret = mes_obj.verify_next_test_station(stage)
                 if not ret:
                     mtp_mgmt_ctrl.cli_log_err("UUT is NOT allowed to run " + stage, level=0)
+                    mtp_mgmt_ctrl.cli_log_inf("TEST STATION EXPECTED: " + \
+                        mes_obj.get_mes_next_test_station(), level=0)
                     mtp_mgmt_ctrl.cli_log_inf("Test data will NOT be pushed to MES")
                     mes_obj.clear_push_to_mes()
+                    return
                 else:
                     mtp_mgmt_ctrl.cli_log_inf("UUT is allowed to run " + stage, level=0)
 
@@ -236,7 +241,8 @@ def single_uut_fw_program(stage,
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_test_status("FAIL")
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
                     mes_obj.save_res_test_end_timestamp(libmfg_utils.timestamp_snapshot())
                     mes_obj.save_res_passmark("N/A")
 
@@ -321,6 +327,8 @@ def single_uut_fw_program(stage,
                         "MES_MFG_EEPROM_CHK",
                         "DIAG_INIT",
                         "TD_GEARBOX_VERIFY",
+                        "3V3_FIX",
+                        "3V3_FIX_VERIFY",
                         "TD_AVS_SET"
                         ]
         for skipped_test in skip_testlist:
@@ -460,6 +468,10 @@ def single_uut_fw_program(stage,
             elif test == "BIOS_CONFIG_TPM":
                 ret = mtp_mgmt_ctrl.tor_bios_config_tpm()
 
+            elif test == "3V3_FIX":
+                ret = mtp_mgmt_ctrl.set_3v3_vref_trim()
+            elif test == "3V3_FIX_VERIFY":
+                ret = mtp_mgmt_ctrl.verify_3v3_vref_trim()
 
             elif test == "TD_AVS_SET":
                 ret = mtp_mgmt_ctrl.tor_td_avs_set()
@@ -518,7 +530,8 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode(test)
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(
+                        collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                 break
             else:
@@ -613,7 +626,8 @@ def single_uut_fw_program(stage,
                     # - Test Fail Signature
                     if isinstance(mes_obj, MES):
                         mes_obj.save_res_fail_mode(test)
-                        mes_obj.save_res_fail_signature('TBD')
+                        mes_obj.save_res_fail_signature(
+                            collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
 
                     break
                 else:
@@ -647,19 +661,7 @@ def single_uut_fw_program(stage,
                         ret = mtp_mgmt_ctrl.tor_nic_avs_set(slot)
                     else:
                         mtp_mgmt_ctrl.cli_log_err("Unknown DL Test: {:s}, Ignore".format(test))
-                        if uut_id not in fail_uut_list:
-                            fail_uut_list.append(uut_id)
-                        if uut_id in pass_uut_list:
-                            pass_uut_list.remove(uut_id)
-
-                        # FAIL: Save the following to be uploaded to MES later:
-                        # - Test Fail Mode
-                        # - Test Fail Signature
-                        if isinstance(mes_obj, MES):
-                            mes_obj.save_res_fail_mode("Unknown DL Test")
-                            mes_obj.save_res_fail_signature('TBD')
-
-                        break
+                        continue
                     duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
                     if not ret:
                         mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
@@ -674,8 +676,8 @@ def single_uut_fw_program(stage,
                         # - Test Fail Signature
                         if isinstance(mes_obj, MES):
                             mes_obj.save_res_fail_mode(test)
-                            mes_obj.save_res_fail_signature('TBD')
-
+                            mes_obj.save_res_fail_signature(
+                                collect_fail_signature(mtp_mgmt_ctrl, subtest=test))
                         break
                     else:
                         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -692,7 +694,7 @@ def single_uut_fw_program(stage,
                 # - Test Fail Signature
                 if isinstance(mes_obj, MES):
                     mes_obj.save_res_fail_mode('Failed to program DL2 passmark')
-                    mes_obj.save_res_fail_signature('TBD')
+                    mes_obj.save_res_fail_signature(collect_fail_signature(mtp_mgmt_ctrl))
 
             if uut_id not in fail_uut_list and isinstance(mes_obj, MES):
                 # PASS: Save the following to be uploaded to MES later:
@@ -767,6 +769,24 @@ def single_uut_fw_program(stage,
             pass_uut_list.remove(uut_id)
         exit_fail(mtp_mgmt_ctrl, log_filep_list, traceback.format_exc())
 
+
+def collect_fail_signature(mtp_mgmt_ctrl, subtest="", error_msg=""):
+    '''
+    Returns a string of the respective fail signature delimited by a newline
+    '''
+
+    collect_fail_sig_list = []
+    if error_msg:
+        collect_fail_sig_list.append(error_msg)
+
+    liblog.collect_err_msg(mtp_mgmt_ctrl, subtest)
+
+    if len(mtp_mgmt_ctrl.get_err_msg()):
+        collect_fail_sig_list.extend(mtp_mgmt_ctrl.get_err_msg())
+
+    return str("\n".join(collect_fail_sig_list))
+
+
 def main():
     parser = argparse.ArgumentParser(description="MFG DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
@@ -775,6 +795,7 @@ def main():
     parser.add_argument("--DL2", "-DL2", "--dl2", "-dl2", "-2", help="station for rest of the things", action="store_true")
     parser.add_argument("--mtpid", "--mtp-id", "--uut-id", "--uutid", "-uutid", "-mtpid", help="pre-select UUTs", nargs="*", default=[])
     parser.add_argument("--no_mes", help="do not access Foxconn MES system", action='store_true')
+    parser.add_argument("--operator", help="specify Operator name")
 
     args = parser.parse_args()
     if args.verbosity:
@@ -791,7 +812,10 @@ def main():
 
         # Save the following to be uploaded to MES later:
         # - Test Start Time
+        # - Operator ID
         mes_obj.save_res_test_start_timestamp(libmfg_utils.timestamp_snapshot())
+        if args.operator:
+            mes_obj.save_res_operator_id(args.operator)
 
 
     if args.DL1:

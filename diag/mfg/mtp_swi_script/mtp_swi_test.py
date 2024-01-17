@@ -468,6 +468,14 @@ def main():
         emmc_img_file_list[sw_pn] = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + sw_img
 
     try:
+        # read scanned barcode file except when we're skipping in dev environment
+        scanned_nic_fru_cfg = dict()
+        scanned_nic_fru_cfg[mtp_id] = dict()
+        if "SCAN_VERIFY" not in args.skip_test:
+            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
+            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
+            scanned_nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=FF_Stage.FF_SWI):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
             logfile_close(open_file_track_list)
@@ -549,32 +557,22 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
 
-        if "SCAN_VERIFY" not in args.skip_test:
-            # load the barcode config file made in toplevel
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-            if mtp_id not in scanned_fru_cfg_dict:
-                mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-                # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
-                scanned_fru_cfg = dict()
-                for slot in range(MTP_Const.MTP_SLOT_NUM):
-                    key = libmfg_utils.nic_key(slot)
-                    if not nic_prsnt_list[slot]:
-                        continue
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-            else:
-                scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
-            tmp_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
-            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(tmp_fru_cfg, scanned_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=True)
+        # read in current FRU
+        nic_fru_cfg = dict()
+        nic_fru_cfg[mtp_id] = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
+        # failures from construct_nic_fru_config
+        for slot in pass_nic_list:
+            key = libmfg_utils.nic_key(slot)
+            if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
 
-            # reload the barcode config file
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+        if "SCAN_VERIFY" not in args.skip_test:
+            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg[mtp_id], scanned_nic_fru_cfg[mtp_id], pass_nic_list, fail_nic_list, dsp)
 
             nic_thread_list = list()
             for slot in fru_reprogram_list:
@@ -607,6 +605,7 @@ def main():
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
                     mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
 
         check_naples_pn = "SCAN_VERIFY" not in args.skip_test
 
@@ -729,6 +728,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -829,6 +832,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -921,6 +928,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type in FPGA_TYPE_LIST:
@@ -1019,6 +1030,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1117,6 +1132,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1160,6 +1179,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1214,6 +1237,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
@@ -1277,6 +1304,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)

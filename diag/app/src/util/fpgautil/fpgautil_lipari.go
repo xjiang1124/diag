@@ -856,7 +856,7 @@ func lipari_fpga_cli() {
                     wrData = append(wrData, byte(addr))
                     wrData = append(wrData, byte(data64))
                     rdData, err = liparifpga.I2c_access( cpld_Map[elbaNumber].bus, cpld_Map[elbaNumber].mux, 0x4A, 2, wrData, 0 )
-                    fmt.Printf("WR[%.02x]=%.02x\n", addr, data32);
+                    fmt.Printf("WR[%.02x]=%.02x\n", addr, data64);
                 } else {
                     fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
                     os.Exit(-1)

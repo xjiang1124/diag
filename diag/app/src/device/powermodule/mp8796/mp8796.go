@@ -87,6 +87,42 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
 
 
 
+func ReadPout(devName string) (integer uint64, dec uint64, err int) {
+    voutInt, voutFrac, err := ReadVout(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    ioutInt, ioutFrac, err := ReadIout(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+
+    voutFloat := float64(voutInt) + float64(voutFrac)/1000
+    ioutFloat := float64(ioutInt) + float64(ioutFrac)/1000
+    poutFloat := voutFloat * ioutFloat
+
+    integer = uint64(poutFloat)
+    dec = uint64((poutFloat - float64(uint64(poutFloat)))*1000)
+
+    return
+}
+
+
+
+func ReadStatus(devName string) (status uint16, err int) {
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadWord(devName, STATUS_WORD)
+    return
+}
+
+
+
 
 // vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
 func DispVoltWattAmp(devName string) (err int) {
@@ -133,33 +169,53 @@ func DispVoltWattAmp(devName string) (err int) {
     return
 }
 
+
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
-    //var fmtDigFrac string = "%d.%03d"
+
+    vrmTitle := []string {"VIN", "VOUT", "IOUT", "POUT", "STATUS"}
+    var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
 
     var outStr string
-    //var outStrTemp string
+    var outStrTemp string
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
 
-    outStr = outStr + fmt.Sprintf(fmtStr, "FIXME")
-    outStr = outStr + fmt.Sprintf(fmtStr, "FIXME")
-    outStr = outStr + fmt.Sprintf(fmtStr, "FIXME")
-    outStr = outStr + fmt.Sprintf(fmtStr, "FIXME")
-    outStr = outStr + fmt.Sprintf(fmtStr, "FIXME")
+    dig, frac, err := ReadVin(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if err != errType.SUCCESS {
+        return;
+    }
+
+
+    dig, frac, _ = ReadVout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadIout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, _ = ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    status, _ := ReadStatus(devName)
+    outStrTemp = fmt.Sprintf("0x%X", status)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
 
     cli.Println("i", outStr)
 
     return
+
 }
 
 

@@ -328,7 +328,6 @@ func updateYaml (resultStr string) (err int) {
         err = errType.FAIL
         return
     }
-    defer f.Close()
 
     resultStr = fmt.Sprintf("TEST_RESULT: %s", resultStr)
     _, errGo = f.Write([]byte(resultStr))
@@ -337,7 +336,8 @@ func updateYaml (resultStr string) (err int) {
         err = errType.FAIL
         return
     }
-    f.Sync()
+    f.Sync() 
+    f.Close()
 
     dcli.Println("i", "Result in YAML file")
     return

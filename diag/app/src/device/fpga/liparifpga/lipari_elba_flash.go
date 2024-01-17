@@ -118,7 +118,7 @@ const ELB_CHIP_ERASE_DELAY      int = 1000000
 
 func init () {
     //268435456 addresses bytes (2Gb), 4096 erasable sectors.  Sector Size = 64K  SubSector Size = 4K
-    elba_flash_info.region_size = uint32(0x10000000)  // 2Gb / 256megabyte
+    elba_flash_info.region_size = uint32(0x10000000)  // 2Gb/256MB  
     elba_flash_info.sector_size = FLASH_SECTOR_SIZE
     elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
     elba_flash_info.offset = 0
@@ -179,11 +179,6 @@ func  Spi_flash_set_extended_addr_register(spiNumber uint32, addr uint32) (err e
     if err != nil {
         return
     }
-
-
-    //err = Spi_flash_WriteDisable(spiNumber) 
-    //ext, _ := Spi_flash_read_extended_addr_reg(spiNumber) 
-    //fmt.Printf(" Extended Register = %.02x\n", ext)
 
     return
 }
@@ -438,7 +433,12 @@ func Spi_elba_flash_get_partition_info(spiNumber uint32, partition string) (flas
     return
 }
 
-//uboot0/golduboot/goldfw/allflash
+
+/*************************************************************************************************** 
+* 
+* valid partition strings --> uboot0/uboota/ubootb/golduboot/goldfw/allflash 
+* 
+****************************************************************************************************/ 
 func Spi_elba_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filename string) (err error) {
     var flash_size int = 0 
     var start_addr int = 0
@@ -548,8 +548,6 @@ func Spi_elba_flash_VerifyImage(spiNumber uint32, partition string, filename str
         return
     }
 
-
-    //fmt.Printf(" len=%d   mod=%d\n", len(data), (len(data) % read_size))
     for i=start_addr; i< start_addr + len(data); i = i+read_size {
         rd_data := []byte{}
         if (i%0x20000) == 0 {
@@ -644,36 +642,9 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
     }
     fmt.Printf("\n")
 
-    /* ////// 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
-    if err != nil {
-        return
-    }
-
-    Spi_flash_WriteEnable(spiNumber) 
-    err = Spi_flash_CheckWriteEnable(spiNumber)
-    if err != nil {
-        return
-    }
-    
-    err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
-    if err != nil {
-        return
-    }     
-    ////// */
 
     fmt.Printf(" Programming flash sectors\n");
     for i=start_addr; i< start_addr + len(data); i = i+FLASH_PAGE_WRITE_SIZE {
-
-        /* //////
-        if (i % 0x1000000) < 256 {
-            err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(i)) 
-            if err != nil {
-                return
-            } 
-        }
-        ////// */
-
         if (i%0x20000) == 0 {
             fmt.Printf("%.08x\n", uint32(i))
         }
@@ -704,9 +675,7 @@ func Spi_elba_flash_WriteImage(spiNumber uint32, partition string, filename stri
 
 
 func Spi_elba_flash_erase_all_sectors(spiNumber uint32) (err error) {
-    //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
     var i uint32 = 0
-
 
     elba_flash_info.region_size = uint32(0x10000000)  // 2Gb / 256megabyte
     elba_flash_info.sector_size = FLASH_SECTOR_SIZE
@@ -724,18 +693,11 @@ func Spi_elba_flash_erase_all_sectors(spiNumber uint32) (err error) {
         }
     }
     fmt.Printf("\nErase All Sectors Passed\n")
-
-
-
-
-
     return
 }
 
 
 func Spi_elba_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
-    //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
-
     err = Spi_flash_disable_4byte_addr_mode(spiNumber)
     if err != nil {
         return
@@ -827,15 +789,11 @@ func Spi_elba_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (e
 
     sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_PAGE_WR_DELAY)
     if rc != 0 {
-       err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
+       err = fmt.Errorf("ERROR: Spi_elba_flash_Write_N_Bytes.  Timeout Waiting for Write To Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
        return
     }
 
-    //err = Spi_flash_WriteDisable(spiNumber) 
-    //if err != nil {
-    //   fmt.Printf("ERROR: Spi_elba_flash_Write_N_Bytes.  Spi_flash_WriteDisable Failed\n")
-    //}
     return
 }
 

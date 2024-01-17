@@ -26,6 +26,8 @@ const (
     STATUS_TEMPERATURE        = 0x7D
     STATUS_CML                = 0x7E
     STATUS_FANS_1_2           = 0x81
+      STATUS_FAN_FAULT          = (1<<7)
+      STATUS_FAN_WARN           = (1<<5)
     READ_EIN                  = 0x86
     READ_EOUT                 = 0x87
     READ_VIN                  = 0x88
@@ -35,6 +37,7 @@ const (
     READ_TEMPERATURE_1        = 0x8D
     READ_TEMPERATURE_2        = 0x8E
     READ_TEMPERATURE_3        = 0x8F
+    READ_FAN_SPEED_1          = 0x90
     READ_POUT                 = 0x96
     READ_PIN                  = 0x97
     PMBUS_REVISION            = 0x98

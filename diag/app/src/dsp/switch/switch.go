@@ -93,7 +93,7 @@ func SwitchSnakeHdl(argList []string) {
     //loopback:=*loopbackPtr
     
     dcli.Println("e", "ERROR: Test is not working using the DSP.   Please run the test using the 'switch' binary utility")
-    err = errType.FAIL // taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90)
+    err = errType.FAIL // taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), loopback, 0, 0, 1, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90, 0)
 
     // Inform diag engine that test handler is done
     // Use chan to return error code
@@ -226,6 +226,34 @@ func SwitchVrm_FixHdl(argList []string) {
 }
 
 
+func SwitchElbalinkflapHdl(argList []string) {
+    var err int = 0
+    fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
+
+    errFs := fs.Parse(argList)
+    if errFs != nil {
+        dcli.Println("e", "Parse failed", errFs)
+    }
+
+
+     err = taormina.Elba_Check_Link_Flap_Count(0, 0)
+
+     err |= taormina.Elba_Check_Link_Flap_Count(1, 0)
+
+     err |= taormina.TD3_Check_Link_Flap()
+     
+
+    // To avoid compile error: variable not used
+    // Need to remove after implementing DSP handler
+    dcli.Println("i", "TEST")
+
+    // Inform diag engine that test handler is done
+    // Use chan to return error code
+    diagEngine.FuncMsgChan <- err
+    return
+}
+
+
 func main() {
     diagEngine.FuncMap = make(map[string]diagEngine.TestFn)
 
@@ -238,6 +266,7 @@ func main() {
     diagEngine.FuncMap["ELBA_RTC"] = SwitchElba_RtcHdl
     diagEngine.FuncMap["FPGA_STRAPPING"] = SwitchFgpa_StrappingHdl
     diagEngine.FuncMap["VRM_FIX"] = SwitchVrm_FixHdl
+    diagEngine.FuncMap["ELBALINKFLAP"] = SwitchElbalinkflapHdl
 
     dcli.Init("log_"+dspName+".txt", config.OutputMode)
     diagEngine.CardInfoInit(dspName)

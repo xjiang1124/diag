@@ -471,7 +471,7 @@ def naples_diag_ncsi_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, para_test_
 
     return fail_list
 
-def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist):
+def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list, vmarg, stop_on_err, swmtestmode, skip_testlist, edvt_loop_idx=1):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
 
     for skipped_test in skip_testlist:
@@ -534,7 +534,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
             mtp_start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-            ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg)
+            ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg, edvt_loop_idx)
             
             duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
             for slot in nic_test_list[:]:
@@ -933,6 +933,7 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
             post_cmd = test_cfg["POST"]
 
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+        pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
         nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         opts = test_cfg["OPTS"]
         mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
@@ -941,8 +942,13 @@ def single_nic_zmq_diag_regression(mtp_mgmt_ctrl, slot, diag_test_db, diag_seq_t
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp_disp, test))
 
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+        n_vmarg = vmarg
+        if vmarg in (Voltage_Margin.high, Voltage_Margin.low):
+            n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
+            mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
+
         if dsp == "ASIC" and test == "L1":
-            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, vmarg):
+            if not mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg):
                 ret = "FAIL"
             else:
                 ret = "SUCCESS"
@@ -1024,6 +1030,8 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
@@ -1130,6 +1138,7 @@ def main():
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--loop_idx", help="current loop index of uplevel loop calls; if MFG, this argument not used; if EDVT, for snake and eth_prbs, odd index internal loopback, even external loopback", default=1, type=int)
     args = parser.parse_args()
 
     mtp_id = "MTP-000"
@@ -1138,6 +1147,7 @@ def main():
     l1_sequence = False
     stage = FF_Stage.FF_P2C
     swm_lp_boot_mode = False
+    loop_idx = args.loop_idx
     if args.mtpid:
         mtp_id = args.mtpid
         mtp_cli_id_str = libmfg_utils.id_str(mtp = mtp_id)
@@ -1627,7 +1637,8 @@ def main():
                                                                            vmarg,
                                                                            stop_on_err,
                                                                            swmtestmode,
-                                                                           args.skip_test)
+                                                                           args.skip_test,
+                                                                           loop_idx)
                             for slot in mtp_para_fail_list:
                                 if slot in nic_list and stop_on_err:
                                     nic_list.remove(slot)
@@ -1946,6 +1957,10 @@ def main():
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                if slot in pass_nic_list:
+                                    pass_nic_list.remove(slot)
                                 continue
 
                             nic_thread = threading.Thread(target = single_nic_test_fpga_program, args = (mtp_mgmt_ctrl,
@@ -1986,6 +2001,10 @@ def main():
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                if slot in pass_nic_list:
+                                    pass_nic_list.remove(slot)
                                 continue
 
                             nic_thread = threading.Thread(target = single_nic_prod_fpga_program, args = (mtp_mgmt_ctrl,

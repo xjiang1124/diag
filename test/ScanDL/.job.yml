@@ -23,6 +23,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -51,6 +52,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -79,6 +81,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -107,6 +110,36 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-solo
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-solo-orc_th:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-orc_th --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -135,6 +168,181 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-adicr
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-adi-msft:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-adi
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-solo-msft:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-solo
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-adicr-msft:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-adicr
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-adi-ibm:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-ibm --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-adi
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-solo-s4:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-solo
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ortano-adicr-s4:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -163,6 +371,7 @@ e2e-targets:
      - build-amd64-elba
      - build-arm64-elba
      - package-elba-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -191,6 +400,7 @@ e2e-targets:
      - build-amd64-giglio
      - build-arm64-giglio
      - package-giglio-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
