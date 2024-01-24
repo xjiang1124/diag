@@ -130,6 +130,8 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
   test/ortano-ti-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
+  test/naples25swm-dell:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-dell"]
   test/naples25swm-hpe:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
   test/naples100:
@@ -209,6 +211,8 @@ dependencies:
     - reference: test/ortano-adi-orc
       exclude_dirs: ["scripts"]
     - reference: test/ortano-ti-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/naples25swm-dell
       exclude_dirs: ["scripts"]
     - reference: test/naples25swm-hpe
       exclude_dirs: ["scripts"]
