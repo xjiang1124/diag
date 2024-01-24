@@ -1316,6 +1316,8 @@ def main():
             isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
 
             sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.NAPLES100:
+                sw_test_list = ["SW_BOOT", "SW_MGMT_INIT", "CONF_VERIFY", "SW_SHUTDOWN"]
             if isCloud or nic_type == NIC_Type.NAPLES100IBM:
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
@@ -1329,8 +1331,9 @@ def main():
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
             if nic_profile:
-                if "SW_PROFILE" not in sw_test_list:
+                if "SW_MGMT_INIT" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_MGMT_INIT")
+                if "SW_PROFILE" not in sw_test_list:
                     sw_test_list.insert(-1, "SW_PROFILE")
 
             for skipped_test in args.skip_test:
@@ -1364,6 +1367,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
                 elif test == "KEYS_CHECK":
                     ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
+                elif test == "CONF_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_nic_device_conf_verify(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue

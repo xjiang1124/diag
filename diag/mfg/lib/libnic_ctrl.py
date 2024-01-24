@@ -5490,3 +5490,33 @@ class nic_ctrl():
                 return False
 
         return True
+
+    def device_conf_verify(self):
+        """
+        wait for file /sysconfig/config0/device.conf to be created
+        issue sync command
+        """
+
+        max_polling_time = 120
+        polled_time = 0
+        while polled_time < max_polling_time:
+
+            polled_time += 10
+            time.sleep(10)
+
+            self.nic_get_err_msg() # clear previous loop's error
+
+            cmd_buf = self.nic_get_info("cat /sysconfig/config0/device.conf")
+            if not cmd_buf:
+                self.nic_set_err_msg("Failed to read device.conf")
+                continue
+
+            if "No such file" in cmd_buf:
+                self.nic_set_err_msg("device.conf is missing")
+                continue
+
+            if "port-admin-state" in cmd_buf:
+                return True
+
+        self.nic_set_err_msg("Waited too long for device.conf to generate")
+        return False
