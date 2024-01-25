@@ -1,4 +1,4 @@
-source /data/nic_arm/nic_config.sh
+source /data/nic_arm/nic_config.sh $@
 
 source /etc/profile
 
