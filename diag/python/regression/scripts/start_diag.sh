@@ -28,6 +28,7 @@ then
     echo "FPGA found"
 else
     echo "Legacy MTP found"
+    FPGA_PRST="NO"
 fi
 
 echo "-------------------"
