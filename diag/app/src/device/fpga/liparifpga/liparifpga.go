@@ -121,7 +121,7 @@ func init () {
         os.Setenv("CARD_TYPE","TAORMINA")
         cardType = "TAORMINA"
     } 
-    if cardType == "LIPARI" {
+    if cardType == "LIPARI" || cardType == "MTP_MATERA" {
         bar := []uint64 { 0,0 }
         exists, _ := Path_exists("/tmp/fpgabars")
 
