@@ -701,9 +701,9 @@ class nic_test:
         print "slot_list:", slot_list
         #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
         if test_type == "snake":
-            self.setup_env_multi_top(slot_list, False, 30, False, True, False, numRetry=num_retry, do_untar="0")
+            self.setup_env_multi_top(slot_list, False, 30, False, True, False, do_untar="0")
         else:
-            self.setup_env_multi_top(slot_list, False, 30, False, True, False, numRetry=num_retry)
+            self.setup_env_multi_top(slot_list, False, 30, False, True, False)
 
         test_result = OrderedDict()
         # Start snake
@@ -718,7 +718,7 @@ class nic_test:
         self.mtp_sts(wait_time)
 
         done_count = 0
-        for retry_idx in range(self.num_retry):
+        for retry_idx in range(num_retry):
             print "Checking result:", retry_idx
             for slot in nic_list:
                 if test_result[slot] != "NO RESULT":
