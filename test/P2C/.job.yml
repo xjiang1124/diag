@@ -71,6 +71,35 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  naples25swm-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25swm-dell --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
+     - package-capri-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: capri
+         - name: naples25swm
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
   ortano-ti-orc:
     commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
