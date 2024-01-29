@@ -5506,9 +5506,13 @@ class nic_ctrl():
 
             self.nic_get_err_msg() # clear previous loop's error
 
-            cmd_buf = self.nic_get_info("cat /sysconfig/config0/device.conf")
-            if not cmd_buf:
+            if not self.nic_exec_cmds(["cat /sysconfig/config0/device.conf"]):
                 self.nic_set_err_msg("Failed to read device.conf")
+                continue
+
+            cmd_buf = self.nic_get_cmd_buf()
+            if not cmd_buf:
+                self.nic_set_err_msg("No output from device.conf")
                 continue
 
             if "No such file" in cmd_buf:
