@@ -5520,6 +5520,10 @@ class nic_ctrl():
                 continue
 
             if "port-admin-state" in cmd_buf:
+                # sync for sanity
+                if not self.nic_exec_cmds(["sync", "sync"]):
+                    self.nic_set_err_msg("Failed to issue sync commands")
+                    return False
                 return True
 
         self.nic_set_err_msg("Waited too long for device.conf to generate")
