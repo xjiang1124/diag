@@ -19,6 +19,19 @@ fi
 
 # Set up environment
 echo "-------------------"
+echo "Checking if FPGA is present"
+num_fpga=$(lspci | grep "Pensando Systems" | wc | awk -F " " '{print $1}')
+echo "num_fpga: $num_fpga"
+FPGA_PRST="YES"
+if [[ $num_fpga -ne 0 ]]
+then
+    echo "FPGA found"
+else
+    echo "Legacy MTP found"
+    FPGA_PRST="NO"
+fi
+
+echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 
@@ -26,16 +39,22 @@ ASIC_IMG=/home/diag/nic.tar.gz
 asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
-if [[ -n $skip_untar ]]
+
+if [[ $FPGA_PRST == "YES" ]]
 then
-    echo "Using existing ASIC lib"
+    echo "FIXME: 000 Deal ASIC lib later"
 else
-    echo "Untar ASIC lib"
-    chmod -R 755 $DIAG_DIR/asic_all/$asic/
-    tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
-    cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
-    cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
-    rm -rf $DIAG_DIR/asic_all/$asic/nic
+    if [[ -n $skip_untar ]]
+    then
+        echo "Using existing ASIC lib"
+    else
+        echo "Untar ASIC lib"
+        chmod -R 755 $DIAG_DIR/asic_all/$asic/
+        tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+        cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+        cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+        rm -rf $DIAG_DIR/asic_all/$asic/nic
+    fi
 fi
 
 mkdir -p $DIAG_DIR/log/
@@ -49,14 +68,21 @@ fi
 if [[ $arch == "amd64" ]]
 then
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
-    /home/diag/diag/python/regression/envinit.py
-    turn_on_slot.sh on all
-    /home/diag/diag/util/inventory -env
-    cat $DIAG_DIR/log/board_env.txt >> temp_profile
-    echo "export DIAG_HOME=/home/diag/" >> temp_profile
+    if [[ $FPGA_PRST == "YES" ]]
+    then
+        echo "FIXME: 001 Make it work for Matera"
+    else
+        /home/diag/diag/python/regression/envinit.py
+        turn_on_slot.sh on all
+        /home/diag/diag/util/inventory -env
+        cat $DIAG_DIR/log/board_env.txt >> temp_profile
+        echo "export DIAG_HOME=/home/diag/" >> temp_profile
+    fi
 else
     cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
 fi
+
+echo "-------------------"
 
 echo "" >> temp_profile
 echo "# Diag set up" >> temp_profile
@@ -71,10 +97,19 @@ echo "PATH=\$PATH:$DIAG_DIR/scripts" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/scripts/asic" >> temp_profile
 echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
-mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
-mtp_id_str1=($mtp_id_str)
-mtp_id=${mtp_id_str1[-1]}
-#echo "mtp_id: $mtp_id"
+if [[ $FPGA_PRST == "YES" ]]
+then
+    CARD_TYPE="MTP_MATERA"
+    mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
+    mtp_id_str1=$(echo $mtp_id_str | tail -1 | awk -F " " '{print $5}')
+    mtp_id="${mtp_id_str1:0:6}"
+    echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
+else
+    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+    mtp_id_str1=($mtp_id_str)
+    mtp_id=${mtp_id_str1[-1]}
+    #echo "mtp_id: $mtp_id"
+fi
 
 #==================================
 ASIC_DIR_TOP=$DIAG_DIR/asic_all
@@ -95,12 +130,18 @@ then
         echo "export MTP_TYPE=MTP_TURBO_ELBA" >> temp_profile
     fi
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
-elif [ $mtp_id == "0x2" ]
+elif [[ $mtp_id == "0x2" ]]
 then
     echo "CAPRI MTP"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
+elif [[ $mtp_id == "0x0009" ]]
+then
+    echo "Matera  MTP"
+    echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 else
+    echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 fi
