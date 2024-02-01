@@ -704,7 +704,6 @@ func init() {
     LaconaMtpTbl = append(LaconaMtpTbl, MtpHubI2cTbl...)
     LaconaDellMtpTbl = append(LaconaDellMtpTbl, MtpHubI2cTbl...)
     GinestraMtpTbl = append(GinestraMtpTbl, MtpHubI2cTbl...)
-fmt.Printf("CARD_TYPE=%s\n", CardType);
     if CardType == "NAPLES100" ||
        CardType == "NAPLES100HPE" ||
        CardType == "NAPLES100IBM" ||
@@ -785,7 +784,7 @@ fmt.Printf("CARD_TYPE=%s\n", CardType);
         I2cFpgaTbl = LipariI2cFpgaTbl
     } else if CardType == "LIPARIELBA" {
         I2cTbl = LipariElbaTbl
-    } else if CardType == "MTFUJIELBA" {
+    } else if CardType == "MTFUJI" {
         I2cTbl = MtFujiElbaTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
