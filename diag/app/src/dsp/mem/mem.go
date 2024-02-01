@@ -6,11 +6,13 @@ import (
     "flag"
     "strings"
     "strconv"
+    "regexp"
 
     "common/diagEngine"
     "common/dcli"
     "common/errType"
     "common/runCmd"
+    "common/misc"
     "config"
 )
 
@@ -20,6 +22,28 @@ const (
     // Each DSP should know it own name
     dspName = "MEM"
 )
+
+func check_mcc_interrupts() (err int) {
+    dcli.Println("i", "check mcc interrupts")
+    err = errType.SUCCESS
+    out, errGo := exec.Command("halctl", "show", "interrupts").Output()
+    if errGo != nil {
+        dcli.Println("e", "Failed to show interrupts", errGo)
+        err = errType.FAIL
+        return
+    }
+    regexMCC := regexp.MustCompile(`.*int_mcc_(ecc|controller).*`)
+    outStr := string(out)
+    matches := regexMCC.FindAllString(outStr, -1)
+    if matches != nil {
+        dcli.Println("e", "Got mcc interrupts")
+        err = errType.FAIL
+        for _, mccInt := range matches {
+            dcli.Println("e", mccInt)
+        }
+    }
+    return
+}
 
 func MemDdr_StressHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
@@ -33,7 +57,21 @@ func MemDdr_StressHdl(argList []string) {
     if errFs != nil {
         dcli.Println("e", "Parse failed", errFs)
     }
-
+    // clear old interrupts before starting test
+    dcli.Println("i", "clear old interrupts")
+    _, errGo := exec.Command("halctl", "clear", "interrupts").Output()
+    if errGo != nil {
+        dcli.Println("e", "Failed to clear interrupts", errGo)
+        err = errType.FAIL
+        return
+    }
+    misc.SleepInSec(10)
+    // check new interrupts before running stress test
+    err = check_mcc_interrupts()
+    if err != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err
+        return
+    }
     out, errGo := exec.Command("grep", "MemAvailable", "/proc/meminfo").Output()
     if errGo != nil {
         dcli.Println("e", "Failed to get MemAvailable", errGo)
@@ -53,7 +91,13 @@ func MemDdr_StressHdl(argList []string) {
     passSign := "Status: PASS - please verify no corrected errors"
     failSign := "Status: FAIL - test discovered HW problems"
     err = runCmd.Run(passSign, failSign, cmd, "-M", strconv.Itoa(availMemSize), "-s", strconv.Itoa(*secondsPtr), "-m", strconv.Itoa(*copy_threadsPtr), "-l", "/data/nic_util/" + *logfilePtr)
-
+    // check interrupts after stress test
+    misc.SleepInSec(3)
+    err_intr := check_mcc_interrupts()
+    if err_intr != errType.SUCCESS {
+        diagEngine.FuncMsgChan <- err_intr
+        return
+    }
     // Inform diag engine that test handler is done
     // Use chan to return error code
     diagEngine.FuncMsgChan <- err
