@@ -544,8 +544,6 @@ func init() {
 
     // MtFuji ELBA
     mtfujiElbaDispStaList = make(map[string]DispStaFunc)
-    mtfujiElbaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
-    mtfujiElbaDispStaList["TSENSOR1"]   = tmp451.DispStatusWithRemote
     mtfujiElbaDispStaList["VDD_DDR"]    = ltc3882.DispStatus
     mtfujiElbaDispStaList["VDDQ_DDR"]   = ltc3882.DispStatus
     mtfujiElbaDispStaList["ELB0_CORE"]  = ltc3882.DispStatus
@@ -640,7 +638,7 @@ func init() {
     dispMap["LIPARIELBA"]  = lipariElbaDispStaList
 
     // MtFuji (Cisco)
-    dispMap["MTFUJIELBA"]  = mtfujiElbaDispStaList
+    dispMap["MTFUJI"]  = mtfujiElbaDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
