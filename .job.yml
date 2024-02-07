@@ -83,6 +83,8 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build", "CI-DIAG-Release"]
+  qa-infra/daily:
+    labels: ["CI-DIAG-Daily"]
   test/ScanDL:
     labels: ["CI-DIAG-ScanDL"]
   test/DL:
