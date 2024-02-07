@@ -354,10 +354,24 @@ class nic_test_v2:
 
                 # Copy image file to NIC
                 try:
+                    # clear interrupts before test
+                    self.nic_con.uart_session_cmd(session, "halctl clear interrupts")
+                    time.sleep(10)
+                    # ECC check before test
+                    self.nic_con.uart_session_cmd(session, "halctl show interrupts | grep -i mcc")
+                    if 'int_mcc_ecc' in session.before or 'int_mcc_controller' in session.before:
+                        print("New interrupts before stress test")
+                        return False
                     cmd = "/data/nic_util/stressapptest_arm -M 20000 -s 60 -m 16 -l /data/nic_util/stressapptest.log"
                     ret = common.session_cmd(session, cmd, timeout=120, ending="Status: PASS - please verify no corrected errors")
                     if ret < 0:
                         print("P000", ret)
+                        return False
+                    time.sleep(3)
+                    # ECC check
+                    self.nic_con.uart_session_cmd(session, "halctl show interrupts | grep -i mcc")
+                    if 'int_mcc_ecc' in session.before or 'int_mcc_controller' in session.before:
+                        print("Failed ECC check")
                         return False
                 except pexpect.TIMEOUT:
                     return False
