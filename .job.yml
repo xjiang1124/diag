@@ -11,6 +11,7 @@ builds:
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_giglio.tar
+    - /psdiag/build/images/nic_util.tar # save nic_util only once instead of for every asic
   build-amd64-elba:
     commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
