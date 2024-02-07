@@ -10,6 +10,4 @@ make pull-assets
 # debugging purpose to show where we are
 pwd & ls -ltr
 
-sudo apt update
-
 exec "$@"
