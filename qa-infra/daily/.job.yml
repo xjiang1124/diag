@@ -1,0 +1,23 @@
+---
+version: 2.0
+queue_name: asic
+
+targets:
+  daily-diag-images:
+    commands: [ "sh", "-c", "ls /psdiag/build/images/ -la; rsync -aPtv /psdiag/build/images/*.tar /vol/hw/diag/diag_images/daily/; chmod +r /vol/hw/diag/diag_images/daily/*.tar" ]
+    owners: ["email:xin@pensando.io"]
+    build-dependencies:
+    - build-amd64-capri
+    - build-arm64-capri
+    - build-amd64-elba
+    - build-arm64-elba
+    - build-amd64-giglio
+    - build-arm64-giglio
+
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+host_mounts:
+  "/hw": "/vol/hw"
+

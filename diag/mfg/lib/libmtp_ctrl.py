@@ -7489,3 +7489,8 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_nic_device_conf_verify(self, slot):
+        if not self._nic_ctrl_list[slot].device_conf_verify():
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True

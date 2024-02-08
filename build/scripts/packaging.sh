@@ -211,7 +211,7 @@ do
         rm -rf $BUILD_DIR/latest/
         mkdir -p $BUILD_DIR/latest/
         #cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
-        cp /vol/hw/diag/diag_images/jenkins/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
+        cp /vol/hw/diag/diag_images/asicimg_latest/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
     fi
 
     if [[ $arch == "amd64" ]]

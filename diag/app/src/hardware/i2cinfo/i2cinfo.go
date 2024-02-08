@@ -771,6 +771,10 @@ func init() {
         I2cTbl = MtpI2cTbl
     } else if CardType == "MTPS" {
         I2cTbl = MtpsI2cTbl
+    } else if CardType == "MTP_MATERA" { //FIXME: For Matera valiation on Lipari only
+        I2cTbl = LipariTbl
+        I2cFpgaTbl = LipariI2cFpgaTbl
+        cli.Println("d", "Found card:", CardType)
     } else if CardType == "TAORMINA" {
         I2cTbl = TaorTbl
     } else if CardType == "TAORELBA" {
