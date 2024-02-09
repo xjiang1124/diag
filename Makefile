@@ -6,7 +6,7 @@ CUR_USER:=$(shell whoami)
 CUR_TIME:=$(shell date +%Y-%m-%d_%H.%M.%S)
 CONTAINER_NAME:=${CUR_USER}_${CUR_TIME}
 REGISTRY = registry.test.pensando.io:5000
-DIAG_CONTAINER_VERSION:=1.1
+DIAG_CONTAINER_VERSION:=1.2
 DIAG_CONTAINER:=${REGISTRY}/pensando/diag:${DIAG_CONTAINER_VERSION}
 SHELL_IMAGE_NAME="pensando/diag:shell"
 
