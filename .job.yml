@@ -55,22 +55,22 @@ builds:
     - /psdiag/build/images/image_arm64_elba.tar
 
   package-giglio-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=giglio bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-elba-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=elba bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-capri-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=capri working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=capri bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-fw-assets:
-    commands: [ "sh", "-c", "working_dir=/psdiag bash -ex qa-infra/package-fw.sh" ]
+    commands: [ "sh", "-c", "bash -ex qa-infra/package-fw.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/fw.tar
