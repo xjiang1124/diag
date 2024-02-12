@@ -1,6 +1,5 @@
 top_dir=$PWD
 asic_type=$(echo $asic_type)
-jenkins_dir=$(echo $working_dir)
 mfg_folder="mfg"
 if [[ ${asic_type} == "taormina" ]]; then
 	asic_type="elba"
@@ -10,11 +9,11 @@ if [[ ${asic_type} == "lipari" ]]; then
 	asic_type="elba"
 	mfg_folder="mfg_lipari"
 fi
-if [[ -z ${jenkins_dir} ]]; then
-	jenkins_dir=/vol/hw/diag/mfg_release/jenkins
+if [[ -z ${working_dir} ]]; then
+    working_dir=/psdiag
 fi
-mfg_script_dir=${jenkins_dir}/diag/${mfg_folder}
-dest_folder=${jenkins_dir}/release/
+mfg_script_dir=${working_dir}/diag/${mfg_folder}
+dest_folder=${working_dir}/release/
 mkdir -p ${dest_folder}
 
 
