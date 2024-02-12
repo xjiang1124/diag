@@ -325,6 +325,7 @@ class ddr_test:
                     self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                     #self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
                     self.nic_con.uart_session_cmd(session, "export CARD_TYPE=GINESTRA_D5", 10)
+                    vmarg = vmarg.replace('_', ' ')
                     self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
                     print("num_edma:", num_edma)
                     for edma_ite in range(num_edma):
@@ -356,6 +357,7 @@ class ddr_test:
             session.expect("\#")
             session.sendline("/data/nic_util/eeutil -disp -field sn")
             session.expect("\#")
+            vmarg = vmarg.replace('_', ' ')
             session.sendline("/data/nic_arm/vmarg.sh {}".format(vmarg))
             session.expect("\#")
             print("num_edma:", num_edma)
@@ -531,7 +533,7 @@ class ddr_test:
             print "======================================"
 
 
-    def chamber_test(self, nic_list=[], num_ite=1, num_edma=20, num_stress=20):
+    def chamber_test(self, nic_list=[], num_ite=1, num_edma=20, num_stress=20, vmarg="normal"):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
             sys.exit(0)
@@ -549,7 +551,7 @@ class ddr_test:
         #print("=====set chamber 45C=====")
         #self.set_temp_for_ddr('10.9.6.249', 45)
         #print("=====run edma and stress=====")
-        self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, "normal")
+        self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, vmarg)
         #self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, "high")
         #self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, "low")
 
@@ -603,6 +605,7 @@ class ddr_test:
                     self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
                     #self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
                     self.nic_con.uart_session_cmd(session, "export CARD_TYPE=GINESTRA_D5", 10)
+                    vmarg = vmarg.replace('_', ' ')
                     self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
                     print("num_stress:", num_stress)
                     for stress_ite in range(num_stress):
@@ -942,7 +945,7 @@ if __name__ == "__main__":
 
     if args.chamber_test == True:
         slot_list = args.slot_list.split(',')
-        test.chamber_test(slot_list, args.num_ite, args.num_edma, args.num_stress)
+        test.chamber_test(slot_list, args.num_ite, args.num_edma, args.num_stress, args.vmarg)
         sys.exit()
 
     if args.chamber_test_snake == True:

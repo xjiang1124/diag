@@ -18,7 +18,7 @@ import (
 // User guild for Cobra can be found at
 // https://github.com/spf13/cobra/blob/main/site/content/user_guide.md
 
-var uut string
+var slot string
 var devName string
 
 // rootCmd represents the base command when called without any subcommands
@@ -36,7 +36,7 @@ var listCmd = &cobra.Command{
 	Short: "List all i2c devices",
 	Long:  `List all i2c devices`,
 	Run: func(cmd *cobra.Command, args []string) {
-        i2cinfo.SwitchI2cTbl(strings.ToUpper(uut))
+        i2cinfo.SwitchI2cTbl(strings.ToUpper(slot))
         i2cinfo.DispI2cInfoAll()
 	},
 }
@@ -46,7 +46,7 @@ var statusCmd = &cobra.Command{
 	Short: "Device status",
 	Long:  `Device status`,
 	Run: func(cmd *cobra.Command, args []string) {
-        hwdev.DispStatus(strings.ToUpper(devName), strings.ToUpper(uut))
+        hwdev.DispStatus(strings.ToUpper(devName), strings.ToUpper(slot))
 	},
 }
 
@@ -57,9 +57,9 @@ func Execute() {
 }
 
 func init() {
-	listCmd.Flags().StringVarP(&uut, "uut", "u", "UUT_NONE", "UUT name, e.g. UUT_1")
+	listCmd.Flags().StringVarP(&slot, "slot", "s", "UUT_NONE", "UUT name, e.g. UUT_1")
 
-	statusCmd.Flags().StringVarP(&uut, "uut", "u", "UUT_NONE", "UUT name, e.g. UUT_1")
+	statusCmd.Flags().StringVarP(&slot, "slot", "s", "UUT_NONE", "UUT name, e.g. UUT_1")
 	statusCmd.Flags().StringVarP(&devName, "dev", "d", "ALL", "Device name")
 
 	rootCmd.AddCommand(listCmd)
