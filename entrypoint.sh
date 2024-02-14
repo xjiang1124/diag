@@ -12,4 +12,6 @@ pwd & ls -ltr
 
 #sudo apt update
 
+go mod init
+
 exec "$@"
