@@ -17,7 +17,7 @@ docker/shell:
 	docker run -it --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${DIAG_CONTAINER} bash
 else
 docker/shell: docker/build-shell-image
-	docker run -it --user ${CUR_USER} --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${SHELL_IMAGE_NAME}
+	docker run -it --user ${CUR_USER} --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GO111MODULE=auto" -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${SHELL_IMAGE_NAME}
 endif
 
 docker/build-shell-image: docker/install_box
