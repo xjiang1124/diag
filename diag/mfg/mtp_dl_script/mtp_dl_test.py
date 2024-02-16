@@ -78,14 +78,14 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
 
     dsp = FF_Stage.FF_DL
-    testlist = ["QSPI_PROG"]
+    testlist = ["QSPI_PROG"] if nic_type in CAPRI_NIC_TYPE_LIST else ["ERASE_MAINFW", "QSPI_PROG"]
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     if nic_type in (ELBA_NIC_TYPE_LIST) and nic_type not in (NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT):
-        testlist = ["QSPI_PROG", "UBOOT_PROG"]
+        testlist = ["ERASE_MAINFW", "QSPI_PROG", "UBOOT_PROG"]
     if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
-        testlist = ["QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
+        testlist = ["ERASE_MAINFW", "QSPI_PROG", "UBOOT_PROG", "QSPI_GOLD_PROG"]
     if nic_type == NIC_Type.ORTANO2ADIIBM:
-        testlist = ["QSPI_PROG", "UBOOT_PROG", "UBOOTA_PROG", "UBOOTB_PROG", "QSPI_GOLD_PROG"]
+        testlist = ["ERASE_MAINFW", "QSPI_PROG", "UBOOT_PROG", "UBOOTA_PROG", "UBOOTB_PROG", "QSPI_GOLD_PROG"]
     for skip_test in skip_testlist:
         if skip_test in testlist:
             testlist.remove(skip_test)
@@ -102,6 +102,8 @@ def single_nic_qspi_program(mtp_mgmt_ctrl, qspi_img_file, qspi_gold_img_file, ub
             ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, uboota_img_file, uboot_installer_file, uboot_pat="uboota")
         elif test == "UBOOTB_PROG":
             ret = mtp_mgmt_ctrl.mtp_program_nic_uboot(slot, ubootb_img_file, uboot_installer_file, uboot_pat="ubootb")
+        elif test == "ERASE_MAINFW":
+            ret = mtp_mgmt_ctrl.mtp_erase_main_fw_partition(slot)
         else:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
             continue

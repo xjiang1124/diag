@@ -2297,6 +2297,94 @@ class nic_ctrl():
 
         return True
 
+    def nic_erase_main_fw_partition(self):
+        # check mainfwa & mainfwb block info existing any content
+        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        fw_info_buf = self.nic_get_info(cmd)
+        if not fw_info_buf:
+            self.nic_set_err_msg("Unable to execute list fw info")
+            return False
+        try:
+            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:]))
+            if ("mainfwa" in fw_info.keys() and fw_info["mainfwa"]) or ("mainfwb" in fw_info.keys() and fw_info["mainfwb"]):
+                pass
+            else:
+                return True
+        except:
+            self.nic_set_err_msg("Get complete fw list failed")
+            return False
+
+        # get qspi partition
+        cmd = MFG_DIAG_CMDS.NIC_GET_QSPI_PARTITION_FMT
+        qspi_part_buf = self.nic_get_info(cmd)
+        if not qspi_part_buf:
+            self.nic_set_err_msg("Unable to get qspi partition")
+            return False
+
+        nic_erase_qspi_cmd_list = []
+        matchs = re.findall(r"mtd(\d+):.*\s\"(mainfwa|mainfwb|uboota|ubootb)\"", qspi_part_buf)
+        for match in matchs:
+            fw_num = int(match[0])
+            fw_name = match[1]
+            nic_erase_qspi_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_QSPI_PARTITION_FMT.format(fw_num))
+
+        # erase qspi partition
+        for erase_cmd in nic_erase_qspi_cmd_list:
+            erase_qspi_cmd_buf = self.nic_get_info(erase_cmd, 300)
+            if not erase_qspi_cmd_buf:
+                self.nic_set_err_msg("Unable to execute erase qspi partition")
+                return False
+            match = re.search(r"100 % complete", erase_qspi_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word failed".format(erase_cmd))
+                return False
+
+        # get emmc partition
+        cmd = MFG_DIAG_CMDS.NIC_GET_EMMC_PARTITION_FMT
+        emmc_part_buf = self.nic_get_info(cmd)
+        if not emmc_part_buf:
+            self.nic_set_err_msg("Unable to get emmc partition")
+            return False
+
+        nic_erase_emmc_cmd_list = []
+        matchs = re.findall(r"(\d+)\s.+\s(System Image A|System Image B)", emmc_part_buf)
+        for match in matchs:
+            fw_num = int(match[0])
+            fw_name = match[1]
+            nic_erase_emmc_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_EMMC_PARTITION_FMT.format(fw_num))
+
+        # erase emmc partition
+        for erase_cmd in nic_erase_emmc_cmd_list:
+            erase_emmc_cmd_buf = self.nic_get_info(erase_cmd, 10)
+            if not erase_emmc_cmd_buf:
+                self.nic_set_err_msg("Unable to execute erase emmc partition")
+                return False
+            match = re.search(r"16\+0 records in",erase_emmc_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word \"{:s}\" failed".format(erase_cmd, "16+0 records in"))
+                return False
+            match = re.search(r"16\+0 records out",erase_emmc_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word \"{:s}\" failed".format(erase_cmd, "16+0 records out"))
+                return False
+
+        # verify mainfwa & mainfwb block info contant clear
+        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        fw_info_buf = self.nic_get_info(cmd)
+        if not fw_info_buf:
+            self.nic_set_err_msg("Unable to execute list fw info")
+            return False
+        try:
+            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:]))
+            if ("mainfwa" in fw_info.keys() and fw_info["mainfwa"]) or ("mainfwb" in fw_info.keys() and fw_info["mainfwb"]):
+                self.nic_set_err_msg("Verify mainfw partition clear failed")
+                return False
+        except:
+            self.nic_set_err_msg("Unable to get complete fw list to verify")
+            return False
+
+        return True
+
     def nic_init_emmc(self, init=False, emmc_check=False):
         if init:
             if not self.nic_read_emmc_id():
