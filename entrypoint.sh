@@ -12,6 +12,7 @@ pwd & ls -ltr
 
 #sudo apt update
 
-go mod init
+env_disp="$(env)"
+echo $env_disp
 
 exec "$@"
