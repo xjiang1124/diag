@@ -21,6 +21,8 @@ workdir "/psdiag"
 #env GOPATH: "/psdiag/diag/app"
 #env GOFLAGS: "-mod=vendor"
 
+env GO111MODULE: "auto"
+
 #run "pip2.7 install redis IPython"
 
 copy "entrypoint.sh", "/entrypoint.sh"
