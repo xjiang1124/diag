@@ -15,6 +15,7 @@ run "curl -sSL http://pm.test.pensando.io/tools/go1.21.6.linux-amd64.tar.gz | ta
 run "echo 'export GO111MODULE=auto' >> /etc/profile"
 
 env GOPATH: "/psdiag/diag/app",
-    PATH: "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/usr/local/go/bin:/go/bin"
+    PATH: "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/usr/local/go/bin:/go/bin",
+    GO111MODULE: "auto"
 
 flatten

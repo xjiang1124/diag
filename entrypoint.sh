@@ -12,7 +12,4 @@ pwd & ls -ltr
 
 #sudo apt update
 
-env_disp="$(env)"
-echo $env_disp
-
 exec "$@"
