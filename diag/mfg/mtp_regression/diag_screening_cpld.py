@@ -18,7 +18,7 @@ import testlog
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -788,7 +788,7 @@ def main():
 
         mtp_mgmt_ctrl.cli_log_inf("Single MTP CPLD Validation Test Start",  level=0)
         # Disable PCIe polling
-        if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
             mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
             libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
             diag_pre_fail_list = diag_reg.mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stage)
@@ -957,7 +957,7 @@ def main():
 
         # Enable PCIe poll
         if not stop_on_err:
-            if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+            if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
