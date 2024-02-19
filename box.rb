@@ -1,4 +1,4 @@
-from "registry.test.pensando.io:5000/pensando/diag:1.1"
+from "registry.test.pensando.io:5000/pensando/diag:1.2"
 
 user = getenv("USER")
 group = getenv("GROUP_NAME")
@@ -20,6 +20,8 @@ end
 workdir "/psdiag"
 #env GOPATH: "/psdiag/diag/app"
 #env GOFLAGS: "-mod=vendor"
+
+env GO111MODULE: "auto"
 
 #run "pip2.7 install redis IPython"
 
