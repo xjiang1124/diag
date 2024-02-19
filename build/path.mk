@@ -3,6 +3,7 @@ COMMON_SRC_DIR=			\
 	dsp/asic			\
 	dsp/pcie_h   		\
 	util/devmgr			\
+	util/devmgr_v2			\
 	util/eeutil			\
 	util/i2cutil 		\
 	util/rtcutil 		\

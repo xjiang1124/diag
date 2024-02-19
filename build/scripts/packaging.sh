@@ -155,6 +155,7 @@ do
         cp $TOP_DIR/tools/bin/arm64/fio                         $NIC_UTIL_DIR
         cp $TOP_DIR/tools/bin/arm64/elba-chk-secboot-rdy.sh     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr_v2     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil       $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil       $NIC_UTIL_DIR
