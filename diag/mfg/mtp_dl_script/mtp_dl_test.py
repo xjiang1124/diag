@@ -23,6 +23,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
+from libmfg_cfg import CAPRI_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
