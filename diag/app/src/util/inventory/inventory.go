@@ -7,7 +7,7 @@ import (
     "os/exec"
     "regexp"
     "strconv"
-
+    "strings"
     "cardinfo"
     "common/cli"
     "common/errType"
@@ -583,10 +583,14 @@ func main() {
     esecPtr    := flag.Bool("esec", false, "Escure status dump")
     stsPtr     := flag.Bool("sts", false, "Entire status dump")
     mtpIdPtr   := flag.Bool("mtpid", false, "Identify MTP reversion")
+    cpuPtr     := flag.Bool("cpu", false, "Show CPU information")
+    ddrPtr     := flag.Bool("ddr", false, "Show DDR information")
 
     flag.Parse()
 
     slot := *slotPtr
+    var out []byte
+    var errGo error
 
     if *presentPtr == true {
         present()
@@ -622,6 +626,42 @@ func main() {
 
     if *mtpIdPtr == true {
         mtpIdentify()
+        return
+    }
+
+    if *cpuPtr == true {
+        out, errGo = exec.Command("bash", "-c", "dmidecode -t processor | grep Version:").Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            strArray := strings.Split(string(out[:]), ":")
+            outStr := strings.TrimSpace(strArray[1])
+            cli.Println("i", "CPU Model:", outStr)
+        }
+        return
+    }
+
+    if *ddrPtr == true {
+        out, errGo = exec.Command("bash", "-c", "dmidecode -t memory | grep \"Number Of Devices\"").Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            cli.Println("i", strings.TrimSpace(string(out[:])))
+        }
+
+        //cmdStr := string("dmidecode -t memory | grep -A32 \"Memory Device\" | grep -e \"Memory Device\" -e \"Size:\" -e \"Bank Locator:\" -e \"Type:\" -e \"Speed:\" -e \"Manufacturer:\" | grep -v \"Config\" | grep -v \"Volatile\" | grep -v \"Cache\" | grep -v \"Logical\"")
+        cmdStr := string("dmidecode -t memory | grep -A32 \"Memory Device\" | grep -e \"Memory Device\" -e \"Size:\" -e \"Bank Locator:\" -e \"Type:\" -e \"Speed:\" -e \"Manufacturer:\" | grep -v \"Volatile\" | grep -v \"Cache\" | grep -v \"Logical\"")
+        out, errGo = exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            strArray := strings.Split(string(out[:]), "\n")
+            for i := 0; i < len(strArray); i++ {
+                //cli.Println("i", "\n", string(out[:]))
+                cli.Println("i", strArray[i])
+            }
+        }
+
         return
     }
 
