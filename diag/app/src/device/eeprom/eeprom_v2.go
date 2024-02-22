@@ -70,6 +70,7 @@ const (
     PN_LIPARI_BMC    string = "73-0076-01"
     PN_GIN_D4_ORACLE string = "68-0074-01"
     PN_GIN_D5_ORACLE string = "68-0075"
+    PN_GIN_D5_MSFT   string = "68-0087"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -83,6 +84,7 @@ const (
     PROD_NAME_ORACLE        string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_LIPARI_ELBA   string = "AMD DSS-28800"
     PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -97,6 +99,7 @@ const (
     SKU_LIPARI_ELBA     string = "DSS-28800"
     SKU_GIN_D4          string = "DSC2A-2Q200-32R32F64P-R"
     SKU_GIN_D5          string = "DSC2A-2Q200-32S32F64P-R"
+    SKU_GIN_D5_MSFT     string = "DSC2A-2Q200-32S32F64P-M"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -111,6 +114,7 @@ const (
     FRU_ID_LIPARI_ELBA   string = "12/01/22"
     FRU_ID_GIN_D4        string = "01/24/23"
     FRU_ID_GIN_D5        string = "01/24/23"
+    FRU_ID_GIN_D5_MSFT   string = "01/19/24"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -476,6 +480,25 @@ var CardDataInfo = map[string]updateInfo {
         ginestraD5OracleExt,
     },
 
+    PN_GIN_D5_MSFT: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_MSFT,
+        SKU_GIN_D5_MSFT,
+        FRU_ID_GIN_D5_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -501,6 +524,7 @@ var CardTypes = []card{
     card{"ORTANO-SOLO_SSDK",        PN_SOLO_SSDK},
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
+    card{"ORTANO-GIN_D5_MSFT",      PN_GIN_D5_MSFT},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
