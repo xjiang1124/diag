@@ -3194,6 +3194,13 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT)                   #68-0075-01 XX    GINESTRA_D5
                 ],
             NIC_Type.GINESTRA_S4: [
+<<<<<<< HEAD
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
+            NIC_Type.GINESTRA_S4_B3: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
+            NIC_Type.GINESTRA_S4_P3: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
                 ],
             NIC_Type.ORTANO2SOLO: [

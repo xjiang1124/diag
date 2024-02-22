@@ -4942,6 +4942,18 @@ class mtp_ctrl():
                     final_nic_type = NIC_Type.GINESTRA_S4
                 self._nic_type_list[slot] = final_nic_type
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                sku = self.mtp_get_nic_sku(slot)
+                if re.match(SKU_MATCH.GINESTRA_S4, sku):
+                    final_nic_type = NIC_Type.GINESTRA_S4
+                elif re.match(SKU_MATCH.GINESTRA_S4_B3, sku):
+                    final_nic_type = NIC_Type.GINESTRA_S4_B3
+                elif re.match(SKU_MATCH.GINESTRA_S4_P3, sku):
+                    final_nic_type = NIC_Type.GINESTRA_S4_P3
+                else:
+                    final_nic_type = self.mtp_get_nic_type(slot)
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+
         # populate OCP adapter info
         for slot in range(self._slots):
             if self.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
@@ -5784,7 +5796,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
                 preset_config = "8"
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -6785,6 +6797,35 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(read_fru_cfg[key]["SN"], dsp, test, duration))
 
         return fru_reprogram_list
+
+    def ssdk_sku_validate(self, pass_nic_list, fail_nic_list, dsp, sku):
+        fru_reprogram_list = list()
+
+        test = "SKU_VALIDATE"
+        for slot in range(self._slots):
+            start_ts = self.log_slot_test_start(slot, test)
+            key = libmfg_utils.nic_key(slot)
+            if slot in fail_nic_list:
+                continue
+            if not self.mtp_check_nic_status(slot):
+                continue
+
+            sn = self.mtp_get_nic_sn(slot)
+            pn = self.mtp_get_nic_pn(slot)
+            if match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+            else:
+                self.cli_log_slot_err_lock(slot, "Scanned SKU for this card not allowed {:s}".format())
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                self.mtp_set_nic_status_fail(slot, skip_fa=True)
+            duration = self.log_slot_test_stop(slot, test, start_ts)
+
+        return fru_reprogram_list
+
 
     def mtp_nic_ping_test(self, slotA, slotB):
         if not self._nic_ctrl_list[slotA].nic_console_enable_network_port():
