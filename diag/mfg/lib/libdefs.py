@@ -411,7 +411,10 @@ class MFG_DIAG_CMDS:
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
     NIC_CFG_CHECKSUM_FMT = "md5sum cfg{:s}"
     NIC_CHK_SECBOOT_FMT = "/data/nic_util/elba-chk-secboot-rdy.sh"
-
+    NIC_GET_QSPI_PARTITION_FMT = "cat /proc/mtd"
+    NIC_ERASE_QSPI_PARTITION_FMT = "flash_erase /dev/mtd{:d} 0 0"
+    NIC_GET_EMMC_PARTITION_FMT = "sgdisk -p /dev/mmcblk0"
+    NIC_ERASE_EMMC_PARTITION_FMT = "dd if=/dev/zero of=/dev/mmcblk0p{:d} bs=512 count=16"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
