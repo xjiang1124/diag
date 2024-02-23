@@ -585,6 +585,7 @@ func main() {
     mtpIdPtr   := flag.Bool("mtpid", false, "Identify MTP reversion")
     cpuPtr     := flag.Bool("cpu", false, "Show CPU information")
     ddrPtr     := flag.Bool("ddr", false, "Show DDR information")
+    hdparmPtr  := flag.Bool("hdparm", false, "Show Harddisk basic information")
 
     flag.Parse()
 
@@ -658,6 +659,31 @@ func main() {
             strArray := strings.Split(string(out[:]), "\n")
             for i := 0; i < len(strArray); i++ {
                 //cli.Println("i", "\n", string(out[:]))
+                cli.Println("i", strArray[i])
+            }
+        }
+
+        return
+    }
+
+    if *hdparmPtr == true {
+        cmdStr := string("fdisk -l | grep -e Disk | grep -e sectors | grep -iv loop | grep -iv nvme | grep -iv usb")
+        out, errGo = exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            cli.Println("i", strings.TrimSpace(string(out[:])))
+        }
+        strArray := strings.Split(string(out[:]), ":")
+        hdName := strings.Split(strArray[0], " ")
+
+        cmdStr = string("hdparm -I " + strings.TrimSpace(hdName[1]) + " | grep -A4 \"ATA device\"")
+        out, errGo = exec.Command("bash", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            strArray = strings.Split(strings.TrimSpace(string(out[:])), "\n")
+            for i := 0; i < len(strArray); i++ {
                 cli.Println("i", strArray[i])
             }
         }
