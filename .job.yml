@@ -123,8 +123,6 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
   test/ortano-adicr-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
-  test/ortano-solo-orc_th:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc_th"]
   test/ortano-solo-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
   test/ortano-interp-orc:
@@ -204,8 +202,6 @@ dependencies:
     - reference: test/ortano-adi-msft
       exclude_dirs: ["scripts"]
     - reference: test/ortano-adicr-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-solo-orc_th
       exclude_dirs: ["scripts"]
     - reference: test/ortano-solo-orc
       exclude_dirs: ["scripts"]
