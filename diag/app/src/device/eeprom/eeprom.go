@@ -1350,7 +1350,6 @@ var DellOcp uint
 var Erase bool
 var I2cAddr16 bool
 var CustType string
-var Smbus bool
 
 func max(x, y int) (m int) {
     if x > y {
@@ -2694,7 +2693,13 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     const MR_HDR_LENGTH          uint8 = 5
     const BIAsize                uint16 = 256
     rawFru := []byte{}//make([]byte, 0)
-    
+
+    found, _ := CardInListTlv(devName)
+    if found == true {
+        err = VerifyFruTlvs(devName)
+        return
+    }
+
     header := make([]byte, 0)
     board_info_area := make([]byte, 0)
     product_info_area := make([]byte, 0)

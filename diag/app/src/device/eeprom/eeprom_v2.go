@@ -71,6 +71,10 @@ const (
     PN_GIN_D4_ORACLE string = "68-0074-01"
     PN_GIN_D5_ORACLE string = "68-0075"
     PN_GIN_D5_MSFT   string = "68-0087"
+    PN_MTP_MATERA_FRU  string = "102-P10300-00"
+    PN_MTP_MATERA_MB   string = "102-P10300-00"
+    PN_MTP_MATERA_IOB  string = "102-P10400-00"
+    PN_MTP_MATERA_FPIC string = "102-P10500-00"
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -1160,9 +1164,9 @@ func CardInListAccessViaFpga(dev string) (found bool, minPN string) {
     //return true if card type in the list of cards access eeprom via FPGA
     var cardtyp string = os.Getenv("CARD_TYPE")
     for _, card := range(CardTypesAccessViaFpga) {
-        if strings.Contains(cardtyp, card.cardTyp) {
+        if (cardtyp == card.cardTyp) {
             found = true
-            if strings.Contains(dev, card.devName) {
+            if (dev == card.devName) {
                 minPN = card.partNum
                 return
             }
