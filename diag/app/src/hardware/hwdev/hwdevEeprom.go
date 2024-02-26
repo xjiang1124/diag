@@ -283,11 +283,11 @@ func EepromVerifyCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bo
 //                         N E W     F U N C T I O N S
 //==============================================================================
 
-func EepromUpdateNew(devName string, bus uint32, devAddr byte, sn string, pn string, mac string, date string) (err int) {
+func EepromUpdateNew(devName string, bus uint32, devAddr byte, sn string, identifier string, mac string, date string, skuMode bool) (err int) {
     //Function updates SN, PN, MAC. and Date. All fields required to update successfully.
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.ProgData(devName, bus, devAddr, sn, pn, mac, date)
+    err = eeprom.ProgData(devName, bus, devAddr, sn, identifier, mac, date, skuMode)
     if err != errType.SUCCESS {
         cli.Println("e", "EEPROM update failed!")
         return

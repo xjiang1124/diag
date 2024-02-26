@@ -75,6 +75,7 @@ const (
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
     PN_MTP_MATERA_FPIC string = "102-P10500-00"
+    PN_GIN_D5_COMMON string = "68-0000" //TBD
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -83,8 +84,7 @@ const (
     PROD_NAME_NETAPP_R2     string = "NAPLES 100, NetApp, R2"
     PROD_NAME_ORACLE        string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_LIPARI_ELBA   string = "AMD DSS-28800"
-    PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
-    PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
+    PROD_NAME_GIG_COMMON    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -97,9 +97,12 @@ const (
     SKU_ADICR_ORACLE    string = "DSC2-2Q200-32R32F64P-R5"
     SKU_SR4T_ORACLE     string = "DSC2-2Q200-32R32F64P-R4-T"
     SKU_LIPARI_ELBA     string = "DSS-28800"
-    SKU_GIN_D4          string = "DSC2A-2Q200-32R32F64P-R"
-    SKU_GIN_D5          string = "DSC2A-2Q200-32S32F64P-R"
+    SKU_GIN_D4_ORACLE   string = "DSC2A-2Q200-32R32F64P-R"
+    SKU_GIN_D5_ORACLE   string = "DSC2A-2Q200-32S32F64P-R"
     SKU_GIN_D5_MSFT     string = "DSC2A-2Q200-32S32F64P-M"
+    SKU_GIN_D5_S4       string = "DSC2A-2Q200-32R32F64P-S4"
+    SKU_GIN_D5_S4_B3    string = "DSC2A-2Q200-32R32F64P-S4-B3"
+    SKU_GIN_D5_S4_P3    string = "DSC2A-2Q200-32R32F64P-S4-P3"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -139,7 +142,7 @@ type fieldInfo struct {
 type updateInfo struct {
     tbl         []entry
     prodName    string
-    sku         string
+    sku         string //PN is stored in this field for SKU type cards
     fruId       string
     info        []progInfo
     ext         []fieldInfo
@@ -187,7 +190,7 @@ type entryinfo struct {
 	NumBytes int
 }
 
-//Part number and data location maps
+//Part_number/SKU and data location maps
 var CardDataInfo = map[string]updateInfo {
     PN_IBM: updateInfo {
         OrtanoPenStandardTbl,
@@ -421,10 +424,32 @@ var CardDataInfo = map[string]updateInfo {
         },
         lipariElbaExt,
     },
-    PN_GIN_D4_ORACLE: updateInfo {
+
+    //programmed before SWI
+    PN_GIN_D5_COMMON: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_COMMON,
+        SKU_GIN_D5_S4,
+        FRU_ID_GIN_D5_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+    //programmed after SWI
+    SKU_GIN_D4_ORACLE: updateInfo {
         OrtanoOracleTbl,
-        PROD_NAME_GIG_ORACLE,
-        SKU_GIN_D4,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D4_ORACLE,
         FRU_ID_GIN_D4,
         []progInfo {
             progInfo {
@@ -450,10 +475,10 @@ var CardDataInfo = map[string]updateInfo {
         },
         ginestraD4OracleExt,
     },
-    PN_GIN_D5_ORACLE: updateInfo {
+    SKU_GIN_D5_ORACLE: updateInfo {
         OrtanoOracleTbl,
-        PROD_NAME_GIG_ORACLE,
-        SKU_GIN_D5,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D5_COMMON,
         FRU_ID_GIN_D5,
         []progInfo {
             progInfo {
@@ -480,11 +505,71 @@ var CardDataInfo = map[string]updateInfo {
         ginestraD5OracleExt,
     },
 
-    PN_GIN_D5_MSFT: updateInfo {
+    SKU_GIN_D5_MSFT: updateInfo {
         OrtanoPenStandardTbl,
-        PROD_NAME_GIG_MSFT,
-        SKU_GIN_D5_MSFT,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D5_COMMON,
         FRU_ID_GIN_D5_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+
+    SKU_GIN_D5_S4: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D5_COMMON,
+        FRU_ID_GIN_D5,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+
+    SKU_GIN_D5_S4_B3: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D5_COMMON,
+        FRU_ID_GIN_D5,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                },
+        },
+        nil,
+    },
+
+    SKU_GIN_D5_S4_P3: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_COMMON,
+        PN_GIN_D5_COMMON,
+        FRU_ID_GIN_D5,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -525,6 +610,14 @@ var CardTypes = []card{
     card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
     card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
     card{"ORTANO-GIN_D5_MSFT",      PN_GIN_D5_MSFT},
+    card{"ORTANO-GIN_D5_S4",        PN_GIN_D5_COMMON},
+    //SKU type cards
+    card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
+    card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
+    card{"GIN_D5_MSFT",             SKU_GIN_D5_MSFT},
+    card{"GIN_D5_S4",               SKU_GIN_D5_S4},
+    card{"GIN_D5_S4_B3",            SKU_GIN_D5_S4_B3},
+    card{"GIN_D5_S4_P3",            SKU_GIN_D5_S4_P3},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
@@ -543,10 +636,10 @@ var Info    []entryinfo
 //                     G E N E R I C     F U N C T I O N S
 //==============================================================================
 
-func convertToByteTbl(pn string) (err int){
+func convertToByteTbl(identifier string, skuMode bool) (err int){
     //Writes all entries of EepromTbl into new slices
     //Checks and sets EepromTbl based on the input part number
-    found, partNum := CardInListNew(pn)
+    found, partNum := CardInListNew(identifier)
     if found == true {
         EepromTbl = CardDataInfo[partNum].tbl
     } else {
@@ -624,17 +717,19 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
 func findPn(start int, end int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
+    // first look for FIELD_NUM_PN_4 which is SKU
     partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_PN_4)
     if err != errType.SUCCESS {
-        cli.Println("e", "ERROR: Failed to find part number offset.")
+        cli.Println("e", "ERROR: Failed to find SKU offset.")
         return
     }
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
-    partNum := string(pnBytes) //full PN
+    partNum := string(pnBytes) //in this case SKU is actually stored in partNum
     found, pn := CardInListNew(partNum)
     if (found == true) && (err == errType.SUCCESS) {
         return 
     }
+    // if SKU is not found by CardInListNew, look for PN (Assembly Number)
     partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10)
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum = string(pnBytes)
@@ -736,22 +831,27 @@ func updateChkSum() {
     }
 }
 
-func updateFields(sn string, pn string, mac string, date string) (err int) {
+func updateFields(sn string, identifier string, mac string, date string, skuMode bool) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
     var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen int
+    var pnField, skuField string
 
     //Checks PN validity and sets card type
-    found, minPN := CardInListNew(pn)
+    found, minPN := CardInListNew(identifier)
     if found != true {
-        cli.Printf("e", "ERROR: Card part number not supported")
+        if skuMode == true {
+            cli.Printf("e", "ERROR: Card SKU not supported")
+        } else {
+            cli.Printf("e", "ERROR: Card part number not supported")
+        }
         return errType.FAIL
     }
     card := CardDataInfo[minPN]
 
     //Initial failure condition
-    if (sn == "") || (pn == "") || (mac == "") || (date == "") {
-        cli.Printf("e", "ERROR: Must have values for serial number, part number, MAC address, and date.\n")
+    if (sn == "") || (identifier == "") || (mac == "") || (date == "") {
+        cli.Printf("e", "ERROR: Must have values for serial number, SKU or part number, MAC address, and date.\n")
         err = errType.INVALID_PARAM
         return 
     }
@@ -779,10 +879,18 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
 
     //Converts SN and PN to byte & declares offset/length variables
     snByte := []byte(sn)
-    pnByte := []byte(pn)
+    if skuMode == true {
+        //in skuMode it's the PN that's stored in sku field in CardDataInfo
+        pnField = card.sku
+        skuField = identifier
+    } else {
+        pnField = identifier
+        skuField = card.sku
+    }
+    pnByte := []byte(pnField)
 
     prodNameByte:= []byte(card.prodName)
-    skuByte     := []byte(card.sku)
+    skuByte     := []byte(skuField)
     fruIdByte   := []byte(card.fruId)
 
     //Find offset/Len of SN/PN/MAC/Date of each progInfo entry
@@ -805,7 +913,7 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
             }
             if entry.pn != FIELD_NUM_NONE {
                 pnOff = entry.pn
-                pnLen = len(pn)
+                pnLen = len(pnField)
             }
             if entry.mac != FIELD_NUM_NONE {
                 macOff = entry.mac
@@ -817,11 +925,11 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
             }
             if entry.sku != FIELD_NUM_NONE {
                 skuOff = entry.sku
-                skuLen = len(card.sku)
+                skuLen = len(skuField)
             }
             if entry.fruId != FIELD_NUM_NONE {
-                skuOff = entry.fruId
-                skuLen = len(card.fruId)
+                fruIdOff = entry.fruId
+                fruIdLen = len(card.fruId)
             }
         } else {
             if entry.sn != FIELD_NUM_NONE {
@@ -881,7 +989,7 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
         //Returns error if string longer than specified value
         if (
             (len(sn) > snLen)                   ||
-            (len(pn) > pnLen)                   ||
+            (len(pnField) > pnLen)              ||
             (len(mac) != MAC_LEN)               ||
             (len(date) != (MFG_DATE_LEN*2))     ||
             (len(prodNameByte) > prodNameLen)   ||
@@ -899,10 +1007,10 @@ func updateFields(sn string, pn string, mac string, date string) (err int) {
                 errorOutput = "Serial Number"
                 maxLen = snLen
                 realLen = len(sn)
-            } else if len(pn) > pnLen {
+            } else if len(pnField) > pnLen {
                 errorOutput = "Assembly Number"
                 maxLen = pnLen
-                realLen = len(pn)
+                realLen = len(pnField)
             } else if len(mac) != MAC_LEN {
                 errorOutput = "MAC Address"
                 maxLen = MAC_LEN
@@ -1151,7 +1259,7 @@ func CardInListNew(partNum string) (found bool, minPN string) {
         if strings.Contains(partNum, card.pn) {
         //if card.pn == partNum[:len(card.pn)] {
             found = true
-            minPN = card.pn
+            minPN = card.pn //for SKU card types, SKU is actually returned in minPN
             return
         }
     }
@@ -1221,6 +1329,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
             return
         }
         boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
+        //SKU takes priority over PN
         cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen)
     }
     if (err == errType.SUCCESS) {
@@ -1304,7 +1413,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
     return
 }
 
-func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, mac string, date string) (err int){
+func ProgData(devName string, bus uint32, devAddr byte, sn string, identifier string, mac string, date string, skuMode bool) (err int){
     //Creates data slice of EEPROM table, updates data and checksums, and writes to FRU
     //Opens connections
     err = smbusNew.Open(devName, bus, devAddr)
@@ -1313,14 +1422,14 @@ func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, ma
     }
     defer smbusNew.Close()
     //Initiates the entries
-    err = convertToByteTbl(pn)
+    err = convertToByteTbl(identifier, skuMode)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Card not supported.")
         err = errType.FAIL
         return 
     }
     //Updates the byte data slice with specified data
-    err = updateFields(sn, pn, mac, date)
+    err = updateFields(sn, identifier, mac, date, skuMode)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Update failed.")
         err = errType.FAIL
