@@ -763,6 +763,7 @@ func main() {
         return
     }
 
+    var found bool
     if *skuModePtr == true {
         found, _ = eeprom.CardInListNew(sku)
     } else {
