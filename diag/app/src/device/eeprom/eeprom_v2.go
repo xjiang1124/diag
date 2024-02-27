@@ -75,7 +75,7 @@ const (
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
     PN_MTP_MATERA_FPIC string = "102-P10500-00"
-    PN_GIN_D5_COMMON string = "68-0000" //TBD
+    PN_GIN_D5_COMMON string = "68-0075" //TBD: update this when the real PN is ready
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
