@@ -1118,6 +1118,7 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
 
         extra_info_xml += "MFG_SCRIPT_VER=\"{:s}\" ".format(mfg_script_ver)
 
+    if extra_info_xml:
         extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
 
     #(stage, SN, start_ts, duration, stop_ts, result)
@@ -1471,7 +1472,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
 
             rot_sn = None
             if stage == FF_Stage.FF_FST:
-                nic_rot_sn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_ROT_SN_BY_FRU_RE.format(sn, sn)
+                nic_rot_sn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_ROT_SN_BY_FRU_RE.format(sn)
                 matchsnfor_rot_sn = re.findall(nic_rot_sn_reg_exp, buf)
                 if matchsnfor_rot_sn:
                     rot_sn=matchsnfor_rot_sn[-1][0]
@@ -1574,7 +1575,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
 
             rot_sn = None
             if stage == FF_Stage.FF_FST:
-                nic_rot_sn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_ROT_SN_BY_FRU_RE.format(sn, sn)
+                nic_rot_sn_reg_exp = MTP_DIAG_Report.NIC_DIAG_REGRESSION_ROT_SN_BY_FRU_RE.format(sn)
                 matchsnfor_rot_sn = re.findall(nic_rot_sn_reg_exp, buf)
                 if matchsnfor_rot_sn:
                     rot_sn=matchsnfor_rot_sn[-1][0]
