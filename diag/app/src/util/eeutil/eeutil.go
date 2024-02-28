@@ -72,7 +72,7 @@ func dispInfo() {
     }
 }
 
-func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
+func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, skuMode bool) (err int) {
 
     if pn == MTPOCPADAPTER || eeprom.CustType == "MTPOCPADAPTER" {
         // OCP Adapter, CARD_TYPE not supported in env!
@@ -219,9 +219,36 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
         }
+
         if (cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5") {
-            eeprom.CustType = "ORTANO"
-            eeprom.EepromTbl = eeprom.OrtanoOracleTbl
+            if update == true {
+                if skuMode == true {
+                    if sku == "" {
+                        cli.Println("e", "For Programming Ginestra, you must enter an SKU")
+                        return -1;
+                    }
+                    if (sku ==  eeprom.SKU_GIN_D4_ORACLE) || (sku == eeprom.SKU_GIN_D5_ORACLE) {
+                        eeprom.EepromTbl = eeprom.OrtanoOracleTbl
+                        eeprom.CustType = "ORTANO"
+                    } else if (sku == eeprom.SKU_GIN_D5_MSFT) ||
+                              (sku == eeprom.SKU_GIN_D5_S4) ||
+                              (sku == eeprom.SKU_GIN_D5_S4_B3) ||
+                              (sku == eeprom.SKU_GIN_D5_S4_P3){
+                        eeprom.EepromTbl = eeprom.OrtanoPenStandardTbl
+                        eeprom.CustType = "ORTANO"
+                    } else {
+                        cli.Println("e", "Invalid SKU '", sku,"' Entered For Programming a Ginestra Card")
+                        return -1;
+                    }
+                } else {
+                    if pn == "" {
+                        cli.Println("e", "For Programming Ginestra, you must enter a part number")
+                        return -1;
+                    }
+                    eeprom.EepromTbl = eeprom.OrtanoPenStandardTbl
+                    eeprom.CustType = "ORTANO"
+                }
+            }
         }
         if (cardType == "VOMERO2") {
             eeprom.CustType = "ORACLE"
@@ -657,6 +684,8 @@ func main() {
     custTypePtr:= flag.String("custType", "pensando", "Customerized eeeprom operation option")
     numBytesPtr:= flag.Int   ("numBytes",0,         "Number of bytes to be dumped")
     fpoPtr     := flag.Bool  ("fpo",    false,      "First time power on")
+    skuPtr     := flag.String("sku",    "",         "SKU")
+    skuModePtr := flag.Bool  ("skuMode",false,      "SKU mode")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -673,6 +702,7 @@ func main() {
     numBytes := *numBytesPtr
     fixHpe := 1
     custType := strings.ToUpper(*custTypePtr)
+    sku := strings.ToUpper(*skuPtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -733,12 +763,25 @@ func main() {
         return
     }
 
-    found, _ := eeprom.CardInListNew(pn)
+    var found bool
+    if *skuModePtr == true {
+        found, _ = eeprom.CardInListNew(sku)
+    } else {
+        found, _ = eeprom.CardInListNew(pn)
+    }
     if !found {
-        rc := eepromTlbInit(uut, pn, *updatePtr, devName)
-        if rc != 0 {
-            cli.Println("e", "eepromTlbInit Failed\n")
-            return
+        if *skuModePtr == true {
+            rc := eepromTlbInit(uut, "", *updatePtr, devName, sku, true)
+            if rc != 0 {
+                cli.Println("e", "eepromTlbInit Failed\n")
+                return
+            }
+        } else {
+            rc := eepromTlbInit(uut, pn, *updatePtr, devName, "", false)
+            if rc != 0 {
+                cli.Println("e", "eepromTlbInit Failed\n")
+                return
+            }
         }
     } else {
         //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
@@ -821,9 +864,16 @@ func main() {
                     return
                 }
 
-                found, _ = eeprom.CardInListNew(pn)
+                var identifier string
+                if *skuModePtr == true {
+                    identifier = sku
+                } else {
+                    identifier = pn
+                }
+                //cli.Printf("i", "mode: %t, identifier: %s\n", *skuModePtr, identifier)
+                found, _ = eeprom.CardInListNew(identifier)
                 if found == true {
-                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, mac, date)
+                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, identifier, mac, date, *skuModePtr)
                     misc.SleepInUSec(500000)
                     return
                 }
