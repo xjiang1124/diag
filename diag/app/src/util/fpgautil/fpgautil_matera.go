@@ -16,6 +16,8 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil regdump <fgpa#>\n" + 
         "fpgautil r32 <fgpa#> <addr>\n" +
         "fpgautil w32 <fgpa#> <addr> <data>\n"
+        "fpgautil mdiord <fgpa#> <addr>\n" +
+        "fpgautil mdiowr <fgpa#> <addr> <data>\n"
         
 
                                
@@ -66,6 +68,43 @@ func matera_fpga_cli() {
         } else {
             data64, err = strconv.ParseUint(os.Args[3], 0, 32)
             err = materafpga.MateraWriteU32(uint64(bar + addr), uint32(data64))
+            fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
+        }
+        os.Exit(0)
+    } else if os.Args[1] == "mdiord" || os.Args[1] == "mdiowr" {
+        if (os.Args[1] == "mdiord") && argc < 4  {
+            if argc < 4 {
+                fmt.Printf(" ERROR mdiord:  Not enough args\n")
+                os.Exit(-1)
+            }
+        }
+        if (os.Args[2] == "mdiowr") && argc < 5  {
+            if argc < 4 {
+                fmt.Printf(" ERROR mdiowr:  Not enough args\n") 
+                os.Exit(-1)
+            }
+        }
+        fpga_number, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
+        }
+        addr, err = strconv.ParseUint(os.Args[3], 0, 64)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
+        }
+
+        if (os.Args[1] == "mdiord") {
+            data32, err = materafpga.LipariReadU32(uint32(fpga_number) , uint64(bar + addr))
+            if err != nil {
+                cli.Printf("e", "LipariReadU32 Failed")
+                os.Exit(-1)
+            }
+            fmt.Printf("RD [0x%.04x] = 0x%.08x\n", bar + addr, data32)
+        } else {
+            data64, err = strconv.ParseUint(os.Args[4], 0, 32)
+            err = materafpga.LipariWriteU32(uint32(fpga_number), uint64(bar + addr), uint32(data64))
             fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
         }
         os.Exit(0)
