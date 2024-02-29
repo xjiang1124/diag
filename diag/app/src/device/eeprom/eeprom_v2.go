@@ -102,7 +102,7 @@ const (
     SKU_GIN_D4          string = "DSC2A-2Q200-32R32F64P-R"
     SKU_GIN_D5          string = "DSC2A-2Q200-32S32F64P-R"
     SKU_GIN_D5_MSFT     string = "DSC2A-2Q200-32S32F64P-M"
-    SKU_GIN_D5_SSDK     string = "DSC2A-2Q200-32R32F64P-S4"
+    SKU_GIN_D5_SSDK     string = "DSC2A-2Q200-32S32F64P-S4"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
