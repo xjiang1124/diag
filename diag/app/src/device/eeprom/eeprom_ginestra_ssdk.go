@@ -11,7 +11,7 @@ var GinestraSSDKTbl = []entry {
     entry{"Common Header Checksum",                 INT8,        7,        1,    []byte{0x00}},
 
     entry{"Board Info Format Version",              INT8,        8,        1,    []byte{0x01}},
-    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x13}},
+    entry{"Board Area Length",                      INT8,        9,        1,    []byte{0x14}},
     entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
     entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
     entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
@@ -44,8 +44,10 @@ var GinestraSSDKTbl = []entry {
     entry{"Assembly Number Type/Length",            INT8,       134,       1,    []byte{0xCD}},
     entry{"Assembly Number",                        STRING,     135,      13,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20}},
-    entry{"Diagnostic Part Number",                 STRING,     148,      10,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    entry{"DPN Type/Length",                        INT8,       148,       1,    []byte{0xCA}},
+    entry{"DPN (Diagnostic Part Number)",           STRING,     149,      10,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20}},
-    entry{"End of Field",                           INT8,       158,       1,    []byte{0xC1}},
-    entry{"Board Info Area Checksum",               INT8,       159,       1,    []byte{0x00}},
+    entry{"End of Field",                           INT8,       159,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       160,       7,    []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"Board Info Area Checksum",               INT8,       167,       1,    []byte{0x00}},
 }
