@@ -240,7 +240,6 @@ PN_FORMAT_TABLE = {
     NIC_Type.ORTANO2INTERP: [
         PART_NUMBERS_MATCH.ORTANO2INTERP_ORC_PN_FMT             #68-0029-01 XX    ORTANO2 Interposer
         ],
-
     NIC_Type.POMONTEDELL: [
         PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT                   #0PCFPC X/A       POMONTE DELL
         ],
@@ -276,7 +275,7 @@ PN_FORMAT_TABLE = {
         ],
     NIC_Type.GINESTRA_D5: [
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT                   #68-0075-01 01    GINESTRA_D5
-        ]
+        ],
     NIC_Type.GINESTRA_D5_SSDK: [
         PART_NUMBERS_MATCH.GINESTRA_D5_SSDK_PN_FMT              #68-0076-01 01    GINESTRA_D5_SSDK
         ]

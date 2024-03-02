@@ -1,25 +1,24 @@
-MTP-3333:
+MTP-7777:
     MODE: ""
     TS: ""
     TS_PORT: ""
     TS_USERID: ""
     TS_PASSWORD: ""
     APC1: "10.9.17.51"
-    APC1_PORT: "11"
+    APC1_PORT: "13"
     APC1_USERID: "apc"
     APC1_PASSWORD: "apc"
     APC2: "10.9.17.51"
-    APC2_PORT: "12"
+    APC2_PORT: "14"
     APC2_USERID: "apc"
     APC2_PASSWORD: "apc"
-    IP: "10.9.17.57"
+    IP: "10.9.17.58"
     USERID: "diag"
     PASSWORD: "lab123"
-    ALIAS: "mtp3333"
+    ALIAS: "mtp7777"
     SLOTS: 10
-    SKIP_SLOTS: 1-6,9-10
+    SKIP_SLOTS: 1-8
     CAPABILITY: 0x3
-
 
 ###############################
 ##### Flex Milpitas setup #####
