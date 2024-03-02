@@ -2952,6 +2952,9 @@ class mtp_ctrl():
         elif naples_pn[0:7] == "68-0075":     #GINESTRA_D5
             if software_pn != "90-0023-0002":
                 return False
+        elif naples_pn[0:7] == "68-0076":     #GINESTRA_D5_SSDK
+            if software_pn != "90-0023-0003":
+                return False
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return False
@@ -4931,7 +4934,14 @@ class mtp_ctrl():
                     final_nic_type = NIC_Type.ORTANO2ADICRS4
                 self._nic_type_list[slot] = final_nic_type
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-
+            if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_D5:
+                pn = self.mtp_get_nic_pn(slot)
+                if re.match(PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT, pn):
+                    final_nic_type = NIC_Type.GINESTRA_D5
+                elif re.match(PART_NUMBERS_MATCH.GINESTRA_D5_SSDK_PN_FMT, pn):
+                    final_nic_type = NIC_Type.GINESTRA_D5_SSDK
+                self._nic_type_list[slot] = final_nic_type
+                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
         # populate OCP adapter info
         for slot in range(self._slots):
             if self.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
@@ -5774,7 +5784,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_D5_SSDK):
                 preset_config = "8"
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -5925,6 +5935,8 @@ class mtp_ctrl():
         elif nic_type == NIC_Type.GINESTRA_D4:
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_D5:
+            vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type == NIC_Type.GINESTRA_D5_SSDK:
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
@@ -6977,7 +6989,7 @@ class mtp_ctrl():
             d4_val = "0x10"
             vddq_prog = False
 
-        if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+        if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_D5_SSDK):
             d3_val = "0x07"
 
         if console:
@@ -6993,13 +7005,13 @@ class mtp_ctrl():
                     self.mtp_get_nic_err_msg(slot)
                     return False
         else:
-            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_D5_SSDK):
                 rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
             else:
                 rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
             if not rc:
                 self.mtp_clear_nic_err_msg(slot) # clear out the error message
-                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_D5_SSDK):
                     rc = self._nic_ctrl_list[slot].gigilo_nic_vdd_ddr_fix(d3_val=d3_val)
                 else:
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_fix(d3_val, d4_val, vddq_prog)
@@ -7008,7 +7020,7 @@ class mtp_ctrl():
                     self.mtp_get_nic_err_msg(slot)
                     self.mtp_dump_nic_err_msg(slot)
                     return False
-                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
+                if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_D5_SSDK):
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val=d3_val, i2cbus_num="2")
                 else:
                     rc = self._nic_ctrl_list[slot].nic_vdd_ddr_check(d3_val, d4_val, vddq_prog)
