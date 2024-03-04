@@ -1429,6 +1429,8 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
     var testStarted uint32 = 0
     var passCnt = (rdpad_max / 10) + 3
 
+    var newEDMA uint32 = 0  //new edma does not need bypass memory variables set
+
 
     if rdpad_max > 101 {
         t := (rdpad_max - 100) / 10
@@ -1456,15 +1458,21 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
     dcli.Printf("i", " Starting Elba EMDA Test:  Mask=0x%x\n", elbaMask)
 
 
-    {
-        year, month, _ := CXOS_Get_Build_Date()
-        dcli.Printf("i","CXOS Build Date %d-%.02d\n", year, month)
-        if (year < 2022) || ((year==2022) && (month < 7)) {
-            cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%.02d\n", year, month)
-            err = errType.FAIL
-            return
-        }
+    year, month, _ := CXOS_Get_Build_Date()
+    dcli.Printf("i","CXOS Build Date %d-%.02d\n", year, month)
+    if (year < 2022) || ((year==2022) && (month < 7)) {
+        cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%.02d\n", year, month)
+        err = errType.FAIL
+        return
     }
+
+
+
+    //2024-02-02 04:06:46 UTC
+    if ((year==2024) && (month > 1)){
+        newEDMA=1
+    }
+    dcli.Printf("i","newEDMA=%d\n", newEDMA)
 
 
     for i=forStart; i < forEnd; i++ {
@@ -1473,6 +1481,7 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
             elbafailmask |= (1<<i)
         }
     }
+
 
 
     cli.Printf("i","Removing Elba from PCI\n");
@@ -1487,29 +1496,30 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         }
     }
 
-    dcli.Printf("i","Setting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824;sysreset.sh\n")
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
-    for i=forStart; i < forEnd; i++ {
-        if elbafailmask & (1<<i) == (1<<i) {
-            continue
+    if (newEDMA == 0) {
+        dcli.Printf("i","Setting fwenv vars for mem bypass and rebooting Elba\n")
+        cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824;sysreset.sh\n")
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+        for i=forStart; i < forEnd; i++ {
+            if elbafailmask & (1<<i) == (1<<i) {
+                continue
+            }
+            testStarted=1
+            if  i == ELBA0 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            } 
+            _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
         }
-        testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
-        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
-        if errGo != nil {
-            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
-            err = errType.FAIL
-            return
-        }
+        misc.SleepInSec(15)
     }
-    misc.SleepInSec(15)
-
 
    
     dcli.Printf("i","Creating cmd files\n")
@@ -1661,25 +1671,26 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         
     }
 
-    dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
-    for i=forStart; i < forEnd; i++ {
-        testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
-        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
-        if errGo != nil {
-            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
-            err = errType.FAIL
-            return
+    if (newEDMA == 0) {
+        dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
+        cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+        for i=forStart; i < forEnd; i++ {
+            testStarted=1
+            if  i == ELBA0 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            } 
+            _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
         }
     }
-    
 
     for i=forStart; i < forEnd; i++ {
         if elbafailmask & (1<<i) == (1<<i) {
@@ -3238,6 +3249,40 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, percent uint32, calledFromCLI 
 
 
 /********************************************************************************* 
+ 
+ 
+////////////////////////////// CONTENTS OF EACH REGISTER IN THE SCRIPT ////////////////
+# cat elba_local_read_ecc_reg.sh
+#!/bin/bash
+
+/nic/bin/capview << EOF
+secure on
+read 0x30520020     //CHECK MC0 CORRECTABLE IRQ (See below for bit defines).  
+read 0x305a0020     //CHECK MC1 CORRECTABLE IRQ (see below for bit defines). 
+
+read 0x30530464     //BITS[31:0]
+read 0x30530468     //BITS[63:32] --> MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+
+read 0x3053046C     //BITS[31:0]
+read 0x30530470     //BITS[63:32] --> MC0-DATA[63:0]
+
+read 0x30530474     //[BITS31:0]  --> MC0-ECC C ID[16]
+
+read 0x305B0464     //BITS[31:0]
+read 0x305B0468     //BITS[63:32] --> MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+
+read 0x305B046C     //BITS[31:0]
+read 0x305B0470     //BITS[63:32] --> MC1-DATA[63:0]
+
+read 0x305B0474     //[BITS31:0]  --> MC1-ECC C ID[16]
+
+EOF 
+ 
+ 
+ 
+ 
+ 
+ 
 * 
 * Below is what gets return from Elba, and then parsed.
 
