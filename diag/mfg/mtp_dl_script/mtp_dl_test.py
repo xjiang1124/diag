@@ -35,7 +35,7 @@ from libdefs import Swm_Test_Mode
 import image_control
 import testlog
 import test_utils
-
+import scanning
 
 def logfile_close(filep_list):
     for fp in filep_list:
@@ -242,11 +242,9 @@ def main():
     try:
         # read scanned barcode file except when we're skipping in dev environment
         scanned_nic_fru_cfg = dict()
-        scanned_nic_fru_cfg[mtp_id] = dict()
         if args.scandl or "SCAN_VERIFY" not in args.skip_test:
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            scanned_nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+            scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
+            scanned_nic_fru_cfg = mtp_mgmt_ctrl.barcode_scans
 
         if args.scandl:
             if not test_utils.mtp_common_setup_scandl(mtp_mgmt_ctrl, FF_Stage.FF_DL, scanned_nic_fru_cfg, args.skip_test):
@@ -289,12 +287,11 @@ def main():
             nic_fru_cfg = scanned_nic_fru_cfg
         else:
             # read in current FRU
-            nic_fru_cfg = dict()
-            nic_fru_cfg[mtp_id] = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
+            nic_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
             # failures from construct_nic_fru_config
             for slot in pass_nic_list:
                 key = libmfg_utils.nic_key(slot)
-                if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+                if not nic_fru_cfg[key]["VALID"]:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                     if slot not in fail_nic_list:
@@ -304,28 +301,28 @@ def main():
 
         if not args.scandl:
             if "SCAN_VERIFY" not in args.skip_test:
-                mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg[mtp_id], scanned_nic_fru_cfg[mtp_id], pass_nic_list, fail_nic_list, dsp)
+                mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg, scanned_nic_fru_cfg, pass_nic_list, fail_nic_list, dsp)
 
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 continue
 
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+            sn = nic_fru_cfg[key]["SN"]
+            mac = nic_fru_cfg[key]["MAC"]
+            pn = nic_fru_cfg[key]["PN"]
+            prog_date = str(nic_fru_cfg[key]["TS"])
             mac_ui = libmfg_utils.mac_address_format(mac)
             alom_sn = None
             alom_pn = None
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-               if "SN_ALOM" in nic_fru_cfg[mtp_id][key]:
-                   alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                   alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+               if "SN_ALOM" in nic_fru_cfg[key]:
+                   alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                   alom_pn = nic_fru_cfg[key]["PN_ALOM"]
 
             riser_sn = None
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
@@ -336,8 +333,8 @@ def main():
             print("")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
@@ -525,8 +522,8 @@ def main():
             if slot in fail_nic_list:
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 continue
 
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
@@ -701,8 +698,8 @@ def main():
                 nic_test_rslt_list[slot] = False
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -711,7 +708,7 @@ def main():
             fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_program, args = (mtp_mgmt_ctrl,
-                                                                               nic_fru_cfg[mtp_id][key],
+                                                                               nic_fru_cfg[key],
                                                                                cpld_img_file,
                                                                                failsafe_cpld_img_file,
                                                                                fea_cpld_img_file,
@@ -764,15 +761,15 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 continue
 
             # DL Verify process
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+            sn = nic_fru_cfg[key]["SN"]
+            mac = nic_fru_cfg[key]["MAC"]
+            pn = nic_fru_cfg[key]["PN"]
+            prog_date = str(nic_fru_cfg[key]["TS"])
             exp_sn = sn
             exp_mac = "-".join(re.findall("..", mac))
             exp_pn = pn
@@ -784,8 +781,8 @@ def main():
             exp_assettag = None
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
                 exp_alom_sn = alom_sn
                 exp_alom_pn = alom_pn
                 exp_assettag = 'C0'

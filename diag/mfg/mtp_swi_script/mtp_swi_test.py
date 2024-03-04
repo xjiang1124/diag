@@ -30,6 +30,7 @@ from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
 import testlog
+import scanning
 
 
 def logfile_close(filep_list):
@@ -472,11 +473,9 @@ def main():
     try:
         # read scanned barcode file except when we're skipping in dev environment
         scanned_nic_fru_cfg = dict()
-        scanned_nic_fru_cfg[mtp_id] = dict()
         if "SCAN_VERIFY" not in args.skip_test:
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            scanned_nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+            scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
+            scanned_nic_fru_cfg = mtp_mgmt_ctrl.barcode_scans
 
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=FF_Stage.FF_SWI):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
@@ -560,12 +559,11 @@ def main():
                     pass_nic_list.remove(slot)
 
         # read in current FRU
-        nic_fru_cfg = dict()
-        nic_fru_cfg[mtp_id] = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
+        nic_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
         # failures from construct_nic_fru_config
         for slot in pass_nic_list:
             key = libmfg_utils.nic_key(slot)
-            if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+            if not nic_fru_cfg[key]["VALID"]:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 if slot not in fail_nic_list:
@@ -574,16 +572,16 @@ def main():
                     pass_nic_list.remove(slot)
 
         if "SCAN_VERIFY" not in args.skip_test:
-            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg[mtp_id], scanned_nic_fru_cfg[mtp_id], pass_nic_list, fail_nic_list, dsp)
+            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg, scanned_nic_fru_cfg, pass_nic_list, fail_nic_list, dsp)
 
             nic_thread_list = list()
             for slot in fru_reprogram_list:
                 key = libmfg_utils.nic_key(slot)
-                valid = nic_fru_cfg[mtp_id][key]["VALID"]
-                if str.upper(valid) != "YES":
+                valid = nic_fru_cfg[key]["VALID"]
+                if not valid:
                     continue
                 nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
-                                                                                      nic_fru_cfg[mtp_id][key],
+                                                                                      nic_fru_cfg[key],
                                                                                       slot,
                                                                                       fail_nic_list,
                                                                                       pass_nic_list,

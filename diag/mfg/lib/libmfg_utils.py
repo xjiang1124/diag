@@ -472,6 +472,17 @@ def load_cfg_from_yaml_file_list(yaml_file_list):
 
     return cfg
 
+def save_cfg_to_yaml(d, output_file):
+    with open(output_file, "w+") as o:
+        yaml.safe_dump(d, o)
+
+    # read back to validate
+    with open(output_file, "r") as i:
+        e = yaml.safe_load(i)
+        if d != e:
+            return False
+    return True
+
 def expand_range_of_numbers(data, range_min=1, range_max=10, dev=None):
     '''
     Expands a string "1-3,5,7" as list of integers [1,2,3,5,7]
@@ -1007,12 +1018,12 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     mtp_id = mtp_mgmt_ctrl._id
     key = nic_key(slot)
-    if key not in mtp_mgmt_ctrl.barcode_scans[mtp_id].keys():
+    if key not in mtp_mgmt_ctrl.barcode_scans.keys():
         return False
-    if str.upper(mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["VALID"]) != "YES":
+    if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False
-    sn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["SN"]
-    pn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["PN"]
+    sn = mtp_mgmt_ctrl.barcode_scans[key]["SN"]
+    pn = mtp_mgmt_ctrl.barcode_scans[key]["PN"]
     nic_type = get_nic_type_by_part_number(pn)
     mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
     mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
@@ -2221,68 +2232,6 @@ def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
     mtp_mgmt_ctrl.cli_log_inf("End logging MTP syslog", level=0)
     mtp_syslog_handle.send('\x03')
     mtp_syslog_handle.close()
-
-def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_Test_Mode.SW_DETECT, is_fst_test=False):
-    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-
-    while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode, is_fst_test=is_fst_test)
-        if scan_rslt:
-            break;
-        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-    # print scan summary
-    for slot in range(mtp_mgmt_ctrl._slots):
-        key = nic_key(slot)
-        nic_cli_id_str = id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["VALID"]:
-            sn = scan_rslt[key]["SN"]
-            rot_sn = scan_rslt[key].get("ROTSN", "")
-            pn = scan_rslt[key]["PN"]
-            mac_ui = mac_address_format(scan_rslt[key]["MAC"])
-            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = scan_rslt[key]["SN_ALOM"]
-                alom_pn = scan_rslt[key]["PN_ALOM"]
-                if swmtestmode == Swm_Test_Mode.ALOM:
-                    valid_display_string = nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn
-                    if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-                else:
-                    valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn
-                    if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-            else:
-                valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn
-                if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-            pass_rslt_list.append(valid_display_string)
-        else:
-            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)
-
-    scan_cfg_file = logfile_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
-    scan_cfg_filep = open(scan_cfg_file, "w+")
-    mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
-    scan_cfg_filep.close()
-
-    ## also save the scans into mtp object
-    if not read_scanned_barcodes(mtp_mgmt_ctrl):
-        return False
-
-def read_scanned_barcodes(mtp_mgmt_ctrl):
-    import testlog
-    # load the barcode config file made earlier
-    mtp_id = mtp_mgmt_ctrl._id
-    tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-    scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-    scanned_fru_cfg_dict = load_cfg_from_yaml(scan_cfg_file)
-    if mtp_id not in scanned_fru_cfg_dict:
-        mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-        return False
-    mtp_mgmt_ctrl.barcode_scans = scanned_fru_cfg_dict
-    return True
 
 @test_utils.semi_parallel_test_section
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
