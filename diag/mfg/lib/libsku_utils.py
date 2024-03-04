@@ -345,7 +345,7 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.GINESTRA_D5
     elif "68-0076-" in pn:
         product_name = NIC_Type.GINESTRA_D5_SSDK
-    elif "DSC2A-2Q200-32R32F64P-S4" in pn:
+    elif "DSC2A-2Q200-32S32F64P-S4" in pn:
         product_name = NIC_Type.GINESTRA_D5_SSDK
     elif "68-0077-01" in pn:
         product_name = NIC_Type.ORTANO2SOLO

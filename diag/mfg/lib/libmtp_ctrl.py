@@ -7430,7 +7430,7 @@ class mtp_ctrl():
                     else:
                         self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
                         return False
-                elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4) and partition in ["mainfwa","mainfwb"]:
+                elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D5_SSDK) and partition in ["mainfwa","mainfwb"]:
                     self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
                 else:
                     self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]) )
@@ -7464,15 +7464,7 @@ class mtp_ctrl():
             if boot_image != "extdiag":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting extdiag".format(boot_image))
                 return False
-        elif nic_type == NIC_Type.ORTANO2ADIIBM:
-            if boot_image != "goldfw":
-                self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
-                return False
-        elif nic_type == NIC_Type.ORTANO2SOLOS4:
-            if boot_image != "goldfw":
-                self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
-                return False
-        elif nic_type == NIC_Type.ORTANO2ADICRS4:
+        elif nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D5_SSDK):
             if boot_image != "goldfw":
                 self.cli_log_slot_err(slot, "Booted from {:s}, expecting goldfw".format(boot_image))
                 return False

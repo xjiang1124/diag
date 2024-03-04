@@ -264,7 +264,6 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
     swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
     testsuite     = kwargs.get("testsuite_name", stage)
 
-    no_pc = True
     for loop_idx in range(1, loop_cnt+1):
         ### Begin logging
         testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
