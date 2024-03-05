@@ -21,7 +21,7 @@ from pathlib import Path
 import shlex
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:  # python 3.x
     import pickle
 
@@ -254,7 +254,7 @@ def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
     swi_sn_dict = dict()
 
     if fetch == True:
-        for idx, sn in sn_list.items():
+        for idx, sn in list(sn_list.items()):
             stage_new_list.append("NA")
             if pd.isna(sn) == True:
                 print("Reached end of file")
@@ -289,7 +289,7 @@ def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
         print("no test_logs folder, will be created")
 
     record_dict = dict()
-    for idx, sn in sn_list.items():
+    for idx, sn in list(sn_list.items()):
         print("=== SN:", sn, "===")
 
         if pd.isna(sn) == True:
@@ -374,7 +374,7 @@ def parse_pac_from_file_top(filename, log_root, cm, fetch, cleanup):
     anal_output = fmt_anal_output.format("PN", "SN", "PAC", "DATE")
     f.write(anal_output)
 
-    for sn, sn_info in record_dict.items():
+    for sn, sn_info in list(record_dict.items()):
         pn = sn_info["PN"]
         pac = sn_info["PAC"]
         date = sn_info["DATE"]
@@ -429,7 +429,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     swi_sn_dict = dict()
     fst_sn_dict = dict()
 
-    for idx, sn in sn_list.items():
+    for idx, sn in list(sn_list.items()):
         stage_new_list.append("NA")
         if pd.isna(sn) == True or pd.isna(fail_code_list[idx]) == True:
             break
@@ -540,7 +540,7 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         print("==== Stage:", stage_tgt, "====")
 
         stage_sn_dict = dict()
-        for idx, sn in sn_list.items():
+        for idx, sn in list(sn_list.items()):
             print("=== SN:", sn, "===")
 
             # Temp solution: Penang yield report has extra records of old data
@@ -717,24 +717,24 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     print("=== {} ===".format(card_type))
     for stage_tgt in stage_tgt_list:
         print("=== {} ===".format(stage_tgt))
-        for stage, sn_dict in record_diag_dict.items():
+        for stage, sn_dict in list(record_diag_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
                 print("==============================================")
                 print("--- {} ---".format(sn))
-                for test_info,err_info_dict in test_info_dict.items():
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     print("--- {} ---".format(test_info))
                     print("ERROR CODE:", err_info_dict["ERR_CODE"])
                     if verbose == True:
                         print(err_info_dict["ERR_INFO"])
-        for stage, sn_dict in record_dict.items():
+        for stage, sn_dict in list(record_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
                 print("==============================================")
                 print("--- {} ---".format(sn))
-                for test_info,err_info_dict in test_info_dict.items():
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     print("--- {} ---".format(test_info))
                     print("ERROR CODE:", err_info_dict["ERR_CODE"])
                     if verbose == True:
@@ -753,12 +753,12 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
     f.write(anal_output)
     for stage_tgt in stage_tgt_list:
         print("=== {} ===".format(stage_tgt))
-        for stage, sn_dict in record_diag_dict.items():
+        for stage, sn_dict in list(record_diag_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
                 #print(sn)
-                for test_info,err_info_dict in test_info_dict.items():
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     location = err_info_dict["LOCATION"]
                     root_cause = err_info_dict["ROOT CAUSE"]
                     action = err_info_dict["ACTION"]
@@ -786,11 +786,11 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     anal_output = fmt_anal_output.format(stage, date, mtp_id, sn, err_code, corner, location, root_cause, action)
                     f.write(anal_output)
 
-        for stage, sn_dict in record_dict.items():
+        for stage, sn_dict in list(record_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
-                for test_info,err_info_dict in test_info_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     location = err_info_dict["LOCATION"]
                     root_cause = err_info_dict["ROOT CAUSE"]
                     action = err_info_dict["ACTION"]
@@ -865,11 +865,11 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
         print("=== {} ===".format(stage_tgt))
         stage_stat_dict = dict()
         stage_stat_dict["TOTAL"] = 0
-        for stage, sn_dict in record_diag_dict.items():
+        for stage, sn_dict in list(record_diag_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
-                for test_info,err_info_dict in test_info_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     err_code = err_info_dict["ERR_CODE"]
                     err_code = err_code.split(",")[0]
                     stage_stat_dict["TOTAL"] = stage_stat_dict["TOTAL"] + 1
@@ -878,11 +878,11 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     except:
                         stage_stat_dict[err_code] = 1
 
-        for stage, sn_dict in record_dict.items():
+        for stage, sn_dict in list(record_dict.items()):
             if stage != stage_tgt:
                 continue
-            for sn, test_info_dict in sn_dict.items():
-                for test_info,err_info_dict in test_info_dict.items():
+            for sn, test_info_dict in list(sn_dict.items()):
+                for test_info,err_info_dict in list(test_info_dict.items()):
                     err_code = err_info_dict["ERR_CODE"]
                     stage_stat_dict["TOTAL"] = stage_stat_dict["TOTAL"] + 1
                     try:
@@ -890,11 +890,11 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
                     except:
                         stage_stat_dict[err_code] = 1
             
-            sorted_x = sorted(stage_stat_dict.items(), key=lambda kv: kv[1], reverse=True)
+            sorted_x = sorted(list(stage_stat_dict.items()), key=lambda kv: kv[1], reverse=True)
             sorted_dict = collections.OrderedDict(sorted_x)
 
             stage_stat_pct_dict = collections.OrderedDict()
-            for err_code, value in sorted_dict.items():
+            for err_code, value in list(sorted_dict.items()):
                 print(err_code, value)
                 stage_stat_pct_dict[err_code] = '{:.1%}'.format(sorted_dict[err_code]/total_tested[stage])
 
@@ -908,9 +908,9 @@ def parse_yield_file(filename, prefix, log_root, cm, stage_list, first_yield, fe
 
     stat_file = fmt_stat_file.format(card_type, prefix, "_".join(stage_tgt_list))
     f = open(stat_file, "w+") 
-    for stage, err_dict in stat_dict.items():
+    for stage, err_dict in list(stat_dict.items()):
         f.write(stage+"\n")
-        for err_code, num in err_dict.items():
+        for err_code, num in list(err_dict.items()):
             new_err_code = err_code.replace(",", "")
             stat_output = fmt_stat_output.format(new_err_code, num, stat_pct_dict[stage][err_code])
             f.write(stat_output)

@@ -165,8 +165,8 @@ os.chdir(cwd_top)
 f= open("die_id.log","w+")
 f1= open("card_sn_die_id.log","w+")
 fmt_str = "{:15}{:15}{:50}"
-for card, sn_die_dict in record_dict.iteritems():
-    for sn, dieId in sn_die_dict.iteritems():
+for card, sn_die_dict in record_dict.items():
+    for sn, dieId in sn_die_dict.items():
         out_str = fmt_str.format(card, sn, dieId)
         #print out_str
         f1.write(out_str+'\n')
