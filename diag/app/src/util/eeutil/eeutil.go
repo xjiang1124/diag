@@ -876,7 +876,7 @@ func main() {
                 found, _ = eeprom.CardInListNew(identifier)
                 cli.Printf("i", "found: %t\n", found)
                 if found == true {
-                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, identifier, mac, date, dpn, *skuModePtr)
+                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, sku, mac, date, dpn, *skuModePtr)
                     misc.SleepInUSec(500000)
                     return
                 }

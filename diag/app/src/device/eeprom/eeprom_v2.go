@@ -78,7 +78,6 @@ const (
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
     PN_MTP_MATERA_FPIC string = "102-P10500-00"
-    PN_GIN_D5_COMMON string = "68-0075" //TBD: update this when the real PN is ready
 
     // Product name
     PROD_NAME_IBM           string = "Pensando DSC2-200 50/100/200G 2p QSFP56 Card"
@@ -668,10 +667,10 @@ var Info    []entryinfo
 //                     G E N E R I C     F U N C T I O N S
 //==============================================================================
 
-func convertToByteTbl(identifier string, skuMode bool) (err int){
+func convertToByteTbl(pn string) (err int){
     //Writes all entries of EepromTbl into new slices
     //Checks and sets EepromTbl based on the input part number
-    found, partNum := CardInListNew(identifier)
+    found, partNum := CardInListNew(pn)
     if found == true {
         EepromTbl = CardDataInfo[partNum].tbl
     } else {
@@ -752,7 +751,7 @@ func findPn(start int, end int) (pn string, err int) {
     // first look for FIELD_NUM_PN_4 which is SKU
     partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_PN_4)
     if err != errType.SUCCESS {
-        cli.Println("e", "ERROR: Failed to find SKU offset.")
+        cli.Println("e", "ERROR: Failed to find part number offset.")
         return
     }
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
@@ -863,13 +862,19 @@ func updateChkSum() {
     }
 }
 
-func updateFields(sn string, identifier string, mac string, date string, dpn string, skuMode bool) (err int) {
+func updateFields(sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
     var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff int
-    var pnField, skuField string
+    var skuField string
+    var identifier string
 
     //Checks PN validity and sets card type
+    if skuMode == true {
+        identifier = sku
+    } else {
+        identifier = pn
+    }
     found, minPN := CardInListNew(identifier)
     if found != true {
         if skuMode == true {
@@ -882,8 +887,12 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
     card := CardDataInfo[minPN]
 
     //Initial failure condition
-    if (sn == "") || (identifier == "") || (mac == "") || (date == "") {
-        cli.Printf("e", "ERROR: Must have values for serial number, SKU or part number, MAC address, and date.\n")
+    if (sn == "") || (pn == "") || ((skuMode == true) && (sku == "")) || (mac == "") || (date == "") {
+        if (skuMode == true) {
+            cli.Printf("e", "ERROR: Must have values for serial number, SKU, part number, MAC address, and date.\n")
+        } else {
+            cli.Printf("e", "ERROR: Must have values for serial number, part number, MAC address, and date.\n")
+        }
         err = errType.INVALID_PARAM
         return 
     }
@@ -911,17 +920,17 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
 
     //Converts SN and PN to byte & declares offset/length variables
     snByte := []byte(sn)
-    if skuMode == true {
-        //in skuMode it's the PN that's stored in sku field in CardDataInfo
-        pnField = card.sku
-        skuField = identifier
-    } else {
-        pnField = identifier
-        skuField = card.sku
-    }
-    pnByte := []byte(pnField)
+    pnByte := []byte(pn)
 
     prodNameByte:= []byte(card.prodName)
+    if skuMode == true {
+        //in skuMode it's the PN that's stored in sku field in CardDataInfo
+        //pnField = card.sku
+        skuField = sku
+    } else {
+        //pnField = identifier
+        skuField = card.sku
+    }
     skuByte     := []byte(skuField)
     fruIdByte   := []byte(card.fruId)
     dpnByte     := []byte(dpn)
@@ -946,7 +955,7 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
             }
             if entry.pn != FIELD_NUM_NONE {
                 pnOff = entry.pn
-                pnLen = len(pnField)
+                pnLen = len(pn)
             }
             if entry.mac != FIELD_NUM_NONE {
                 macOff = entry.mac
@@ -992,8 +1001,6 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
             if entry.dpn != FIELD_NUM_NONE {
                 dpnInt := entry.dpn
                 dpnOff, _, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, dpnInt)
-                //DPN field does not have Type/Length
-                dpnOff -= 1
                 cli.Printf("i", "dpnOff=%d\n", dpnOff)
             }
         }
@@ -1029,7 +1036,7 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
         //Returns error if string longer than specified value
         if (
             (len(sn) > snLen)                   ||
-            (len(pnField) > pnLen)              ||
+            (len(pn) > pnLen)              ||
             (len(mac) != MAC_LEN)               ||
             (len(date) != (MFG_DATE_LEN*2))     ||
             (len(prodNameByte) > prodNameLen)   ||
@@ -1048,10 +1055,10 @@ func updateFields(sn string, identifier string, mac string, date string, dpn str
                 errorOutput = "Serial Number"
                 maxLen = snLen
                 realLen = len(sn)
-            } else if len(pnField) > pnLen {
+            } else if len(pn) > pnLen {
                 errorOutput = "Assembly Number"
                 maxLen = pnLen
-                realLen = len(pnField)
+                realLen = len(pn)
             } else if len(mac) != MAC_LEN {
                 errorOutput = "MAC Address"
                 maxLen = MAC_LEN
@@ -1470,7 +1477,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
     return
 }
 
-func ProgData(devName string, bus uint32, devAddr byte, sn string, identifier string, mac string, date string, dpn string, skuMode bool) (err int){
+func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int){
     //Creates data slice of EEPROM table, updates data and checksums, and writes to FRU
     //Opens connections
     err = smbusNew.Open(devName, bus, devAddr)
@@ -1479,14 +1486,20 @@ func ProgData(devName string, bus uint32, devAddr byte, sn string, identifier st
     }
     defer smbusNew.Close()
     //Initiates the entries
-    err = convertToByteTbl(identifier, skuMode)
+    var identifier string
+    if skuMode == true {
+        identifier = sku
+    } else {
+        identifier = pn
+    }
+    err = convertToByteTbl(identifier)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Card not supported.")
         err = errType.FAIL
         return 
     }
     //Updates the byte data slice with specified data
-    err = updateFields(sn, identifier, mac, date, dpn, skuMode)
+    err = updateFields(sn, pn, sku, mac, date, dpn, skuMode)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Update failed.")
         err = errType.FAIL
