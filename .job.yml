@@ -105,8 +105,8 @@ jobs:
   test/FST:
     labels: ["CI-DIAG-FST"]
 ### NIC_TYPE TEST BUNDLE ###
-  test/ginestra:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ginestra"]
+  test/ginestra_s4:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ginestra_s4"]
 ### END NIC_TYPE TEST BUNDLE ###
 ### NIC_TYPE ASIC TEST BUNDLE ###
   test-asic/ginestra:
@@ -155,7 +155,7 @@ dependencies:
 
   diag/mfg:
 ### NIC_TYPE DEPENDENCY ###
-    - reference: test/ginestra
+    - reference: test/ginestra_s4
       exclude_dirs: ["scripts"]
 ### END NIC_TYPE DEPENDENCY ###
   diag/mfg/scripts:
