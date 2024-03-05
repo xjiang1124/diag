@@ -304,8 +304,6 @@ var LipariElbaTbl = []I2cInfo {
 var MtFujiElbaTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    0},   //Cisco uses 8-bit FRU 
-    I2cInfo {"TSENSOR",        "TMP451",    0x0,   0x4C,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR1",       "TMP451",    0x0,   0x4E,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDD_DDR",        "LTC3882",   0x0,   0x44,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDDQ_DDR",       "LTC3882",   0x0,   0x44,    0x1,    "HUB_NONE",  0,    0},
     I2cInfo {"ELB0_CORE",      "LTC3882",   0x0,   0x55,    0x0,    "HUB_NONE",  0,    0},
@@ -624,7 +622,7 @@ var LipariTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C04C",    7,   0x50,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU_CPUBRD",     "AT24C04C",    7,   0x50,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
     I2cInfo {"FRU_CERT",       "AT24C04C",    7,   0x51,    0x0,    "0_3",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"FRU_CPU",        "AT24C04",     0,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
+    //I2cInfo {"FRU_CPU",        "AT24C04",     0,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
     //I2cInfo {"FRU_SWITCH",     "AT24C256C",   1,   0x50,    0x0,    "HUB_NONE", 0, I2C_TEST_ENABLE},
 
     I2cInfo {"FAN_1",          "ADT7462",     9,   0x5C,    0x0,    "1_0",  0,    I2C_TEST_ENABLE},

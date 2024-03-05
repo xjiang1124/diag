@@ -1238,20 +1238,31 @@ def soap_post_report(xml, factory=Factory.FSP):
         webservice.endheaders()
 
         webservice.send(xml)
-
-        statuscode, statusmessage, header = webservice.getreply()
+    except Exception as Err:
+        cli_dbg(Err)
+        cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
+        return 88888888
+    else:
+        statuscode, reason, msg = webservice.getreply()
+        cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
+        if not str(statuscode).startswith('2'):
+            cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
+            return int(statuscode)
         resp = webservice.getfile().read()
         match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
+        cli_inf("HTTP POST request successful")
         if match:
+            cli_inf("GOT FLX_SAVE_UUT_RSLT_CODE {:s} From HTTP POST Response, Return it".format(match[0]))
             return match[0]
         else:
-            print("################## SAVE UUT RSLT #######################")
-            print(resp)
-            print("################## SAVE UUT RSLT #######################")
-            return "500"
-    except:
-        print("Error occur when post report to webserver")
-        return "999"
+            cli_dbg("Failed to parse FLX_SAVE_UUT_RSLT_CODE From HTTP POST Response, display the response as following:")
+            cli_dbg("################## SAVE UUT RSLT #######################")
+            cli_dbg(resp)
+            cli_dbg("################## SAVE UUT RSLT #######################")
+            return 58888888
+    finally:
+        webservice.close()
+
 
 def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
@@ -1271,20 +1282,30 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
         webservice.endheaders()
 
         webservice.send(xml)
-
-        statuscode, statusmessage, header = webservice.getreply()
+    except Exception as Err:
+        cli_dbg(Err)
+        cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
+        return 88888888
+    else:
+        statuscode, reason, msg = webservice.getreply()
+        cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
+        if not str(statuscode).startswith('2'):
+            cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
+            return int(statuscode)
         resp = webservice.getfile().read()
         match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
+        cli_inf("HTTP POST request successful")
         if match:
+            cli_inf("GOT FLX_GET_UUT_INFO_CODE {:s} From HTTP POST Response, Return it".format(match[0]))
             return match[0]
         else:
-            print("################## GET UUT INF #######################")
-            print(resp)
-            print("################## GET UUT INF #######################")
-            return "500"
-    except:
-        print("Unable to connect to webserver")
-        return "500"
+            cli_dbg("Failed to parse FLX_GET_UUT_INFO_CODE From HTTP POST Response, display the response as following:")
+            cli_dbg("################## GET UUT INFO RSLT #######################")
+            cli_dbg(resp)
+            cli_dbg("################## GET UUT INFO RSLT #######################")
+            return 58888888
+    finally:
+        webservice.close()
 
 def soap_get_uut_resp(xml, factory=Factory.FSP):
     try:
@@ -1304,14 +1325,21 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
         webservice.endheaders()
 
         webservice.send(xml)
-
-        statuscode, statusmessage, header = webservice.getreply()
+    except Exception as Err:
+        cli_dbg(Err)
+        cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
+        return "88888888"
+    else:
+        statuscode, reason, msg = webservice.getreply()
+        cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
+        if not str(statuscode).startswith('2'):
+            cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
+            return int(statuscode)
         resp = webservice.getfile().read()
-        
+        cli_inf("HTTP POST request successful")
         return resp
-    except:
-        print("Unable to connect to webserver")
-        return "500"
+    finally:
+        webservice.close()
 
 def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None):
     if factory is None or factory == Factory.UNKNOWN:
@@ -1505,7 +1533,13 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                             break
                         else:
                             if rs in FLEX_ERR_CODE_MAP.err_code:
-                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [{:s}:{:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Database Server Access Error: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
+                            elif rs in httplib.responses:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), httplib.responses[rs])
+                            elif rs == 88888888:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Sending HTTP Request Error: error code ({:s}) --> Please check server avaiblity and network connectivity]".format((post_cnt + 1), sn, str(rs)))
+                            elif rs == 58888888:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Parse Xml data Error: error code ({:s}) --> did not find xml tag <GetUnitInfoResult> or <SaveResultResult> in xml data]".format((post_cnt + 1), sn, str(rs)))
                             else:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [ERROR: Unknown error code -->({:s})]".format((post_cnt + 1), sn, str(rs)))
                             if rs != 9999:
