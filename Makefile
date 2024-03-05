@@ -6,7 +6,7 @@ CUR_USER:=$(shell whoami)
 CUR_TIME:=$(shell date +%Y-%m-%d_%H.%M.%S)
 CONTAINER_NAME:=${CUR_USER}_${CUR_TIME}
 REGISTRY = registry.test.pensando.io:5000
-DIAG_CONTAINER_VERSION:=1.1
+DIAG_CONTAINER_VERSION:=1.2
 DIAG_CONTAINER:=${REGISTRY}/pensando/diag:${DIAG_CONTAINER_VERSION}
 SHELL_IMAGE_NAME="pensando/diag:shell"
 
@@ -14,10 +14,10 @@ SHELL_IMAGE_NAME="pensando/diag:shell"
 # get a shell with the dependencies image loaded, with the host filesystem mounted.
 ifeq ($(USER),)
 docker/shell:
-	docker run -it --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${DIAG_CONTAINER} bash
+	docker run -it --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GO111MODULE=auto" -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${DIAG_CONTAINER} bash
 else
 docker/shell: docker/build-shell-image
-	docker run -it --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${SHELL_IMAGE_NAME} su -l ${CUR_USER}
+	docker run -it --user ${CUR_USER} --rm --sysctl net.ipv6.conf.all.disable_ipv6=1 -e "GO111MODULE=auto" -e "GOPATH=/psdiag/diag/app" --privileged --name ${CONTAINER_NAME} -v $(CUR_DIR):/psdiag -v /vol/hw:/vol/hw -w /psdiag ${SHELL_IMAGE_NAME}
 endif
 
 docker/build-shell-image: docker/install_box

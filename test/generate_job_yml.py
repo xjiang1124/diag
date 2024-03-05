@@ -1,4 +1,30 @@
 import sys, os
+"""
+ USAGE
+
+ - ON A RELEASE BRANCH,
+
+    cd test
+    python3 generate_job_yml.py
+
+    this will make sure 4C, ORT, RDT are part of PR tests.
+    and that all stage bundles remain in root jobyml despite being skipped.
+
+
+ - FOR MASTER BRANCH,
+
+    cd test
+    DEV=1 python3 generate_job_yml.py
+
+    this will skip 4C, ORT, RDT, etc (default)
+
+
+ - FOR ASIC TOT,
+
+    cd test-asic
+    python3 generate_job_yml.py
+ 
+"""
 
 EXCLUDE_FROM_PRECHECKIN=["ScanDL", "4C", "ORT", "RDT", "SRN"]
 
@@ -46,7 +72,7 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("    build-dependencies:\n")
     if stage == "FST":
         pass
-    elif job_set == "diag":
+    elif job_set == "diag" or job_set == "modeling":
         fh.write("     - build-amd64-{:s}\n".format(asic))
         fh.write("     - build-arm64-{:s}\n".format(asic))
     elif job_set == "asic":

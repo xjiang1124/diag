@@ -27,7 +27,10 @@ python3 ./mfg.py -sn_list 2YU029009F,2YU03300Z9 -fetch -card_type naples25swm -s
 
 # By SN file
 FMODE="SN"
-python3 ./mfg.py -fn temp -fmode $FMODE -fetch -card_type naples25swm -stage p2c -cm pen -logroot $LOGROOT
+CARD_TYPE="ORTANO2ADIMSFT"
+FN="temp"
+STAGE="FST"
+python3 ./mfg.py -fn $FN -fmode $FMODE -fetch -card_type $CARD_TYPE -stage $FST -cm pen -logroot $LOGROOT
 # SN file format example:
 2YU029009F
 2YU03300Z9

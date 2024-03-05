@@ -155,6 +155,7 @@ do
         cp $TOP_DIR/tools/bin/arm64/fio                         $NIC_UTIL_DIR
         cp $TOP_DIR/tools/bin/arm64/elba-chk-secboot-rdy.sh     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr        $NIC_UTIL_DIR
+        cp $TOP_DIR/diag/app/bin/linux_arm64/util/devmgr_v2     $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/eeutil        $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/smbutil       $NIC_UTIL_DIR
         cp $TOP_DIR/diag/app/bin/linux_arm64/util/rtcutil       $NIC_UTIL_DIR
@@ -210,7 +211,7 @@ do
         rm -rf $BUILD_DIR/latest/
         mkdir -p $BUILD_DIR/latest/
         #cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
-        cp /vol/hw/diag/diag_images/jenkins/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
+        cp /vol/hw/diag/diag_images/asicimg_latest/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
     fi
 
     if [[ $arch == "amd64" ]]

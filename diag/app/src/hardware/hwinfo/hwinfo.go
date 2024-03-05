@@ -84,7 +84,8 @@ var CpldInfo interface{}
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
-var lipariEepList = []string {"FRU", "FRU_CPU", "FRU_SWITCH"}
+var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
+var materaEepList = []string {"FRU", "MB", "IOB1", "IOB2", "FPIC"}
 
 //===============================
 // Naples100 
@@ -178,6 +179,7 @@ var mtpDispStaList map[string]DispStaFunc
 var mtpEepList = []string {"FRU"}
 // I2C hub map
 var mtpI2cHubMap map[string] I2cHubInfo
+var materaI2cHubMap map[string] I2cHubInfo
 
 //===============================
 // MTP
@@ -494,6 +496,8 @@ func init() {
     mtpsDispStaList["659_DVDD"] = tps53659.DispStatus
     mtpsDispStaList["659_AVDD"] = tps53659.DispStatus
 
+    materaI2cHubMap = make(map[string]I2cHubInfo)
+
     //===============================
     // Taormina
     taorDispStaList = make(map[string]DispStaFunc)
@@ -568,6 +572,18 @@ func init() {
     mtpI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
     mtpI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
+
+    materaI2cHubMap = make(map[string]I2cHubInfo)
+    materaI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
+    materaI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
+    materaI2cHubMap["UUT_3"]  = I2cHubInfo{"HUB_1", 2}
+    materaI2cHubMap["UUT_4"]  = I2cHubInfo{"HUB_1", 3}
+    materaI2cHubMap["UUT_5"]  = I2cHubInfo{"HUB_2", 0}
+    materaI2cHubMap["UUT_6"]  = I2cHubInfo{"HUB_2", 1}
+    materaI2cHubMap["UUT_7"]  = I2cHubInfo{"HUB_2", 2}
+    materaI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
+    materaI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
+    materaI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
@@ -682,6 +698,7 @@ func init() {
     //===============================
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
+    eepromMap["MTP_MATERA"]    = materaEepList
     //===============================
     // Taormina
     eepromMap["TAORMINA"]          = naplesEepList
@@ -693,6 +710,9 @@ func init() {
     i2cHubMap["MTP"] = mtpI2cHubMap
     // MTP=MTPS
     i2cHubMap["MTPS"]           = mtpI2cHubMap
+    // MTP_MATERA
+    i2cHubMap["MTP_MATERA"]     = materaI2cHubMap
+
     i2cHubMap["NAPLES100"]      = naples100I2cHubMap
     i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap
     i2cHubMap["NAPLES100HPE"]   = naples100I2cHubMap

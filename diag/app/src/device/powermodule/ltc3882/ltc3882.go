@@ -317,10 +317,10 @@ func SetVMargin(devName string, pct int) (err int) {
 }
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"VIN", "VBOOT", "VOUT", "IOUT", "POUT", "TEMP-EXT", "TEMP-INT", "STATUS", "REVISION"}
+    vrmTitle := []string {"VIN", "VBOOT", "VOUT", "IOUT", "POUT", "TEMPEXT", "TEMPINT", "STATUS", "REVISION"}
     var fmtDigFrac string = "%d.%03d"
-    fmtStr := "%-10s"
-    fmtNameStr := "%-20s"
+    fmtStr := "%-9s"
+    fmtNameStr := "%-12s"
 
     var outStr string
     var outStrTemp string

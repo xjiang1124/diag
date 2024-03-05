@@ -3,12 +3,17 @@ slot_list=$1
 
 #==============
 # config
-ite=10
+ite=1
 
 vmarg="normal"
-vmarg="high"
+#vmarg="high"
 
-stop_on_error=0
+mode="hod"
+dura=10
+snake_num=6
+wtime=180
+
+stop_on_error=1
 
 #==============
 
@@ -16,7 +21,7 @@ for idx in $(seq 1 1 $ite)
 do
     echo "=== Ite: $idx ==="
     #stdbuf -i0 -o0 -e0 python ./nic_test.py -snake -slot_list $slot_list -mode hod -int_lpbk -dura 3 -snake_num 4 -wtime 600 -vmarg $vmarg | tee snake_ite.log
-    stdbuf -i0 -o0 -e0 python ./nic_test.py -snake -slot_list $slot_list -mode nod_525 -int_lpbk -dura 120 -snake_num 6 -wtime 300 -vmarg $vmarg | tee snake_ite.log
+    stdbuf -i0 -o0 -e0 python ./nic_test.py -snake -slot_list $slot_list -mode $mode -int_lpbk -dura $dura -snake_num $snake_num -wtime $wtime -vmarg $vmarg | tee snake_ite.log
     sync
  
     IFS=',' read -r -a slot_list1 <<< "$slot_list"

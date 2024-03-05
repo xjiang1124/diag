@@ -932,9 +932,11 @@ class nic_con:
             return -1
         else:
             print "=== Management port is ready ==="
-
+        # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
+        if asic_type == "GIGLIO_CPLD":
+            time.sleep(10)
         ret = self.ping_check_mtp(slot)
-	print("ret:", ret)
+        print("ret:", ret)
 
         # if ping test fails, apply WA for Elba
         mtpType = os.environ['MTP_TYPE']

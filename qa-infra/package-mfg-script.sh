@@ -1,7 +1,5 @@
 top_dir=$PWD
-release_name=$(echo $branch_or_tag | awk -F'/' '{print $NF}')
 asic_type=$(echo $asic_type)
-jenkins_dir=$(echo $working_dir)
 mfg_folder="mfg"
 if [[ ${asic_type} == "taormina" ]]; then
 	asic_type="elba"
@@ -11,16 +9,21 @@ if [[ ${asic_type} == "lipari" ]]; then
 	asic_type="elba"
 	mfg_folder="mfg_lipari"
 fi
-if [[ -z ${jenkins_dir} ]]; then
-	jenkins_dir=/vol/hw/diag/mfg_release/jenkins
+if [[ -z ${working_dir} ]]; then
+	working_dir=/psdiag
 fi
-mfg_script_dir=${jenkins_dir}/${release_name}/${mfg_folder}
+if [[ -z $branch_or_tag ]]; then
+    release_name=jobd
+else
+    release_name=$(echo $branch_or_tag | awk -F'/' '{print $NF}')
+fi
+mfg_script_dir=${working_dir}/${release_name}/${mfg_folder}
 
 ## CLEAN UP PREVIOUS BUILD OF THIS RELEASE
 mkdir -p $mfg_script_dir
 sync
 rm -rf $mfg_script_dir/*
-rm -f ${jenkins_dir}/${release_name}/*.tar.gz
+rm -f ${working_dir}/${release_name}/*.tar.gz
 sync
 cp -r $top_dir/diag/${mfg_folder}/* $mfg_script_dir/
 sync
@@ -65,9 +68,9 @@ fi
 rm -rf $mfg_script_dir/scripts
 
 ## TAR THE MFG SCRIPTS
-cd $jenkins_dir
+cd $working_dir
 rm -f ${release_name}.tar.gz
 tar czf ${release_name}.tar.gz ${release_name}/*
 mv ${release_name}.tar.gz ${release_name}/
 
-echo "Script package available at: ${jenkins_dir}/${release_name}"
+echo "Script package available at: ${working_dir}/${release_name}"

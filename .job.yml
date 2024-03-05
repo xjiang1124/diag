@@ -11,6 +11,7 @@ builds:
     owners: ["email:xin@pensando.io"]
     artifacts:
     - /psdiag/build/images/image_arm64_giglio.tar
+    - /psdiag/build/images/nic_util.tar # save nic_util only once instead of for every asic
   build-amd64-elba:
     commands: [ "sh", "-c", "cd build; make amd64 asic=elba asiclib=stable" ]
     owners: ["email:xin@pensando.io"]
@@ -54,22 +55,22 @@ builds:
     - /psdiag/build/images/image_arm64_elba.tar
 
   package-giglio-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=giglio working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=giglio bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-elba-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=elba working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=elba bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-capri-mfg-script:
-    commands: [ "sh", "-c", "branch_or_tag=jobd asic_type=capri working_dir=/psdiag bash -ex qa-infra/package-mfg-script.sh" ]
+    commands: [ "sh", "-c", "asic_type=capri bash -ex qa-infra/package-mfg-script.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/jobd/jobd.tar.gz
   package-fw-assets:
-    commands: [ "sh", "-c", "working_dir=/psdiag bash -ex qa-infra/package-fw.sh" ]
+    commands: [ "sh", "-c", "bash -ex qa-infra/package-fw.sh" ]
     owners: ["email:nabeel@pensando.io"]
     artifacts:
     - /psdiag/fw.tar
@@ -83,6 +84,8 @@ host_mounts:
 jobs:
   asset-build:
     labels: ["CI-DIAG-Build", "CI-DIAG-Release"]
+  qa-infra/daily:
+    labels: ["CI-DIAG-Daily"]
   test/ScanDL:
     labels: ["CI-DIAG-ScanDL"]
   test/DL:
@@ -120,8 +123,6 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
   test/ortano-adicr-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
-  test/ortano-solo-orc_th:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc_th"]
   test/ortano-solo-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
   test/ortano-interp-orc:
@@ -130,6 +131,8 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
   test/ortano-ti-orc:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
+  test/naples25swm-dell:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-dell"]
   test/naples25swm-hpe:
     labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
   test/naples100:
@@ -200,8 +203,6 @@ dependencies:
       exclude_dirs: ["scripts"]
     - reference: test/ortano-adicr-orc
       exclude_dirs: ["scripts"]
-    - reference: test/ortano-solo-orc_th
-      exclude_dirs: ["scripts"]
     - reference: test/ortano-solo-orc
       exclude_dirs: ["scripts"]
     - reference: test/ortano-interp-orc
@@ -209,6 +210,8 @@ dependencies:
     - reference: test/ortano-adi-orc
       exclude_dirs: ["scripts"]
     - reference: test/ortano-ti-orc
+      exclude_dirs: ["scripts"]
+    - reference: test/naples25swm-dell
       exclude_dirs: ["scripts"]
     - reference: test/naples25swm-hpe
       exclude_dirs: ["scripts"]
