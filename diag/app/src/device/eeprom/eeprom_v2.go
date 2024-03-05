@@ -444,7 +444,59 @@ var CardDataInfo = map[string]updateInfo {
         },
         lipariElbaExt,
     },
+    //keep for backward compatibility
+    PN_GIN_D5_ORACLE: updateInfo {
+        OrtanoOracleTbl,
+        PROD_NAME_GIG_ORACLE,
+        SKU_GIN_D5_ORACLE,
+        FRU_ID_GIN_D5,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+            progInfo {
+                FIELD_TYPE_BYTE,
+                AREA_TYPE_PRDT_INFO,
+                BYTE_OFFSET_SN_ORACLE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                FIELD_NUM_NONE,
+                },
+        },
+        ginestraD5OracleExt,
+    },
 
+    PN_GIN_D5_MSFT: updateInfo {
+        OrtanoPenStandardTbl,
+        PROD_NAME_GIG_MSFT,
+        SKU_GIN_D5_MSFT,
+        FRU_ID_GIN_D5_MSFT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
     //programmed before SWI
     PN_GIN_D5_SSDK: updateInfo {
         GinestraSSDKTbl,
@@ -639,16 +691,17 @@ var CardTypes = []card{
     card{"ORTANO-SOLOR4T_ORACLE",   PN_SR4T_ORACLE},
     card{"ORTANO-SOLO_SSDK",        PN_SOLO_SSDK},
     //card{"ORTANO-GIN_D4_ORACLE",    PN_GIN_D4_ORACLE},
-    //card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
-    //card{"ORTANO-GIN_D5_MSFT",      PN_GIN_D5_MSFT},
+    card{"ORTANO-GIN_D5_ORACLE",    PN_GIN_D5_ORACLE},
+    card{"ORTANO-GIN_D5_MSFT",      PN_GIN_D5_MSFT},
+    //used in non SKU mode
     card{"ORTANO-GIN_D5_SSDK",      PN_GIN_D5_SSDK},
-    //SKU type cards
-    card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
-    card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
-    card{"GIN_D5_MSFT",             SKU_GIN_D5_MSFT},
-    card{"GIN_D5_SSDK",               SKU_GIN_D5_SSDK},
-    card{"GIN_D5_SSDK_B3",            SKU_GIN_D5_SSDK_B3},
-    card{"GIN_D5_SSDK_P3",            SKU_GIN_D5_SSDK_P3},
+    //SKU type cards: used in SKU mode
+    //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
+    //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
+    //card{"GIN_D5_MSFT",             SKU_GIN_D5_MSFT},
+    card{"GIN_D5_SSDK",             SKU_GIN_D5_SSDK},
+    card{"GIN_D5_SSDK_B3",          SKU_GIN_D5_SSDK_B3},
+    card{"GIN_D5_SSDK_P3",          SKU_GIN_D5_SSDK_P3},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
@@ -865,7 +918,7 @@ func updateChkSum() {
 func updateFields(sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int) {
     //Updates serial number, part number, MAC address, and date in Data
     var snOff, snLen, pnOff, pnLen, macOff, macLen, dateOff, dateLen int
-    var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff int
+    var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff, dpnLen int
     var skuField string
     var identifier string
 
@@ -924,11 +977,9 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 
     prodNameByte:= []byte(card.prodName)
     if skuMode == true {
-        //in skuMode it's the PN that's stored in sku field in CardDataInfo
-        //pnField = card.sku
+        //in skuMode, use the scanned SKU
         skuField = sku
     } else {
-        //pnField = identifier
         skuField = card.sku
     }
     skuByte     := []byte(skuField)
@@ -1000,8 +1051,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
             }
             if entry.dpn != FIELD_NUM_NONE {
                 dpnInt := entry.dpn
-                dpnOff, _, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, dpnInt)
-                cli.Printf("i", "dpnOff=%d\n", dpnOff)
+                dpnOff, dpnLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, dpnInt)
             }
         }
 
@@ -1036,12 +1086,12 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
         //Returns error if string longer than specified value
         if (
             (len(sn) > snLen)                   ||
-            (len(pn) > pnLen)              ||
+            (len(pn) > pnLen)                   ||
             (len(mac) != MAC_LEN)               ||
             (len(date) != (MFG_DATE_LEN*2))     ||
             (len(prodNameByte) > prodNameLen)   ||
             (len(skuByte) > skuLen && (entry.sku != FIELD_NUM_NONE)) ||
-            (len(dpnByte) > DPN_LEN && (entry.dpn != FIELD_NUM_NONE)) ||
+            (len(dpnByte) > dpnLen && (entry.dpn != FIELD_NUM_NONE)) ||
             (len(fruIdByte) > fruIdLen) ) {
             err = errType.INVALID_PARAM
             var errorOutput string
@@ -1075,9 +1125,9 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 errorOutput = "FRU ID"
                 maxLen = fruIdLen
                 realLen = len(fruIdByte)
-            } else if len(dpnByte) > DPN_LEN {
+            } else if len(dpnByte) > dpnLen {
                 errorOutput = "Diagnostic Product Name"
-                maxLen = DPN_LEN
+                maxLen = dpnLen
                 realLen = len(dpnByte)
             }
             cli.Printf("e", "ERROR: Input fields differ from specified lengths. Affected field(s): %s; expected: %d; got: %d", 
@@ -1112,8 +1162,8 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                     fruIdByte=append(fruIdByte, 0x20)
                 }
             }
-            if (len(dpnByte) < DPN_LEN) {
-                for i:=len(dpnByte);i<DPN_LEN;i++ {
+            if (len(dpnByte) < dpnLen) {
+                for i:=len(dpnByte);i<dpnLen;i++ {
                     dpnByte=append(dpnByte, 0x20)
                 }
             }
@@ -1172,7 +1222,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 incrementVar = 0
             }
             if (offset == dpnOff) && (entry.dpn != FIELD_NUM_NONE) {
-                for i:=offset;i<offset+DPN_LEN;i++ {
+                for i:=offset;i<offset+dpnLen;i++ {
                     Data[i]=dpnByte[incrementVar]
                     incrementVar++
                 }
