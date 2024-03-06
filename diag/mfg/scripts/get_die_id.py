@@ -13,7 +13,7 @@ def find_file(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
     return result
 
 def find_dir(pattern, path):
@@ -23,7 +23,7 @@ def find_dir(pattern, path):
             if fnmatch.fnmatch(dir_name, pattern):
                 result.append(os.path.join(root, dir_name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
 
     return result
 
@@ -35,7 +35,7 @@ def find_first_dir(path):
             result.append(os.path.join(root, dir_name))
 
     if result == []:
-        print "Can not find file!", path
+        print("Can not find file!", path)
 
     return result
 
@@ -111,14 +111,14 @@ cwd_top = os.getcwd()
 try:
     shutil.rmtree(cwd_top+'/test_logs')
 except os.error:
-    print "no test_logs folder"
+    print("no test_logs folder")
 
 sn_dict = dict()
-print "Parsing error logs"
+print("Parsing error logs")
 for sn in sn_list:
     pattern = '*'+sn+'*'
     corner_dict = dict()
-    print sn
+    print(sn)
     for corner in corners:
         path = log_root+card+stage+corner
         dirs_found = find_dir(pattern, path)
@@ -158,14 +158,14 @@ for sn in sn_list:
     sn_dict[sn] = corner_dict
 
 # Output
-print "Printing error report"
-for sn, corner_dict in sn_dict.iteritems():
-    print "====================="
-    print sn
-    for corner, msg_list in corner_dict.iteritems():
-        print "-------------"
-        print corner
+print("Printing error report")
+for sn, corner_dict in sn_dict.items():
+    print("=====================")
+    print(sn)
+    for corner, msg_list in corner_dict.items():
+        print("-------------")
+        print(corner)
         for msg in msg_list:
-            print msg
-    print " "
+            print(msg)
+    print(" ")
 

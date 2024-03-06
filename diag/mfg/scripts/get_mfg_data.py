@@ -13,7 +13,7 @@ def find_file(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
     return result
 
 def find_dir(pattern, path):
@@ -23,7 +23,7 @@ def find_dir(pattern, path):
             if fnmatch.fnmatch(dir_name, pattern):
                 result.append(os.path.join(root, dir_name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
 
     return result
 
@@ -35,7 +35,7 @@ def find_first_dir(path):
             result.append(os.path.join(root, dir_name))
 
     if result == []:
-        print "Can not find file!", path
+        print("Can not find file!", path)
 
     return result
 
@@ -302,9 +302,9 @@ def parse_dsp_log(file_list, sn, pcie_prbs, eth_prbs, l1):
                 if "TEST STARTED" in line:
                     for sig in sig_start:
                         if sig in line:
-                            f.next()
-                            line_next = f.next()
-                            line_nnext = f.next()
+                            next(f)
+                            line_next = next(f)
+                            line_nnext = next(f)
                             if sn in line_next or sn in line_nnext:
                                 parse_en = 1
                                 dsp_msg.append(line)
@@ -319,10 +319,10 @@ def parse_dsp_log(file_list, sn, pcie_prbs, eth_prbs, l1):
                     if "max retry reached!" in line:
                         if jtag_found == 0:
                             dsp_msg.append(line)
-                            f.next()
-                            dsp_msg.append(f.next())
-                            dsp_msg.append(f.next())
-                            f.next()
+                            next(f)
+                            dsp_msg.append(next(f))
+                            dsp_msg.append(next(f))
+                            next(f)
                             jtag_found = 1
                     else:
                         jtag_found = 0
@@ -404,7 +404,7 @@ cwd_top = os.getcwd()
 try:
     shutil.rmtree(cwd_top+'/test_logs')
 except os.error:
-    print "no test_logs folder"
+    print("no test_logs folder")
 
 cwd_log = cwd_top+"/test_logs"
 if not os.path.exists(cwd_log):
@@ -412,7 +412,7 @@ if not os.path.exists(cwd_log):
 os.chdir(cwd_log)
  
 sn_dict = dict()
-print "Parsing error logs"
+print("Parsing error logs")
 for sn in sn_list:
     pattern = '*'+sn+'*'
     corner_dict = dict()
@@ -465,19 +465,19 @@ for sn in sn_list:
     sn_dict[sn] = corner_dict
 
 # Output
-print "Printing error report"
-for sn, corner_dict in sn_dict.iteritems():
-    print "====================="
-    print sn
-    for corner, msg_list in corner_dict.iteritems():
-        print "-------------"
-        print corner
+print("Printing error report")
+for sn, corner_dict in sn_dict.items():
+    print("=====================")
+    print(sn)
+    for corner, msg_list in corner_dict.items():
+        print("-------------")
+        print(corner)
         for msg in msg_list:
-            print msg
-    print " "
+            print(msg)
+    print(" ")
 
 # Write to csv file
-print "Write to spreadsheet"
+print("Write to spreadsheet")
 book = xlwt.Workbook()
 
 algn1 = xlwt.Alignment()
@@ -493,7 +493,7 @@ sh.write(0, 3, "LTLV")
 sh.write(0, 4, "LTHV")
 
 row_idx = 1
-for sn, corner_dict in sn_dict.iteritems():
+for sn, corner_dict in sn_dict.items():
     sh.write(row_idx, 0, sn)
     for corner_idx in range(len(corners)):
         msg_list = corner_dict[corners[corner_idx]]
