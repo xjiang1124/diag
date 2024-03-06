@@ -74,15 +74,15 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
         return
     }
     // debug
-    cli.Println("d", "FindUutI2cDev :: hubInfo.hubName =", hubInfo.hubName)
+    //cli.Println("d", "FindUutI2cDev :: hubInfo.hubName =", hubInfo.hubName)
 
     hubI2cInfo, err := i2cinfo.GetI2cInfo(hubInfo.hubName)
     if err != errType.SUCCESS {
         return
     }
     // debug
-    cli.Println("d", "hubI2cInfo.Name Comp Bus DevAddr Page HubName HubPort Flag")
-    cli.Println("d", hubI2cInfo.Name, hubI2cInfo.Comp, hubI2cInfo.Bus, hubI2cInfo.DevAddr, hubI2cInfo.Page, hubI2cInfo.HubName, hubI2cInfo.HubPort, hubI2cInfo.Flag)
+    //cli.Println("d", "hubI2cInfo.Name Comp Bus DevAddr Page HubName HubPort Flag")
+    //cli.Println("d", hubI2cInfo.Name, hubI2cInfo.Comp, hubI2cInfo.Bus, hubI2cInfo.DevAddr, hubI2cInfo.Page, hubI2cInfo.HubName, hubI2cInfo.HubPort, hubI2cInfo.Flag)
     i2cDevIdx = int(hubI2cInfo.Bus)
     return
 }
@@ -195,7 +195,7 @@ func EnableHubChannelExclusive(devName string) (err int) {
 func EnableHubChannelUut(uutName string) (err int) {
     // for MTP only for now
     // debug
-    cli.Println("d", "EnableHubChannelUut :: uutName =", uutName)
+    //cli.Println("d", "EnableHubChannelUut :: uutName =", uutName)
     if cardType != "MTP" {
         cli.Println("e", "Unsupported platform!", cardType)
         err = errType.INVALID_PARAM
