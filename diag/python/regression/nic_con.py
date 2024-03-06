@@ -933,7 +933,9 @@ class nic_con:
         else:
             print "=== Management port is ready ==="
         # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
+        asic_type = self.get_asic_type(slot)
         if asic_type == "GIGLIO_CPLD":
+            print "sleep 10"
             time.sleep(10)
         ret = self.ping_check_mtp(slot)
         print("ret:", ret)
