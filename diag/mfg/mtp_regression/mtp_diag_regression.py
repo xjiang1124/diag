@@ -1232,6 +1232,7 @@ def main():
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.GINESTRA_D4] = "config/ginestra_d4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.GINESTRA_D5] = "config/ginestra_d5_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.GINESTRA_S4] = "config/ginestra_d5_ssdk_mtp_test_cfg.yaml"
     
     test_db = dict()
     for nic_type in test_cfg_file.keys():

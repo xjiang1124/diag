@@ -231,7 +231,7 @@ func EepromErase(devName string, bus uint32, devAddr byte, numBytes int) (err in
 
     found, _ := eeprom.CardInListTlv(devName)
     if found == true {
-        err = eeprom.EraseTlvEeprom(devName, numBytes)
+        err = eeprom.EraseEepromTlv(devName, numBytes)
     } else {
         err = eeprom.EraseEeprom(devName, bus, devAddr, numBytes)
     }
@@ -306,11 +306,11 @@ func EepromDisplayNew(devName string, bus uint32, devAddr byte, field string, fp
 }
 
 
-func EepromUpdateTlvFpga(devName string, sn string, pn string, sn2 string, pn2 string,
+func EepromUpdateTlvs(devName string, sn string, pn string, sn2 string, pn2 string,
                          mac string, date string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.ProgTlvFpga(devName, sn, pn, sn2, pn2, mac, date)
+    err = eeprom.ProgTlvs(devName, sn, pn, sn2, pn2, mac, date)
     if err != errType.SUCCESS {
         cli.Println("e", "EEPROM update failed!")
         return
@@ -319,10 +319,10 @@ func EepromUpdateTlvFpga(devName string, sn string, pn string, sn2 string, pn2 s
     return
 }
 
-func EepromUpdateTlvFieldFpga(devName string, field string, value string) (err int) {
+func EepromUpdateTlvField(devName string, field string, value string) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.ProgTlvFieldFpga(devName, field, value)
+    err = eeprom.ProgTlvField(devName, field, value)
     if err != errType.SUCCESS {
         cli.Println("e", "EEPROM update failed!")
         return
@@ -331,10 +331,10 @@ func EepromUpdateTlvFieldFpga(devName string, field string, value string) (err i
     return
 }
 
-func EepromDisplayTlvFpga(devName string, field string, fpo bool) (err int) {
+func EepromDisplayTlvs(devName string, field string, fpo bool) (err int) {
     hwinfo.EnableHubChannelExclusive(devName)
 
-    err = eeprom.DisplayTlvFpga(devName, field, fpo)
+    err = eeprom.DisplayTlvs(devName, field, fpo)
 
     return
 }

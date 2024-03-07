@@ -382,6 +382,8 @@ def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_ni
         test_list = []
     if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
         test_list = []
+    if nic_type == NIC_Type.GINESTRA_S4:
+        test_list = []
     for skip_test in skip_testlist:
         if skip_test in test_list:
             test_list.remove(skip_test)
@@ -663,7 +665,7 @@ def main():
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
 
-            if nic_type not in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
+            if nic_type not in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4):
                 if emmc_img_file:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
@@ -1248,8 +1250,10 @@ def main():
             test_list = ["SET_MAINFW", "SW_CLEANUP"]
             if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
                 test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
-            if nic_type in GIGLIO_NIC_TYPE_LIST:
+            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
                 test_list = ["CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
+            if nic_type == NIC_Type.GINESTRA_S4:
+                test_list = ["CFG_VERIFY", "SW_CLEANUP"]
             if nic_type in FPGA_TYPE_LIST:
                 test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
@@ -1326,6 +1330,8 @@ def main():
                 sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2ADIMSFT or nic_type == NIC_Type.ORTANO2ADICRMSFT:
                 sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.GINESTRA_S4:
+                sw_test_list = ["SW_SHUTDOWN"]
             if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
                 sw_test_list = []
             if nic_type in FPGA_TYPE_LIST:

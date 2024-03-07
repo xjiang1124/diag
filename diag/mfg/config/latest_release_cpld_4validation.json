@@ -72,28 +72,28 @@
     "68-0075": {
         "cpld_id":"0x61",
         "working_imge" : {
-            "name": "ginestra_d5_rev2_3_working.bin",
+            "name": "ginestra_d5_rev2.8_working_01252024.bin",
             "version": "0x2",
-            "minor_version" : "0x3",
+            "minor_version" : "0x8",
             "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
-            "sha512sum" : "948f9a033dc9c97721f71225a17f02440b9fa0f2fa99a0d0b32240973061fd6ff1665e0992d9ad9baf9b7d4299673d8b91b186d7249796535fd4598b71d01ddf"
+            "sha512sum" : "da94fbe80e4cbfe93a59810ac4b039f4dd9e6b9683eaa8c587a07ce740114bc05e029e35fd61045a12d117b6dc60da770b5be00b197038d70b1415c5ca0a6a13"
         },
         "failsafe_imge" : {
-            "name": "ginestra_d5_rev2_3_failsafe.bin",
+            "name": "ginestra_d5_rev2.8_failsafe_01252024.bin",
             "version": "0x2",
-            "minor_version" : "0x03",
+            "minor_version" : "0x8",
             "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
-            "sha512sum" : "523a71ab0af73c8f8948e8852e4d7c17c864413b2c4db8fe9c52ff0bacb21220d86e7c838b31bc0ec2d27b864174e2f84d680bd5795de43f503b83b5430f6211"
+            "sha512sum" : "ac20d827cd8643164351f4c1b80e51bf1fb2a87968f663a9ba9bbafff013c6159d68404688b42cda986cb03e6bff0584766447ca0e91377be5dab28666cbc172"
         },
         "secure_imge" : {
-            "name": "ginestra_d5_rev2_3_working.bin",
+            "name": "ginestra_d5_rev2.8_working_01252024.bin",
             "version": "0x2",
-            "minor_version" : "0x3",
+            "minor_version" : "0x8",
             "nano_version" : "",
             "file_location" : "/vol/hw/diag/diag_images/CPLD",
-            "sha512sum" : "948f9a033dc9c97721f71225a17f02440b9fa0f2fa99a0d0b32240973061fd6ff1665e0992d9ad9baf9b7d4299673d8b91b186d7249796535fd4598b71d01ddf"
+            "sha512sum" : "da94fbe80e4cbfe93a59810ac4b039f4dd9e6b9683eaa8c587a07ce740114bc05e029e35fd61045a12d117b6dc60da770b5be00b197038d70b1415c5ca0a6a13"
         },
         "special_boot0_imge" : {
             "name": "special_boot0_giglio.img",
