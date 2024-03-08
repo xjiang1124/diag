@@ -84,7 +84,7 @@ func MemDdr_StressHdl(argList []string) {
     availMemInKb := availMemStrArr[1]
     availMemSize, _ := strconv.Atoi(availMemInKb)
     dcli.Println("i", "Available memory in Kbytes: ", availMemSize)
-    availMemSize = (availMemSize / 1024 / 100) * 100;
+    availMemSize = (availMemSize / 1024 / 100) * 100 - 1000;//use available memory - 1G
     dcli.Println("i", "Available memory in Mbytes: ", availMemSize)
 
     cmd = "/data/nic_util/stressapptest_arm"
