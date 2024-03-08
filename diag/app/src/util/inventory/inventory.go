@@ -639,6 +639,22 @@ func main() {
             outStr := strings.TrimSpace(strArray[1])
             cli.Println("i", "CPU Model:", outStr)
         }
+
+        // CPU temperature
+        out, errGo = exec.Command("bash", "-c", "sensors").Output()
+        if errGo != nil {
+            cli.Println("e", errGo)
+        } else {
+            strArray := strings.Split(string(out[:]), "\n")
+            cli.Println("i", "")
+            cli.Println("i", "Temperature Sensors:")
+            for i := 0; i < len(strArray); i++ {
+                if !strings.Contains(strArray[i], "ERROR") {
+                    cli.Println("i", strings.TrimSpace(strArray[i]))
+                }
+            }
+        }
+
         return
     }
 
