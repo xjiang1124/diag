@@ -33,10 +33,8 @@ func main() {
     if cardType == "LIPARI" || 
        cardType == "MTP_MATERA" { // FIXME: For validation Matera on Lipari only
         lipari_fpga_cli()
-        cli.Println("d", "Found card:", cardType)
     } else {
         taormina_fpga_cli()
-        cli.Println("d", "Found card:", cardType)
     }
     return
 }

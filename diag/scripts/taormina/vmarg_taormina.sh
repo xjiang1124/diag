@@ -38,12 +38,13 @@ then
     declare -a pct_list=(0)
     declare -a pct_list3V3S=(0)
     declare -a pct_list3V3=(0)
+    declare -a pct_list3V3_vrefprogrammed=(-1)
 elif [ "$1" == "high" ]
 then
     declare -a pct_list=(1 2)
     declare -a pct_list3V3S=(1 2 3)
-    declare -a pct_list3V3=(1 2 3 4 5 6)
-    declare -a pct_list3V3_vrefprogrammed=(0)
+    declare -a pct_list3V3=(1 2 3)
+    declare -a pct_list3V3_vrefprogrammed=(1)
 else
     echo "Invalid parameter"
     exit 1
