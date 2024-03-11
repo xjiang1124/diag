@@ -85,7 +85,7 @@ func TaorminaSetVrefTrim(devName string) (err int) {
         cli.Println("e", "Failed to read %s VREF_TRIM register", devName)
         return
     }
-    if vref_trim == 0x09 &&  {
+    if vref_trim == 0x09  {
         cli.Printf("i", "3.3V is already trimmed. VREFTIME=0x%02x Exiting\n", vref_trim)
         return                                                           
     } else {
