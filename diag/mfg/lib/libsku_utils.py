@@ -1,5 +1,5 @@
 from libdefs import NIC_Type
-from libmfg_cfg import Factory
+from libdefs import Factory
 
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_SN_SUFFIX_FMT = r"\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
