@@ -186,6 +186,10 @@ var materaI2cHubMap map[string] I2cHubInfo
 // Status display list
 var mtpsDispStaList map[string]DispStaFunc
 
+// MTP_MATERA
+// Status display list
+var materaDispStaList map[string]DispStaFunc
+
 //===============================
 // NIC POWER
 // Status display list
@@ -496,6 +500,17 @@ func init() {
     mtpsDispStaList["659_DVDD"] = tps53659.DispStatus
     mtpsDispStaList["659_AVDD"] = tps53659.DispStatus
 
+    //===============================
+    // MTP_MATERA
+    materaDispStaList = make(map[string]DispStaFunc)
+    materaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
+    materaDispStaList["P3V3"]      = mp8796.DispStatus
+    materaDispStaList["P3V3S1"]    = tps53688.DispStatus
+    materaDispStaList["P3V3S2"]    = tps53688.DispStatus
+    materaDispStaList["TEMP_MB"]   = lm75a.DispStatus
+    materaDispStaList["TEMP_IOB1"] = lm75a.DispStatus
+    materaDispStaList["TEMP_IOB2"] = lm75a.DispStatus
+
     materaI2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
@@ -646,6 +661,7 @@ func init() {
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
+    dispMap["MTP_MATERA"]  = materaDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
     //===============================
     // Taormina
