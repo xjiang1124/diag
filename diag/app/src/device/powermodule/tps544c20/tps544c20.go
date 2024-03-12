@@ -56,7 +56,11 @@ func I2cTest(devname string) (err int) {
 * 
 * Need to set Taormina's 3V3 higher due to a problem with a serdes clock buffer 
 * The clock buffer seems to behave better with higher 3.3V voltage. 
-* Want to bump it 5% to ~  3.465
+* Want to bump it 5% to ~  3.465 
+*  
+* ###### CLEAR OUT VREF TRIM ##############
+* fpgautil i2c 0 1 8 w 0xd4 0 0
+* fpgautil i2c 0 1 8 w 0x15 
 * 
 *********************************************************************************/ 
 func TaorminaSetVrefTrim(devName string) (err int) {
@@ -81,11 +85,11 @@ func TaorminaSetVrefTrim(devName string) (err int) {
         cli.Println("e", "Failed to read %s VREF_TRIM register", devName)
         return
     }
-    if vref_trim == 0x0E {
+    if vref_trim == 0x09  {
         cli.Printf("i", "3.3V is already trimmed. VREFTIME=0x%02x Exiting\n", vref_trim)
         return                                                           
     } else {
-        err = pmbus.WriteWord(devName, VREF_TRIM, 0x0E)
+        err = pmbus.WriteWord(devName, VREF_TRIM, 0x09)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to write %s VREF_TRIM register", devName)
             return
