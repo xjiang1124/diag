@@ -7,7 +7,7 @@ import pexpect
 import argparse
 import re
 import random
-import commands
+import subprocess
 from datetime import datetime
 import json
 
@@ -47,7 +47,7 @@ def main():
         
         ping_cmd = "ping {:s} -c 4".format(srv_ipaddr)
 
-        output = commands.getstatusoutput(ping_cmd)
+        output = subprocess.getstatusoutput(ping_cmd)
 
         findmatch = re.findall(r"\s(\d+)% packet loss",output[1])
 
@@ -61,7 +61,7 @@ def main():
         logserver_dir = "/mfg_log/"
         rsync_cmd = "rsync -u -t -r -a -v --dry-run -e " + ssh_cmd + ":" + pro_srv_logpath + " " + logserver_dir
         print(rsync_cmd)
-        session = pexpect.spawn(rsync_cmd)
+        session = pexpect.spawn(rsync_cmd, encoding='utf-8')
         try:
             session.expect_exact("assword:")
         except pexpect.TIMEOUT:
@@ -81,8 +81,8 @@ def main():
         #print(json.dumps(workondata, indent = 4))
         #print(output2)
         print("FILE COUNT: {}".format(filecount))
-        print("FILE COUNT After process: {}".format(len(workondata.keys())))
-        emailBody = "FILE COUNT After process: {}\n{}".format(len(workondata.keys()),emailBody)
+        print("FILE COUNT After process: {}".format(len(list(workondata.keys()))))
+        emailBody = "FILE COUNT After process: {}\n{}".format(len(list(workondata.keys())),emailBody)
         emailBody = "FILE COUNT: {} \n{}".format(filecount,emailBody)
         #gettransfersize(output2)
         #sys.exit()
@@ -145,7 +145,7 @@ def workonrsynceachfile(eachfile,eachdata, ssh_cmd, pro_srv_logpath, logserver_d
     return rsync_cmd + "\n" + output3
 
 def run_rsync_cmd_locate(rsync_cmd):
-    session3 = pexpect.spawn(rsync_cmd)
+    session3 = pexpect.spawn(rsync_cmd, encoding='utf-8')
     session3.expect_exact(pexpect.EOF, timeout=None)
 
     output3 = session3.before
@@ -153,7 +153,7 @@ def run_rsync_cmd_locate(rsync_cmd):
     return output3
 
 def run_rsync_cmd(rsync_cmd,srv_passwd):
-    session2 = pexpect.spawn(rsync_cmd)
+    session2 = pexpect.spawn(rsync_cmd, encoding='utf-8')
     try:
         session2.expect_exact("assword:")
     except pexpect.TIMEOUT:

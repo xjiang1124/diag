@@ -258,5 +258,5 @@ if args.parallelRuntest != None:
     diaghost.paraRun(testItems)
     sys.exit()
 
-print "Invalid parameter!"
+print("Invalid parameter!")
 parser.print_usage()

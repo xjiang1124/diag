@@ -15,7 +15,7 @@ def find_file(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
     return result
 
 def find_dir(pattern, path):
@@ -25,7 +25,7 @@ def find_dir(pattern, path):
             if fnmatch.fnmatch(dir_name, pattern):
                 result.append(os.path.join(root, dir_name))
     if result == []:
-        print "Can not find file!", pattern, path
+        print("Can not find file!", pattern, path)
 
     return result
 
@@ -37,7 +37,7 @@ def find_first_dir(path):
             result.append(os.path.join(root, dir_name))
 
     if result == []:
-        print "Can not find file!", path
+        print("Can not find file!", path)
 
     return result
 
@@ -75,7 +75,7 @@ cwd_top = os.getcwd()
 try:
     shutil.rmtree(cwd_top+'/test_logs')
 except os.error:
-    print "no test_logs folder, will be created"
+    print("no test_logs folder, will be created")
 
 #print "Parsing error logs"
 record_dict = dict()
@@ -96,7 +96,7 @@ for card in card_list:
         for file_fullname in files_found:
             dir_name1 = os.path.dirname(file_fullname)
             file_name = os.path.basename(file_fullname)
-            print file_fullname
+            print(file_fullname)
         
             tgt_dir = cwd_top+"/test_logs"
             if not os.path.exists(tgt_dir):
@@ -111,7 +111,7 @@ for card in card_list:
             tgt_msg = parse_asic_file(sn, "./temp.log")
             if tgt_msg != '000000':
                 new_record[sn] = tgt_msg
-                print card[:-1], sn, tgt_msg
+                print(card[:-1], sn, tgt_msg)
             os.system("rm -rf "+cwd_top+"/test_logs/*")
         
             #print cwd_top
@@ -125,8 +125,8 @@ os.chdir(cwd_top)
 f= open("die_id.log","w+")
 f1= open("card_sn_die_id.log","w+")
 fmt_str = "{:15}{:15}{:50}"
-for card, sn_die_dict in record_dict.iteritems():
-    for sn, dieId in sn_die_dict.iteritems():
+for card, sn_die_dict in record_dict.items():
+    for sn, dieId in sn_die_dict.items():
         out_str = fmt_str.format(card, sn, dieId)
         #print out_str
         f1.write(out_str+'\n')
