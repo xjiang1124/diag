@@ -219,9 +219,12 @@ func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, s
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
         }
-
         if (cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5") {
             if update == true {
+                if pn == "" {
+                    cli.Println("e", "For Programming Ginestra, you must enter a part number")
+                    return -1;
+                }
                 if skuMode == true {
                     if sku == "" {
                         cli.Println("e", "For Programming Ginestra, you must enter an SKU")
@@ -231,21 +234,17 @@ func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, s
                         eeprom.EepromTbl = eeprom.OrtanoOracleTbl
                         eeprom.CustType = "ORTANO"
                     } else if (sku == eeprom.SKU_GIN_D5_MSFT) ||
-                              (sku == eeprom.SKU_GIN_D5_S4) ||
-                              (sku == eeprom.SKU_GIN_D5_S4_B3) ||
-                              (sku == eeprom.SKU_GIN_D5_S4_P3){
-                        eeprom.EepromTbl = eeprom.OrtanoPenStandardTbl
+                              (sku == eeprom.SKU_GIN_D5_SSDK) ||
+                              (sku == eeprom.SKU_GIN_D5_SSDK_B3) ||
+                              (sku == eeprom.SKU_GIN_D5_SSDK_P3){
+                        eeprom.EepromTbl = eeprom.GinestraSSDKTbl
                         eeprom.CustType = "ORTANO"
                     } else {
                         cli.Println("e", "Invalid SKU '", sku,"' Entered For Programming a Ginestra Card")
                         return -1;
                     }
                 } else {
-                    if pn == "" {
-                        cli.Println("e", "For Programming Ginestra, you must enter a part number")
-                        return -1;
-                    }
-                    eeprom.EepromTbl = eeprom.OrtanoPenStandardTbl
+                    eeprom.EepromTbl = eeprom.GinestraSSDKTbl
                     eeprom.CustType = "ORTANO"
                 }
             }
@@ -686,6 +685,7 @@ func main() {
     fpoPtr     := flag.Bool  ("fpo",    false,      "First time power on")
     skuPtr     := flag.String("sku",    "",         "SKU")
     skuModePtr := flag.Bool  ("skuMode",false,      "SKU mode")
+    dpnPtr     := flag.String("dpn",    "",         "Diagnostic Part number")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -703,6 +703,7 @@ func main() {
     fixHpe := 1
     custType := strings.ToUpper(*custTypePtr)
     sku := strings.ToUpper(*skuPtr)
+    dpn := strings.ToUpper(*dpnPtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -771,7 +772,7 @@ func main() {
     }
     if !found {
         if *skuModePtr == true {
-            rc := eepromTlbInit(uut, "", *updatePtr, devName, sku, true)
+            rc := eepromTlbInit(uut, pn, *updatePtr, devName, sku, true)
             if rc != 0 {
                 cli.Println("e", "eepromTlbInit Failed\n")
                 return
@@ -870,12 +871,17 @@ func main() {
                 } else {
                     identifier = pn
                 }
-                //cli.Printf("i", "mode: %t, identifier: %s\n", *skuModePtr, identifier)
+                //cli.Printf("i", "skuMode: %t, identifier: %s, dpn: %s\n", *skuModePtr, identifier, dpn)
                 found, _ = eeprom.CardInListNew(identifier)
                 if found == true {
-                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, identifier, mac, date, *skuModePtr)
+                    hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, sku, mac, date, dpn, *skuModePtr)
                     misc.SleepInUSec(500000)
                     return
+                } else {
+                    if *skuModePtr == true {
+                        cli.Println("e", "The SKU '", sku,"' is not supported For Programming a Ginestra Card")
+                        return
+                    }
                 }
             }
             if mac != "" && eeprom.HpeAlom == false {

@@ -892,6 +892,12 @@ Factory_network_config = {
     }
 }
 
+###############################################################################################################################
+# Traffice flow control function implemented, but not deploy yet, uncoment this global vaiable when apply the feature
+###############################################################################################################################
+# FLEX_FLOW_TOKEN_REDIS_IP = '192.168.8.2'              # the centra server running redis. If not specify, default to localhost.
+# FLEX_FLOW_TOKEN_REDIS_PASSWD = ''
+
 # Don't touch the following xml format, it is required for flex flow report
 
 # Milpitas flex server

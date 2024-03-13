@@ -219,29 +219,35 @@ def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp,
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([progCmd], timeout=MTP_Const.OS_CMD_DELAY):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         if "xo3dcpld" in prog_cmd_list and "Invalid region to erase" in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Program UFM3 NOT SUPPORTED by current version of xo3dcpld utility")
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         if "end of programming" not in mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf():
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         # dump UFM3 back to a binary file
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_dump_cpld(partition, file_path=MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + tmp_test_readback_bin_file):
             mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Read Back NIC CPLD internal flash UFM3 failed")
             mtp_mgmt_ctrl.mtp_dump_nic_err_msg(slot)
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         # copy dumped binary file to MTP
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_copy_file_from_nic(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + tmp_test_readback_bin_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_readback_bin_file):
-            return False
+            ret = False
+            break
         # compare two binary file
         if not binary_file_compare(mtp_mgmt_ctrl, slot, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_bin_file, MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + tmp_test_readback_bin_file):
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         # enable cpld to access ufm3
         # """
         #     Write to spi/smbus reg 0xc0[0] =1 to enable cpld to access ufm3 or trigger the following 4 cases to enable hard power cycle the ASIC power( make sure reg 0xc0 [0]  = 0 when disable the MUX access for this SPI UFM module)
@@ -254,7 +260,8 @@ def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp,
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         # read back 'UFM3 Read debug' register and compare with specified test UFM data
         # reverse binary_line, so that it's easy to compate with register value. [crc8, UFM3_data0,.. UFM3_data14]
         # reister 0xC1 is CRC byte, 0xc2 is UFM3_data0, ... 0xcf is UFM3_data13 0xd0 is UFM3_data14
@@ -264,37 +271,49 @@ def single_nic_ufm3_rw_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, dsp,
             if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
                 nic_test_rslt_list[slot] = False
-                return False
+                ret = False
+                break
             ufm3_read_debug_reg_val = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf().split("\n")[1].strip("\r")
             if int(ufm3_read_debug_reg_val, 16) != int(ufm3_data, 16):
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Value {:02x} from UFM3 Read debug NOT match Value {:02x} from dumped bin file".format(ufm3_read_debug_reg_val, ufm3_data))
                 nic_test_rslt_list[slot] = False
-                return False
-        # check register 0xD2
-        cmd = "cpldapp -r 0xd2"
+                ret = False
+                break
+        # check register 0xD1
+        cmd = "cpldapp -r 0xd1"
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         ufm3_read_debug_reg_val = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf().split("\n")[1].strip("\r")
         # check bit2 crc checkout, 1 means crc check error
         if (int(ufm3_read_debug_reg_val, 16) & 0b00000100):
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD2 bit2 check failed")
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD1 bit2 check failed")
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
         # only check for esec enable test pattern
         if test_index == 0:
-            # check bit2 hw lock checkout
+            # check bit1 hw lock checkout
             if not (int(ufm3_read_debug_reg_val, 16) & 0b00000010):
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD2 bit1 check failed")
+                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Register 0xD1 bit1 check failed")
                 nic_test_rslt_list[slot] = False
-                return False
+                ret = False
+                break
         # recover register 0xc0
         cmd = "cpldapp -w 0xc0 0x00"
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
             nic_test_rslt_list[slot] = False
-            return False
+            ret = False
+            break
+
+    # recover register 0xc0 if break out of above loop
+    if not ret:
+        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds([cmd], timeout=MTP_Const.OS_CMD_DELAY):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf())
+            nic_test_rslt_list[slot] = False
 
     # prog back original ufm3 dump, if original ufm3 are all FF, we have recovert it by direct prog the bin without cal checksum.
     progCmd = random.choice(prog_cmd_list).format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH + orginal_ufm3_dump_file_name, "ufm3")
