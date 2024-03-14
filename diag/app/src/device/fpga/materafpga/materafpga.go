@@ -7,7 +7,7 @@ import (
     "os"
     "os/exec"
     "strconv"
-    //"time"
+    "time"
     "strings"
     "syscall"
     "unsafe"
@@ -48,6 +48,21 @@ const MAP_SIZE int = 1048576
 const L_FPGA_PCI_VENDOR_ID    uint32 = 0x1dd8
 const MATERA_FPGA0            uint32 = 0x0000
 const MATERA_FPGA0_PCI_DEV_ID uint32 = 0x0009
+
+const MDIO_RD_ENA         uint32 = 0x6
+const MDIO_WR_ENA         uint32 = 0x5
+const MDIO_REG_ADDR_MASK  uint32 = 0x1F
+const MDIO_DEV_ADDR_MASK  uint32 = 0x1F
+const MDIO_RUN_BUSY_MASK  uint32 = 0x8000
+const MDIO_DATA_MASK      uint32 = 0xFFFF
+const MDIO_DEV_ADDR_SHIFT uint32 = 5
+const MDIO_OP_SHIFT       uint32 = 10
+
+const MVL_REG_GLOBAL                    uint8 = 0x1B
+const MVL_GLOBAL_STATS_OP_REG           uint8 = 0x1D
+const MVL_GLOBAL_STATS_OP_BUSY          uint16 = 1 << 15
+const MVL_GLOBAL_STATS_OP_CAPTURE_PORT  uint16 = 5 << 12
+const MVL_GLOBAL_STATS_OP_HIST_RX_TX    uint16 = 3 << 10
 
 
 var Glob_fd0 *os.File = nil
@@ -376,3 +391,88 @@ func MunMAP_Device(fd *os.File, mmap []byte) (err error) {
 }
 
 
+func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
+    var cmd uint32
+    var data uint32
+    var retry uint16
+
+    if (inst != 0  && inst != 1) {
+        cli.Printf("e", "Invalid instance number")
+        return
+    }
+    cmd = uint32(regAddr) & MDIO_REG_ADDR_MASK
+    cmd |= (uint32(phy) & MDIO_DEV_ADDR_MASK) << MDIO_DEV_ADDR_SHIFT
+    cmd |= (MDIO_RD_ENA << MDIO_OP_SHIFT) | MDIO_RUN_BUSY_MASK
+    err = MateraWriteU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8), cmd)
+    if err != nil {
+        return
+    }
+    for retry = 0; retry < 100; retry++ {
+        data, err = MateraReadU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8))
+        if ((data & MDIO_RUN_BUSY_MASK) == 0) {
+            data, err = MateraReadU32(FPGA_E0_SMI_DATA_REG + uint64(inst * 8))
+            value = uint16(data & MDIO_DATA_MASK)
+            return
+        }
+        time.Sleep(time.Duration(1) * time.Microsecond)
+    }
+    cli.Println("e", "timeout waiting for operation to complete")
+    return
+}
+
+
+func MdioWrite(inst uint8, phy uint8, regAddr uint8, value uint16) (err error) {
+    var cmd uint32
+    var data uint32
+    var retry uint16
+
+    if (inst != 0  && inst != 1) {
+        cli.Println("e", "Invalid instance number")
+        return
+    }
+    err = MateraWriteU32(FPGA_E0_SMI_DATA_REG + uint64(inst * 8), uint32(value))
+    if err != nil {
+        return
+    }
+    cmd = uint32(regAddr) & MDIO_REG_ADDR_MASK
+    cmd |= (uint32(phy) & MDIO_DEV_ADDR_MASK) << MDIO_DEV_ADDR_SHIFT
+    cmd |= (MDIO_WR_ENA << MDIO_OP_SHIFT) | MDIO_RUN_BUSY_MASK
+    err = MateraWriteU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8), cmd)
+    if err != nil {
+        return
+    }
+    for retry = 0; retry < 100; retry++ {
+        data, err = MateraReadU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8))
+        if ((data & MDIO_RUN_BUSY_MASK) == 0) {
+            return
+        }
+        time.Sleep(time.Duration(1) * time.Microsecond)
+        retry++
+    }
+    cli.Println("e", "timeout waiting for operation to complete")
+    return
+}
+
+
+func MvlDump(inst uint8) (err error) {
+    var port uint16
+    if (inst != 0  && inst != 1) {
+        cli.Println("e", "Invalid instance number")
+        return
+    }
+    fmt.Printf("MATERA MARVELL instance %d REGISTER DUMP\n", inst)
+    for port = 0; port < 10; port++ {
+        fmt.Printf("  Port %d\n", port)
+        // snapshot all counters for this port
+        err = MdioWrite(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG,
+                        MVL_GLOBAL_STATS_OP_CAPTURE_PORT |
+                        MVL_GLOBAL_STATS_OP_HIST_RX_TX |
+                        MVL_GLOBAL_STATS_OP_BUSY | port)
+        if err != nil {
+            return
+        }
+        // wait for the snapshot to complete
+        // read the captured stats
+    }
+    return
+}
