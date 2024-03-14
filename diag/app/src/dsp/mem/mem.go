@@ -32,7 +32,7 @@ func check_mcc_interrupts() (err int) {
         err = errType.FAIL
         return
     }
-    regexMCC := regexp.MustCompile(`.*int_mcc_(ecc|controller).*`)
+    regexMCC := regexp.MustCompile(`.*int_mcc_(ecc.*|controller\s+)`)
     outStr := string(out)
     matches := regexMCC.FindAllString(outStr, -1)
     if matches != nil {
