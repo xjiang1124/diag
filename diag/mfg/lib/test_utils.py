@@ -142,6 +142,22 @@ def parallel_threaded_test(func):
 
     return start_end
 
+def update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_list=[True]*MTP_Const.MTP_SLOT_NUM):
+    for slot in pass_nic_list[:]:
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+        if not nic_test_rslt_list[slot]:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+    return pass_nic_list, fail_nic_list
+
 def get_test_constants(stage, mtp_id):
     testsuite_config = {
         FF_Stage.FF_DL:

@@ -31,7 +31,7 @@ from libdefs import Swm_Test_Mode
 import image_control
 import testlog
 import scanning
-
+import test_utils
 
 def logfile_close(filep_list):
     for fp in filep_list:
@@ -602,6 +602,8 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
 
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+
         check_naples_pn = "SCAN_VERIFY" not in args.skip_test
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -610,12 +612,7 @@ def main():
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
@@ -637,13 +634,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
-                continue
-            if slot in fail_nic_list:
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
@@ -717,18 +708,7 @@ def main():
         # program the NIC firmware
         nic_thread_list = list()
         prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 

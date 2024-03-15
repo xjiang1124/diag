@@ -273,6 +273,10 @@ def main():
                 continue
             if not nic_prsnt_list[slot]:
                 continue
+            if args.scandl:
+                key = libmfg_utils.nic_key(slot)
+                if not scanned_nic_fru_cfg[key]["VALID"]:
+                    continue
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
@@ -286,7 +290,7 @@ def main():
             # read in current FRU
             nic_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list, swmtestmode)
             # failures from construct_nic_fru_config
-            for slot in pass_nic_list:
+            for slot in pass_nic_list[:]:
                 key = libmfg_utils.nic_key(slot)
                 if not nic_fru_cfg[key]["VALID"]:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
@@ -302,14 +306,7 @@ def main():
                 # only for QA, fake the scans
                 mtp_mgmt_ctrl.mtp_populate_fru_to_scans(nic_fru_cfg, pass_nic_list, dpn=args.dpn)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[key]["VALID"]
-            if not valid:
-                continue
-
+        for slot in pass_nic_list:
             sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
             mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
             pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
@@ -347,20 +344,12 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
 
         #identify adi ibm pass slot
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
+        for slot in pass_nic_list:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 adi_ibm_reset_slot.append(slot)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
+        for slot in pass_nic_list[:]:
             if slot not in adi_ibm_reset_slot:
                 continue
                 
@@ -419,26 +408,14 @@ def main():
 
         if len(adi_ibm_reset_slot) > 0 and not mtp_mgmt_ctrl.mtp_nic_diag_init(adi_ibm_reset_slot, emmc_format=True, emmc_check=True, fru_fpo=True, fru_valid=True if not args.scandl else False):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                if slot in adi_ibm_reset_slot:
-                    adi_ibm_reset_slot.remove(slot)
+
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+        for slot in fail_nic_list:
+            if slot in adi_ibm_reset_slot:
+                adi_ibm_reset_slot.remove(slot)
 
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot not in adi_ibm_reset_slot:
-                continue
-
+        for slot in adi_ibm_reset_slot[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             test_list = []
             if nic_type == NIC_Type.ORTANO2ADIIBM:
@@ -475,11 +452,7 @@ def main():
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
 
             test_list = ["CONSOLE_BOOT"]
@@ -518,14 +491,7 @@ def main():
         if "CONSOLE_BOOT" not in args.skip_test:
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[key]["VALID"]
-            if not valid:
-                continue
-
+        for slot in pass_nic_list[:]:
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
             elif nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:
@@ -577,22 +543,12 @@ def main():
         ## 1. setup mgmt
         if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC MGMT failed", level=0)
-        for slot in pass_nic_list:
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
 
         ## 2. program fw
         nic_thread_list = list()
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
-
+        for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
             qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
@@ -626,19 +582,10 @@ def main():
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_test_rslt_list[slot]:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_list)
 
         ## 2b. set emmc settings for elba
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
+        for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
 
@@ -676,32 +623,12 @@ def main():
 
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, emmc_format=True, emmc_check=True, fru_fpo=True, fru_valid=True if not args.scandl else False):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
 
         # 4. program the fru, cpld
         nic_thread_list = list()
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                nic_test_rslt_list[slot] = False
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                nic_test_rslt_list[slot] = False
-                continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[key]["VALID"]
-            if not valid:
-                continue
-
+        for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
             failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
@@ -730,12 +657,7 @@ def main():
                     nic_thread_list.remove(nic_thread)
             time.sleep(5)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not nic_test_rslt_list[slot]:
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_list)
 
         ## 5. flash asic esecure fw
         if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
@@ -745,25 +667,9 @@ def main():
         # init nic diag env.
         if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
             mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
 
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[key]["VALID"]
-            if not valid:
-                continue
-
+        for slot in pass_nic_list[:]:
             # DL Verify process
             sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
             mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
