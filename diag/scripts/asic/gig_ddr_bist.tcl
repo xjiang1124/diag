@@ -91,9 +91,14 @@ set vmarg_en 0
 if {$vmarg != "normal"} {
     set vmarg_en 1
 }
-gig_card_rst $port $slot1 hod_1100 $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 $vmarg_en $vdd_margin_pct $arm_margin_pct $margin_pct
+gig_card_rst $port $slot1 $mode $ddr_freq 3000 0 0 "127" 0 1 $vmarg 0 $vmarg_en $vdd_margin_pct $arm_margin_pct $margin_pct
+# do vmarg after ddr init
+#gig_card_rst $port $slot1 $mode $ddr_freq 3000 0 0 "127" 0 1 normal 0 0
 gig_platform
 gig_ddr_init_ddr $::ddr5 $ddr_freq
+# do vmarg after ddr init
+#set core_freq [gig_core_freq_for_mode $mode]
+#gig_set_vmarg_vout $vmarg $core_freq 3000 $vdd_margin_pct $arm_margin_pct $margin_pct
 gig_ddr_bist -1 -1 1
 gig_platform
 gig_mc_check_ecc  -1  -1  $::ddr5  $::board_type

@@ -35,7 +35,7 @@ class nic_test:
         file1.close()
         return mtp_rev[0][:-1]
 
-    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False):
+    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, do_untar=""):
         print "=== Starting setup env on slot {} ===".format(slot)
 
         mtp_rev = self.get_mtp_rev()
@@ -92,7 +92,7 @@ class nic_test:
                 #self.nic_con.uart_session_cmd(session, "cat write_ddl.txt | capview")
                 #self.nic_con.uart_session_cmd(session, "cat read_ddl.txt | capview | grep data")
 
-                self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
+                self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh " + do_untar, 120)
                 self.nic_con.uart_session_cmd(session, "source /etc/profile", 10)
                 #if cpldID[0] == "0x43" or \
                 #   cpldID[0] == "0x44" or \
@@ -165,14 +165,14 @@ class nic_test:
 
         return ret
 
-    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True):
+    def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True, do_untar=""):
         nic_list_remain = nic_list[:]
         timeout = 60
         for retry in range(numRetry):
             print "Setting up #{}".format(retry)
             print "slot_list", nic_list_remain
             print "timestamp", datetime.datetime.now().time()
-            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port, env=env)
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port, env=env, do_untar=do_untar)
             timeout += retry*10
             if ret == 0:
                 break
@@ -235,7 +235,7 @@ class nic_test:
         return ret, nic_list_remain
 
 
-    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, env=True):
+    def setup_env_multi(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, env=True, do_untar=""):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
@@ -250,7 +250,7 @@ class nic_test:
 
         if env == True:
             for slot in nic_list:
-                ret = self.setup_env(int(slot), False, timeout, False, False, False)
+                ret = self.setup_env(int(slot), False, timeout, False, False, False, do_untar)
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
         for slot in nic_list:
@@ -700,7 +700,10 @@ class nic_test:
         #slot_list = ",".join(nic_list)
         print "slot_list:", slot_list
         #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
-        self.setup_env_multi_top(slot_list, False, 30, False, True, False, numRetry=num_retry)
+        if test_type == "snake":
+            self.setup_env_multi_top(slot_list, False, 30, False, True, False, do_untar="0")
+        else:
+            self.setup_env_multi_top(slot_list, False, 30, False, True, False)
 
         test_result = OrderedDict()
         # Start snake
@@ -715,7 +718,7 @@ class nic_test:
         self.mtp_sts(wait_time)
 
         done_count = 0
-        for retry_idx in range(self.num_retry):
+        for retry_idx in range(num_retry):
             print "Checking result:", retry_idx
             for slot in nic_list:
                 if test_result[slot] != "NO RESULT":

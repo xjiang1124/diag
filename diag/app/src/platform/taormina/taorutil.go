@@ -60,6 +60,100 @@ import (
 )
 
 
+type ElbaMIBstats struct {
+    FRAMES_RX_OK           uint64 
+    FRAMES_RX_ALL          uint64 
+    FRAMES_RX_BAD_FCS      uint64
+    FRAMES_RX_BAD_ALL      uint64 
+    OCTETS_RX_OK           uint64
+    OCTETS_RX_ALL          uint64
+    FRAMES_RX_UNICAST      uint64
+    FRAMES_RX_MULTICAST    uint64
+    FRAMES_RX_BROADCAST    uint64
+    FRAMES_RX_PAUSE        uint64   //10
+    FRAMES_RX_BAD_LENGTH   uint64
+    FRAMES_RX_UNDERSIZED   uint64
+    FRAMES_RX_OVERSIZED    uint64
+    FRAMES_RX_FRAGMENTS    uint64
+    FRAMES_RX_JABBER       uint64
+    FRAMES_RX_PRIPAUSE     uint64
+    FRAMES_RX_STOMPED_CRC  uint64
+    FRAMES_RX_TOO_LONG     uint64
+    FRAMES_RX_VLAN_GOOD    uint64
+    FRAMES_RX_DROPPED      uint64  //20
+    FRAMES_RX_LESS_THAN_64B uint64
+    FRAMES_RX_64B          uint64
+    FRAMES_RX_65B_127B     uint64
+    FRAMES_RX_128B_255B    uint64
+    FRAMES_RX_256B_511B    uint64
+    FRAMES_RX_512B_1023B   uint64
+    FRAMES_RX_1024B_1518B  uint64
+    FRAMES_RX_1519B_2047B  uint64
+    FRAMES_RX_2048B_4095B  uint64
+    FRAMES_RX_4096B_8191B  uint64  //30
+    FRAMES_RX_8192B_9215B  uint64
+    FRAMES_RX_OTHER        uint64
+    FRAMES_TX_OK           uint64
+    FRAMES_TX_ALL          uint64
+    FRAMES_TX_BAD          uint64
+    OCTETS_TX_OK           uint64
+    OCTETS_TX_TOTAL        uint64
+    FRAMES_TX_UNICAST      uint64
+    FRAMES_TX_MULTICAST    uint64
+    FRAMES_TX_BROADCAST    uint64  //40
+    FRAMES_TX_PAUSE        uint64
+    FRAMES_TX_PRIPAUSE     uint64
+    FRAMES_TX_VLAN         uint64
+    FRAMES_TX_LESS_THAN_64B uint64
+    FRAMES_TX_64B          uint64
+    FRAMES_TX_65B_127B     uint64
+    FRAMES_TX_128B_255B    uint64
+    FRAMES_TX_256B_511B    uint64
+    FRAMES_TX_512B_1023B   uint64
+    FRAMES_TX_1024B_1518B  uint64  //50
+    FRAMES_TX_1519B_2047B  uint64
+    FRAMES_TX_2048B_4095B  uint64
+    FRAMES_TX_4096B_8191B  uint64
+    FRAMES_TX_8192B_9215B  uint64
+    FRAMES_TX_OTHER        uint64
+    FRAMES_TX_PRI_0        uint64
+    FRAMES_TX_PRI_1        uint64
+    FRAMES_TX_PRI_2        uint64
+    FRAMES_TX_PRI_3        uint64
+    FRAMES_TX_PRI_4        uint64  //60
+    FRAMES_TX_PRI_5        uint64
+    FRAMES_TX_PRI_6        uint64
+    FRAMES_TX_PRI_7        uint64
+    FRAMES_RX_PRI_0        uint64
+    FRAMES_RX_PRI_1        uint64
+    FRAMES_RX_PRI_2        uint64
+    FRAMES_RX_PRI_3        uint64
+    FRAMES_RX_PRI_4        uint64
+    FRAMES_RX_PRI_5        uint64
+    FRAMES_RX_PRI_6        uint64  //70
+    FRAMES_RX_PRI_7        uint64
+    TX_PRIPAUSE_0_COUNT    uint64
+    TX_PRIPAUSE_1_COUNT    uint64
+    TX_PRIPAUSE_2_COUNT    uint64
+    TX_PRIPAUSE_3_COUNT    uint64
+    TX_PRIPAUSE_4_COUNT    uint64
+    TX_PRIPAUSE_5_COUNT    uint64
+    TX_PRIPAUSE_6_COUNT    uint64
+    TX_PRIPAUSE_7_COUNT    uint64
+    RX_PRIPAUSE_0_COUNT    uint64  //80
+    RX_PRIPAUSE_1_COUNT    uint64
+    RX_PRIPAUSE_2_COUNT    uint64
+    RX_PRIPAUSE_3_COUNT    uint64
+    RX_PRIPAUSE_4_COUNT    uint64
+    RX_PRIPAUSE_5_COUNT    uint64
+    RX_PRIPAUSE_6_COUNT    uint64
+    RX_PRIPAUSE_7_COUNT    uint64
+    RX_PAUSE_1US_COUNT      uint64
+    FRAMES_TX_TRUNCATED     uint64
+    RSFEC_CORRECTABLE_WORD  uint64 //90
+    RSFEC_CH_SYMBOL_ERR_CNT uint64
+}
+
 
 const (
     MAXPSU = 2
@@ -97,6 +191,8 @@ const (
     PRBS_GB_LPBK = 1
     PRBS_RETIMER_LPBK = 2
 )
+
+const ELBA_MAX_TEMP = 80
 
 var gbLoopbackLevel_map = map[int]string{
     GB_LOOPBACK_LINE_SIDE : "Line",
@@ -1333,6 +1429,8 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
     var testStarted uint32 = 0
     var passCnt = (rdpad_max / 10) + 3
 
+    var newEDMA uint32 = 0  //new edma does not need bypass memory variables set
+
 
     if rdpad_max > 101 {
         t := (rdpad_max - 100) / 10
@@ -1360,15 +1458,21 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
     dcli.Printf("i", " Starting Elba EMDA Test:  Mask=0x%x\n", elbaMask)
 
 
-    {
-        year, month, _ := CXOS_Get_Build_Date()
-        dcli.Printf("i","CXOS Build Date %d-%.02d\n", year, month)
-        if (year < 2022) || ((year==2022) && (month < 7)) {
-            cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%.02d\n", year, month)
-            err = errType.FAIL
-            return
-        }
+    year, month, _ := CXOS_Get_Build_Date()
+    dcli.Printf("i","CXOS Build Date %d-%.02d\n", year, month)
+    if (year < 2022) || ((year==2022) && (month < 7)) {
+        cli.Printf("e", "CXOS Image build date does not look like it supports EDMA. Date--> %d-%.02d\n", year, month)
+        err = errType.FAIL
+        return
     }
+
+
+
+    //2024-02-02 04:06:46 UTC
+    if ((year==2024) && (month > 1)){
+        newEDMA=1
+    }
+    dcli.Printf("i","newEDMA=%d\n", newEDMA)
 
 
     for i=forStart; i < forEnd; i++ {
@@ -1377,6 +1481,7 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
             elbafailmask |= (1<<i)
         }
     }
+
 
 
     cli.Printf("i","Removing Elba from PCI\n");
@@ -1391,29 +1496,30 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         }
     }
 
-    dcli.Printf("i","Setting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824;sysreset.sh\n")
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
-    for i=forStart; i < forEnd; i++ {
-        if elbafailmask & (1<<i) == (1<<i) {
-            continue
+    if (newEDMA == 0) {
+        dcli.Printf("i","Setting fwenv vars for mem bypass and rebooting Elba\n")
+        cmdStr = fmt.Sprintf("pwd\nfwenv -s mem_bypass_addr 0x1000000000;fwenv -s mem_bypass_size 1073741824;sysreset.sh\n")
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+        for i=forStart; i < forEnd; i++ {
+            if elbafailmask & (1<<i) == (1<<i) {
+                continue
+            }
+            testStarted=1
+            if  i == ELBA0 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            } 
+            _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
         }
-        testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
-        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
-        if errGo != nil {
-            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
-            err = errType.FAIL
-            return
-        }
+        misc.SleepInSec(15)
     }
-    misc.SleepInSec(15)
-
 
    
     dcli.Printf("i","Creating cmd files\n")
@@ -1565,25 +1671,26 @@ func ElbaEDMA_Test_Console_Only_CXOS_SCRIPT(elbaMask uint32, calledFromCLI int, 
         
     }
 
-    dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
-    cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
-    _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
-    for i=forStart; i < forEnd; i++ {
-        testStarted=1
-        if  i == ELBA0 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
-        } else if i == ELBA1 {
-            cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
-        } 
-        _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
-        if errGo != nil {
-            dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
-            err = errType.FAIL
-            return
+    if (newEDMA == 0) {
+        dcli.Printf("i","UnSetting fwenv vars for mem bypass and rebooting Elba\n")
+        cmdStr = fmt.Sprintf("pwd\nfwenv -R\n")
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt", []byte(cmdStr), 0755)
+        _ = ioutil.WriteFile("/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt", []byte(cmdStr), 0755)
+        for i=forStart; i < forEnd; i++ {
+            testStarted=1
+            if  i == ELBA0 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+            } else if i == ELBA1 {
+                cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+            } 
+            _ , errGo := exec.Command("sh", "-c", cmdStr).Output()
+            if errGo != nil {
+                dcli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
         }
     }
-    
 
     for i=forStart; i < forEnd; i++ {
         if elbafailmask & (1<<i) == (1<<i) {
@@ -3142,6 +3249,40 @@ func ElbaMemoryTest(elbaMask uint32, time uint32, percent uint32, calledFromCLI 
 
 
 /********************************************************************************* 
+ 
+ 
+////////////////////////////// CONTENTS OF EACH REGISTER IN THE SCRIPT ////////////////
+# cat elba_local_read_ecc_reg.sh
+#!/bin/bash
+
+/nic/bin/capview << EOF
+secure on
+read 0x30520020     //CHECK MC0 CORRECTABLE IRQ (See below for bit defines).  
+read 0x305a0020     //CHECK MC1 CORRECTABLE IRQ (see below for bit defines). 
+
+read 0x30530464     //BITS[31:0]
+read 0x30530468     //BITS[63:32] --> MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+
+read 0x3053046C     //BITS[31:0]
+read 0x30530470     //BITS[63:32] --> MC0-DATA[63:0]
+
+read 0x30530474     //[BITS31:0]  --> MC0-ECC C ID[16]
+
+read 0x305B0464     //BITS[31:0]
+read 0x305B0468     //BITS[63:32] --> MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+
+read 0x305B046C     //BITS[31:0]
+read 0x305B0470     //BITS[63:32] --> MC1-DATA[63:0]
+
+read 0x305B0474     //[BITS31:0]  --> MC1-ECC C ID[16]
+
+EOF 
+ 
+ 
+ 
+ 
+ 
+ 
 * 
 * Below is what gets return from Elba, and then parsed.
 
@@ -3667,6 +3808,522 @@ func ElbaCheckECC_via_console(elba uint32, calledFromCLI int, InjectError int) (
     return
 }
 
+/********************************************************************************************************** 
+*  
+*  
+    PortMap{54, 9  , "ce1",  0, 0, 60, 0},  //Internal Port to ELBA0.3 100G   PHY U1_G0 (LANE 0xF0)    Eth1/2/3 
+    PortMap{55, 91 , "ce9",  0, 0, 60, 0},  //Internal Port to ELBA0.2 100G   PHY U1_G0 (LANE 0x0F)    Eth1/2/1
+    PortMap{56, 95 , "ce10", 1, 0, 60, 0},  //Internal Port to ELBA1.3 100G   PHY U1_G2 (LANE 0xF0)            Eth1/2/3
+    PortMap{57, 13 , "ce2",  1, 0, 60, 0},  //Internal Port to ELBA1.2 100G   PHY U1_G2 (LANE 0x0F)            Eth1/2/1
+    PortMap{58, 123, "ce12", 0, 0, 60, 0},  //Internal Port to ELBA0.0 100G   PHY U1_G1 (LANE 0x0F)    Eth1/1/1           
+    PortMap{59, 127, "ce13", 1, 0, 60, 0},  //Internal Port to ELBA1.1 100G   PHY U1_G3 (LANE 0xF0)            Eth1/1/3
+    PortMap{60, 33,  "ce3",  0, 0, 60, 0},  //Internal Port to ELBA0.1 100G   PHY U1_G1 (LANE 0xF0)    Eth1/1/3
+    PortMap{61, 37,  "ce4",  1, 0, 60, 0},  //Internal Port to ELBA1.0 100G   PHY U1_G3 (LANE 0x0F)            Eth1/1/1
+*  
+*  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+* ID                                      Name      IfIndex     Speed  MAC-Info  FEC       AutoNeg   MTU   Pause  Pause  Debounce  State       Transceiver       NumLinkDown LinkSM              Loopback 
+*                                                                                Cfg/Oper  Cfg/Oper        Type   Tx/Rx  (msecs)   Admin/Oper                                                             
+* --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+* 01000211-0000-0000-4242-049081002f9a    Eth1/2/1  0x11020001  100G   0/4/2       RS/RS    F/F      9412  NONE    F/F   0           UP/UP     REMOVED           0           UP                  NONE     
+* 03000211-0000-0000-4242-049081002f9a    Eth1/2/3  0x11020003  100G   0/6/2       RS/RS    F/F      9412  NONE    F/F   0           UP/UP     REMOVED           0           UP                  NONE     
+* 01000111-0000-0000-4242-049081002f9a    Eth1/1/1  0x11010001  100G   0/0/2       RS/RS    F/F      9412  NONE    F/F   0           UP/UP     REMOVED           0           UP                  NONE     
+* 03000111-0000-0000-4242-049081002f9a    Eth1/1/3  0x11010003  100G   0/2/2       RS/RS    F/F      9412  NONE    F/F   0           UP/UP     REMOVED           0           UP                  NONE     
+* 
+* No. of ports : 4
+************************************************************************************************************/ 
+type LinkFlap_s struct {
+    ethDev  string 
+    GearBoxNumber int
+    GearBoxLanes  uint32
+    LinkFlaps     int 
+}
+
+func Elba_Check_Link_Flap_Count(elba int, useCLI int) (err int) {
+    var ethCount int
+    var cmdStr string
+    Elba_0_Info := []LinkFlap_s{ { "Eth1/1/1", 1, 0x0F, 0 }, 
+                                 { "Eth1/1/3", 1, 0xF0, 0 },
+                                 { "Eth1/2/1", 0, 0x0F, 0 },  
+                                 { "Eth1/2/3", 0, 0xF0, 0 },  
+                               }
+    Elba_1_Info := []LinkFlap_s{ { "Eth1/1/1", 3, 0x0F, 0 }, 
+                                 { "Eth1/1/3", 3, 0xF0, 0 },
+                                 { "Eth1/2/1", 2, 0x0F, 0 },  
+                                 { "Eth1/2/3", 2, 0xF0, 0 },  
+                               }
+    ElbaFlapInfo := Elba_0_Info
+
+    err = errType.SUCCESS
+
+    if  elba == 0 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /nic/bin/pdsctl show port status"
+        cli.Printf("i", "ELBA0 LINK STATUS\n")
+    } else if elba == 1 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /nic/bin/pdsctl show port status"
+        cli.Printf("i", "ELBA1 LINK STATUS\n")
+        ElbaFlapInfo = Elba_1_Info
+    } else {
+        cli.Printf("e", "Invalid Elba Number Passed (%d)", elba)
+        err = errType.FAIL
+        return
+    }
+
+    //Ping Elba to make sure the network is up
+    err = ElbaPing(uint32(elba)) 
+    if err != errType.SUCCESS {
+        dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed.  Cannot communicate with elba to check number of link flaps!\n", elba)
+        goto endLinkFlapTest
+    } else {
+        //execute command to get link flap number
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+        }
+        cli.Printf("i", "%s\n", output)
+
+        s := strings.Split(string(output), "\n")
+        for _, temp := range s {
+            if strings.Contains(temp, "Eth")==true {
+                ethCount++
+
+                temp_s := strings.TrimSpace(string(temp[155:165]))
+                flaps, errGo := strconv.Atoi(string(temp_s))
+                if errGo != nil {
+                    cli.Printf("e", "strconv atoi failed")
+                    err = errType.FAIL
+                    goto endLinkFlapTest
+                }
+                for cnt, elbinfo := range(ElbaFlapInfo) {
+                    if strings.Contains(temp, elbinfo.ethDev) == true {
+                        ElbaFlapInfo[cnt].LinkFlaps=flaps
+                    }
+                }
+
+            }
+        }
+    }
+
+
+    for number, elbinfo := range(ElbaFlapInfo) {
+        var tmpStr string
+        if elbinfo.LinkFlaps > 0 {
+            err = errType.FAIL
+            tmpStr = "FAILED"
+        } else {
+            tmpStr = "PASSED"
+        }
+        cli.Printf("i", " Elba-%d Port-%d < -- > GB-%d Lanes 0x%.02x --> Link Flaps = %d (%s)\n", elba, number, elbinfo.GearBoxNumber,elbinfo.GearBoxLanes, elbinfo.LinkFlaps, tmpStr)
+    }
+
+    if (ethCount != 4) {
+        cli.Printf("e", "Error:  Did not count 4 ethernet devices on Elba\n")
+        err = errType.FAIL
+        goto endLinkFlapTest
+    }
+
+
+    
+
+endLinkFlapTest:
+
+    if err == errType.SUCCESS {
+        cli.Printf("i", "SWITCH LINK FLAP TEST PASSED\n")
+    } else {
+        cli.Printf("e", "SWITCH LINK FLAP TEST FAILED\n")
+    }
+    
+
+    return
+}
+
+
+//ce12, ce3, ce9, ce1, ce4, ce13, ce2, ce10
+//journalctl -u switchd | grep -e "link_scan_internal" | grep -w "status=0" | grep "port\[1\]" | wc -l
+func TD3_Check_Link_Flap() (err int) {
+
+    port_wc_check := []string{
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port\\[123\\]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[33]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[91]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[9]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[37]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[127]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[13]\" | wc -l",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[95]\" | wc -l",
+    }
+
+    port_check := []string{
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port\\[123\\]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[33]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[91]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[9]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[37]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[127]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[13]\"",
+        "journalctl -u switchd | grep -e \"link_scan_internal\" | grep -w \"status=0\" | grep \"port[95]\"",
+    }
+
+    cli.Printf("i", "CHECKING LINK FLAPS FROM TD3 TO EACH ELBA\n")
+
+    for i, _ := range port_wc_check {
+        output , errGo := exec.Command("sh", "-c", port_wc_check[i]).Output()
+        if errGo != nil {
+            dcli.Printf("e","Cmd %s failed! %v", port_wc_check[i], errGo)
+            err = errType.FAIL
+            return
+        }
+        wc64_t, _ := strconv.ParseUint(strings.TrimSpace(string(output)), 0, 64)
+        
+        if wc64_t > 0 {
+            output , errGo := exec.Command("sh", "-c", port_check[i]).Output()
+            if errGo != nil {
+                dcli.Printf("e","Cmd %s failed! %v", port_check[i], errGo)
+                err = errType.FAIL
+                return
+            }
+            cli.Printf("e", "%s\n", output)
+            cli.Printf("e", "Error:  Detect TD3 Ports to Elba that link flapped\n")
+            
+        }
+
+    } //end range loop
+
+    err = errType.SUCCESS
+
+
+
+    if err == errType.SUCCESS {
+        cli.Printf("i", "TD3 LINK FLAP TEST PASSED\n")
+    } else {
+        cli.Printf("e", "TD3 LINK FLAP TEST FAILED\n")
+    }
+
+    return
+}
+
+
+
+
+//journalctl -u switchd | grep -e "link_scan_internal" | grep -w "status=0"
+
+
+/* 
+var gbLoopbackLevel_map = map[int]string{
+    GB_LOOPBACK_LINE_SIDE : "Line",
+    GB_LOOPBACK_HOST_SIDE : "Host",
+} 
+*/ 
+/* 
+Eth1/1/3FRAMES RX OK             0
+        FRAMES RX ALL            0
+        FRAMES RX BAD FCS        0
+        FRAMES RX BAD ALL        0
+        OCTETS RX OK             0
+        OCTETS RX ALL            0
+        FRAMES RX UNICAST        0
+        FRAMES RX MULTICAST      0
+        FRAMES RX BROADCAST      0
+        FRAMES RX PAUSE          0
+        FRAMES RX BAD LENGTH     0
+        FRAMES RX UNDERSIZED     0
+        FRAMES RX OVERSIZED      0
+        FRAMES RX FRAGMENTS      0
+        FRAMES RX JABBER         0
+        FRAMES RX PRIPAUSE       0
+        FRAMES RX STOMPED CRC    0
+        FRAMES RX TOO LONG       0
+        FRAMES RX VLAN GOOD      0
+        FRAMES RX DROPPED        0
+//20 
+        FRAMES RX LESS THAN 64B  0
+        FRAMES RX 64B            0
+        FRAMES RX 65B 127B       0
+        FRAMES RX 128B 255B      0
+        FRAMES RX 256B 511B      0
+        FRAMES RX 512B 1023B     0
+        FRAMES RX 1024B 1518B    0
+        FRAMES RX 1519B 2047B    0
+        FRAMES RX 2048B 4095B    0
+        FRAMES RX 4096B 8191B    0
+        FRAMES RX 8192B 9215B    0
+        FRAMES RX OTHER          0
+        FRAMES TX OK             0
+        FRAMES TX ALL            0
+        FRAMES TX BAD            0
+        OCTETS TX OK             0
+        OCTETS TX TOTAL          0
+        FRAMES TX UNICAST        0
+        FRAMES TX MULTICAST      0
+        FRAMES TX BROADCAST      0
+ 40
+        FRAMES TX PAUSE          0
+        FRAMES TX PRIPAUSE       0
+        FRAMES TX VLAN           0
+        FRAMES TX LESS THAN 64B  0
+        FRAMES TX 64B            0
+        FRAMES TX 65B 127B       0
+        FRAMES TX 128B 255B      0
+        FRAMES TX 256B 511B      0
+        FRAMES TX 512B 1023B     0
+        FRAMES TX 1024B 1518B    0
+        FRAMES TX 1519B 2047B    0
+        FRAMES TX 2048B 4095B    0
+        FRAMES TX 4096B 8191B    0
+        FRAMES TX 8192B 9215B    0
+        FRAMES TX OTHER          0
+        FRAMES TX PRI 0          0
+        FRAMES TX PRI 1          0
+        FRAMES TX PRI 2          0
+        FRAMES TX PRI 3          0
+        FRAMES TX PRI 4          0
+60 
+        FRAMES TX PRI 5          0
+        FRAMES TX PRI 6          0
+        FRAMES TX PRI 7          0
+        FRAMES RX PRI 0          0
+        FRAMES RX PRI 1          0
+        FRAMES RX PRI 2          0
+        FRAMES RX PRI 3          0
+        FRAMES RX PRI 4          0
+        FRAMES RX PRI 5          0
+        FRAMES RX PRI 6          0
+        FRAMES RX PRI 7          0
+        TX PRIPAUSE 0 1US COUNT  0
+        TX PRIPAUSE 1 1US COUNT  0
+        TX PRIPAUSE 2 1US COUNT  0
+        TX PRIPAUSE 3 1US COUNT  0
+        TX PRIPAUSE 4 1US COUNT  0
+        TX PRIPAUSE 5 1US COUNT  0
+        TX PRIPAUSE 6 1US COUNT  0
+        TX PRIPAUSE 7 1US COUNT  0
+        RX PRIPAUSE 0 1US COUNT  0
+ 80
+        RX PRIPAUSE 1 1US COUNT  0
+        RX PRIPAUSE 2 1US COUNT  0
+        RX PRIPAUSE 3 1US COUNT  0
+        RX PRIPAUSE 4 1US COUNT  0
+        RX PRIPAUSE 5 1US COUNT  0
+        RX PRIPAUSE 6 1US COUNT  0
+        RX PRIPAUSE 7 1US COUNT  0
+        RX PAUSE 1US COUNT       0
+        FRAMES TX TRUNCATED      0
+        RSFEC CORRECTABLE WORD   0
+ 90
+        RSFEC CH SYMBOL ERR CNT  0
+ 
+*/ 
+
+
+//type ElbaMIBstats struct {
+//..Eth1/2/1 --> PORT2
+//..Eth1/2/3 --> PORT3
+//..Eth1/1/1 --> PORT0
+//..Eth1/1/3 --> PORT1
+func Elba_Get_Mac_Stats_Into_Struct(elba int, useCLI int) (mibs []ElbaMIBstats, err int) {
+    var cmdStr string
+    var i,j int = 0,0
+    err = errType.SUCCESS
+    var port0 ElbaMIBstats
+    var port1 ElbaMIBstats
+    var port2 ElbaMIBstats
+    var port3 ElbaMIBstats
+    var port_ptr *ElbaMIBstats 
+
+
+
+    if  elba == 0 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /nic/bin/pdsctl show port statistics"
+    } else if elba == 1 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /nic/bin/pdsctl show port statistics"
+        //ElbaFlapInfo = Elba_1_Info
+    } else {
+        cli.Printf("e", "Invalid Elba Number Passed (%d)", elba)
+        err = errType.FAIL
+        return
+    }
+
+    //Ping Elba to make sure the network is up
+    err = ElbaPing(uint32(elba)) 
+    if err != errType.SUCCESS {
+        dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed.  Cannot communicate with elba to check number of link flaps!\n", elba)
+    } else {
+        t1 := time.Now()
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+        }
+        t2 := time.Now()
+        diff := t2.Sub(t1)
+
+        fmt.Println(" Elapsed Time=",diff)
+
+        //cli.Printf("i", "%s\n", output)
+        s := strings.Split(string(output), "\n")
+        i=0
+        j=0
+        for cnt, temp := range s {
+            if cnt<3 { continue }
+            x, _ := strconv.ParseUint(strings.TrimSpace(temp[32:]), 0, 64)
+            switch (j) {
+                case 0: port_ptr = &port2
+                case 1: port_ptr = &port3
+                case 2: port_ptr = &port0
+                case 3: port_ptr = &port1
+            }
+            switch (i) {
+                case 0: port_ptr.FRAMES_RX_OK = x
+                case 1: port_ptr.FRAMES_RX_ALL = x
+                case 2: port_ptr.FRAMES_RX_BAD_FCS = x           
+                case 3: port_ptr.FRAMES_RX_BAD_ALL = x
+                case 4: port_ptr.OCTETS_RX_OK = x
+                case 5: port_ptr.OCTETS_RX_ALL = x           
+                case 6: port_ptr.FRAMES_RX_UNICAST = x
+                case 7: port_ptr.FRAMES_RX_MULTICAST = x
+                case 8: port_ptr.FRAMES_RX_BROADCAST = x           
+                case 9: port_ptr.FRAMES_RX_PAUSE = x
+                case 10: port_ptr.FRAMES_RX_BAD_LENGTH = x
+                case 11: port_ptr.FRAMES_RX_UNDERSIZED = x           
+                case 12: port_ptr.FRAMES_RX_OVERSIZED = x
+                case 13: port_ptr.FRAMES_RX_UNDERSIZED = x           
+                case 14: port_ptr.FRAMES_RX_FRAGMENTS = x
+                case 15: port_ptr.FRAMES_RX_JABBER = x           
+                case 16: port_ptr.FRAMES_RX_STOMPED_CRC = x
+                case 17: port_ptr.FRAMES_RX_TOO_LONG = x           
+                case 18: port_ptr.FRAMES_RX_VLAN_GOOD = x
+                case 19: port_ptr.FRAMES_RX_DROPPED = x     
+                case 20: port_ptr.FRAMES_RX_LESS_THAN_64B = x                                     
+                case 21: port_ptr.FRAMES_RX_64B = x                                     
+                case 22: port_ptr.FRAMES_RX_65B_127B = x                                     
+                case 23: port_ptr.FRAMES_RX_128B_255B = x                                     
+                case 24: port_ptr.FRAMES_RX_256B_511B = x                                     
+                case 25: port_ptr.FRAMES_RX_512B_1023B = x                                     
+                case 26: port_ptr.FRAMES_RX_1024B_1518B = x                                     
+                case 27: port_ptr.FRAMES_RX_1519B_2047B = x                                     
+                case 28: port_ptr.FRAMES_RX_2048B_4095B = x                                     
+                case 29: port_ptr.FRAMES_RX_4096B_8191B = x    
+                case 30: port_ptr.FRAMES_RX_8192B_9215B = x
+                case 31: port_ptr.FRAMES_RX_OTHER = x
+                case 32: port_ptr.FRAMES_TX_OK = x
+                case 33: port_ptr.FRAMES_TX_ALL = x
+                case 34: port_ptr.FRAMES_TX_BAD = x
+                case 35: port_ptr.OCTETS_TX_OK = x
+                case 36: port_ptr.OCTETS_TX_TOTAL = x
+                case 37: port_ptr.FRAMES_TX_UNICAST = x
+                case 38: port_ptr.FRAMES_TX_MULTICAST = x
+                case 39: port_ptr.FRAMES_TX_BROADCAST = x
+                case 40: port_ptr.FRAMES_TX_PAUSE = x
+                case 41: port_ptr.FRAMES_TX_PRIPAUSE = x
+                case 42: port_ptr.FRAMES_TX_VLAN = x
+                case 43: port_ptr.FRAMES_TX_LESS_THAN_64B = x
+                case 44: port_ptr.FRAMES_TX_64B = x
+                case 45: port_ptr.FRAMES_TX_65B_127B = x
+                case 46: port_ptr.FRAMES_TX_128B_255B = x
+                case 47: port_ptr.FRAMES_TX_256B_511B = x
+                case 48: port_ptr.FRAMES_TX_512B_1023B = x
+                case 49: port_ptr.FRAMES_TX_1024B_1518B = x
+                case 50: port_ptr.FRAMES_TX_1519B_2047B = x           
+                case 51: port_ptr.FRAMES_TX_2048B_4095B = x           
+                case 52: port_ptr.FRAMES_TX_4096B_8191B = x           
+                case 53: port_ptr.FRAMES_TX_8192B_9215B = x           
+                case 54: port_ptr.FRAMES_TX_OTHER = x           
+                case 55: port_ptr.FRAMES_TX_PRI_0 = x           
+                case 56: port_ptr.FRAMES_TX_PRI_1 = x           
+                case 57: port_ptr.FRAMES_TX_PRI_2 = x           
+                case 58: port_ptr.FRAMES_TX_PRI_3 = x           
+                case 59: port_ptr.FRAMES_TX_PRI_4 = x  
+                case 60: port_ptr.FRAMES_TX_PRI_5 = x
+                case 61: port_ptr.FRAMES_TX_PRI_6 = x
+                case 62: port_ptr.FRAMES_TX_PRI_7 = x
+                case 63: port_ptr.FRAMES_RX_PRI_0 = x
+                case 64: port_ptr.FRAMES_RX_PRI_1 = x
+                case 65: port_ptr.FRAMES_RX_PRI_2 = x
+                case 66: port_ptr.FRAMES_RX_PRI_3 = x
+                case 67: port_ptr.FRAMES_RX_PRI_4 = x
+                case 68: port_ptr.FRAMES_RX_PRI_5 = x
+                case 69: port_ptr.FRAMES_RX_PRI_6 = x
+                case 70: port_ptr.FRAMES_RX_PRI_7 = x
+                case 71: port_ptr.TX_PRIPAUSE_0_COUNT = x
+                case 72: port_ptr.TX_PRIPAUSE_1_COUNT = x
+                case 73: port_ptr.TX_PRIPAUSE_2_COUNT = x
+                case 74: port_ptr.TX_PRIPAUSE_3_COUNT = x
+                case 75: port_ptr.TX_PRIPAUSE_4_COUNT = x
+                case 76: port_ptr.TX_PRIPAUSE_5_COUNT = x
+                case 77: port_ptr.TX_PRIPAUSE_6_COUNT = x
+                case 78: port_ptr.TX_PRIPAUSE_7_COUNT = x
+                case 79: port_ptr.RX_PRIPAUSE_0_COUNT = x
+                case 80: port_ptr.RX_PRIPAUSE_1_COUNT = x
+                case 81: port_ptr.RX_PRIPAUSE_2_COUNT = x
+                case 82: port_ptr.RX_PRIPAUSE_3_COUNT = x
+                case 83: port_ptr.RX_PRIPAUSE_4_COUNT = x
+                case 84: port_ptr.RX_PRIPAUSE_5_COUNT = x
+                case 85: port_ptr.RX_PRIPAUSE_6_COUNT = x
+                case 86: port_ptr.RX_PRIPAUSE_7_COUNT = x
+                case 87: port_ptr.RX_PAUSE_1US_COUNT = x
+                case 88: port_ptr.FRAMES_TX_TRUNCATED = x
+                case 89: port_ptr.RSFEC_CORRECTABLE_WORD = x
+                case 90: port_ptr.RSFEC_CH_SYMBOL_ERR_CNT = x            
+
+            }
+            i++
+            if i>90 {  //91 stats, roll back to next ports stats afte we go through all 91 for a port
+                i=0;
+                j++;
+            }
+            if j == 4 {  //4 ports, break once we are done
+                break
+            }
+        }
+    }
+    mibs = append(mibs, port0) 
+    mibs = append(mibs, port1)
+    mibs = append(mibs, port2)
+    mibs = append(mibs, port3)
+    return
+}
+
+
+func Elba_Get_Mac_Stats(elba int) (err int) {
+    var cmdStr string
+    err = errType.SUCCESS
+
+
+
+    if  elba == 0 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /nic/bin/pdsctl show port statistics"
+    } else if elba == 1 {
+        cmdStr = "ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /nic/bin/pdsctl show port statistics"
+        //ElbaFlapInfo = Elba_1_Info
+    } else {
+        cli.Printf("e", "Invalid Elba Number Passed (%d)", elba)
+        err = errType.FAIL
+        return
+    }
+
+    //Ping Elba to make sure the network is up
+    err = ElbaPing(uint32(elba)) 
+    if err != errType.SUCCESS {
+        dcli.Printf("e","[ERROR] Elba-%d Ping Test Failed.  Cannot communicate with elba to check number of link flaps!\n", elba)
+    } else {
+        t1 := time.Now()
+        output , errGo := exec.Command("sh", "-c", cmdStr).Output()
+        if errGo != nil {
+            cli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo)
+            err = errType.FAIL
+        }
+        t2 := time.Now()
+        diff := t2.Sub(t1)
+
+        fmt.Println(" Elapsed Time=",diff)
+
+        //fmt.Printf(" %T\n", output)
+
+        cli.Printf("i", "%s\n", output)
+    }
+
+    return
+}
 
 
 func Elba_Check_Pci_Link(elba int, warnOnLinkDownGrade int, useCLI int) (err int) {
@@ -4188,6 +4845,22 @@ retrysettingVRM:
     return
 }
 
+/************************************************************************ 
+*  
+* Set vref_trim for P3V3 to adjust it to +5% permanently 
+* 
+/***********************************************************************/ 
+func TaorminaP3V3trimFix() (err int) {
+    var devName string = "P3V3"
+    err = hwinfo.EnableHubChannelExclusive(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("e", "Failed to set i2c mux for %s", devName)
+        return
+    }
+    err = tps544c20.TaorminaSetVrefTrim(devName)
+    return
+}
+
 
 
 /************************************************************************ 
@@ -4455,8 +5128,8 @@ ovs-appctl l1/phy_loopback 0 0xF0 0 1 1
 ovs-appctl l1/phy_loopback 1 0x0F 0 1 1
 ovs-appctl l1/phy_loopback 1 0xF0 0 1 1
 ovs-appctl l1/phy_loopback 2 0x0F 0 1 1
-ovs-appctl l1/phy_loopback 2 0x0F 0 1 1
-ovs-appctl l1/phy_loopback 3 0xF0 0 1 1
+ovs-appctl l1/phy_loopback 2 0xF0 0 1 1
+ovs-appctl l1/phy_loopback 3 0x0F 0 1 1
 ovs-appctl l1/phy_loopback 3 0xF0 0 1 1
 
 ovs-appctl l1/phy_loopback 0 0x0F 1 2 1
@@ -4464,8 +5137,8 @@ ovs-appctl l1/phy_loopback 0 0xF0 1 2 1
 ovs-appctl l1/phy_loopback 1 0x0F 1 2 1
 ovs-appctl l1/phy_loopback 1 0xF0 1 2 1
 ovs-appctl l1/phy_loopback 2 0x0F 1 2 1
-ovs-appctl l1/phy_loopback 2 0x0F 1 2 1
-ovs-appctl l1/phy_loopback 3 0xF0 1 2 1
+ovs-appctl l1/phy_loopback 2 0xF0 1 2 1
+ovs-appctl l1/phy_loopback 3 0x0F 1 2 1
 ovs-appctl l1/phy_loopback 3 0xF0 1 2 1 
  
     GB_LOOPBACK_LINE_SIDE = 0
@@ -4900,6 +5573,144 @@ func BCM_Retimer_Check_Link(host int, line int) (err int) {
             }
         }
     }
+    return
+}
+
+
+/****************************************************************************************************** 
+* 
+* # aapl eye -server localhost -port 9000 -a 3:8.1 -print-vbtc -print-hbtc | grep "Eye height at 1e-06"
+* Eye height at 1e-06 BER/0.0625 = Q(4.74):   45 mV
+* Eye height at 1e-06 BER/0.0625 = Q(4.74):   53 mV
+* Eye height at 1e-06 BER/0.0625 = Q(4.74):   46 mV
+* 
+* 
+*******************************************************************************************************/ 
+func Elba_Check_Eye_Height(elba int, serdes_lane int, useCLI int) (err int, mv0 int, mv1 int, mv2 int) {
+    var cmdStr string
+    var scriptStr string
+    //Elba_lane_param := []string{"3:8.0", "3:8.1", "3:8.2", "3:8.3", "3:8.4", "3:8.5", "3:8.6", "3:8.7"}
+    i := 0
+
+    const createscript = 
+    "pwd\n"+
+    "cd /data\n"+
+    "rm elb_read_eye.sh\n"+
+    "echo -e \"#!/bin/bash\" > /data/elb_read_eye.sh\n"+ 
+    "echo -e \"/nic/bin/pdsctl debug aacs-server-start --server-port 9000\" >> /data/elb_read_eye.sh\n"+ 
+    "echo -e \"export SERDES_DUT_IP=localhost:9000\" >> /data/elb_read_eye.sh\n"+ 
+    "echo -e \"export SERDES_SBUS_RINGS=4\" >> /data/elb_read_eye.sh\n"+ 
+    "echo -e \"/nic/bin/aapl eye -server localhost -port 9000  -print-ascii-eye -a 3:8.0 -print-vbtc -print-hbtc\" >> /data/elb_read_eye.sh\n"
+
+    err = errType.SUCCESS
+
+    if (elba > (NUMBER_ELBAS -1)) {
+        cli.Printf("e", "Invalid Elba Number Passed (%d)", elba)
+        return errType.FAIL, 0, 0, 0
+    }
+    if (serdes_lane > 7) {
+        cli.Printf("e", "Invalid Port Number Passed (%d)", serdes_lane)
+        return errType.FAIL, 0, 0, 0
+    }
+
+    if (serdes_lane == 0) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.0", 1)
+    }
+    if (serdes_lane == 1) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.1", 1)
+    }
+    if (serdes_lane == 2) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.2", 1)
+    }
+    if (serdes_lane == 3) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.3", 1)
+    }
+    if (serdes_lane == 4) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.4", 1)
+    }
+    if (serdes_lane == 5) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.5", 1)
+    }
+    if (serdes_lane == 6) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.6", 1)
+    }
+    if (serdes_lane == 7) {
+        scriptStr = strings.Replace(createscript, "3:8.0", "3:8.7", 1)
+    }
+
+    if  elba == ELBA0 {
+        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/cmd_elba0.txt"
+    } else if elba == ELBA1 {
+        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/cmd_elba1.txt"
+    }     
+    file, errGo := os.OpenFile(cmdStr, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if errGo != nil {
+        cli.Println("e", "ERROR: Failed to Open %s.   GO ERROR=%v", cmdStr, errGo)
+        err = errType.FAIL
+        return
+    }
+    file.WriteString(string(scriptStr[:]))
+    file.Close()
+    os.Chmod(cmdStr, 0777)
+    if  elba == ELBA0 {
+        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba0_via_console.sh"
+    } else if elba == ELBA1 {
+        cmdStr = "/fs/nos/home_diag/diag/scripts/taormina/exec_cmd_elba1_via_console.sh"
+    } 
+    output , errGo1 := exec.Command("sh", "-c", cmdStr).Output()
+    if errGo1 != nil {
+        cli.Printf("d", "Cmd %s failed! %v", cmdStr, errGo1)
+        err = errType.FAIL
+        return
+    }
+
+
+    if  elba == 0 {
+        cmdStr = fmt.Sprintf("ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 chmod 777 /data/elb_read_eye.sh")
+    } else {
+        cmdStr = fmt.Sprintf("ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 chmod 777 /data/elb_read_eye.sh")
+    } 
+    output , errGo1 = exec.Command("sh", "-c", cmdStr).Output()
+    if errGo1 != nil {
+        cli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo1)
+        return errType.FAIL, 0, 0, 0
+    }
+
+    //get the eye height
+    if  elba == 0 {
+        cmdStr = fmt.Sprintf("ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.13.1 /data/elb_read_eye.sh | grep \"Eye height at 1e-06\"")
+    } else {
+        cmdStr = fmt.Sprintf("ip netns exec ntb sshpass -p pen123 timeout 500 ssh -o LogLevel=ERROR -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@169.254.7.1 /data/elb_read_eye.sh | grep \"Eye height at 1e-06\"")
+    } 
+
+    output , errGo1 = exec.Command("sh", "-c", cmdStr).Output()
+    if errGo1 != nil {
+        cli.Printf("e", "Cmd %s failed! %v", cmdStr, errGo1)
+        return errType.FAIL, 0, 0, 0
+    }
+    //cli.Printf("i", "%s\n", output)
+
+    s := strings.Split(string(output), "\n")
+    for _, temp := range s {
+        temp_s := strings.TrimSpace(string(temp[43:46]))
+        eyeHeight, errGo := strconv.Atoi(string(temp_s))
+        if errGo != nil {
+            cli.Printf("e", "strconv atoi failed")
+            return errType.FAIL, 0, 0, 0
+        }
+        switch (i) {
+            case 0: 
+                mv0 = eyeHeight
+            case 1: 
+                mv1 = eyeHeight
+            case 2: 
+                mv2 = eyeHeight
+        }
+        i++
+        if (i > 2) {
+            break
+        }
+    } 
     return
 }
 
@@ -5395,8 +6206,10 @@ func ShowTemperature ()  (err int)  {
                                   {"TSENSOR-ASIC0", taorfpga.GetTemperature},
                                   {"TSENSOR-ASIC1", taorfpga.GetTemperature},
                                   {"TSENSOR-CPU", XeonD.GetTemperature},
-                                  {"TSENSOR-BCM", td3.GetTemperature},
-                                  {"TSENSOR-BCM", td3.GetPeakTemperature},
+                                  {"TSENSOR-TD3", td3.GetTemperature},
+                                  {"TSENSOR-TD3", td3.GetPeakTemperature},
+                                  {"TSENSOR-GB", td3.GearboxGetTemperatures},
+                                  {"TSENSOR-RETIMER", td3.RetimerGetTemperatures},
                                 }
 
     var TD3count int = 0
@@ -5422,7 +6235,7 @@ func ShowTemperature ()  (err int)  {
             fmt.Printf("ERROR: Reading temperature from dev %s failed\n", temp.TemperatureDevName) 
             return;
         }
-        if temp.TemperatureDevName == "TSENSOR-BCM" {
+        if temp.TemperatureDevName == "TSENSOR-TD3" {
             TD3count++
         }
         if TD3count == 2 {
@@ -5445,6 +6258,105 @@ func ShowTemperature ()  (err int)  {
 
     return
 }
+
+
+/*
+root@sonic:/home/admin/eeupdate# ./fan.bash
+
+
+           prsnt     rev     dir   power   error     pwm   inRPM  outRPM
+           =====     ===     ===   =====   =====     ===   =====  ======
+ fan0:         1       3     red      on       0    0x40    2779    2374
+ fan1:         1       3     red      on       0    0x40    2720    2390
+ fan2:         1       3     red      on       0    0x40    2644    2351
+ fan3:         1       3     red      on       0    0x40    2750    2405
+*/
+func ShowFanSpeed()  (err int)  {
+    //var rc int
+    var outStr string
+    var i int
+    var psuPresent [taorfpga.MAXPSU]bool
+    FanHeader  := []string {"prsnt","error", "pwm", "inRPM", "outRPM"}
+    FanHeader1 := []string {"-----","-----", "---", "-----", "------"}
+
+    outStr = fmt.Sprintf("%-20s", "NAME")
+    for _, title := range(FanHeader) {
+        outStr = outStr + fmt.Sprintf("%-10s", title)
+    }
+    fmt.Printf("%s\n", outStr)
+
+    outStr = fmt.Sprintf("%-20s", "----")
+    for _, title := range(FanHeader1) {
+        outStr = outStr + fmt.Sprintf("%-10s", title)
+    }
+    fmt.Printf("%s\n", outStr)
+
+    //MAXPSU
+    for i=0; i<taorfpga.MAXPSU; i++ {
+        psuPresent[i], _ = taorfpga.PSU_present(uint32(i)) 
+
+    }
+    for i=0; i<taorfpga.MAXPSU; i++ {
+        if psuPresent[i] {
+            str := fmt.Sprintf("PSU_%d", i+1)
+            hwinfo.EnableHubChannelExclusive(str)
+            psuFault, rc := dps800.ReadFanWarnFault(str) 
+            if rc != errType.SUCCESS {
+                fmt.Printf("%-20s RPM = ERROR READING RPM\n", str)
+                err = -1
+            }
+
+            rpm, rc := dps800.ReadFanSpeed(str)
+            if rc != errType.SUCCESS {
+                fmt.Printf("%-20s RPM = ERROR READING RPM\n", str)
+                err = -1
+            } 
+
+            fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", str, "1", strconv.Itoa(int(psuFault))," ", " ",  strconv.Itoa(int(rpm)))
+        }
+    }
+
+//    var fan_MAP = map[int]fanDevMap {
+//    0 : { dev:"FAN_1" , fanNum:0, silkScreenFan:6 } ,  //fan 1 from presence
+//    1 : { dev:"FAN_1" , fanNum:1, silkScreenFan:5 } ,  //fan 2 from presence
+//    2 : { dev:"FAN_1" , fanNum:2, silkScreenFan:4 } ,  //fan 3 from presence
+//    3 : { dev:"FAN_2" , fanNum:0, silkScreenFan:3 } ,  //fan 4 from presence
+//    4 : { dev:"FAN_2" , fanNum:1, silkScreenFan:2 } ,  //fan 5 from presence
+//    5 : { dev:"FAN_2" , fanNum:2, silkScreenFan:1 } ,  //fan 6 from presence
+
+    for i=0; i<taorfpga.MAXFAN; i++ {
+        fanErr :=0
+        var pwm byte
+        var inner, outer uint64
+        var err int
+
+        hwinfo.EnableHubChannelExclusive(fan_MAP[i].dev)
+        inner, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2)+1)
+        if err != errType.SUCCESS {
+            fmt.Printf("%-20s RPM = ERROR READING RPM\n", fan_MAP[i].dev)
+            err = -1
+        } 
+        outer, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2))
+        if err != errType.SUCCESS {
+            fmt.Printf("%-20s RPM = ERROR READING RPM\n", fan_MAP[i].dev)
+            err = -1
+        }
+
+
+        //fanErr, _ := liparifpga.FAN_Get_Fault(i) 
+        pwm , err = hwdev.FanReadReg(fan_MAP[i].dev, uint32(0xAA + fan_MAP[i].fanNum))
+        if err != errType.SUCCESS {
+            fmt.Printf("%-20s RPM = ERROR READING PWM\n", fan_MAP[i].dev)
+            err = -1
+        }
+        fanStr := fmt.Sprintf("FAN-%d", i)
+        fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", fanStr, "1", strconv.Itoa(int(fanErr)),strconv.Itoa(int(pwm)), strconv.Itoa(int(inner)),  strconv.Itoa(int(outer)))
+    }
+    
+
+    return
+}
+
 
 
 
@@ -6165,7 +7077,7 @@ endBCMprbs:
 *  
 *  
 ***********************************************************************************************************/ 
-func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32, TD3MaxTemp int, ElbaMaxTemp int, Fanspeed int, GBloopback int, Retimerloopback int) (err int) {
+func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32, loopback_level string, pkt_size uint64, pkt_pattern uint64, dump_temperature uint32, TD3MaxTemp int, ElbaMaxTemp int, Fanspeed int, GBloopback int, Retimerloopback int, PollErrorAtEnd int) (err int) {
     var pwm_backup [MAXFANMODULES]byte
     var rc int = errType.SUCCESS
     var errGo error
@@ -6184,6 +7096,11 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
 
     var VlanStart int = 10
     var vlanMap = []int{10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85}
+
+    var link_rc, link_retry int
+    var ps_output string
+//    var badeyefix int
+//    var eye [2][8][3]int
 
     if test_type == td3.SNAKE_TEST_LINE_RATE {
         cli.Printf("i", "Starting Snake Test.  Line Rate.   Elba Link Mask=%x,  Duration=%d\n", elba_port_mask, duration)
@@ -6653,10 +7570,10 @@ func System_Snake_Test(test_type uint32, elba_port_mask uint32, duration uint32,
 
     //Check Link
     //Check Link
-    {
-        var link_rc, link_retry int
-        var ps_output string
+    link_rc = 0
+    link_retry = 0
 snakelinkcheckretry:
+    {
         cli.Printf("i", "Checking Link\n")
         time.Sleep(time.Duration(2) * time.Second)
         ps_output, err = td3.ExecBCMshellCMD("ps", 5)
@@ -6688,6 +7605,7 @@ snakelinkcheckretry:
             if link_retry < 2 {
                 link_retry = link_retry + 1
                 rc = 0
+                time.Sleep(time.Duration(2) * time.Second)
                 goto snakelinkcheckretry
             }
             err = errType.FAIL
@@ -6720,6 +7638,339 @@ snakelinkcheckretry:
         goto snaketestend
     }
 
+/*
+    {
+        var eyefix int = badeyefix
+        //for elbnumber:=0; elbnumber<NUMBER_ELBAS;elbnumber++{ 
+        fmt.Printf(" Bad eye count=%d\n", badeyefix)
+        for elbnumber:=0; elbnumber<1;elbnumber++{ 
+            for lane:=0;lane<8;lane++{
+                if ((eye[elbnumber][lane][0]<20) || (eye[elbnumber][lane][1]<20) || (eye[elbnumber][lane][2]<20) ) {
+                    fmt.Printf(" Getting eye data for Elba-%d Lane-%d\n", elbnumber, lane)
+                    rc, mv0, mv1, mv2 := Elba_Check_Eye_Height(elbnumber, lane, 0)
+                    if rc == errType.FAIL {
+                        err = errType.FAIL
+                        goto snaketestend
+                    }
+                    eye[elbnumber][lane][0]=mv0
+                    eye[elbnumber][lane][1]=mv1
+                    eye[elbnumber][lane][2]=mv2
+                }
+            }
+        }
+
+
+        fmt.Printf("==============================================================\n")
+        fmt.Printf("Elba-0\n")
+        fmt.Printf("Lane0 | Lane1 | Lane2 | Lane3 | Lane4 | Lane5 | Lane6 | Lane7 \n")
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[0][0][0], eye[0][1][0], eye[0][2][0], eye[0][3][0], eye[0][4][0], eye[0][5][0], eye[0][6][0], eye[0][7][0])
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[0][0][1], eye[0][1][1], eye[0][2][1], eye[0][3][1], eye[0][4][1], eye[0][5][2], eye[0][6][1], eye[0][7][1])
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[0][0][2], eye[0][1][2], eye[0][2][2], eye[0][3][2], eye[0][4][2], eye[0][5][1], eye[0][6][2], eye[0][7][2])
+        fmt.Printf("==============================================================\n")
+        fmt.Printf("Elba-1\n")
+        fmt.Printf("Lane0 | Lane1 | Lane2 | Lane3 | Lane4 | Lane5 | Lane6 | Lane7 \n")
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[1][0][0], eye[1][1][0], eye[1][2][0], eye[1][3][0], eye[1][4][0], eye[1][5][0], eye[1][6][0], eye[1][7][0])
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[1][0][1], eye[1][1][1], eye[1][2][1], eye[1][3][1], eye[1][4][1], eye[1][5][2], eye[1][6][1], eye[1][7][1])
+        fmt.Printf(" %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv |  %dmv \n", eye[1][0][2], eye[1][1][2], eye[1][2][2], eye[1][3][2], eye[1][4][2], eye[1][5][1], eye[1][6][2], eye[1][7][2])
+        fmt.Printf("==============================================================\n")
+
+        //ELBA-0 LANE 0 + 1
+        if ( (eye[0][0][0] < 20) || (eye[0][0][1] < 20) || (eye[0][0][2] < 20) || (eye[0][1][0] < 20) || (eye[0][1][1] < 20) || (eye[0][1][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB1 0x0F\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 1 0x0F 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB1 0x0F\n");
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0x0F 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0x0F 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0x0F 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(10) * time.Second)
+            eyefix++
+        }
+
+        //ELBA-0 LANE 2 + 3
+        if ( (eye[0][2][0] < 20) || (eye[0][2][1] < 20) || (eye[0][2][2] < 20) || (eye[0][3][0] < 20) || (eye[0][3][1] < 20) || (eye[0][3][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB1 0xF0\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 1 0xF0 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB1 0xF0\n");
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0xF0 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0xF0 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 1 0xF0 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(10) * time.Second)
+            eyefix++
+        }
+
+        //ELBA-0 LANE 4 + 5
+        if ( (eye[0][4][0] < 20) || (eye[0][4][1] < 20) || (eye[0][4][2] < 20) || (eye[0][5][0] < 20) || (eye[0][5][1] < 20) || (eye[0][5][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB0 0x0F\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 0 0x0F 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB0 0x0F\n");
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0x0F 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0x0F 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0x0F 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(10) * time.Second)
+            eyefix++
+        }
+
+        //ELBA-0 LANE 6 + 7
+        if ( (eye[0][6][0] < 20) || (eye[0][6][1] < 20) || (eye[0][6][2] < 20) || (eye[0][7][0] < 20) || (eye[0][7][1] < 20) || (eye[0][7][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-0 GB0 0xF0\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 0 0xF0 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0xF0 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0xF0 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 0 0xF0 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(10) * time.Second)
+            eyefix++
+        }
+ 
+        //ELBA-1 LANE 0 + 1
+        if ( (eye[1][0][0] < 20) || (eye[1][0][1] < 20) || (eye[1][0][2] < 20) || (eye[1][1][0] < 20) || (eye[1][1][1] < 20) || (eye[1][1][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-1 GB3 0x0F\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 3 0x0F 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            fmt.Printf(" ERROR: Flapping ELBA-1 GB3 0x0F\n");
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0x0F 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0x0F 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0x0F 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            eyefix++
+        }
+
+        //ELBA-1 LANE 2 + 3
+        if ( (eye[1][2][0] < 20) || (eye[1][2][1] < 20) || (eye[1][2][2] < 20) || (eye[1][3][0] < 20) || (eye[1][3][1] < 20) || (eye[1][3][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-1 GB3 0xF0\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 3 0xF0 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0xF0 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0xF0 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 3 0xF0 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            eyefix++
+        }
+
+        //ELBA-1 LANE 4 + 5
+        if ( (eye[1][4][0] < 20) || (eye[1][4][1] < 20) || (eye[1][4][2] < 20) || (eye[1][5][0] < 20) || (eye[1][5][1] < 20) || (eye[1][5][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-1 GB2 0x0F\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 2 0x0F 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0x0F 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0x0F 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0x0F 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            eyefix++
+        }
+
+        //ELBA-1 LANE 6 + 7
+        if ( (eye[1][6][0] < 20) || (eye[1][6][1] < 20) || (eye[1][6][2] < 20) || (eye[1][7][0] < 20) || (eye[1][7][1] < 20) || (eye[1][7][2] < 20) ) {
+            fmt.Printf(" ERROR: Flapping ELBA-1 GB2 0xF0\n");
+            cmdStr := "ovs-appctl l1/phy_loopback 2 0xF0 0 1 1"
+            _, errGo := exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0xF0 0 2 1"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            time.Sleep(time.Duration(1) * time.Second)
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0xF0 0 1 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            cmdStr = "ovs-appctl l1/phy_loopback 2 0xF0 0 2 0"
+            _, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Printf("e", "%s return error -> %w" , cmdStr, errGo)
+                err = errType.FAIL
+                return
+            }
+            eyefix++
+        }
+
+        if ((eyefix > badeyefix) && (badeyefix < 20)) {
+            badeyefix++
+            //go to link check again
+            goto snakelinkcheckretry
+        }
+    }
+    //func 
+*/
 
     //Clear stat counters
     cli.Printf("i", "clear c\n")
@@ -6928,6 +8179,12 @@ snakelinkcheckretry:
         fmt.Printf(" Lag521 min bandwidth = %d\n", Lag521ExtPortminBandWidth)
         fmt.Printf(" Lag522 min bandwidth = %d\n", Lag522ExtPortminBandWidth)
 
+
+        if PollErrorAtEnd > 0 {
+            fmt.Printf(" Sleeping for %d seconds.  Test will poll errors at the very end of the test\n", duration)
+            time.Sleep(time.Duration(duration) * time.Second)
+        }
+
         for {
             var StatRxBytes string
             var StatFCS string
@@ -6946,6 +8203,7 @@ readStatsAgain:
                 rc = errType.FAIL
                 goto snaketestend
             }
+
 
             //check for s/w isuse that flaps the links on all the qsfp ports.  check if all qsfp ports have low stats
             {
@@ -7044,7 +8302,6 @@ readStatsAgain:
                         if RxBytes < Lag522ExtPortminBandWidth { 
                             cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
                             bwERROR = bwERROR + 1
-                            rc = errType.FAIL
                         }
                     }
                     //TD3 25G Snake ports
@@ -7052,7 +8309,6 @@ readStatsAgain:
                         if RxBytes < MinBandWidth25G { 
                             cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth25G)
                             bwERROR = bwERROR + 1
-                            rc = errType.FAIL
                         }
                     }
 
@@ -7061,7 +8317,6 @@ readStatsAgain:
                         if RxBytes < MinBandWidth100G { 
                             cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, MinBandWidth100G)
                             bwERROR = bwERROR + 1
-                            rc = errType.FAIL
                         }
                     }
                     //Internal Port going to Elba
@@ -7071,7 +8326,6 @@ readStatsAgain:
                             if RxBytes < ElbaPortminBandwidth { 
                                 cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, ElbaPortminBandwidth)
                                 bwERROR = bwERROR + 1
-                                rc = errType.FAIL
                             }
                         }
                     }
@@ -7080,14 +8334,12 @@ readStatsAgain:
                     if (i < (td3.TAOR_NUMB_EXT_PORT/2)) &&  (RxBytes < Lag521ExtPortminBandWidth) { 
                         cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag521ExtPortminBandWidth)
                         bwERROR = bwERROR + 1
-                        rc = errType.FAIL
                     }
                     //lag522
                     if (i >= (td3.TAOR_NUMB_EXT_PORT/2)) && (i < td3.TAOR_NUMB_EXT_PORT) {
                         if RxBytes < Lag522ExtPortminBandWidth { 
                             cli.Printf("e", "Bandwidth on Port-%d (%s) is low.  Read=%d  Expected Minimum=%d\n", i+1 , td3.TaorPortMap[i].Name, RxBytes, Lag522ExtPortminBandWidth)
                             bwERROR = bwERROR + 1
-                            rc = errType.FAIL
                         }
                     }
                 }
@@ -7107,21 +8359,41 @@ readStatsAgain:
                         rc = errType.FAIL
                     }
                 }
+            } //end for i:=0; i < td3.TAOR_TOTAL_PORTS; i++ 
+
+            //check elba for errors
+            {
+                for elba:=0;elba<NUMBER_ELBAS;elba++ {
+                    mibs, _ := Elba_Get_Mac_Stats_Into_Struct(int(elba), elba) 
+                    for portNumber, mibStats := range mibs  {
+                        if mibStats.FRAMES_RX_BAD_FCS > 0 {
+                            cli.Printf("e", "ELBA-%d Port-%d has %d Rx FCS Errors\n", elba, portNumber, mibStats.FRAMES_RX_BAD_FCS)
+                            rc = errType.FAIL
+                        }
+                        if mibStats.FRAMES_RX_BAD_ALL > 0 {
+                            cli.Printf("e", "ELBA-%d Port-%d has %d Rx BAD ALL Errors\n", elba, portNumber, mibStats.FRAMES_RX_BAD_ALL)
+                            rc = errType.FAIL
+                        }
+                    }
+                }
             }
+
+
             printRxBandwidth = 0
             time.Sleep(time.Duration(500) * time.Millisecond)
             if bwERROR > 0 {
                 bwERRORtotal = bwERRORtotal+1
                 bwERROR=0
             }
-            if bwERRORtotal < 2 {
-                rc = errType.SUCCESS
+            if bwERRORtotal > 1 {
+                rc = errType.FAIL
             }
 
 
+            //start temp sesnor code
             {
                 var TD3highTemp float64 = 0
-                //Temperature Check
+                //Temperature Check on Trident3
                 current_temperatures, _, errtd3 := td3.CheckTemperatures("TD3", TD3MaxTemp /*td3.TD3_MAX_TEMP*/)
                 if errtd3 != errType.SUCCESS {
                     cli.Printf("e", "Reading Trident3 Temperatures Failed\n")
@@ -7130,6 +8402,36 @@ readStatsAgain:
                 for i:=0;i<len(current_temperatures);i++ {
                     if current_temperatures[i] > TD3highTemp { TD3highTemp = current_temperatures[i] }
                 }
+
+                gbTemperatures, gbRc := td3.GearboxGetTemperatures("TSENSOR-GB")
+                if gbRc != errType.SUCCESS {
+                    cli.Printf("e", "Reading Gearbox Temperatures Failed\n")
+                    rc = errType.FAIL
+                } else {
+                    for i:=0;i<len(gbTemperatures);i++ {
+                        fmt.Printf(" GB-%d %f\n", i, gbTemperatures[i]) 
+                        if int(gbTemperatures[i]) > TD3MaxTemp {
+                            cli.Printf("e", "BROADCOM GEARBOX-%d (zero based):  Current temperature Reading %d is exceeding threshold of %d\n", i, int(gbTemperatures[i]), TD3MaxTemp)
+                            rc = errType.FAIL
+                        }
+                    }
+                }
+
+                retimerTemperatures, retimerRc := td3.RetimerGetTemperatures("TSENSOR-RETIMER")
+                if retimerRc != errType.SUCCESS {
+                    cli.Printf("e", "Reading Retimer Temperatures Failed\n")
+                    rc = errType.FAIL
+                } else {
+                    for i:=0;i<len(retimerTemperatures);i++ {
+                        fmt.Printf(" RETIMER-%d %f\n", i, retimerTemperatures[i])
+                        if int(retimerTemperatures[i]) > TD3MaxTemp {
+                            cli.Printf("e", "BROADCOM RETIMER-%d (zero based):  Current temperature Reading %d is exceeding threshold of %d\n", i, int(retimerTemperatures[i]), TD3MaxTemp)
+                            rc = errType.FAIL
+                        }
+                    }
+                }
+
+
                 //check elba temperature
                 {
                     for i:=0;i<NUMBER_ELBAS;i++ {
@@ -7139,7 +8441,7 @@ readStatsAgain:
                         ElbaTemp, _ = taorfpga.GetTemperature(tsensor_string)
                         if int(ElbaTemp[0]) > ElbaMaxTemp {
                             cli.Printf("e", "Elba-%d:  Temperature sensor Current Reading %d is exceeding threshold of %d\n", i, int(ElbaTemp[0]), ElbaMaxTemp)
-                            err = errType.FAIL
+                            rc = errType.FAIL
                         }
                     }
                 }
@@ -7167,7 +8469,7 @@ readStatsAgain:
                         ShowTemperature()
                     }
                 }
-            }
+            } //end temp sesnor code
 
             if rc == errType.FAIL {
                 fmt.Printf(" ERR BREAK\n")
@@ -7175,10 +8477,13 @@ readStatsAgain:
                 break
             }
 
-        }
-    }
+
+        } //for loop until duration break or error break
+
+    } //error check bracket
 
 snaketestend:
+
     if test_type == td3.SNAKE_TEST_LINE_RATE || test_type == td3.SNAKE_TEST_ENVIRONMENT{
         command = "port " + td3.TaorPortMap[0].Name +" enable=false"
         command = command + ";port " + td3.TaorPortMap[16].Name +" enable=false"
@@ -7191,6 +8496,16 @@ snaketestend:
         td3.ExecBCMshellCMD(command, 5)
     }
 
+    time.Sleep(time.Duration(2000) * time.Millisecond) 
+    Elba_Get_Mac_Stats(0)
+    Elba_Get_Mac_Stats(1)
+    for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+        td3.PrintPortRmonStats(i)
+    }
+    for i:=td3.TAOR_INTERNAL_PORT_START; i<(td3.TAOR_INTERNAL_PORT_START+td3.TAOR_INTERNAL_PORTS); i++ {
+        td3.PrintPortRmonStats(i)
+    }
+
     //No return output to check on this command
     cli.Printf("i", "Disabling all 25G Ports\n")
     command = "port " + port25G_s +" enable=false"
@@ -7200,6 +8515,9 @@ snaketestend:
     cli.Printf("i", "Disabling all 100G Ports\n")
     command = "port " + port100G_s +" enable=false"
     td3.ExecBCMshellCMD(command, 5)
+
+
+
 
     fmt.Printf("\n")
     td3.DumpRxTxCounters()

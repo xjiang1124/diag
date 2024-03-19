@@ -41,7 +41,8 @@ const NAPLES200_PEN       string  = "68-0021-02 01"   //ORTANO Pensando
 const NAPLES200_IBM       string  = "68-0028-01 01"   //ORTANO IBM
 const NAPLES200_TAOR      string  = "68-0018-01 01"   //TAORMINA ORTANO Pensando
 const NAPLES200_TAOR2     string  = "73-0040-03 A2"   //TAORMINA ORTANO Pensando (newer part number)
-const NAPLES200_LIPARI    string  = "68-0032-01 01"   //TAORMINA ORTANO Pensando
+const NAPLES200_LIPARI    string  = "68-0032-01 01"   //LIPARI SWITCH ELBA
+const NAPLES200_MTFUJI    string  = "73-21403-01"     //MTFUJI SWITCH ELBA
 
 
 const LACONA16GB_HPE     string  = "P47927-001"
@@ -54,6 +55,16 @@ func init() {
 }
 
 func dispInfo() {
+    var outStr string
+    var fmtStr = "%-15s"
+    // Titles
+    i2cTitle := []string {"DEV_NAME", "COMP", "BUS", "DEV_ADDR", "PAGE(PMBus)"}
+    for _, title := range(i2cTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", outStr)
+    cli.Println("i", "-----------------------------------------------------------------------")
+
     for _, eeprom := range(hwinfo.EepromList) {
         i2cinfo.DispI2cInfo(eeprom)
     }
@@ -82,10 +93,24 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
     }
     eeprom.CardType = cardType
 
-    if (cardType == "MTP") {
+
+    if (strings.Contains(cardType, "MTP")) {
         mtpType = os.Getenv("MTP_TYPE")
         if ( mtpType == "MTP_TURBO_ELBA" ) {
             eeprom.EepromTbl = eeprom.MtpTurboTbl
+        } else if ( mtpType == "MTP_MATERA" ) {
+            eeprom.CustType = "MTP_MATERA"
+            eeprom.EepromTbl = nil
+            if strings.Contains(dev, "FRU") || strings.Contains(dev, "MB") {
+                eeprom.EepromTlvs = eeprom.MtpMateraMbTlvs
+            } else if strings.Contains(dev, "IOB") {
+                eeprom.EepromTlvs = eeprom.MtpMateraIobTlvs
+            } else if strings.Contains(dev, "FPIC") {
+                eeprom.EepromTlvs = eeprom.MtpMateraFpicTlvs
+            } else {
+                cli.Println("e", "Not supported MTP_TYPE", mtpType, "devName", dev)
+                return errType.FAIL
+            }
         } else {
             eeprom.EepromTbl = eeprom.MtpTbl
         }
@@ -203,6 +228,10 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
             eeprom.EepromTbl = eeprom.OrtanoTbl
             
         }
+        if (cardType == "MTFUJIELBA") {
+            eeprom.EepromTbl = eeprom.MtFujiElba
+            eeprom.CustType = "PENORTANO"
+        }
         if (cardType == "ORTANO2") {
             if update == true {
                 if pn == "" {
@@ -223,6 +252,9 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
                     eeprom.CustType = "PENORTANO"
                 } else if pn[0:7] == NAPLES200_LIPARI[0:7] {      
                     eeprom.EepromTbl = eeprom.OrtanoLipariTbl
+                    eeprom.CustType = "PENORTANO"
+                } else if pn[0:7] == NAPLES200_MTFUJI[0:7] {      
+                    eeprom.EepromTbl = eeprom.MtFujiElba
                     eeprom.CustType = "PENORTANO"
                 } else {
                     cli.Println("e", "Invalid Part Number '", pn,"' Entered For Programming an Ortano Card")
@@ -480,9 +512,16 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             eeprom.CustType = "PENORTANO"
             return(0)
         }
-        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_LIPARI[0:7])  //Taormina with Elba's
+        rc = hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_LIPARI[0:7])  //Lipari Switch with Elba's
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.OrtanoLipariTbl
+            eeprom.CustType = "PENORTANO"
+            return(0)
+        }
+    } else if (cardType == "MTFUJIELBA") {
+        rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_MTFUJI[0:7])  //MtFuji switch with Elba's
+        if rc == errType.SUCCESS {
+            eeprom.EepromTbl = eeprom.MtFujiElba
             eeprom.CustType = "PENORTANO"
             return(0)
         }
@@ -560,7 +599,7 @@ func main() {
     infoPtr    := flag.Bool  ("info",   false,      "Display device info")
     dispPtr    := flag.Bool  ("disp",   false,      "Display eeprom content")
     updatePtr  := flag.Bool  ("update", false,      "Update eeprom")
-    veriryPtr  := flag.Bool  ("verify", false,      "Verify eeprom checksums")
+    verifyPtr  := flag.Bool  ("verify", false,      "Verify eeprom checksums")
     erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
     dumpPtr    := flag.Bool  ("dump",    false,      "Dump FRU")
     macPtr     := flag.String("mac",    "",         "MAC address")
@@ -597,7 +636,6 @@ func main() {
     numBytes := *numBytesPtr
     fixHpe := 1
     custType := strings.ToUpper(*custTypePtr)
-    dutCardType := os.Getenv("CARD_TYPE")
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -626,15 +664,6 @@ func main() {
         eeprom.DellOcp = 1
     }
 
-    found, _ := eeprom.CardInListAccessViaFpga(devName)
-    // Smbus == true: access eeprom via system smbus
-    // Smbus == false: access eeprom via FPGA (e.g., LIPARI)
-    if found {
-        eeprom.Smbus = false
-    } else {
-        eeprom.Smbus = true
-    }
-
     if len(uut) < 5 {
         cli.Println("e", "Invalid UUT.  UUT Needs to be UUT_NONE or UUT_#.", devName)
         return
@@ -655,6 +684,7 @@ func main() {
         pn = MTPOCPADAPTER
         custType = "MTPOCPADAPTER"
     }
+
     iInfo, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain I2C info of", devName)
@@ -666,7 +696,7 @@ func main() {
         return
     }
 
-    found, _ = eeprom.CardInListNew(pn)
+    found, _ := eeprom.CardInListNew(pn)
     if !found {
         rc := eepromTlbInit(uut, pn, *updatePtr, devName)
         if rc != 0 {
@@ -688,28 +718,9 @@ func main() {
         if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
             found, _ := eeprom.CardInListTlv(devName)
             if found == true {
-                //cli.Printf("i", "eeutil :: Display FRU - found PN (%s) in eeprom.CardTypesTlv\n", pn)
-                if eeprom.Smbus {
-                    // TODO: currently only Lipari has tlv-based eeprom and without smbus
-                    //       will implement once smbus is ready on Lipari
-                    //err = hwdev.EepromDisplayTlv(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
-                    err = errType.FAIL
-                    cli.Println("e", "smbus is not ready for", dutCardType)
-                } else {
-                    err = hwdev.EepromDisplayTlvFpga(devName, field, *fpoPtr)
-                }
-                return
+                err = hwdev.EepromDisplayTlvs(devName, field, *fpoPtr)
             } else {
-                if eeprom.Smbus {
-                    err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
-                } else {
-                    // currently don't need to support non tlv-based eeprom without smbus
-                    // will implement whenever necessary
-                    //err = hwdev.EepromDisplayfpga(devName, field, *fpoPtr)
-                    cli.Println("e", "Not supported: non-tlv eeprom but smbus not ready. CARD_TYPE", dutCardType)
-                    err = errType.FAIL
-                    return
-                }
+                err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
             }
 
             if err == errType.SUCCESS {
@@ -764,17 +775,12 @@ func main() {
             if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
                 found, _ := eeprom.CardInListTlv(devName)
                 if found == true {
-                    if eeprom.Smbus {
-                        // TODO: will implement when smbus is ready
-                        cli.Println("e", "smbus is not ready for", dutCardType)
+                    if field == "ALL" {
+                        hwdev.EepromUpdateTlvs(devName, sn, pn, sn2, pn2, mac, date)
                     } else {
-                        if field == "ALL" {
-                            hwdev.EepromUpdateTlvFpga(devName, sn, pn, sn2, pn2, mac, date)
-                        } else {
-                            hwdev.EepromUpdateTlvFieldFpga(devName, field, value)
-                        }
-                        misc.SleepInUSec(500000)
+                        hwdev.EepromUpdateTlvField(devName, field, value)
                     }
+                    misc.SleepInUSec(500000)
                     return
                 }
 
@@ -834,27 +840,20 @@ func main() {
             rd = rd | 0x2
             _ = cpldSmb.WriteSmb("CPLD", 0x21, rd)
         } else {
-            if eeprom.Smbus {
-                CpldWrite(0x1, 0x6)
-            }
+            CpldWrite(0x1, 0x6)
         }
         return
     }
 
     if *dumpPtr == true {
-        if numBytes <= 0 {
-            cli.Println("e", "Please set a positive number of bytes to dump!", devName)
+        if numBytes <= 0 || numBytes >= 2048 {
+            cli.Println("e", "Please set a valid number [1 - 2047] of bytes to dump!", devName)
             return;
         }
         found, _ := eeprom.CardInListTlv(devName)
         if found == true {
-            if eeprom.Smbus {
-                // TODO: will implement when smbus is ready
-                cli.Println("e", "smbus is not ready for", dutCardType)
-            } else {
-                eeprom.DumpEepromTlvFpga(devName, numBytes)
-                misc.SleepInUSec(500000)
-            }
+            eeprom.DumpEepromTlvs(devName, numBytes)
+            misc.SleepInUSec(500000)
             return
         } else {
             hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
@@ -863,7 +862,7 @@ func main() {
         return
     }
 
-    if *veriryPtr == true {
+    if *verifyPtr == true {
         rc := hwdev.EepromVerifyCSUM(devName, iInfo.Bus, iInfo.DevAddr, true)
         if rc != 0 {
             os.Exit(-1)

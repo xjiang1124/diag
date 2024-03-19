@@ -1,9 +1,43 @@
 #include "accpcie.h"
 #include <time.h>
 
-int verbosity = 0;
-ULONGLONG bar_addr = 0x40000000;
+#define WAIT_CNT 1000
+
+int verbosity = 5;
+ULONGLONG bar_addr = 0;//0x10021100000;
 FT_HANDLE ftHandle = 0;
+
+struct platform {
+    char *  pciDevice;
+    char *  Name;
+    int     PlatformNumber;
+    int     MaxJtagDevices;
+    int     found;
+};
+
+#define LIPARI  1
+#define MTFUJI  2
+
+struct platform Platform_t[] = { { "1dd8000a", "LIPARI", LIPARI, 8, 0},
+                                 { "11370183", "MTFUJI", MTFUJI, 4, 0}};
+
+ULONGLONG xtoi(char *hexstring)
+{
+    ULONGLONG i = 0;
+
+    if ( (*hexstring == '0') && (*(hexstring + 1) == 'x'))
+        hexstring += 2;
+    while ( *hexstring ) {
+        char c = toupper(*hexstring++);
+        if ( (c < '0') || (c > 'F') || ((c > '9') && (c < 'A')) )
+            break;
+        c -= '0';
+        if ( c > 9 )
+            c -= 7;
+        i = (i << 4) + c;
+    }
+    return i;
+}
 
 void set_verbosity(int level)
 {
@@ -17,6 +51,87 @@ void set_bar(ULONGLONG addr)
     return;
 }
 
+int FindPlatform(ULONGLONG * bar, uint32_t * entry) {
+    int i=0;
+    FILE *fileptr;
+    char line[512];
+    char delim[] = "\t";
+    char *ptr = NULL;
+    int len;
+    unsigned long long int address = 0;
+
+    for(i=0; i<sizeof(Platform_t)/(sizeof(struct platform)); i++) {
+        fileptr = fopen("/proc/bus/pci/devices", "r");
+        if ( fileptr == NULL ) {
+            printf("pcie device under proc cannot be opened\n");
+            return address;
+        }
+        while ( fgets(line, sizeof(line), fileptr) ) {
+            ptr = strtok(line, delim);
+            while ( ptr != NULL ) {
+               if ( strcasecmp(ptr, Platform_t[i].pciDevice) == 0 ) {
+                   ptr = strtok(NULL, delim);
+                   ptr = strtok(NULL, delim);
+                   len = strlen(ptr);
+                   ptr[len - 1] = '0';
+                   address = strtoll(ptr, NULL, 16);
+                   break;
+               } else
+                   ptr = strtok(NULL, delim);
+            }
+            if ( address != 0 ) {
+                if ( verbosity )
+                    printf("PCIE BAR = 0x%llx\n", address);
+                *bar = address;
+                *entry = i;
+                fclose(fileptr);
+                return address;
+            }
+        }
+        fclose(fileptr);
+    }
+
+    return -1;
+}
+
+
+ULONGLONG get_bar_from_proc(void)
+{
+    FILE *fileptr = fopen("/proc/bus/pci/devices", "r");
+    char line[512];
+    char delim[] = "\t";
+    char *ptr = NULL;
+    int len;
+    unsigned long long int address = 0;
+
+    if ( fileptr == NULL ) {
+        printf("pcie device under proc cannot be opened\n");
+        return address;
+    }
+    while ( fgets(line, sizeof(line), fileptr) ) {
+        ptr = strtok(line, delim);
+        while ( ptr != NULL ) {
+           if ( strcmp(ptr, "1dd8000a") == 0 ) {
+               ptr = strtok(NULL, delim);
+               ptr = strtok(NULL, delim);
+               len = strlen(ptr);
+               ptr[len - 1] = '0';
+               address = strtoll(ptr, NULL, 16);
+               break;
+           } else
+               ptr = strtok(NULL, delim);
+        }
+        if ( address != 0 ) {
+            if ( verbosity )
+                printf("PCIE BAR = 0x%llx\n", address);
+            fclose(fileptr);
+            return address;
+        }
+    }
+    fclose(fileptr);
+    return address;
+}
+
 ULONGLONG show_bar(void)
 {
     if ( verbosity != 0 )
@@ -24,85 +139,86 @@ ULONGLONG show_bar(void)
     return bar_addr;
 }
 
-int read_fpga_mem32(ULONGLONG ftHandle, DWORD reg, DWORD *data)
+int read_fpga_mem32(ULONGLONG inst_offset, DWORD reg, DWORD *data)
 {
-    DWORD *addr;
+    unsigned char *addr;
 
-    /*
+    off_t offset = bar_addr + inst_offset + reg;
     size_t pagesize = sysconf(_SC_PAGE_SIZE);
-    off_t page_base = ((ftHandle + reg) / pagesize) * pagesize;
-    off_t page_offset = ftHandle + reg - page_base;
-    */
+    off_t page_base = (offset / pagesize) * pagesize;
+    off_t page_offset = offset - page_base;
 
-    if ( verbosity )
-        printf("read_fpag_mem32\n");
-    /* int fd = open("/dev/mem", O_SYNC); */
-    int fd = open("/sys/bus/pci/devices/0000:07:00.0/resource0", O_RDWR | O_SYNC);
+    if ( verbosity == 2 ) {
+        printf("read_fpag_mem32 with inst_offset %llx\n", inst_offset);
+        printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
+    }
+    int fd = open("/dev/mem", O_RDWR | O_SYNC);
+    /* int fd = open("/sys/bus/pci/devices/0000:02:00.0/resource0", O_RDWR | O_SYNC); */
     if ( fd < 0 ) {
         printf("Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
 
-    /* unsigned char *mem = mmap(NULL, page_offset + 256, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, page_base); */
-    DWORD *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    /* unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (DWORD *)(mem + ftHandle - bar_addr + (ULONGLONG)reg);
-    *data = *addr;
-    
-    munmap((void *)mem, 1024*1024);
+    /* addr = mem + inst_offset + reg; */
+    addr = mem + page_offset;
+    if ( verbosity == 2 ) {
+        printf("allocated mem %llx; addr %llx\n", (ULONGLONG)mem, (ULONGLONG)addr);
+    }
+
+    /* addr = (DWORD *)(mem | (unsigned char *)ftHandle | (unsigned char *)reg); */
+    *data = *((DWORD *)addr);
+
+    munmap((void *)mem, 4096);
     close(fd);
     return FT_OK;
 }
 
-int write_fpga_mem32(ULONGLONG ftHandle, DWORD reg, ULONG value)
+int write_fpga_mem32(ULONGLONG inst_offset, DWORD reg, ULONG value)
 {
-    DWORD *addr;
+    unsigned char *addr;
 
-    /*
+    off_t offset = bar_addr + inst_offset + reg;
     size_t pagesize = sysconf(_SC_PAGE_SIZE);
-    off_t page_base = ((ftHandle + reg) / pagesize) * pagesize;
-    off_t page_offset = ftHandle + reg - page_base;
-    */
-
-    if ( verbosity )
-        printf("write_fpag_mem32\n");
-    /* int fd = open("/dev/mem", O_RDWR | O_SYNC); */
-    int fd = open("/sys/bus/pci/devices/0000:07:00.0/resource0", O_RDWR | O_SYNC);
+    off_t page_base = (offset / pagesize) * pagesize;
+    off_t page_offset = offset - page_base;
+    
+    if ( verbosity == 2 ) {
+        printf("write_fpag_mem32 with inst_offset %llx\n", inst_offset);
+        printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
+    }
+    int fd = open("/dev/mem", O_RDWR | O_SYNC);
+    /* int fd = open("/sys/bus/pci/devices/0000:02:00.0/resource0", O_RDWR | O_SYNC); */
     if ( fd < 0 ) {
         printf("Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
     
-    DWORD *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    /* unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd); 
         return FT_ERROR_MAP_PCIE;
     }
 
-    addr = (DWORD *)(mem + ftHandle - bar_addr + (ULONGLONG)reg);
-    if ( verbosity ) {
-        printf("reg address %x\n", reg);
-        printf("addr address %x\n", (DWORD)addr);
-        printf("data %x\n", value);
+    /* addr = mem + inst_offset + (ULONGLONG)reg; */
+    addr = mem + page_offset;
+    if ( verbosity == 2 ) {
+        printf("allocated mem %llx; addr %llx\n", (ULONGLONG)mem, (ULONGLONG)addr);
     }
-    *addr = (DWORD)value;
+    *((DWORD *)addr) = (DWORD)value;
 
-    munmap((void *)mem, 1024*1024);
+    munmap((void *)mem, 4096);
     close(fd); 
     return FT_OK;
-}
-
-int write_fpga_mem64(ULONG ftHandle, DWORD reg, ULONGLONG value)
-{
-    int rc = 0;
-
-    return rc;
 }
 
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
@@ -111,9 +227,12 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;;
     DWORD cmd;
     DWORD resp;
-    int wait_cnt = 10;
+    DWORD dummy = inst;
+    int wait_cnt = WAIT_CNT;
     int i;
     int rc = 0;
+
+    inst = dummy;
 
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
@@ -163,7 +282,36 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
             printf("write command time out\n");
         return FT_RESP_TIMEOUT;
     }
+    if ( verbosity == 2 )
+        printf("FINISH WRITE\n");
+    return ftStatus;
+}
 
+FT_STATUS jtag_wg(ULONGLONG address, DWORD data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+
+    rc = write_fpga_mem32(ftHandle, (DWORD)address, data);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to write register\n");
+        return -1;
+    }
+    return ftStatus;
+}
+
+FT_STATUS jtag_rg(ULONGLONG address, DWORD *data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+
+    rc = read_fpga_mem32(ftHandle, (DWORD)address, data);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to read register\n");
+        return -1;
+    }
     return ftStatus;
 }
 
@@ -173,9 +321,12 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     DWORD cmd;
     DWORD resp;
     DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-    int wait_cnt = 10;
+    DWORD dummy = inst;
+    int wait_cnt = WAIT_CNT;
     int i, rc = 0;
  
+    inst = dummy;
+
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
             printf("j2c port is not opened\n");
@@ -242,15 +393,16 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         return FT_RESP_TIMEOUT;
     }
     if ( (resp & J2C_VALID_BIT) == 0 ) {
-        if ( verbosity )
+        if ( verbosity ) {
+            printf("response value = %x\n", resp);
             printf("invalid response\n");
+        }
         return FT_INVALID_RESP;
     } else if ( resp & J2C_ID_BIT ) {
         if ( verbosity )
             printf("invalid ID\n");
         return FT_ERROR_ID;
     } 
-
     rc = read_fpga_mem32(ftHandle, J2C_0_RXDATA_REG, data);
     if ( rc ) {
         if ( verbosity )
@@ -258,12 +410,9 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         *data = 0xdeadbeef;
         return -1;
     }
+    if ( verbosity == 2 )
+        printf("FINISH READ\n");
     return ftStatus;
-}
-
-int jtag_tst(DWORD inst, BYTE enable)
-{
-    return 0;
 }
 
 FT_STATUS jtag_init(DWORD portNum)
@@ -271,25 +420,71 @@ FT_STATUS jtag_init(DWORD portNum)
     time_t rawtime;
     struct tm *timeinfo;
     ULONGLONG j2c_mem_addr;
+    ULONGLONG pcie_bar;
     DWORD magic;
+    int entry;
     int rc;
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
 
-    j2c_mem_addr = bar_addr + (portNum - 1) * 32;
+    //pcie_bar = get_bar_from_proc();
+    //if ( pcie_bar != 0 ) {
+    //    bar_addr = pcie_bar;
+    //}
+    rc = FindPlatform(&pcie_bar, &entry);
+    if (rc == 0) {
+        printf(" jtag_init ERROR: Failed to find a valid platform\n");
+        printf(" jtag_init ERROR: Failed to find a valid platform\n");
+        return -1;
+    }
+    bar_addr = pcie_bar;
+
+    if (portNum > Platform_t[entry].MaxJtagDevices || portNum == 0) {
+        printf(" jtag_init ERROR: Jtag port range is 1 - %d.  You Passed %d\n", Platform_t[entry].MaxJtagDevices, portNum);
+        printf(" jtag_init ERROR: Jtag port range is 1 - %d.  You Passed %d\n", Platform_t[entry].MaxJtagDevices, portNum);
+        return -1;
+    }
+
+    if (Platform_t[entry].PlatformNumber == LIPARI) {
+        j2c_mem_addr = J2C_0_OFFSET + ((portNum - 1) * 32);
+    } else if (Platform_t[entry].PlatformNumber == MTFUJI) {
+        j2c_mem_addr = MTFUJI_JTAG0_BASE + ((portNum - 1) * MTFUJI_JTAG_STRIDE);
+    } else {
+        printf(" jtag_init ERROR: Platform Type not found.  Entry = %d.  NOTE THIS SHOULD NOT HAPPEN\n", entry);
+        printf(" jtag_init ERROR: Platform Type not found.  Entry = %d.  NOTE THIS SHOULD NOT HAPPEN\n", entry);
+        return -1;
+    }
+
+   
+    printf("12-13-2023 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    printf("bar address is set with  0x%llx  fpga mem offset = %llx  platform=%s\n", bar_addr, j2c_mem_addr, Platform_t[entry].Name);
+
+    /*
+    read_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, &magic);
+    if ( magic != 0 ) {
+        printf("j2c interface (port %d) is in use by another process\n", portNum - 1);
+        return FT_PORT_TAKEN;
+    }
+    read_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, &magic);
+    if ( magic == 0 ) {
+        printf("j2c interface (port %d) is not locked\n", portNum - 1);
+        return FT_ERROR_LOCKPORT;
+    }
+    printf("j2c interface (port %d) is locked for this process\n", portNum - 1);
     read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
-    printf("01-17-2023 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
     printf("magic number %x\n", magic);
     if ( magic != 0 ) {
-        if ( verbosity != 0 )
-            printf("jtag for this instance has been opened already!\n");
+        printf("jtag for this instance has been opened already!\n");
         return (FT_STATUS)magic;
-    }
-    ftHandle = j2c_mem_addr;
-    rc = write_fpga_mem32(ftHandle, J2C_0_MAGIC_REG, (DWORD)(ftHandle & 0xffffffff));
+    } 
+    */ 
+    ftHandle = (DWORD)j2c_mem_addr & 0xffffffff;
+    rc = write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, ftHandle);
     if ( rc )
         ftHandle = 0;
+    if ( verbosity == 2 )
+        printf("FINISH INIT\n");
     return rc;
 }
 
@@ -297,12 +492,8 @@ void jtag_close()
 {
     if ( verbosity )
         printf("closing jtag\n");
-    if ( ftHandle == 0 ) {
-        printf("ftHandle is zero, the port is not opened\n");
-    } else {
-        write_fpga_mem32(ftHandle, J2C_0_MAGIC_REG, 0);
-        write_fpga_mem32(ftHandle, J2C_0_SEM_REG, 0);
-    }
+    write_fpga_mem32(ftHandle, J2C_0_MAGIC_REG, 0);
+    write_fpga_mem32(ftHandle, J2C_0_SEM_REG, 0);
     ftHandle = 0;
     return;
 }
@@ -311,8 +502,12 @@ FT_STATUS jtag_reset(DWORD inst)
 {
     DWORD cmd;
     DWORD resp;
-    int wait_cnt = 10;
+    DWORD dummy = inst;
+
+    int wait_cnt = WAIT_CNT;
     int i, rc = 0;
+
+    inst = dummy;
 
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
@@ -342,6 +537,8 @@ FT_STATUS jtag_reset(DWORD inst)
             printf("reset command time out\n");
         return FT_RESP_TIMEOUT;
     }
+    if ( verbosity == 2 )
+        printf("FINISH RESET\n");
     return FT_OK;
 }
 
@@ -349,8 +546,11 @@ FT_STATUS jtag_enable(DWORD inst)
 {
     DWORD cmd;
     DWORD resp;
-    int wait_cnt = 10;
+    DWORD dummy = inst;
+    int wait_cnt = WAIT_CNT;
     int i, rc = 0;
+
+    inst = dummy;
 
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
@@ -380,21 +580,37 @@ FT_STATUS jtag_enable(DWORD inst)
             printf("enable command time out\n");
         return FT_RESP_TIMEOUT;
     }
+    if ( verbosity == 2 )
+        printf("FINISH ENABLE\n");
     return FT_OK;
 }
 
-int main(void)
+/* Following routines are dummy function to be compatible with asic lib compilation */
+FT_STATUS spi_reg_init(void)
 {
-    DWORD data;
-
-    set_verbosity(1);
-    set_bar(0xfb400000);
-    jtag_init(1);
-    jtag_reset(1);
-    jtag_enable(1);
-    jtag_wr(0, 0x307c0000, 0x1, 2);
-    jtag_rd(0, 0x307c0000, &data, 2);
-    printf("data read = %x\n", data);
-    return 0;
+    return FT_OK;
 }
-    
+
+FT_STATUS spi_wr(BYTE address, BYTE data)
+{
+    address = 0;
+    data = 0;
+
+    return FT_OK;
+}
+
+FT_STATUS spi_rd(BYTE address, BYTE* data)
+{
+    BYTE dummy;
+
+    dummy = *data;
+    dummy = 0;
+
+    return FT_OK;
+}
+
+void ftHandle_close()
+{
+    return;
+}
+

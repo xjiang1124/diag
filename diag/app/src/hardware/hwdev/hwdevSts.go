@@ -82,7 +82,7 @@ func DispStatus(devName string, uutName string) (err int){
 
 func dispStatusDev(devName string, lockFlag bool) (err int){
     var lockName string
-    if lockFlag == true {
+    if lockFlag == true && i2cinfo.CardType != "MTP_MATERA" { //FIXME
         lockName, _, err = hwinfo.LockDev(devName)
         if err != errType.SUCCESS {
             cli.Println("f", "failed to lock the device: ", devName)

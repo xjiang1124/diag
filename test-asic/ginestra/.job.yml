@@ -23,6 +23,7 @@ e2e-targets:
      - build-amd64-giglio-tot
      - build-arm64-giglio-tot
      - package-giglio-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -51,6 +52,7 @@ e2e-targets:
      - build-amd64-giglio-tot
      - build-arm64-giglio-tot
      - package-giglio-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:
@@ -79,6 +81,7 @@ e2e-targets:
      - build-amd64-giglio-tot
      - build-arm64-giglio-tot
      - package-giglio-mfg-script
+     - package-fw-assets
     deployment:
       skip-pxe-install: true
     resources:

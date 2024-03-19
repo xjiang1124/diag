@@ -2,6 +2,7 @@ package main
 
 import (
     "os"
+    "common/cli"
 )
 
 var cardType string
@@ -9,15 +10,19 @@ var cardType string
 func init() {
     cardType = os.Getenv("CARD_TYPE")
     
-    if cardType != "LIPARI" && cardType != "TAORMINA" {
+    if cardType != "LIPARI" && 
+       cardType != "MTP_MATERA" &&
+       cardType != "TAORMINA" {
         //See if we are SONIC OS.. if yes we are lipari
         exists, _ := Path_exists("/etc/sonic")
         if exists == true {
             cardType = "LIPARI"
             os.Setenv("CARD_TYPE",cardType)
+            cli.Println("d", "Found card:", cardType)
         } else {
             cardType = "TAORMINA"
             os.Setenv("CARD_TYPE",cardType)
+            cli.Println("d", "Found card:", cardType)
             
         }
     }
@@ -25,7 +30,8 @@ func init() {
                                
 
 func main() {
-    if cardType == "LIPARI" {
+    if cardType == "LIPARI" || 
+       cardType == "MTP_MATERA" { // FIXME: For validation Matera on Lipari only
         lipari_fpga_cli()
     } else {
         taormina_fpga_cli()

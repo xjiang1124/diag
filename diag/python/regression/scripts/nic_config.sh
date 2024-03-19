@@ -1,3 +1,12 @@
+do_untar=1
+if [[ $# -ne 0 ]]
+then
+    if [[ $1 == "0" ]]
+    then
+        do_untar=0
+    fi
+fi
+
 NIC_ARM_DIR=/data/nic_arm/
 
 if [[ -f /etc/profile.bak ]]
@@ -155,6 +164,14 @@ elif [[ $cpld_id == "0x61" ]]
 then
     type="GINESTRA_D5"
     asic_type="GIGLIO"
+elif [[ $cpld_id == "0x81" ]]
+then
+    type="LIPARI"
+    asic_type="ELBA"
+elif [[ $cpld_id == "0x82" ]]
+then
+    type="MTFUJI"
+    asic_type="ELBA"
 else
     type="UNKNOW"
     asic_type="UNKNOW"
@@ -221,36 +238,42 @@ find . -name "catalog*.json" | xargs sed -i 's/"num_local_passthru_channel": 1/"
 cd /data/nic_util/
 tar xf edma_test.tar.gz
 echo "EDMA setup done"
-
-if [[ $asic_type != "UNKNOW" ]]
+if [[ $do_untar == "1" ]]
 then
-    if [[ $asic_type == "ELBA" ]]
+    if [[ $asic_type != "UNKNOW" ]]
     then
-        ARM_ASIC_PATH=$NIC_ARM_DIR/elba
-    elif [[ $asic_type == "GIGLIO" ]]
-    then
-        ARM_ASIC_PATH=$NIC_ARM_DIR/giglio
-    else
-        ARM_ASIC_PATH=$NIC_ARM_DIR/capri
+        if [[ $asic_type == "ELBA" ]]
+        then
+            ARM_ASIC_PATH=$NIC_ARM_DIR/elba
+        elif [[ $asic_type == "GIGLIO" ]]
+        then
+            ARM_ASIC_PATH=$NIC_ARM_DIR/giglio
+        else
+            ARM_ASIC_PATH=$NIC_ARM_DIR/capri
+        fi
+        echo "Copy scripts to nic_arm"
+        ASIC_IMG=/data/nic.tar.gz
+        tar xf $ASIC_IMG -C /data
+        sync;sync;sync
+        cp -r /data/nic/fake_root_target/nic/* $ARM_ASIC_PATH
+        cp -r /data/nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl $ARM_ASIC_PATH/asic_version.txt
+        rm -rf /data/nic/
+        sync;sync;sync
+        cp $ARM_ASIC_PATH/asic_lib/diag_s.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/diag.exe
+        cp $NIC_ARM_DIR/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/elb_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/gig_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/elb_arm*tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        cp $NIC_ARM_DIR/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
+        sync;sync;sync
     fi
-    echo "Copy scripts to nic_arm"
-    ASIC_IMG=/data/nic.tar.gz
-    tar xf $ASIC_IMG -C /data
-    cp -r /data/nic/fake_root_target/nic/* $ARM_ASIC_PATH
-    cp -r /data/nic/fake_root_target/nic/asic_src/ip/cosim/tclsh/.git_rev.tcl $ARM_ASIC_PATH/asic_version.txt
-    rm -rf /data/nic/
-    cp $ARM_ASIC_PATH/asic_lib/diag_s.exe $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/diag.exe
-    cp $NIC_ARM_DIR/snake.h.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/snake.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/prbs.e.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/prbs.p.a.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/prbs.e.a.forio.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/snake_all.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/elb_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/gig_efuse_prog.tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/elb_arm*tcl $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    cp $NIC_ARM_DIR/nic_prbs.sh $ARM_ASIC_PATH/asic_src/ip/cosim/tclsh/
-    sync;sync;sync
+else
+    echo "Using existing ASIC lib"
 fi
 
 

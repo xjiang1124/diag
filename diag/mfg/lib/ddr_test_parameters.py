@@ -28,6 +28,7 @@ test2args = {
         # Lacona section
         "P47930"                     : "nod_525",               #P47930-001       LACONA32 HPE
         "0X322F"                     : "nod_525",               #0X322F X/A       LACONA32 DELL
+        "0W5WGK"                     : "nod_525",               #0X322F X/A       LACONA32 DELL
         # Ginestra section
         "68-0074"                    : "hod_1100",              #68-0074          Ginextra_D4
         "68-0075"                    : "hod_1100",              #68-0075          Ginextra_D5
@@ -43,6 +44,7 @@ test2args = {
         "DEFAULT"                    : "XYZ          N/A             -                   -               -               -               -                   -           normal         0           -                       -                       -",
         "P47930"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A         -                       -                       -",
         "0X322F"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A         -                       -                       -",
+        "0W5WGK"                     : "N/A          N/A             N/A                 N/A             N/A             1               2400                N/A         N/A            N/A         -                       -                       -",
         "68-0074"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             3200                N/A         N/A            0           -                       -                       -",
         "68-0075"                    : "N/A          N/A             N/A                 N/A             N/A             N/A             5600                N/A         N/A            0           3                       3                       3",
     },
@@ -57,7 +59,7 @@ test2args = {
         "68-0015"                    : "N/A             N/A                 N/A            N/A               N/A           N/A              N/A",
         "P47930"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
         "0X322F"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
-        "0X322F"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
+        "0W5WGK"                     : "N/A             300                 N/A            6                 120           N/A              N/A",
         "68-0029"                    : "N/A             600                 N/A            4                 3             +                N/A",
         "68-0074"                    : "N/A             600                 N/A            6                 120           +                N/A",
         "68-0075"                    : "N/A             600                 N/A            6                 120           +                N/A",

@@ -1375,6 +1375,8 @@ class nic_ctrl():
 
     def nic_boot_info_init(self, smode=False):
         # save boot image info into self._boot_image and self._kernel_timestamp
+        previous_card_status = self.nic_check_status()
+
         loop = 0
         while loop < MTP_Const.NIC_CON_CMD_RETRY:
             if not self.nic_read_firmware_image(smode):
@@ -1387,6 +1389,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
+        elif previous_card_status:
+            self.nic_set_status(NIC_Status.NIC_STA_OK)
 
         # get kernel build timestamp
         loop = 0
@@ -1401,6 +1405,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
+        elif previous_card_status:
+            self.nic_set_status(NIC_Status.NIC_STA_OK)
 
         return True
 
@@ -2288,6 +2294,94 @@ class nic_ctrl():
                 return False
 
         self.nic_boot_info_reset()
+
+        return True
+
+    def nic_erase_main_fw_partition(self):
+        # check mainfwa & mainfwb block info existing any content
+        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        fw_info_buf = self.nic_get_info(cmd)
+        if not fw_info_buf:
+            self.nic_set_err_msg("Unable to execute list fw info")
+            return False
+        try:
+            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:]))
+            if ("mainfwa" in fw_info.keys() and fw_info["mainfwa"]) or ("mainfwb" in fw_info.keys() and fw_info["mainfwb"]):
+                pass
+            else:
+                return True
+        except:
+            self.nic_set_err_msg("Get complete fw list failed")
+            return False
+
+        # get qspi partition
+        cmd = MFG_DIAG_CMDS.NIC_GET_QSPI_PARTITION_FMT
+        qspi_part_buf = self.nic_get_info(cmd)
+        if not qspi_part_buf:
+            self.nic_set_err_msg("Unable to get qspi partition")
+            return False
+
+        nic_erase_qspi_cmd_list = []
+        matchs = re.findall(r"mtd(\d+):.*\s\"(mainfwa|mainfwb|uboota|ubootb)\"", qspi_part_buf)
+        for match in matchs:
+            fw_num = int(match[0])
+            fw_name = match[1]
+            nic_erase_qspi_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_QSPI_PARTITION_FMT.format(fw_num))
+
+        # erase qspi partition
+        for erase_cmd in nic_erase_qspi_cmd_list:
+            erase_qspi_cmd_buf = self.nic_get_info(erase_cmd, 300)
+            if not erase_qspi_cmd_buf:
+                self.nic_set_err_msg("Unable to execute erase qspi partition")
+                return False
+            match = re.search(r"100 % complete", erase_qspi_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word failed".format(erase_cmd))
+                return False
+
+        # get emmc partition
+        cmd = MFG_DIAG_CMDS.NIC_GET_EMMC_PARTITION_FMT
+        emmc_part_buf = self.nic_get_info(cmd)
+        if not emmc_part_buf:
+            self.nic_set_err_msg("Unable to get emmc partition")
+            return False
+
+        nic_erase_emmc_cmd_list = []
+        matchs = re.findall(r"(\d+)\s.+\s(System Image A|System Image B)", emmc_part_buf)
+        for match in matchs:
+            fw_num = int(match[0])
+            fw_name = match[1]
+            nic_erase_emmc_cmd_list.append(MFG_DIAG_CMDS.NIC_ERASE_EMMC_PARTITION_FMT.format(fw_num))
+
+        # erase emmc partition
+        for erase_cmd in nic_erase_emmc_cmd_list:
+            erase_emmc_cmd_buf = self.nic_get_info(erase_cmd, 10)
+            if not erase_emmc_cmd_buf:
+                self.nic_set_err_msg("Unable to execute erase emmc partition")
+                return False
+            match = re.search(r"16\+0 records in",erase_emmc_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word \"{:s}\" failed".format(erase_cmd, "16+0 records in"))
+                return False
+            match = re.search(r"16\+0 records out",erase_emmc_cmd_buf)
+            if not match:
+                self.nic_set_err_msg("After execute Command {:s}, unable to locate pass key word \"{:s}\" failed".format(erase_cmd, "16+0 records out"))
+                return False
+
+        # verify mainfwa & mainfwb block info contant clear
+        cmd = MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT
+        fw_info_buf = self.nic_get_info(cmd)
+        if not fw_info_buf:
+            self.nic_set_err_msg("Unable to execute list fw info")
+            return False
+        try:
+            fw_info = json.loads('\n'.join(fw_info_buf.strip().split('\n')[1:]))
+            if ("mainfwa" in fw_info.keys() and fw_info["mainfwa"]) or ("mainfwb" in fw_info.keys() and fw_info["mainfwb"]):
+                self.nic_set_err_msg("Verify mainfw partition clear failed")
+                return False
+        except:
+            self.nic_set_err_msg("Unable to get complete fw list to verify")
+            return False
 
         return True
 
@@ -5484,3 +5578,41 @@ class nic_ctrl():
                 return False
 
         return True
+
+    def device_conf_verify(self):
+        """
+        wait for file /sysconfig/config0/device.conf to be created
+        issue sync command
+        """
+
+        max_polling_time = 120
+        polled_time = 0
+        while polled_time < max_polling_time:
+
+            polled_time += 10
+            time.sleep(10)
+
+            self.nic_get_err_msg() # clear previous loop's error
+
+            if not self.nic_exec_cmds(["cat /sysconfig/config0/device.conf"]):
+                self.nic_set_err_msg("Failed to read device.conf")
+                continue
+
+            cmd_buf = self.nic_get_cmd_buf()
+            if not cmd_buf:
+                self.nic_set_err_msg("No output from device.conf")
+                continue
+
+            if "No such file" in cmd_buf:
+                self.nic_set_err_msg("device.conf is missing")
+                continue
+
+            if "port-admin-state" in cmd_buf:
+                # sync for sanity
+                if not self.nic_exec_cmds(["sync", "sync"]):
+                    self.nic_set_err_msg("Failed to issue sync commands")
+                    return False
+                return True
+
+        self.nic_set_err_msg("Waited too long for device.conf to generate")
+        return False

@@ -7,9 +7,12 @@ import (
     "device/boardinfo"
     "device/fanctrl/adt7462"
     "device/powermodule/ltc2301"
+    "device/powermodule/ltc3882"
     "device/powermodule/ltc3888"
     "device/bcm/td3"
     "device/fpga/taorfpga"
+    "device/powermodule/mp2975"
+    "device/powermodule/mp8796"
     "device/powermodule/tps53659"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544b25"
@@ -81,7 +84,8 @@ var CpldInfo interface{}
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
-var lipariEepList = []string {"FRU", "FRU_CPU", "FRU_SWITCH"}
+var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
+var materaEepList = []string {"FRU", "MB", "IOB1", "IOB2", "FPIC"}
 
 //===============================
 // Naples100 
@@ -175,11 +179,16 @@ var mtpDispStaList map[string]DispStaFunc
 var mtpEepList = []string {"FRU"}
 // I2C hub map
 var mtpI2cHubMap map[string] I2cHubInfo
+var materaI2cHubMap map[string] I2cHubInfo
 
 //===============================
 // MTP
 // Status display list
 var mtpsDispStaList map[string]DispStaFunc
+
+// MTP_MATERA
+// Status display list
+var materaDispStaList map[string]DispStaFunc
 
 //===============================
 // NIC POWER
@@ -191,12 +200,17 @@ var nicPwrDispStaList map[string]DispStaFunc
 // Status display list
 var taorDispStaList map[string]DispStaFunc
 
-// Taormina 
+// Lipari
 var lipariDispStaList map[string]DispStaFunc
+var lipariElbaDispStaList map[string]DispStaFunc
+
+// mtfuji (Cisco)
+var mtfujiElbaDispStaList map[string]DispStaFunc
 
 // I2C hub map -- not used on Taormina and Lipari
 var taorI2cHubMap map[string] I2cHubInfo
 var lipariI2cHubMap map[string] I2cHubInfo
+var lipariElbaI2cHubMap map[string] I2cHubInfo
 
 // SFP table
 var SFP_STAT_REG0 uint32 = uint32(taorfpga.D0_FP_SFP_STAT_3_0_REG) 
@@ -487,6 +501,19 @@ func init() {
     mtpsDispStaList["659_AVDD"] = tps53659.DispStatus
 
     //===============================
+    // MTP_MATERA
+    materaDispStaList = make(map[string]DispStaFunc)
+    materaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
+    materaDispStaList["P3V3"]      = mp8796.DispStatus
+    materaDispStaList["P3V3S1"]    = tps53688.DispStatus
+    materaDispStaList["P3V3S2"]    = tps53688.DispStatus
+    materaDispStaList["TEMP_MB"]   = lm75a.DispStatus
+    materaDispStaList["TEMP_IOB1"] = lm75a.DispStatus
+    materaDispStaList["TEMP_IOB2"] = lm75a.DispStatus
+
+    materaI2cHubMap = make(map[string]I2cHubInfo)
+
+    //===============================
     // Taormina
     taorDispStaList = make(map[string]DispStaFunc)
     taorDispStaList["P0V8AVDD_GB_A"]   = tps549a20.DispStatus
@@ -507,7 +534,7 @@ func init() {
     taorDispStaList["PSU_1"]            = dps800.DispStatus
     taorDispStaList["PSU_2"]            = dps800.DispStatus
     taorDispStaList["TSENSOR-CPU"]      = XeonD.DispStatus
-    taorDispStaList["TSENSOR-BCM"]      = td3.DispStatus
+    taorDispStaList["TSENSOR-TD3"]      = td3.DispStatus
     taorDispStaList["TSENSOR-ASIC0"]    = taorfpga.AsicCoreTemp
     taorDispStaList["TSENSOR-ASIC1"]    = taorfpga.AsicCoreTemp
     taorDispStaList["FAN_1"]   = adt7462.DispStatus
@@ -522,9 +549,31 @@ func init() {
     lipariDispStaList["MEM_VDDIO"]   = tps53688.DispStatus
     lipariDispStaList["P3V3S2"]   = tps53688.DispStatus
     lipariDispStaList["P3V3S1"]   = tps53688.DispStatus
+    lipariDispStaList["P3V3"]     = mp8796.DispStatus
 
     //Just decalred.. not used on Lipari
     lipariI2cHubMap = make(map[string]I2cHubInfo)
+
+    // Lipari ELBA
+    lipariElbaDispStaList = make(map[string]DispStaFunc)
+    lipariElbaDispStaList["VDD_DDR"]   = mp8796.DispStatus
+    lipariElbaDispStaList["VDDQ_DDR"]   = mp8796.DispStatus
+    lipariElbaDispStaList["ELB0_CORE"]   = mp2975.DispStatus
+    lipariElbaDispStaList["ELB0_ARM"]   = mp2975.DispStatus
+
+    // MtFuji ELBA
+    mtfujiElbaDispStaList = make(map[string]DispStaFunc)
+    mtfujiElbaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
+    mtfujiElbaDispStaList["TSENSOR1"]   = tmp451.DispStatusWithRemote
+    mtfujiElbaDispStaList["VDD_DDR"]    = ltc3882.DispStatus
+    mtfujiElbaDispStaList["VDDQ_DDR"]   = ltc3882.DispStatus
+    mtfujiElbaDispStaList["ELB0_CORE"]  = ltc3882.DispStatus
+    mtfujiElbaDispStaList["ELB0_CORE1"] = ltc3882.DispStatus
+    mtfujiElbaDispStaList["ELB0_CORE2"] = ltc3882.DispStatus
+    mtfujiElbaDispStaList["ELB0_ARM"]   = ltc3882.DispStatus
+
+    //Just decalred.. not used on Lipari
+    lipariElbaI2cHubMap = make(map[string]I2cHubInfo)
 
     //===============================
     mtpI2cHubMap = make(map[string]I2cHubInfo)
@@ -538,6 +587,18 @@ func init() {
     mtpI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
     mtpI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
     mtpI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
+
+    materaI2cHubMap = make(map[string]I2cHubInfo)
+    materaI2cHubMap["UUT_1"]  = I2cHubInfo{"HUB_1", 0}
+    materaI2cHubMap["UUT_2"]  = I2cHubInfo{"HUB_1", 1}
+    materaI2cHubMap["UUT_3"]  = I2cHubInfo{"HUB_1", 2}
+    materaI2cHubMap["UUT_4"]  = I2cHubInfo{"HUB_1", 3}
+    materaI2cHubMap["UUT_5"]  = I2cHubInfo{"HUB_2", 0}
+    materaI2cHubMap["UUT_6"]  = I2cHubInfo{"HUB_2", 1}
+    materaI2cHubMap["UUT_7"]  = I2cHubInfo{"HUB_2", 2}
+    materaI2cHubMap["UUT_8"]  = I2cHubInfo{"HUB_2", 3}
+    materaI2cHubMap["UUT_9"]  = I2cHubInfo{"HUB_3", 0}
+    materaI2cHubMap["UUT_10"] = I2cHubInfo{"HUB_3", 1}
 
     mtpI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4"}
     mtpsI2cHubList := []string{"HUB_1", "HUB_2", "HUB_3", "HUB_4", "HUB_5"}
@@ -600,6 +661,7 @@ func init() {
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
+    dispMap["MTP_MATERA"]  = materaDispStaList
     dispMap["NIC_POWER"]   = nicPwrDispStaList
     //===============================
     // Taormina
@@ -607,6 +669,10 @@ func init() {
 
     // Lipari
     dispMap["LIPARI"]  = lipariDispStaList
+    dispMap["LIPARIELBA"]  = lipariElbaDispStaList
+
+    // MtFuji (Cisco)
+    dispMap["MTFUJIELBA"]  = mtfujiElbaDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
@@ -648,6 +714,7 @@ func init() {
     //===============================
     eepromMap["MTP"]           = mtpEepList
     eepromMap["MTPS"]          = mtpEepList
+    eepromMap["MTP_MATERA"]    = materaEepList
     //===============================
     // Taormina
     eepromMap["TAORMINA"]          = naplesEepList
@@ -659,6 +726,9 @@ func init() {
     i2cHubMap["MTP"] = mtpI2cHubMap
     // MTP=MTPS
     i2cHubMap["MTPS"]           = mtpI2cHubMap
+    // MTP_MATERA
+    i2cHubMap["MTP_MATERA"]     = materaI2cHubMap
+
     i2cHubMap["NAPLES100"]      = naples100I2cHubMap
     i2cHubMap["NAPLES100IBM"]   = naples100I2cHubMap
     i2cHubMap["NAPLES100HPE"]   = naples100I2cHubMap
@@ -698,8 +768,9 @@ func init() {
     i2cHubMap["TAORMINA"]     = taorI2cHubMap
 
     //===============================
-    // Taormina
+    // Lipari
     i2cHubMap["LIPARI"]     = lipariI2cHubMap
+    i2cHubMap["LIPARIELBA"] = lipariElbaI2cHubMap
 
     i2cHubListMap = make(map[string][]string)
     i2cHubListMap["MTP"]           = mtpI2cHubList

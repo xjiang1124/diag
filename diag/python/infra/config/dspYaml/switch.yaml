@@ -184,4 +184,10 @@ DSP:
                     ALL: 60
                 INFO: Test timeout setting
 
+    TEST#ELBALINKFLAP:
+        INFO: Check if Elba had any link flaps
+        PLATFORM:
+            TOR: ALL
+        PRIORITY: NORMAL
+        PARAM:
 ...

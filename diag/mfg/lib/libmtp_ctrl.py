@@ -3495,6 +3495,13 @@ class mtp_ctrl():
             return False
         return True
 
+    def mtp_erase_main_fw_partition(self, slot):
+        if not self._nic_ctrl_list[slot].nic_erase_main_fw_partition():
+            self.cli_log_slot_inf_lock(slot, "Erase mainfw failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
 
     def mtp_verify_nic_qspi(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
@@ -7489,3 +7496,8 @@ class mtp_ctrl():
         return True
 
 
+    def mtp_nic_device_conf_verify(self, slot):
+        if not self._nic_ctrl_list[slot].device_conf_verify():
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        return True

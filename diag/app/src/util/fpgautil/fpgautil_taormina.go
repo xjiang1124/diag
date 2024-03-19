@@ -164,7 +164,7 @@ func taormina_fpga_cli() {
         if os.Args[2] == "snake" {
             mask, _ := strconv.ParseUint(os.Args[3], 0, 32)
             duration, _ := strconv.ParseUint(os.Args[4], 0, 32)
-            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], 0, 0, 0, td3.TD3_MAX_TEMP, td3.TD3_MAX_TEMP, 90, taormina.SNAKE_GB_NO_LPBK, taormina.SNAKE_RETIMER_NO_LPBK)
+            taormina.System_Snake_Test(td3.SNAKE_TEST_LINE_RATE, uint32(mask), uint32(duration), os.Args[5], 0, 0, 0, taormina.ELBA_MAX_TEMP, td3.TD3_MAX_TEMP, 90, taormina.SNAKE_GB_NO_LPBK, taormina.SNAKE_RETIMER_NO_LPBK, 0)
         }
         if os.Args[2] == "checkgb" {
             td3.CheckForRevA_Gearbox()

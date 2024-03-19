@@ -7,7 +7,7 @@ import pexpect
 import argparse
 import re
 import random
-import commands
+import subprocess
 from datetime import datetime
 
 sys.path.append(os.path.relpath("/home/mfg/lib"))
@@ -44,7 +44,7 @@ def main():
         
         ping_cmd = "ping {:s} -c 4".format(srv_ipaddr)
 
-        output = commands.getstatusoutput(ping_cmd)
+        output = subprocess.getstatusoutput(ping_cmd)
 
         findmatch = re.findall(r"\s(\d+)% packet loss",output[1])
 
@@ -56,7 +56,7 @@ def main():
 
         ssh_cmd = "'ssh {:s}'".format(DIAG_SSH_OPTIONS) + " " + srv_username + "@" + srv_ipaddr 
         rsync_cmd = "rsync -H -t -r -v -e " + ssh_cmd + ":" + pro_srv_logpath + " " + "/mfg_log/"
-        session = pexpect.spawn(rsync_cmd)
+        session = pexpect.spawn(rsync_cmd, encoding='utf-8')
         try:
             session.expect_exact("assword:")
         except pexpect.TIMEOUT:

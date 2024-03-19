@@ -728,6 +728,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -828,6 +832,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
@@ -920,6 +928,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type in FPGA_TYPE_LIST:
@@ -1018,6 +1030,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1116,6 +1132,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1159,6 +1179,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1213,6 +1237,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
@@ -1276,6 +1304,10 @@ def main():
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -1284,6 +1316,8 @@ def main():
             isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
 
             sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
+            if nic_type == NIC_Type.NAPLES100:
+                sw_test_list = ["SW_BOOT", "SW_MGMT_INIT", "CONF_VERIFY", "SW_PROFILE", "SW_SHUTDOWN"]
             if isCloud or nic_type == NIC_Type.NAPLES100IBM:
                 sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
             if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
@@ -1296,10 +1330,6 @@ def main():
                 sw_test_list = []
             if nic_type in FPGA_TYPE_LIST:
                 sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
-            if nic_profile:
-                if "SW_PROFILE" not in sw_test_list:
-                    sw_test_list.insert(-1, "SW_MGMT_INIT")
-                    sw_test_list.insert(-1, "SW_PROFILE")
 
             for skipped_test in args.skip_test:
                 if skipped_test in sw_test_list:
@@ -1315,9 +1345,9 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_boot(slot)
                 elif test == "EXTDIAG_BOOT_SMODE":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_smode_boot(slot)
-                elif test == "SW_MGMT_INIT" and nic_profile:
+                elif test == "SW_MGMT_INIT":
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(slot)
-                elif test == "SW_PROFILE" and nic_profile:
+                elif test == "SW_PROFILE":
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
                 elif test == "SW_MODE_SWITCH":
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch(slot)
@@ -1332,6 +1362,8 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
                 elif test == "KEYS_CHECK":
                     ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
+                elif test == "CONF_VERIFY":
+                    ret = mtp_mgmt_ctrl.mtp_nic_device_conf_verify(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
                     continue

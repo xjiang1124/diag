@@ -460,15 +460,15 @@ class NIC_IMAGES:
     goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
     goldfw_dat["GINESTRA_D4"] = "08-21-2023"
 
-    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
-    cpld_ver["GINESTRA_D5"] = "0x1"
-    cpld_dat["GINESTRA_D5"] = "0x02"
-    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_working_08162023.bin"
-    sec_cpld_ver["GINESTRA_D5"] = "0x1"
-    sec_cpld_dat["GINESTRA_D5"] = "0x02"
-    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev1.2_failsafe_08162023.bin"
-    fail_cpld_ver["GINESTRA_D5"] = "0x1"
-    fail_cpld_dat["GINESTRA_D5"] = "0x02"
+    cpld_img["GINESTRA_D5"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["GINESTRA_D5"] = "0x2"
+    cpld_dat["GINESTRA_D5"] = "0x07"
+    sec_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["GINESTRA_D5"] = "0x2"
+    sec_cpld_dat["GINESTRA_D5"] = "0x07"
+    fail_cpld_img["GINESTRA_D5"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["GINESTRA_D5"] = "0x2"
+    fail_cpld_dat["GINESTRA_D5"] = "0x07"
     fea_cpld_img["GINESTRA_D5"] = "ginestra_impl1.bin"
     diagfw_img["GINESTRA_D5"] = "naples_diagfw_elba_1.68-G-4_2023.08.21.tar"
     diagfw_dat["GINESTRA_D5"] = "08-21-2023"
@@ -891,6 +891,12 @@ Factory_network_config = {
         "Flexflow": ""
     }
 }
+
+###############################################################################################################################
+# Traffice flow control function implemented, but not deploy yet, uncoment this global vaiable when apply the feature
+###############################################################################################################################
+# FLEX_FLOW_TOKEN_REDIS_IP = '192.168.8.2'              # the centra server running redis. If not specify, default to localhost.
+# FLEX_FLOW_TOKEN_REDIS_PASSWD = ''
 
 # Don't touch the following xml format, it is required for flex flow report
 

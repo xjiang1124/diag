@@ -1030,6 +1030,8 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
             if slot in fail_nic_list:
                 continue
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
                 continue
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["CPLD_INIT", "NIC_BOOT_INIT", "CPLD_VERIFY", "QSPI_VERIFY"]
@@ -1955,6 +1957,10 @@ def main():
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                if slot in pass_nic_list:
+                                    pass_nic_list.remove(slot)
                                 continue
 
                             nic_thread = threading.Thread(target = single_nic_test_fpga_program, args = (mtp_mgmt_ctrl,
@@ -1995,6 +2001,10 @@ def main():
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                         for slot in nic_list:
                             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                if slot in pass_nic_list:
+                                    pass_nic_list.remove(slot)
                                 continue
 
                             nic_thread = threading.Thread(target = single_nic_prod_fpga_program, args = (mtp_mgmt_ctrl,

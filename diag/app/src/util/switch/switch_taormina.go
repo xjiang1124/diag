@@ -28,6 +28,7 @@ const errhelp = "\nswitch:\n" +
         "                                maxtd3temp:value\n" +
         "                                gbloopback:<host/line>\n" +
         "                                retimerloopback:<host/line>\n" +
+        "                                pollerroratend:<0/1>\n" +
         "                                EXAMPLE pktsize:1480 pktpattern:0xFFFFFFFF dumptemps:1 fanspeed:70 maxelbatemp:65 maxtd3temp:80\n" +
         "switch td3 snakecompliance <elbPortMask> <time> <phy/ext>\n" +
         "switch td3 vrmfix\n" +
@@ -35,7 +36,7 @@ const errhelp = "\nswitch:\n" +
         "switch elba memtest <elba mask 0x1/0x2/0x3> <time in seconds> \n" +
         "switch elba edmatest <elba mask 0x1/0x2/0x3> \n" +
         "switch elba rtctest <elba mask 0x1/0x2/0x3>\n" +
-        "switch elba checkecc/checkpcilink <elba#>\n" +
+        "switch elba checkecc/checkpcilink/checklinkflap <elba#>\n" +
         "\n" +
         "switch cpu usbtest <file size in MB> <# of files to generate>\n" +
         "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
@@ -90,6 +91,7 @@ L1                  idle
 
 func taormina_switch_cli() {
     argc := len(os.Args[0:])
+    rc := 0
 
     if argc < 2 {
         fmt.Printf(" %s \n", errhelp)
@@ -160,11 +162,11 @@ func taormina_switch_cli() {
                 os.Exit(0)
             }
         } else if os.Args[2] == "resistor" {
-            if argc < 3 {
+            if argc < 4 {
                 fmt.Printf("\n [WARN] Please provide another arg with the expected resistor value.  i.e. 1, 2, 3, etc\n\n")
                 return
             }
-            strapping, _ := strconv.ParseUint(os.Args[2], 0, 32)
+            strapping, _ := strconv.ParseUint(os.Args[3], 0, 32)
             rc := taormina.FPGA_Strapping_Test(int(strapping))
             if rc != errType.SUCCESS {
                 os.Exit(-1) 
@@ -225,6 +227,16 @@ func taormina_switch_cli() {
                 os.Exit(0)
             }
         }
+        if os.Args[2] == "PrintPortRmonStats" {
+            portnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            rc := td3.PrintPortRmonStats(int(portnumber))
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        }
+
         if os.Args[2] == "testrun" {
             testnumber, _ := strconv.ParseUint(os.Args[3], 0, 32)
             _,_,_,_,rc := td3.BCMshell_Test_Run(int(testnumber))
@@ -261,7 +273,7 @@ func taormina_switch_cli() {
             return
         } else if os.Args[2] == "retimer_temperatures" {
             fmt.Printf("IN RETIMER TEMP\n")
-            temps, _ := td3.RetimerGetTemperatures()
+            temps, _ := td3.RetimerGetTemperatures("RETIMER")
             for i:=0;i<len(temps);i++ {
                 fmt.Printf("Retimer-%d  Temp=%fC\n", i, temps[i])
             }
@@ -291,7 +303,7 @@ func taormina_switch_cli() {
             }
         } else if os.Args[2] == "gearbox_temperatures" {
             fmt.Printf("IN GEARBOX TEMP\n")
-            temps, _ := td3.GearboxGetTemperatures()
+            temps, _ := td3.GearboxGetTemperatures("GEARBOX")
             for i:=0;i<len(temps);i++ {
                 fmt.Printf("Gearbox-%d  Temp=%fC\n", i, temps[i])
             }
@@ -328,11 +340,12 @@ func taormina_switch_cli() {
             var dumptemperature uint32 = 1
             var data32 uint32
             var pkt_length, pkt_pattern uint64 = 0, 0  
-            var TD3MaxTemp, ElbaMaxTemp, Fanspeed int = 85, 85, 00 //00 fanspeed means dont set it.. just use what is running
+            var TD3MaxTemp, ElbaMaxTemp, Fanspeed int = td3.TD3_MAX_TEMP, taormina.ELBA_MAX_TEMP, 00 //00 fanspeed means dont set it.. just use what is running
             var extraArg bool
             var test_type uint32 = td3.SNAKE_TEST_LINE_RATE
             var gbloopback = 0
             var retimerloopback = 0;
+            var PollErrorAtEnd = 0;
 
             if argc < 6 { fmt.Printf(" Not enough args..."); return; }
 
@@ -390,6 +403,10 @@ func taormina_switch_cli() {
             extraArg = contains_with_a_string(os.Args, "retimerloopback", "line")
             if extraArg == true { retimerloopback = taormina.SNAKE_RETIMER_LINE_LPBK }
 
+            data32, extraArg = contains_with_a_value(os.Args, "pollerroratend") 
+            if extraArg == true { PollErrorAtEnd = int(data32) }
+
+
             cli.Printf("i", " pkt_length=%d\n", pkt_length)
             cli.Printf("i", " pkt_pattern=0x%x\n", pkt_pattern)
             cli.Printf("i", " dumptemperature=%x\n", dumptemperature)
@@ -398,8 +415,9 @@ func taormina_switch_cli() {
             cli.Printf("i", " TD3MaxTemp=%d\n", TD3MaxTemp)
             cli.Printf("i", " gbloopback=%d\n", gbloopback)
             cli.Printf("i", " retimerloopback=%d\n", retimerloopback)
+            cli.Printf("i", " PollErrorAtEnd=%d\n", PollErrorAtEnd)
 
-            rc := taormina.System_Snake_Test(test_type, uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern, dumptemperature, TD3MaxTemp, ElbaMaxTemp, Fanspeed, gbloopback, retimerloopback)
+            rc := taormina.System_Snake_Test(test_type, uint32(mask), uint32(duration), os.Args[5], pkt_length, pkt_pattern, dumptemperature, TD3MaxTemp, ElbaMaxTemp, Fanspeed, gbloopback, retimerloopback, PollErrorAtEnd)
             if rc != errType.SUCCESS {
                 os.Exit(-1) 
             } else {
@@ -475,6 +493,49 @@ func taormina_switch_cli() {
     } else if os.Args[1] == "elba" {
         if os.Args[2] == "vrmfix" {
             taormina.ElbaVRMfix()
+        } else if os.Args[2] == "checkeyeheight" {
+            elba, _ := strconv.ParseUint(os.Args[3], 0, 32)
+            lane, _ := strconv.ParseUint(os.Args[4], 0, 32)
+
+            _, mv0, mv1, mv2 := taormina.Elba_Check_Eye_Height(int(elba), int(lane), 1)
+            fmt.Printf("\b0=%dmv \n1=%dmv \n2=%dmv\n", mv0, mv1, mv2)
+
+        } else if os.Args[2] == "checklinkflap" {
+
+            e := taormina.Elba_Check_Link_Flap_Count(0, 1) 
+            e |= taormina.Elba_Check_Link_Flap_Count(1, 1) 
+            e |= taormina.TD3_Check_Link_Flap()
+
+            if (e != errType.SUCCESS) {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "printmacstats" {
+            elba, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            e := taormina.Elba_Get_Mac_Stats(int(elba)) 
+            if e != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+        } else if os.Args[2] == "printmacstats1" {
+            elba, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            mibs, e := taormina.Elba_Get_Mac_Stats_Into_Struct(int(elba), 1) 
+            for _, temp := range mibs  {
+                fmt.Printf("fcs=%x\n", temp.RSFEC_CH_SYMBOL_ERR_CNT)
+            }
+            if e != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
         } else if os.Args[2] == "checkpcilink" {
             elba, err := strconv.ParseUint(os.Args[3], 0, 32)
             if err != nil {
@@ -667,6 +728,15 @@ func taormina_switch_cli() {
                 fmt.Printf(" No Errors Detected\n")
                 os.Exit(0)
             }
+        } else if os.Args[2] == "3v3fix" {
+            rc := taormina.TaorminaP3V3trimFix()
+            if rc != errType.SUCCESS {
+                cli.Printf("e", "3v3fix FAILED\n")
+                os.Exit(-1)
+            } else { 
+                cli.Printf("i", "3v3fix PASSED\n")
+                os.Exit(0)
+            }
         } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {  //pci scan
             var skipelba uint32 
             if contains(os.Args, "-noelba") {
@@ -759,12 +829,19 @@ func taormina_switch_cli() {
             os.Exit(0)
 
         } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {    //power
-            taormina.ShowPower()
+            rc = taormina.ShowPower()
         } else if os.Args[2][0] == 't' || os.Args[2][0] == 'T' {    //temperature
-            taormina.ShowTemperature()
+            rc = taormina.ShowTemperature()
+        } else if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {    //fans
+            rc = taormina.ShowFanSpeed() 
         } else {
             fmt.Printf(" Bad ARG--> ARGV[2]=%s\n", os.Args[2])
             return
+        }
+        if rc != errType.SUCCESS {
+            os.Exit(-1)
+        } else { 
+            os.Exit(0)
         }
 
     }
