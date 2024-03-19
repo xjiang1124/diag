@@ -1022,8 +1022,8 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False
-    sn = mtp_mgmt_ctrl.barcode_scans[key]["SN"]
-    pn = mtp_mgmt_ctrl.barcode_scans[key]["PN"]
+    sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
+    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     nic_type = get_nic_type_by_part_number(pn)
     mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
     mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)

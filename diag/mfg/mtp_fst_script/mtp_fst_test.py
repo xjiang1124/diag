@@ -31,6 +31,7 @@ from libmtp_ctrl import mtp_ctrl
 import test_utils
 import testlog
 import scanning
+import barcode_field as bf
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -306,8 +307,8 @@ def main():
         if scanned_fru_cfg:
             for slot in range(mtp_mgmt_ctrl._slots):
                 key = libmfg_utils.nic_key(slot)
-                if scanned_fru_cfg[key]["VALID"] and "ROTSN" in scanned_fru_cfg[key]:
-                    slot2rotsn[slot] = scanned_fru_cfg[key]["ROTSN"]
+                if scanned_fru_cfg[key]["VALID"] and bf.ROT_SN in scanned_fru_cfg[key]:
+                    slot2rotsn[slot] = scanned_fru_cfg[key][bf.ROT_SN]
 
         for skip_test in args.skip_test:
             if skip_test in testlist:

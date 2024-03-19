@@ -65,11 +65,11 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
     
-def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
-    sn = fru_cfg["SN"]
-    mac = fru_cfg["MAC"]
-    pn = fru_cfg["PN"]
-    prog_date = str(fru_cfg["TS"])
+def single_nic_fru_program(mtp_mgmt_ctrl, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
+    sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
+    mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
+    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+    prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
     test_list = ["FRU_PROG"]
 
     dsp = FF_Stage.FF_SWI
@@ -576,12 +576,7 @@ def main():
 
             nic_thread_list = list()
             for slot in fru_reprogram_list:
-                key = libmfg_utils.nic_key(slot)
-                valid = nic_fru_cfg[key]["VALID"]
-                if not valid:
-                    continue
                 nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
-                                                                                      nic_fru_cfg[key],
                                                                                       slot,
                                                                                       fail_nic_list,
                                                                                       pass_nic_list,

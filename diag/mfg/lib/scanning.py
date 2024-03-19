@@ -259,3 +259,41 @@ def keyboard_input(prompt):
 
     return input(prompt)
 
+# API to mtp functions
+def retrieve_field(barcode_scans_dict, slot, field):
+    key = libmfg_utils.nic_key(slot)
+    if key not in barcode_scans_dict.keys():
+        return None
+    if field not in barcode_scans_dict[key].keys():
+        return ""
+    return barcode_scans_dict[key][field]
+
+def get_sn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, SN)
+
+def get_mac(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, MAC)
+
+def get_pn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, PN)
+
+def get_alom_sn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, ALOM_SN)
+
+def get_alom_pn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, ALOM_PN)
+
+def get_rot_sn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, ROT_SN)
+
+def get_dpn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, DPN)
+
+def get_swpn(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, SWPN)
+
+def get_sku(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, SKU)
+
+def get_ts(mtp_mgmt_ctrl, slot):
+    return retrieve_field(mtp_mgmt_ctrl.barcode_scans, slot, "TS")
