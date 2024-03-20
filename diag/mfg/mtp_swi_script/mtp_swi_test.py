@@ -66,9 +66,11 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     return mtp_mgmt_ctrl
     
 def single_nic_fru_program(mtp_mgmt_ctrl, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
-    sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
-    mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
-    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    mac = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)[1].replace('-', '')
+    pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
+    dpn = mtp_mgmt_ctrl.mtp_get_nic_dpn(slot)
+    sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
     test_list = ["FRU_PROG"]
 
@@ -82,7 +84,7 @@ def single_nic_fru_program(mtp_mgmt_ctrl, slot, fail_nic_list, pass_nic_list, sk
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program FRU
         if test == "FRU_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
             continue
@@ -604,6 +606,44 @@ def main():
 
         test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
 
+        # Reprogram FRU with final SKU
+        sku_fru_prog_list = list()
+        for slot in pass_nic_list[:]:
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.GINESTRA_S4:
+                continue
+            sku_fru_prog_list.append(slot)
+
+
+        nic_thread_list = list()
+        for slot in sku_fru_prog_list:
+            nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
+                                                                                  slot,
+                                                                                  fail_nic_list,
+                                                                                  pass_nic_list,
+                                                                                  args.skip_test))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in sku_fru_prog_list:
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
+                mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+
         check_naples_pn = "SCAN_VERIFY" not in args.skip_test
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -638,12 +678,15 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
+            sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
             emmc_img_file = emmc_img_file_list[sw_pn]
             if emmc_img_file:
                 emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
 
             swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_SWI)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
+            if sku:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
             for image_name, image_file_path in swi_image_dict.items():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)

@@ -372,6 +372,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         card_type     = kwargs.get("card_type",   None)
         swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
         testsuite     = kwargs.get("testsuite_name", stage)
+        dpn           = kwargs.get("dpn", None)
         only_test_list        = kwargs.get("only_test_list",        [])
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn_list",            [])
@@ -389,6 +390,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             test_cmd_args += " --loop_idx {:d}".format(loop_idx)
         if swm_test_mode:
             test_cmd_args += " --swm {:s}".format(swm_test_mode)
+        if dpn:
+            test_cmd_args += " --dpn {:s}".format(dpn)
         if skip_test_list:
             test_cmd_args += " --skip-test {:s}".format('"'+'" "'.join(skip_test_list).strip()+'"')
         if only_test_list:

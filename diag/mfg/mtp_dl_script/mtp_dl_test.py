@@ -28,6 +28,7 @@ from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
+from libsku_utils import VALID_DPN
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -123,6 +124,7 @@ def single_nic_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, fea_cpl
     sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
     mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
     pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+    dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
 
     dsp = FF_Stage.FF_DL
@@ -158,7 +160,7 @@ def single_nic_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, fea_cpl
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program FRU
         if test == "FRU_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             #skip ALOM programming if Naples25 SWM test mode is SWM only
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:  
@@ -211,6 +213,7 @@ def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--dpn", type=VALID_DPN, help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", choices=list(VALID_DPN), default=None)
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
@@ -310,6 +313,7 @@ def main():
             sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
             mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
             pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+            dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
             prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
             mac_ui = libmfg_utils.mac_address_format(mac)
             alom_sn = None
@@ -674,10 +678,12 @@ def main():
             sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
             mac = mtp_mgmt_ctrl.get_scanned_mac(slot)
             pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
+            dpn = mtp_mgmt_ctrl.get_scanned_dpn(slot)
             prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
             exp_sn = sn
             exp_mac = "-".join(re.findall("..", mac))
             exp_pn = pn
+            exp_dpn = dpn
             exp_date = prog_date
             alom_sn = None
             alom_pn = None
@@ -728,7 +734,7 @@ def main():
                     ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
                 # verify FRU
                 elif test == "FRU_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date)
+                    ret = mtp_mgmt_ctrl.mtp_verify_nic_fru(slot, exp_sn, exp_mac, exp_pn, exp_date, exp_dpn)
                     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         if ret:

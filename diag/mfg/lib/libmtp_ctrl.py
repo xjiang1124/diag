@@ -2625,16 +2625,20 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
+    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
-        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=False):
+        if dpn:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
+        if sku:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
+        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=False):
             self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
-            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=True):
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True):
                 self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
@@ -2681,7 +2685,7 @@ class mtp_ctrl():
     def mtp_get_nic_alom_sn(self, slot):
         return self._nic_ctrl_list[slot].nic_alom_sn_get_fru()
 
-    def mtp_verify_nic_fru(self, slot, sn, mac, pn, date):
+    def mtp_verify_nic_fru(self, slot, sn, mac, pn, date, dpn=None):
         nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
         if not nic_fru_info:
             self.cli_log_slot_err_lock(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
@@ -2704,7 +2708,14 @@ class mtp_ctrl():
         if nic_date != date:
             self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
             return False
+        if dpn:
+            nic_dpn = self._nic_ctrl_list[slot]._dpn
+            if nic_dpn != dpn:
+                self.cli_log_slot_err_lock(slot, "DPN Verify Failed, get {:s}, expect {:s}".format(nic_dpn, dpn))
+                return False
         self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
+        if dpn:
+            self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, dpn={:s}".format(dpn))
 
         return True
 
@@ -4008,6 +4019,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
                 if fru_valid:
                     fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+                    dpn = self.mtp_get_nic_dpn(slot)
 
                     riser_sn = None
                     riser_progdate = None
@@ -4022,6 +4034,8 @@ class mtp_ctrl():
                                 self.cli_log_slot_err_lock(slot, "Retrieve OCP Adapter FRU failed")
                     else:
                         self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0],fru_info_list[1],fru_info_list[2]))
+                        if dpn:
+                            self.cli_log_slot_inf(slot, "==> DPN: {:s}".format(dpn))
                         if fru_info_list[3]:
                             self.cli_log_slot_inf(slot, "==> FRU Program Date: {:s}".format(fru_info_list[3]))
                         if nic_type == NIC_Type.NAPLES25OCP:
@@ -4917,6 +4931,10 @@ class mtp_ctrl():
 
         # set final nic_type
         for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+
+            final_nic_type = self.mtp_get_nic_type(slot)
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
                 pn = self.mtp_get_nic_pn(slot)
                 if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
@@ -4951,23 +4969,25 @@ class mtp_ctrl():
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_D5:
                 pn = self.mtp_get_nic_pn(slot)
+                sku = self.get_scanned_sku(slot)
                 if re.match(PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_D5
                 elif re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_S4
-                self._nic_type_list[slot] = final_nic_type
-                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
-                sku = self.mtp_get_nic_sku(slot)
-                if re.match(SKU_MATCH.GINESTRA_S4, sku):
-                    final_nic_type = NIC_Type.GINESTRA_S4
-                elif re.match(SKU_MATCH.GINESTRA_S4_B3, sku):
-                    final_nic_type = NIC_Type.GINESTRA_S4_B3
-                elif re.match(SKU_MATCH.GINESTRA_S4_P3, sku):
-                    final_nic_type = NIC_Type.GINESTRA_S4_P3
+
+                    if sku == PRODUCT_SKU.GIN_S4:
+                        final_nic_type = NIC_Type.GINESTRA_S4
+                    elif sku == PRODUCT_SKU.GIN_S4_B3:
+                        final_nic_type = NIC_Type.GINESTRA_S4_B3
+                    elif sku == PRODUCT_SKU.GIN_S4_P3:
+                        final_nic_type = NIC_Type.GINESTRA_S4_P3
+
                 else:
                     final_nic_type = self.mtp_get_nic_type(slot)
                 self._nic_type_list[slot] = final_nic_type
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+
+            self.cli_log_slot_inf(slot, "Found {:s}".format(final_nic_type))
 
         # populate OCP adapter info
         for slot in range(self._slots):
@@ -5343,6 +5363,10 @@ class mtp_ctrl():
 
     def get_scanned_ts(self, slot):
         return str(scanning.get_ts(self, slot))
+
+    def mtp_get_nic_dpn(self, slot):
+        if self._nic_ctrl_list:
+            return self._nic_ctrl_list[slot]._dpn
 
     def mtp_mgmt_set_nic_diag_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_diag_boot():
@@ -6498,6 +6522,8 @@ class mtp_ctrl():
                     temp_fru_cfg[key][bf.SN] = nic_fru_info[0]
                     temp_fru_cfg[key][bf.MAC] = nic_fru_info[1].replace('-', '')
                     temp_fru_cfg[key][bf.PN] = nic_fru_info[2]
+                    temp_fru_cfg[key][bf.DPN] = self._nic_ctrl_list[slot]._dpn
+                    temp_fru_cfg[key][bf.SKU] = self.get_scanned_sku(slot)
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         nic_fru_info = self.mtp_get_nic_alom_fru(slot)
                         temp_fru_cfg[key][bf.ALOM_SN] = nic_fru_info[0]
@@ -6582,6 +6608,8 @@ class mtp_ctrl():
 
             sn = self.mtp_get_nic_sn(slot)
             pn = self.mtp_get_nic_pn(slot)
+            dpn = self.mtp_get_nic_dpn(slot)
+            sku = self.get_scanned_sku(slot)
             if match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                 self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
             else:
