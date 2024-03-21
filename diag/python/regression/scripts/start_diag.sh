@@ -50,7 +50,8 @@ else
     else
         echo "Untar ASIC lib"
         chmod -R 755 $DIAG_DIR/asic_all/$asic/
-        tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+        rm -rf  $DIAG_DIR/asic_all/$asic/*
+        tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
         cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
         cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
         rm -rf $DIAG_DIR/asic_all/$asic/nic
