@@ -8,6 +8,7 @@ import (
     "os/exec"
     "strconv"
     "time"
+    "math"
     "strings"
     "syscall"
     "unsafe"
@@ -58,11 +59,30 @@ const MDIO_DATA_MASK      uint32 = 0xFFFF
 const MDIO_DEV_ADDR_SHIFT uint32 = 5
 const MDIO_OP_SHIFT       uint32 = 10
 
+const MVL_STATS_POLICY_BASED   int = 0
+const MVL_STATS_MAC_BASED      int = 1
+
+//for policy based counters
+const MVL_PORT_IN_DISCARDS              uint8 = 0x10
+const MVL_PORT_IN_FILTERED              uint8 = 0x12
+const MVL_PORT_OUT_FILTERED             uint8 = 0x13
+//for MAC based counters
 const MVL_REG_GLOBAL                    uint8 = 0x1B
 const MVL_GLOBAL_STATS_OP_REG           uint8 = 0x1D
+const MVL_GLOBAL_STATS_COUNTER_3_2_REG  uint8 = 0x1E
+const MVL_GLOBAL_STATS_COUNTER_1_0_REG  uint8 = 0x1F
 const MVL_GLOBAL_STATS_OP_BUSY          uint16 = 1 << 15
+const MVL_GLOBAL_STATS_OP_READ_CAPTURED uint16 = 4 << 12
 const MVL_GLOBAL_STATS_OP_CAPTURE_PORT  uint16 = 5 << 12
 const MVL_GLOBAL_STATS_OP_HIST_RX_TX    uint16 = 3 << 10
+
+type mvlStat struct {
+    Name        string
+    NumBytes    int
+    Offset      uint8
+    CounterType int
+    counters    [10]uint64 //one for each port
+}
 
 
 var Glob_fd0 *os.File = nil
@@ -397,7 +417,7 @@ func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
     var retry uint16
 
     if (inst != 0  && inst != 1) {
-        cli.Printf("e", "Invalid instance number")
+        err = fmt.Errorf("Invalid instance number")
         return
     }
     cmd = uint32(regAddr) & MDIO_REG_ADDR_MASK
@@ -416,7 +436,7 @@ func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
         }
         time.Sleep(time.Duration(1) * time.Microsecond)
     }
-    cli.Println("e", "timeout waiting for operation to complete")
+    err = fmt.Errorf("timeout waiting for operation to complete")
     return
 }
 
@@ -427,7 +447,7 @@ func MdioWrite(inst uint8, phy uint8, regAddr uint8, value uint16) (err error) {
     var retry uint16
 
     if (inst != 0  && inst != 1) {
-        cli.Println("e", "Invalid instance number")
+        err = fmt.Errorf("Invalid instance number")
         return
     }
     err = MateraWriteU32(FPGA_E0_SMI_DATA_REG + uint64(inst * 8), uint32(value))
@@ -447,32 +467,177 @@ func MdioWrite(inst uint8, phy uint8, regAddr uint8, value uint16) (err error) {
             return
         }
         time.Sleep(time.Duration(1) * time.Microsecond)
-        retry++
     }
-    cli.Println("e", "timeout waiting for operation to complete")
+    err = fmt.Errorf("timeout waiting for operation to complete")
     return
 }
 
 
-func MvlDump(inst uint8) (err error) {
-    var port uint16
+var MvlStatCounters [10]uint64 = [10]uint64{math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64, math.MaxUint64}
+var MvlStatTbl = []mvlStat {
+    mvlStat{"InDiscards",       4, 0x10, MVL_STATS_POLICY_BASED, MvlStatCounters},
+    mvlStat{"InFiltered",       2, 0x12, MVL_STATS_POLICY_BASED, MvlStatCounters},
+    mvlStat{"OutFiltered",      2, 0x13, MVL_STATS_POLICY_BASED, MvlStatCounters},
+    //Ingress
+    mvlStat{"InGoodOctets",     8, 0x00, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InBadOctets",      4, 0x02, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InUnicast",        4, 0x04, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InBroadcasts",     4, 0x06, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InMulticasts",     4, 0x07, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InPause",          4, 0x16, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InUndersize",      4, 0x18, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InFragments",      4, 0x19, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InOversize",       4, 0x1A, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InJabber",         4, 0x1B, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InRxErr",          4, 0x1C, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"InFCSErr",         4, 0x1D, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    //Egress
+    mvlStat{"OutOctets",        8, 0x0E, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"OutUnicast",       4, 0x10, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"OutBroadcasts",    4, 0x13, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"OutMulticasts",    4, 0x12, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"OutPause",         4, 0x15, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Deferred",         4, 0x05, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Collisions",       4, 0x1E, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Single",           4, 0x14, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Multiple",         4, 0x17, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Excessive",        4, 0x11, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"Late",             4, 0x1F, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"OutFCSErr",        4, 0x03, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    //both Ingress and Egress
+    mvlStat{"64Octets",         4, 0x08, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"65to127Octets",    4, 0x09, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"128to255Octets",   4, 0x0A, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"256to511Octets",   4, 0x0B, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"512to1023Octets",  4, 0x0C, MVL_STATS_MAC_BASED,    MvlStatCounters},
+    mvlStat{"1024toMaxOctets",  4, 0x0D, MVL_STATS_MAC_BASED,    MvlStatCounters},
+}
+
+
+func MvlStatsWait(inst uint8) (err error) {
+    var data uint16
+    for retry := 0; retry < 100; retry++ {
+        data, err = MdioRead(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG)
+        if err != nil {
+            return
+        }
+        if data & MVL_GLOBAL_STATS_OP_BUSY == 0 {
+            return
+        } else {
+            time.Sleep(time.Duration(1) * time.Microsecond)
+        }
+    }
+    return fmt.Errorf("timeout waiting for operation to complete")
+}
+
+
+// returns a 4-byte long counter
+func MvlStatsRead(inst uint8, offset uint8) (value uint32, err error) {
+    var data uint16
+
+    err = MdioWrite(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG,
+                    MVL_GLOBAL_STATS_OP_READ_CAPTURED |
+                    MVL_GLOBAL_STATS_OP_HIST_RX_TX |
+                    MVL_GLOBAL_STATS_OP_BUSY | uint16(offset))
+    if err != nil {
+        return
+    }
+    err = MvlStatsWait(inst)
+    if err != nil {
+        return
+    }
+
+    data, err = MdioRead(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_COUNTER_3_2_REG)
+    if err != nil {
+        return
+    }
+    value = uint32(data) << 16
+    data, err = MdioRead(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_COUNTER_1_0_REG)
+    if err != nil {
+        return
+    }
+    value = value | uint32(data)
+    return
+}
+
+
+func MvlPortStatsMacBased(inst uint8, port uint8) (err error) {
+    var data32_low, data32_high uint32
+
+    // snapshot all counters for this port
+    err = MdioWrite(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG,
+                    MVL_GLOBAL_STATS_OP_CAPTURE_PORT |
+                    MVL_GLOBAL_STATS_OP_HIST_RX_TX |
+                    MVL_GLOBAL_STATS_OP_BUSY | uint16(port))
+    if err != nil {
+        return
+    }
+    // wait for the snapshot to complete
+    err = MvlStatsWait(inst)
+    if err != nil {
+        return
+    }
+
+    // read the captured stats
+    for i := 0; i < len(MvlStatTbl); i++ {
+        stat := MvlStatTbl[i]
+        if stat.CounterType == MVL_STATS_POLICY_BASED {
+            continue
+        }
+        data32_low, err = MvlStatsRead(inst, stat.Offset)
+        if err != nil {
+            return
+        }
+        if stat.NumBytes == 8 {
+            data32_high, err = MvlStatsRead(inst, stat.Offset + 1)
+            if err != nil {
+                return
+            }
+        }
+        MvlStatTbl[i].counters[port] = uint64(data32_high) << 32 | uint64(data32_low)
+    }
+    return
+}
+
+
+func MvlPortStatsPolicyBased(inst uint8, port uint8) (err error) {
+    var data16_low, data16_high uint16
+    for i := 0; i < len(MvlStatTbl); i++ {
+        stat := MvlStatTbl[i]
+        if stat.CounterType == MVL_STATS_POLICY_BASED {
+            data16_low, err = MdioRead(inst, 0x10 + port, stat.Offset)
+            if err != nil {
+                return
+            }
+            if stat.NumBytes == 4 {
+                data16_high, err = MdioRead(inst, 0x10 + port, stat.Offset + 1)
+                if err != nil {
+                    return
+                }
+            }
+            MvlStatTbl[i].counters[port] = uint64(data16_high) << 16 | uint64(data16_low)
+        }
+    }
+    return
+}
+
+
+func MvlDump(inst uint8) () {
+    var port uint8
+
     if (inst != 0  && inst != 1) {
         cli.Println("e", "Invalid instance number")
         return
     }
     fmt.Printf("MATERA MARVELL instance %d REGISTER DUMP\n", inst)
     for port = 0; port < 10; port++ {
-        fmt.Printf("  Port %d\n", port)
-        // snapshot all counters for this port
-        err = MdioWrite(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG,
-                        MVL_GLOBAL_STATS_OP_CAPTURE_PORT |
-                        MVL_GLOBAL_STATS_OP_HIST_RX_TX |
-                        MVL_GLOBAL_STATS_OP_BUSY | port)
-        if err != nil {
-            return
+        fmt.Printf("\nstats for Port %d\n", port)
+        MvlPortStatsPolicyBased(inst, port)
+        MvlPortStatsMacBased(inst, port)
+        for i := 0; i < len(MvlStatTbl); i++ {
+            stat := MvlStatTbl[i]
+            fmt.Printf("%-15s: %-20v\n", stat.Name, stat.counters[port])
         }
-        // wait for the snapshot to complete
-        // read the captured stats
     }
     return
 }
