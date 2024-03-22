@@ -309,6 +309,36 @@ def main():
                 # only for QA, fake the scans
                 mtp_mgmt_ctrl.mtp_populate_fru_to_scans(nic_fru_cfg, pass_nic_list, dpn=args.dpn)
 
+        # validate the DPN is allowed for this PN
+        test_list = ["DPN_VALIDATE"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for slot in pass_nic_list[:]:
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type != NIC_Type.GINESTRA_S4:
+                continue
+
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            for test in test_list:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+
+                if test == "DPN_VALIDATE":
+                    ret = mtp_mgmt_ctrl.mtp_nic_validate_pn_dpn_match(slot)
+
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
         for slot in pass_nic_list:
             sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
             mac = mtp_mgmt_ctrl.get_scanned_mac(slot)

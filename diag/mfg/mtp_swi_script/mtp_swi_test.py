@@ -613,6 +613,33 @@ def main():
                 continue
             sku_fru_prog_list.append(slot)
 
+        # Before programming, check that scanned SKU is valid for this card
+        test_list = ["SKU_VALIDATE"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for slot in sku_fru_prog_list[:]:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            for test in test_list:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+
+                if test == "SKU_VALIDATE":
+                    ret = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(slot)
+
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    if slot in sku_fru_prog_list:
+                        sku_fru_prog_list.remove(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         nic_thread_list = list()
         for slot in sku_fru_prog_list:

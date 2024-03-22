@@ -6594,7 +6594,7 @@ class mtp_ctrl():
 
         return fru_reprogram_list
 
-    def ssdk_sku_validate(self, pass_nic_list, fail_nic_list, dsp, sku):
+    def mtp_nic_validate_sku_dpn_match(self, pass_nic_list, fail_nic_list, dsp):
         fru_reprogram_list = list()
 
         test = "SKU_VALIDATE"
