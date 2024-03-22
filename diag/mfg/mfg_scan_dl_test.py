@@ -18,7 +18,6 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libsku_utils import VALID_DPN
 
 
 def load_mtp_cfg(cfg_yaml=None):
@@ -52,7 +51,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG MTP ScanDL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--dpn", type=VALID_DPN, help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", choices=list(VALID_DPN), default=None)
+    parser.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])

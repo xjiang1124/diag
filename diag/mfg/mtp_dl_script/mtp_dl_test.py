@@ -28,7 +28,6 @@ from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
-from libsku_utils import VALID_DPN
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -213,7 +212,7 @@ def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--dpn", type=VALID_DPN, help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", choices=list(VALID_DPN), default=None)
+    parser.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])

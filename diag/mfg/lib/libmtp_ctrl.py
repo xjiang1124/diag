@@ -15,6 +15,7 @@ from libsku_utils import *
 from libsku_cfg import *
 
 from libdefs import NIC_Type
+from libdefs import PRODUCT_SKU
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -6624,6 +6625,38 @@ class mtp_ctrl():
 
         return fru_reprogram_list
 
+    def mtp_nic_validate_pn_dpn_match(self, slot):
+        """
+            Check that scanned DPN is allowed for the part number in the FRU
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        pn = self.mtp_get_nic_pn(slot)
+        dpn = self.get_scanned_dpn(slot)
+        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            self.cli_log_slot_err(slot, "PN-DPN check doesnt apply to this NIC")
+            return False
+
+        if libmfg_utils.check_dpn_allowed(self, pn, dpn):
+            return True
+        else:
+            return False
+
+    def mtp_nic_validate_sku_dpn_match(self, slot):
+        """
+            Check that scanned SKU is allowed for the DPN in the FRU
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        pn = self.mtp_get_nic_pn(slot)
+        dpn = self.mtp_get_nic_dpn(slot)
+        sku = self.get_scanned_sku(slot)
+        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            self.cli_log_slot_err(slot, "DPN-SKU check doesnt apply to this NIC")
+            return False
+
+        if libmfg_utils.check_sku_allowed(self, pn, dpn, sku):
+            return True
+        else:
+            return False
 
     def mtp_nic_ping_test(self, slotA, slotB):
         if not self._nic_ctrl_list[slotA].nic_console_enable_network_port():

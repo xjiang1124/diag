@@ -282,39 +282,6 @@ PN_FORMAT_TABLE = {
         ]
 }
 
-class VALID_DPN(Enum):
-    GINESTRA_S4 = "58-0001-01"
-
-    def __str__(self):
-        return self.value
-
-class PRODUCT_SKU(Enum):
-    ADI_IBM       = "DSC2-2Q200-32R32F64P-B"
-    ADI_MSFT      = "DSC2-2Q200-32R32F64P-M2"
-    SOLO_MSFT     = "DSC2-2Q200-32R32F64P-M4"
-    ADICR_MSFT    = "DSC2-2Q200-32R32F64P-M5"
-    SOLO_S4       = "DSC2-2Q200-32R32F64P-S4"
-    SOLO_ORCL     = "DSC2-2Q200-32R32F64P-R4"
-    SOLO_ORCL_TH  = "DSC2-2Q200-32R32F64P-R4-T"
-    ADICR_ORCL    = "DSC2-2Q200-32R32F64P-R5"
-
-    GIN_D4_ORCL   = "DSC2A-2Q200-32R32F64P-R"
-    GIN_D5_ORCL   = "DSC2A-2Q200-32S32F64P-R"
-    GIN_S4        = "DSC2A-2Q200-32S32F64P-S4"
-    GIN_S4_B3     = "DSC2A-2Q200-32S32F64P-S4-B3"
-    GIN_S4_P3     = "DSC2A-2Q200-32S32F64P-S4-P3"
-
-    def __str__(self):
-        return self.value
-
-DPN_SKU_MATCH = {
-    VALID_DPN.GINESTRA_S4: [
-        PRODUCT_SKU.GIN_S4,
-        PRODUCT_SKU.GIN_S4_B3,
-        PRODUCT_SKU.GIN_S4_P3
-    ]
-}
-
 def get_product_name_from_pn_and_sn(pn, sn=""):
     if "DSC2-2Q200-32R32F64P-R3" in pn:
         product_name = NIC_Type.ORTANO2INTERP

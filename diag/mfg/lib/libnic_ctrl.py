@@ -3421,11 +3421,11 @@ class nic_ctrl():
         """ Save to self._dpn and return True/False """
         disp_field = r"DPN \(Diagnostic Part Number\)"
 
-        for pn_regex in map(str,list(VALID_DPN)):
-            pn_disp_regex = r"%s +(%s)" % (disp_field, pn_regex)
-            match = re.findall(pn_disp_regex, fru_buf)
+        for dpn_regex in libmfg_utils.get_all_valid_dpn():
+            dpn_disp_regex = r"%s +(%s)" % (disp_field, str(dpn_regex))
+            match = re.findall(dpn_disp_regex, fru_buf)
             if match:
-                self._dpn = match[0]
+                self._dpn = dpn_regex
                 return True
 
         self.nic_set_err_msg("Programmed DPN not a valid DPN")

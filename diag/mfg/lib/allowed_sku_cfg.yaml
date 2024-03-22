@@ -1,0 +1,25 @@
+##########################################################################
+#
+# To check whats allowed in CTO model, we follow this hierarchy
+# - 68-PN:
+#   - 58-DPN1:
+#        - SKU1
+#        - SKU2
+#    - 58-DPN2:
+#        - SKU3
+#        - SKU4
+#
+# i.e. "SKU1" label is allowed for "DPN1" FRU of card "PN".
+#
+# The hyphen "-" is needed before every line as code expects arrays.
+#
+# This is essentially an upside-down view of BOM structure.
+#
+##########################################################################
+
+### GINESTRA SSDK
+- 68-0076:
+    - 58-0001-01:
+        - DSC2A-2Q200-32S32F64P-S4
+        - DSC2A-2Q200-32S32F64P-S4-B3
+        - DSC2A-2Q200-32S32F64P-S4-P3

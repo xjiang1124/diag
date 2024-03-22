@@ -2449,3 +2449,92 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
 
     return mode
 
+def load_sku_cfg():
+    with open("lib/allowed_sku_cfg.yaml", "r") as f:
+        sku_dict = yaml.safe_load(f)
+
+    if not sku_dict:
+        cli_err("Failed to load SKU file: missing or bad YAML", level=0)
+        return None
+
+    # check that the file is formatted correctly
+    def isarray(yaml_item):
+        return isinstance(yaml_item, list)
+
+    if not isarray(sku_dict):
+        cli_err("Bad formatting of allowed_sku_cfg.yaml", level=0)
+        return None
+    for pn in sku_dict:
+        for dpn_list in pn.values():
+            if not isarray(dpn_list):
+                cli_err("Bad formatting for {:s} in allowed_sku_cfg.yaml.\nDPN must be an array.".format(repr(dpn_list)))
+                return None
+            for dpn in dpn_list:
+                for sku in dpn.values():
+                    if not isarray(sku):
+                        cli_err("Bad formatting for {:s}.\nSKU must be an array.".format(repr(sku)))
+                        return None
+
+    # flatten list of dicts to single dict
+    sku_dict = {k: v for d in sku_dict for k, v in d.items()}
+    for pn in sku_dict:
+        sku_dict[pn] = {k: v for d in sku_dict[pn] for k, v in d.items()}
+
+    return sku_dict
+
+def get_all_valid_dpn():
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        return []
+    x = [list(d.keys()) for d in list(skucfg.values())] # convert dict to list of lists
+    x = [xss for xs in x for xss in xs] # flatten list of lists
+    return x
+
+def get_all_valid_sku():
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        return []
+    x = [list(d.values()) for d in list(skucfg.values())] # convert dict to list of lists
+    x = [xsss for xs in x for xss in xs for xsss in xss]  # flatten list of lists
+    return x
+
+def skucfg_pn_search(skucfg, search_pn):
+    """ Since PN in the skucfg yaml are written as 7-character without the rev, need to match it """
+    for pn in skucfg:
+        if pn in search_pn:
+            return pn
+    return None
+
+def check_dpn_allowed(mtp_mgmt_ctrl, pn, dpn):
+    """ DPN must be allowed for given PN """
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        mtp_mgmt_ctrl.cli_log_err("Problem reading allowed_sku_cfg.yaml", level=0)
+        return False
+    foundpn = skucfg_pn_search(skucfg, pn)
+    if not foundpn:
+        mtp_mgmt_ctrl.cli_log_err("No DPNs defined for PN {:s} in allowed_sku_cfg.yaml".format(pn))
+        return False
+    if dpn not in skucfg[foundpn]:
+        mtp_mgmt_ctrl.cli_log_err("DPN {:s} not allowed for {:s} card".format(dpn, pn))
+        return False
+    return True
+
+def check_sku_allowed(mtp_mgmt_ctrl, pn, dpn, sku):
+    """ SKU must be allowed for given PN, DPN combination """
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        mtp_mgmt_ctrl.cli_log_err("Problem reading allowed_sku_cfg.yaml", level=0)
+        return False
+    foundpn = skucfg_pn_search(skucfg, pn)
+    if not foundpn:
+        mtp_mgmt_ctrl.cli_log_err("No SKUs defined for PN {:s} in allowed_sku_cfg.yaml".format(pn))
+        return False
+    if dpn not in skucfg[foundpn]:
+        mtp_mgmt_ctrl.cli_log_err("SKU {:s} not allowed for {{{:s}, {:s}}} pair".format(sku, pn, dpn))
+        return False
+    if sku not in skucfg[foundpn][dpn]:
+        mtp_mgmt_ctrl.cli_log_err("SKU {:s} not allowed for {{{:s}, {:s}}} pair".format(
+            sku, pn, dpn))
+        return False
+    return True

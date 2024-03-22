@@ -3,8 +3,6 @@ from libdefs import Swm_Test_Mode
 from libdefs import MTP_DIAG_Logfile
 from libdefs import FF_Stage
 from libsku_utils import PART_NUMBERS_MATCH
-from libsku_utils import PRODUCT_SKU
-from libsku_utils import VALID_DPN
 from barcode_field import *
 import libmfg_utils
 import testlog
@@ -58,10 +56,10 @@ def validate_rot_sn(usr_input):
     return libmfg_utils.rot_cable_serial_number_validate(usr_input)
 
 def validate_dpn(usr_input):
-    return usr_input in map(str,list(VALID_DPN))
+    return usr_input in libmfg_utils.get_all_valid_dpn()
 
 def validate_sku(usr_input):
-    return usr_input in map(str,list(PRODUCT_SKU))
+    return usr_input in libmfg_utils.get_all_valid_sku()
 
 def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list):
     scan_item_to_validation_func = {
