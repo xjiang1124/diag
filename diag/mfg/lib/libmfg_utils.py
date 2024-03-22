@@ -1103,7 +1103,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1128,6 +1128,11 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         extra_info_xml += "OCP_ADAPTER=\"{:s}\" ".format(ocp_adap_sn)
 
         extra_info_xml += "MFG_SCRIPT_VER=\"{:s}\" ".format(mfg_script_ver)
+
+    if dpn:
+        extra_info_xml += "DPN=\"{:s}\" ".format(dpn)
+    if SKU:
+        extra_info_xml += "DSC-SKU=\"{:s}\" ".format(sku)
 
     if extra_info_xml:
         extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
@@ -1352,7 +1357,7 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
     finally:
         webservice.close()
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None, dpu=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1368,7 +1373,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
     if not xml:
         return False
 
@@ -1401,7 +1406,7 @@ def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None):
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1409,7 +1414,7 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
     if not xml:
         return -2
 
@@ -1527,6 +1532,9 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+
             block_retest = False
             for test in test_list:
                 block_retest |= testlog.is_retest_blocked(test, stage)
@@ -1538,7 +1546,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -1561,7 +1569,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                         time.sleep(3)
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -1635,13 +1643,17 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
+
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+
             if FLEX_SHOP_FLOOR_CONTROL:
                 if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
                     post_cnt = 0
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -1666,7 +1678,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                                 mtp_test_summary[idx][3] = False
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:

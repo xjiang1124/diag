@@ -49,6 +49,7 @@ class nic_ctrl():
         self._prod_num = None
         self._hpe_prod_ver = None
         self._dpn = None
+        self._sku = None
         self._alom_sn = None
         self._alom_pn = None
         self._alom_prod_num = None

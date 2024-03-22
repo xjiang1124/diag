@@ -3902,6 +3902,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
 
+        # sku is unique, save it without reading fru
+        self._nic_ctrl_list[slot]._sku = self.get_scanned_sku(slot)
+
         duration = self.log_slot_test_stop(slot, test, start_ts)
         self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
