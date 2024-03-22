@@ -34,6 +34,7 @@ from libdefs import Swm_Test_Mode
 import image_control
 import testlog
 import test_utils
+import scanning
 
 
 def logfile_close(filep_list):
@@ -146,9 +147,8 @@ def main():
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
     try:
-        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-        nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+        scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
+        nic_fru_cfg = mtp_mgmt_ctrl.barcode_scans
 
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, FF_Stage.CONVERT, args.skip_test):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
@@ -186,23 +186,23 @@ def main():
             if slot in fail_nic_list:
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
 
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+            sn = nic_fru_cfg[key]["SN"]
+            mac = nic_fru_cfg[key]["MAC"]
+            pn = nic_fru_cfg[key]["PN"]
+            prog_date = str(nic_fru_cfg[key]["TS"])
             mac_ui = libmfg_utils.mac_address_format(mac)
             alom_sn = None
             alom_pn = None
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-               if "SN_ALOM" in nic_fru_cfg[mtp_id][key]:
-                   alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                   alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+               if "SN_ALOM" in nic_fru_cfg[key]:
+                   alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                   alom_pn = nic_fru_cfg[key]["PN_ALOM"]
 
             riser_sn = None
             if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
@@ -213,8 +213,8 @@ def main():
             print("")
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
@@ -335,16 +335,16 @@ def main():
             if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                 continue
             key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[mtp_id][key]["VALID"]
-            if str.upper(valid) != "YES":
+            valid = nic_fru_cfg[key]["VALID"]
+            if not valid:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
                 continue
 
             # DL Verify process
-            sn = nic_fru_cfg[mtp_id][key]["SN"]
-            mac = nic_fru_cfg[mtp_id][key]["MAC"]
-            pn = nic_fru_cfg[mtp_id][key]["PN"]
-            prog_date = str(nic_fru_cfg[mtp_id][key]["TS"])
+            sn = nic_fru_cfg[key]["SN"]
+            mac = nic_fru_cfg[key]["MAC"]
+            pn = nic_fru_cfg[key]["PN"]
+            prog_date = str(nic_fru_cfg[key]["TS"])
             exp_sn = sn
             exp_mac = "-".join(re.findall("..", mac))
             exp_pn = pn
@@ -356,8 +356,8 @@ def main():
             exp_assettag = None
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[mtp_id][key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[mtp_id][key]["PN_ALOM"]
+                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
+                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
                 exp_alom_sn = alom_sn
                 exp_alom_pn = alom_pn
                 exp_assettag = 'C0'

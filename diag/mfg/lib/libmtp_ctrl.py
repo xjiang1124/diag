@@ -9,11 +9,13 @@ import json
 from datetime import datetime
 import ipaddress
 import traceback
+import barcode_field as bf
 from libmfg_cfg import *
 from libsku_utils import *
 from libsku_cfg import *
 
 from libdefs import NIC_Type
+from libdefs import PRODUCT_SKU
 from libdefs import MTP_ASIC_SUPPORT
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
@@ -33,6 +35,7 @@ from libdefs import Factory
 from libnic_ctrl import nic_ctrl
 import test_utils
 import image_control
+import scanning
 
 class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg = None, mgmt_cfg = None, apc_cfg = None, slots_to_skip = [False]*MTP_Const.MTP_SLOT_NUM, dbg_mode = False):
@@ -2623,16 +2626,20 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_program_nic_fru(self, slot, date, sn, mac, pn):
+    def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None):
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf_lock(slot, "Program NIC FRU date={:s}, sn={:s}, mac={:s}, pn={:s}".format(date, sn, mac, pn))
-        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=False):
+        if dpn:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
+        if sku:
+            self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
+        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=False):
             self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
         if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
-            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, smb_fru=True):
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True):
                 self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
@@ -2679,7 +2686,7 @@ class mtp_ctrl():
     def mtp_get_nic_alom_sn(self, slot):
         return self._nic_ctrl_list[slot].nic_alom_sn_get_fru()
 
-    def mtp_verify_nic_fru(self, slot, sn, mac, pn, date):
+    def mtp_verify_nic_fru(self, slot, sn, mac, pn, date, dpn=None):
         nic_fru_info = self._nic_ctrl_list[slot].nic_get_fru()
         if not nic_fru_info:
             self.cli_log_slot_err_lock(slot, "Verify NIC FRU Failed, can not retrieve FRU content")
@@ -2702,7 +2709,14 @@ class mtp_ctrl():
         if nic_date != date:
             self.cli_log_slot_err_lock(slot, "Date Verify Failed, get {:s}, expect {:s}".format(nic_date, date))
             return False
+        if dpn:
+            nic_dpn = self._nic_ctrl_list[slot]._dpn
+            if nic_dpn != dpn:
+                self.cli_log_slot_err_lock(slot, "DPN Verify Failed, get {:s}, expect {:s}".format(nic_dpn, dpn))
+                return False
         self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, sn={:s}, mac={:s}, pn={:s}, date={:s}".format(sn, mac, pn, date))
+        if dpn:
+            self.cli_log_slot_inf_lock(slot, "Verify NIC FRU Pass, dpn={:s}".format(dpn))
 
         return True
 
@@ -3888,6 +3902,9 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
 
+        # sku is unique, save it without reading fru
+        self._nic_ctrl_list[slot]._sku = self.get_scanned_sku(slot)
+
         duration = self.log_slot_test_stop(slot, test, start_ts)
         self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
@@ -3967,22 +3984,33 @@ class mtp_ctrl():
             return False
         self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
+
     def mtp_nic_load_scan_fru(self, nic_fru_cfg=None):
         self.cli_log_inf("Load NIC FRU config")
-        if not nic_fru_cfg:
-            nic_fru_cfg_file = "config/{:s}.yaml".format(self._id)
-            self.cli_log_inf("Load from config file: {:s}".format(nic_fru_cfg_file))
-            nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(nic_fru_cfg_file)
-
         for slot in range(self._slots):
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[self._id][key]["VALID"]
-            if str.upper(valid) == "YES":
-                sn = nic_fru_cfg[self._id][key]["SN"]
-                self.mtp_set_nic_scan_sn(slot, sn)
+            sn = self.get_scanned_sn(slot)
+            self.mtp_set_nic_scan_sn(slot, sn)
         self.cli_log_inf("Load NIC FRU config complete\n")
         return True
 
+    def mtp_populate_fru_to_scans(self, nic_fru_cfg, pass_nic_list, dpn="", sku=""):
+        """
+            When skipping scanning (e.g. for modeling/QA), still need the barcode_scans object to be filled.
+            So copy the values from actual FRU.
+        """
+        for slot in pass_nic_list:
+            key = libmfg_utils.nic_key(slot)
+            self.barcode_scans[key] = dict()
+            self.barcode_scans[key][bf.SN] = nic_fru_cfg[key][bf.SN]
+            self.barcode_scans[key][bf.MAC] = nic_fru_cfg[key][bf.MAC]
+            self.barcode_scans[key][bf.PN] = nic_fru_cfg[key][bf.PN]
+            if dpn:
+                self.barcode_scans[key][bf.DPN] = dpn
+            elif self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_S4:
+                self.cli_log_slot_err(slot, "A DPN must be supplied via --dpn args.")
+                self.mtp_set_nic_status_fail(slot)
+            if sku:
+                self.barcode_scans[key][bf.SKU] = sku
 
     def mtp_nic_info_disp(self, nic_list, fru_valid=True):
         self.cli_log_inf("MTP NIC Info Dump:")
@@ -3995,6 +4023,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "NIC is Present, Type is: {:s}".format(nic_type))
                 if fru_valid:
                     fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+                    dpn = self.mtp_get_nic_dpn(slot)
 
                     riser_sn = None
                     riser_progdate = None
@@ -4009,6 +4038,8 @@ class mtp_ctrl():
                                 self.cli_log_slot_err_lock(slot, "Retrieve OCP Adapter FRU failed")
                     else:
                         self.cli_log_slot_inf(slot, "==> FRU: {:s}, {:s}, {:s}".format(fru_info_list[0],fru_info_list[1],fru_info_list[2]))
+                        if dpn:
+                            self.cli_log_slot_inf(slot, "==> DPN: {:s}".format(dpn))
                         if fru_info_list[3]:
                             self.cli_log_slot_inf(slot, "==> FRU Program Date: {:s}".format(fru_info_list[3]))
                         if nic_type == NIC_Type.NAPLES25OCP:
@@ -4085,8 +4116,10 @@ class mtp_ctrl():
 
             # NIC sn should match
             if self._nic_scan_prsnt_list[slot] and self._nic_prsnt_list[slot]:
-                if self._nic_scan_sn_list[slot] != self._nic_sn_list[slot]:
-                    self.cli_log_slot_err(slot, "SN mismatch, scanned: {:s}, fru: {:s}".format(self._nic_scan_sn_list[slot], self._nic_sn_list[slot]))
+                scan_sn = self.get_scanned_sn(slot)
+                read_sn = self.mtp_get_nic_sn(slot)
+                if scan_sn != read_sn:
+                    self.cli_log_slot_err(slot, "SN mismatch, scanned: {:s}, fru: {:s}".format(scan_sn, read_sn))
                     return False
         return True
 
@@ -4890,18 +4923,22 @@ class mtp_ctrl():
                 # In ScanDL, use scanned SN, PN as ground truth
                 mtp_id = self._id
                 key = libmfg_utils.nic_key(slot)
-                valid = scanned_fru[mtp_id][key]["VALID"]
-                if str.upper(valid) != "YES":
+                valid = scanned_fru[key]["VALID"]
+                if not valid:
                     self.cli_log_slot_err(slot, "Missing scan for this slot. Could not initialize.")
                     self.mtp_set_nic_status_fail(slot)
                     continue
-                pn = scanned_fru[mtp_id][key]["PN"]
-                sn = scanned_fru[mtp_id][key]["SN"]
+                pn = self.get_scanned_pn(slot)
+                sn = self.get_scanned_sn(slot)
                 self.mtp_set_nic_sn(slot, sn)
                 self.mtp_set_nic_pn(slot, pn)
 
         # set final nic_type
         for slot in range(self._slots):
+            if not self._nic_prsnt_list[slot]:
+                continue
+
+            final_nic_type = self.mtp_get_nic_type(slot)
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
                 pn = self.mtp_get_nic_pn(slot)
                 if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
@@ -4936,12 +4973,26 @@ class mtp_ctrl():
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_D5:
                 pn = self.mtp_get_nic_pn(slot)
+                sku = self.get_scanned_sku(slot)
                 if re.match(PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_D5
                 elif re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_S4
+
+                    if sku == PRODUCT_SKU.GIN_S4:
+                        final_nic_type = NIC_Type.GINESTRA_S4
+                    elif sku == PRODUCT_SKU.GIN_S4_B3:
+                        final_nic_type = NIC_Type.GINESTRA_S4_B3
+                    elif sku == PRODUCT_SKU.GIN_S4_P3:
+                        final_nic_type = NIC_Type.GINESTRA_S4_P3
+
+                else:
+                    final_nic_type = self.mtp_get_nic_type(slot)
                 self._nic_type_list[slot] = final_nic_type
                 self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+
+            self.cli_log_slot_inf(slot, "Found {:s}".format(final_nic_type))
+
         # populate OCP adapter info
         for slot in range(self._slots):
             if self.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
@@ -4975,8 +5026,8 @@ class mtp_ctrl():
             sn2slot = dict()
             for slot in range(self._slots):
                 key = libmfg_utils.nic_key(slot)
-                if scanned_fru[key]["VALID"] == "Yes":
-                    sn2slot[scanned_fru[key]["SN"]] = slot
+                if scanned_fru[key]["VALID"]:
+                    sn2slot[scanned_fru[key][bf.SN]] = slot
 
             # Map to Scaned slot id by card serial number
             phy_present_slot_list = []
@@ -5287,6 +5338,39 @@ class mtp_ctrl():
         self._nic_scan_sn_list[slot] = sn
         self._nic_scan_prsnt_list[slot] = True
 
+    def get_scanned_sn(self, slot):
+        return scanning.get_sn(self, slot)
+
+    def get_scanned_mac(self, slot):
+        return scanning.get_mac(self, slot)
+
+    def get_scanned_pn(self, slot):
+        return scanning.get_pn(self, slot)
+
+    def get_scanned_alom_sn(self, slot):
+        return scanning.get_alom_sn(self, slot)
+
+    def get_scanned_alom_pn(self, slot):
+        return scanning.get_alom_pn(self, slot)
+
+    def get_scanned_rot_sn(self, slot):
+        return scanning.get_rot_sn(self, slot)
+
+    def get_scanned_dpn(self, slot):
+        return scanning.get_dpn(self, slot)
+
+    def get_scanned_swpn(self, slot):
+        return scanning.get_swpn(self, slot)
+
+    def get_scanned_sku(self, slot):
+        return scanning.get_sku(self, slot)
+
+    def get_scanned_ts(self, slot):
+        return str(scanning.get_ts(self, slot))
+
+    def mtp_get_nic_dpn(self, slot):
+        if self._nic_ctrl_list:
+            return self._nic_ctrl_list[slot]._dpn
 
     def mtp_mgmt_set_nic_diag_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_diag_boot():
@@ -5784,7 +5868,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
                 preset_config = "8"
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -6218,281 +6302,7 @@ class mtp_ctrl():
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
         ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
-        return [ret, err_msg_list]
-
-
-    def mtp_barcode_scan(self, present_check=True, swmtestmode=Swm_Test_Mode.SWMALOM, no_slot=False, is_fst_test=False):
-        mtp_scan_rslt = dict()
-        mtp_ts_snapshot = libmfg_utils.get_timestamp()
-        mtp_scan_rslt["MTP_ID"] = self._id
-        mtp_scan_rslt["MTP_TS"] = mtp_ts_snapshot
-        valid_nic_key_list = list()
-
-        unscanned_nic_key_list = list()
-        scan_nic_key_list = list()
-        scan_sn_list = list()
-        scan_mac_list = list()
-        scan_atom_sn_list = list()
-        scan_rot_sn_list = list()
-        slot_num = 1
-
-        # build all valid nic key list
-        for slot in range(self._slots):
-            key = libmfg_utils.nic_key(slot)
-            valid_nic_key_list.append(key)
-            if present_check and self._nic_prsnt_list[slot]:
-                unscanned_nic_key_list.append(key)
-
-        while True:
-            if len(scan_nic_key_list) == self._slots:
-                print("\033[1;93m")
-                libmfg_utils.cli_log_inf(self._filep, "!!! NO More Available Slot, Please Scan STOP !!!")
-                print("\033[0m")
-
-            if present_check:
-                unscanned_nic_list_cli_str = ", ".join(unscanned_nic_key_list)
-                usr_prompt = "\nUnscanned NIC list [{:s}]\nPlease Scan NIC ID Barcode:".format(unscanned_nic_list_cli_str)
-            else:
-                usr_prompt = "\nPlease Scan NIC ID Barcode:"
-            nic_scan_rslt = dict()
-            if not no_slot:
-                raw_scan = raw_input(usr_prompt)
-
-            if raw_scan == "STOP":
-                if present_check and len(unscanned_nic_key_list) != 0:
-                    self.cli_log_err("{:s} have not scanned yet".format(unscanned_nic_list_cli_str), level=0)
-                    continue
-                else:
-                    break
-            elif no_slot:
-                key = "NIC-{:>02d}".format(slot_num)
-                slot_num =+ 1
-                scan_nic_key_list.append(key)
-                unscanned_nic_key_list.remove(key)
-            elif raw_scan in scan_nic_key_list:
-                self.cli_log_err("NIC ID Barcode: {:s} is double scanned, please restart the scan process\n".format(raw_scan), level=0)
-                return None
-            else:
-                key = raw_scan
-                # basic sanity check
-                if present_check:
-                    if key not in unscanned_nic_key_list:
-                        self.cli_log_err("Invalid NIC ID: {:s}".format(key), level=0)
-                        continue
-                    else:
-                        scan_nic_key_list.append(key)
-                        unscanned_nic_key_list.remove(key)
-                else:
-                    if key not in valid_nic_key_list:
-                        self.cli_log_err("Invalid NIC ID: {:s}".format(key), level=0)
-                        continue
-                    else:
-                        scan_nic_key_list.append(key)
-
-            #Scan SN loop
-            sn = "0"
-            mac = "000000000000"
-            pn = "0"
-            if swmtestmode != Swm_Test_Mode.ALOM:
-                sn_scanned = False
-                mac_scanned = False
-                pn_scanned = False
-                rot_scanned = False
-                while not sn_scanned:
-                    usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(key)
-                    raw_scan = raw_input(usr_prompt)
-                    if raw_scan == "STOP":
-                        break
-                    if libmfg_utils.dell_ppid_validate(raw_scan):
-                        # Dell PPID
-                        sn = libmfg_utils.extract_sn_from_dell_ppid(raw_scan)
-                        pn = libmfg_utils.extract_pn_from_dell_ppid(raw_scan)
-                        pn_scanned = True
-                    else:
-                        sn = libmfg_utils.serial_number_validate(raw_scan)
-                    if not sn:
-                        self.cli_log_err("Invalid NIC Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                        #return None
-                    elif sn in scan_sn_list:
-                        self.cli_log_err("NIC Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-                        #return None
-                    else:
-                        scan_sn_list.append(sn)
-                        sn_scanned = True
-
-                    if pn_scanned and not pn:
-                        pn_scanned = False
-
-                #Scan Mac Loop
-                while not mac_scanned and sn_scanned:
-                    usr_prompt = "Please scan {:s} MAC Address Barcode:".format(key)
-                    raw_scan = raw_input(usr_prompt)
-                    mac = libmfg_utils.mac_address_validate(raw_scan)
-                    if not mac:
-                        self.cli_log_err("Invalid NIC MAC Address: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                        #return None
-                    elif mac in scan_mac_list:
-                        mac_ui = libmfg_utils.mac_address_format(mac)
-                        self.cli_log_err("NIC MAC Address: {:s} is double scanned, please restart the scan process\n".format(mac_ui), level=0)
-                        #return None
-                    else:
-                        scan_mac_list.append(mac)
-                        mac_scanned = True
-
-                #Scan PN Loop
-                while not pn_scanned:
-                    usr_prompt = "Please scan {:s} Part Number Barcode:".format(key)
-                    raw_scan = raw_input(usr_prompt)
-                    pn = libmfg_utils.part_number_validate(raw_scan)
-                    if not pn:
-                        self.cli_log_err("Invalid NIC Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                        #return None
-                    else:
-                        pn_scanned = True
-
-                #Scan ROT cable if FST Station
-                if is_fst_test:
-                    if libmfg_utils.part_number_match_rot_require_list(pn):
-                        while not rot_scanned:
-                            usr_prompt = "Please Scan {:s} ROT Cable Barcode:".format(key)
-                            rot_sn = raw_input(usr_prompt).strip()
-                            if not rot_sn:
-                                continue
-                            if not libmfg_utils.rot_cable_serial_number_validate(rot_sn):
-                                self.cli_log_err("Invalid ROT Cable SN: {:s}, please re-scan\n".format(rot_sn), level=0)
-                            elif rot_sn in scan_rot_sn_list:
-                                self.cli_log_err("ROT Cable: {:s} has already scanned, please re-scan\n".format(rot_sn), level=0)
-                            else:
-                                scan_rot_sn_list.append(rot_sn)
-                                rot_scanned = True
-                        nic_scan_rslt["ROTSN"] = rot_sn
-                    else:
-                        print("\033[1;92m")
-                        libmfg_utils.cli_log_inf(self._filep, "!!! NO NEED ROT CABLE FOR THIS CARD TYPE !!!")
-                        print("\033[0m")
-
-                #Scan ALOM SN Loop
-                alom_sn = None
-                alom_pn = None
-
-
-            if swmtestmode == Swm_Test_Mode.ALOM:  #if only scanning Alom we need to manually put in the SWM part number
-                pn="000000-000"
-
-            if pn == '000000-000':
-                while True:
-                    usr_prompt = "Please Scan {:s} ALOM Serial Number Barcode:".format(key)
-                    raw_scan = raw_input(usr_prompt)
-                    alom_sn = libmfg_utils.serial_number_validate(raw_scan)
-                    if not alom_sn:
-                        self.cli_log_err("Invalid ALOM Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                    #return None
-                    elif alom_sn in scan_atom_sn_list:
-                        self.cli_log_err("ALOM Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-                    #return None
-                    else:
-                        scan_atom_sn_list.append(alom_sn)
-                        break
-                #Scan ALOM PN Loop
-                
-                while True:
-                    usr_prompt = "Please scan {:s} ALOM Part Number Barcode:".format(key)
-                    raw_scan = raw_input(usr_prompt)
-                    alom_pn = libmfg_utils.part_number_validate(raw_scan)
-                    if not alom_pn:
-                        self.cli_log_err("Invalid ALOM Part Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                    #return None
-                    else:
-                        break
-
-            nic_scan_rslt["VALID"] = True
-            nic_scan_rslt["SN"] = sn
-            nic_scan_rslt["MAC"] = mac
-            nic_scan_rslt["PN"] = pn
-            nic_scan_rslt["TS"] = libmfg_utils.get_fru_date()
-            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
-                nic_scan_rslt["SN_ALOM"] = alom_sn
-                nic_scan_rslt["PN_ALOM"] = alom_pn
-            mtp_scan_rslt[key] = nic_scan_rslt
-
-        nic_empty_list = list(set(valid_nic_key_list).difference(set(scan_nic_key_list)))
-        for key in nic_empty_list:
-            nic_scan_rslt = dict()
-            nic_scan_rslt["VALID"] = False
-            mtp_scan_rslt[key] = nic_scan_rslt
-
-        return mtp_scan_rslt
-
-    def mtp_screen_barcode_scan(self):
-        mtp_scan_rslt = dict()
-        mtp_ts_snapshot = libmfg_utils.get_timestamp()
-        mtp_scan_rslt["MTP_ID"] = self._id
-        mtp_scan_rslt["MTP_TS"] = mtp_ts_snapshot
-        mtp_scan_rslt["VALID"] = False
-        scan_sn_list = list()
-
-        sn = ""
-        sn_scanned = False
-        while not sn_scanned:
-            usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(self._id)
-            raw_scan = raw_input(usr_prompt)
-            if raw_scan == "STOP":
-                break
-            sn = libmfg_utils.serial_number_validate(raw_scan)
-
-            if not sn:
-                self.cli_log_err("Invalid MTP Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-                #return None
-            elif sn in scan_sn_list:
-                self.cli_log_err("MTP Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-                #return None
-            else:
-                scan_sn_list.append(sn)
-                sn_scanned = True
-                mtp_scan_rslt["VALID"] = True
-        
-        mtp_scan_rslt["MTP_SN"] = sn
-
-        return mtp_scan_rslt
-
-
-    # generate the local barcode config file
-    def gen_barcode_config_file(self, file_p, scan_rslt, swmtestmode=Swm_Test_Mode.ALOM):
-        config_lines = [str(scan_rslt["MTP_ID"]) + ":"]
-        tmp = "    TS: " +  scan_rslt["MTP_TS"]
-        config_lines.append(tmp)
-        for slot in range(self._slots):
-            key = libmfg_utils.nic_key(slot)
-            tmp = "    " + key + ":"
-            config_lines.append(tmp)
-
-            if scan_rslt[key]["VALID"]:
-                tmp = "        VALID: \"Yes\""
-                config_lines.append(tmp)
-                tmp = "        SN: \"" + scan_rslt[key]["SN"] + "\""
-                config_lines.append(tmp)
-                tmp = "        MAC: \"" + scan_rslt[key]["MAC"] + "\""
-                config_lines.append(tmp)
-                tmp = "        PN: \"" + scan_rslt[key]["PN"] + "\""
-                config_lines.append(tmp)
-                tmp = "        TS: \"" + scan_rslt[key]["TS"] + "\""
-                config_lines.append(tmp)
-                pn = scan_rslt[key]["PN"]
-                if pn == '000000-000':
-                    tmp = "        SN_ALOM: \"" + scan_rslt[key]["SN_ALOM"] + "\""
-                    config_lines.append(tmp)
-                    tmp = "        PN_ALOM: \"" + scan_rslt[key]["PN_ALOM"] + "\""
-                    config_lines.append(tmp)
-                rot_sn = scan_rslt[key].get("ROTSN", "")
-                if rot_sn:
-                    tmp = '        ROTSN: "' + rot_sn + '"'
-                    config_lines.append(tmp)
-            else:
-                tmp = "        VALID: \"No\""
-                config_lines.append(tmp)
-
-        for line in config_lines:
-            file_p.write(line + "\n")
+        return [ret, err_msg_list] 
 
     def mtp_nic_mvl_acc_test(self, slot):
         test = "ACC"
@@ -6705,31 +6515,33 @@ class mtp_ctrl():
             key = libmfg_utils.nic_key(slot)
             temp_fru_cfg[key] = dict()
             if slot in fail_nic_list or not self.mtp_check_nic_status(slot):
-                temp_fru_cfg[key]["VALID"] = "No"
+                temp_fru_cfg[key]["VALID"] = False
                 continue
             if self.mtp_nic_check_prsnt(slot):
                 nic_type = self.mtp_get_nic_type(slot)
-                temp_fru_cfg[key]["VALID"] = "Yes"
+                temp_fru_cfg[key]["VALID"] = True
                 temp_fru_cfg[key]["TS"] = libmfg_utils.get_fru_date()
                 nic_fru_info = self.mtp_get_nic_fru(slot)
                 if nic_fru_info:
-                    temp_fru_cfg[key]["SN"] = nic_fru_info[0]
-                    temp_fru_cfg[key]["MAC"] = nic_fru_info[1].replace('-', '')
-                    temp_fru_cfg[key]["PN"] = nic_fru_info[2]
+                    temp_fru_cfg[key][bf.SN] = nic_fru_info[0]
+                    temp_fru_cfg[key][bf.MAC] = nic_fru_info[1].replace('-', '')
+                    temp_fru_cfg[key][bf.PN] = nic_fru_info[2]
+                    temp_fru_cfg[key][bf.DPN] = self._nic_ctrl_list[slot]._dpn
+                    temp_fru_cfg[key][bf.SKU] = self.get_scanned_sku(slot)
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         nic_fru_info = self.mtp_get_nic_alom_fru(slot)
-                        temp_fru_cfg[key]["SN_ALOM"] = nic_fru_info[0]
-                        temp_fru_cfg[key]["PN_ALOM"] = nic_fru_info[1]
+                        temp_fru_cfg[key][bf.ALOM_SN] = nic_fru_info[0]
+                        temp_fru_cfg[key][bf.ALOM_PN] = nic_fru_info[1]
                 else:
-                    temp_fru_cfg[key]["VALID"] = "No"
-                    temp_fru_cfg[key]["SN"] = "DEADBEEF"
-                    temp_fru_cfg[key]["MAC"] = "DEADBEEF"
-                    temp_fru_cfg[key]["PN"] = "DEADBEEF"
+                    temp_fru_cfg[key]["VALID"] = False
+                    temp_fru_cfg[key][bf.SN] = "DEADBEEF"
+                    temp_fru_cfg[key][bf.MAC] = "DEADBEEF"
+                    temp_fru_cfg[key][bf.PN] = "DEADBEEF"
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        temp_fru_cfg[key]["SN_ALOM"] = "DEADBEEF"
-                        temp_fru_cfg[key]["PN_ALOM"] = "DEADBEEF"
+                        temp_fru_cfg[key][bf.ALOM_SN] = "DEADBEEF"
+                        temp_fru_cfg[key][bf.ALOM_PN] = "DEADBEEF"
             else:
-                temp_fru_cfg[key]["VALID"] = "No"
+                temp_fru_cfg[key]["VALID"] = False
 
         return temp_fru_cfg
 
@@ -6744,9 +6556,9 @@ class mtp_ctrl():
                 continue
             if not self.mtp_check_nic_status(slot):
                 continue
-            if str.upper(read_fru_cfg[key]["VALID"]) == "No":
+            if not read_fru_cfg[key]["VALID"]:
                 continue
-            if scan_fru_cfg[key]["VALID"] == 'No':
+            if not scan_fru_cfg[key]["VALID"]:
                 self.cli_log_slot_err_lock(slot, "Missing scan for this slot")
                 if slot not in fail_nic_list:
                     fail_nic_list.append(slot)
@@ -6754,15 +6566,15 @@ class mtp_ctrl():
                     pass_nic_list.remove(slot)
                 self.mtp_set_nic_status_fail(slot, skip_fa=True)
                 duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key][bf.SN], dsp, test, "FAILED", duration))
                 continue
 
-            for item in ["SN", "MAC", "PN"]:
+            for item in [bf.SN, bf.MAC, bf.PN]:
                 expected = scan_fru_cfg[key][item]
                 received = read_fru_cfg[key][item]
 
                 if expected != received:
-                    if item == "PN" and ignore_pn_rev:
+                    if item == bf.PN and ignore_pn_rev:
                         expected = expected[:PEN_PN_MINUS_REV_MASK]
                         received = received[:PEN_PN_MINUS_REV_MASK]
                         if expected == received:
@@ -6780,11 +6592,74 @@ class mtp_ctrl():
             duration = self.log_slot_test_stop(slot, test, start_ts)
 
             if slot in fail_nic_list:
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key]["SN"], dsp, test, "FAILED", duration))
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key][bf.SN], dsp, test, "FAILED", duration))
             else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(read_fru_cfg[key]["SN"], dsp, test, duration))
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(read_fru_cfg[key][bf.SN], dsp, test, duration))
 
         return fru_reprogram_list
+
+    def mtp_nic_validate_sku_dpn_match(self, pass_nic_list, fail_nic_list, dsp):
+        fru_reprogram_list = list()
+
+        test = "SKU_VALIDATE"
+        for slot in range(self._slots):
+            start_ts = self.log_slot_test_start(slot, test)
+            key = libmfg_utils.nic_key(slot)
+            if slot in fail_nic_list:
+                continue
+            if not self.mtp_check_nic_status(slot):
+                continue
+
+            sn = self.mtp_get_nic_sn(slot)
+            pn = self.mtp_get_nic_pn(slot)
+            dpn = self.mtp_get_nic_dpn(slot)
+            sku = self.get_scanned_sku(slot)
+            if match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
+                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+            else:
+                self.cli_log_slot_err_lock(slot, "Scanned SKU for this card not allowed {:s}".format())
+                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                self.mtp_set_nic_status_fail(slot, skip_fa=True)
+            duration = self.log_slot_test_stop(slot, test, start_ts)
+
+        return fru_reprogram_list
+
+    def mtp_nic_validate_pn_dpn_match(self, slot):
+        """
+            Check that scanned DPN is allowed for the part number in the FRU
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        pn = self.mtp_get_nic_pn(slot)
+        dpn = self.get_scanned_dpn(slot)
+        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            self.cli_log_slot_err(slot, "PN-DPN check doesnt apply to this NIC")
+            return False
+
+        if libmfg_utils.check_dpn_allowed(self, pn, dpn):
+            return True
+        else:
+            return False
+
+    def mtp_nic_validate_sku_dpn_match(self, slot):
+        """
+            Check that scanned SKU is allowed for the DPN in the FRU
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        pn = self.mtp_get_nic_pn(slot)
+        dpn = self.mtp_get_nic_dpn(slot)
+        sku = self.get_scanned_sku(slot)
+        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            self.cli_log_slot_err(slot, "DPN-SKU check doesnt apply to this NIC")
+            return False
+
+        if libmfg_utils.check_sku_allowed(self, pn, dpn, sku):
+            return True
+        else:
+            return False
 
     def mtp_nic_ping_test(self, slotA, slotB):
         if not self._nic_ctrl_list[slotA].nic_console_enable_network_port():
@@ -7372,9 +7247,9 @@ class mtp_ctrl():
             scanned_mac = list()
             for slot_index in range(self._slots):
                 key = libmfg_utils.nic_key(slot_index)
-                if scanned_fru[key]["VALID"] == "Yes":
-                    scanned_pn.append(scanned_fru[key]["PN"].lower())
-                    scanned_mac.append(scanned_fru[key]["MAC"].lower())
+                if scanned_fru[key]["VALID"]:
+                    scanned_pn.append(scanned_fru[key][bf.PN].lower())
+                    scanned_mac.append(scanned_fru[key][bf.MAC].lower())
             if pn.lower() not in scanned_pn:
                 self.cli_log_slot_err(slot, "PN {:s} read from FRU file /tmp/fru.json not in scanned PN list: {:s}".format(pn, str(scanned_pn)))
                 return False

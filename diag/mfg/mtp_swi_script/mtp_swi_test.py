@@ -30,7 +30,8 @@ from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
 import testlog
-
+import scanning
+import test_utils
 
 def logfile_close(filep_list):
     for fp in filep_list:
@@ -64,11 +65,13 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
     
-def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
-    sn = fru_cfg["SN"]
-    mac = fru_cfg["MAC"]
-    pn = fru_cfg["PN"]
-    prog_date = str(fru_cfg["TS"])
+def single_nic_fru_program(mtp_mgmt_ctrl, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    mac = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)[1].replace('-', '')
+    pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
+    dpn = mtp_mgmt_ctrl.mtp_get_nic_dpn(slot)
+    sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
+    prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
     test_list = ["FRU_PROG"]
 
     dsp = FF_Stage.FF_SWI
@@ -81,7 +84,7 @@ def single_nic_fru_program(mtp_mgmt_ctrl, fru_cfg, slot, fail_nic_list, pass_nic
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
         # program FRU
         if test == "FRU_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn)
+            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
         else:
             mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
             continue
@@ -472,11 +475,9 @@ def main():
     try:
         # read scanned barcode file except when we're skipping in dev environment
         scanned_nic_fru_cfg = dict()
-        scanned_nic_fru_cfg[mtp_id] = dict()
         if "SCAN_VERIFY" not in args.skip_test:
-            tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-            scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-            scanned_nic_fru_cfg = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
+            scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
+            scanned_nic_fru_cfg = mtp_mgmt_ctrl.barcode_scans
 
         if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=FF_Stage.FF_SWI):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
@@ -560,12 +561,11 @@ def main():
                     pass_nic_list.remove(slot)
 
         # read in current FRU
-        nic_fru_cfg = dict()
-        nic_fru_cfg[mtp_id] = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
+        nic_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
         # failures from construct_nic_fru_config
         for slot in pass_nic_list:
             key = libmfg_utils.nic_key(slot)
-            if str.upper(nic_fru_cfg[mtp_id][key]["VALID"]) == "NO":
+            if not nic_fru_cfg[key]["VALID"]:
                 mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
                 mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
                 if slot not in fail_nic_list:
@@ -574,16 +574,11 @@ def main():
                     pass_nic_list.remove(slot)
 
         if "SCAN_VERIFY" not in args.skip_test:
-            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg[mtp_id], scanned_nic_fru_cfg[mtp_id], pass_nic_list, fail_nic_list, dsp)
+            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg, scanned_nic_fru_cfg, pass_nic_list, fail_nic_list, dsp)
 
             nic_thread_list = list()
             for slot in fru_reprogram_list:
-                key = libmfg_utils.nic_key(slot)
-                valid = nic_fru_cfg[mtp_id][key]["VALID"]
-                if str.upper(valid) != "YES":
-                    continue
                 nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
-                                                                                      nic_fru_cfg[mtp_id][key],
                                                                                       slot,
                                                                                       fail_nic_list,
                                                                                       pass_nic_list,
@@ -609,6 +604,73 @@ def main():
                     mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
 
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+
+        # Reprogram FRU with final SKU
+        sku_fru_prog_list = list()
+        for slot in pass_nic_list[:]:
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.GINESTRA_S4:
+                continue
+            sku_fru_prog_list.append(slot)
+
+        # Before programming, check that scanned SKU is valid for this card
+        test_list = ["SKU_VALIDATE"]
+        for skipped_test in args.skip_test:
+            if skipped_test in test_list:
+                test_list.remove(skipped_test)
+        for slot in sku_fru_prog_list[:]:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+            for test in test_list:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+
+                if test == "SKU_VALIDATE":
+                    ret = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(slot)
+
+                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+                if not ret:
+                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    if slot in sku_fru_prog_list:
+                        sku_fru_prog_list.remove(slot)
+                    break
+                else:
+                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+
+        nic_thread_list = list()
+        for slot in sku_fru_prog_list:
+            nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
+                                                                                  slot,
+                                                                                  fail_nic_list,
+                                                                                  pass_nic_list,
+                                                                                  args.skip_test))
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(2)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(5)
+
+        for slot in sku_fru_prog_list:
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
+                mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+
+        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+
         check_naples_pn = "SCAN_VERIFY" not in args.skip_test
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -617,12 +679,7 @@ def main():
         for skipped_test in args.skip_test:
             if skipped_test in test_list:
                 test_list.remove(skipped_test)
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
@@ -644,22 +701,19 @@ def main():
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
 
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
-                continue
-            if slot in fail_nic_list:
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
+            sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
             emmc_img_file = emmc_img_file_list[sw_pn]
             if emmc_img_file:
                 emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
 
             swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_SWI)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
+            if sku:
+                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
             for image_name, image_file_path in swi_image_dict.items():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
@@ -724,18 +778,7 @@ def main():
         # program the NIC firmware
         nic_thread_list = list()
         prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
+        for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 

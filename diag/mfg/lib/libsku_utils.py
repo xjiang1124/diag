@@ -1,5 +1,6 @@
+from enum import Enum
 from libdefs import NIC_Type
-from libmfg_cfg import Factory
+from libdefs import Factory
 
 # FLM[Year, like 18, 19, 20][Week: 00-52][4 hex sequential digits]
 FLX_SN_SUFFIX_FMT = r"\d{2}[0-5]{1}\d{1}[0-9A-F]{4}"
@@ -280,7 +281,6 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT                   #68-0076-01 01    GINESTRA_S4
         ]
 }
-
 
 def get_product_name_from_pn_and_sn(pn, sn=""):
     if "DSC2-2Q200-32R32F64P-R3" in pn:

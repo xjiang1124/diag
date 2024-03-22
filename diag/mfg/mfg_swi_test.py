@@ -91,7 +91,7 @@ def main():
     if args.sw_pn:
         sw_pn_list = args.sw_pn
     else:
-        sw_pn_list = [libmfg_utils.sw_pn_scan(),]
+        sw_pn_list = ["90-0023-0003"] # hardcode SSDK mainfw for this release
 
     mfg_swi_start_ts = libmfg_utils.timestamp_snapshot()
 

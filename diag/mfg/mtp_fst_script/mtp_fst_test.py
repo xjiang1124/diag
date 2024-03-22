@@ -30,6 +30,8 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils
 import testlog
+import scanning
+import barcode_field as bf
 
 def load_mtp_usb_serial_port(mtp_mgmt_ctrl):
     usb_serial = []
@@ -176,26 +178,20 @@ def main():
     s4_family = False
 
     # load scanned fru
-    scanned_fru_cfg = None
+    scanned_fru_cfg = dict()
     if "SCAN_VERIFY" not in args.skip_test and FST_SCAN_ENABLE:
         # load the barcode config file made in toplevel
-        tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-        scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-        scanned_fru_cfg_dict = libmfg_utils.load_cfg_from_yaml(scan_cfg_file)
-        if mtp_id not in scanned_fru_cfg_dict:
-            mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-            # fail all the mtp slots instead of exit by calling libmfg_utils.sys_exit, and fill scanned_fru_cfg with no valid flag
-            scanned_fru_cfg = dict()
-            for slot in range(mtp_mgmt_ctrl._slots):
-                key = libmfg_utils.nic_key(slot)
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-        else:
-            scanned_fru_cfg = scanned_fru_cfg_dict[mtp_id]
+        scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
+        scanned_fru_cfg = mtp_mgmt_ctrl.barcode_scans
+
+        for slot in range(mtp_mgmt_ctrl._slots):
+            key = libmfg_utils.nic_key(slot)
+            if not nic_prsnt_list[slot]:
+                continue
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
 
     try:
         dsp = FF_Stage.FF_FST
@@ -311,8 +307,8 @@ def main():
         if scanned_fru_cfg:
             for slot in range(mtp_mgmt_ctrl._slots):
                 key = libmfg_utils.nic_key(slot)
-                if scanned_fru_cfg[key]["VALID"] == "Yes" and "ROTSN" in scanned_fru_cfg[key]:
-                    slot2rotsn[slot] = scanned_fru_cfg[key]["ROTSN"]
+                if scanned_fru_cfg[key]["VALID"] and bf.ROT_SN in scanned_fru_cfg[key]:
+                    slot2rotsn[slot] = scanned_fru_cfg[key][bf.ROT_SN]
 
         for skip_test in args.skip_test:
             if skip_test in testlist:

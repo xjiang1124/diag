@@ -472,6 +472,17 @@ def load_cfg_from_yaml_file_list(yaml_file_list):
 
     return cfg
 
+def save_cfg_to_yaml(d, output_file):
+    with open(output_file, "w+") as o:
+        yaml.safe_dump(d, o)
+
+    # read back to validate
+    with open(output_file, "r") as i:
+        e = yaml.safe_load(i)
+        if d != e:
+            return False
+    return True
+
 def expand_range_of_numbers(data, range_min=1, range_max=10, dev=None):
     '''
     Expands a string "1-3,5,7" as list of integers [1,2,3,5,7]
@@ -1007,12 +1018,12 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     mtp_id = mtp_mgmt_ctrl._id
     key = nic_key(slot)
-    if key not in mtp_mgmt_ctrl.barcode_scans[mtp_id].keys():
+    if key not in mtp_mgmt_ctrl.barcode_scans.keys():
         return False
-    if str.upper(mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["VALID"]) != "YES":
+    if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False
-    sn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["SN"]
-    pn = mtp_mgmt_ctrl.barcode_scans[mtp_id][key]["PN"]
+    sn = mtp_mgmt_ctrl.get_scanned_sn(slot)
+    pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     nic_type = get_nic_type_by_part_number(pn)
     mtp_mgmt_ctrl.mtp_set_nic_sn(slot, sn)
     mtp_mgmt_ctrl.mtp_set_nic_type(slot, nic_type)
@@ -1092,7 +1103,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1117,6 +1128,11 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         extra_info_xml += "OCP_ADAPTER=\"{:s}\" ".format(ocp_adap_sn)
 
         extra_info_xml += "MFG_SCRIPT_VER=\"{:s}\" ".format(mfg_script_ver)
+
+    if dpn:
+        extra_info_xml += "DPN=\"{:s}\" ".format(dpn)
+    if SKU:
+        extra_info_xml += "DSC-SKU=\"{:s}\" ".format(sku)
 
     if extra_info_xml:
         extra_info_xml = FLX_SAVE_UUT_RSLT_ENTRY_EXTRA_FMT.format(extra_info_xml)
@@ -1341,7 +1357,7 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
     finally:
         webservice.close()
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None, dpu=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1357,7 +1373,7 @@ def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, du
     if int(ret) != 0:
         return False
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
     if not xml:
         return False
 
@@ -1390,7 +1406,7 @@ def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None):
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1398,7 +1414,7 @@ def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, du
         print("Unable to locate flex factory based on sn: {:s}".format(sn))
         return -3
 
-    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+    xml = flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
     if not xml:
         return -2
 
@@ -1516,6 +1532,9 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+
             block_retest = False
             for test in test_list:
                 block_retest |= testlog.is_retest_blocked(test, stage)
@@ -1527,7 +1546,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -1550,7 +1569,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                         time.sleep(3)
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "FAIL", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -1624,13 +1643,17 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     matchsn2 = re.findall(nic_pn_reg_exp2, buf)
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
+
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+
             if FLEX_SHOP_FLOOR_CONTROL:
                 if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
                     post_cnt = 0
                     retry = FLEX_TWO_WAY_COMM.POST_RETRY
                     time.sleep(1)
                     while True:
-                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                        rs = flx_web_srv_post_uut_status(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                         if rs == 0:
                             cli_inf(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver complete".format((post_cnt + 1), sn))
                             break
@@ -1655,7 +1678,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                                 mtp_test_summary[idx][3] = False
 
             else:
-                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn)
+                ret = flx_web_srv_post_uut_report(stage, sn_type, sn, "PASS", mtp_start_ts, mtp_stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac, pn, rot_sn, dpn, sku)
                 if not ret:
                     cli_err(mtp_cli_id_str + "Post [{:s}] result to webserver failed".format(sn))
                 else:
@@ -2222,68 +2245,6 @@ def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
     mtp_syslog_handle.send('\x03')
     mtp_syslog_handle.close()
 
-def single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, logfile_dir, swmtestmode=Swm_Test_Mode.SW_DETECT, is_fst_test=False):
-    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-
-    while True:
-        scan_rslt = mtp_mgmt_ctrl.mtp_barcode_scan(False, swmtestmode, is_fst_test=is_fst_test)
-        if scan_rslt:
-            break;
-        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-
-    pass_rslt_list = list()
-    fail_rslt_list = list()
-    # print scan summary
-    for slot in range(mtp_mgmt_ctrl._slots):
-        key = nic_key(slot)
-        nic_cli_id_str = id_str(mtp = mtp_id, nic = slot)
-        if scan_rslt[key]["VALID"]:
-            sn = scan_rslt[key]["SN"]
-            rot_sn = scan_rslt[key].get("ROTSN", "")
-            pn = scan_rslt[key]["PN"]
-            mac_ui = mac_address_format(scan_rslt[key]["MAC"])
-            if pn == '000000-000' or swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = scan_rslt[key]["SN_ALOM"]
-                alom_pn = scan_rslt[key]["PN_ALOM"]
-                if swmtestmode == Swm_Test_Mode.ALOM:
-                    valid_display_string = nic_cli_id_str + "SN_ALOM = " + alom_sn + " PN_ALOM = " + alom_pn
-                    if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-                else:
-                    valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn + "; SN_ALOM = " + alom_sn + "; PN_ALOM = " + alom_pn
-                    if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-            else:
-                valid_display_string = nic_cli_id_str + "SN = " + sn + "; MAC = " + mac_ui + "; PN = " + pn
-                if rot_sn:
-                        valid_display_string += "; ROT SN = " + rot_sn
-            pass_rslt_list.append(valid_display_string)
-        else:
-            fail_rslt_list.append(nic_cli_id_str + "NIC Absent")
-    cli_log_rslt("Barcode Scan Summary", pass_rslt_list, fail_rslt_list, mtp_mgmt_ctrl._filep)
-
-    scan_cfg_file = logfile_dir + MTP_DIAG_Logfile.SCAN_BARCODE_FILE
-    scan_cfg_filep = open(scan_cfg_file, "w+")
-    mtp_mgmt_ctrl.gen_barcode_config_file(scan_cfg_filep, scan_rslt)
-    scan_cfg_filep.close()
-
-    ## also save the scans into mtp object
-    if not read_scanned_barcodes(mtp_mgmt_ctrl):
-        return False
-
-def read_scanned_barcodes(mtp_mgmt_ctrl):
-    import testlog
-    # load the barcode config file made earlier
-    mtp_id = mtp_mgmt_ctrl._id
-    tlf = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-    scan_cfg_file = os.path.join(tlf, MTP_DIAG_Logfile.SCAN_BARCODE_FILE)
-    scanned_fru_cfg_dict = load_cfg_from_yaml(scan_cfg_file)
-    if mtp_id not in scanned_fru_cfg_dict:
-        mtp_mgmt_ctrl.cli_log_err("Not found information for MTP: {:s} in scan config file {:s}".format(mtp_id, scan_cfg_file), level=0)
-        return False
-    mtp_mgmt_ctrl.barcode_scans = scanned_fru_cfg_dict
-    return True
-
 @test_utils.semi_parallel_test_section
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
     if sn is None:
@@ -2500,3 +2461,92 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
 
     return mode
 
+def load_sku_cfg():
+    with open("lib/allowed_sku_cfg.yaml", "r") as f:
+        sku_dict = yaml.safe_load(f)
+
+    if not sku_dict:
+        cli_err("Failed to load SKU file: missing or bad YAML", level=0)
+        return None
+
+    # check that the file is formatted correctly
+    def isarray(yaml_item):
+        return isinstance(yaml_item, list)
+
+    if not isarray(sku_dict):
+        cli_err("Bad formatting of allowed_sku_cfg.yaml", level=0)
+        return None
+    for pn in sku_dict:
+        for dpn_list in pn.values():
+            if not isarray(dpn_list):
+                cli_err("Bad formatting for {:s} in allowed_sku_cfg.yaml.\nDPN must be an array.".format(repr(dpn_list)))
+                return None
+            for dpn in dpn_list:
+                for sku in dpn.values():
+                    if not isarray(sku):
+                        cli_err("Bad formatting for {:s}.\nSKU must be an array.".format(repr(sku)))
+                        return None
+
+    # flatten list of dicts to single dict
+    sku_dict = {k: v for d in sku_dict for k, v in d.items()}
+    for pn in sku_dict:
+        sku_dict[pn] = {k: v for d in sku_dict[pn] for k, v in d.items()}
+
+    return sku_dict
+
+def get_all_valid_dpn():
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        return []
+    x = [list(d.keys()) for d in list(skucfg.values())] # convert dict to list of lists
+    x = [xss for xs in x for xss in xs] # flatten list of lists
+    return x
+
+def get_all_valid_sku():
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        return []
+    x = [list(d.values()) for d in list(skucfg.values())] # convert dict to list of lists
+    x = [xsss for xs in x for xss in xs for xsss in xss]  # flatten list of lists
+    return x
+
+def skucfg_pn_search(skucfg, search_pn):
+    """ Since PN in the skucfg yaml are written as 7-character without the rev, need to match it """
+    for pn in skucfg:
+        if pn in search_pn:
+            return pn
+    return None
+
+def check_dpn_allowed(mtp_mgmt_ctrl, pn, dpn):
+    """ DPN must be allowed for given PN """
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        mtp_mgmt_ctrl.cli_log_err("Problem reading allowed_sku_cfg.yaml", level=0)
+        return False
+    foundpn = skucfg_pn_search(skucfg, pn)
+    if not foundpn:
+        mtp_mgmt_ctrl.cli_log_err("No DPNs defined for PN {:s} in allowed_sku_cfg.yaml".format(pn))
+        return False
+    if dpn not in skucfg[foundpn]:
+        mtp_mgmt_ctrl.cli_log_err("DPN {:s} not allowed for {:s} card".format(dpn, pn))
+        return False
+    return True
+
+def check_sku_allowed(mtp_mgmt_ctrl, pn, dpn, sku):
+    """ SKU must be allowed for given PN, DPN combination """
+    skucfg = load_sku_cfg()
+    if not skucfg:
+        mtp_mgmt_ctrl.cli_log_err("Problem reading allowed_sku_cfg.yaml", level=0)
+        return False
+    foundpn = skucfg_pn_search(skucfg, pn)
+    if not foundpn:
+        mtp_mgmt_ctrl.cli_log_err("No SKUs defined for PN {:s} in allowed_sku_cfg.yaml".format(pn))
+        return False
+    if dpn not in skucfg[foundpn]:
+        mtp_mgmt_ctrl.cli_log_err("SKU {:s} not allowed for {{{:s}, {:s}}} pair".format(sku, pn, dpn))
+        return False
+    if sku not in skucfg[foundpn][dpn]:
+        mtp_mgmt_ctrl.cli_log_err("SKU {:s} not allowed for {{{:s}, {:s}}} pair".format(
+            sku, pn, dpn))
+        return False
+    return True
