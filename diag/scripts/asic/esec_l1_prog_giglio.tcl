@@ -51,7 +51,7 @@ proc img_prog {slot} {
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
     gig_esec_set_proto_mode
 
     set ret [gig_prog_qspi $fw_ptr 0x70010000]

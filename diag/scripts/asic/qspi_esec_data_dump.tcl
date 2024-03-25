@@ -34,8 +34,14 @@ if { $slot == "" } {
     exit
 }
 
+set ASIC_TYPE $::env(ASIC_TYPE)
+
 cd $ASIC_SRC/ip/cosim/tclsh
-source .tclrc.diag.elb
+if { $ASIC_TYPE == "GIGLIO" } {
+    source .tclrc.diag.gig
+} else {
+    source .tclrc.diag.elb
+}
 
 set port [mtp_get_j2c_port $slot]
 set slot1 [mtp_get_j2c_slot $slot]
@@ -52,7 +58,11 @@ after 1000
 
 diag_open_j2c_if $port $slot1
 _msrd
-elb_card_rst $port $slot1 $mode 3200 3000 0 0 "127" 0 1 normal 0 0
-
-elb_qspi_pwr_up_chk 835 1
+if { $ASIC_TYPE == "GIGLIO" } {
+    gig_card_rst $port $slot1 $mode 5600 3000 0 0 "127" 0 1 normal 0 0
+    gig_qspi_pwr_up_chk 835 1
+} else {
+    elb_card_rst $port $slot1 $mode 3200 3000 0 0 "127" 0 1 normal 0 0
+    elb_qspi_pwr_up_chk 835 1
+}
 

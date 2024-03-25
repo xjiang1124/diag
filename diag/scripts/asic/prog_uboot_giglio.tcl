@@ -63,7 +63,7 @@ foreach slot $slot_list {
         continue
     }
 
-    gig_card_rst $port $slot1 $mode 3200 3000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $slot1 $mode 5600 3000 0 0 "127" 0 1 normal 0 0
 
     set val [_msrd]
     if {$val != 0x1} {

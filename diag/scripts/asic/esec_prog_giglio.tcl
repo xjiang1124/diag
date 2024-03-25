@@ -114,7 +114,7 @@ proc puf_enroll { sn slot fn } {
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     ssi_cpld_write 0x29 0x80
     gig_set_esec_enable_pin
@@ -181,7 +181,7 @@ proc show_status { sn slot } {
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     gig_show_esec_pins
     gig_dump_cpld_sts_spi
@@ -200,7 +200,7 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     set ret [gig_prog_qspi $fw_ptr 0x70010000]
     if {$ret != 0} {
@@ -244,7 +244,7 @@ proc efuse_prog {slot sn} {
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     set ret [gig_prog_efuse rand_sn_${sn}.txt $port $turbo_slot]
 
@@ -268,7 +268,7 @@ proc efuse_test {slot} {
     set cpld_rev [ssi_cpld_read 0x00]
     set cpld_ver [ssi_cpld_read 0x80]
     
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     cpu_force_global_flags 1
 
@@ -470,7 +470,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
     ssi_cpld_write 0x29 0x80
     gig_set_esec_enable_pin
 
@@ -497,7 +497,7 @@ proc esec_all_pac {sn usb_port slot PN MAC MTP
     }
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
     gig_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
     plog_msg "CSP recorded"
 
@@ -538,7 +538,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
 
     diag_open_j2c_if $port $turbo_slot
     _msrd
-    gig_card_rst $port $turbo_slot nod 3200 2000 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
     set card_type [gig_get_card_type]
     #set card_type [regsub "_" $card_type ""]
     ssi_cpld_write 0x29 0x80
@@ -644,7 +644,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
         return -1
     }
 
-    gig_card_rst $port $turbo_slot nod_550 3000 3200 0 0 "127" 0 1 normal 0 0
+    gig_card_rst $port $turbo_slot hod_1100 5600 3000 0 0 "127" 0 1 normal 0 0
 
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
     gig_dump_qspi csp 0x70000000 0x10000 csp_${sn}_${cur_time}.txt 0
