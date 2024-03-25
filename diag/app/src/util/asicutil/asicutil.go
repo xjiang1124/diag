@@ -21,6 +21,7 @@ func myUsage() {
 func main() {
     flag.Usage = myUsage
 
+    eccPtr     := flag.Bool("checkecc",    false, "Check for Correctable ECC Errors on ELBA ARM CORE")
     prbsPtr     := flag.Bool("prbs",       false, "PRBS Test")
     prbsChkPtr  := flag.Bool("prbs_chk",   false, "PRBS Test status check")
     snakePtr    := flag.Bool("snake",      false, "SNAKE Test")
@@ -45,6 +46,26 @@ func main() {
         intLpbk = 1
     } else {
         intLpbk = 0
+    }
+
+    if *eccPtr == true {
+        if asicType == "ELBA" {
+            elba.CheckECC()
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
+        }
+        return
+    }
+
+    if *prbsPtr == true {
+        if asicType == "ELBA" || asicType == "GIGLIO" {
+            elba.Prbs(*modePtr, *polyPtr, *duraPtr, intLpbk, asicType)
+        } else if asicType == "CAPRI"{
+            capri.Prbs(*modePtr, *polyPtr, *duraPtr)
+        } else {
+            cli.Println("e", "Unsupported ASIC type", asicType)
+        }
+        return
     }
 
     if *prbsPtr == true {

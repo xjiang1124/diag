@@ -15,11 +15,102 @@ import (
 
     "common/dcli"
     "common/errType"
+    "common/misc"
     "common/runCmd"
 )
 
 type TResult struct {
     TestResult string `yaml:"TEST_RESULT"`
+}
+
+
+/********************************************************************************
+ Check Elba for ECC Errors. 
+ 
+ Need to read the 12 registers below which are the IRQ and ECC data registers
+ 
+   read 0x30520020     //CHECK MC0 CORRECTABLE IRQ (See below for bit defines).  
+   read 0x305a0020     //CHECK MC1 CORRECTABLE IRQ (see below for bit defines). 
+   read 0x30530464     //BITS[31:0]
+   read 0x30530468     //BITS[63:32] --> MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+   read 0x3053046C     //BITS[31:0]
+   read 0x30530470     //BITS[63:32] --> MC0-DATA[63:0]
+   read 0x30530474     //[BITS31:0]  --> MC0-ECC C ID[16]
+   read 0x305B0464     //BITS[31:0]
+   read 0x305B0468     //BITS[63:32] --> MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0]
+   read 0x305B046C     //BITS[31:0]
+   read 0x305B0470     //BITS[63:32] --> MC1-DATA[63:0]
+   read 0x305B0474     //[BITS31:0]  --> MC1-ECC C ID[16]
+ 
+   FOR IRQ JUST CHECK TWO CORRECTED BITS BELOW
+        [   1   ] ecc_dataout_corrected_1_interrupt:   0x0
+        [   0   ] ecc_dataout_corrected_0_interrupt:   0x0 
+**********************************************************************************/
+func CheckECC() (err int) {
+    var errGo error
+    var ecc_check uint32
+    //var addr uint32
+    addresses := []uint32{  0x30520020,
+                            0x305a0020,
+                            0x30530464,
+                            0x30530468,
+                            0x3053046C,
+                            0x30530470,
+                            0x30530474,
+                            0x305B0464,
+                            0x305B0468,
+                            0x305B046C,
+                            0x305B0470,
+                            0x305B0474,
+                        }
+    ReadData := make([]uint32, 12)
+
+    for cnt , addr := range(addresses) {
+        ReadData[cnt], errGo = misc.ReadU32(uint64(addr))
+        if errGo != nil {
+            fmt.Printf("ERROR: Failed to read the ecc registers from Elba at address 0x%x\n", addr)
+            err = errType.FAIL
+            return
+        }
+    }
+
+    //Mask our the IRQ's we don't care about
+    ReadData[0] = ReadData[0] & 0x3
+    ReadData[1] = ReadData[1] & 0x3
+    
+    //All registers associated with the ECC need to be zero, or we hit an ecc correctable error
+    //MC0
+
+    ecc_check = ReadData[0] | ReadData[2] | ReadData[3] | ReadData[4] | ReadData[5] | ReadData[6]
+    if ecc_check > 0 {
+        fmt.Printf("ERROR: Elba MC0 Correctable Error Data Set\n")
+        err = errType.FAIL
+    }
+    fmt.Printf("MC0 ecc_dataout_corrected_1_interrupt  = 0x%x\n", ReadData[0] & 0x2) 
+    fmt.Printf("MC0 ecc_dataout_corrected_0_interrupt  = 0x%x\n", ReadData[0] & 0x1)
+    fmt.Printf("MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[2] | (ReadData[3]<<32))
+    fmt.Printf("MC0-DATA[63:0]                         = 0x%x\n", ReadData[4] | (ReadData[5]<<32))
+    fmt.Printf("MC0-ECC C ID[16]                       = 0x%x\n", ReadData[6])
+
+
+    //MC1
+    ecc_check = ReadData[1] | ReadData[7] | ReadData[8] | ReadData[9] | ReadData[10] | ReadData[11]
+    if ecc_check > 0 {
+        fmt.Printf("ERROR: Elba MC1 Correctable Error Data Set\n")
+        err = errType.FAIL
+    }
+    fmt.Printf("MC1 ecc_dataout_corrected_1_interrupt  = 0x%x\n", ReadData[1] & 0x2) 
+    fmt.Printf("MC1 ecc_dataout_corrected_0_interrupt  = 0x%x\n", ReadData[1] & 0x1)
+    fmt.Printf("MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[7] | (ReadData[8]<<32))
+    fmt.Printf("MC1-DATA[63:0]                         = 0x%x\n", ReadData[9] | (ReadData[10]<<32))
+    fmt.Printf("MC1-ECC C ID[16]                       = 0x%x\n", ReadData[11])
+    
+    if err == errType.FAIL {
+        fmt.Printf("ECC Check FAILED\n\n");
+    } else {
+        fmt.Printf("ECC Check PASSED\n\n");
+    }
+    return
 }
 
 func Prbs(mode string, poly string, duration int, intLpbk int, asicType string) (err int) {
