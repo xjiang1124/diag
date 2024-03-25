@@ -74,13 +74,12 @@ func CheckECC() (err int) {
         }
     }
 
-    //Mask our the IRQ's we don't care about
+    //Mask out the IRQ BITs we don't care about
     ReadData[0] = ReadData[0] & 0x3
     ReadData[1] = ReadData[1] & 0x3
     
     //All registers associated with the ECC need to be zero, or we hit an ecc correctable error
     //MC0
-
     ecc_check = ReadData[0] | ReadData[2] | ReadData[3] | ReadData[4] | ReadData[5] | ReadData[6]
     if ecc_check > 0 {
         fmt.Printf("ERROR: Elba MC0 Correctable Error Data Set\n")
