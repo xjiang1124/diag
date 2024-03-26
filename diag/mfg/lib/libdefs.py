@@ -567,7 +567,7 @@ class MFG_DIAG_CMDS:
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
     NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh PRBS"
     NIC_FPGA_PHY_LINK_TEST_FMT = "{:s}xcvr_phy_intf.sh LINKUP"
-    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh"
+    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh {:s}"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
 
@@ -625,6 +625,8 @@ class MFG_DIAG_SIG:
     NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
+    NIC_MVL_LINK1_SIG = "MVL RJ45 port 1 link is up"
+    NIC_MVL_LINK2_SIG = "MVL RJ45 port 2 link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
     NIC_FPGA_PHY_LINK_TEST_SIG = "TRANSCEIVER RJ45 port link is up"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"

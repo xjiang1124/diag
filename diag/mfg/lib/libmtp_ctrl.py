@@ -6512,12 +6512,12 @@ class mtp_ctrl():
 
         return retval, err_msg_list
 
-    def mtp_nic_mvl_link_test(self, slot):
+    def mtp_nic_mvl_link_test(self, slot, ports=1):
         test = "LINK"
 
         retval = ""
         err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_mvl_link_test():
+        if self._nic_ctrl_list[slot].nic_mvl_link_test(ports):
             retval = "SUCCESS"
         else:
             retval = "FAIL"
