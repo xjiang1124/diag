@@ -42,6 +42,10 @@ type TResult struct {
    read 0x305B0470     //BITS[63:32] --> MC1-DATA[63:0]
    read 0x305B0474     //[BITS31:0]  --> MC1-ECC C ID[16]
  
+   read 0x305305e4     --> MC0 INT STATUS ECC
+   read 0x305b05e4     --> MC1 INT STATUS ECC
+ 
+ 
    FOR IRQ JUST CHECK TWO CORRECTED BITS BELOW
         [   1   ] ecc_dataout_corrected_1_interrupt:   0x0
         [   0   ] ecc_dataout_corrected_0_interrupt:   0x0 
@@ -49,7 +53,7 @@ type TResult struct {
 func CheckECC() (err int) {
     var errGo error
     var ecc_check uint32
-    //var addr uint32
+    ReadData := make([]uint32, 14)
     addresses := []uint32{  0x30520020,
                             0x305a0020,
                             0x30530464,
@@ -62,8 +66,90 @@ func CheckECC() (err int) {
                             0x305B046C,
                             0x305B0470,
                             0x305B0474,
+                            0x305305e4,
+                            0x305b05e4,
                         }
-    ReadData := make([]uint32, 12)
+
+//var gbLoopbackLevel_map = map[int]string{
+//    GB_LOOPBACK_LINE_SIDE : "Line",
+//    GB_LOOPBACK_HOST_SIDE : "Host",
+//}
+
+    var syndrome_map = map[int]string{
+           0x00 : "No Error",
+           0x01 : "slice8.Check-0",
+           0x02 : "slice8.Check-1",
+           0x04 : "slice8.Check-2",       
+           0x08 : "slice8.Check-3",
+           0x0b : "slice7.Data-63",
+           0x0e : "slice7.Data-62",
+           0x10 : "slice8.Check-4",
+           0x13 : "slice7.Data-61",
+           0x15 : "slice7.Data-60",       
+           0x16 : "slice7.Data-59",
+           0x19 : "slice7.Data-58",
+           0x1a : "slice7.Data-57",
+           0x1c : "slice7.Data-56",
+           0x20 : "slice8.Check-5",       
+           0x23 : "slice6.Data-55",
+           0x25 : "slice6.Data-54",
+           0x26 : "slice6.Data-53",
+           0x29 : "slice6.Data-52",       
+           0x2a : "slice6.Data-51",
+           0x2c : "slice6.Data-50",
+           0x31 : "slice6.Data-49",       
+           0x34 : "slice6.Data-48",       
+           0x40 : "slice8.Check-6",
+           0x4a : "slice5.Data-47",       
+           0x4f : "slice5.Data-46",
+           0x52 : "slice5.Data-45",
+           0x54 : "slice5.Data-44",
+           0x57 : "slice5.Data-43",
+           0x58 : "slice5.Data-42",
+           0x5b : "slice5.Data-41",
+           0x5e : "slice5.Data-40",
+           0x62 : "slice4.Data-39",
+           0x64 : "slice4.Data-38",
+           0x67 : "slice4.Data-37",
+           0x68 : "slice4.Data-36",
+           0x6b : "slice4.Data-35",
+           0x6d : "slice4.Data-34",
+           0x70 : "slice4.Data-33",
+           0x75 : "slice4.Data-32",
+           0x80 : "slice8.Check-7",
+           0x8a : "slice3.Data-31",
+           0x8f : "slice3.Data-30",
+           0x92 : "slice3.Data-29",
+           0x94 : "slice3.Data-28",
+           0x97 : "slice3.Data-27",
+           0x98 : "slice3.Data-26",
+           0x9b : "slice3.Data-25",
+           0x9d : "slice3.Data-24",       
+           0xa2 : "slice2.Data-23",
+           0xa4 : "slice2.Data-22",
+           0xa7 : "slice2.Data-21",
+           0xa8 : "slice2.Data-20",
+           0xab : "slice2.Data-19",
+           0xad : "slice2.Data-18",
+           0xb0 : "slice2.Data-17",
+           0xb5 : "slice2.Data-16",
+           0xcb : "slice1.Data-15",
+           0xce : "slice1.Data-14",
+           0xd3 : "slice1.Data-13",
+           0xd5 : "slice1.Data-12",
+           0xd6 : "slice1.Data-11",
+           0xd9 : "slice1.Data-10",
+           0xda : "slice1.Data-9 ",
+           0xdc : "slice1.Data-8 ",
+           0xe3 : "slice0.Data-7 ",
+           0xe5 : "slice0.Data-6 ",
+           0xe6 : "slice0.Data-5 ",
+           0xe9 : "slice0.Data-4 ",
+           0xea : "slice0.Data-3 ",
+           0xec : "slice0.Data-2 ",
+           0xf1 : "slice0.Data-1 ",
+           0xf4 : "slice0.Data-0 ",
+    }
 
     for cnt , addr := range(addresses) {
         ReadData[cnt], errGo = misc.ReadU32(uint64(addr))
@@ -90,6 +176,16 @@ func CheckECC() (err int) {
     fmt.Printf("MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[2] | (ReadData[3]<<32))
     fmt.Printf("MC0-DATA[63:0]                         = 0x%x\n", ReadData[4] | (ReadData[5]<<32))
     fmt.Printf("MC0-ECC C ID[16]                       = 0x%x\n", ReadData[6])
+    if ( ((ReadData[12] & 0xA)>0) || 
+          (ReadData[12] & 0x5)>0) {
+        var syndrome int = int((ReadData[3] >> 8) & 0xFF)   //get 8-bit syndrome
+        if syndrome != 0 {
+            syndrome_string, ok := syndrome_map[int(syndrome)]
+            if ok {
+                fmt.Println("MC0 ECC Syndrome=%s", syndrome_string)
+            }
+        }
+    }
 
 
     //MC1
@@ -103,6 +199,16 @@ func CheckECC() (err int) {
     fmt.Printf("MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[7] | (ReadData[8]<<32))
     fmt.Printf("MC1-DATA[63:0]                         = 0x%x\n", ReadData[9] | (ReadData[10]<<32))
     fmt.Printf("MC1-ECC C ID[16]                       = 0x%x\n", ReadData[11])
+    if ( ((ReadData[13] & 0xA)>0) || 
+        (ReadData[13] & 0x5)>0) {
+        var syndrome int = int((ReadData[8] >> 8) & 0xFF)   //get 8-bit syndrome
+        if syndrome != 0 {
+            syndrome_string, ok := syndrome_map[syndrome]
+            if ok {
+                fmt.Println("MC1 ECC Syndrome=%s", syndrome_string)
+            }
+        }
+    }
     
     if err == errType.FAIL {
         fmt.Printf("ECC Check FAILED\n\n");
