@@ -77,7 +77,7 @@ def handle_scan(mtp_mgmt_ctrl, scan_item_str, usr_input, already_scanned_list):
     if validation_func(usr_input):
         if usr_input not in already_scanned_list:
             return True
-        elif usr_input in already_scanned_list and ("Part Number" in scan_item_str or "PN" in scan_item_str): #pns are not unique
+        elif usr_input in already_scanned_list and ("Part Number" in scan_item_str or "PN" in scan_item_str or scan_item_str == SKU): #pns are not unique
             return True
         else:
             mtp_mgmt_ctrl.cli_log_err("{:s}: {:s} is double scanned, please rescan".format(scan_item_str, usr_input))
