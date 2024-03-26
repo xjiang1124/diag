@@ -27,7 +27,7 @@ from libdiag_db import diag_db
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import MTP_IMAGES
 from libdefs import MTP_Const
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import MTP_DIAG_Error
@@ -101,7 +101,7 @@ def mtp_diag_pre_init(mtp_mgmt_ctrl):
 
     return True
 
-def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id, diag_log_filep, mtp_test_summary, asic_expected_version):
+def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id, diag_log_filep, mtp_test_summary, expected_mtp_type):
     """
     Steps to convert MTP from MTP_CAPRI to MTP_ELBA or vice versa:
 
@@ -206,16 +206,16 @@ def single_mtp_convert(mtp_mgmt_ctrl, mtp_images_list, mtp_expected_ver, mtp_id,
             raise Exception
 
         # confirm environment variable has been set
-        if mtp_mgmt_ctrl._asic_support != asic_expected_version:
+        if mtp_mgmt_ctrl._mtp_type != expected_mtp_type:
             mtp_mgmt_ctrl.cli_log_err("Fail to set correct MTP_TYPE")
             raise Exception
 
     except Exception as e:
-        mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), False, False))
+        mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._mtp_type), False, False))
         mtp_mgmt_ctrl.cli_log_err(str(e))
         return False
 
-    mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._asic_support), True, False))
+    mtp_test_summary.append((mtp_id, "", "MTP_"+str(mtp_mgmt_ctrl._mtp_type), True, False))
     return True
 
 def main():
@@ -226,7 +226,7 @@ def main():
 
     args = parser.parse_args()
     if args.convert_to:
-        asic_support = args.convert_to
+        mtp_type = args.convert_to
     else:
         sys.exit("Missing -to flag. argparser should not let us be here.")
     verbosity = False
@@ -256,17 +256,17 @@ def main():
 
     # Collect IO and JTAG CPLD image names
     try:
-        mtp_images_list  = [MTP_IMAGES.mtp_io_cpld_img[asic_support], MTP_IMAGES.mtp_jtag_cpld_img[asic_support]]
-        mtp_expected_ver = [MTP_IMAGES.mtp_io_cpld_ver[asic_support], MTP_IMAGES.mtp_jtag_cpld_ver[asic_support]]
+        mtp_images_list  = [MTP_IMAGES.mtp_io_cpld_img[mtp_type], MTP_IMAGES.mtp_jtag_cpld_img[mtp_type]]
+        mtp_expected_ver = [MTP_IMAGES.mtp_io_cpld_ver[mtp_type], MTP_IMAGES.mtp_jtag_cpld_ver[mtp_type]]
     except KeyError:
-        mtp_mgmt_ctrl.cli_log_err("Missing CPLD image for {:s}".format(asic_support), level=0)
+        mtp_mgmt_ctrl.cli_log_err("Missing CPLD image for {:s}".format(mtp_type), level=0)
         return
     # Collect amd and arm diag images
     try:
-        mtp_images_list.append(MTP_IMAGES.amd64_img[asic_support])
-        mtp_images_list.append(MTP_IMAGES.arm64_img[asic_support])
+        mtp_images_list.append(MTP_IMAGES.amd64_img[mtp_type])
+        mtp_images_list.append(MTP_IMAGES.arm64_img[mtp_type])
     except KeyError:
-        mtp_mgmt_ctrl.cli_log_err("Missing diag image for {:s}".format(asic_support), level=0)
+        mtp_mgmt_ctrl.cli_log_err("Missing diag image for {:s}".format(mtp_type), level=0)
         return
 
     # Connect to MTP
@@ -301,7 +301,7 @@ def main():
                 mtpid_fail_list.append(mtp_id)
                 continue
 
-            if int(mtp_rev) < 3 and asic_support != MTP_ASIC_SUPPORT.CAPRI:
+            if int(mtp_rev) < 3 and mtp_type != MTP_TYPE.CAPRI:
                 ######################################################################
                 # MTP Rev_01 and Rev_02 only support changing to Capri-compatible CPLD
                 ######################################################################
@@ -350,7 +350,7 @@ def main():
                                                                            mtp_id,
                                                                            diag_log_filep_list[mtp_id],
                                                                            mfg_convert_summary[mtp_id], 
-                                                                           asic_support))
+                                                                           mtp_type))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)

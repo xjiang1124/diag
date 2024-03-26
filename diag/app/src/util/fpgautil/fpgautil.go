@@ -9,7 +9,7 @@ var cardType string
 
 func init() {
     cardType = os.Getenv("CARD_TYPE")
-    
+
     if cardType != "LIPARI" && 
        cardType != "MTP_MATERA" &&
        cardType != "TAORMINA" {
@@ -23,18 +23,19 @@ func init() {
             cardType = "TAORMINA"
             os.Setenv("CARD_TYPE",cardType)
             cli.Println("d", "Found card:", cardType)
-            
         }
     }
 }
-                               
 
 func main() {
-    if cardType == "LIPARI" || 
-       cardType == "MTP_MATERA" { // FIXME: For validation Matera on Lipari only
+    if cardType == "LIPARI" {
         lipari_fpga_cli()
-    } else {
+    } else if cardType == "TAORMINA" {
         taormina_fpga_cli()
+    } else if cardType == "MTP_MATERA" {
+        matera_fpga_cli()
+    } else {
+        cli.Println("e", "Wrong card type:", cardType)
     }
     return
 }
@@ -46,5 +47,3 @@ func Path_exists(path string) (bool, error) {
     if os.IsNotExist(err) { return false, nil }
     return false, err
 }
-
- 
