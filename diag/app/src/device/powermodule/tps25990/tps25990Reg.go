@@ -33,7 +33,7 @@ const (
     MFR_REVISION              = 0x9B
     READ_VIN                  = 0x88
     READ_VOUT                 = 0x8B
-    READ_IOUT                 = 0x89
+    READ_IIN                  = 0x89
     READ_TEMPERATURE_1        = 0x8D
     READ_VAUX                 = 0xD0
 

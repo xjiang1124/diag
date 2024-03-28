@@ -692,6 +692,8 @@ var MateraI2cTbl = []I2cInfo {
     I2cInfo {"TEMP_IOB1", "LM75",     6,  0x48,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
     I2cInfo {"TEMP_MB",   "LM75",     6,  0x49,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
     I2cInfo {"TEMP_IOB2", "LM75",     6,  0x4A,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"P12V",      "TPS25990", 10, 0x41,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},   //hot swap contorller
+    I2cInfo {"CPU_VDDCR", "ISL69247", 10, 0x60,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
 }
 
 // simulate UUT on Lipari using its 8 Elba CPLD

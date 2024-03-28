@@ -91,7 +91,7 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
     //Y = (m * X + b) * 10R
     //X = (y/(10R * m)) - (b/m)
 
-    expOutFloat := float64(VIN) / (math.Pow(10, (-2)) * 5246) 
+    expOutFloat := float64(VIN) / (math.Pow(10, (-2)) * 5251)
     intpart, div := math.Modf(expOutFloat)
 
     integer = uint64(intpart)
@@ -119,7 +119,7 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     //Y = (m * X + b) * 10R
     //X = (y/(10R * m)) - (b/m)
 
-    expOutFloat := float64(VOUT) / (math.Pow(10, (-2)) * 5246) 
+    expOutFloat := float64(VOUT) / (math.Pow(10, (-2)) * 5251)
     intpart, div := math.Modf(expOutFloat)
 
     integer = uint64(intpart)
@@ -167,7 +167,6 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
 
 
 func ReadIin(devName string) (integer uint64, dec uint64, err int) {
-    /*
     var IIN uint16
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
@@ -177,15 +176,19 @@ func ReadIin(devName string) (integer uint64, dec uint64, err int) {
     defer pmbus.Close()
 
     IIN, err = pmbus.ReadWord(devName, READ_IIN)
+    if err != errType.SUCCESS {
+        return
+    }
 
-    integer, dec, err =  pmbus.Linear11(IIN)
-    */
-    integer = 0
-    dec = 0
+    expOutFloat := float64(IIN) / ((math.Pow(10, (-3))) * (9.538 * 309))
+    intpart, div := math.Modf(expOutFloat)
+
+    integer = uint64(intpart)
+    dec = uint64(div*1000)
     return
 }
 
-
+/*
 func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var IOUT uint16
     err = pmbus.Open(devName)
@@ -214,6 +217,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
 
 
 }
+*/
 
 
 func ReadPin(devName string) (integer uint64, dec uint64, err int) {
@@ -234,7 +238,7 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
 
     //X = (y/(10R * m)) - (b/m)
 
-    expOutFloat := float64(PIN) / ((math.Pow(10, (-4)) * (4.892 * 309)))
+    expOutFloat := float64(PIN) / ((math.Pow(10, (-4))) * (4.901 * 309))
     intpart, div := math.Modf(expOutFloat)
 
     integer = uint64(intpart)
@@ -243,7 +247,7 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
-
+/*
 func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     var f float64
     dig, frac, _ := ReadVout(devName)
@@ -262,9 +266,9 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
 
     return
 }
+*/
 
 func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
-    /*
     var TEMP uint16
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
@@ -275,8 +279,12 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
 
     TEMP, err = pmbus.ReadWord(devName, READ_TEMPERATURE_1)
 
-    integer, dec, err =  pmbus.Linear11(TEMP)
-    */
+    expOutFloat := (float64(TEMP) * math.Pow(10, 2) - 32100) / 140
+    intpart, div := math.Modf(expOutFloat)
+
+    integer = uint64(intpart)
+    dec = uint64(div*1000)
+
     return
 }
 
@@ -287,7 +295,7 @@ func GetTemperature(devName string) (temperatures []float64, err int) {
 }
 
 
-// vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
+// vrmTitle := []string {"VOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
 func DispVoltWattAmp(devName string) (err int) {
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -305,7 +313,7 @@ func DispVoltWattAmp(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, err = ReadPout(devName)
+   /* dig, frac, err = ReadPout(devName)
     if err != errType.SUCCESS { return; }
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
@@ -313,7 +321,7 @@ func DispVoltWattAmp(devName string) (err int) {
     digIout, fracIout, err := ReadIout(devName)
     if err != errType.SUCCESS { return; }
     outStrTemp = fmt.Sprintf(fmtDigFrac, digIout, fracIout)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)*/
 
     dig, frac, err = ReadVin(devName)
     if err != errType.SUCCESS { return; }
@@ -325,10 +333,15 @@ func DispVoltWattAmp(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    //dig, frac, err = ReadIin(devName)
-    //if err != errType.SUCCESS { return; }
-    //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    dig, frac, err = ReadIin(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    dig, frac, err = ReadTemp(devName)
+    if err != errType.SUCCESS { return; }
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     outStrTemp = "-"
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
@@ -339,7 +352,7 @@ func DispVoltWattAmp(devName string) (err int) {
 }
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
+    vrmTitle := []string {"VOUT", "PIN", "VIN", "IIN", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -360,17 +373,17 @@ func DispStatus(devName string) (err int) {
     //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ := ReadPout(devName)
+  /*  dig, frac, _ := ReadPout(devName)
+    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)*/
+
+    dig, frac, _ := ReadVout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadVout(devName)
+ /*   dig, frac, _ = ReadIout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
-
-    dig, frac, _ = ReadIout(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)*/
 
     dig, frac, _ = ReadPin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
