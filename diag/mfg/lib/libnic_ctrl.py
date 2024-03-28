@@ -8,7 +8,7 @@ import pexpect
 
 from datetime import datetime
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -1474,15 +1474,15 @@ class nic_ctrl():
         else:
             return False
 
-    def nic_check_jtag(self, asic_support):
+    def nic_check_jtag(self, mtp_type):
         cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
 
         fail_sig_list = ["JTAG Read failed!"]
 
         sig_list = ["valid bit 0x1", "error 0x00"]
-        if asic_support == MTP_ASIC_SUPPORT.ELBA:
+        if mtp_type == MTP_TYPE.ELBA:
             sig_list = ["0x00000001"]
-        elif asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
+        elif mtp_type == MTP_TYPE.TURBO_ELBA:
             sig_list = ["0x00000001"]
 
         error_flag = False

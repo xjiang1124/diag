@@ -14,7 +14,7 @@ from libsku_utils import *
 from libsku_cfg import *
 
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -80,7 +80,7 @@ class mtp_ctrl():
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
-        self._asic_support = None
+        self._mtp_type = None
         self._mtp_rev = None
         self._os_ver = None
         self._diag_ver = None
@@ -269,10 +269,10 @@ class mtp_ctrl():
             return False
         self.cli_log_report_inf("MTP JTAG-CPLD Version: {:s}".format(self._jtag_cpld_ver))
 
-        if not self._asic_support:
-            self.cli_log_err("Unable to retrieve ASIC version supported by CPLD")
+        if not self._mtp_type:
+            self.cli_log_err("Unable to retrieve MTP TYPE")
             return False
-        self.cli_log_report_inf("MTP CPLD supports: {:s}".format(self._asic_support))
+        self.cli_log_report_inf("MTP CPLD supports: {:s}".format(self._mtp_type))
 
         if not self._mtp_rev:
             self.cli_log_err("Unable to retrieve MTP revision")
@@ -1225,15 +1225,15 @@ class mtp_ctrl():
             return False
 
         # MTP_TYPE
-        cmd = MFG_DIAG_CMDS.MTP_ASIC_SUPPORTED_FMT
+        cmd = MFG_DIAG_CMDS.MTP_TYPE_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to send command for getting asic supported version", level = 0)
+            self.cli_log_err("Failed to send command for getting MTP type", level = 0)
             return False
         match = re.findall(r"MTP_TYPE=MTP_([a-zA-Z_]+)", self.mtp_get_cmd_buf())
         if match:
-            self._asic_support = match[0].strip().upper()
+            self._mtp_type = match[0].strip().upper()
         else:
-            self.cli_log_err("Failed to get asic supported version", level = 0)
+            self.cli_log_err("Failed to get MTP type", level = 0)
             return False
 
         # MTP_REV
@@ -1292,8 +1292,8 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_get_asic_support(self):
-        return self._asic_support
+    def mtp_get_mtp_type(self):
+        return self._mtp_type
 
     def mtp_get_hw_version(self):
         return [self._io_cpld_ver, self._jtag_cpld_ver]
@@ -2083,8 +2083,8 @@ class mtp_ctrl():
             self.cli_log_err("MTP CPLD test failed")
             return False
 
-        io_version = MTP_IMAGES.mtp_io_cpld_ver[self._asic_support]
-        jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._asic_support]
+        io_version = MTP_IMAGES.mtp_io_cpld_ver[self._mtp_type]
+        jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._mtp_type]
 
         if self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0 and int(self._mtp_rev) > 2:
             if int(cpld_ver_list[0],16) < int(io_version,16):
@@ -2503,7 +2503,8 @@ class mtp_ctrl():
             return True
 
     def mtp_check_nic_jtag(self, slot):
-        if not self._nic_ctrl_list[slot].nic_check_jtag(self._asic_support):
+        asic_type = "elba" if self.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST else "capri"
+        if not self._nic_ctrl_list[slot].nic_check_jtag(asic_type):
             self.mtp_dump_nic_err_msg(slot)
             return False
         else:
@@ -3724,32 +3725,6 @@ class mtp_ctrl():
             self.cli_log_err("Command {:s} failed".format(cmd), level=0)
             return False
         return True
-        # self.mtp_nic_console_lock()
-        # self.mtp_single_j2c_lock()
-        # self.cli_log_inf("NIC Diag Sys Clean", level=0)
-
-        # cmd = MFG_DIAG_CMDS.NIC_SYS_CLEAN_FMT.format(MTP_DIAG_Path.ONBOARD_MTP_MTP_DIAG_PATH)
-
-        # if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        #     ret = False
-
-        # cmd_buf = self._cmd_buf
-        # if ret and not cmd_buf:
-        #     self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-        #     ret = False
-
-        # if ret:
-        #     # wait for completion sig to avoid interfering with other tests
-        #     if self._asic_support != "capri":
-        #     # issue with capri diag image... 
-        #         if "sys_clean done" in cmd_buf:
-        #             ret = True
-        #         else:
-        #             ret = False
-            
-        # self.mtp_single_j2c_unlock()
-        # self.mtp_nic_console_unlock()
-        # return ret
 
     def mtp_mgmt_killall_tclsh_picocom(self):
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
@@ -4233,7 +4208,8 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA else "capri"
+        nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
+        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         for slot in nic_list:
             self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
@@ -4354,7 +4330,8 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA else "capri"
+        nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
+        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if aapl:
             for slot in nic_list:
@@ -4540,7 +4517,8 @@ class mtp_ctrl():
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        asic_type = "elba" if self._asic_support == MTP_ASIC_SUPPORT.ELBA or self._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA else "capri"
+        nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
+        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_PARA_SIG]
         for slot in nic_list:
             self.cli_log_slot_inf(slot, "Para Init NIC port")
