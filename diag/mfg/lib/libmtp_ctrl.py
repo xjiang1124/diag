@@ -4133,8 +4133,6 @@ class mtp_ctrl():
             else:
                 self.cli_log_slot_err(slot, "Unable to load SN")
                 ret = False
-        elif not fru_valid:
-            self.mtp_set_nic_sn(slot, self.mtp_get_nic_scan_sn(slot))
 
         if ret:
             # (DIAG_INIT, NIC_VMARG) START
