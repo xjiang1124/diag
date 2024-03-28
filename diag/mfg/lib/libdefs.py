@@ -34,11 +34,12 @@ class NIC_Type:
     UNKNOWN = "Unknown"
 
 
-class MTP_ASIC_SUPPORT:
+class MTP_TYPE:
     CAPRI = "CAPRI"
     TURBO_CAPRI = "TURBO_CAPRI"
     ELBA  = "ELBA"
     TURBO_ELBA = "TURBO_ELBA"
+    MATERA = "MATERA"
 
 class Factory:
     UNKNOWN = "Unknown"
@@ -290,7 +291,7 @@ class MFG_DIAG_CMDS:
     MTP_LOGIN_VERIFY_FMT = "echo $USER"
     MTP_ASIC_VERSION_FMT = "head /home/diag/diag/asic/asic_version.txt"
     MTP_REV_FMT =  "env | grep MTP_REV | cat"
-    MTP_ASIC_SUPPORTED_FMT =  "env | grep MTP_TYPE | cat"
+    MTP_TYPE_FMT =  "env | grep MTP_TYPE | cat"
     MTP_FAN_STATUS_FMT = "devmgr -dev FAN -status"
     MTP_FAN_SET_SPD_FMT = "devmgr -dev=fan -speed -pct={:d}"
     MTP_PSU_DISP_FMT = "devmgr -dev=psu_{:s} -status"
@@ -567,7 +568,7 @@ class MFG_DIAG_CMDS:
     NIC_MVL_LINK_FMT = "{:s}mvl_link.sh"
     NIC_FPGA_PHY_TEST_FMT = "{:s}xcvr_phy_intf.sh PRBS"
     NIC_FPGA_PHY_LINK_TEST_FMT = "{:s}xcvr_phy_intf.sh LINKUP"
-    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh"
+    NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh {:s}"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
 
@@ -625,6 +626,8 @@ class MFG_DIAG_SIG:
     NIC_MVL_ACC_SIG = "MVL ACC TEST PASSED"
     NIC_MVL_STUB_SIG = "MVL STUB TEST PASSED"
     NIC_MVL_LINK_SIG = "MVL RJ45 port link is up"
+    NIC_MVL_LINK1_SIG = "MVL RJ45 port 1 link is up"
+    NIC_MVL_LINK2_SIG = "MVL RJ45 port 2 link is up"
     NIC_FPGA_PHY_TEST_SIG = "TRANSCEIVER PHY INTERFACE TEST PASSED"
     NIC_FPGA_PHY_LINK_TEST_SIG = "TRANSCEIVER RJ45 port link is up"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"

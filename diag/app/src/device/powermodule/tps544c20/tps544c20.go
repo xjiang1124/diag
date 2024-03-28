@@ -56,7 +56,7 @@ func I2cTest(devname string) (err int) {
 * 
 * Need to set Taormina's 3V3 higher due to a problem with a serdes clock buffer 
 * The clock buffer seems to behave better with higher 3.3V voltage. 
-* Want to bump it 5% to ~  3.465 
+* Want to bump it 3% to ~  3.39 
 *  
 * ###### CLEAR OUT VREF TRIM ##############
 * fpgautil i2c 0 1 8 w 0xd4 0 0
