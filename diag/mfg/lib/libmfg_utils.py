@@ -34,6 +34,7 @@ from libmfg_cfg import *
 from libsku_utils import *
 import image_control
 import test_utils
+import parallelize
 import similar_expect
 
 def get_linux_prompt_list():
@@ -2357,30 +2358,23 @@ def sanity_check_setup(mtp_mgmt_ctrl, nic_list):
     cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
     fail_nic_list = list()
-    para_nic_list = list()       # needs para_init
-    mgmt_nic_list = list()  # needs para_mgmt_init
-    for slot in nic_list:
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        if nic_type in FPGA_TYPE_LIST:
-            mgmt_nic_list.append(slot)
-        else:
-            para_nic_list.append(slot)
+    all_types_except_monterey = libmfg_utils.list_subtract(MFG_VALID_NIC_TYPE_LIST, FPGA_TYPE_LIST)
+    para_nic_list = mtp_mgmt_ctrl.get_slots_of_type(all_types_except_monterey, nic_list)       # needs para_init
+    mgmt_nic_list = mtp_mgmt_ctrl.get_slots_of_type(FPGA_TYPE_LIST, nic_list)                  # needs para_mgmt_init
 
     # for all cards:
     if para_nic_list:
-        if not mtp_mgmt_ctrl.mtp_nic_para_init(para_nic_list):
-            for slot in para_nic_list:
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
+        fail_init_list = mtp_mgmt_ctrl.mtp_nic_para_init(para_nic_list)
+        for slot in fail_init_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
 
     # for lacona/pomonte:
     if mgmt_nic_list:
-        if not mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False):
-            for slot in mgmt_nic_list:
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
+        fail_mgmt_list = mtp_mgmt_ctrl.mtp_nic_mgmt_para_init(mgmt_nic_list, False)
+        for slot in fail_mgmt_list:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
 
     return fail_nic_list
 
@@ -2396,7 +2390,7 @@ def mtp_power_log_end(mtp_mgmt_ctrl, mtp_syslog_handle):
     mtp_syslog_handle.send('\x03')
     mtp_syslog_handle.close()
 
-@test_utils.semi_parallel_test_section
+@parallelize.sequential_nic_test
 def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, retry = 0):
     if sn is None:
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -2583,9 +2577,9 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
             mode = "hod"
         else:
             mode = "hod_1100"
-    elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR) and test in ("L1", "SEC_PROG_VERIFY"):
+    elif nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR) and test in ("L1", "SEC_PROG_VERIFY", "SNAKE_ELBA"):
         mode = "hod"
-    elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICRMSFT) and test in ("L1", "SEC_PROG_VERIFY"):
+    elif nic_type in (NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICRMSFT) and test in ("L1", "SEC_PROG_VERIFY", "SNAKE_ELBA"):
         mode = "hod_1100"
     elif nic_type == NIC_Type.ORTANO2INTERP:
         mode = "hod"
@@ -2601,12 +2595,16 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "hod_1100"
     elif nic_type == NIC_Type.POMONTEDELL:
         mode = "nod"
+    elif nic_type in (NIC_Type.LACONA32DELL, NIC_Type.LACONA32) and test == "SNAKE_ELBA":
+        mode = "nod_525"
     elif nic_type == NIC_Type.LACONA32DELL or nic_type == NIC_Type.LACONA32:
         mode = "nod_550"
     elif nic_type in CAPRI_NIC_TYPE_LIST:
         mode = "hod"
     elif nic_type in GIGLIO_NIC_TYPE_LIST:
         mode = "hod_1100"
+    elif test == "SNAKE_ELBA":
+        mode = "nod"
     else:
         mode = ""
 

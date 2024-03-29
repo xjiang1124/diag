@@ -36,6 +36,7 @@ from libnic_ctrl import nic_ctrl
 from libmtp_health import mtp_health_ctrl
 
 import test_utils
+import parallelize
 import image_control
 import scanning
 
@@ -880,7 +881,9 @@ class mtp_ctrl():
 
         cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
         sig_list = [userid]
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list):
+        handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(handle, sig_list + self._prompt_list)
+        if idx < 0:
             self.cli_log_err("Connect to mtp mgmt failed", level=0)
             return None
         else:
@@ -2277,14 +2280,14 @@ class mtp_ctrl():
         return True
 
     def mtp_verify_nic_extdiag_boot(self, slot):
-        if not self.mtp_nic_boot_info_init(slot, skip_check=True):
+        if slot in self.mtp_nic_boot_info_init([slot], skip_check=True):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
         return self.mtp_nic_check_extdiag_boot(slot)
 
     def mtp_verify_nic_extdiag_smode_boot(self, slot):
-        if not self.mtp_nic_boot_info_init(slot, smode=True):
+        if slot in self.mtp_nic_boot_info_init([slot], smode=True):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
@@ -2295,6 +2298,7 @@ class mtp_ctrl():
 ########################################
 
 # 1. Routines that need console, can not be run in parallel
+    @parallelize.parallel_nic_using_console
     def mtp_nic_boot_info_init(self, slot, smode=False, skip_check=False):
         if self._nic_ctrl_list[slot]._boot_image is not None and self._nic_ctrl_list[slot]._kernel_timestamp is not None and not skip_check:
             # no need to do this
@@ -2320,6 +2324,10 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_list_check_diag_boot(self, slot):
+        return self.mtp_nic_check_diag_boot(slot)
+
     def mtp_nic_check_diag_boot(self, slot):
         qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
         if not qspi_info:
@@ -2333,15 +2341,16 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_verify_nic_diag_boot(self, slot):
-        if not self.mtp_nic_boot_info_init(slot):
+        if slot in self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
         return self.mtp_nic_check_diag_boot(slot)
 
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
-        if not self.mtp_nic_boot_info_init(slot):
+        if slot in self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC gold boot info failed")
             return False
 
@@ -2367,7 +2376,7 @@ class mtp_ctrl():
         return True
 
     def mtp_mgmt_verify_nic_sw_boot(self, slot):
-        if not self.mtp_nic_boot_info_init(slot):
+        if slot in self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
@@ -2425,18 +2434,10 @@ class mtp_ctrl():
 
     def mtp_nic_mgmt_init(self, slot, fpo):
         # self.cli_log_slot_inf(slot, "Init NIC MGMT port")
-        dsp = "DIAG_INIT"
-        sn = self.mtp_get_nic_sn(slot)
-        test = "NIC_MGMT_INIT"
-        self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = self.log_slot_test_start(slot, test)
-
         if not self._nic_ctrl_list[slot].nic_mgmt_init(fpo):
             # retry
             if not self.mtp_nic_mgmt_reinit(slot):
                 self.cli_log_slot_err(slot, "Init NIC MGMT port failed")
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 return False
 
         # delete the arp entry
@@ -2444,8 +2445,6 @@ class mtp_ctrl():
         cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_slot_err(slot, "Command sudo {:s} failed".format(cmd))
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
         # ping to update the arp cache
         for x in range(2):
@@ -2453,8 +2452,6 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_slot_err(slot, "Command {:s} failed".format(cmd))
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
                 return False
 
         cmd_buf = self.mtp_get_cmd_buf()
@@ -2462,32 +2459,15 @@ class mtp_ctrl():
         if not match:
             self.cli_log_slot_err(slot, "Ping MTP to NIC failed")
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
-
-        duration = self.log_slot_test_stop(slot, test, start_ts)
-        self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
         return True
 
     def mtp_nic_mini_init(self, slot, fpo=False):
         if not self.mtp_nic_mgmt_init(slot, fpo):
             return False
-        sn = self.mtp_get_nic_sn(slot)
-        dsp = "DIAG_INIT"
-        test = "NIC_BOOT_INIT"
-        self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = self.log_slot_test_start(slot, test)
-
-        if not self.mtp_nic_boot_info_init(slot):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+        if slot in self.mtp_nic_boot_info_init(slot):
             return False
-        else:
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
         return True
 
     def mtp_mgmt_test_nic_mem(self, slot):
@@ -2504,7 +2484,10 @@ class mtp_ctrl():
         else:
             return True
 
-# 2. Routines that need smb bus, can not be run in parallel
+    @parallelize.parallel_nic_using_smbus
+    def mtp_check_nic_list_pwr_status(self, slot):
+        return self.mtp_mgmt_check_nic_pwr_status(slot)
+
     def mtp_mgmt_check_nic_pwr_status(self, slot):
         if not self._nic_ctrl_list[slot].nic_power_check():
             self.mtp_dump_nic_err_msg(slot)
@@ -2581,14 +2564,17 @@ class mtp_ctrl():
 # 4. Routines use mgmt port, can be run in parallel
 
 
-    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
-        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout)
+    def mtp_mgmt_exec_cmd_para(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
+        rc = self._nic_ctrl_list[slot].mtp_exec_cmd(cmd, timeout, sig_list)
         if not rc:
             self.mtp_dump_nic_err_msg(slot)
         return rc
 
     def mtp_get_nic_cmd_buf(self, slot):
         return self._nic_ctrl_list[slot].nic_get_cmd_buf()
+
+    def mtp_get_nic_cmd_buf_before_sig(self):
+        return self._nic_ctrl_list[slot]._buf_before_sig
 
     def mtp_exec_nic_cmd_get_info(self, slot, cmd, timeout=None):
         return self._nic_ctrl_list[slot].nic_get_info(cmd, timeout)
@@ -2757,6 +2743,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify NIC assettag FRU Pass, assettag={:s}".format(assettag))
         return True
 
+
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_hpe_rework_verify(self, slot):
         """ REWORK VERIFICATION FOR CAP CHANGE 
             For NAPLES25(HPE) and NAPLES25SWM(HPE), Product Version/Revision Code must be 0B or 0x30 0x42
@@ -2984,6 +2972,7 @@ class mtp_ctrl():
     def mtp_get_alom_fru(self, slot):
         return self._nic_ctrl_list[slot].alom_get_fru()
 
+    @parallelize.parallel_nic_using_console
     def mtp_setting_partition(self, slot):
         # copy script to detect the emmc part size
         if not self._nic_ctrl_list[slot].nic_copy_image("{:s}diag/scripts/emmc_format.sh".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)):
@@ -3006,6 +2995,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Verify PSCL Pass")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_emmc_bkops_en(self, slot):
         # copy script to detect the emmc part size
         if not self._nic_ctrl_list[slot].nic_copy_image("{:s}nic_util/mmc.latest".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_DIAG_PATH)):
@@ -3023,6 +3013,7 @@ class mtp_ctrl():
                 return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_emmc_hwreset_set(self, slot):
         if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
             self.mtp_clear_nic_err_msg(slot)  # clear out the error message
@@ -3036,6 +3027,7 @@ class mtp_ctrl():
                 return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_set_nic_diagfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].set_nic_diagfw_boot():
             self.cli_log_slot_err(slot, "Set boot diagfw failed")
@@ -3139,6 +3131,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_program_nic_fpga(self, slot, partition_list=None, alternate_image_list=None):
         """
         This sequence has to be followed:
@@ -3205,6 +3198,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_verify_nic_fpga(self, slot, main_only=False):
         """
         Following the same partition sequence as writing:
@@ -3257,6 +3251,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_refresh_nic_cpld(self, slot, dontwait=False):
         if not self._nic_ctrl_list[slot].nic_is_cpld_refresh_required():
             self.cli_log_slot_inf_lock(slot, "No CPLD refresh needed")
@@ -3303,6 +3298,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_verify_nic_cpld_fea(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
@@ -3398,11 +3394,12 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_verify_nic_cpld(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True, console=False):
         # cpld_has_timestamp = 1
         nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
         if not nic_cpld_info:
-            self.cli_log_slot_err_lock(slot, "Verify NIC CPLD failed, can not retrieve CPLD info")
+            self.cli_log_slot_err(slot, "Verify NIC CPLD failed, can not retrieve CPLD info")
             return False
 
         cur_ver = nic_cpld_info[0]
@@ -3501,6 +3498,7 @@ class mtp_ctrl():
             return False
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_erase_main_fw_partition(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_main_fw_partition():
             self.cli_log_slot_inf_lock(slot, "Erase mainfw failed")
@@ -3646,7 +3644,7 @@ class mtp_ctrl():
 
         return True
 
-    @test_utils.parallel_threaded_test
+    @parallelize.parallel_nic_using_ssh
     def mtp_mgmt_save_nic_diag_logfile(self, slot, aapl):
         self.cli_log_slot_inf(slot, "Collecting NIC diag logfiles")
         if not self._nic_ctrl_list[slot].nic_save_diag_logfile(aapl):
@@ -3843,30 +3841,16 @@ class mtp_ctrl():
             msg = "Init NIC FRU info with date"
         else:
             msg = "Init NIC FRU info without date"
-
         if fru_fpo:
             msg += " with FPO"
-
-        dsp = "DIAG_INIT"
-        sn = self.mtp_get_nic_sn(slot)
-        test = "NIC_FRU_INIT"
-        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = self.log_slot_test_start(slot, test)
+        self.cli_log_slot_inf(slot, msg)
 
         if not self._nic_ctrl_list[slot].nic_fru_init(self._factory_location, init_date, self._swmtestmode[slot], fpo=fru_fpo):
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
-            self.mtp_set_nic_status_fail(slot)
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
             return False
-
         # sku is unique, save it without reading fru
         self._nic_ctrl_list[slot]._sku = self.get_scanned_sku(slot)
-
-        duration = self.log_slot_test_stop(slot, test, start_ts)
-        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
         return True
 
     def mtp_nic_ocp_adapter_fru_init(self, slot, fpo=False):
@@ -3941,29 +3925,27 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
 
-    def mtp_nic_load_scan_fru(self, nic_fru_cfg=None):
-        self.cli_log_inf("Load NIC FRU config")
-        for slot in range(self._slots):
-            sn = self.get_scanned_sn(slot)
-            self.mtp_set_nic_scan_sn(slot, sn)
-        self.cli_log_inf("Load NIC FRU config complete\n")
+    def mtp_nic_load_scan_fru(self, slot):
+        self.cli_log_slot_inf(slot, "Load NIC FRU config")
+        sn = self.get_scanned_sn(slot)
+        self.mtp_set_nic_scan_sn(slot, sn)
         return True
 
-    def mtp_populate_fru_to_scans(self, nic_fru_cfg, pass_nic_list, dpn="", sku=""):
+    def mtp_populate_fru_to_scans(self, slot, nic_fru_cfg, dpn="", sku=""):
         """
             When skipping scanning (e.g. for modeling/QA), still need the barcode_scans object to be filled.
             So copy the values from actual FRU.
         """
-        for slot in pass_nic_list:
-            key = libmfg_utils.nic_key(slot)
-            self.barcode_scans[key] = dict()
-            self.barcode_scans[key][bf.SN] = nic_fru_cfg[key][bf.SN]
-            self.barcode_scans[key][bf.MAC] = nic_fru_cfg[key][bf.MAC]
-            self.barcode_scans[key][bf.PN] = nic_fru_cfg[key][bf.PN]
-            if dpn:
-                self.barcode_scans[key][bf.DPN] = dpn
-            if sku:
-                self.barcode_scans[key][bf.SKU] = sku
+        key = libmfg_utils.nic_key(slot)
+        self.barcode_scans[key] = dict()
+        self.barcode_scans[key][bf.SN] = nic_fru_cfg[key][bf.SN]
+        self.barcode_scans[key][bf.MAC] = nic_fru_cfg[key][bf.MAC]
+        self.barcode_scans[key][bf.PN] = nic_fru_cfg[key][bf.PN]
+        self.barcode_scans[key]["TS"] = nic_fru_cfg[key]["TS"]
+        if dpn:
+            self.barcode_scans[key][bf.DPN] = dpn
+        if sku:
+            self.barcode_scans[key][bf.SKU] = sku
 
     def mtp_populate_dpn_sku_to_scans(self, slot, dpn="", sku=""):
         """
@@ -3983,7 +3965,7 @@ class mtp_ctrl():
         self.cli_log_inf("MTP NIC Info Dump:")
 
         for slot in nic_list:
-            prsnt = self.mtp_nic_check_prsnt(slot)
+            prsnt = slot not in self.mtp_nic_check_prsnt(slot)
             nic_type = self.mtp_get_nic_type(slot)
 
             if prsnt:
@@ -4039,6 +4021,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "NIC is Absent")
         self.cli_log_inf("End MTP NIC Info Dump")
 
+        return []
 
     def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
@@ -4089,102 +4072,6 @@ class mtp_ctrl():
                     return False
         return True
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, fpo, stop_on_err, vmarg_percentage=""):
-        ret = True
-        nic_type = self.mtp_get_nic_type(slot)
-
-        start_ts = self.log_slot_test_start(slot, "NIC_DIAG_INIT")
-
-        # (DIAG_INIT, START_DIAG) START
-        dsp = "DIAG_INIT"
-        sn = self.mtp_get_nic_sn(slot)
-        test = "START_DIAG"
-        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = self.log_slot_test_start(slot, test)
-
-        if ret and not self.mtp_nic_emmc_init(slot, emmc_format, emmc_check=emmc_check):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-
-        if ret and not self.mtp_mgmt_setup_nic_diag(slot, emmc_format):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-
-        if ret and not self.mtp_mgmt_start_nic_diag(slot, aapl, dis_hal):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-
-        if ret:
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        # (DIAG_INIT, START_DIAG) END
-
-        # (DIAG_INIT, CPLD_DIAG) START
-        test = "CPLD_DIAG"
-        self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        # self._nic_test_block_log_list[slot].append(self.get_cli_log_slot_msg(slot,MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test), 0, "INF") )
-        start_ts = self.log_slot_test_start(slot, test)
-
-        if ret and not self.mtp_nic_cpld_init(slot):
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            ret = False
-
-        if not emmc_format:
-            if ret and not self.mtp_check_nic_cpld_partition(slot):
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                ret = False
-
-        if ret:
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-        # (DIAG_INIT, CPLD_DIAG) END
-
-        if ret and fru_valid:
-            if fpo:
-                init_date = False
-            else:
-                init_date = True
-            if not self.mtp_nic_fru_init(slot, init_date, nic_type, fru_fpo):
-                ret = False
-            fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
-            if fru_info_list:
-                self.mtp_set_nic_sn(slot, fru_info_list[0])
-            else:
-                self.cli_log_slot_err(slot, "Unable to load SN")
-                ret = False
-
-        if ret:
-            # (DIAG_INIT, NIC_VMARG) START
-            test = "NIC_VMARG"
-            self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = self.log_slot_test_start(slot, test)
-
-            if ret and not self.mtp_set_nic_vmarg(slot, vmargin, vmarg_percentage):
-                ret = False
-
-            if ret and not self.mtp_nic_display_voltage(slot):
-                ret = False
-
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            if not ret:
-                self.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            else:
-                self.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            # (DIAG_INIT, NIC_VMARG) END
-
-        duration = self.log_slot_test_stop(slot, "NIC_DIAG_INIT", start_ts)
-
-        if not ret:
-            self.mtp_set_nic_status_fail(slot)
-
-        return ret
-
     def mtp_nic_mgmt_seq_init(self, nic_list, fpo, stop_on_err=False):
         for slot in nic_list:
             if self._nic_prsnt_list[slot] and self.mtp_check_nic_status(slot):
@@ -4196,105 +4083,68 @@ class mtp_ctrl():
                         continue
         return True
 
-    def mtp_nic_mgmt_para_init_fpo(self, nic_list, stop_on_err=False):
-        nic_test_list = list()
-        for slot in nic_list:
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_check_nic_status(slot):
-                    self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
-                    if stop_on_err:
-                        return False
-                    else:
-                        continue
-                nic_test_list.append(slot)
-        nic_list = nic_test_list
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_nic_test_setup_multi(self, nic_list, mgmt=True, fpo=False, aapl=False, swm_lp=False, stop_on_err=False):
+        fail_nic_list = list()
 
         if not nic_list:
-            self.cli_log_err("No NICs passed")
-            return False
+            # self.cli_log_err("No NICs passed")
+            return fail_nic_list
 
-        # parallel init mgmt
-        dsp = "DIAG_INIT"
-        sn = ""
-        test = "NIC_PARA_MGMT_FPO_INIT"
-        start_ts = libmfg_utils.timestamp_snapshot()
-
-        mtp_start_ts = self.log_test_start(test)
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(int(slot))
-            slot_start_ts = self.log_slot_test_start(slot, test)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        # first slot will be the "main" slot to issue the commands on.
+        slot_main = nic_list[0]
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
         asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
-        for slot in nic_list:
-            self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
-        cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
-
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            duration = self.log_test_stop(test, start_ts)
+        if not mgmt:
             for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-            return False
-        if "failed" in self.mtp_get_cmd_buf():
-            match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
+                self.cli_log_slot_inf(slot, "Para Init NIC environment")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
+        elif fpo:
+            for slot in nic_list:
+                self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+        elif aapl:
+            for slot in nic_list:
+                self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
+        else:
+            for slot in nic_list:
+                self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
+            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if swm_lp:
+                cmd = "".join((cmd, " -swm_lp"))
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+        # self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
+        if "failed" in self.mtp_get_nic_cmd_buf(slot_main):
+            match = re.search("failed! *([0-9,]+)", self.mtp_get_nic_cmd_buf(slot_main))
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
-                    self.cli_log_slot_err_lock(slot, "Para Init NIC MGMT failed")
+                    self.cli_log_slot_err(slot, "Para Init NIC MGMT failed")
                     self.mtp_set_nic_status_fail(slot)
+                    fail_nic_list.append(slot)
+                    if stop_on_err:
+                        return fail_nic_list
 
-        if not self.mtp_nic_mgmt_mac_refresh(nic_list):
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-            return False
+        return fail_nic_list
 
-        duration = self.log_test_stop(test, start_ts)
-        for slot in nic_list:
-            self.log_slot_test_stop(slot, test, start_ts)
-            sn = self.mtp_get_nic_sn(int(slot))
-            if not self.mtp_check_nic_status(slot):
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(slot)
-            dsp = "DIAG_INIT"
-            test = "NIC_BOOT_INIT"
-            if not self.mtp_check_nic_status(slot):
-                continue
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = self.log_slot_test_start(slot, test)
-
-            if not self.mtp_nic_boot_info_init(slot):
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-                if stop_on_err:
-                    return False
-                else:
-                    continue
-            else:
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        return True
+    def mtp_nic_mgmt_para_init_fpo(self, nic_list, stop_on_err=False):
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, fpo=True, stop_on_err=stop_on_err)
+        if stop_on_err:
+            return fail_setup_multi_list
+        fail_mac_refresh_list = self.mtp_nic_mgmt_mac_refresh(nic_list)
+        return libmfg_utils.list_union(fail_setup_multi_list, fail_mac_refresh_list)
 
     def nic_semi_parallel_log(self, nic_list, buf):
         buf = buf[:]  # make a copy
@@ -4318,115 +4168,11 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_mgmt_para_init(self, nic_list, aapl, swm_lp=False, stop_on_err=False):
-        nic_test_list = list()
-        for slot in nic_list:
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_check_nic_status(slot):
-                    self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
-                    if stop_on_err:
-                        return False
-                    else:
-                        continue
-                nic_test_list.append(slot)
-        nic_list = nic_test_list
-
-        if not nic_list:
-            self.cli_log_err("No NICs passed")
-            return False
-
-        # parallel init mgmt/aapl
-        dsp = "DIAG_INIT"
-        sn = ""
-        test = "NIC_PARA_MGMT_AAPL_INIT" if aapl else "NIC_PARA_MGMT_INIT"
-        start_ts = libmfg_utils.timestamp_snapshot()
-
-        mtp_start_ts = self.log_test_start(test)
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(int(slot))
-            slot_start_ts = self.log_slot_test_start(slot, test)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
-
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
-        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
-        sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
-        if aapl:
-            for slot in nic_list:
-                self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_AAPL_FMT.format(nic_list_param, asic_type)
-        else:
-            for slot in nic_list:
-                self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
-            cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-            if swm_lp:
-                cmd = "".join((cmd, " -swm_lp"))
-            # in case of nic-to-nic loopback, disable network ports:
-            if asic_type == "elba":
-                cmd = "".join((cmd, " -dis_net_port"))
-
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-            return False
-        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
-        if "failed" in self.mtp_get_cmd_buf():
-            match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
-            if match:
-                for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
-                    slot = slot-1
-                    self.cli_log_slot_err_lock(slot, "Para Init NIC MGMT failed")
-                    self.mtp_set_nic_status_fail(slot)
-
-        if not self.mtp_nic_mgmt_mac_refresh(nic_list):
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-            return False
-
-        duration = self.log_test_stop(test, start_ts)
-        for slot in nic_list:
-            self.log_slot_test_stop(slot, test, start_ts)
-            sn = self.mtp_get_nic_sn(int(slot))
-            if not self.mtp_check_nic_status(slot):
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(slot)
-            dsp = "DIAG_INIT"
-            test = "NIC_BOOT_INIT"
-            if not self.mtp_check_nic_status(slot):
-                continue
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-            start_ts = self.log_slot_test_start(slot, test)
-
-            if not self.mtp_nic_boot_info_init(slot):
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-                if stop_on_err:
-                    return False
-                else:
-                    continue
-            else:
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        return True
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, aapl=aapl, swm_lp=swm_lp, stop_on_err=stop_on_err)
+        if stop_on_err:
+            return fail_setup_multi_list
+        fail_mac_refresh_list = self.mtp_nic_mgmt_mac_refresh(nic_list)
+        return libmfg_utils.list_union(fail_setup_multi_list, fail_mac_refresh_list)
 
     def mtp_nic_edma_env_init(self, nic_list, stop_on_err=False):
         if not nic_list:
@@ -4504,241 +4250,223 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_para_init(self, nic_list, stop_on_err=False):
-        nic_test_list = list()
-        for slot in nic_list:
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_check_nic_status(slot):
-                    self.cli_log_slot_err(slot, "Para Init NIC MGMT port bypassed for failed NIC")
-                    if stop_on_err:
-                        return False
-                    else:
-                        continue
-                nic_test_list.append(slot)
-        nic_list = nic_test_list
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, mgmt=False, stop_on_err=stop_on_err)
+        return fail_setup_multi_list
 
-        if not nic_list:
-            self.cli_log_err("No NICs passed")
-            return False
-
-        # parallel init nic
-        dsp = "DIAG_INIT"
-        sn = ""
-        test = "NIC_PARA_INIT"
-        start_ts = libmfg_utils.timestamp_snapshot()
-
-        mtp_start_ts = self.log_test_start(test)
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(int(slot))
-            slot_start_ts = self.log_slot_test_start(slot, test)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
-
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
-        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
-        sig_list = [MFG_DIAG_SIG.NIC_PARA_SIG]
-        for slot in nic_list:
-            self.cli_log_slot_inf(slot, "Para Init NIC port")
-        cmd = MFG_DIAG_CMDS.MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
-
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-            for slot in nic_list:
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            return False
-        self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
-        if "failed" in self.mtp_get_cmd_buf():
-            match = re.search("failed! *([0-9,]+)", self.mtp_get_cmd_buf())
-            if match:
-                for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
-                    slot = slot-1
-                    self.cli_log_slot_err_lock(slot, "Para Init NIC failed")
-                    self.mtp_set_nic_status_fail(slot)
-
-        duration = self.log_test_stop(test, start_ts)
-        for slot in nic_list:
-            self.log_slot_test_stop(slot, test, start_ts)
-            sn = self.mtp_get_nic_sn(int(slot))
-            if not self.mtp_check_nic_status(slot):
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                if stop_on_err:
-                    return False
-                else:
-                    continue
-            else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        return True
-
-    def mtp_nic_mgmt_mac_refresh(self, nic_list):
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_mgmt_mac_refresh(self, slot):
         # delete the arp entry
-        for slot in nic_list:
-            if self._nic_prsnt_list[slot]:
-                ipaddr = libmfg_utils.get_nic_ip_addr(slot)
-                cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
-                if not self.mtp_mgmt_exec_sudo_cmd(cmd):
-                    return False
+        if self._nic_prsnt_list[slot]:
+            ipaddr = libmfg_utils.get_nic_ip_addr(slot)
+            cmd = MFG_DIAG_CMDS.MTP_ARP_DELET_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                return False
 
-                # Have seen failures on Naples25SWM where ping fails and ARP table is not populated
-                # Add a 2nd ping try as a work around.
-                # first ping, send only 1 packet to wake it up
+            ###Have seen failures on Naples25SWM where ping fails and ARP table is not populated
+            ###Add a 2nd ping try as a work around.   
+            # first ping, send only 1 packet to wake it up
 
-                # time.sleep(5)
-                cmd = "ping -c 1 {:s}".format(ipaddr)
-                if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
-                    return False
+            # time.sleep(5)
+            cmd = "ping -c 1 {:s}".format(ipaddr)
+            if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+                return False
 
-                # time.sleep(5)
-                cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
-                if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
-                    return False
+            # time.sleep(5)
+            cmd = MFG_DIAG_CMDS.MTP_NIC_PING_FMT.format(ipaddr)
+            if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+                return False
 
         return True
 
-    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False, fru_fpo=False):
-        ret = True
-        if not nic_list:
-            self.cli_log_err("No NICs passed")
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_diag_init_start_diag(self, slot, emmc_format, emmc_check, aapl, dis_hal):
+        if not self.mtp_nic_emmc_init(slot, emmc_format, emmc_check=emmc_check):
             return False
+        if not self.mtp_mgmt_setup_nic_diag(slot, emmc_format):
+            return False
+        if not self.mtp_mgmt_start_nic_diag(slot, aapl, dis_hal):
+            return False
+        return True
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_diag_init_cpld_diag(self, slot, emmc_format):
+        if not self.mtp_nic_cpld_init(slot):
+            return False
+        if not emmc_format:
+            if not self.mtp_check_nic_cpld_partition(slot):
+                return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_diag_init_fru_init(self, slot, init_date, fru_fpo):
+        ret = True
+        nic_type = self.mtp_get_nic_type(slot)
+        if not self.mtp_nic_fru_init(slot, init_date, nic_type, fru_fpo):
+            ret = False
+        fru_info_list = self._nic_ctrl_list[slot].nic_get_fru()
+        if fru_info_list:
+            self.mtp_set_nic_sn(slot, fru_info_list[0])
+        else:
+            self.cli_log_slot_err(slot, "Unable to load SN")
+            ret = False
+        return ret
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_diag_init_nic_vmarg(self, slot, vmargin):
+        vmarg_percentage = ""
+        if vmargin in (Voltage_Margin.high, Voltage_Margin.low):
+            partnumber = ""
+            for nic_controller in  self._nic_ctrl_list:
+                if nic_controller._pn:
+                    partnumber = nic_controller._pn
+                    break
+            vmarg_percentage = libmfg_utils.pick_voltage_margin_percentage(partnumber)
+            vmarg_percentage = vmarg_percentage.strip("_")
+            self.cli_log_slot_inf(slot, "Got Vmargin Percentage: {:s} With Part Number: {:s} ".format(vmarg_percentage, partnumber))
+
+        if not self.mtp_set_nic_vmarg(slot, vmargin, vmarg_percentage):
+            return False
+        if not self.mtp_nic_display_voltage(slot):
+            return False
+        return True
+
+    def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False, fru_fpo=False, skip_test_list=[], dsp="DIAG_INIT"):
+        fail_nic_list = list()
+        nic_list = nic_list[:]
+        if not nic_list:
+            return []
         # if 2D list passed from regression, need to flatten it
         if isinstance(nic_list[0], list):
             nic_list = libmfg_utils.flatten_list_of_lists(nic_list)
 
+        # parse args
         # emmc_format will be true only for the first time boot up
         fpo = emmc_format
+        if nic_util:
+            # for QA only not DL: do mgmt para init but do emmc format.
+            emmc_format = True
+        if fru_valid:
+            if fpo:
+                init_date = False
+            else:
+                init_date = True
+
+        # construct test_list
+        test_list = []
         if fpo:
             self.cli_log_inf("Init NIC Diag Environment with FPO set", level=0)
         else:
             self.cli_log_inf("Init NIC Diag Environment", level=0)
 
         if sn_tag:
-            self.mtp_nic_load_scan_fru(fru_cfg)
+            test_list.append("SCANS_LOAD")
         else:
             self.cli_log_inf("Bypass NIC SN/MAC load")
-
         if fpo:
-            # ret = self.mtp_nic_mgmt_seq_init(nic_list, fpo, stop_on_err)
-            ret = self.mtp_nic_mgmt_para_init_fpo(nic_list, stop_on_err)
+            test_list.append("NIC_PARA_MGMT_FPO_INIT")
+        elif aapl:
+            test_list.append("NIC_PARA_MGMT_AAPL_INIT")
         else:
-            ret = self.mtp_nic_mgmt_para_init(nic_list, aapl, swm_lp, stop_on_err)
-
-        if not ret:
-            return False
-
-        if not self.mtp_mgmt_nic_mac_validate():
-            return False
-
-        if nic_util:
-            # for QA only not DL: do mgmt para init but do emmc format.
-            emmc_format = True
-
-        vmarg_percentage = ""
-        if vmargin in (Voltage_Margin.high, Voltage_Margin.low):
-            partnumber = ""
-            for nic_controller in self._nic_ctrl_list:
-                if nic_controller._pn:
-                    partnumber = nic_controller._pn
-                    break
-            vmarg_percentage = libmfg_utils.pick_voltage_margin_percentage(partnumber)
-            vmarg_percentage = vmarg_percentage.strip("_")
-            self.cli_log_inf("Got Vmargin Percentage: {:s} With Part Number: {:s} ".format(vmarg_percentage, partnumber),  level=0)
-
-        nic_thread_list = list()
-        for slot in nic_list:
-            if not self._nic_prsnt_list[slot] or not self.mtp_check_nic_status(slot):
-                continue
-            nic_thread = threading.Thread(target=self.mtp_single_nic_diag_init,
-                                          args=(slot,
-                                                emmc_format,
-                                                emmc_check,
-                                                fru_valid,
-                                                vmargin,
-                                                aapl,
-                                                dis_hal,
-                                                fru_fpo,
-                                                fpo,
-                                                stop_on_err,
-                                                vmarg_percentage))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
+            test_list.append("NIC_PARA_MGMT_INIT")
+        test_list.append("NIC_BOOT_INIT")
+        test_list.append("MAC_VALIDATE")
+        test_list.append("START_DIAG")
+        test_list.append("CPLD_DIAG")
+        if fru_valid:
+            test_list.append("NIC_FRU_INIT")
+        test_list.append("NIC_VMARG")
         if fru_valid and sn_tag:
-            if not self.mtp_nic_scan_fru_validate(nic_list):
-                return False
-
+            test_list.append("SCANS_VALIDATE")
         if not skip_info_dump:
-            self.mtp_nic_info_disp(nic_list, fru_valid)
+            test_list.append("INFO_DUMP")
+
+        for test in test_list:
+            if test in skip_test_list:
+                test_utils.test_skip_nic_log_message(self, nic_list, dsp, test)
+                continue
+
+            start_ts = self.log_test_start(test)
+            test_utils.test_start_nic_log_message(self, nic_list, dsp, test)
+
+            if test == "SCANS_LOAD":
+                rlist = self.mtp_nic_load_scan_fru(nic_list)
+            elif test == "SCANS_VALIDATE":
+                rlist = self.mtp_nic_scan_fru_validate(nic_list)
+            elif test == "NIC_PARA_MGMT_FPO_INIT":
+                rlist = self.mtp_nic_mgmt_para_init_fpo(nic_list, stop_on_err)
+            elif test == "NIC_PARA_MGMT_INIT":
+                rlist = self.mtp_nic_mgmt_para_init(nic_list, aapl, swm_lp, stop_on_err)
+            elif test == "NIC_PARA_MGMT_AAPL_INIT":
+                rlist = self.mtp_nic_mgmt_para_init(nic_list, aapl, swm_lp, stop_on_err)
+            elif test == "NIC_BOOT_INIT":
+                rlist = self.mtp_nic_boot_info_init(nic_list)
+            elif test == "MAC_VALIDATE":
+                rlist = self.mtp_mgmt_nic_mac_validate(nic_list)
+            elif test == "START_DIAG":
+                rlist = self.mtp_nic_diag_init_start_diag(nic_list, emmc_format, emmc_check, aapl, dis_hal)
+            elif test == "CPLD_DIAG":
+                rlist = self.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format)
+            elif test == "NIC_FRU_INIT":
+                rlist = self.mtp_nic_diag_init_fru_init(nic_list, init_date, fru_fpo)
+            elif test == "NIC_VMARG":
+                rlist = self.mtp_nic_diag_init_nic_vmarg(nic_list, vmargin)
+            elif test == "INFO_DUMP":
+                rlist = self.mtp_nic_info_disp(nic_list, fru_valid)
+            else:
+                self.cli_log_err("Unknown test '{:s}'".format(test), level=0)
+                rlist = nic_list[:]
+
+            # if any slot failed and not counted in fail list, fail it
+            for slot in nic_list:
+                if not self.mtp_check_nic_status(slot) and slot not in rlist:
+                    rlist.append(slot)
+
+            # catch bad return value
+            if not isinstance(rlist, list):
+                mtp_mgmt_ctrl.cli_log_err("Test failed with '{}', expected slot list".format(repr(rlist)))
+                rlist = nic_list[:]
+
+            for slot in rlist:
+                self.mtp_set_nic_status_fail(slot)
+                nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+
+            duration = self.log_test_stop(test, start_ts)
+            test_utils.test_fail_nic_log_message(self, rlist, dsp, test, start_ts)
+            test_utils.test_pass_nic_log_message(self, nic_list, dsp, test, start_ts)
+
+            if rlist and stop_on_err:
+                self.cli_log_err("caught stop_on_err in {:s}".format(test), level=0)
+                break
 
         self.mtp_mgmt_killall_tclsh_picocom()
 
-        # if any slot failed, return false
-        for slot in nic_list:
-            if not self.mtp_check_nic_status(slot):
-                ret = False
+        self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
+        return fail_nic_list
 
-        self.cli_log_inf("Init NIC Diag Environment complete\n", level=0)
-        return ret
-
-    # check if any duplicate mac address in the internal network
-    def mtp_mgmt_nic_mac_validate(self):
-        # self.cli_log_inf("NIC MAC address validate started")
-        dsp = "DIAG_INIT"
-        test = "MAC_VALIDATE"
-        start_ts = libmfg_utils.timestamp_snapshot()
+    @parallelize.parallel_nic_using_ssh
+    def mtp_mgmt_nic_mac_validate(self, slot):
+        """ check if any duplicate mac address in the internal network """
+        self.cli_log_slot_inf(slot, "Validating NIC MAC address")
         nic_mac_addr_list = []
         nic_ip_addr_list = []
         # mac_addr_reg_exp = r"([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
         mac_addr_reg_exp = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).+([a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2})"
         cmd = MFG_DIAG_CMDS.MTP_NIC_MAC_DISP_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            # self.cli_log_err("Failed to validate NIC MAC address")
-            self.cli_log_slot_inf(None, MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test))
-            duration = libmfg_utils.timestamp_snapshot() - start_ts
-            self.cli_log_slot_err(None, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", dsp, test, "FAILED", str(duration)))
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Failed to validate NIC MAC address")
             return False
 
-        match = re.findall(mac_addr_reg_exp, self.mtp_get_cmd_buf())
+        match = re.findall(mac_addr_reg_exp, self.mtp_get_nic_cmd_buf(slot))
         if match:
             for nic_info in match:
                 if nic_info[0] in nic_ip_addr_list or nic_info[1] in nic_mac_addr_list:
                     slot = int(nic_info[0].split('.')[3]) - 101
-                    sn = self.mtp_get_nic_sn(slot)
-                    self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                    duration = libmfg_utils.timestamp_snapshot() - start_ts
-                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", str(duration)))
-                    return False
                 else:
                     slot = int(nic_info[0].split('.')[3]) - 101
-                    sn = self.mtp_get_nic_sn(slot)
-                    self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                    duration = libmfg_utils.timestamp_snapshot() - start_ts
-                    self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, str(duration)))
-                    start_ts = libmfg_utils.timestamp_snapshot()
-                    nic_ip_addr_list.append(nic_info[0])
-                    nic_mac_addr_list.append(nic_info[1])
-
             return True
         else:
-            self.cli_log_slot_inf(None, MTP_DIAG_Report.NIC_DIAG_TEST_START.format("", dsp, test))
-            duration = libmfg_utils.timestamp_snapshot() - start_ts
-            self.cli_log_slot_err(None, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format("", dsp, test, "FAILED", str(duration)))
             return False
 
     def mtp_power_on_nic(self, slot_list=[], dl=False, count_down=True):
@@ -4804,13 +4532,16 @@ class mtp_ctrl():
         self.mtp_nic_unlock()
         return True
 
+    @parallelize.parallel_nic_using_nic_test
     def mtp_power_cycle_nic(self, slot_list=[], dl=False, count_down=True):
         rc = self.mtp_power_off_nic(slot_list)
         if not rc:
-            return rc
+            return slot_list[:]
 
         rc = self.mtp_power_on_nic(slot_list, dl, count_down)
-        return rc
+        if not rc:
+            return slot_list[:]
+        return []
 
     def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
@@ -5073,6 +4804,7 @@ class mtp_ctrl():
                     self._nic_ctrl_list[slot]._asic_type = "capri"
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_check_prsnt(self, slot):
         return self._nic_prsnt_list[slot]
 
@@ -5170,6 +4902,7 @@ class mtp_ctrl():
         else:
             return False
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_erase_board_config(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_board_config():
             self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
@@ -5179,6 +4912,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Erase NIC Board Config")
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_erase_board_config_ssh(self, slot):
         if not self._nic_ctrl_list[slot].nic_erase_board_config_ssh():
             self.cli_log_slot_err(slot, "Erase NIC Board Config failed")
@@ -5188,6 +4922,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Erase NIC Board Config")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_cpld_update_request(self, slot):
         if not self._nic_ctrl_list[slot].nic_cpld_update_request():
             if not self._nic_ctrl_list[slot].nic_check_status():
@@ -5200,6 +4935,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Need to Update CPLD")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_nic_console_access(self, slot):
         if not self._nic_ctrl_list[slot].nic_console_access():
             self.cli_log_slot_err(slot, "Get NIC Console Access failed")
@@ -5266,6 +5002,17 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "'{:s}' Type not valid for this script folder".format(nic_type))
             return False
 
+    def get_slots_of_type(self, nic_type, nic_list=range(MTP_Const.MTP_SLOT_NUM), except_type=[]):
+        if isinstance(except_type, NIC_Type) or isinstance(except_type, str):
+            except_type = list(except_type)
+        if isinstance(nic_type, NIC_Type) or isinstance(nic_type, str):
+            return [slot for slot in nic_list if self.mtp_get_nic_type(slot) == nic_type]
+        elif isinstance(nic_type, list) or isinstance(nic_type, tuple):
+            nic_type = libmfg_utils.list_subtract(nic_type, except_type)
+            return [slot for slot in nic_list if self.mtp_get_nic_type(slot) in nic_type]
+        else:
+            return []
+
     def mtp_nic_pn_valid(self, slot):
         if self._nic_ctrl_list[slot] is None:
             self.cli_log_slot_err(slot, "NIC not initialized")
@@ -5285,7 +5032,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "'{:s}' PN not valid for this script folder".format(pn))
             return False
 
-    @test_utils.semi_parallel_test_section
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_list_type_test(self, slot):
         # same as mtp_nic_type_test but call on a nic_list instead of single slot
         return self.mtp_nic_type_test(slot)
@@ -5347,6 +5094,7 @@ class mtp_ctrl():
         if self._nic_ctrl_list:
             return self._nic_ctrl_list[slot]._dpn
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_diag_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_diag_boot():
             self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
@@ -5406,6 +5154,10 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Setup uboot env variables failed")
             return False
         return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_check_nic_list_status(self, slot):
+        return self._nic_ctrl_list[slot].nic_check_status()
 
     def mtp_check_nic_status(self, slot):
         return self._nic_ctrl_list[slot].nic_check_status()
@@ -5531,12 +5283,13 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default extdiag boot")
         return True
 
-    def mtp_mgmt_run_test_mtp_para(self, test, nic_list, vmarg, edvt_loop_idx=1):
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_mgmt_run_test_mtp_para(self, nic_list, test, vmarg, edvt_loop_idx=1):
         nic_fail_list = list()
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return ["TIMEOUT", nic_list[:]]
+            return nic_list[:]
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.MTP_PARA_TEST_SIG]
@@ -5563,7 +5316,7 @@ class mtp_ctrl():
 
             if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                 self.cli_log_err("Incorrect test for this NIC TYPE")
-                return ["FAIL", nic_list[:]]
+                return nic_list[:]
             elif nic_type == NIC_Type.ORTANO2:
                 if self.mtp_is_nic_ortano_oracle(slot):
                     cmd = MFG_DIAG_CMDS.MTP_PARA_SNAKE_ELBA_ORC_FMT.format(nic_list_param, n_vmarg)
@@ -5597,7 +5350,7 @@ class mtp_ctrl():
             nic_type = self.mtp_get_nic_type(slot)
             if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                 self.cli_log_err("Incorrect test for this NIC TYPE")
-                return ["FAIL", nic_list[:]]
+                return nic_list[:]
             else:
                 if nic_type in ELBA_NIC_TYPE_LIST:
                     cmd = MFG_DIAG_CMDS.MTP_PARA_PRBS_ETH_ELBA_FMT.format(nic_list_param, n_vmarg)
@@ -5633,12 +5386,11 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_PARA_DDR_BIST_ELBA_FMT.format(nic_list_param, n_vmarg)
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return ["FAIL", nic_list[:]]
+            return nic_list[:]
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_TIMEOUT):
             self.cli_log_err("Run MTP Parallel Test {:s} Failed".format(test))
-            return ["TIMEOUT", nic_list[:]]
-        ret = "SUCCESS"
+            return nic_list[:]
         cmd_buf = self.mtp_get_cmd_buf()
         buf_before_sig = self.mtp_get_cmd_buf_before_sig()
 
@@ -5656,9 +5408,8 @@ class mtp_ctrl():
             if not rslt_list[slot]:
                 if slot not in nic_fail_list:
                     nic_fail_list.append(slot)
-                    ret = "FAIL"
 
-        return [ret, nic_fail_list]
+        return nic_fail_list
 
     def mtp_mgmt_run_test_mtp_para_with_oneline_summary(self, test, nic_list, vmarg):
         if not nic_list:
@@ -5805,6 +5556,7 @@ class mtp_ctrl():
         self.cli_log_inf("Reset the MTP JTAG Interface complete", level=0)
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_board_config(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
@@ -5842,15 +5594,15 @@ class mtp_ctrl():
             elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
                 preset_config = "8"
             else:
-                self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
+                self.cli_log_slot_err(slot, "Board config not supported on this NIC")
                 return False
 
         else:
-            self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
+            self.cli_log_slot_err(slot, "Board config not supported on this NIC")
             return False
 
         if not self._nic_ctrl_list[slot].nic_set_board_config(preset_config):
-            self.cli_log_slot_err_lock(slot, "Set board config failed")
+            self.cli_log_slot_err(slot, "Set board config failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -5909,6 +5661,8 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, vdd_arm_offset_match[0], level=1)
         return True
 
+
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_avs(self, slot):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
@@ -6044,6 +5798,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_fix_vrm(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type == NIC_Type.ORTANO2:
@@ -6216,15 +5971,23 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_console_lock(self):
+        # fpga implementation allows multiple console
+        if self._mtp_type == MTP_TYPE.MATERA: return
         self._nic_console_lock.acquire()
 
     def mtp_nic_console_unlock(self):
+        # fpga implementation allows multiple console
+        if self._mtp_type == MTP_TYPE.MATERA: return
         self._nic_console_lock.release()
 
     def mtp_single_j2c_lock(self):
+        # fpga implementation allows multiple j2c
+        if self._mtp_type == MTP_TYPE.MATERA: return
         self._j2c_lock.acquire()
 
     def mtp_single_j2c_unlock(self):
+        # fpga implementation allows multiple j2c
+        if self._mtp_type == MTP_TYPE.MATERA: return
         self._j2c_lock.release()
 
     def mtp_turbo_j2c_lock(self, slot):
@@ -6474,97 +6237,82 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_construct_nic_fru_config(self, fail_nic_list, swmtestmode=Swm_Test_Mode.SW_DETECT):
-        # construct nic fru config file
-        temp_fru_cfg = dict()
-        temp_fru_cfg["MTP_ID"] = self._id
-        temp_fru_cfg["MTP_TS"] = libmfg_utils.get_timestamp()
-        for slot in range(self._slots):
-            key = libmfg_utils.nic_key(slot)
-            temp_fru_cfg[key] = dict()
-            if slot in fail_nic_list or not self.mtp_check_nic_status(slot):
-                temp_fru_cfg[key]["VALID"] = False
-                continue
-            if self.mtp_nic_check_prsnt(slot):
-                nic_type = self.mtp_get_nic_type(slot)
-                temp_fru_cfg[key]["VALID"] = True
-                temp_fru_cfg[key]["TS"] = libmfg_utils.get_fru_date()
-                nic_fru_info = self.mtp_get_nic_fru(slot)
-                if nic_fru_info:
-                    temp_fru_cfg[key][bf.SN] = nic_fru_info[0]
-                    temp_fru_cfg[key][bf.MAC] = nic_fru_info[1].replace('-', '')
-                    temp_fru_cfg[key][bf.PN] = nic_fru_info[2]
-                    temp_fru_cfg[key][bf.DPN] = self._nic_ctrl_list[slot]._dpn
-                    temp_fru_cfg[key][bf.SKU] = self.get_scanned_sku(slot)
-                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        nic_fru_info = self.mtp_get_nic_alom_fru(slot)
-                        temp_fru_cfg[key][bf.ALOM_SN] = nic_fru_info[0]
-                        temp_fru_cfg[key][bf.ALOM_PN] = nic_fru_info[1]
-                else:
-                    temp_fru_cfg[key]["VALID"] = False
-                    temp_fru_cfg[key][bf.SN] = "DEADBEEF"
-                    temp_fru_cfg[key][bf.MAC] = "DEADBEEF"
-                    temp_fru_cfg[key][bf.PN] = "DEADBEEF"
-                    if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                        temp_fru_cfg[key][bf.ALOM_SN] = "DEADBEEF"
-                        temp_fru_cfg[key][bf.ALOM_PN] = "DEADBEEF"
-            else:
-                temp_fru_cfg[key]["VALID"] = False
+    def mtp_construct_nic_fru_config(self, slot, swmtestmode=Swm_Test_Mode.SW_DETECT):
+        read_fru_cfg = dict()
+        read_fru_cfg["VALID"] = True
+        nic_fru_info = self.mtp_get_nic_fru(slot)
+        if not nic_fru_info:
+            self.cli_log_slot_err(slot, "Errors while loading FRU from this board")
+            read_fru_cfg["VALID"] = False
+            return read_fru_cfg
+        read_fru_cfg["TS"] = libmfg_utils.get_fru_date()
+        read_fru_cfg[bf.SN] = nic_fru_info[0]
+        read_fru_cfg[bf.MAC] = nic_fru_info[1].replace('-', '')
+        read_fru_cfg[bf.PN] = nic_fru_info[2]
+        read_fru_cfg[bf.DPN] = self._nic_ctrl_list[slot]._dpn
+        read_fru_cfg[bf.SKU] = self.get_scanned_sku(slot)
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+            nic_fru_info = self.mtp_get_nic_alom_fru(slot)
+            read_fru_cfg[bf.ALOM_SN] = nic_fru_info[0]
+            read_fru_cfg[bf.ALOM_PN] = nic_fru_info[1]
 
-        return temp_fru_cfg
+        return read_fru_cfg
 
-    def mtp_scan_verify(self, read_fru_cfg, scan_fru_cfg, pass_nic_list, fail_nic_list, dsp, ignore_pn_rev=False):
+    @parallelize.parallel_nic_using_ssh
+    def mtp_scan_verify(self, slot, ignore_pn_rev=False, swmtestmode=Swm_Test_Mode.SW_DETECT):
         fru_reprogram_list = list()
+        scan_fru_cfg = dict()
+        scan_fru_cfg[bf.SN] = self.get_scanned_sn(slot)
+        scan_fru_cfg[bf.MAC] = self.get_scanned_mac(slot)
+        scan_fru_cfg[bf.PN] = self.get_scanned_pn(slot)
+        scan_fru_cfg[bf.DPN] = self.get_scanned_dpn(slot)
+        scan_fru_cfg[bf.SKU] = self.get_scanned_sku(slot)
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+            scan_fru_cfg[bf.ALOM_SN] = self.get_scanned_alom_sn(slot)
+            scan_fru_cfg[bf.ALOM_PN] = self.get_scanned_alom_pn(slot)
 
-        test = "SCAN_VERIFY"
-        for slot in range(self._slots):
-            start_ts = self.log_slot_test_start(slot, test)
-            key = libmfg_utils.nic_key(slot)
-            if slot in fail_nic_list:
+        read_fru_cfg = self.mtp_construct_nic_fru_config(slot, swmtestmode)
+        if not read_fru_cfg["VALID"]:
+            self.cli_log_slot_err(slot, "Failed to load current FRU")
+            return False
+
+        ret = True
+        for item in [bf.SN, bf.MAC, bf.PN]:
+            expected = scan_fru_cfg[item]
+            received = read_fru_cfg[item]
+            if not expected:
+                self.cli_log_slot_err(slot, "Missing {:s} scan for this slot".format(item))
+                ret = False
                 continue
-            if not self.mtp_check_nic_status(slot):
-                continue
-            if not read_fru_cfg[key]["VALID"]:
-                continue
-            if not scan_fru_cfg[key]["VALID"]:
-                self.cli_log_slot_err_lock(slot, "Missing scan for this slot")
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                self.mtp_set_nic_status_fail(slot, skip_fa=True)
-                duration = self.log_slot_test_stop(slot, test, start_ts)
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key][bf.SN], dsp, test, "FAILED", duration))
+            if expected != received:
+                if item == bf.PN and ignore_pn_rev:
+                    expected = expected[:PEN_PN_MINUS_REV_MASK]
+                    received = received[:PEN_PN_MINUS_REV_MASK]
+                    if expected == received:
+                        if slot not in fru_reprogram_list:
+                            fru_reprogram_list.append(slot)
+                        continue
+
+                self.cli_log_slot_err(slot, "Incorrect {:s}. Scanned {:s}, read {:s}.".format(item, expected, received))
+                ret = False
                 continue
 
-            for item in [bf.SN, bf.MAC, bf.PN]:
-                expected = scan_fru_cfg[key][item]
-                received = read_fru_cfg[key][item]
+        return ret
 
-                if expected != received:
-                    if item == bf.PN and ignore_pn_rev:
-                        expected = expected[:PEN_PN_MINUS_REV_MASK]
-                        received = received[:PEN_PN_MINUS_REV_MASK]
-                        if expected == received:
-                            if slot not in fru_reprogram_list:
-                                fru_reprogram_list.append(slot)
-                            continue
-
-                    self.cli_log_slot_err_lock(slot, "Incorrect {:s}. Scanned {:s}, read {:s}.".format(item, expected, received))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    self.mtp_set_nic_status_fail(slot, skip_fa=True)
-                    break
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-
-            if slot in fail_nic_list:
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(read_fru_cfg[key][bf.SN], dsp, test, "FAILED", duration))
-            else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(read_fru_cfg[key][bf.SN], dsp, test, duration))
-
-        return fru_reprogram_list
+    @parallelize.parallel_nic_using_ssh
+    def fake_scan_verify(self, slot, swmtestmode=Swm_Test_Mode.SW_DETECT, scanned_dpn=False):
+        fail_scan_list = list()
+        read_fru_cfg = dict()
+        # read in current FRU
+        key = libmfg_utils.nic_key(slot)
+        read_fru_cfg[key] = self.mtp_construct_nic_fru_config(slot, swmtestmode)
+        if not read_fru_cfg[key]["VALID"]:
+            self.cli_log_slot_err(slot, "Failed to load current FRU")
+            return False
+        self.mtp_populate_fru_to_scans(slot, read_fru_cfg, dpn=scanned_dpn)
+        return True
 
     def mtp_nic_validate_sku_dpn_match(self, pass_nic_list, fail_nic_list, dsp):
         fru_reprogram_list = list()
@@ -6596,6 +6344,7 @@ class mtp_ctrl():
 
         return fru_reprogram_list
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_validate_pn_dpn_match(self, slot):
         """
             Check that scanned DPN is allowed for the part number in the FRU
@@ -6750,11 +6499,11 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Failed to init mgmt port in production FW")
             return False
 
-        if not self.mtp_nic_mgmt_mac_refresh([slot]):
+        if slot in self.mtp_nic_mgmt_mac_refresh(slot):
             self.cli_log_slot_err(slot, "MTP mac address refresh failed")
             return False
 
-        if not self.mtp_mgmt_nic_mac_validate():
+        if slot in self.mtp_mgmt_nic_mac_validate(slot):
             self.cli_log_slot_err(slot, "MTP detect duplicate mac address")
             return False
 
@@ -6811,6 +6560,11 @@ class mtp_ctrl():
         else:
             return True, err_msg_list
 
+    @parallelize.parallel_nic_using_console
+    def mtp_nic_vdd_ddr_fix_console(self, slot):
+        return self.mtp_nic_vdd_ddr_fix(slot, True)
+
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):
         d3_val = "0xb7"  # vdd_ddr switching frequency
         d4_val = "0x0a"  # vdd_ddr margin
@@ -6887,6 +6641,7 @@ class mtp_ctrl():
         # check for 3 tests with "PASS" result in elb_l1_screen*.log
         self.mtp_nic_stop_test(slot)
 
+    @parallelize.parallel_nic_using_console # should be j2c really but this test in parallel is not tested on turbo MTP
     def mtp_nic_l1_esecure_prog(self, slot):
         self.mtp_single_j2c_lock()
         self.mtp_mgmt_exec_cmd_para(slot, "killall tclsh")
@@ -6900,33 +6655,20 @@ class mtp_ctrl():
         self.mtp_single_j2c_unlock()
         return True
 
-    def mtp_nic_esec_write_protect(self, pass_nic_list=[], fail_nic_list=[], enable=False, dsp="DL"):
-        nic_list = list()
-        for slot in pass_nic_list:
-            nic_type = self.mtp_get_nic_type(slot)
-            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                nic_list.append(slot)
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_nic_esec_write_protect(self, nic_list, enable=False):
+        fail_nic_list = list()
 
         if not nic_list:
-            return True
+            return []
 
-        if enable:
-            test = "ENABLE_ESEC_WP"
-        else:
-            test = "DISABLE_ESEC_WP"
-        sn = ""
-        start_ts = libmfg_utils.timestamp_snapshot()
-
-        mtp_start_ts = self.log_test_start(test)
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(int(slot))
-            slot_start_ts = self.log_slot_test_start(slot, test)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        # first slot will be the "main" slot to issue the commands on.
+        slot_main = nic_list[0]
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.NIC_ESEC_WRITE_PROT_SIG]
@@ -6941,44 +6683,18 @@ class mtp_ctrl():
         else:
             cmd = MFG_DIAG_CMDS.NIC_DIS_ESEC_WRITE_PROT_FMT.format(nic_list_param)
 
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.NIC_ESEC_WRITE_PROT_DELAY):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-            return False
-        if "failed;" in self.mtp_get_cmd_buf():
-            duration = self.log_test_stop(test, start_ts)
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.NIC_ESEC_WRITE_PROT_DELAY):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+        if "failed;" in self.mtp_get_nic_cmd_buf(slot_main):
             match = re.search("failed slots: *([0-9,]+)", self.mtp_get_cmd_buf())
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
-                    duration = self.log_slot_test_stop(slot, test, start_ts)
-                    sn = self.mtp_get_nic_sn(int(slot))
-                    self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
+                    self.cli_log_slot_err(slot, "Esecure write-protect operation failed")
                     self.mtp_set_nic_status_fail(slot)
-                    if slot in nic_list:
-                        nic_list.remove(slot)
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-        if len(nic_list) > 0:
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            return True
-        else:
-            return False
+                    fail_nic_list.append(slot)
+        return fail_nic_list
 
     def mtp_nic_i2c_bus_scan(self, slot):
         self._nic_ctrl_list[slot].nic_i2c_bus_scan()

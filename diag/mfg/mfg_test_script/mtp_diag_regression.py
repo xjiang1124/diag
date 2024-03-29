@@ -534,7 +534,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
 
             mtp_start_ts = mtp_mgmt_ctrl.log_test_start(test)
 
-            ret, test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(test, nic_test_list, vmarg, edvt_loop_idx)
+            test_fail_list = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_test_list, test, vmarg, edvt_loop_idx)
             
             duration = mtp_mgmt_ctrl.log_test_stop(test, mtp_start_ts)
             for slot in nic_test_list[:]:
@@ -549,7 +549,7 @@ def naples_exec_mtp_para_test(mtp_mgmt_ctrl, nic_type, nic_list, para_test_list,
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, dsp, test, "FAILED", duration))
                 mtp_mgmt_ctrl.mtp_mgmt_dump_nic_pll_sta(slot)
                 if not stop_on_err:
-                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, ret, mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], skip_vrm_check=False)
+                    mtp_mgmt_ctrl.mtp_post_dsp_fail_steps(slot, test, "FAILED", mtp_mgmt_ctrl.mtp_get_cmd_buf(), [], skip_vrm_check=False)
                 if stop_on_err:
                     nic_test_list.remove(slot)
                 if slot not in fail_list:
@@ -1055,7 +1055,7 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
                     ret = mtp_mgmt_ctrl.mtp_nic_cpld_init(slot, smb=True)
                 # load diagfw version
                 elif test == "NIC_BOOT_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
+                    rlist = mtp_mgmt_ctrl.mtp_nic_boot_info_init(nic_list)
                 # check CPLD version
                 elif test == "CPLD_VERIFY":
                     ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, timestamp_check=False, console=True) # cant read timestamp from smb
@@ -1068,7 +1068,7 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
                     if not ret:
                         ret = True
                 elif test == "VDD_DDR_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix(slot, console=True)
+                    ret = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix_console(slot)
                 else:
                     mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown DL Test: {:s}, Ignore".format(test))
                     continue
