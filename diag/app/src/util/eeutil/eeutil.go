@@ -72,7 +72,7 @@ func dispInfo() {
     }
 }
 
-func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
+func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, skuMode bool) (err int) {
 
     if pn == MTPOCPADAPTER || eeprom.CustType == "MTPOCPADAPTER" {
         // OCP Adapter, CARD_TYPE not supported in env!
@@ -135,6 +135,8 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
            cardType == "LACONA32" ||
            cardType == "POMONTEDELL" ||
            cardType == "POMONTE" ||
+           cardType == "GINESTRA_D4" ||
+           cardType == "GINESTRA_D5" ||
            cardType == "NAPLES100DELL" ||
            cardType == "NAPLES100HPE" {
            eeprom.I2cAddr16 = true
@@ -216,6 +218,36 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
         }
         if eeprom.HpeAlom == true {
             eeprom.EepromTbl = eeprom.HpeAlomTblAll
+        }
+        if (cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5") {
+            if update == true {
+                if pn == "" {
+                    cli.Println("e", "For Programming Ginestra, you must enter a part number")
+                    return -1;
+                }
+                if skuMode == true {
+                    if sku == "" {
+                        cli.Println("e", "For Programming Ginestra, you must enter an SKU")
+                        return -1;
+                    }
+                    if (sku ==  eeprom.SKU_GIN_D4_ORACLE) || (sku == eeprom.SKU_GIN_D5_ORACLE) {
+                        eeprom.EepromTbl = eeprom.OrtanoOracleTbl
+                        eeprom.CustType = "ORTANO"
+                    } else if (sku == eeprom.SKU_GIN_D5_MSFT) ||
+                              (sku == eeprom.SKU_GIN_D5_SSDK) ||
+                              (sku == eeprom.SKU_GIN_D5_SSDK_B3) ||
+                              (sku == eeprom.SKU_GIN_D5_SSDK_P3){
+                        eeprom.EepromTbl = eeprom.GinestraSSDKTbl
+                        eeprom.CustType = "ORTANO"
+                    } else {
+                        cli.Println("e", "Invalid SKU '", sku,"' Entered For Programming a Ginestra Card")
+                        return -1;
+                    }
+                } else {
+                    eeprom.EepromTbl = eeprom.GinestraSSDKTbl
+                    eeprom.CustType = "ORTANO"
+                }
+            }
         }
         if (cardType == "VOMERO2") {
             eeprom.CustType = "ORACLE"
@@ -732,18 +764,25 @@ func main() {
         return
     }
 
-    var identifier string
+    var found bool
     if *skuModePtr == true {
-        identifier = sku
+        found, _ = eeprom.CardInListNew(sku)
     } else {
-        identifier = pn
+        found, _ = eeprom.CardInListNew(pn)
     }
-    found, _ := eeprom.CardInListNew(identifier)
     if !found {
-        rc := eepromTlbInit(uut, pn, *updatePtr, devName)
-        if rc != 0 {
-            cli.Println("e", "eepromTlbInit Failed\n")
-            return
+        if *skuModePtr == true {
+            rc := eepromTlbInit(uut, pn, *updatePtr, devName, sku, true)
+            if rc != 0 {
+                cli.Println("e", "eepromTlbInit Failed\n")
+                return
+            }
+        } else {
+            rc := eepromTlbInit(uut, pn, *updatePtr, devName, "", false)
+            if rc != 0 {
+                cli.Println("e", "eepromTlbInit Failed\n")
+                return
+            }
         }
     } else {
         //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
@@ -826,6 +865,7 @@ func main() {
                     return
                 }
 
+                var identifier string
                 if *skuModePtr == true {
                     identifier = sku
                 } else {
@@ -839,7 +879,7 @@ func main() {
                     return
                 } else {
                     if *skuModePtr == true {
-                        cli.Println("e", "The SKU '", sku,"' is not supported")
+                        cli.Println("e", "The SKU '", sku,"' is not supported For Programming a Ginestra Card")
                         return
                     }
                 }
