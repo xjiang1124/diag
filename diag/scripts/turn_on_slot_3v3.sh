@@ -211,6 +211,7 @@ control_all() {
         for i in {1..10}
         do
             if [[ $MTP_TYPE != "MTP_MATERA" ]]
+            then
                 reset_hub
                 turn_on_hub.sh $i
                 power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
@@ -361,6 +362,7 @@ else
     for slot in $slot_list
     do
         if [[ $MTP_TYPE != "MTP_MATERA" ]]
+        then
             reset_hub
             turn_on_hub.sh $slot
             power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
