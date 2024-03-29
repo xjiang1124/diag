@@ -117,33 +117,6 @@ func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, s
             eeprom.EepromTbl = eeprom.MtpTbl
         }
     } else {
-
-        if cardType == "NAPLES25SWM" || 
-           cardType == "NAPLES25SWMDELL" || 
-           cardType == "NAPLES25SWM833" || 
-           cardType == "NAPLES25OCP" || 
-           cardType == "VOMERO2" || 
-           cardType == "ORTANO" || 
-           cardType == "ORTANO2" || 
-           cardType == "ORTANO2I" || 
-           cardType == "ORTANO2S" || 
-           cardType == "ORTANO2A" || 
-           cardType == "ORTANO2AC" || 
-           cardType == "LACONADELL" ||
-           cardType == "LACONA" ||
-           cardType == "LACONA32DELL" ||
-           cardType == "LACONA32" ||
-           cardType == "POMONTEDELL" ||
-           cardType == "POMONTE" ||
-           cardType == "GINESTRA_D4" ||
-           cardType == "GINESTRA_D5" ||
-           cardType == "NAPLES100DELL" ||
-           cardType == "NAPLES100HPE" {
-           eeprom.I2cAddr16 = true
-
-        }
-        
-
         eeprom.EepromTbl = eeprom.Naples100Tbl
         if eeprom.HpeNaples == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTbl
