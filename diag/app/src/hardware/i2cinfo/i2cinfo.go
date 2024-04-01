@@ -392,7 +392,7 @@ var Naples25SwmDellMtpTbl = []I2cInfo {
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"FRU_ALOM",       "AT25320B",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"CPLD_ADAP",      "CPLD",      0x0,   0x4B,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"FRU_ADAP",       "AT24C02C",  0x0,   0x57,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"FRU_ADAP",       "AT24C02C",  0x0,   0x57,    0x0,    "HUB_NONE",  0,    0},
 }
 
 //=========================================
