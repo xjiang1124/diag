@@ -36,21 +36,21 @@ class nic_test:
         return mtp_rev[0][:-1]
 
     def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, do_untar=""):
-        print "=== Starting setup env on slot {} ===".format(slot)
+        print("=== Starting setup env on slot {} ===".format(slot))
 
         mtp_rev = self.get_mtp_rev()
         print("MTP_REV: ", mtp_rev)
 
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         try:
             if pwr_cycle == True:
                 ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
                 if ret != 0:
-                    print "Failed to change baud rate"
+                    print("Failed to change baud rate")
                     return -1
 
             self.nic_con.switch_console(int(slot))
@@ -157,10 +157,10 @@ class nic_test:
             if mgmt == True:
                 ret = self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
 
-            print "=== Setup env on slot {} env setup done ===".format(slot)
+            print("=== Setup env on slot {} env setup done ===".format(slot))
 
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Failed to set up env slot {} ===".format(slot)
+            print("=== TIMEOUT: Failed to set up env slot {} ===".format(slot))
             ret = -1
 
         return ret
@@ -169,20 +169,20 @@ class nic_test:
         nic_list_remain = nic_list[:]
         timeout = 60
         for retry in range(numRetry):
-            print "Setting up #{}".format(retry)
-            print "slot_list", nic_list_remain
-            print "timestamp", datetime.datetime.now().time()
+            print("Setting up #{}".format(retry))
+            print("slot_list", nic_list_remain)
+            print("timestamp", datetime.datetime.now().time())
             ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port, env=env, do_untar=do_untar)
             timeout += retry*10
             if ret == 0:
                 break
 
         if ret != 0:
-            print "=== Setup env top failed!", ",".join(nic_list_remain)
+            print("=== Setup env top failed!", ",".join(nic_list_remain))
         else:
-            print "=== Setup env top done #", retry, "==="
+            print("=== Setup env top done #", retry, "===")
 
-        print "timestamp", datetime.datetime.now().time()
+        print("timestamp", datetime.datetime.now().time())
 
         nic_list_pass = [x for x in nic_list if x not in nic_list_remain]
 
@@ -194,7 +194,7 @@ class nic_test:
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         nic_list_remain = nic_list[:]
@@ -227,11 +227,11 @@ class nic_test:
             ret = ret + slot_ret
 
         if ret != 0:
-            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+            print("===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain))
         else:
-            print "===  setup_env_multi Passed ==="
+            print("===  setup_env_multi Passed ===")
 
-        print "timestamp", datetime.datetime.now().time()
+        print("timestamp", datetime.datetime.now().time())
         return ret, nic_list_remain
 
 
@@ -239,7 +239,7 @@ class nic_test:
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         nic_list_remain = nic_list[:]
@@ -285,7 +285,7 @@ class nic_test:
 
         if mgmt == True or aapl == True:
             if len(nic_list) != 0:
-                 print "Sleep 30 sec"
+                 print("Sleep 30 sec")
                  time.sleep(30)
             
         if aapl == True:
@@ -348,18 +348,18 @@ class nic_test:
             ret = ret + slot_ret
 
         if ret != 0:
-            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+            print("===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain))
         else:
-            print "===  setup_env_multi Passed ==="
+            print("===  setup_env_multi Passed ===")
 
-        print "timestamp", datetime.datetime.now().time()
+        print("timestamp", datetime.datetime.now().time())
         return ret, nic_list_remain
 
     def setup_env_multi_goldfw(self, nic_list=[], mgmt=False, timeout=30):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         nic_list_remain = nic_list[:]
@@ -393,11 +393,11 @@ class nic_test:
                 ip = "10.1.1."+str(ip_int)
 
                 for i in range(10):
-        	    session.sendline("ifconfig -a")
-        	    session.expect("\#")
-        	    temp = session.after
-        	    if 'oob_mnic0' in session.before:
-        	        print 'oob_mnic0 ready'
+                    session.sendline("ifconfig -a")
+                    session.expect("\#")
+                    temp = session.after
+                    if 'oob_mnic0' in session.before:
+                        print('oob_mnic0 ready')
                         break
                     else:
                         print("Wait for 5 seconds for mnic0 being ready")
@@ -416,18 +416,18 @@ class nic_test:
             ret = ret + slot_ret
 
         if ret != 0:
-            print "===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain)
+            print("===  setup_env_multi {} failed; failed slot:", ",".join(nic_list_remain))
         else:
-            print "===  setup_env_multi Passed ==="
+            print("===  setup_env_multi Passed ===")
 
-        print "timestamp", datetime.datetime.now().time()
+        print("timestamp", datetime.datetime.now().time())
         return ret, nic_list_remain
 
     def aapl_setup(self, rate, slot=0, skip=False):
         numRetry = 3
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         self.nic_con.switch_console(slot)
@@ -435,14 +435,14 @@ class nic_test:
         session = common.session_start()
         ret = self.nic_con.uart_session_start(session)
         if ret != 0:
-            print "=== AAPL setup failed; slot {} ===".format(slot)
+            print("=== AAPL setup failed; slot {} ===".format(slot))
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
             return ret
 
         if skip == False:
             self.nic_con.uart_session_cmd(session, "sysinit.sh classic hw diag")
-            print "Sleep 30 sec"
+            print("Sleep 30 sec")
             time.sleep(30)
 
             # Disable link manager
@@ -478,7 +478,7 @@ class nic_test:
                     break
 
             except pexpect.TIMEOUT:
-                print "=== TIMEOUT: Failed to set up AAPL ==="
+                print("=== TIMEOUT: Failed to set up AAPL ===")
                 ret = -1
                 break;
             
@@ -486,27 +486,27 @@ class nic_test:
         common.session_stop(session)
 
         if ret == 0:
-            print "=== AAPL setup done; slot {}===".format(slot)
+            print("=== AAPL setup done; slot {}===".format(slot))
         else:
-            print "=== AAPL setup failed; slot {} ===".format(slot)
+            print("=== AAPL setup failed; slot {} ===".format(slot))
 
         return ret
 
     def pwr_cycle_test(self, slot=0, iteration=1):
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         for i in range(iteration):
-            print "=== Ite {} ===".format(i)
+            print("=== Ite {} ===".format(i))
             ret = self.setup_env(slot, False, 30)
             if ret != 0:
-                print "=== Power cycle test failed at ite {} ===".format(i)
+                print("=== Power cycle test failed at ite {} ===".format(i))
                 break
 
         if ret == 0:
-            print "=== Power cycle test passed {} iterations ===".format(iteration)
+            print("=== Power cycle test passed {} iterations ===".format(iteration))
         return ret
 
     def pwr_cycle_test_multi(self, nic_list=[], iteration=1, pc_mode="board"):
@@ -517,7 +517,7 @@ class nic_test:
             self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
 
         for i in range(iteration):
-            print "=== Ite {} ===".format(i)
+            print("=== Ite {} ===".format(i))
             if pc_mode == "board":
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60)
             elif pc_mode == "12v":
@@ -550,15 +550,15 @@ class nic_test:
                 time.sleep(60)
 
         if ret == 0:
-            print "=== Power cycle test passed {} iterations ===".format(iteration)
+            print("=== Power cycle test passed {} iterations ===".format(iteration))
         return ret
 
     def test_start(self, slot=0, test_type="snake", mode="hbm", timeout=30, vmarg="normal", pc="off", dura=120, in_lpbk=False, snake_num=6):
-        print "=== Starting {} on slot {} ===".format(test_type, slot)
+        print("=== Starting {} on slot {} ===".format(test_type, slot))
 
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         int_lpbk_str = ""
@@ -580,7 +580,7 @@ class nic_test:
             test_cmd = "/data/nic_util/asicutil -prbs -mode ETH -dura {} {} 2>&1 > /data/nic_util/asicutil_{}_prbs_eth.log &".format(dura, int_lpbk_str, asic_name)
             print("test_cmd", test_cmd)
         else:
-            print "Invalid test_type {} and mode {}".format(test_type, mode)
+            print("Invalid test_type {} and mode {}".format(test_type, mode))
             sys.exit(0)
 
         if pc == "on":
@@ -599,10 +599,10 @@ class nic_test:
 
             self.nic_con.uart_session_stop(session)
 
-            print "=== {} on slot {} started ===".format(test_type, slot)
+            print("=== {} on slot {} started ===".format(test_type, slot))
         except:
             self.nic_con.uart_session_stop(session)
-            print "=== {} on slot {} FAILED to start! ===".format(test_type, slot)
+            print("=== {} on slot {} FAILED to start! ===".format(test_type, slot))
             common.session_stop(session)
             ret = -1
 
@@ -610,11 +610,11 @@ class nic_test:
         return ret
 
     def test_check(self, slot=0, test_type="snake", mode="hbm", timeout=30):
-        print "=== Checking {} result on slot {} ===".format(test_type, slot)
+        print("=== Checking {} result on slot {} ===".format(test_type, slot))
 
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         self.nic_con.switch_console(slot)
@@ -649,16 +649,16 @@ class nic_test:
 
         common.session_stop(session)
 
-        print "check_result:", ret
-        print "=== Checing {} result on slot {} Done ===".format(test_type, slot)
+        print("check_result:", ret)
+        print("=== Checing {} result on slot {} Done ===".format(test_type, slot))
         return ret
 
     def test_check_ddr(self, slot=0):
-        print "=== Checking {} on slot {} ===".format("DDR setting", slot)
+        print("=== Checking {} on slot {} ===".format("DDR setting", slot))
 
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         self.nic_con.switch_console(slot)
@@ -679,7 +679,7 @@ class nic_test:
 
         common.session_stop(session)
 
-        print "=== Checking {} on slot {} Done ===".format("DDR setting", slot)
+        print("=== Checking {} on slot {} Done ===".format("DDR setting", slot))
         return ret
 
     def mtp_sts(self, wait_time, interval=15):
@@ -692,13 +692,13 @@ class nic_test:
             
 
     def nic_test(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal", duration=120, int_lpbk=False, snake_num=6, disp_si=False, num_retry=2):
-        print "=== NIC {} {} ===".format(test_type, mode)
+        print("=== NIC {} {} ===".format(test_type, mode))
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         #slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
         #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
         if test_type == "snake":
             self.setup_env_multi_top(slot_list, False, 30, False, True, False, do_untar="0")
@@ -714,23 +714,23 @@ class nic_test:
             else:
                 test_result[slot] = "NO RESULT"
 
-        print "Wait for {}s before checking result".format(wait_time)
+        print("Wait for {}s before checking result".format(wait_time))
         self.mtp_sts(wait_time)
 
         done_count = 0
         for retry_idx in range(num_retry):
-            print "Checking result:", retry_idx
+            print("Checking result:", retry_idx)
             for slot in nic_list:
                 if test_result[slot] != "NO RESULT":
                     continue
 
                 test_sts = self.test_check(int(slot), test_type, mode)
                 if test_sts == 0:
-                    print "=== {} Result at Slot {}: Passed".format(test_type, slot)
+                    print("=== {} Result at Slot {}: Passed".format(test_type, slot))
                     test_result[slot] = "PASS"
                     done_count = done_count + 1
                 if test_sts == 1:
-                    print "=== {} Result at Slot {}: Failed".format(test_type, slot)
+                    print("=== {} Result at Slot {}: Failed".format(test_type, slot))
                     test_result[slot] = "FAIL"
                     done_count = done_count + 1
 
@@ -746,11 +746,11 @@ class nic_test:
                 ret = self.test_check_ddr(int(slot))
 
         # Print result
-        print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
+        print("\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper()))
         result_fmt = "Slot {:<2}: {:<5}"
-        for slot, sts in test_result.items():
-            print result_fmt.format(slot, sts)
-        print "======================================"
+        for slot, sts in list(test_result.items()):
+            print(result_fmt.format(slot, sts))
+        print("======================================")
 
     def disp_ecc(self, nic_list=[]):
         print("=== Collect ECC info ===")
@@ -778,11 +778,11 @@ class nic_test:
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         for retry in range(self.num_retry):
-            print "Trying break into uboot {}".format(retry)
+            print("Trying break into uboot {}".format(retry))
             nic_list_str = ",".join(nic_list_remain)
             self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
             for slot in nic_list_remain:
@@ -797,17 +797,17 @@ class nic_test:
                     nic_list.remove(slot)
                     nic_pass_list.append(slot)
 
-            print "remaining slots: ", ",".join(nic_list)
+            print("remaining slots: ", ",".join(nic_list))
             nic_list_remain = nic_list[:]
 
             if len(nic_list) == 0:
                 break
 
         if len(nic_list) != 0:
-            print "=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== ena_dis_uboot_pcie failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== ena_dis_uboot_pcie passed ==="
-        print "=== ena_dis_uboot_pcie done #", retry, "==="
+            print("=== ena_dis_uboot_pcie passed ===")
+        print("=== ena_dis_uboot_pcie done #", retry, "===")
 
 
     def ena_dis_esec_wp(self, nic_list=[], enable=True):
@@ -816,11 +816,11 @@ class nic_test:
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         for retry in range(self.num_retry):
-            print "Trying break into uboot {}".format(retry)
+            print("Trying break into uboot {}".format(retry))
             nic_list_str = ",".join(nic_list_remain)
             self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
             for slot in nic_list_remain:
@@ -832,24 +832,24 @@ class nic_test:
                     nic_list.remove(slot)
                     nic_pass_list.append(slot)
 
-            print "remaining slots: ", ",".join(nic_list)
+            print("remaining slots: ", ",".join(nic_list))
             nic_list_remain = nic_list[:]
 
             if len(nic_list) == 0:
                 break
 
         if len(nic_list) != 0:
-            print "=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== ena_dis_esec_wp failed; failed slots: ", ",".join(nic_list), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== ena_dis_esec_wp passed ==="
-        print "=== ena_dis_esec_wp done #", retry, "==="
+            print("=== ena_dis_esec_wp passed ===")
+        print("=== ena_dis_esec_wp done #", retry, "===")
 
     def verify_esec_qspi_wp(self, nic_list=[], enable=True):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         for slot in nic_list:
@@ -863,20 +863,20 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== verify_esec_qspi_wp failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== verify_esec_qspi_wp failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== verify_esec_qspi_wp passed ==="
-        print "=== verify_esec_qspi_wp done ==="
+            print("=== verify_esec_qspi_wp passed ===")
+        print("=== verify_esec_qspi_wp done ===")
 
     def vrd_fault_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
         self.setup_env_multi_top(slot_list, False, 30, False, True, False)
 
         for slot in nic_list:
@@ -896,7 +896,7 @@ class nic_test:
                 if int(match.group(1), 16) & 0x4 == 0x4:
                     ret_list[int(slot)-1] = 1
             else:
-                print "Failed to read CPLD addr=0x50 for slot {}".format(slot)
+                print("Failed to read CPLD addr=0x50 for slot {}".format(slot))
 
         nic_list_copy = nic_list[:]
         for slot in nic_list:
@@ -905,20 +905,20 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== vrd_fault_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== vrd_fault_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== vrd_fault_line passed ==="
-        print "=== vrd_fault_line done ==="
+            print("=== vrd_fault_line passed ===")
+        print("=== vrd_fault_line done ===")
 
     def therm_alert_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
 
         for slot in nic_list:
             intr_set = 0
@@ -941,7 +941,7 @@ class nic_test:
                             intr_set = 1
                             break
                     else:
-                        print "Failed to read CPLD addr=0x4 for slot {}".format(slot)
+                        print("Failed to read CPLD addr=0x4 for slot {}".format(slot))
                     time.sleep(1)
                 # restore the temp limit
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/devmgr -dev=TSENSOR -restoreLimit")
@@ -956,7 +956,7 @@ class nic_test:
                             intr_cleared = 1
                             break
                     else:
-                        print "Failed to read CPLD addr=0x4 for slot {}".format(slot)
+                        print("Failed to read CPLD addr=0x4 for slot {}".format(slot))
                     time.sleep(1)
                 # disable the temp waring interrupt
                 self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 0x3 0x0")
@@ -971,20 +971,20 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== therm_alert_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== therm_alert_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== therm_alert_line passed ==="
-        print "=== therm_alert_line done ==="
+            print("=== therm_alert_line passed ===")
+        print("=== therm_alert_line done ===")
 
     def therm_trip_line(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
         self.setup_env_multi_top(slot_list, False, 30, False, True, False)
 
         for slot in nic_list:
@@ -1004,7 +1004,7 @@ class nic_test:
                 if int(match.group(1), 16) & 0x8 == 0x8:
                     ret_list[int(slot)-1] = 1
             else:
-                print "Failed to read CPLD addr=0x50 for slot {}".format(slot)
+                print("Failed to read CPLD addr=0x50 for slot {}".format(slot))
 
         nic_list_copy = nic_list[:]
         for slot in nic_list:
@@ -1013,20 +1013,20 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== therm_trip_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== therm_trip_line failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== therm_trip_line passed ==="
-        print "=== therm_trip_line done ==="
+            print("=== therm_trip_line passed ===")
+        print("=== therm_trip_line done ===")
 
     def uart_loopback_test(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
         self.setup_env_multi_top(slot_list, True, 30, False, True, False)
 
         for slot in nic_list:
@@ -1054,14 +1054,14 @@ class nic_test:
                 session_rx.sendline("cat /dev/ttyS0")
                 time.sleep(0.5)
                 teststr = "1" + ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
-                print "teststr is: ", teststr
+                print("teststr is: ", teststr)
                 for element in teststr:
                     session_tx.sendline("echo \"{}\" > /dev/ttyS0".format(element))
                     session_tx.expect("\#")
                     session_rx.expect(element)
                 ret_list[int(slot)-1] = 1
             except pexpect.TIMEOUT:
-                print "=== TIMEOUT: Can not connect to NIC on SSH!"
+                print("=== TIMEOUT: Can not connect to NIC on SSH!")
                 ret_list[int(slot)-1] = 0
             # kill the cat /dev/ttyS0 process
             try:
@@ -1073,7 +1073,7 @@ class nic_test:
                 session_rx.sendline("exit")
                 session_rx.expect("\$")
             except pexpect.TIMEOUT:
-                print "=== TIMEOUT: Can not connect to NIC on SSH!"
+                print("=== TIMEOUT: Can not connect to NIC on SSH!")
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x2d".format(slot)
             common.session_cmd(session_tx, cmd)
             common.session_stop(session_tx)
@@ -1086,17 +1086,17 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== uart_loopback_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== uart_loopback_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== uart_loopback_test passed ==="
-        print "=== uart_loopback_test done ==="
+            print("=== uart_loopback_test passed ===")
+        print("=== uart_loopback_test done ===")
 
     def rmii_linkup_test(self, nic_list=[]):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         nic_pass_list = []
 
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         for slot in nic_list:
@@ -1107,13 +1107,13 @@ class nic_test:
                 self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 0")
                 self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
                 if session.before.splitlines()[1] != "0xe":
-                    print "slot", slot, "Reg 0x9C, expect: 0xe, actual:", session.before.splitlines()[1]
+                    print("slot", slot, "Reg 0x9C, expect: 0xe, actual:", session.before.splitlines()[1])
                     self.nic_con.uart_session_stop(session)
                     continue
                 self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 1")
                 self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
                 if session.before.splitlines()[1] != "0xf":
-                    print "slot", slot, "Reg 0x9C, expect: 0xf, actual:", session.before.splitlines()[1]
+                    print("slot", slot, "Reg 0x9C, expect: 0xf, actual:", session.before.splitlines()[1])
                     self.nic_con.uart_session_stop(session)
                     continue
                 self.nic_con.uart_session_cmd(session, "halctl show port internal")
@@ -1130,43 +1130,43 @@ class nic_test:
                 nic_pass_list.append(slot)
 
         if len(nic_list_copy) != 0:
-            print "=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list)
+            print("=== rmii_linkup_test failed; failed slots: ", ",".join(nic_list_copy), ", passed slots: ", ",".join(nic_pass_list))
         else:
-            print "=== rmii_linkup_test passed ==="
-        print "=== rmii_linkup_test done ==="
+            print("=== rmii_linkup_test passed ===")
+        print("=== rmii_linkup_test done ===")
 
     def config_ddr(self, nic_list=[], hardcode=False, speed=3200):
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
 
         for slot in nic_list:
             ret = self.nic_con.config_ddr(int(slot), hardcode, speed)
 
             if ret != 0:
-                print "=== Failed to change uboot PCIe setting at slot {} ===".format(slot)
+                print("=== Failed to change uboot PCIe setting at slot {} ===".format(slot))
 
     def setup_uboot_env(self, nic_list=[]):
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         slot_list = ",".join(nic_list)
-        print "slot_list:", slot_list
+        print("slot_list:", slot_list)
 
         for slot in nic_list:
             ret = self.nic_con.setup_uboot_env(int(slot))
 
             if ret != 0:
-                print "=== Failed to setup uboot env at slot {} ===".format(slot)
+                print("=== Failed to setup uboot env at slot {} ===".format(slot))
 
     def nic_test1(self, nic_list=[], test_type="snake", mode="hbm", wait_time=180, vmargin="normal"):
-        print "=== NIC {} {} ===".format(test_type, mode)
+        print("=== NIC {} {} ===".format(test_type, mode))
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         # Initialization
@@ -1180,7 +1180,7 @@ class nic_test:
             test_result[slot] = "FAIL"
             nic_list.remove(slot)
 
-        print "NIC list after init:", nic_list
+        print("NIC list after init:", nic_list)
 
         # Start snake
         for slot in nic_list:
@@ -1189,25 +1189,25 @@ class nic_test:
                 test_result[slot] = "FAIL"
                 nic_list.remove(slot)
 
-        print "NIC list after test start:", nic_list
+        print("NIC list after test start:", nic_list)
 
-        print "Wait for {}s before checking result".format(wait_time)
+        print("Wait for {}s before checking result".format(wait_time))
         time.sleep(wait_time)
 
         done_count = 0
         for retry_idx in range(self.num_retry):
-            print "Checking result:", retry_idx
+            print("Checking result:", retry_idx)
             for slot in nic_list:
                 if test_result[slot] != "NO RESULT":
                     continue
 
                 test_sts = self.test_check(int(slot), test_type, mode)
                 if test_sts == 0:
-                    print "=== Snake Result at Slot {}: Passed".format(slot)
+                    print("=== Snake Result at Slot {}: Passed".format(slot))
                     test_result[slot] = "PASS"
                     done_count = done_count + 1
                 if test_sts == 1:
-                    print "=== Snake Result at Slot {}: Failed".format(slot)
+                    print("=== Snake Result at Slot {}: Failed".format(slot))
                     test_result[slot] = "FAIL"
                     done_count = done_count + 1
 
@@ -1216,11 +1216,11 @@ class nic_test:
             time.sleep(20)
 
         # Print result
-        print "\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper())
+        print("\n====== TEST RESULT: {:<5} {:<5} ======".format(test_type.upper(), mode.upper()))
         result_fmt = "Slot {:<2}: {:<5}"
-        for slot, sts in test_result.items():
-            print result_fmt.format(slot, sts)
-        print "======================================"
+        for slot, sts in list(test_result.items()):
+            print(result_fmt.format(slot, sts))
+        print("======================================")
 
 
     def timeout_test(self, timeout):
@@ -1273,9 +1273,9 @@ class nic_test:
         return fan_speed
 
     def skew_test(self, nic_list=[], fan_ctrl=False, tgt_die_temp=80):
-        print "=== NIC Skew Test ==="
+        print("=== NIC Skew Test ===")
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         slot_list = ",".join(nic_list)
@@ -1428,9 +1428,9 @@ class nic_test:
         common.session_stop(session)
 
         result_fmt = "Slot {:<2}: {:<5}"
-        print "\n====== TEST RESULT: {:<5} {:<5} ======".format("SLOT", "RESULT")
-        for slot, result in test_result.items():
-            print result_fmt.format(slot, result)
+        print("\n====== TEST RESULT: {:<5} {:<5} ======".format("SLOT", "RESULT"))
+        for slot, result in list(test_result.items()):
+            print(result_fmt.format(slot, result))
 
     def skew_test_exit(self, nic_list=[]):
 
@@ -1460,9 +1460,9 @@ class nic_test:
         common.session_stop(session)
 
     def emmc_test(self, nic_list=[], num_ite=1):
-        print "=== NIC eMMC Test ==="
+        print("=== NIC eMMC Test ===")
         if len(nic_list) == 0:
-            print "No nic specified -- Exit"
+            print("No nic specified -- Exit")
             sys.exit(0)
 
         fan_speed = 50

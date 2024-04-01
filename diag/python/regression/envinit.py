@@ -5,7 +5,10 @@ import re
 import sys
 import time
 
-child = pexpect.spawn("bash")
+PY3 = (sys.version_info[0] >= 3)
+encoding = "utf-8" if PY3 else None
+
+child = pexpect.spawn("bash", encoding=encoding, codec_errors='ignore')
 child.logfile_read = sys.stdout
 child.expect("\$ ")
 child.sendline("sudo chmod ugo+rw /dev/i2c-8")
