@@ -14,7 +14,7 @@ import sys, os
  - FOR MASTER BRANCH,
 
     cd test
-    DEV=1 python3 generate_job_yml.py
+    MASTER=1 python3 generate_job_yml.py
 
     this will skip 4C, ORT, RDT, etc (default)
 
@@ -22,20 +22,31 @@ import sys, os
  - FOR ASIC TOT,
 
     cd test-asic
-    python3 generate_job_yml.py
+    python3 ../test/generate_job_yml.py
  
 """
 
-EXCLUDE_FROM_PRECHECKIN=["ScanDL", "4C", "ORT", "RDT", "SRN"]
+DEFAULT = ["FST"]
+DIAG_CHANGES = ["P2C"]
+SCRIPT_CHANGES = ["P2C", "SWI", "FST"]
+RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST"]
 
 cwd = os.path.basename(os.getcwd())
 if cwd == "test-asic":
     job_set = "asic"
-elif "DEV" in os.environ.keys():
+elif "MASTER" in os.environ.keys():
     job_set = "diag"
 else:
     job_set = "modeling"
-    EXCLUDE_FROM_PRECHECKIN = ["ScanDL", "SRN"]
+
+NICS_BY_STAGE = dict()
+
+if job_set != "asic":
+    # always keep FST test even if ortano-ti-orc is skipped
+    # since infra tests depend on it
+    NICS_BY_STAGE["FST"] = {"ortano-ti-orc": ("elba", "ortano-ti")}
+
+
 
 def write_headers(fh):
     fh.write("---\n")
@@ -57,6 +68,7 @@ def write_headers(fh):
     fh.write("e2e-targets:\n")
 
 def write_targets(fh, asic, hardware, nic_type, stage):
+    fh.write("  {:s}:\n".format(nic_type))
     fh.write("    commands: [\"sh\", \"-c\", \"/psdiag/test/run_mfg_job.sh \
 --nic-type {:s} \
 --testbed /warmd.json \
@@ -103,24 +115,13 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("        BmOs: linux\n")
     fh.write("\n")
 
-def write_stage_headers(stage):
-    job_yml_file = "{:s}/.job.yml".format(stage)
-    try:
-        with open(job_yml_file, "r") as fh:
-            first_line = fh.readline()
-            if first_line.strip() == "---":
-                # headers already present
-                # else, rewrite this file
-                return
-    except FileNotFoundError:
-        # will write new file
-        pass
-    os.system(f"mkdir -p {stage}/")
-    with open(job_yml_file, "w") as fh:
-        write_headers(fh)
+def write_stage_jobyml():
+    # re-orient jobs.cfg to key by stage instead of nic_type
+    def add_stage(key, nic_type, nic_detail):
+        if key not in NICS_BY_STAGE:
+            NICS_BY_STAGE[key] = dict()
+        NICS_BY_STAGE[key][nic_type] = nic_detail
 
-def test_bundle_by_stage():
-    os.system("rm -r DL P2C 4C RDT ORT SRN SWI FST ScanDL")
     with open("jobs.cfg", "r") as jobs_matrix:
         for line in jobs_matrix:
             line = line.strip()
@@ -131,101 +132,58 @@ def test_bundle_by_stage():
             *stages, asic, hardware, nic_type = line.split("\t")
 
             for stage in stages:
-                if not stage: # empty
-                    continue
-                write_stage_headers(stage)
-                job_yml_file = "{:s}/.job.yml".format(stage)
-                fh = open(job_yml_file, "a")
-                fh.write("  {:s}:\n".format(nic_type))
-                write_targets(fh, asic, hardware, nic_type, stage)
-                fh.close()
+                if not stage: continue # skip empty
+                add_stage(stage, nic_type, (asic, hardware))
 
-def test_bundle_by_nic_type():
-    with open("jobs.cfg", "r") as job_matrix:
-        for line in job_matrix:
-            line = line.strip()
-            if line.strip() == "":
-                continue
-            if line.startswith("#"):
-                continue
-            *stages, asic, hardware, nic_type = line.split("\t")
-
-            os.system(f"mkdir -p {nic_type}/")
-            job_yml_file = f"{nic_type}/.job.yml"
-            fh = open(job_yml_file, "w")
+    # write the new .job.ymls for each stage
+    for stage in NICS_BY_STAGE:
+        os.system(f"rm -r {stage}")
+        os.system(f"mkdir -p {stage}")
+        with open(f"{stage}/.job.yml", "w") as fh:
             write_headers(fh)
-            for stage in stages:
-                if not stage: # empty
-                    continue
-                if stage in EXCLUDE_FROM_PRECHECKIN:
-                    continue
-                fh.write("  {:s}:\n".format(stage))
-                write_targets(fh, asic, hardware, nic_type, stage)
-            fh.close()
-
-def write_FST_test_bundle():
-    # always keep FST test even if ortano-ti-orc is skipped
-    # since infra tests depend on it
-    os.system("rm -r FST")
-    stage, asic, hardware, nic_type = "FST", "elba", "ortano-ti", "ortano-ti-orc"
-
-    write_stage_headers(stage)
-    job_yml_file = "{:s}/.job.yml".format(stage)
-    fh = open(job_yml_file, "a")
-    fh.write("  {:s}:\n".format(nic_type))
-    write_targets(fh, asic, hardware, nic_type, stage)
-    fh.close()
+            for nic_type, nic_detail in NICS_BY_STAGE[stage].items():
+                write_targets(fh, nic_detail[0], nic_detail[1], nic_type, stage)
 
 def update_root_job_yml():
     ### remove old lines
     if job_set == "diag" or job_set == "modeling":
-        sections = [ "NIC_TYPE TEST BUNDLE", "NIC_TYPE DEPENDENCY" ]
+        sections = [ "JOB LABELS", "TEST DIAG CHANGES", "TEST SCRIPT CHANGES" ]
     elif job_set == "asic":
-        sections = [ "NIC_TYPE ASIC TEST BUNDLE" ]
+        sections = [ "ASIC JOB LABELS" ]
 
     for section in sections:
         os.system("sed -i '/^### %s ###/,/^### END %s ###/{/^### %s ###/!{/^### END %s ###/!d}}' ../.job.yml" % (section, section, section, section))
         os.system("sync")
 
     import fileinput
-    with open("jobs.cfg", "r") as job_matrix:
-        for line in job_matrix:
-            line = line.strip()
-            if line.strip() == "":
-                continue
-            if line.startswith("#"):
-                continue
-            *stages, asic, hardware, nic_type = line.split("\t")
+    ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
+    for rline in fileinput.FileInput("../.job.yml", inplace=True):
+        if job_set == "diag" or job_set == "modeling":
+            if "### JOB LABELS ###" in rline:
+                for stage in NICS_BY_STAGE:
+                    new_line  = f"  test/{stage}:\n"
+                    new_line += f"    labels: [\"CI-DIAG-Model\", \"CI-DIAG-Release\", \"CI-DIAG-{stage}\"]\n"
+                    rline += new_line
+            if "### TEST DIAG CHANGES ###" in rline:
+                d_stages = [s for s in NICS_BY_STAGE.keys() if s in DIAG_CHANGES]
+                for stage in d_stages:
+                    new_line  = f"    - reference: test/{stage}\n"
+                    new_line += f"      exclude_dirs: [\"mfg\"]\n"
+                    rline += new_line
+            if "### TEST SCRIPT CHANGES ###" in rline:
+                s_stages = [s for s in NICS_BY_STAGE.keys() if s in SCRIPT_CHANGES]
+                for stage in s_stages:
+                    new_line  = f"    - reference: test/{stage}\n"
+                    new_line += f"      exclude_dirs: [\"scripts\"]\n"
+                    rline += new_line
+        elif job_set == "asic":
+            if "### ASIC JOB LABELS ###" in rline:
+                for stage in NICS_BY_STAGE:
+                    new_line  = f"  test-asic/{stage}:\n"
+                    new_line += f"    labels: [\"CI-ASIC-TOT\", \"CI-ASIC-TOT-{stage}\"]\n"
+                    rline += new_line
+        print(rline, end="")
 
-            ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
-            for rline in fileinput.FileInput("../.job.yml", inplace=True):
-                if job_set == "diag" or job_set == "modeling":
-                    if "### NIC_TYPE TEST BUNDLE ###" in rline:
-                        new_line  = f"  test/{nic_type}:\n"
-                        new_line += f"    labels: [\"CI-DIAG-Model\", \"CI-DIAG-Build\", \"CI-DIAG-{nic_type}\"]\n"
-                        rline += new_line
-                    if "### NIC_TYPE DEPENDENCY ###" in rline:
-                        new_line  = f"    - reference: test/{nic_type}\n"
-                        new_line += f"      exclude_dirs: [\"scripts\"]\n"
-                        rline += new_line
-                elif job_set == "asic":
-                    if "### NIC_TYPE ASIC TEST BUNDLE ###" in rline:
-                        new_line  = f"  test-asic/{nic_type}:\n"
-                        new_line += f"    labels: [\"CI-ASIC-TOT\", \"CI-ASIC-{nic_type}\"]\n"
-                        rline += new_line
-                print(rline, end="")
-                
-if job_set == "diag":
-    test_bundle_by_nic_type()
-    test_bundle_by_stage()
-    update_root_job_yml()
 
-elif job_set == "modeling":
-    test_bundle_by_nic_type()
-    update_root_job_yml()    
-
-elif job_set == "asic":
-    test_bundle_by_nic_type()
-    update_root_job_yml()
-
-write_FST_test_bundle()
+write_stage_jobyml()
+update_root_job_yml()

@@ -13,102 +13,16 @@ logfiles:
  - /psdiag/diag_detailed_log.tgz
 
 e2e-targets:
-  naples100:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples100 --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
-    owners: ["email:nabeel@pensando.io"]
-    area:
-    sub-area:
-    feature:
-    build-dependencies:
-     - build-amd64-capri
-     - build-arm64-capri
-     - package-capri-mfg-script
-     - package-fw-assets
-    deployment:
-      skip-pxe-install: true
-    resources:
-     - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-nic-processor
-           value: capri
-         - name: naples100
-           value: yes
-    provision:
-      username: diag
-      password: lab123
-      vars:
-        BmOs: linux
-
-  naples25swm-hpe:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25swm-hpe --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
-    owners: ["email:nabeel@pensando.io"]
-    area:
-    sub-area:
-    feature:
-    build-dependencies:
-     - build-amd64-capri
-     - build-arm64-capri
-     - package-capri-mfg-script
-     - package-fw-assets
-    deployment:
-      skip-pxe-install: true
-    resources:
-     - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-nic-processor
-           value: capri
-         - name: naples25swm
-           value: yes
-    provision:
-      username: diag
-      password: lab123
-      vars:
-        BmOs: linux
-
-  naples25swm-dell:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25swm-dell --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
-    owners: ["email:nabeel@pensando.io"]
-    area:
-    sub-area:
-    feature:
-    build-dependencies:
-     - build-amd64-capri
-     - build-arm64-capri
-     - package-capri-mfg-script
-     - package-fw-assets
-    deployment:
-      skip-pxe-install: true
-    resources:
-     - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-nic-processor
-           value: capri
-         - name: naples25swm
-           value: yes
-    provision:
-      username: diag
-      password: lab123
-      vars:
-        BmOs: linux
-
   ortano-ti-orc:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -130,14 +44,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adi-orc:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -159,14 +74,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-interp-orc:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-interp-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-interp-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -188,14 +104,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-solo-orc:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -217,14 +134,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adicr-orc:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -246,14 +164,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adi-msft:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -275,14 +194,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-solo-msft:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -304,14 +224,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adicr-msft:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -333,14 +254,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adi-ibm:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-ibm --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-ibm --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -362,14 +284,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-solo-s4:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -391,14 +314,15 @@ e2e-targets:
         BmOs: linux
 
   ortano-adicr-s4:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adicr-s4 --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -420,14 +344,15 @@ e2e-targets:
         BmOs: linux
 
   monterey:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type monterey --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type monterey --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
      - package-elba-mfg-script
      - package-fw-assets
     deployment:
@@ -449,43 +374,15 @@ e2e-targets:
         BmOs: linux
 
   ginestra:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
+    max-duration: 24h
     build-dependencies:
-     - build-amd64-giglio
-     - build-arm64-giglio
-     - package-giglio-mfg-script
-     - package-fw-assets
-    deployment:
-      skip-pxe-install: true
-    resources:
-     - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-nic-processor
-           value: giglio
-         - name: ginestra
-           value: yes
-    provision:
-      username: diag
-      password: lab123
-      vars:
-        BmOs: linux
-
-  ginestra-s4:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
-    owners: ["email:nabeel@pensando.io"]
-    area:
-    sub-area:
-    feature:
-    build-dependencies:
-     - build-amd64-giglio
-     - build-arm64-giglio
+     - build-amd64-giglio-tot
+     - build-arm64-giglio-tot
      - package-giglio-mfg-script
      - package-fw-assets
     deployment:
