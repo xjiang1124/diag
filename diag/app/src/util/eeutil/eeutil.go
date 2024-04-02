@@ -115,7 +115,6 @@ func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, s
             eeprom.EepromTbl = eeprom.MtpTbl
         }
     } else {
-
         if cardType == "NAPLES25SWM" || 
            cardType == "NAPLES25SWMDELL" || 
            cardType == "NAPLES25SWM833" || 
@@ -138,8 +137,6 @@ func eepromTlbInit(uut string, pn string, update bool, dev string, sku string, s
            eeprom.I2cAddr16 = true
 
         }
-        
-
         eeprom.EepromTbl = eeprom.Naples100Tbl
         if eeprom.HpeNaples == 1 {
             eeprom.EepromExtTbl = eeprom.HpeTbl
@@ -747,11 +744,19 @@ func main() {
                 return
             }
         }
+<<<<<<< HEAD
     } 
 
     //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
     info, _ := i2cinfo.GetI2cInfo(devName)
     if (info.Flag == i2cinfo.FLAG_16BIT_EEPROM) {
+=======
+    }
+
+    //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
+    info, _ := i2cinfo.GetI2cInfo(devName)
+    if ((info.Flag & i2cinfo.FLAG_16BIT_EEPROM) != 0) {
+>>>>>>> upstream/master
         eeprom.I2cAddr16 = true
     } else {
         eeprom.I2cAddr16 = false
