@@ -4877,16 +4877,25 @@ class mtp_ctrl():
         for slot in range(self._slots):
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADI:
                 pn = self.mtp_get_nic_pn(slot)
+                final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_ORC_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADI
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_IBM_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADIIBM
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_MSFT_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADIMSFT
-                self._nic_type_list[slot] = final_nic_type
-                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                if final_nic_type:
+                    self._nic_type_list[slot] = final_nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                else:
+                    self._nic_ctrl_list[slot].nic_set_err_msg("Part number doesn't match any known formats under card type {:s}".format(self.mtp_get_nic_type(slot)))
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2SOLO:
                 pn = self.mtp_get_nic_pn(slot)
+                final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLO
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_THS_PN_FMT, pn):
@@ -4895,18 +4904,33 @@ class mtp_ctrl():
                     final_nic_type = NIC_Type.ORTANO2SOLOMSFT
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2SOLO_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2SOLOS4
-                self._nic_type_list[slot] = final_nic_type
-                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                if final_nic_type:
+                    self._nic_type_list[slot] = final_nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                else:
+                    self._nic_ctrl_list[slot].nic_set_err_msg("Part number doesn't match any known formats under card type {:s}".format(self.mtp_get_nic_type(slot)))
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.ORTANO2ADICR:
                 pn = self.mtp_get_nic_pn(slot)
+                final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADICR
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADICRMSFT
                 elif re.match(PART_NUMBERS_MATCH.ORTANO2ADI_CR_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.ORTANO2ADICRS4
-                self._nic_type_list[slot] = final_nic_type
-                self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                if final_nic_type:
+                    self._nic_type_list[slot] = final_nic_type
+                    self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
+                else:
+                    self._nic_ctrl_list[slot].nic_set_err_msg("Part number doesn't match any known formats under card type {:s}".format(self.mtp_get_nic_type(slot)))
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    self.mtp_set_nic_status_fail(slot)
+                    continue
 
         # populate OCP adapter info
         for slot in range(self._slots):
