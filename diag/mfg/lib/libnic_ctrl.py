@@ -8,7 +8,7 @@ import pexpect
 
 from datetime import datetime
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -1476,15 +1476,15 @@ class nic_ctrl():
         else:
             return False
 
-    def nic_check_jtag(self, asic_support):
+    def nic_check_jtag(self, mtp_type):
         cmd = MFG_DIAG_CMDS.NIC_JTAG_TEST_FMT.format(self._slot+1)
 
         fail_sig_list = ["JTAG Read failed!"]
 
         sig_list = ["valid bit 0x1", "error 0x00"]
-        if asic_support == MTP_ASIC_SUPPORT.ELBA:
+        if mtp_type == MTP_TYPE.ELBA:
             sig_list = ["0x00000001"]
-        elif asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA:
+        elif mtp_type == MTP_TYPE.TURBO_ELBA:
             sig_list = ["0x00000001"]
 
         error_flag = False
@@ -4717,7 +4717,7 @@ class nic_ctrl():
             return False
 
     @nic_console_test_section
-    def nic_mvl_link_test(self):
+    def nic_mvl_link_test(self, ports=1):
         nic_cmd_list = list()
         if not self.nic_check_emmc_mounted():
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -4728,8 +4728,14 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_CHECK_HAL_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in CAPRI_NIC_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
+            if ports == 1:
+                sig = MFG_DIAG_SIG.NIC_MVL_LINK1_SIG
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "1"))
+            elif ports == 2:
+                sig = MFG_DIAG_SIG.NIC_MVL_LINK2_SIG
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_CAPRI_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/", "2"))
         else:
+            sig = MFG_DIAG_SIG.NIC_MVL_LINK_SIG
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MVL_LINK_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
 
         for nic_cmd in nic_cmd_list:
@@ -4742,7 +4748,7 @@ class nic_ctrl():
         if not cmd_buf:
             self.nic_set_err_msg("Buffer empty")
             return False
-        if MFG_DIAG_SIG.NIC_MVL_LINK_SIG in cmd_buf:
+        if sig in cmd_buf:
             self.nic_set_cmd_buf(cmd_buf)
             return True
         else:

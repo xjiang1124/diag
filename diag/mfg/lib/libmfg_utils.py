@@ -1843,7 +1843,7 @@ def display_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list,
 
     return
 
-def display_rj45_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list):
+def display_rj45_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list, length):
     """
     -------------------------------------------------
     | MTP-XXX                                       |
@@ -1899,7 +1899,7 @@ def display_rj45_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_
             or mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in TWO_OOB_MGMT_PORT_TYPE_LIST
             ):
             pre += "    "
-        elif loopback_fail_list[slot] > 0 and mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
+        elif loopback_fail_list[slot+length] > 0 and mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
             pre += "X   "
         elif mtp_mgmt_ctrl.mtp_get_nic_type(slot) in TWO_OOB_MGMT_PORT_TYPE_LIST:
             pre += "o   "
@@ -1926,6 +1926,8 @@ def display_rj45_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_
     for slot in nic_list:
         if loopback_fail_list[slot]:
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "RJ45 module is missing")
+        if loopback_fail_list[slot+length]:
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "RJ45 module in port 2 is missing")
 
     return
     
@@ -2149,8 +2151,8 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
     max_retries_per_slot = 3
 
     length = MTP_Const.MTP_SLOT_NUM
-    loopback_fail_list = [0] * length
-    cur_fail_list = [0] * length
+    loopback_fail_list = [0, 0] * length
+    cur_fail_list = [0, 0] * length
     fail_nic_list = list()
 
     start_ts = timestamp_snapshot()
@@ -2165,10 +2167,10 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
                     continue
                 if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
-                elif nic_type in ELBA_NIC_TYPE_LIST:
+                elif nic_type in ELBA_NIC_TYPE_LIST or nic_type in CAPRI_NIC_TYPE_LIST:
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
-                if nic_type in ELBA_NIC_TYPE_LIST:
+                if nic_type in ELBA_NIC_TYPE_LIST or nic_type in CAPRI_NIC_TYPE_LIST:
                     if ret != "SUCCESS":
                         if loopback_fail_list[slot] == max_retries_per_slot:
                             if slot not in fail_nic_list:
@@ -2179,7 +2181,21 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
                             loopback_fail_list[slot] += 1
                             failure_detected = True
 
-        display_rj45_failures(mtp_mgmt_ctrl, nic_list, cur_fail_list, fail_nic_list)
+
+                ## RJ45 PORT 2
+                if nic_type in TWO_OOB_MGMT_PORT_TYPE_LIST:
+                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot, 2)
+                    if ret != "SUCCESS":
+                        if loopback_fail_list[slot+length] == max_retries_per_slot:
+                            if slot not in fail_nic_list:
+                                fail_nic_list.append(slot)
+                            continue
+                        else:
+                            cur_fail_list[slot+length] = 1
+                            loopback_fail_list[slot+length] += 1
+                            failure_detected = True
+
+        display_rj45_failures(mtp_mgmt_ctrl, nic_list, cur_fail_list, fail_nic_list, length)
 
         if not failure_detected:
             break

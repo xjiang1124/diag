@@ -14,15 +14,15 @@ logfiles:
 
 e2e-targets:
   DL:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
-     - package-elba-mfg-script
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
      - package-fw-assets
     deployment:
       skip-pxe-install: true
@@ -33,8 +33,8 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba
-         - name: ortano-solo
+           value: giglio
+         - name: ginestra
            value: yes
     provision:
       username: diag
@@ -43,15 +43,15 @@ e2e-targets:
         BmOs: linux
 
   P2C:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
-     - package-elba-mfg-script
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
      - package-fw-assets
     deployment:
       skip-pxe-install: true
@@ -62,8 +62,8 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba
-         - name: ortano-solo
+           value: giglio
+         - name: ginestra
            value: yes
     provision:
       username: diag
@@ -72,16 +72,16 @@ e2e-targets:
         BmOs: linux
 
   4C:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
     max-duration: 24h
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
-     - package-elba-mfg-script
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
      - package-fw-assets
     deployment:
       skip-pxe-install: true
@@ -92,8 +92,8 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba
-         - name: ortano-solo
+           value: giglio
+         - name: ginestra
            value: yes
     provision:
       username: diag
@@ -102,15 +102,15 @@ e2e-targets:
         BmOs: linux
 
   SWI:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-solo-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
     feature:
     build-dependencies:
-     - build-amd64-elba
-     - build-arm64-elba
-     - package-elba-mfg-script
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
      - package-fw-assets
     deployment:
       skip-pxe-install: true
@@ -121,8 +121,8 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: elba
-         - name: ortano-solo
+           value: giglio
+         - name: ginestra
            value: yes
     provision:
       username: diag

@@ -7,7 +7,7 @@ var Naples25Tbl = []I2cInfo {
     I2cInfo {"CAP0_3V3",       "TPS549A20", 0x2,   0x1a,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CAP0_HBM",       "TPS549A20", 0x2,   0x1b,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CAP0_CORE_AVDD", "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x2,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"RTC",            "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"TSENSOR",        "TMP422",    0x2,   0x4C,    0x0,    "HUB_NONE",  0,    0},
 
@@ -19,6 +19,6 @@ var Naples25Tbl = []I2cInfo {
 var Naples25MtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 

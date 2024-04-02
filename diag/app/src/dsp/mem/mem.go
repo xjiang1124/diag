@@ -32,7 +32,7 @@ func check_mcc_interrupts() (err int) {
         err = errType.FAIL
         return
     }
-    regexMCC := regexp.MustCompile(`.*int_mcc_(ecc|controller).*`)
+    regexMCC := regexp.MustCompile(`.*int_mcc_(ecc.*|controller\s+)`)
     outStr := string(out)
     matches := regexMCC.FindAllString(outStr, -1)
     if matches != nil {
@@ -84,7 +84,7 @@ func MemDdr_StressHdl(argList []string) {
     availMemInKb := availMemStrArr[1]
     availMemSize, _ := strconv.Atoi(availMemInKb)
     dcli.Println("i", "Available memory in Kbytes: ", availMemSize)
-    availMemSize = (availMemSize / 1024 / 100) * 100;
+    availMemSize = (availMemSize / 1024 / 100) * 100 - 1000;//use available memory - 1G
     dcli.Println("i", "Available memory in Mbytes: ", availMemSize)
 
     cmd = "/data/nic_util/stressapptest_arm"

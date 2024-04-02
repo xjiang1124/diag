@@ -16,7 +16,7 @@ from ddr_test_parameters import test2args as ddrtest2args
 import mtp_diag_regression as diag_reg
 from libdefs import MTP_Const
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -356,8 +356,8 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_type, nic_list, ddr_test_db, test_
             nic_top_test_list = nic_list[:nic_split]
             nic_bottom_test_list = nic_list[nic_split:]
 
-        if (mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA or
-            mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_CAPRI):
+        if (mtp_mgmt_ctrl._mtp_type == MTP_TYPE.TURBO_ELBA or
+            mtp_mgmt_ctrl._mtp_type == MTP_TYPE.TURBO_CAPRI):
             # if Tubor MTP got 8G memory, it can run all 10 NIC in parallel
             if int(mtp_mgmt_ctrl.mtp_get_memory_size()) >= 8 * 1000 * 1000:
                 nic_top_test_list = nic_list[:]
@@ -1097,7 +1097,7 @@ def main():
                 # Disable PCIe polling
                 mtp_mgmt_ctrl.mtp_power_off_nic()
                 mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-                if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
                     mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                     libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
                     diag_pre_fail_list = diag_reg.mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, [], stage)
@@ -1280,7 +1280,7 @@ def main():
         # Enable PCIe poll
         #ADD - Bypass shutting down slot right now for debug
         if not stop_on_err:
-            if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+            if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)

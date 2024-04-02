@@ -4,11 +4,14 @@
 package misc
 
 import (
-    //"fmt"
+    "fmt"
     "math/rand"
+    "os"
     "reflect"
     "strings"
+    "syscall"
     "time"
+    "unsafe"
 
     "common/errType"
 )
@@ -32,6 +35,38 @@ const (
 // Global variables
 
 //========================================================
+
+
+/* 
+    Memory Mapped uint32 read from the address
+*/
+func ReadU32(addr uint64) (value uint32, err error) {
+    pageSize := syscall.Getpagesize()
+    pageSize64 := uint64(pageSize)
+    pageAddr := addr / pageSize64 * pageSize64
+    pageOffset := addr - pageAddr
+
+    file, err := os.Open("/dev/mem")
+    if err != nil {
+        fmt.Printf("ERROR: os.Open /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
+        return
+    }
+
+    defer file.Close()
+    mmap, err := syscall.Mmap(int(file.Fd()), int64(pageAddr), pageSize, syscall.PROT_READ, syscall.MAP_SHARED)
+    if err != nil {
+        fmt.Printf("ERROR: syscall.Mmap /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
+        return
+    }
+    value = *(*uint32)(unsafe.Pointer(&mmap[pageOffset]))
+    err = syscall.Munmap(mmap) 
+    if err != nil {
+        fmt.Printf("ERROR: syscall.Munmap failed.  Err !=nil:   ERR = '%s'\n", err)  
+        return 
+    }
+    return
+}
+
 
 /*
     Integer verion of min

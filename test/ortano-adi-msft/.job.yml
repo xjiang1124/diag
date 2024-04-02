@@ -71,6 +71,36 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  4C:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 24h
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: ortano-adi
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
   SWI:
     commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-adi-msft --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]

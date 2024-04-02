@@ -16,7 +16,7 @@ import libmfg_utils
 import libmtp_utils
 from libdefs import MTP_Const
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -593,8 +593,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         nic_top_test_list = nic_list[:nic_split]
         nic_bottom_test_list = nic_list[nic_split:]
 
-    if (mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA or
-        mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_CAPRI):
+    if (mtp_mgmt_ctrl._mtp_type == MTP_TYPE.TURBO_ELBA or
+        mtp_mgmt_ctrl._mtp_type == MTP_TYPE.TURBO_CAPRI):
         nic_top_test_list    = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
         nic_bottom_test_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
     else:
@@ -1433,7 +1433,7 @@ def main():
                 # Disable PCIe polling
                 mtp_mgmt_ctrl.mtp_power_off_nic()
                 mtp_mgmt_ctrl.mtp_power_on_nic(slot_list=pass_nic_list, dl=False)
-                if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
                     mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before disable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                     libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)
                     diag_pre_fail_list = mtp_nic_diag_init_pre(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, args.skip_test, stage)
@@ -1465,10 +1465,10 @@ def main():
                                     return
 
             ### CAPRI TEST ORDER
-            if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.CAPRI, MTP_ASIC_SUPPORT.TURBO_CAPRI):
+            if mtp_mgmt_ctrl._mtp_type in (MTP_TYPE.CAPRI, MTP_TYPE.TURBO_CAPRI):
                 test_section_list = ["ALOM_LP_MODE", "PRE_CHECK", "ARM_DSP", "NIC_DIAG_INIT_AAPL", "ARM_PRBS", "SNAKE", "J2C_SEQ"]
             ### ELBA TEST ORDER
-            if mtp_mgmt_ctrl._asic_support in (MTP_ASIC_SUPPORT.ELBA, MTP_ASIC_SUPPORT.TURBO_ELBA):
+            if mtp_mgmt_ctrl._mtp_type in (MTP_TYPE.ELBA, MTP_TYPE.TURBO_ELBA):
                 test_section_list = ["PRE_CHECK", "MVL", "SNAKE", "ARM_PRBS", "ARM_DSP", "NIC_DIAG_INIT", "NIC_EDMA_ENV_INIT", "EDMA", "J2C_SEQ"]
             ### ELBA TEST ORDER WITH SPECIAL NC-SI IMAGE
             if stage == FF_Stage.FF_P2C and libmfg_utils.list_intersection(FPGA_TYPE_LIST, nic_type_prsnt_list):
@@ -2080,7 +2080,7 @@ def main():
         #ADD - Bypass shutting down slot right now for debug
         print("STOP ON ERR=" + str(stop_on_err))
         if not stop_on_err:
-            if mtp_mgmt_ctrl.mtp_get_asic_support() == MTP_ASIC_SUPPORT.CAPRI:
+            if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.CAPRI:
                 mtp_mgmt_ctrl.mtp_power_cycle_nic(slot_list=pass_nic_list, dl=False)
                 mtp_mgmt_ctrl.cli_log_inf("Wait {:02d} seconds for NIC power up before enable PCIE poll".format(MTP_Const.MTP_PCIE_EN_DIS_DELAY), level=0)
                 libmfg_utils.count_down(MTP_Const.MTP_PCIE_EN_DIS_DELAY)

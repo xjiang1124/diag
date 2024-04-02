@@ -26,6 +26,7 @@ class nic_test_v2:
         self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.nic_con = nic_con()
         self.nic_test = nic_test()
+        self.encoding = common.encoding
 
     def pc_test(self, args):
         print(args)
@@ -247,7 +248,7 @@ class nic_test_v2:
     def chamber_get_temp(self, ip):
         cmd = "telnet {} 5025".format(ip)
         print(cmd)
-        session=pexpect.spawn(cmd)
+        session=pexpect.spawn(cmd, encoding=self.encoding, codec_errors='ignore')
         session.logfile = sys.stdout
         session.expect(r"\]")
 
@@ -262,7 +263,7 @@ class nic_test_v2:
     def chamber_set_temp(self, ip, temp):
         cmd = "telnet {} 5025".format(ip)
         print(cmd)
-        session=pexpect.spawn(cmd)
+        session=pexpect.spawn(cmd, encoding=self.encoding, codec_errors='ignore')
         session.logfile = sys.stdout
         session.expect(r"\]")
 
@@ -373,6 +374,45 @@ class nic_test_v2:
                     if 'int_mcc_ecc' in session.before or 'int_mcc_controller' in session.before:
                         print("Failed ECC check")
                         return False
+                except pexpect.TIMEOUT:
+                    return False
+
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+
+    def nic_snake(self, args):
+        print(args)
+    
+        if args.slot_list == "":
+            print ("Invalide input slot_list:", slot_list)
+    
+        slot_list = args.slot_list.split(',')
+
+        for idx in range(args.ite):
+            print("=== Ite", idx, "===")
+
+            [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, mgmt=False, asic_type="elba")
+
+            for slot1 in nic_list_pass:
+                slot = int(slot1)
+
+                self.nic_con.switch_console(slot)
+                session = common.session_start()
+                ret = self.nic_con.uart_session_start(session)
+                if ret != 0:
+                    return False
+
+                try:
+                    cmd = ("date; "
+                           "/data/nic_util/asicutil -snake "
+                           "-mode {} -dura {} -verbose {} -int_lpbk {} -snake_num {}; "
+                           "date").format(args.mode, args.dura, args.verbose, args.int_lpbk, args.snake_num)
+                    sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
+                    ret = self.nic_con.uart_session_cmd_sig(session, cmd, args.timeout, "\#", sig, args.verbose)
+                    if ret < 0:
+                        print("P000", ret)
+                        return False
+                    time.sleep(3)
                 except pexpect.TIMEOUT:
                     return False
 
@@ -559,6 +599,20 @@ if __name__ == "__main__":
     parser_fw_update.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
 
     parser_fw_update.set_defaults(func=test.ddr_stress)
+
+    # NIC snake test
+    parser_fw_update = subparsers.add_parser('nic_snake', help='NIC snake test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_fw_update.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_fw_update.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_fw_update.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
+    parser_fw_update.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_fw_update.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_fw_update.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
+    parser_fw_update.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
+    parser_fw_update.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
+
+    parser_fw_update.set_defaults(func=test.nic_snake)
 
     # Chamber temp show/set
     parser_fw_update = subparsers.add_parser('chamber_ctrl', help='Chamber temperature control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

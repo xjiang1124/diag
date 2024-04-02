@@ -26,7 +26,7 @@ class nic_con:
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
-            print "ite: ", ite
+            print("ite: ", ite)
             #timeout = 15
 
             try:
@@ -46,7 +46,7 @@ class nic_con:
                 break
             except pexpect.TIMEOUT:
                 if ite != 0:
-                    print "=== TIMEOUT: Can not connect to NIC on UART!"
+                    print("=== TIMEOUT: Can not connect to NIC on UART!")
                 ret = -1
             #time.sleep(15)
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
@@ -54,7 +54,7 @@ class nic_con:
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
+        session.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
@@ -68,7 +68,7 @@ class nic_con:
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
         for ite in range(numRetry):
-            print "ite: ", ite
+            print("ite: ", ite)
             timeout = 1
 
             try:
@@ -86,7 +86,7 @@ class nic_con:
                 break
             except pexpect.TIMEOUT:
                 if ite != 0:
-                    print "=== TIMEOUT: Can not connect to NIC on UART!"
+                    print("=== TIMEOUT: Can not connect to NIC on UART!")
                 ret = -1
 
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
@@ -94,7 +94,7 @@ class nic_con:
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
             ret = -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
+        session.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
         if i != 0:
@@ -104,7 +104,7 @@ class nic_con:
     def uart_session_start_slot(self, session, baud=115200, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
@@ -123,7 +123,7 @@ class nic_con:
                 session.sendline(self.pwd)
                 session.expect("\#")
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Can not connect to NIC on UART!"
+            print("=== TIMEOUT: Can not connect to NIC on UART!")
             return -1
 
         currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
@@ -131,7 +131,7 @@ class nic_con:
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:
             return -1
-        session.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
+        session.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15) # expect the # in my send command
         i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], 15)
         if i != 0:
@@ -146,7 +146,7 @@ class nic_con:
             session.expect("\$")
             return 0
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Faled to stop UART session ==="
+            print("=== TIMEOUT: Faled to stop UART session ===")
             return -1
 
     def uart_session_cmd_sig(self, session, cmd, timeout=30, ending="\#", sig=["PASS", "FAIL"], verbose=True):
@@ -160,7 +160,7 @@ class nic_con:
 
         except:
             if verbose == True:
-                print "=== TIMEOUT:", cmd, "==="
+                print("=== TIMEOUT:", cmd, "===")
             try:
                 session.send(chr(3))
                 time.sleep(0.05)
@@ -179,7 +179,7 @@ class nic_con:
             session.sendline(cmd)
             ret = session.expect(ending)
         except:
-            print "=== TIMEOUT:", cmd, "==="
+            print("=== TIMEOUT:", cmd, "===")
             session.send(chr(3))
             time.sleep(0.05)
             #session.expect(ending)
@@ -195,7 +195,7 @@ class nic_con:
             session.sendline(cmd)
             session.expect(ending)
         except:
-            print "=== TIMEOUT:", cmd, "==="
+            print("=== TIMEOUT:", cmd, "===")
             session.send(chr(3))
             time.sleep(0.05)
             session.expect(ending)
@@ -212,7 +212,7 @@ class nic_con:
 
     def power_cycle_uart(self, baud_rate=115200, slot=0):
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         numRetry = 3
@@ -231,7 +231,7 @@ class nic_con:
             # Wait for nic to boot
             time.sleep(90)
 
-            print "=== Start Uart Session {} ===".format(i)
+            print("=== Start Uart Session {} ===".format(i))
             ret = self.uart_session_start(session, baud_rate)
             if ret == 0:
                 break
@@ -255,7 +255,7 @@ class nic_con:
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
-        print "Wait", wtime, "after power cycle"
+        print("Wait", wtime, "after power cycle")
         time.sleep(wtime)
 
         common.session_stop(session)
@@ -277,7 +277,7 @@ class nic_con:
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
-        print "Wait", wtime, "after power cycle"
+        print("Wait", wtime, "after power cycle")
         time.sleep(wtime)
 
         common.session_stop(session)
@@ -296,7 +296,7 @@ class nic_con:
         common.session_cmd(session, cmd)
 
         # Wait for nic to boot
-        print "Wait", wtime, "after power cycle"
+        print("Wait", wtime, "after power cycle")
         time.sleep(wtime)
 
         common.session_stop(session)
@@ -306,7 +306,7 @@ class nic_con:
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         numRetry = 3
@@ -316,7 +316,7 @@ class nic_con:
         common.session_cmd(session, cmd) 
         time.sleep(1)
         for retry in range(3):
-            print "Trying enter uboot {}".format(retry)
+            print("Trying enter uboot {}".format(retry))
             cmd = "turn_on_slot.sh off {}".format(slot)
             common.session_cmd(session, cmd) 
             cmd = "turn_on_slot.sh on {}".format(slot)
@@ -332,28 +332,28 @@ class nic_con:
             for i in range(60):
                 session.timeout = 0.5
                 try:
-                    print "C+C", i
+                    print("C+C", i)
                     session.send(chr(3))
                     session.expect(expstr)
                     #time.sleep(1)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
-                    print "timeout:", i
+                    print("timeout:", i)
                     ret = -1
             self.uart_session_stop(session)
             if ret == 0:
                 break
 
         if ret == -1:
-            print "=== Failed to enter uboot ==="
+            print("=== Failed to enter uboot ===")
         return ret
 
     def enter_uboot_by_sysreset_after_pwr_cycle(self, session, slot=0, rate=115200, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         session.timeout = timeout
@@ -368,25 +368,25 @@ class nic_con:
         for i in range(60):
             session.timeout = 0.5
             try:
-                print "C+C", i
+                print("C+C", i)
                 session.send(chr(3))
                 session.expect(expstr)
                 ret = 0
                 break
             except pexpect.TIMEOUT:
-                print "timeout:", i
+                print("timeout:", i)
                 ret = -1
         self.uart_session_stop(session)
 
         if ret == -1:
-            print "=== Failed to enter uboot ==="
+            print("=== Failed to enter uboot ===")
         return ret
 
     def enter_uboot_by_sysreset(self, session, slot=0, rate=115200, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         session.timeout = timeout
@@ -400,7 +400,7 @@ class nic_con:
             common.session_cmd(session, cmd) 
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
             common.session_cmd(session, cmd)
-            print "turn on slot, wait for 30 seconds\n"
+            print("turn on slot, wait for 30 seconds\n")
             sys.stdout.flush()
             time.sleep(30)
 
@@ -410,31 +410,31 @@ class nic_con:
             cmd = "sysreset.sh\r"
             uartsession.sendline(cmd)
             time.sleep(1)
-            print "Trying break into uboot {}".format(retry)
+            print("Trying break into uboot {}".format(retry))
             for i in range(60):
                 uartsession.timeout = 0.5
                 try:
-                    print "C+C", i
+                    print("C+C", i)
                     uartsession.send(chr(3))
                     uartsession.expect(expstr)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
-                    print "timeout:", i
+                    print("timeout:", i)
                     ret = -1
             self.uart_session_stop(uartsession)
             if ret == 0:
                 break
 
         if ret == -1:
-            print "=== Failed to enter uboot ==="
+            print("=== Failed to enter uboot ===")
         return ret
 
     def enter_uboot_esec(self, session, slot=0, rate=115200, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         numRetry = 3
@@ -446,7 +446,7 @@ class nic_con:
 
         asic_type = self.get_asic_type(slot)
         for retry in range(numRetry):
-            print "Trying enter uboot {}".format(retry)
+            print("Trying enter uboot {}".format(retry))
             if (asic_type == "ELBA_FPGA"):
                 cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x21".format(slot)
                 common.session_cmd(session, cmd)
@@ -455,7 +455,7 @@ class nic_con:
                     cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data={}".format(slot, hex(int(match.group(1), 16) | 0x10))
                     common.session_cmd(session, cmd)
                 else:
-                    print "Failed to read CPLD addr=0x21"
+                    print("Failed to read CPLD addr=0x21")
                     continue
 
                 cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x20".format(slot)
@@ -465,7 +465,7 @@ class nic_con:
                     cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data={}".format(slot, hex(int(match.group(1), 16) | 0x6))
                     common.session_cmd(session, cmd)
                 else:
-                    print "Failed to read CPLD addr=0x21"
+                    print("Failed to read CPLD addr=0x21")
                     continue
 
                 cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x51".format(slot)
@@ -478,7 +478,7 @@ class nic_con:
                     cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x51 -data={}".format(slot, data & (~0x10))
                     common.session_cmd(session, cmd)
                 else:
-                    print "Failed to read CPLD addr=0x21"
+                    print("Failed to read CPLD addr=0x21")
                     continue
             else:
                 cmd = "turn_on_slot.sh off {}".format(slot)
@@ -495,7 +495,7 @@ class nic_con:
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
-            print "Wait for 60 seconds before entering uboot"
+            print("Wait for 60 seconds before entering uboot")
             sleep(60)
 
             self.uart_session_start(session, rate)
@@ -505,26 +505,26 @@ class nic_con:
             for i in range(60):
                 session.timeout = 0.5
                 try:
-                    print "C+C", i
+                    print("C+C", i)
                     session.send(chr(3))
                     session.expect(expstr)
                     ret = 0
                     break
                 except pexpect.TIMEOUT:
-                    print "timeout:", i
+                    print("timeout:", i)
                     ret = -1
             self.uart_session_stop(session)
             if ret == 0:
                 break
 
         if ret == -1:
-            print "=== Failed to enter uboot ==="
+            print("=== Failed to enter uboot ===")
         return ret
 
     def enter_uboot_after_reset(self, session, slot=0, rate=115200, timeout=30,):
         ret = -1
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         session.timeout = timeout
@@ -532,17 +532,17 @@ class nic_con:
         for i in range(60):
             session.timeout = 0.3
             try:
-                print "C+C", i
+                print("C+C", i)
                 session.send(chr(3))
                 session.expect("Capri# ")
                 #time.sleep(1)
                 ret = 0
                 break
             except pexpect.TIMEOUT:
-                print "timeout:", i
+                print("timeout:", i)
                 ret = -1
 
-	return ret
+        return ret
 
     def boot_goldfw_uboot(self, slot=0, rate=115200, timeout=30):
         session = common.session_start()
@@ -590,7 +590,7 @@ class nic_con:
             session.sendline("\r")
             session.expect(expstr)
         except pexpect.TIMEOUT:
-            print "Failed to connet uboot"
+            print("Failed to connet uboot")
             self.uart_session_stop(session)
             ret = -1
         return ret
@@ -601,8 +601,8 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot(session, slot, baud_rate)
         if ret == -1:
-            print "=== Failed to change uboot board rate! ==="
-            print "=== MTEST FAILED ==="
+            print("=== Failed to change uboot board rate! ===")
+            print("=== MTEST FAILED ===")
             return ret
 
         exprStr = "Capri# "
@@ -621,11 +621,11 @@ class nic_con:
 
             start = "0xC0000000"
             if "start    = 0x140000000" in session.before:
-                print "=== 4G HBM detected ==="
+                print("=== 4G HBM detected ===")
                 end = "0x17fffffff"
                 timeout = 60
             elif "start    = 0x240000000" in session.before:
-                print "=== 8G HBM detected ==="
+                print("=== 8G HBM detected ===")
                 end = "0x27fffffff"
                 timeout = 150
 
@@ -634,9 +634,9 @@ class nic_con:
             session.sendline(cmd)
             session.expect(exprStr)
             if "with 0 errors" in session.before:
-                print "=== MTEST PASSED LOW 1G ==="
+                print("=== MTEST PASSED LOW 1G ===")
             else:
-                print "=== MTEST FAILED LOW 1G ==="
+                print("=== MTEST FAILED LOW 1G ===")
                 err = err + 1
 
             session.timeout = timeout
@@ -644,19 +644,19 @@ class nic_con:
             session.sendline(cmd)
             session.expect(exprStr)
             if "with 0 errors" in session.before:
-                print "=== MTEST PASSED HIGH 3G ==="
+                print("=== MTEST PASSED HIGH 3G ===")
             else:
-                print "=== MTEST FAILED HIGH 3G ==="
+                print("=== MTEST FAILED HIGH 3G ===")
                 err = err + 1
 
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Faled to perform uboot mtest ==="
+            print("=== TIMEOUT: Faled to perform uboot mtest ===")
             err = -1
 
         if err == 0:
-            print "=== MTEST PASSED ==="
+            print("=== MTEST PASSED ===")
         else:
-            print "=== MTEST FAILED ==="
+            print("=== MTEST FAILED ===")
 
         self.uart_session_stop(session)
         common.session_stop(session)
@@ -685,7 +685,7 @@ class nic_con:
             asic_type = "GIGLIO_CPLD"
         else:
             asic_type = "CAPRI"
-        print("asic_type:", asic_type)
+        print(("asic_type:", asic_type))
         return asic_type
 
     def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
@@ -708,7 +708,7 @@ class nic_con:
         #fmt_dummy_fru_json = '"mac-address": "00:11:22:33:{:02}:00"'
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         asic_type = self.get_asic_type(slot)
@@ -751,13 +751,13 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'oob_mnic0' in session.before:
-                print 'oob_mnic0 enabled'
+                print('oob_mnic0 enabled')
             else:
                 self.uart_session_cmd(session, cmd_pre)
                 self.uart_session_cmd(session, "sysinit.sh classic hw diag", 15)
 
         except pexpect.TIMEOUT:
-            print "=== TIMEOUT: Faled to enable management port ==="
+            print("=== TIMEOUT: Faled to enable management port ===")
             ret = -1
 
         self.uart_session_stop(session)
@@ -783,7 +783,7 @@ class nic_con:
     def config_mnic(self, rate=115200, slot=0, uefi=False, dis_net_port=False):
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         session = common.session_start()
@@ -802,7 +802,7 @@ class nic_con:
                     self.run_mes_mtp_reset_commands(session)
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                 time.sleep(0.5)
-                print 'oob_mnic0 enabled'
+                print('oob_mnic0 enabled')
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 up")
                 self.uart_session_cmd(session, "halctl debug port --port Eth1/3 --admin-state up")
                 if dis_net_port == True:
@@ -810,12 +810,12 @@ class nic_con:
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
             else:
-                print 'oob_mnic0 NOT enabled!'
+                print('oob_mnic0 NOT enabled!')
                 ret = 1
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to config management port ==="
+            print("=== TIMEOUT: Faled to config management port ===")
             ret = -1
 
         self.uart_session_stop(session)
@@ -838,11 +838,11 @@ class nic_con:
             ret, output = self.uart_session_cmd_w_ot(session, "ping 10.1.1.100 -c 10 -s 64", 60)
             if ret == 0:
                 if " 0% packet loss" not in output:
-	            print("Ping check failed!")
+                    print("Ping check failed!")
                     ret = -2
         except:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Failed to ping host ==="
+            print("=== TIMEOUT: Failed to ping host ===")
             ret = -1
 
         self.uart_session_stop(session)
@@ -860,10 +860,10 @@ class nic_con:
             ret, output = common.session_cmd_w_ot(session, cmd, 60)
             if ret == 0:
                 if " 0% packet loss" not in output:
-	            print("Ping check failed!")
+                    print("Ping check failed!")
                     ret = -2
         except:
-            print "=== TIMEOUT: Failed to ping slot {} ===".format(slot)
+            print("=== TIMEOUT: Failed to ping slot {} ===".format(slot))
             ret = -1
 
         common.session_stop(session)
@@ -895,7 +895,7 @@ class nic_con:
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to fix elb bx ==="
+            print("=== TIMEOUT: Faled to fix elb bx ===")
             ret = -1
 
         self.uart_session_stop(session)
@@ -906,7 +906,7 @@ class nic_con:
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         self.switch_console(slot)
@@ -914,13 +914,13 @@ class nic_con:
         if skip_enable == False:
             ret = self.enable_mnic(rate, slot, first_pwr_on)
             if ret != 0:
-                print "=== FAIL to enable management port! ==="
+                print("=== FAIL to enable management port! ===")
                 return ret
 
         for i in range(numRetry):
             ret = self.config_mnic(rate, slot, uefi, dis_net_port)
             if ret == -1:
-                print "=== FAIL to enable management port! ==="
+                print("=== FAIL to enable management port! ===")
                 return ret
             elif ret == 0:
                 break
@@ -928,17 +928,17 @@ class nic_con:
             time.sleep(10)
 
         if ret != 0:
-            print "=== FAIL to enable management port! Max retry reached!"
+            print("=== FAIL to enable management port! Max retry reached!")
             return -1
         else:
-            print "=== Management port is ready ==="
+            print("=== Management port is ready ===")
         # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
         asic_type = self.get_asic_type(slot)
         if asic_type == "GIGLIO_CPLD":
             print "sleep 10"
             time.sleep(10)
         ret = self.ping_check_mtp(slot)
-        print("ret:", ret)
+        print(("ret:", ret))
 
         # if ping test fails, apply WA for Elba
         mtpType = os.environ['MTP_TYPE']
@@ -960,7 +960,7 @@ class nic_con:
     def switch_fw(self, rate, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             return -1
 
         session = common.session_start()
@@ -973,15 +973,15 @@ class nic_con:
             session.expect("\#")
             temp = session.after
             if 'mainfwa' in session.before:
-                print 'current fw is mainfwa, switching to mainfwb'
+                print('current fw is mainfwa, switching to mainfwb')
                 cmd = "fwupdate -s mainfwb"
             else:
-                print 'current fw is mainfwb, switching to mainfwa'
+                print('current fw is mainfwb, switching to mainfwa')
                 cmd = "fwupdate -s mainfwa"
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to get fw ==="
+            print("=== TIMEOUT: Faled to get fw ===")
             ret = -1
 
         try:
@@ -990,7 +990,7 @@ class nic_con:
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to switch fw ==="
+            print("=== TIMEOUT: Faled to switch fw ===")
             ret = -1
 
         try:
@@ -999,7 +999,7 @@ class nic_con:
 
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Faled to reboot after switching fw ==="
+            print("=== TIMEOUT: Faled to reboot after switching fw ===")
             ret = -1
 
         self.uart_session_stop(session)
@@ -1012,11 +1012,11 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
-            print "Failed to connect uboot"
+            print("Failed to connect uboot")
             return ret
 
         if hardcode == True:
@@ -1040,12 +1040,12 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             common.session_stop(session)
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
-            print "Failed to connect uboot"
+            print("Failed to connect uboot")
             common.session_stop(session)
             return ret
 
@@ -1054,7 +1054,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
         if ret == -1:
-            print "Failed to set pcie_poll_disable"
+            print("Failed to set pcie_poll_disable")
         return ret
 
     def enable_pcie_uboot(self, slot):
@@ -1063,12 +1063,12 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             common.session_stop(session)
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
-            print "Failed to connect uboot"
+            print("Failed to connect uboot")
             common.session_stop(session)
             return ret
 
@@ -1077,7 +1077,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
         if ret == -1:
-            print "Failed to set pcie_poll_disable"
+            print("Failed to set pcie_poll_disable")
         return ret
 
     def config_cpld_qspi_wp(self, session, enable):
@@ -1099,14 +1099,14 @@ class nic_con:
             session.expect(expstr)
 
             if int(session.before.splitlines()[1], 16) & 0x80 != rd_value:
-                print "unexpected status after", str, "WP"
+                print("unexpected status after", str, "WP")
                 ret = -1
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Failed to", str, "WP ==="
+            print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
-            print "Failed to", str, "WP on CPLD"
+            print("Failed to", str, "WP on CPLD")
         return ret
 
     def config_esec_qspi_wp(self, session, enable):
@@ -1123,10 +1123,10 @@ class nic_con:
             session.expect(expstr)
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Failed to", str, "WP ==="
+            print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
-            print "Failed to", str, "WP in uboot"
+            print("Failed to", str, "WP in uboot")
         return ret
 
     def check_esec_qspi_wp(self, session, enable):
@@ -1142,14 +1142,14 @@ class nic_con:
             session.sendline("hwprot")
             session.expect(expstr)
             if exp_output not in session.before:
-                print "unexpected status after", str, "WP"
+                print("unexpected status after", str, "WP")
                 ret = -1
         except pexpect.TIMEOUT:
             self.uart_session_stop(session)
-            print "=== TIMEOUT: Failed to", str, "WP ==="
+            print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
-            print "Failed to", str, "WP in uboot"
+            print("Failed to", str, "WP in uboot")
         return ret
 
     def file_compare(self, fn1, fn2):
@@ -1252,7 +1252,7 @@ class nic_con:
         common.session_cmd(j2c_session, "diag_open_j2c_if $port $slot1", 30, False, "tclsh]")
         common.session_cmd(j2c_session, "_msrd", 30, False, "tclsh]")
         if "0x00000001" not in j2c_session.before:
-            print "ERROR: j2c failure"
+            print("ERROR: j2c failure")
             common.session_cmd(j2c_session, "exit", 10)
             common.session_stop(j2c_session)
             return -1
@@ -1291,7 +1291,7 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot_by_sysreset_after_pwr_cycle(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             common.session_stop(session)
             return ret
         self.uart_session_start(session)
@@ -1323,9 +1323,9 @@ class nic_con:
         common.session_stop(session)
         if ret == 0:
             if enable == True:
-                print "Succeeded to set QSPI WP enable for slot", slot
+                print("Succeeded to set QSPI WP enable for slot", slot)
             else:
-                print "Succeeded to set QSPI WP disable for slot", slot
+                print("Succeeded to set QSPI WP disable for slot", slot)
         return ret
 
     def setup_uboot_env(self, slot):
@@ -1334,11 +1334,11 @@ class nic_con:
         session = common.session_start()
         ret = self.enter_uboot_by_sysreset(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             return ret
         ret = self.conn_uboot(session)
         if ret != 0:
-            print "Failed to connect uboot"
+            print("Failed to connect uboot")
             return ret
 
         self.uart_session_cmd(session, "setenv mem_dp_tot_size 26G", 30, expstr)
@@ -1353,7 +1353,7 @@ class nic_con:
 
     def switch_console(self, slot=1):
         if int(slot) > 10:
-            print "Invalide slot {}!".format(slot)
+            print("Invalide slot {}!".format(slot))
             return -1
 
         session = common.session_start()

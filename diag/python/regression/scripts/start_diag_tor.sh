@@ -19,10 +19,11 @@ ln -sf /fs/nos/home_diag $DIAG_HOME
 echo "Untar ASIC lib"
 ASIC_IMG=$DIAG_HOME/nic.tar.gz
 asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
-asic=$(echo $asic_type | awk '{print toupper($0)}')
+asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
 chmod -R 755 $DIAG_DIR/asic_all/$asic/
-tar xf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+rm -rf  $DIAG_DIR/asic_all/$asic/*
+tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
 cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
 cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
 rm -rf $DIAG_DIR/asic_all/$asic/nic
@@ -70,6 +71,21 @@ cp -r $DIAG_HOME/diag/scripts/taormina/readline/tcltk/x86_64-linux-gnu/* /usr/li
 
 #==================================
 source $DIAG_DIR/python/infra/config/scripts/pre_dsp_tor
+
+ASIC_DIR_TOP=$DIAG_DIR/asic_all
+ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
+
+ASIC_LIB_BUNDLE=$DIAG_DIR/asic
+rm -rf $ASIC_LIB_BUNDLE
+ln -sf $ASIC_DIR_SUB_TOP $ASIC_LIB_BUNDLE
+
+
+echo "Set up ASIC environment"
+echo "export ASIC_LIB_BUNDLE=$ASIC_LIB_BUNDLE" >> temp_profile
+echo "export ASIC_SRC=\$ASIC_LIB_BUNDLE/asic_src" >> temp_profile
+echo "export ASIC_LIB=\$ASIC_LIB_BUNDLE/asic_lib" >> temp_profile
+echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
+echo "source \$ASIC_LIB/source_env_path" >> temp_profile
 
 hack_asic_elba.sh
 

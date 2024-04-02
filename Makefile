@@ -25,7 +25,7 @@ docker/build-shell-image: docker/install_box
 	BOX_INCLUDE_ENV="USER USER_UID USER_GID GROUP_NAME HOST_HOSTNAME HOST_WORKSPACE" USER_UID=$$(id -u) USER_GID=$$(id -g) GROUP_NAME=$$(id -gn) HOST_HOSTNAME=$$(hostname) HOST_WORKSPACE=$$(git rev-parse --show-toplevel) box -t ${SHELL_IMAGE_NAME} box.rb
 
 docker/install_box:
-	@if [ ! -x /usr/local/bin/box ]; then echo "Installing box, sudo is required"; curl -sSL box-builder.sh | sudo bash; fi
+	@if [ ! -x /usr/local/bin/box ]; then echo "Installing box, sudo is required"; curl -sSL http://pm.test.pensando.io/tools/box-builder/install.sh | sudo bash; fi
 
 # make a test image for CI run.
 docker/build: docker/install_box
