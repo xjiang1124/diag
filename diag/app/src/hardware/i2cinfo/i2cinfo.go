@@ -678,8 +678,7 @@ var LipariTbl = []I2cInfo {
 
 var MateraI2cTbl = []I2cInfo {
     //       name    comp          Bus   devAddr  page  HubName     HubPort  Flag
-    I2cInfo {"FRU",  "AT24C04C",    7,   0x50,    0x0,  "HUB_NONE", 0,       I2C_TEST_ENABLE},
-    I2cInfo {"MB",   "AT24C04C",    7,   0x50,    0x0,  "HUB_NONE", 0,       I2C_TEST_ENABLE},
+    I2cInfo {"FRU",  "AT24C04C",    7,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM}, //MB FRU
     I2cInfo {"IOB1", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
     I2cInfo {"IOB2", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
     I2cInfo {"FPIC", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
