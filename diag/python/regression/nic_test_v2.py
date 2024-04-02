@@ -26,6 +26,7 @@ class nic_test_v2:
         self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
         self.nic_con = nic_con()
         self.nic_test = nic_test()
+        self.encoding = common.encoding
 
     def pc_test(self, args):
         print(args)
@@ -247,7 +248,7 @@ class nic_test_v2:
     def chamber_get_temp(self, ip):
         cmd = "telnet {} 5025".format(ip)
         print(cmd)
-        session=pexpect.spawn(cmd)
+        session=pexpect.spawn(cmd, encoding=self.encoding, codec_errors='ignore')
         session.logfile = sys.stdout
         session.expect(r"\]")
 
@@ -262,7 +263,7 @@ class nic_test_v2:
     def chamber_set_temp(self, ip, temp):
         cmd = "telnet {} 5025".format(ip)
         print(cmd)
-        session=pexpect.spawn(cmd)
+        session=pexpect.spawn(cmd, encoding=self.encoding, codec_errors='ignore')
         session.logfile = sys.stdout
         session.expect(r"\]")
 

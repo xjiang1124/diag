@@ -9,6 +9,10 @@ import time
 import yaml
 from collections import OrderedDict
 
+
+PY3 = (sys.version_info[0] >= 3)
+encoding = "utf-8" if PY3 else None
+
 #=========================================================
 # To load yaml file in order
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
@@ -80,6 +84,7 @@ CONST = _Const()
 
 pwd_prompt = "password: "
 bash_prompt = "\$ "
+#bash_prompt = r"$ "
 sudo_pwd = "lab123"
 
 #=============================
@@ -92,7 +97,7 @@ def runcmd(cmd, timeout=30, sudo=False):
         expstr = CONST.EOF
 
     try:
-        session = pexpect.spawn(cmd, timeout=timeout)
+        session = pexpect.spawn(cmd, timeout=timeout, encoding=encoding, codec_errors='ignore')
         session.logfile_read = sys.stdout
         i = session.expect(expstr, timeout=timeout)
         if sudo == True:
@@ -111,7 +116,7 @@ def run_cmd(cmd, timeout=30, sudo=False):
         cmd = "sudo "+cmd
     expstr = [pwd_prompt, bash_prompt]
     try:
-        session = pexpect.spawn(cmd)
+        session = pexpect.spawn(cmd, encoding=encoding, codec_errors='ignore')
         session.logfile_read = sys.stdout
         session.timeout = timeout
         i = session.expect(expstr)
@@ -133,7 +138,7 @@ def bash_cmd(cmd, timeout=30, sudo=False):
         cmd = "sudo "+cmd
     expstr = [pwd_prompt, bash_prompt]
     try:
-        session = pexpect.spawn("bash")
+        session = pexpect.spawn("bash", encoding=encoding, codec_errors='ignore')
         session.expect(bash_prompt)
         session.logfile_read = sys.stdout
         session.timeout = timeout
@@ -324,8 +329,10 @@ def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeou
 #=============================
 # Start bash session
 def session_start(timeout=30):
+    print("Encoding:", encoding)
     try:
-        session = pexpect.spawn("bash", timeout=timeout, ignore_sighup=False)
+        session = pexpect.spawn("bash", timeout=timeout, ignore_sighup=False, encoding=encoding, codec_errors='ignore')
+        #session = pexpect.spawn("bash", timeout=timeout, ignore_sighup=False)
         session.logfile_read = sys.stdout
         session.expect(bash_prompt) 
         return session
