@@ -21,6 +21,8 @@ import (
     "device/powermodule/sn1701022"
     "device/powermodule/tps53688"
     "device/powermodule/tps53830"
+    "device/powermodule/tps25990"
+    "device/powermodule/isl69247"
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/tempsensor/tmp42123"
@@ -510,6 +512,8 @@ func init() {
     materaDispStaList["TEMP_MB"]   = lm75a.DispStatus
     materaDispStaList["TEMP_IOB1"] = lm75a.DispStatus
     materaDispStaList["TEMP_IOB2"] = lm75a.DispStatus
+    materaDispStaList["P12V"] = tps25990.DispStatus
+    materaDispStaList["CPU_VDDCR"] = isl69247.DispStatus
 
     materaI2cHubMap = make(map[string]I2cHubInfo)
 

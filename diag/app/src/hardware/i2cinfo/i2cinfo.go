@@ -684,14 +684,16 @@ var MateraI2cTbl = []I2cInfo {
     I2cInfo {"IOB2", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
     I2cInfo {"FPIC", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
     // TODO: CPLD_ELBA0 to simulate MTP_MATERA CPLD, but it's ARM based?
-    I2cInfo {"CPLD", "MACHXO3",     0,   0x4A,    0x0,  "FPGA1_HUB_0",  0,   I2C_TEST_ENABLE},
-    I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",    0,  I2C_TEST_ENABLE},   //cannot ping
-    I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",    0,  I2C_TEST_ENABLE},
-    I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",    0,  I2C_TEST_ENABLE},   //cannot ping
-    I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",    0,  I2C_TEST_ENABLE},   //cannot ping
-    I2cInfo {"TEMP_IOB1", "LM75",     6,  0x48,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_MB",   "LM75",     6,  0x49,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_IOB2", "LM75",     6,  0x4A,   0x0,  "HUB_NONE",  0,    I2C_TEST_ENABLE},
+    I2cInfo {"CPLD", "MACHXO3",     0,   0x4A,    0x0,  "FPGA1_HUB_0",  0,   0},
+    I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
+    I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",    0,  0},
+    I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
+    I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
+    I2cInfo {"TEMP_IOB1", "LM75",     6,  0x48,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TEMP_MB",   "LM75",     6,  0x49,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TEMP_IOB2", "LM75",     6,  0x4A,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"P12V",      "TPS25990", 10, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
+    I2cInfo {"CPU_VDDCR", "ISL69247", 10, 0x60,   0x0,  "HUB_NONE",  0,    0},
 }
 
 // simulate UUT on Lipari using its 8 Elba CPLD

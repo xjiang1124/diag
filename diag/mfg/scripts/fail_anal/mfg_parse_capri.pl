@@ -5,7 +5,7 @@ use Time::Local;
 use Cwd;
 use YAML::XS;
 
-my $rev = "1.18.09282023";
+my $rev = "1.23.03262024";
 my $fa_opt = shift;
 my $card_type = shift;
 my $test_name_opt = shift;
@@ -338,9 +338,34 @@ sub pick_top_diag_fa {
         return;
     }
 
-    if (exists $diag_fa_code{"TEST_IGNORED"}) {
-        $top_diag_fa_code = "TEST_IGNORED";
-        delete $diag_fa_code{"TEST_IGNORED"};
+    if (exists $diag_fa_code{"EDMA_FAILURE"}) {
+        $top_diag_fa_code = "EDMA_FAILURE";
+        delete $diag_fa_code{"EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"HV_EDMA_FAILURE"}) {
+        if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+            $top_diag_fa_code = "HV_LV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            delete $diag_fa_code{"LV_EDMA_FAILURE"};
+            return;
+        } else {
+            $top_diag_fa_code = "HV_EDMA_FAILURE";
+            delete $diag_fa_code{"HV_EDMA_FAILURE"};
+            return;
+        }
+    }
+
+    if (exists $diag_fa_code{"LV_EDMA_FAILURE"}) {
+        $top_diag_fa_code = "LV_EDMA_FAILURE";
+        delete $diag_fa_code{"LV_EDMA_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"L1_DDR_BIST"}) {
+        $top_diag_fa_code = "L1_DDR_BIST";
+        delete $diag_fa_code{"L1_DDR_BIST"};
         return;
     }
 
@@ -356,9 +381,34 @@ sub pick_top_diag_fa {
         return;
     }
 
+
+    if (exists $diag_fa_code{"DDR_INIT_FAILURE"}) {
+        $top_diag_fa_code = "DDR_INIT_FAILURE";
+        delete $diag_fa_code{"DDR_INIT_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PCIE_PRBS_FAILURE"}) {
+        $top_diag_fa_code = "PCIE_PRBS_FAILURE";
+        delete $diag_fa_code{"PCIE_PRBS_FAILURE"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
+        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
+        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
+        return;
+    }
+
     if (exists $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"}) {
         $top_diag_fa_code = "PCIE_PLL_FAILURE(0x2e)";
         delete $diag_fa_code{"PCIE_PLL_FAILURE(0x2e)"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"PUF_ERRORS(0x2a)"}) {
+        $top_diag_fa_code = "PUF_ERRORS(0x2a)";
+        delete $diag_fa_code{"PUF_ERRORS(0x2a)"};
         return;
     }
 
@@ -388,10 +438,12 @@ sub pick_top_diag_fa {
         }
     }
 
-    if (exists $diag_fa_code{"PCIE_PRBS_FAILURE"}) {
-        $top_diag_fa_code = "PCIE_PRBS_FAILURE";
-        delete $diag_fa_code{"PCIE_PRBS_FAILURE"};
-        return;
+    for (keys %diag_fa_code) {
+        if ($_ =~ "ARM_L1_" && $_ !~ "ARM_L1_LOGFILE_NOT_EXIST") {
+            $top_diag_fa_code = "$_";
+            delete $diag_fa_code{"$_"};
+            return;
+        }
     }
 
     if (exists $diag_fa_code{"ETH_PRBS_FAILURE"}) {
@@ -427,12 +479,6 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"L1_ESEC_FAILURE"}) {
         $top_diag_fa_code = "L1_ESEC_FAILURE";
         delete $diag_fa_code{"L1_ESEC_FAILURE"};
-        return;
-    }
-
-    if (exists $diag_fa_code{"SNAKE_PCIe_LINKUP"}) {
-        $top_diag_fa_code = "SNAKE_PCIe_LINKUP";
-        delete $diag_fa_code{"SNAKE_PCIe_LINKUP"};
         return;
     }
 
@@ -487,6 +533,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"INCORRECT_PN_REV"};
         return;
     }
+    if (exists $diag_fa_code{"INCORRECT_MAC"}) {
+        $top_diag_fa_code = "INCORRECT_MAC";
+        delete $diag_fa_code{"INCORRECT_MAC"};
+        return;
+    }
     if (exists $diag_fa_code{"PN_SW_MATCH_ERR"}) {
         $top_diag_fa_code = "PN_SW_MATCH_ERR";
         delete $diag_fa_code{"PN_SW_MATCH_ERR"};
@@ -500,6 +551,16 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"CARD_RESET"}) {
         $top_diag_fa_code = "CARD_RESET";
         delete $diag_fa_code{"CARD_RESET"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C_L1"}) {
+        $top_diag_fa_code = "Bad_J2C_L1";
+        delete $diag_fa_code{"Bad_J2C_L1"};
+        return;
+    }
+    if (exists $diag_fa_code{"Bad_J2C"}) {
+        $top_diag_fa_code = "Bad_J2C";
+        delete $diag_fa_code{"Bad_J2C"};
         return;
     }
     if (exists $diag_fa_code{"SNAKE_HBM_LOG_INCOMPLETE"}) {
@@ -532,6 +593,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"SNAKE_PCIE_LOGFILE_NOT_EXIST"};
         return;
     }
+    if (exists $diag_fa_code{"SNAKE_OTHER"}) {
+        $top_diag_fa_code = "SNAKE_OTHER";
+        delete $diag_fa_code{"SNAKE_OTHER"};
+        return;
+    }
     if (exists $diag_fa_code{"L1_LOG_INCOMPLETE"}) {
         $top_diag_fa_code = "L1_LOG_INCOMPLETE";
         delete $diag_fa_code{"L1_LOG_INCOMPLETE"};
@@ -562,6 +628,7 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"NIC_TXT_EMPTY"};
         return;
     }
+
     if (exists $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"}) {
         $top_diag_fa_code = "ETH_PRBS_LOG_INCOMPLETE";
         delete $diag_fa_code{"ETH_PRBS_LOG_INCOMPLETE"};
@@ -582,14 +649,35 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"ARM_L1_LOG_EMPTY"};
         return;
     }
-    if (exists $diag_fa_code{"Bad_J2C_L1"}) {
-        $top_diag_fa_code = "Bad_J2C_L1";
-        delete $diag_fa_code{"Bad_J2C_L1"};
+
+    if (exists $diag_fa_code{"NIC_JTAG_FAILURE"}) {
+        $top_diag_fa_code = "NIC_JTAG_FAILURE";
+        delete $diag_fa_code{"NIC_JTAG_FAILURE"};
         return;
     }
-    if (exists $diag_fa_code{"Bad_J2C"}) {
-        $top_diag_fa_code = "Bad_J2C";
-        delete $diag_fa_code{"Bad_J2C"};
+    if (exists $diag_fa_code{"HSM_UNAVAILABLE"}) {
+        $top_diag_fa_code = "HSM_UNAVAILABLE";
+        delete $diag_fa_code{"HSM_UNAVAILABLE"};
+        return;
+    }
+    if (exists $diag_fa_code{"MVL_ACC_FAILURE"}) {
+        $top_diag_fa_code = "MVL_ACC_FAILURE";
+        delete $diag_fa_code{"MVL_ACC_FAILURE"};
+        return;
+    }
+    if (exists $diag_fa_code{"MVL_STUB_FAILURE"}) {
+        $top_diag_fa_code = "MVL_STUB_FAILURE";
+        delete $diag_fa_code{"MVL_STUB_FAILURE"};
+        return;
+    }
+    if (exists $diag_fa_code{"MVL_LINK_DOWN"}) {
+        $top_diag_fa_code = "MVL_LINK_DOWN";
+        delete $diag_fa_code{"MVL_LINK_DOWN"};
+        return;
+    }
+    if (exists $diag_fa_code{"ETH1/3_PORT_DOWN"}) {
+        $top_diag_fa_code = "ETH1/3_PORT_DOWN";
+        delete $diag_fa_code{"ETH1/3_PORT_DOWN"};
         return;
     }
     if (exists $diag_fa_code{"CARD_SPACE_FULL"}) {
@@ -612,6 +700,11 @@ sub pick_top_diag_fa {
         delete $diag_fa_code{"OOB_MNIC_NOT_ENABLED"};
         return;
     }
+    if (exists $diag_fa_code{"MGMT_NIC_REBOOTED"}) {
+        $top_diag_fa_code = "MGMT_NIC_REBOOTED";
+        delete $diag_fa_code{"MGMT_NIC_REBOOTED"};
+        return;
+    }
     if (exists $diag_fa_code{"KEY_PROG_CRC_ERR"}) {
         $top_diag_fa_code = "KEY_PROG_CRC_ERR";
         delete $diag_fa_code{"KEY_PROG_CRC_ERR"};
@@ -620,6 +713,16 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"}) {
         $top_diag_fa_code = "ELBA_SELF_POWER_CYCLE(0x50)";
         delete $diag_fa_code{"ELBA_SELF_POWER_CYCLE(0x50)"};
+        return;
+    }
+    if (exists $diag_fa_code{"QSFP_I2C"}) {
+        $top_diag_fa_code = "QSFP_I2C";
+        delete $diag_fa_code{"QSFP_I2C"};
+        return;
+    }
+    if (exists $diag_fa_code{"PCIE_LINK_SPEED_WIDTH"}) {
+        $top_diag_fa_code = "PCIE_LINK_SPEED_WIDTH";
+        delete $diag_fa_code{"PCIE_LINK_SPEED_WIDTH"};
         return;
     }
     if (exists $diag_fa_code{"PSU1_NOT_INSTALLED"}) {
@@ -652,6 +755,53 @@ sub pick_top_diag_fa {
         return;
     }
 
+    if (exists $diag_fa_code{"NO_ERR_IN_SNAKE_HBM_LOG"}) {
+        $top_diag_fa_code = "NO_ERR_IN_SNAKE_HBM_LOG";
+        delete $diag_fa_code{"NO_ERR_IN_SNAKE_HBM_LOG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"NO_ERR_IN_SNAKE_PCIE_LOG"}) {
+        $top_diag_fa_code = "NO_ERR_IN_SNAKE_PCIE_LOG";
+        delete $diag_fa_code{"NO_ERR_IN_SNAKE_PCIE_LOG"};
+        return;
+    }
+
+    if (exists $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"}) {
+        $top_diag_fa_code = "CONSOLE_BOOT_UNKNOWN";
+        delete $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"};
+        return;
+    }
+    if (exists $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"}) {
+        $top_diag_fa_code = "MGMT_PORT_FAILURE_UNKNOWN";
+        delete $diag_fa_code{"MGMT_PORT_FAILURE_UNKNOWN"};
+        return;
+    }
+    if (exists $diag_fa_code{"L1_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "L1_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"L1_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"ARM_L1_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "ARM_L1_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"ARM_L1_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"ETH_PRBS_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "ETH_PRBS_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"ETH_PRBS_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "NIC_LOGFILE_NOT_EXIST";
+        delete $diag_fa_code{"NIC_LOGFILE_NOT_EXIST"};
+        return;
+    }
+    if (exists $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"}) {
+        $top_diag_fa_code = "NIC_TXTFILE_NOT_EXIST";
+        delete $diag_fa_code{"NIC_TXTFILE_NOT_EXIST"};
+        return;
+    }
     if (exists $diag_fa_code{"ALL_SLOTS_FAIL"}) {
         $top_diag_fa_code = "ALL_SLOTS_FAIL";
         delete $diag_fa_code{"ALL_SLOTS_FAIL"};
@@ -665,6 +815,11 @@ sub pick_top_diag_fa {
     if (exists $diag_fa_code{"SLOTS_10_6_FAIL"}) {
         $top_diag_fa_code = "SLOTS_10_6_FAIL";
         delete $diag_fa_code{"SLOTS_10_6_FAIL"};
+        return;
+    }
+    if (exists $diag_fa_code{"TEST_IGNORED"}) {
+        $top_diag_fa_code = "TEST_IGNORED";
+        delete $diag_fa_code{"TEST_IGNORED"};
         return;
     }
     if (%diag_fa_code) {
@@ -727,7 +882,7 @@ sub parse_snake_hbm_log {
     if ($test_err_msg ne "") {
         $all_test_msg .= $test_err_msg;
     } else {
-        if (! exists $diag_fa_code{"SNAKE_HBMLOG_EMPTY"}) {
+        if (! exists $diag_fa_code{"SNAKE_HBM_LOG_EMPTY"}) {
             $diag_fa_code{"NO_ERR_IN_SNAKE_HBM_LOG"} = 1;
         }
     }
@@ -838,12 +993,14 @@ sub parse_l1_log {
             $test_err_msg .= $line;
             $puf_error = 1;
         }
-
+        if($line =~ m/ERROR :: cap_puf_dppm_chk:/) {
+            $test_err_msg .= $line;
+        }
         if(($line =~ m/ERROR :: -> cap_esec_l1_test.*failed with \d+ errors/)) {
             $test_err_msg .= $line;
-            if ($puf_error == 1) {
+            #if ($puf_error == 1) {
                 $diag_fa_code{"L1_ESEC_FAILURE"} = 1;
-            }
+            #}
         }
         if($line =~ m/cap_chlng_wr :: Timeout while waiting for sta_WACK/) {
             $test_err_msg .= $line;
@@ -1251,6 +1408,9 @@ sub find_failure_code {
                 $diag_fa_code{"CONSOLE_BOOT_UNKNOWN"} = 1;
             }
         }
+        if ($test_name =~ "MVL" && $failure_code =~ "STUB") {
+            $diag_fa_code{"MVL_STUB_FAILURE"} = 1;
+        }
     }
     if ($stage ne "FST") {
         parse_mtp_and_slot_log($fulllogpath, $failedslot, $stage, $all_failure_codes);
@@ -1299,6 +1459,7 @@ sub parse_fst_rot {
     my $fail_linenum = 0;
     my @fa_code;
     my $fa_code_str = "";
+    my $cable_connected = 0;
 
     if (!open(TR3, '<', $fstlogfile)) {
         print "Cannot open file $fstlogfile\n";
@@ -1310,6 +1471,7 @@ sub parse_fst_rot {
             my $usbport = $1;
             my $rotfile = $fulllogpath."/"."rot_$usbport.log";
             $test_err_msg .= $line;
+            $cable_connected = 1;
             if (!open(TR, '<', $rotfile)) {
                 print "Cannot open file $rotfile\n";
                 next;
@@ -1365,11 +1527,15 @@ sub parse_fst_rot {
             close(TR);
         }
     }
-    foreach (@fa_code) {
-        print "fa code is: $_\n";
-        $fa_code_str .= $_."\n";
+    if ($cable_connected == 0) {
+        $diag_fa_code{"CABLE_NOT_CONNECTED"} = 1;
+    } else {
+        foreach (@fa_code) {
+            print "fa code is: $_\n";
+            $fa_code_str .= $_."\n";
+        }
+        $diag_fa_code{$fa_code_str} = 1;
     }
-    $diag_fa_code{$fa_code_str} = 1;
     if ($test_err_msg ne "") {
         $all_test_msg .= "log path: ".$fulllogpath."\n";
         $all_test_msg .= $test_err_msg;
@@ -1440,7 +1606,17 @@ sub parse_fst_log {
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $fst_test_msg .= $line;
-            $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+            if ($line =~ m/"Database Server Access Error"/) {
+                $diag_fa_code{"DATABASE_SERVER_ACCESS_ERR"} = 1;
+            } elsif ($line =~ m/HTTP Response ERROR/) {
+                $diag_fa_code{"HTTP_RESPONSE_ERR"} = 1;
+            } elsif ($line =~ m/Sending HTTP Request Error/) {
+                $diag_fa_code{"SENDING_HTTP_REQ_ERR"} = 1;
+            } elsif ($line =~ m/Parse Xml data Error/) {
+                $diag_fa_code{"PARSE_XML_DATA_ERR"} = 1;
+            } else {
+                $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+            }
         }
     }
     if ($fst_test_msg ne "") {
@@ -1692,7 +1868,17 @@ sub parse_mtp_and_slot_log {
             ($line =~ m/\[NIC-$slot\]: Pre-Post \[\w+\] result to webserver failed/) ||
             ($line =~ m/\[NIC-$slot\]: \w+: Pre-Post \[\w+\] result to webserver failed.*(500|600142250)/)) {
             $mtp_test_msg .= $line;
-            $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+            if ($line =~ m/"Database Server Access Error"/) {
+                $diag_fa_code{"DATABASE_SERVER_ACCESS_ERR"} = 1;
+            } elsif ($line =~ m/HTTP Response ERROR/) {
+                $diag_fa_code{"HTTP_RESPONSE_ERR"} = 1;
+            } elsif ($line =~ m/Sending HTTP Request Error/) {
+                $diag_fa_code{"SENDING_HTTP_REQ_ERR"} = 1;
+            } elsif ($line =~ m/Parse Xml data Error/) {
+                $diag_fa_code{"PARSE_XML_DATA_ERR"} = 1;
+            } else {
+                $diag_fa_code{"2WAY_COMMUNICATION_FAILURE"} = 1;
+            }
         }
         #if ($line =~ m/\[NIC-$slot\]: ==== Error Message Start: ====/) {
         #    $err_msg_dump = 1;

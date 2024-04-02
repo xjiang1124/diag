@@ -1,5 +1,8 @@
 #!/bin/bash
 
+matera_v12_addr="0x174"
+matera_v3v3_addr="0x178"
+matera_perst_addr="0x17c"
 
 #For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD.
 power_on_naples25_swm_ocp() {
@@ -56,7 +59,7 @@ power_on_naples25_swm_ocp() {
 elba_enable_jtag() {
     slot=$1
 
-    if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
+    if [[ $MTP_TYPE == "MTP_MATERA" || $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
     then
         reg=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x22)
         reg=$(expr match "$reg" '.*data=\(0x[0-9|a-f|A-F]*\)')
@@ -163,20 +166,59 @@ control_slot() {
     cpldutil -cpld-rd -addr=$v3v3_addr
 }
 
+control_slot_matera() {
+    wValue=$pc
+    if [[ $wValue -eq 0 ]]
+    then
+        return 0
+    fi
+
+    printf "Setting power control to $on_off with 0x%x\n" $wValue
+
+    fpgautil r32 $matera_v3v3_addr
+    v3v3=$?
+
+    if [[ $on_off == "off" ]]
+    then
+        wValue=$(( ~$wValue ))
+        wValue=$(( $wValue & 0x3ff ))
+        wValue=$(( $wValue | 0xfffffc00 ))
+        v3v3=$(( $v3v3 & $wValue ))
+        fpgautil w32 $matera_v3v3_addr $v3v3
+        sleep 0.2
+    else
+        wValue=$(( $wValue & 0x3ff ))
+        v3v3=$(( $v3v3 | $wValue ))
+        fpgautil w32 $matera_v3v3_addr -data=$v3v3
+    fi
+    fpgautil r32 $matera_v3v3_addr
+}
+
 control_all() {
     if [[ "$1" == "on" ]]
     then
         echo "Turning on all slots"
-        cpldutil -cpld-wr -addr=0x12 -data=0
-        cpldutil -cpld-wr -addr=0x13 -data=0
-        
-        elba_delay
+        if [[ $MTP_TYPE == "MTP_MATERA" ]]
+        then
+            fpgautil r32 $matera_v3v3_addr
+            v3v3=$?
+            v3v3=$(( $v3v3 | 0x3ff ))
+            fpgautil w32 $matera_v3v3_addr $v3v3
+        else
+            cpldutil -cpld-wr -addr=0x12 -data=0
+            cpldutil -cpld-wr -addr=0x13 -data=0
+
+            elba_delay
+        fi
 
         for i in {1..10}
         do
-            reset_hub
-            turn_on_hub.sh $i
-            power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
+            if [[ $MTP_TYPE != "MTP_MATERA" ]]
+            then
+                reset_hub
+                turn_on_hub.sh $i
+                power_on_naples25_swm_ocp $i   #these adapters need an additional power on via the MTP Adapter
+            fi
             enable_nic_mtp_r3 $i
             elba_enable_jtag $i
         done
@@ -185,13 +227,23 @@ control_all() {
     
     else
         echo "Turning off all slots"
-        cpldutil -cpld-wr -addr=0x12 -data=0xff
-        cpldutil -cpld-wr -addr=0x13 -data=0xff
+        if [[ $MTP_TYPE == "MTP_MATERA" ]]
+        then
+            fpgautil w32 $matera_3v3_addr 0x0
+        else
+            cpldutil -cpld-wr -addr=0x12 -data=0xff
+            cpldutil -cpld-wr -addr=0x13 -data=0xff
+        fi
     
         echo "All slots turned off"
     fi
-    cpldutil -cpld-rd -addr=0x12
-    cpldutil -cpld-rd -addr=0x13
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        fpgautil r32 $matera_3v3_addr
+    else
+        cpldutil -cpld-rd -addr=0x12
+        cpldutil -cpld-rd -addr=0x13
+    fi
 }
 
 usage() {
@@ -217,8 +269,18 @@ usage() {
 
 if [[ $1 == "show" ]]
 then
-    cpldutil -cpld-rd -addr=0x12
-    cpldutil -cpld-rd -addr=0x13
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        # P12V_CTRL_REG
+        fpgautil r32 $matera_v12_addr
+        # P03V_CTRL_REG
+        fpgautil r32 $matera_v3v3_addr
+        # PERST_CTRL_REG
+        fpgautil r32 $matera_perst_addr
+    else
+        cpldutil -cpld-rd -addr=0x12
+        cpldutil -cpld-rd -addr=0x13
+    fi
     exit
 fi
 
@@ -236,9 +298,12 @@ then
     echo "swm_lp_mode = $swm_lp_mode"
 fi
 
-mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
-mtp_id_str1=($mtp_id_str)
-mtp_id=${mtp_id_str1[-1]}
+if [[ $MTP_TYPE != "MTP_MATERA" ]]
+then
+    mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
+    mtp_id_str1=($mtp_id_str)
+    mtp_id=${mtp_id_str1[-1]}
+fi
 
 if [[ $2 == "all" ]]
 then
@@ -247,29 +312,46 @@ else
     slot_list=$(echo $2 | tr "," "\n")
 	pc_low=0
 	pc_high=0
+	pc=0
 	on_off=$1
 
-	for slot in $slot_list
-	do
-	    slot=$(( $slot - 1 ))
-	    if [[ $slot -ge 8 ]]
-	    then
-	        slot=$(( $slot - 8 ))
-	        bitPos=$(( 1 << $slot ))
-	        pc_high=$(( $pc_high | $bitPos ))
-	    else
-	        bitPos=$(( 1 << $slot ))
-        	pc_low=$(( $pc_low | $bitPos ))
-    	fi
-	done
-	#printf "pc_low: 0x%x\n" $pc_low
-	#printf "pc_high: 0x%x\n" $pc_high
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        for slot in $slot_list
+        do
+            slot=$(( $slot - 1 ))
+            bitPos=$(( 1 << $slot ))
+            pc=$(( $pc | $bitPos ))
+        done
+        #printf "pc: 0x%x\n" $pc
+    else
+        for slot in $slot_list
+        do
+            slot=$(( $slot - 1 ))
+            if [[ $slot -ge 8 ]]
+            then
+                slot=$(( $slot - 8 ))
+                bitPos=$(( 1 << $slot ))
+                pc_high=$(( $pc_high | $bitPos ))
+            else
+                bitPos=$(( 1 << $slot ))
+                pc_low=$(( $pc_low | $bitPos ))
+            fi
+        done
+        #printf "pc_low: 0x%x\n" $pc_low
+        #printf "pc_high: 0x%x\n" $pc_high
+    fi
 
-	declare -a low_high_list=("low" "high")
-	for low_high in "${low_high_list[@]}"
-	do
-    	control_slot
-	done
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        control_slot_matera
+    else
+        declare -a low_high_list=("low" "high")
+        for low_high in "${low_high_list[@]}"
+        do
+            control_slot
+        done
+    fi
 
     if [[ $on_off == "off" ]]
     then
@@ -278,9 +360,12 @@ else
 
     for slot in $slot_list
     do
-        reset_hub
-        turn_on_hub.sh $slot
-        power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
+        if [[ $MTP_TYPE != "MTP_MATERA" ]]
+        then
+            reset_hub
+            turn_on_hub.sh $slot
+            power_on_naples25_swm_ocp $slot   #these adapters need an additional power on via the MTP ADAPTER
+        fi
         enable_nic_mtp_r3 $slot
         elba_enable_jtag $slot
     done
