@@ -90,7 +90,7 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
 
     //Y = (m * X + b) * 10R
     //X = (y/(10R * m)) - (b/m)
-
+    //for VIN, R = -2, m = 5251, b = 0
     expOutFloat := float64(VIN) / (math.Pow(10, (-2)) * 5251)
     intpart, div := math.Modf(expOutFloat)
 
@@ -118,7 +118,7 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
 
     //Y = (m * X + b) * 10R
     //X = (y/(10R * m)) - (b/m)
-
+    //for VOUT, R = -2, m = 5251, b = 0
     expOutFloat := float64(VOUT) / (math.Pow(10, (-2)) * 5251)
     intpart, div := math.Modf(expOutFloat)
 
@@ -180,6 +180,9 @@ func ReadIin(devName string) (integer uint64, dec uint64, err int) {
         return
     }
 
+    //X = (y/(10R * m)) - (b/m)
+    //for IIN, R = -3, m = 9.538 * RIMON, b = 0
+    //RIMON can be found in Matera MB schematic page 41
     expOutFloat := float64(IIN) / ((math.Pow(10, (-3))) * (9.538 * 309))
     intpart, div := math.Modf(expOutFloat)
 
@@ -237,7 +240,8 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     //Y = (m * X + b) * 10R
 
     //X = (y/(10R * m)) - (b/m)
-
+    //for IIN, R = -4, m = 4.901 * RIMON, b = 0
+    //RIMON can be found in Matera MB schematic page 41
     expOutFloat := float64(PIN) / ((math.Pow(10, (-4))) * (4.901 * 309))
     intpart, div := math.Modf(expOutFloat)
 
@@ -279,6 +283,8 @@ func ReadTemp(devName string) (integer uint64, dec uint64, err int) {
 
     TEMP, err = pmbus.ReadWord(devName, READ_TEMPERATURE_1)
 
+    //X = (y/(10R * m)) - (b/m)
+    //for IIN, R = -2, m = 140, b = 32100
     expOutFloat := (float64(TEMP) * math.Pow(10, 2) - 32100) / 140
     intpart, div := math.Modf(expOutFloat)
 

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+matera_v12_addr="0x174"
+matera_v3v3_addr="0x178"
+matera_perst_addr="0x17c"
 
 #For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD.
 power_on_naples25_swm_ocp() {
@@ -308,10 +311,6 @@ usage() {
     echo "turn_on_slot_12v.sh off all"
     echo "========================="
 }
-
-matera_v12_addr="0x174"
-matera_v3v3_addr="0x178"
-matera_perst_addr="0x17c"
 
 if [[ $1 == "show" ]]
 then
