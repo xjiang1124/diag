@@ -744,19 +744,11 @@ func main() {
                 return
             }
         }
-<<<<<<< HEAD
-    } 
-
-    //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
-    info, _ := i2cinfo.GetI2cInfo(devName)
-    if (info.Flag == i2cinfo.FLAG_16BIT_EEPROM) {
-=======
     }
 
     //cli.Println("i", "card IS in eeprom.CardInListNew, PN =", pn)
     info, _ := i2cinfo.GetI2cInfo(devName)
     if ((info.Flag & i2cinfo.FLAG_16BIT_EEPROM) != 0) {
->>>>>>> upstream/master
         eeprom.I2cAddr16 = true
     } else {
         eeprom.I2cAddr16 = false
