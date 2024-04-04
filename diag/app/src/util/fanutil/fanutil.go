@@ -1,7 +1,6 @@
 package main
 
 import (
-    //"device/fpga/taorfpga"
     "os"
     "fmt"
     "strconv"
@@ -10,6 +9,8 @@ import (
     "hardware/i2cinfo"
     "hardware/hwinfo"
     "hardware/hwdev"
+    "device/fpga/liparifpga"
+    "device/fpga/materafpga"
 )
 
 
@@ -81,8 +82,11 @@ func main() {
         var daulfan int = 0 //flag to indicate two fans per module
 
         if i2cinfo.CardType == "LIPARI" {
-            maxfan = 4
-            daulfan = 1
+            maxfan = liparifpga.MAXFAN
+            daulfan = liparifpga.DUALFAN
+        } else if i2cinfo.CardType == "MTP_MATERA" {
+            maxfan = materafpga.MAXFAN
+            daulfan = materafpga.DUALFAN
         }
 
         if os.Args[3] == "all" {
@@ -114,6 +118,8 @@ func main() {
                 mask = 0x7
             } else if i2cinfo.CardType == "LIPARI" {
                 mask = 0xF
+            } else if i2cinfo.CardType == "MATERA_MTP" {
+                mask = 0x1F
             } else {
                 mask = 0xFF
             }
@@ -138,6 +144,8 @@ func get_fan_device_name(devNumber int) (device string, err int) {
     } else if i2cinfo.CardType == "TAORMINA" {
         device = fmt.Sprintf("FAN_%d", devNumber+1)
     } else if i2cinfo.CardType == "LIPARI" {
+        device = fmt.Sprintf("FAN")
+    } else if i2cinfo.CardType == "MATERA_MTP" {
         device = fmt.Sprintf("FAN")
     } else {
         cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")

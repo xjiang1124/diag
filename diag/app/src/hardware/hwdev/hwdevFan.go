@@ -8,6 +8,7 @@ import (
 
     "device/fanctrl/adt7462"
     "device/fpga/liparifpga"
+    "device/fpga/materafpga"
 
     "hardware/hwinfo"
     "hardware/i2cinfo"
@@ -108,15 +109,17 @@ func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
         }
     } else if i2cif.Comp == "FPGA" {
         if i2cinfo.CardType == "LIPARI" {
-            for i = 0; i < 4; i++ {
+            for i = 0; i < liparifpga.MAXFAN; i++ {
                 if (mask & (1 << i)) != 0 {
                     liparifpga.FAN_Set_PWM(i, uint32(pct))
                 }
             }
         } else if i2cinfo.CardType == "MATERA_MTP" {
-            cli.Printf("e", "Matera needs to be coded\n")
-            err = errType.INVALID_PARAM
-            
+            for i = 0; i < materafpga.MAXFAN; i++ {
+                if (mask & (1 << i)) != 0 {
+                    materafpga.FAN_Set_PWM(i, uint32(pct))
+                }
+            }
         } else {
             cli.Println("e", "Unsupported component: ", i2cif.Comp," for cardtype: ", i2cinfo.CardType)
             err = errType.INVALID_PARAM
@@ -128,9 +131,12 @@ func FanSpeedSet(devName string, pct int, mask uint64) (err int) {
     return
 }
 
-
-//rpm  = Main fan, or in the case with fan modules that have two fans, it will report the inner fan
-//rpm2 = on fan modules with 2 fans, this will report the outer fan
+/************************************************************************************************** 
+*  
+* rpm  = Main fan, or in the case with fan modules that have two fans, it will report the inner fan
+* rpm2 = on fan modules with 2 fans, this will report the outer fan 
+*  
+**************************************************************************************************/
 func FanSpeedGet(devName string, fanIdx uint64) (rpm uint64, rpm2 uint64, err int) {
     var i2cif i2cinfo.I2cInfo
 
@@ -154,19 +160,17 @@ func FanSpeedGet(devName string, fanIdx uint64) (rpm uint64, rpm2 uint64, err in
     if i2cif.Comp == "ADT7462" {
         rpm, err = adt7462.GetFanSpeed(devName, fanIdx)
     } else if i2cif.Comp == "FPGA" {
+        var inner_fan, outer_fan uint32
         if i2cinfo.CardType == "LIPARI" {
-            var inner_fan, outer_fan uint32
             inner_fan, outer_fan, err = liparifpga.FAN_Get_RPM(uint32(fanIdx)) 
-            rpm = uint64(inner_fan)
-            rpm2 = uint64(outer_fan)
         } else if i2cinfo.CardType == "MATERA_MTP" {
-            cli.Printf("e", "Matera needs to be coded\n")
-            err = errType.INVALID_PARAM
-            
+            inner_fan, outer_fan, err = materafpga.FAN_Get_RPM(uint32(fanIdx)) 
         } else {
             cli.Println("e", "Unsupported component: ", i2cif.Comp," for cardtype: ", i2cinfo.CardType)
             err = errType.INVALID_PARAM
         }
+        rpm = uint64(inner_fan)
+        rpm2 = uint64(outer_fan)
     } else {
         cli.Println("e", "Unsupported component: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -221,8 +225,7 @@ func FanSetup(devName string) (err int) {
         if i2cinfo.CardType == "LIPARI" {
             err = liparifpga.Fan_Init() 
         } else if i2cinfo.CardType == "MATERA_MTP" {
-            cli.Printf("e", "Matera needs to be coded\n")
-            err = errType.INVALID_PARAM
+            err = materafpga.Fan_Init() 
         } else {
             cli.Println("e", "Unsupported component: ", i2cif.Comp," for cardtype: ", i2cinfo.CardType)
             err = errType.INVALID_PARAM

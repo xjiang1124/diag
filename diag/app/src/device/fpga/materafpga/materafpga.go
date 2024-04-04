@@ -44,6 +44,7 @@ const (
     FAN3 = 3
     FAN4 = 4
     MAXFAN = 5
+    DUALFAN = 1
 )
 
 

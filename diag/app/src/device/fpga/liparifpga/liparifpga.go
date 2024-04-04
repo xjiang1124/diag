@@ -49,6 +49,7 @@ const (
     FAN2 = 2
     FAN3 = 3
     MAXFAN = 4
+    DUALFAN = 1
     AIRFLOW_FRONT_TO_BACK = 0
     AIRFLOW_BACK_TO_FRONT = 1
     AIRFLOW_MIXED_ERROR = 2
