@@ -735,13 +735,16 @@ func main() {
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
         if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-            found, _ := eeprom.CardInListTlv(devName)
-            if found == true {
+            isTlv, _ := eeprom.CardInListTlv(devName)
+            if isTlv == true {
                 err = hwdev.EepromDisplayTlvs(devName, field, *fpoPtr)
-            } else {
-                err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
+                if err != errType.SUCCESS {
+                    cli.Println("e", "Failed to display tlv-based eeprom! CARD_TYPE:", os.Getenv("CARD_TYPE"), "dvName:", devName)
+                }
+                return
             }
 
+            err = hwdev.EepromDisplayNew(devName, iInfo.Bus, iInfo.DevAddr, field, *fpoPtr)
             if err == errType.SUCCESS {
                 return
             }
@@ -792,8 +795,8 @@ func main() {
             misc.SleepInUSec(1000)
             cli.Printf("i", "Programming/Updating Fru\n")
             if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-                found, _ := eeprom.CardInListTlv(devName)
-                if found == true {
+                isTlv, _ := eeprom.CardInListTlv(devName)
+                if isTlv == true {
                     if field == "ALL" {
                         hwdev.EepromUpdateTlvs(devName, sn, pn, sn2, pn2, mac, date)
                     } else {
@@ -881,8 +884,8 @@ func main() {
             cli.Println("e", "Please set a valid number [1 - 2047] of bytes to dump!", devName)
             return;
         }
-        found, _ := eeprom.CardInListTlv(devName)
-        if found == true {
+        isTlv, _ := eeprom.CardInListTlv(devName)
+        if isTlv == true {
             eeprom.DumpEepromTlvs(devName, numBytes)
             misc.SleepInUSec(500000)
             return
