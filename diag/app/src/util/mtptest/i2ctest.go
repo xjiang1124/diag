@@ -75,7 +75,7 @@ func fanSpeedTest() (err int) {
         misc.SleepInSec(10)
 
         for i := 0; i < 6; i++ {
-            rpm, err1 = hwdev.FanSpeedGet(fan, uint64(i))
+            rpm, _, err1 = hwdev.FanSpeedGet(fan, uint64(i))
             if err1 != errType.SUCCESS {
                 err = err1
                 cli.Println("e", fan, "access failed")

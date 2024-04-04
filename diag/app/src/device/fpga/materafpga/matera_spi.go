@@ -14,53 +14,38 @@ import (
 
 
 type spiDevMap struct{
-    fpgaNumber    uint32
     spiMBaddr     uint64
     devname string
 }
 
 
-const SPI_FPGA0_FLASH      uint32 = 0
-const SPI_CPU_CPLD         uint32 = 1
-const SPI_FPGA1_FLASH      uint32 = 2
-const SPI_ELBA0_CPLD       uint32 = 3
-const SPI_ELBA1_CPLD       uint32 = 4
-const SPI_ELBA2_CPLD       uint32 = 5
-const SPI_ELBA3_CPLD       uint32 = 6
-const SPI_ELBA4_CPLD       uint32 = 7
-const SPI_ELBA5_CPLD       uint32 = 8
-const SPI_ELBA6_CPLD       uint32 = 9
-const SPI_ELBA7_CPLD       uint32 = 10
-const SPI_ELBA0_FLASH      uint32 = 11
-const SPI_ELBA1_FLASH      uint32 = 12
-const SPI_ELBA2_FLASH      uint32 = 13
-const SPI_ELBA3_FLASH      uint32 = 14
-const SPI_ELBA4_FLASH      uint32 = 15
-const SPI_ELBA5_FLASH      uint32 = 16
-const SPI_ELBA6_FLASH      uint32 = 17
-const SPI_ELBA7_FLASH      uint32 = 18
-const SPI_NUMB_BUSES       uint32 = 19
+const SPI_ELBA0            uint32 = 0
+const SPI_ELBA1            uint32 = 1
+const SPI_ELBA2            uint32 = 2
+const SPI_ELBA3            uint32 = 3
+const SPI_ELBA4            uint32 = 4
+const SPI_ELBA5            uint32 = 5
+const SPI_ELBA6            uint32 = 6
+const SPI_ELBA7            uint32 = 7
+const SPI_ELBA8            uint32 = 8
+const SPI_ELBA9            uint32 = 9
+const SPI_DBG              uint32 = 10
+const SPI_FPGA             uint32 = 11
+const SPI_NUMB_BUSES       uint32 = 12
 
 var SpiTable = map[uint32]spiDevMap {
-    SPI_FPGA0_FLASH : { fpgaNumber:0, spiMBaddr:FPGA_S0_SPI_RXDATA_REG , devname:"FPGA0 FLASH", } , 
-/*    SPI_CPU_CPLD    : { fpgaNumber:0, spiMBaddr:FPGA0_SPI1_RXDATA_REG , devname:"CPU CPLD",    } , 
-    SPI_FPGA1_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI0_RXDATA_REG , devname:"FPGA1 FLASH", } , 
-    SPI_ELBA0_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI1_RXDATA_REG , devname:"ELBA0 CPLD",  } , 
-    SPI_ELBA1_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI2_RXDATA_REG , devname:"ELBA1 CPLD", } , 
-    SPI_ELBA2_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI3_RXDATA_REG , devname:"ELBA2 CPLD", } , 
-    SPI_ELBA3_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI4_RXDATA_REG , devname:"ELBA3 CPLD", } , 
-    SPI_ELBA4_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI5_RXDATA_REG , devname:"ELBA4 CPLD", } , 
-    SPI_ELBA5_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI6_RXDATA_REG , devname:"ELBA5 CPLD", } , 
-    SPI_ELBA6_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI7_RXDATA_REG , devname:"ELBA6 CPLD", } , 
-    SPI_ELBA7_CPLD :  { fpgaNumber:0, spiMBaddr:FPGA1_SPI8_RXDATA_REG , devname:"ELBA7 CPLD", } , 
-    SPI_ELBA0_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI9_RXDATA_REG , devname:"ELBA0 FLASH", } , 
-    SPI_ELBA1_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI10_RXDATA_REG , devname:"ELBA1 FLASH", } , 
-    SPI_ELBA2_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI11_RXDATA_REG , devname:"ELBA2 FLASH", } , 
-    SPI_ELBA3_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI12_RXDATA_REG , devname:"ELBA3 FLASH", } , 
-    SPI_ELBA4_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI13_RXDATA_REG , devname:"ELBA4 FLASH", } , 
-    SPI_ELBA5_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI14_RXDATA_REG , devname:"ELBA5 FLASH", } , 
-    SPI_ELBA6_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI15_RXDATA_REG , devname:"ELBA6 FLASH", } , 
-    SPI_ELBA7_FLASH : { fpgaNumber:0, spiMBaddr:FPGA1_SPI16_RXDATA_REG , devname:"ELBA7 FLASH", } , */
+    SPI_ELBA0 : { spiMBaddr:FPGA_S0_SPI_RXDATA_REG , devname:"ELBA0", } , 
+    SPI_ELBA1 : { spiMBaddr:FPGA_S1_SPI_RXDATA_REG , devname:"ELBA1", } , 
+    SPI_ELBA2 : { spiMBaddr:FPGA_S2_SPI_RXDATA_REG , devname:"ELBA2", } , 
+    SPI_ELBA3 : { spiMBaddr:FPGA_S3_SPI_RXDATA_REG , devname:"ELBA3", } , 
+    SPI_ELBA4 : { spiMBaddr:FPGA_S4_SPI_RXDATA_REG , devname:"ELBA4", } , 
+    SPI_ELBA5 : { spiMBaddr:FPGA_S5_SPI_RXDATA_REG , devname:"ELBA5", } , 
+    SPI_ELBA6 : { spiMBaddr:FPGA_S6_SPI_RXDATA_REG , devname:"ELBA6", } , 
+    SPI_ELBA7 : { spiMBaddr:FPGA_S7_SPI_RXDATA_REG , devname:"ELBA7", } , 
+    SPI_ELBA8 : { spiMBaddr:FPGA_S8_SPI_RXDATA_REG , devname:"ELBA8", } , 
+    SPI_ELBA9 : { spiMBaddr:FPGA_S9_SPI_RXDATA_REG , devname:"ELBA9", } , 
+    SPI_DBG   : { spiMBaddr:FPGA_DBG_SPI_RXDATA_REG , devname:"DBG", } , 
+    SPI_FPGA  : { spiMBaddr:FPGA_FPGA_SPI_RXDATA_REG , devname:"FGPA", } , 
 }
 
 const SPI_RXDATA_OFFSET            uint64 = 0x00       //SPI0 = FPGA FLASH
@@ -213,7 +198,12 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
 
 
 
-
+// ***********************************************************************************
+// *
+// *   Do a spi transaction.   For SPI Number mapping see the top of the file.  
+// *   The spi number corresponds to the spi mail box in the fpga.
+// *
+// ***********************************************************************************
 func matera_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength uint32) (rdData []byte, err error) {
     var data32 uint32 = 0
     var tmpRdLength uint32 = 0

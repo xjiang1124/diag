@@ -56,8 +56,6 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
     }
 
     cardType = i2cinfo.CardType
-    // debug
-    //cli.Println("d", "FindUutI2cDev :: i2cinfo.CardType =", cardType)
     hubMap, ok := i2cHubMap[cardType]
     if ok != true {
         cli.Println("e", "Invalid card name:", cardType)
@@ -73,16 +71,11 @@ func FindUutI2cDev(uutName string) (i2cDevIdx int, err int) {
         err = errType.INVALID_PARAM
         return
     }
-    // debug
-    //cli.Println("d", "FindUutI2cDev :: hubInfo.hubName =", hubInfo.hubName)
 
     hubI2cInfo, err := i2cinfo.GetI2cInfo(hubInfo.hubName)
     if err != errType.SUCCESS {
         return
     }
-    // debug
-    //cli.Println("d", "hubI2cInfo.Name Comp Bus DevAddr Page HubName HubPort Flag")
-    //cli.Println("d", hubI2cInfo.Name, hubI2cInfo.Comp, hubI2cInfo.Bus, hubI2cInfo.DevAddr, hubI2cInfo.Page, hubI2cInfo.HubName, hubI2cInfo.HubPort, hubI2cInfo.Flag)
     i2cDevIdx = int(hubI2cInfo.Bus)
     return
 }
@@ -109,8 +102,6 @@ func EnableHubChannel(devName string) (err int) {
             cli.Println("e", "Failed: ", err)
             return
         }
-        // debug
-        cli.Println("d", "EnableHubChannel :: devName Bus HubPort::", devName, i2cInfo.Bus, i2cInfo.HubPort)
         liparifpga.SetI2Cmux((i2cInfo.Bus), uint32(i2cInfo.HubPort))
         return
     }
@@ -156,8 +147,6 @@ func EnableHubChannelExclusive(devName string) (err int) {
             cli.Println("e", "Failed: ", err)
             return
         }
-        // debug
-        cli.Println("d", "EnableHubChannelExclusive :: devName Bus HubPort::", devName, i2cInfo.Bus, i2cInfo.HubPort)
         liparifpga.SetI2Cmux((i2cInfo.Bus), uint32(i2cInfo.HubPort))
         return
     }
@@ -179,7 +168,7 @@ func EnableHubChannelExclusive(devName string) (err int) {
         }
         err = tca9546a.DisableAllChan(hubName)
         if err != errType.SUCCESS {
-            cli.Println("d", "Failed: ", err)
+            cli.Println("e", " tca9546a.DisableAllChan Failed: ", err)
             return
         }
     }
@@ -194,8 +183,6 @@ func EnableHubChannelExclusive(devName string) (err int) {
  */
 func EnableHubChannelUut(uutName string) (err int) {
     // for MTP only for now
-    // debug
-    //cli.Println("d", "EnableHubChannelUut :: uutName =", uutName)
     if cardType != "MTP" {
         cli.Println("e", "Unsupported platform!", cardType)
         err = errType.INVALID_PARAM
@@ -205,14 +192,14 @@ func EnableHubChannelUut(uutName string) (err int) {
     for _, hubName := range I2cHubList {
         err = tca9546a.DisableAllChan(hubName)
         if err != errType.SUCCESS {
-            cli.Println("d", "Failed: ", err)
+            cli.Println("e", " tca9546a.DisableAllChanFailed: ", err)
             return
         }
     }
 
     hubInfo, ok := I2cHubMap[uutName]
     if ok != true {
-        cli.Println("d", "Failed: ", err)
+        cli.Println("e", " Getting hubInfo from I2cHubMap Failed: ", err)
         err = errType.INVALID_PARAM
         return
     }
@@ -245,8 +232,6 @@ func UnlockDev(lockName string) {
  * Lock UUT I2C root device
  */
 func PreUutSetup(uutName string) (lockName string, err int) {
-    // debug
-    //cli.Println("d", "PreUutSetup :: uutName =", uutName)
     i2cDevIdx, err := FindUutI2cDev(uutName)
     if err != errType.SUCCESS {
         return
@@ -284,16 +269,12 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
     if err != errType.SUCCESS {
         return
     }
-    // debug
-    cli.Println("d", "PreUutSetupBlind() :: uutName i2cDevIdx(bus) =", uutName, i2cDevIdx)
 
     lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
     err = dmutex.Lock(lockName)
     if err != errType.SUCCESS {
         return
     }
-    // debug
-    cli.Println("d", "PreUutSetupBlind() :: lockName =", i2cDevIdx)
 
     err = EnableHubChannelUut(uutName)
     if err != errType.SUCCESS {

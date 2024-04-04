@@ -11,6 +11,7 @@ import (
     "device/powermodule/ltc3888"
     "device/bcm/td3"
     "device/fpga/taorfpga"
+    "device/fpga/liparifpga"
     "device/powermodule/mp2975"
     "device/powermodule/mp8796"
     "device/powermodule/tps53659"
@@ -25,6 +26,7 @@ import (
     "device/powermodule/isl69247"
     "device/psu/pet1600"
     "device/psu/dps800"
+    "device/psu/dps2100"
     "device/tempsensor/tmp42123"
     "device/tempsensor/adm1032"
     "device/tempsensor/tmpadicom"
@@ -550,10 +552,13 @@ func init() {
     //===============================
     // Lipari
     lipariDispStaList = make(map[string]DispStaFunc)
+    lipariDispStaList["FAN"]      = liparifpga.DispFanStatus
     lipariDispStaList["MEM_VDDIO"]   = tps53688.DispStatus
     lipariDispStaList["P3V3S2"]   = tps53688.DispStatus
     lipariDispStaList["P3V3S1"]   = tps53688.DispStatus
     lipariDispStaList["P3V3"]     = mp8796.DispStatus
+    lipariDispStaList["PSU_1"]   = dps2100.DispStatus
+    lipariDispStaList["PSU_2"]   = dps2100.DispStatus
 
     //Just decalred.. not used on Lipari
     lipariI2cHubMap = make(map[string]I2cHubInfo)
@@ -567,8 +572,6 @@ func init() {
 
     // MtFuji ELBA
     mtfujiElbaDispStaList = make(map[string]DispStaFunc)
-    mtfujiElbaDispStaList["TSENSOR"]   = tmp451.DispStatusWithRemote
-    mtfujiElbaDispStaList["TSENSOR1"]   = tmp451.DispStatusWithRemote
     mtfujiElbaDispStaList["VDD_DDR"]    = ltc3882.DispStatus
     mtfujiElbaDispStaList["VDDQ_DDR"]   = ltc3882.DispStatus
     mtfujiElbaDispStaList["ELB0_CORE"]  = ltc3882.DispStatus
@@ -676,7 +679,7 @@ func init() {
     dispMap["LIPARIELBA"]  = lipariElbaDispStaList
 
     // MtFuji (Cisco)
-    dispMap["MTFUJIELBA"]  = mtfujiElbaDispStaList
+    dispMap["MTFUJI"]  = mtfujiElbaDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)

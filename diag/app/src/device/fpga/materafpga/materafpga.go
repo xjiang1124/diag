@@ -34,6 +34,19 @@ const (
 )
 
 
+const (
+    PSU0 = 0
+    PSU1 = 1
+    MAXPSU = 2
+    FAN0 = 0
+    FAN1 = 1
+    FAN2 = 2
+    FAN3 = 3
+    FAN4 = 4
+    MAXFAN = 5
+)
+
+
 const MEM_ACCESS_32  uint32 = 1
 const MEM_ACCESS_64  uint32 = 2
 
@@ -116,7 +129,7 @@ func init () {
             bar, _ = strconv.ParseUint(strings.TrimSuffix(scanner.Text(), "\n"), 0, 64)
             file.Close()
         } else {
-            shcmds := []string{ "lspci -s 01:00.0 -v | grep 'Memory at' | awk '{print $3}'"}
+            shcmds := []string{ "lspci -v -d 1dd8:000B | grep 'Memory at' | awk '{print $3}'"}
             execOutput, errGo := exec.Command("sh", "-c", shcmds[0] ).Output()
             if errGo != nil {
                 cli.Println("e", "ERROR: Failed to get FPGA BAR VALUE.   GO ERROR=%v", errGo)
@@ -408,6 +421,78 @@ func MunMAP_Device(fd *os.File, mmap []byte) (err error) {
         return 
     }
     return 
+}
+
+
+func PSU_present(PSUnumber uint32) (present bool, err error) {
+    var data32 uint32
+    present = false
+
+    if PSUnumber > (MAXPSU - 1) {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = MateraReadU32(FPGA_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  FPGA_PSU_STAT_PRSNT0) == FPGA_PSU_STAT_PRSNT0) {
+        present = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  FPGA_PSU_STAT_PRSNT1) == FPGA_PSU_STAT_PRSNT1) {
+        present = true
+    }
+    return
+}
+
+
+func PSU_pwrok(PSUnumber uint32) (pwrok bool, err error) {
+    var data32 uint32
+    pwrok = false
+
+    if PSUnumber > (MAXPSU - 1) {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = MateraReadU32(FPGA_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  FPGA_PSU_STAT_PWROK0) == FPGA_PSU_STAT_PWROK0) {
+        pwrok = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  FPGA_PSU_STAT_PWROK1) == FPGA_PSU_STAT_PWROK1) {
+        pwrok = true
+    }
+    return
+}
+
+
+func PSU_alert(PSUnumber uint32) (alert bool, err error) {
+    var data32 uint32
+    alert = false
+
+    if PSUnumber > (MAXPSU - 1) {
+        err = fmt.Errorf(" Error: PSU_present.  PSU NUMBER PASSED (%d) IS NOT VALID!", PSUnumber)
+        cli.Printf("e", "%s", err)
+        return
+    }
+    data32, err = MateraReadU32(FPGA_PSU_STAT_REG)
+    if err != nil {
+        return
+    }
+
+    if PSUnumber == PSU0 && ( (data32 &  FPGA_PSU_STAT_ALERT0) == FPGA_PSU_STAT_ALERT0) {
+        alert = true
+    }
+    if PSUnumber == PSU1 && ( (data32 &  FPGA_PSU_STAT_ALERT1) == FPGA_PSU_STAT_ALERT1) {
+        alert = true
+    }
+    return
 }
 
 

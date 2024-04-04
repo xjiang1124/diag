@@ -252,7 +252,6 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     } else {
         //Linear16
         integer, dec, err =  pmbus.Linear16(uint64(dacStepRegVal), VOUT)
-        
     }
 
     return
@@ -334,8 +333,8 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     } else if (dacStepRegVal == DAC_STEP_10MV) {
         integer, dec, err =  pmbus.Convert_vr13_10mvVID(voutcmd)
     } else {
-        cli.Println("i", "Unexpected vout_mode", dacStepRegVal)
-        return
+        //Linear16
+        integer, dec, err =  pmbus.Linear16(uint64(dacStepRegVal), voutcmd)
     }
 
     return

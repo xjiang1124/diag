@@ -142,8 +142,8 @@ func init () {
             }
             file.Close()
         } else {
-            shcmds := []string{ "lspci -s 01:00.0 -v | grep 'Memory at' | awk '{print $3}'", 
-                                "lspci -s 02:00.0 -v | grep 'Memory at' | awk '{print $3}'"  }
+            shcmds := []string{ "lspci -v -d 1dd8:0009 | grep 'Memory at' | awk '{print $3}'", 
+                                "lspci -v -d 1dd8:000A | grep 'Memory at' | awk '{print $3}'"  }
             for i:=0;i<len(shcmds);i++ {
                 execOutput, errGo := exec.Command("sh", "-c", shcmds[i] ).Output()
                 if errGo != nil {
