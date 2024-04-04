@@ -48,6 +48,8 @@ class nic_ctrl():
         self._boot_image = None
         self._prod_num = None
         self._hpe_prod_ver = None
+        self._dpn = None
+        self._sku = None
         self._alom_sn = None
         self._alom_pn = None
         self._alom_prod_num = None
@@ -2906,6 +2908,14 @@ class nic_ctrl():
         asic_date = self._date
         if self._prod_num != None:
             asic_prod_num = self._prod_num
+
+        ### 1c. Validate Diagnostic part number, if applicable
+        if self._pn_format in (PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT):
+            if not self.nic_fru_parse_dpn(fru_buf):
+                self.nic_set_err_msg("DPN field doesn't match any known formats in ASIC FRU")
+                self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                return False
+
         
         ### 2. Validate SMBUS (MTP-facing) FRU, if present
         if self.nic_2nd_fru_exist(self._pn):
@@ -2946,6 +2956,13 @@ class nic_ctrl():
                         self.nic_set_err_msg("HPE Product Number doesn't match any known formats in SMB FRU")
                         self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
                         return False
+
+            ### 2c. Validate Diagnostic part number, if applicable
+            if self._pn_format == PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT:
+                if not self.nic_fru_parse_dpn(fru_buf):
+                    self.nic_set_err_msg("DPN field doesn't match any known formats in SMB FRU")
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
 
             ### 3. COMPARE ASIC & SMBUS
             if self._sn != asic_sn or self._mac != asic_mac or self._pn != asic_pn or self._date != asic_date:
@@ -3193,6 +3210,15 @@ class nic_ctrl():
             NIC_Type.GINESTRA_D5: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT)                   #68-0075-01 XX    GINESTRA_D5
                 ],
+            NIC_Type.GINESTRA_S4: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
+            NIC_Type.GINESTRA_S4_B3: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
+            NIC_Type.GINESTRA_S4_P3: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
+                ],
             NIC_Type.ORTANO2SOLO: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.ORTANO2SOLO_ORC_PN_FMT)               #68-0077-01 XX    ORTANO2 SOLO
                 ],
@@ -3392,6 +3418,20 @@ class nic_ctrl():
 
         return True
 
+    def nic_fru_parse_dpn(self, fru_buf):
+        """ Save to self._dpn and return True/False """
+        disp_field = r"DPN \(Diagnostic Part Number\)"
+
+        for dpn_regex in libmfg_utils.get_all_valid_dpn():
+            dpn_disp_regex = r"%s +(%s)" % (disp_field, str(dpn_regex))
+            match = re.findall(dpn_disp_regex, fru_buf)
+            if match:
+                self._dpn = dpn_regex
+                return True
+
+        self.nic_set_err_msg("Programmed DPN not a valid DPN")
+        return False        
+
     def nic_get_fru(self):
         if not self._sn or not self._mac or not self._pn:
 
@@ -3451,7 +3491,7 @@ class nic_ctrl():
 
         return fru_buf
 
-    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, smb_fru=False):
+    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False):
         eeutil_cmd_lookup = {
             PART_NUMBERS_MATCH.N100_PEN_PN_FMT:         "eeutil -dev=fru -update",
             PART_NUMBERS_MATCH.N100_NET_PN_FMT:         "eeutil -dev=fru -update",
@@ -3490,6 +3530,11 @@ class nic_ctrl():
             cmd = "eeutil -dev=fru -update -erase -numBytes=512"
         
         cmd += " -date='{:s}' -sn='{:s}' -mac='{:s}' -pn='{:s}'".format(date, sn, mac, pn)
+
+        if dpn or sku:
+            cmd += " -dpn='{:s}'".format(dpn)
+        if sku:
+            cmd += " -skuMode -sku='{:s}'".format(sku)
 
         if smb_fru:
             cmd += " -uut=UUT_{:d}".format(self._slot+1)

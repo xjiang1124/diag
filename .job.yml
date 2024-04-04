@@ -86,86 +86,32 @@ jobs:
     labels: ["CI-DIAG-Build", "CI-DIAG-Release"]
   qa-infra/daily:
     labels: ["CI-DIAG-Daily"]
-  test/ScanDL:
-    labels: ["CI-DIAG-ScanDL"]
-  test/DL:
-    labels: ["CI-DIAG-DL"]
-  test/P2C:
-    labels: ["CI-DIAG-P2C"]
-  test/4C:
-    labels: ["CI-DIAG-4C", "CI-DIAG-Regression"]
-  #test/RDT:
-  #  labels: ["CI-DIAG-RDT"]
-  test/ORT:
-    labels: ["CI-DIAG-ORT"]
-  #test/SRN:
-  #  labels: ["CI-DIAG-SRN"]
-  test/SWI:
-    labels: ["CI-DIAG-SWI"]
+### JOB LABELS ###
   test/FST:
-    labels: ["CI-DIAG-FST"]
-### NIC_TYPE TEST BUNDLE ###
-  test/ginestra:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ginestra"]
-  test/monterey:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-monterey"]
-  test/ortano-adicr-s4:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-s4"]
-  test/ortano-solo-s4:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-s4"]
-  test/ortano-adi-ibm:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-ibm"]
-  test/ortano-adicr-msft:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-msft"]
-  test/ortano-solo-msft:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-msft"]
-  test/ortano-adi-msft:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-msft"]
-  test/ortano-adicr-orc:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adicr-orc"]
-  test/ortano-solo-orc:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-solo-orc"]
-  test/ortano-interp-orc:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-interp-orc"]
-  test/ortano-adi-orc:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-adi-orc"]
-  test/ortano-ti-orc:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-ortano-ti-orc"]
-  test/naples25swm-dell:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-dell"]
-  test/naples25swm-hpe:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples25swm-hpe"]
-  test/naples100:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Build", "CI-DIAG-naples100"]
-### END NIC_TYPE TEST BUNDLE ###
-### NIC_TYPE ASIC TEST BUNDLE ###
-  test-asic/ginestra:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ginestra"]
-  test-asic/monterey:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-monterey"]
-  test-asic/ortano-adicr-s4:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-s4"]
-  test-asic/ortano-solo-s4:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-s4"]
-  test-asic/ortano-adi-ibm:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-ibm"]
-  test-asic/ortano-adicr-msft:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-msft"]
-  test-asic/ortano-solo-msft:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-msft"]
-  test-asic/ortano-adi-msft:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-msft"]
-  test-asic/ortano-adicr-orc:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adicr-orc"]
-  test-asic/ortano-solo-orc:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-solo-orc"]
-  test-asic/ortano-interp-orc:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-interp-orc"]
-  test-asic/ortano-adi-orc:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-adi-orc"]
-  test-asic/ortano-ti-orc:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-ortano-ti-orc"]
-### END NIC_TYPE ASIC TEST BUNDLE ###
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-FST"]
+  test/DL:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-DL"]
+  test/P2C:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-P2C"]
+  test/4C:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-4C"]
+  test/SWI:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-SWI"]
+  test/ScanDL:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ScanDL"]
+  test/ORT:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ORT"]
+### END JOB LABELS ###
+### ASIC JOB LABELS ###
+  test-asic/DL:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-DL"]
+  test-asic/P2C:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-P2C"]
+  test-asic/4C:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-4C"]
+  test-asic/SWI:
+    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-SWI"]
+### END ASIC JOB LABELS ###
 
 dependencies:
   .:
@@ -180,43 +126,19 @@ dependencies:
     - reference: asset-build
 
   diag:
+### TEST DIAG CHANGES ###
     - reference: test/P2C
       exclude_dirs: ["mfg"]
+### END TEST DIAG CHANGES ###
 
   diag/mfg:
-### NIC_TYPE DEPENDENCY ###
-    - reference: test/ginestra
+### TEST SCRIPT CHANGES ###
+    - reference: test/FST
       exclude_dirs: ["scripts"]
-    - reference: test/monterey
+    - reference: test/P2C
       exclude_dirs: ["scripts"]
-    - reference: test/ortano-adicr-s4
+    - reference: test/SWI
       exclude_dirs: ["scripts"]
-    - reference: test/ortano-solo-s4
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-adi-ibm
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-adicr-msft
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-solo-msft
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-adi-msft
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-adicr-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-solo-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-interp-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-adi-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/ortano-ti-orc
-      exclude_dirs: ["scripts"]
-    - reference: test/naples25swm-dell
-      exclude_dirs: ["scripts"]
-    - reference: test/naples25swm-hpe
-      exclude_dirs: ["scripts"]
-    - reference: test/naples100
-      exclude_dirs: ["scripts"]
-### END NIC_TYPE DEPENDENCY ###
+### END TEST SCRIPT CHANGES ###
   diag/mfg/scripts:
     - reference: test/FST

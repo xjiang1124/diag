@@ -1232,6 +1232,7 @@ def main():
     test_cfg_file[NIC_Type.LACONA32] = "config/lacona32_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.GINESTRA_D4] = "config/ginestra_d4_mtp_test_cfg.yaml"
     test_cfg_file[NIC_Type.GINESTRA_D5] = "config/ginestra_d5_mtp_test_cfg.yaml"
+    test_cfg_file[NIC_Type.GINESTRA_S4] = "config/ginestra_d5_ssdk_mtp_test_cfg.yaml"
     
     test_db = dict()
     for nic_type in test_cfg_file.keys():
@@ -1526,9 +1527,8 @@ def main():
                     #
                     ######################################################################
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
-                        nic_pre_test_check_list = pre_test_check_list[nic_type]
-
                         if nic_list:
+                            nic_pre_test_check_list = pre_test_check_list[nic_type]
                             pre_check_fail_list = naples_exec_pre_check(mtp_mgmt_ctrl,
                                                                         nic_type,
                                                                         nic_list,
@@ -1590,11 +1590,9 @@ def main():
                     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
                         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
-
-                        nic_para_test_list = para_test_list[nic_type]
-                        nic_test_db = test_db[nic_type]
-
                         if nic_list:
+                            nic_para_test_list = para_test_list[nic_type]
+                            nic_test_db = test_db[nic_type]
                             diag_para_fail_list = naples_diag_ncsi_test(mtp_mgmt_ctrl,
                                                                        nic_type,
                                                                        nic_list,
@@ -1621,15 +1619,13 @@ def main():
                         if nic_type == NIC_Type.NAPLES25SWM:
                             if swmtestmode == Swm_Test_Mode.ALOM:
                                 continue
-                        nic_mtp_para_test_list = mtp_para_test_list[nic_type]
-
-                        if ("RMII_LINKUP") in nic_mtp_para_test_list:
-                            nic_mtp_para_test_list.remove("RMII_LINKUP")
-                        if ("UART_LPBACK") in nic_mtp_para_test_list:
-                            nic_mtp_para_test_list.remove("UART_LPBACK")
-
                         fstl = list()
                         if nic_list:
+                            nic_mtp_para_test_list = mtp_para_test_list[nic_type]
+                            if ("RMII_LINKUP") in nic_mtp_para_test_list:
+                                nic_mtp_para_test_list.remove("RMII_LINKUP")
+                            if ("UART_LPBACK") in nic_mtp_para_test_list:
+                                nic_mtp_para_test_list.remove("UART_LPBACK")
                             mtp_para_fail_list, fstl = naples_exec_mtp_para_test(mtp_mgmt_ctrl,
                                                                            nic_type,
                                                                            nic_list,
@@ -1647,8 +1643,7 @@ def main():
                                 if slot in pass_nic_list:
                                     pass_nic_list.remove(slot)
 
-                        # re-init diag preparing for next Parallel DSP Test, And copy logfiles out
-                        if nic_list:
+                            # re-init diag preparing for next Parallel DSP Test, And copy logfiles out
                             # include failed slots
                             for slot in nic_list:
                                 mtp_mgmt_ctrl.mtp_hide_nic_status(slot)
@@ -1682,10 +1677,9 @@ def main():
                             if swmtestmode == Swm_Test_Mode.ALOM:
                                 continue
 
-                        nic_para_test_list = para_test_list[nic_type][:]
-                        nic_test_db = test_db[nic_type]
-
                         if nic_list:
+                            nic_para_test_list = para_test_list[nic_type][:]
+                            nic_test_db = test_db[nic_type]
                             # aapl tests
                             new_nic_para_test_list = list()
                             if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
@@ -1729,10 +1723,9 @@ def main():
                             if swmtestmode == Swm_Test_Mode.ALOM:
                                 continue
 
-                        nic_para_test_list = para_test_list[nic_type][:]
-                        nic_test_db = test_db[nic_type]
-
                         if nic_list:
+                            nic_para_test_list = para_test_list[nic_type][:]
+                            nic_test_db = test_db[nic_type]
                             # skip tests done in other loops
                             if ("NIC_ASIC","PCIE_PRBS") in nic_para_test_list:
                                 nic_para_test_list.remove(("NIC_ASIC","PCIE_PRBS"))
@@ -1777,10 +1770,9 @@ def main():
                         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
                             continue
 
-                        nic_para_test_list = para_test_list[nic_type][:]
-                        nic_test_db = test_db[nic_type]
-
                         if nic_list:
+                            nic_para_test_list = para_test_list[nic_type][:]
+                            nic_test_db = test_db[nic_type]
                             # skip all tests except edma in this loop
                             new_nic_para_test_list = list()
                             if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
@@ -1820,10 +1812,9 @@ def main():
                             if swmtestmode == Swm_Test_Mode.ALOM:
                                 continue
 
-                        nic_seq_test_list = seq_test_list[nic_type]
-                        nic_test_db = test_db[nic_type]
-
                         if nic_list:
+                            nic_seq_test_list = seq_test_list[nic_type]
+                            nic_test_db = test_db[nic_type]
                             diag_seq_fail_list = naples_diag_seq_test(mtp_mgmt_ctrl,
                                                                       nic_type,
                                                                       nic_list,

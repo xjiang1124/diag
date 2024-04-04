@@ -210,6 +210,10 @@ class LaunchApp(object):
                     fh.write(barcode_scans[slot]['MAC'] + "\n")
                     if barcode_scans[slot]['PN']:
                         fh.write(barcode_scans[slot]['PN'] + "\n")
+                    if "DPN" in barcode_scans[slot]:
+                        fh.write(barcode_scans[slot]["DPN"] + "\n")
+                    if "SKU" in barcode_scans[slot]:
+                        fh.write(barcode_scans[slot]["SKU"] + "\n")
                     if self.__testsuite.config.job == "FST":
                         fh.write("ROT-000{:02d}".format(slot) + "\n")
 

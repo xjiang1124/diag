@@ -4,9 +4,11 @@ import traceback
 import threading
 from libdefs import *
 from libmfg_cfg import *
+import barcode_field as bf
 import libmfg_utils
 import libmtp_utils
 import testlog
+import scanning
 
 def single_nic_test_start(mtp_mgmt_ctrl, slot, test_name):
     start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_name)
@@ -140,6 +142,22 @@ def parallel_threaded_test(func):
 
     return start_end
 
+def update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_list=[True]*MTP_Const.MTP_SLOT_NUM):
+    for slot in pass_nic_list[:]:
+        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+        if not nic_test_rslt_list[slot]:
+            if slot not in fail_nic_list:
+                fail_nic_list.append(slot)
+            if slot in pass_nic_list:
+                pass_nic_list.remove(slot)
+
+    return pass_nic_list, fail_nic_list
+
 def get_test_constants(stage, mtp_id):
     testsuite_config = {
         FF_Stage.FF_DL:
@@ -270,26 +288,22 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
 
         ### Barcode scanning
         if loop_idx == 1:
+            if not ENABLE_SCAN_VERIFY:
+                skip_test_list.append("SCAN_VERIFY") # allow skipping via global var or arg
+
             if stage == FF_Stage.FF_DL and testsuite in (FF_Stage.SCAN_DL, FF_Stage.CONVERT):
-                libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
-
+                scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage, swmtestmode=swm_test_mode)
             elif stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
-                if not ENABLE_SCAN_VERIFY:
-                    skip_test_list.append("SCAN_VERIFY")
-
                 if "SCAN_VERIFY" not in skip_test_list:
-                    libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), swm_test_mode)
-            elif stage == FF_Stage.FF_FST:
-                if not ENABLE_SCAN_VERIFY:
-                    skip_test_list.append("SCAN_VERIFY")
-
-                if "SCAN_VERIFY" not in skip_test_list and False:
-                    libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), is_fst_test=True)
+                    scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage, swmtestmode=swm_test_mode)
+            elif False and stage == FF_Stage.FF_FST:
+                if "SCAN_VERIFY" not in skip_test_list:
+                    scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
 
             elif stage == FF_Stage.FF_SRN:
                 mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
                 while True:
-                    scan_rslt = mtp_mgmt_ctrl.mtp_screen_barcode_scan()
+                    scan_rslt = scanning.mtp_screen_barcode_scan(mtp_mgmt_ctrl)
                     if scan_rslt and scan_rslt["VALID"]:
                         mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
                         break;
@@ -358,6 +372,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         card_type     = kwargs.get("card_type",   None)
         swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
         testsuite     = kwargs.get("testsuite_name", stage)
+        dpn           = kwargs.get("dpn", None)
         only_test_list        = kwargs.get("only_test_list",        [])
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn_list",            [])
@@ -375,6 +390,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             test_cmd_args += " --loop_idx {:d}".format(loop_idx)
         if swm_test_mode:
             test_cmd_args += " --swm {:s}".format(swm_test_mode)
+        if dpn:
+            test_cmd_args += " --dpn {:s}".format(dpn)
         if skip_test_list:
             test_cmd_args += " --skip-test {:s}".format('"'+'" "'.join(skip_test_list).strip()+'"')
         if only_test_list:

@@ -48,10 +48,14 @@ tar xfO ${arm64img} nic.tar.gz | tar xzO nic/fake_root_target/nic/asic_src/ip/co
 
 echo "Collect release targets"
 grep ${ASIC} /psdiag/test/jobs.cfg | grep -v "#" | awk -F"\t" '{$(NF-1)=$(NF-2)=""; OFS="\t"; $1=$1; print}' > /release/${ASIC}_${RELEASE}/TARGETS
+if [[ $(cat /release/${ASIC}_${RELEASE}/TARGETS | wc -l) < 1 ]]; then
+    echo "No ${ASIC} targets tested. Skipping ${ASIC} tarball."
+    exit 0
+fi
 
 echo "Collect release changelist"
 cp /psdiag/CHANGES.md /release/${ASIC}_${RELEASE}/CHANGES.md
-if [[ $(wc -l /release/${ASIC}_${RELEASE}/CHANGES.md) < 1 ]]; then
+if [[ $(cat /release/${ASIC}_${RELEASE}/CHANGES.md | wc -l) < 1 ]]; then
     echo "CHANGES.md looks empty. Aborting release"
     exit -1
 fi

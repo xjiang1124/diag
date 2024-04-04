@@ -280,7 +280,7 @@ PRIVEK <ek.sk>"""
         output = subprocess.check_output(cmd_list)
         #print(output)
 
-        ma = re.compile(r".*Assembly Number.*([\d]{2}-[\d]{4}-[\d]{2}) .*")
+        ma = re.compile(r".*Assembly Number\s+([\d]{2}-[\d]{4}-[\d]{2}) .*")
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:

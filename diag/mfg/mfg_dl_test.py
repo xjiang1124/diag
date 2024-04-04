@@ -51,6 +51,7 @@ def main():
     parser = argparse.ArgumentParser(description="MFG MTP DL Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
+    parser.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--skip-slots", "--skip-slot", help="skip a particular slot", nargs="*", default=[])
@@ -112,7 +113,8 @@ def main():
                                                 "mtpcfg_file": mtpcfg_file,
                                                 "jobd_logdir": args.jobd_logdir,
                                                 "testsuite_name": stage,
-                                                "swm_test_mode": swmtestmode}))
+                                                "swm_test_mode": swmtestmode,
+                                                "dpn": args.dpn}))
         mtp_thread.daemon = True
         mtp_thread.start()
         mtp_thread_list.append(mtp_thread)
