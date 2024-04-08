@@ -801,8 +801,8 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
 func findPn(start int, end int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
-    // first look for FIELD_NUM_PN_4 which is SKU
-    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_PN_4)
+    // first look for FIELD_NUM_SKU_4 which is SKU
+    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_SKU_4)
     if err != errType.SUCCESS {
         cli.Println("e", "ERROR: Failed to find part number offset.")
         return
