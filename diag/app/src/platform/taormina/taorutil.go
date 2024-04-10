@@ -272,7 +272,7 @@ func Fan_FIX_Stuck_Fan(fanNumber int, fanPWM int) (err int) {
             }
 
             for fanInModule:=0; fanInModule < FANPERMODULE; fanInModule++ {
-                rpm[fanInModule], err =  hwdev.FanSpeedGet(fan_MAP[j].dev, uint64((int(fan_MAP[j].fanNum) * FANPERMODULE) + fanInModule) ) 
+                rpm[fanInModule], _, err =  hwdev.FanSpeedGet(fan_MAP[j].dev, uint64((int(fan_MAP[j].fanNum) * FANPERMODULE) + fanInModule) ) 
                 if err != errType.SUCCESS {
                     cli.Printf("e", "FanSpeedGet Failed on %s, fan-%d   (Silkscreen Number-%d)  \n", fan_MAP[j].dev, fan_MAP[j].fanNum, fan_MAP[fanNumber].silkScreenFan)
                     return
@@ -350,7 +350,7 @@ func Fan_Check_RPM(fanNumber int, fanPWM int, tollerance int) (err int) {
 
     for fanInModule=0; fanInModule < FANPERMODULE; fanInModule++ {
         for retry:=0; retry < MaxRetry; retry++ {
-            rpm[fanNumber], fanFail =  hwdev.FanSpeedGet(fan_MAP[fanNumber].dev, ((fan_MAP[fanNumber].fanNum * FANPERMODULE) + fanInModule) ) 
+            rpm[fanNumber], _, fanFail =  hwdev.FanSpeedGet(fan_MAP[fanNumber].dev, ((fan_MAP[fanNumber].fanNum * FANPERMODULE) + fanInModule) ) 
             if fanFail != errType.SUCCESS {
                 cli.Printf("e", "FanSpeedGet Failed on %s, fan-%d  (Silkscreen Number-%d)\n", fan_MAP[fanNumber].dev, fan_MAP[fanNumber].fanNum, fan_MAP[fanNumber].silkScreenFan)
                 err = errType.FAIL
@@ -6331,12 +6331,12 @@ func ShowFanSpeed()  (err int)  {
         var err int
 
         hwinfo.EnableHubChannelExclusive(fan_MAP[i].dev)
-        inner, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2)+1)
+        inner, _, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2)+1)
         if err != errType.SUCCESS {
             fmt.Printf("%-20s RPM = ERROR READING RPM\n", fan_MAP[i].dev)
             err = -1
         } 
-        outer, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2))
+        outer, _, err =  hwdev.FanSpeedGet(fan_MAP[i].dev, (fan_MAP[i].fanNum * 2))
         if err != errType.SUCCESS {
             fmt.Printf("%-20s RPM = ERROR READING RPM\n", fan_MAP[i].dev)
             err = -1

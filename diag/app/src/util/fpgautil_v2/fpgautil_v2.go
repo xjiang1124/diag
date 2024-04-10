@@ -1,7 +1,9 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
+    "github.com/spf13/cobra"
+    "fmt"
+    "os"
 )
 
 // User guild for Cobra can be found at
@@ -9,8 +11,8 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-    Use:   "devmgr_v2",
-    Short: "devmgr_v2 command",
+    Use:   "fpgautil_v2",
+    Short: "fpgautil_v2 command",
     // Uncomment the following line if your bare application
     // has an action associated with it:
     // Run: func(cmd *cobra.Command, args []string) { },
@@ -19,14 +21,16 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-    rootCmd.Execute()
+    if err := rootCmd.Execute(); err != nil {
+        fmt.Println(err)
+        os.Exit(-1)
+    }
 }
 
 func init() {
-    rootCmd.AddCommand(listCmd)
-    rootCmd.AddCommand(statusCmd)
-    rootCmd.AddCommand(faninitCmd)
-    rootCmd.AddCommand(fanctrlCmd)
+    rootCmd.AddCommand(programCmd)
+    rootCmd.AddCommand(validateCmd)
+    rootCmd.AddCommand(flashDumpCmd)
     rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 

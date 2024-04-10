@@ -1,7 +1,6 @@
 package main
 
 import (
-    //"device/fpga/taorfpga"
     "os"
     "fmt"
     "strconv"
@@ -10,6 +9,8 @@ import (
     "hardware/i2cinfo"
     "hardware/hwinfo"
     "hardware/hwdev"
+    "device/fpga/liparifpga"
+    "device/fpga/materafpga"
 )
 
 
@@ -76,17 +77,37 @@ func main() {
 
     } else if os.Args[2] == "speed" {
         var rpm [8]uint64
-        //"fanutil <fanctrl#> speed get <fan# / all>\n" +  
+        var rpm2 [8]uint64
+        var maxfan int = 8  //number of fan modules
+        var daulfan int = 0 //flag to indicate two fans per module
+
+        if i2cinfo.CardType == "LIPARI" {
+            maxfan = liparifpga.MAXFAN
+            daulfan = liparifpga.DUALFAN
+        } else if i2cinfo.CardType == "MTP_MATERA" {
+            maxfan = materafpga.MAXFAN
+            daulfan = materafpga.DUALFAN
+        }
+
         if os.Args[3] == "all" {
-            for i:=0; i<8; i++ {
-                rpm[i], err =  hwdev.FanSpeedGet(devName, uint64(i)) 
-                fmt.Printf(" Fan-%d   RPM = %d\n", i, rpm[i])
+            for i:=0; i<maxfan; i++ {
+                rpm[i], rpm2[i], err =  hwdev.FanSpeedGet(devName, uint64(i)) 
+                if daulfan == 0 {
+                    fmt.Printf(" Fan-%d   RPM = %d\n", i, rpm[i])
+                } else {
+                    fmt.Printf(" Fan-%d   RPM Inner = %d  Outer = %d\n", i, rpm[i], rpm2[i])
+                }
             }
         } else {
             data64, _ = strconv.ParseUint(os.Args[4], 0, 32)
             if data64 > 7 { fmt.Printf(" ERROR: Max fan number is 7\n"); return }
-            rpm[data64], err =  hwdev.FanSpeedGet(devName, data64) 
-            fmt.Printf(" Fan-%d   RPM = %d\n", data64, rpm[data64])
+            rpm[data64], rpm2[data64], err =  hwdev.FanSpeedGet(devName, data64) 
+            if daulfan == 0 {
+                fmt.Printf(" Fan-%d   RPM = %d\n", data64, rpm[data64])
+            } else {
+                fmt.Printf(" Fan-%d   RPM Inner = %d  Outer = %d\n", data64, rpm[data64], rpm2[data64])
+            }
+            
         }
     } else if os.Args[2] == "pwm" {
         var mask uint64
@@ -95,6 +116,10 @@ func main() {
         if os.Args[4] == "all" {
             if i2cinfo.CardType == "TAORMINA" {
                 mask = 0x7
+            } else if i2cinfo.CardType == "LIPARI" {
+                mask = 0xF
+            } else if i2cinfo.CardType == "MATERA_MTP" {
+                mask = 0x1F
             } else {
                 mask = 0xFF
             }
@@ -114,16 +139,18 @@ func main() {
 }
 
 func get_fan_device_name(devNumber int) (device string, err int) {
-    cardType := os.Getenv("CARD_TYPE")
-    if cardType == "MTP" {
+    if i2cinfo.CardType == "MTP" {
         device = "FAN"
-    } else if cardType == "TAORMINA" {
+    } else if i2cinfo.CardType == "TAORMINA" {
         device = fmt.Sprintf("FAN_%d", devNumber+1)
+    } else if i2cinfo.CardType == "LIPARI" {
+        device = fmt.Sprintf("FAN")
+    } else if i2cinfo.CardType == "MATERA_MTP" {
+        device = fmt.Sprintf("FAN")
     } else {
         cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")
         err = errType.FAIL
     }
-    fmt.Printf("DEBUG:  Device=%s\n", device)
     return
 }
 

@@ -664,16 +664,8 @@ var LipariTbl = []I2cInfo {
     I2cInfo {"ELBA5_TEMP",      "TMP451",     60,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
     I2cInfo {"ELBA6_TEMP",      "TMP451",     61,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
     I2cInfo {"ELBA7_TEMP",      "TMP451",     62,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
-    /*
-    I2cInfo {"TEMP_ELBA0",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA1",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA2",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA3",      "TMP451",     0,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA4",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA5",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA6",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"TEMP_ELBA7",      "TMP451",     1,   0x4C,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE}, 
-    */ 
+    //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
+    I2cInfo {"FAN",             "FPGA",       2,    0x44,    0x0,    "NONE",         0,    0},
 }
 
 var MateraI2cTbl = []I2cInfo {
@@ -684,15 +676,17 @@ var MateraI2cTbl = []I2cInfo {
     I2cInfo {"FPIC", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
     // TODO: CPLD_ELBA0 to simulate MTP_MATERA CPLD, but it's ARM based?
     I2cInfo {"CPLD", "MACHXO3",     0,   0x4A,    0x0,  "FPGA1_HUB_0",  0,   0},
-    I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
-    I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",    0,  0},
-    I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
-    I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",    0,  0},   //cannot ping
+    I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
+    I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
+    I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
     I2cInfo {"TEMP_IOB1", "LM75",     6,  0x48,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"TEMP_MB",   "LM75",     6,  0x49,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"TEMP_IOB2", "LM75",     6,  0x4A,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"P12V",      "TPS25990", 10, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
     I2cInfo {"CPU_VDDCR", "ISL69247", 10, 0x60,   0x0,  "HUB_NONE",  0,    0},
+    //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
+    I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
 }
 
 // simulate UUT on Lipari using its 8 Elba CPLD
@@ -803,10 +797,8 @@ func init() {
         I2cTbl = MtpI2cTbl
     } else if CardType == "MTPS" {
         I2cTbl = MtpsI2cTbl
-    } else if CardType == "MTP_MATERA" { //FIXME: For Matera valiation on Lipari only
-        //I2cTbl = LipariTbl
+    } else if CardType == "MTP_MATERA" { 
         I2cTbl = MateraI2cTbl
-        cli.Println("d", "Found card:", CardType)
     } else if CardType == "TAORMINA" {
         I2cTbl = TaorTbl
     } else if CardType == "TAORELBA" {

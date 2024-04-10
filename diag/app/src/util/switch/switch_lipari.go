@@ -8,10 +8,12 @@ import (
     //"common/cli"
     "common/errType"
     "platform/lipari"
+    "platform/matera"
 )
 
 
 const errhelpLipari = "\nswitch:\n" +
+        "switch test fan\n" +
         "switch cpu memtest <# test threads> <percent of mem to test 1-100> <time>\n" +
         "switch show <power/temperature/fans>\n" +
         "switch margin <name> <pct>\n" +
@@ -54,6 +56,21 @@ func lipari_switch_cli() {
             } else { 
                 os.Exit(0)
             }
+        }
+    } else if os.Args[1] == "test" {
+        if argc < 3 {
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        if os.Args[2] == "fan" {
+            fmt.Printf(" FAN TEST\n")
+            rc := lipari.Fan_RPM_test(10)
+            if rc != errType.SUCCESS {
+                os.Exit(-1) 
+            } else {
+                os.Exit(0)
+            }
+            rc = matera.Fan_RPM_test(10)
         }
     } else if os.Args[1] == "show" {
         if argc < 3 {

@@ -199,7 +199,7 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
             eeprom.EepromTbl = eeprom.OrtanoTbl
             
         }
-        if (cardType == "MTFUJIELBA") {
+        if (cardType == "MTFUJI") {
             eeprom.EepromTbl = eeprom.MtFujiElba
             eeprom.CustType = "PENORTANO"
         }
@@ -489,7 +489,7 @@ func eepromDispTableFix(uut string, devName string, bus uint32, devAddr byte) (e
             eeprom.CustType = "PENORTANO"
             return(0)
         }
-    } else if (cardType == "MTFUJIELBA") {
+    } else if (cardType == "MTFUJI") {
         rc := hwdev.EepromMatchSearchFruPN(devName, bus, devAddr, NAPLES200_MTFUJI[0:7])  //MtFuji switch with Elba's
         if rc == errType.SUCCESS {
             eeprom.EepromTbl = eeprom.MtFujiElba

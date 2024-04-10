@@ -26,8 +26,6 @@ func ReadStatus(devName string) (status uint16, err int) {
 }
 
 
-
-//Read target voltage from VOUT 
 func ReadVin(devName string) (integer uint64, dec uint64, err int) {
     var VIN uint16
     err = smbus.Open(devName)
@@ -47,7 +45,6 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
 }
 
 
-//Read target voltage from VOUT 
 func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     var VOUT uint16
     var VMODE uint8
@@ -69,7 +66,6 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     }
 
     integer, dec, err =  pmbus.Linear16(uint64(VMODE), VOUT)
-        
     return
 }
 
@@ -528,7 +524,6 @@ func DispVoltWattAmp(devName string) (err int) {
 
 
 func DispStatus(devName string) (err int) {
-    /*
     vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP1", "TEMP2", "TEMP3", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
@@ -562,15 +557,10 @@ func DispStatus(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
-
-    //dig, frac, _ := ReadVboot(devName)
-    //outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    //outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     dig, frac, err := ReadPout(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
@@ -614,7 +604,6 @@ func DispStatus(devName string) (err int) {
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
 
     cli.Println("i", outStr)
-    */
     return
 }
 
