@@ -103,10 +103,6 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ORT"]
 ### END JOB LABELS ###
 ### ASIC JOB LABELS ###
-  test-asic/DL:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-DL"]
-  test-asic/P2C:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-P2C"]
   test-asic/4C:
     labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-4C"]
   test-asic/SWI:
