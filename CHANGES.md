@@ -1,0 +1,6 @@
+- Add RJ45 sanity check for capri cards
+- Fix exceptions in ScanDL
+- JIRA HW-599: NIC boot info init takes too long when theres no prompt
+- Untar asic lib in start_diag
+- Update temp sensor error msg
+- Add DIAGFW_STORE test to save a copy of fw in emmc in case it gets corrupted

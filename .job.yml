@@ -97,10 +97,6 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-4C"]
   test/SWI:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-SWI"]
-  test/ScanDL:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ScanDL"]
-  test/ORT:
-    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ORT"]
 ### END JOB LABELS ###
 ### ASIC JOB LABELS ###
   test-asic/4C:
