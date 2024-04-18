@@ -252,8 +252,8 @@ def read_scanned_barcodes(mtp_mgmt_ctrl):
 
 def keyboard_input(prompt):
     # Support python2 and 3 compatability
-    try: input = raw_input
-    except NameError: pass
+    # try: input = raw_input
+    # except NameError: pass
 
     return input(prompt)
 
