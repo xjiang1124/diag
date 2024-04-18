@@ -1124,8 +1124,10 @@ def main():
             fail_step = "connect MTP failed"
             fail_desc = "Unable to connect MTP Chassis. Abort test"
             for slot in range(10):
-                fail_nic_list.append(slot)
-                pass_nic_list.remove(slot) 
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
             return False
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
@@ -1137,8 +1139,10 @@ def main():
                 fail_step = "MTP common setup failed"
                 fail_desc = "MTP common setup fails"
                 for slot in range(10):
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot) 
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                 rs = False
             else:
                 mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
@@ -1233,8 +1237,10 @@ def main():
                 fail_step = "Unable to get MTP MAC Address"
                 fail_desc = "Unable to get MTP MAC Address"
                 for slot in range(10):
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot) 
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                 rs = False
             else:
                 mac = mac_dict[mtp_sn].strip()
@@ -1255,8 +1261,10 @@ def main():
                 fail_step = "MTP program FRU failed"
                 fail_desc = "MTP program FRU fails"
                 for slot in range(10):
-                    fail_nic_list.append(slot)
-                    pass_nic_list.remove(slot) 
+                    if slot not in fail_nic_list:
+                        fail_nic_list.append(slot)
+                    if slot in pass_nic_list:
+                        pass_nic_list.remove(slot)
                 rs = False
             else:
                 mtp_mgmt_ctrl.cli_log_inf("MTP program FRU command passed", level=0)

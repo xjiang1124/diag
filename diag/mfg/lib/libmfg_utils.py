@@ -1,6 +1,6 @@
 import getpass
 import smtplib
-import httplib
+import http.client
 import sys
 import datetime
 import re
@@ -271,7 +271,7 @@ def serial_number_validate(buf, exact_match=True):
         Check that the 'buf' containing serial number matches *ANY* of the rules.
         If exact_match=True, 'buf' must contain whole serial number and nothing else.
     """
-    all_sn_regexes = [p[s] for p in SN_FORMAT_TABLE.values() for s in p] # flatten dict
+    all_sn_regexes = [p[s] for p in list(SN_FORMAT_TABLE.values()) for s in p] # flatten dict
 
     for sn_regex in all_sn_regexes:
         if exact_match:
@@ -310,7 +310,7 @@ def part_number_validate(tmp):
         return None
 
 def part_number_lookup(pn):
-    all_pn_regexes = [x for y in PN_FORMAT_TABLE.values() for x in y] # flatten list
+    all_pn_regexes = [x for y in list(PN_FORMAT_TABLE.values()) for x in y] # flatten list
 
     for pn_regex in all_pn_regexes:
         match = re.match(pn_regex, pn)
@@ -335,7 +335,7 @@ def part_number_match_rot_require_list(pn):
     return rc
 
 def get_nic_type_by_part_number(pn):
-    for nic_type, pn_regex_arr in PN_FORMAT_TABLE.items():
+    for nic_type, pn_regex_arr in list(PN_FORMAT_TABLE.items()):
         for pn_regex in pn_regex_arr:
             if re.match(pn_regex, pn):
                 return nic_type
@@ -379,7 +379,7 @@ def double_confirm(msg):
     tmp = ""
 
     while (tmp != "Y") and (tmp != "N"):
-        tmp = raw_input("Confirm " + msg + "? (Y/N) [Y]:")
+        tmp = input("Confirm " + msg + "? (Y/N) [Y]:")
         # default is yes
         if tmp == "":
             tmp = "Y"
@@ -396,11 +396,11 @@ def double_confirm(msg):
 def action_confirm(msg, action):
     tmp = ""
     while (tmp != action):
-        tmp = raw_input("Operator Confirm " + msg + ":")
+        tmp = input("Operator Confirm " + msg + ":")
 
 
 def sw_pn_scan():
-    tmp = raw_input("Scan the Software PN: ")
+    tmp = input("Scan the Software PN: ")
     return tmp;
 
 
@@ -415,7 +415,7 @@ def single_select_menu(title, opt_list):
 
     # validate input loop
     while True:
-        scan_input = raw_input(menu).replace(' ', '')
+        scan_input = input(menu).replace(' ', '')
         if scan_input == "STOP":
             return None
         elif scan_input in opt_list:
@@ -438,12 +438,15 @@ def multiple_select_menu(title, opt_list):
         menu += "| " + title + " |\n"
         menu += "+-" + "-"*len(title) + "-+\n"
         menu += "Options:\n"
-        for idx in range(opt_num):
-            menu += "    * " + menu_list[idx] + "\n"
-        menu += "Scan the MTP ID Bar Code: [{:s} Selected]".format(", ".join(sub_list))
+        for i, idx in enumerate(range(opt_num)):
+            menu += "    * " + menu_list[idx]
+            menu += " " * (10 -len(menu_list[idx]))
+            if  (i+1) % 5 == 0:
+                menu +="\n"
+        menu += "\nScan the MTP ID Bar Code: [{:s} Selected]".format(", ".join(sub_list))
 
         # validate input loop
-        scan_input = raw_input(menu).replace(' ','')
+        scan_input = input(menu).replace(' ','')
         if scan_input == "STOP":
             return sub_list
         elif scan_input in menu_list:
@@ -502,9 +505,9 @@ def expand_range_of_numbers(data, range_min=1, range_max=10, dev=None):
                     expanded.append(int(yaml_field))
                 else:
                     #range of integers: expand them
-                    start,end = map(int, yaml_field.split("-"))
+                    start,end = list(map(int, yaml_field.split("-")))
                     if start < end:
-                        expanded = expanded + range(start,end+1)
+                        expanded = expanded + list(range(start,end+1))
                     else:
                         sys_exit("{:s} Invalid slot range '{:s}-{:s}' in config file".format(dev, start, end))
 
@@ -599,7 +602,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
 
     # calculate remote file ms5sum
     cmd = get_ssh_connect_cmd(userid, ip_addr)
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.setecho(False)
     session.expect_exact("assword:")
     session.sendline(passwd)
@@ -638,7 +641,7 @@ def need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, local_filename=None
 
 def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     cmd = "md5sum " + local_file
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
@@ -648,14 +651,15 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
         cli_err("Execute command {:s} failed".format(cmd))
         return False
 
-    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, remote_dir))
+    session = pexpect.spawn("scp {:s} {:s} {:s}@{:s}:{:s}".format(get_ssh_option(), local_file, userid, ip_addr, remote_dir), encoding='utf-8', codec_errors='ignore')
     session.expect_exact("ssword:")
     session.sendline(passwd)
-    session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
+    # session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
+    session.expect_exact(pexpect.EOF, timeout=3600)
 
     # verify the file md5sum
     cmd = get_ssh_connect_cmd(userid, ip_addr)
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.setecho(False)
     session.expect_exact("assword:")
     session.sendline(passwd)
@@ -670,6 +674,7 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
     session.expect_exact(get_linux_prompt_list(), timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]{32}) +.*", str(session.before))
     session.close()
+
     # md5sum match
     if match:
         if match.group(1) == local_md5sum:
@@ -683,17 +688,17 @@ def network_copy_file(ip_addr, userid, passwd, local_file, remote_dir):
 
 
 def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
-    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file))
+    session = pexpect.spawn("scp {:s} {:s}@{:s}:{:s} {:s}".format(get_ssh_option(), userid, ip_addr, remote_file, local_file), encoding='utf-8', codec_errors='ignore')
     session.expect_exact("ssword:")
     session.sendline(passwd)
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.MTP_NETCOPY_DELAY)
 
     cmd = "sync"
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_SYNC_DELAY)
 
     cmd = "md5sum " + local_file
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.expect_exact(pexpect.EOF, timeout=MTP_Const.OS_CMD_DELAY)
     match = re.search(r"([0-9a-fA-F]+) +.*", str(session.before))
     session.close()
@@ -705,7 +710,7 @@ def network_get_file(ip_addr, userid, passwd, local_file, remote_file):
 
     # verify the file md5sum
     cmd = get_ssh_connect_cmd(userid, ip_addr)
-    session = pexpect.spawn(cmd)
+    session = pexpect.spawn(cmd, encoding='utf-8', codec_errors='ignore')
     session.setecho(False)
     session.expect_exact("assword:")
     session.sendline(passwd)
@@ -775,7 +780,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
         images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage)
         if images_for_nic_type is None:
             return None
-        image_list += images_for_nic_type.values()
+        image_list += list(images_for_nic_type.values())
 
     image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
     return image_list
@@ -816,6 +821,18 @@ def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
     if new_version != cur_version:
         return False
 
+    return True
+
+def mtp_prepare_swi_invoke_on_mtp(mtp_mgmt_ctrl, swpn_list, image_list):
+    """
+    setup sw_pn to sw image symbol link, so that SWI can invoke on MTP locallly.
+    """
+
+    for swpn, filename in zip(swpn_list, image_list):
+        cmd = "cd /home/diag; ln -s {:s} {:s}".format(filename, swpn)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=5):
+            mtp_mgmt_ctrl.cli_log_err("Failed to establish symbol link from image file {:s} to {:s}".format(filename, swpn), level=0)
+            return False
     return True
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
@@ -860,6 +877,24 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
         else:
             mtp_mgmt_ctrl.cli_log_inf("Firmware image {:s} on MTP is up-to-date".format(image), level=0)
 
+    return True
+
+def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir='/home/diag/', mtp_python_site_package_file="release/"+MTP_IMAGES.python_site_package4mtp_img):
+    """
+    force update python3.6.9 third party packages even if it is exist, since just in case we may have more third party image to install
+    """
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy Python3.6 site-packge image to MTP: {:s}".format(mtp_python_site_package_file), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Force update site-packge even if it is exist, since just in case we may have more third party image to install", level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_python_site_package_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy Python3.6 site-packge image to MTP... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Copied Python3.6 site-packge image to MTP: {:s}".format(os.path.basename(mtp_python_site_package_file)), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("Updating Python3.6 site-packge to MTP: {:s}".format(os.path.basename(mtp_python_site_package_file)), level=0)
+    if not mtp_mgmt_ctrl.mtp_update_python36_site_package(remote_dir + os.path.basename(mtp_python_site_package_file)):
+        mtp_mgmt_ctrl.cli_log_err("Update Python3.6 site-packge to MTP... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Updated Python3.6 site-packge to MTP\n", level=0)
     return True
 
 def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMAGE, nic_image=MFG_IMAGE_FILES.MTP_ARM64_IMAGE, force_update=False):
@@ -916,6 +951,11 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
     elif not running_diag_img_match(mtp_mgmt_ctrl, mtp_image):
         mtp_mgmt_ctrl.cli_log_inf("Loaded diag image doesn't match...updating", level=0)
         update_needed = True
+
+    # check if python3.6.9 installed and update python3.6.9 site-package
+    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
+        return False
 
     if not update_needed:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
@@ -1011,6 +1051,11 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
 
+    # check if python3.6.9 installed and update python3.6.9 site-package
+    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
+        return False
+
     return True
 
 def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
@@ -1018,7 +1063,7 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     mtp_id = mtp_mgmt_ctrl._id
     key = nic_key(slot)
-    if key not in mtp_mgmt_ctrl.barcode_scans.keys():
+    if key not in list(mtp_mgmt_ctrl.barcode_scans[mtp_id].keys()):
         return False
     if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False
@@ -1119,10 +1164,10 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
         extra_info_xml += "FST_ROT_SN=\"{:s}\" ".format(rot_sn)
 
     if mtp_psu_sn_list or nic_loopback_sn_list or ocp_adap_sn:
-        for psu, psu_sn in zip(mtp_psu_sn_list.keys(), mtp_psu_sn_list.values()):
+        for psu, psu_sn in zip(list(mtp_psu_sn_list.keys()), list(mtp_psu_sn_list.values())):
             extra_info_xml += "PSU_{:s}=\"{:s}\" ".format(psu, psu_sn)
 
-        for lpbk, lpbk_sn in zip(nic_loopback_sn_list.keys(), nic_loopback_sn_list.values()):
+        for lpbk, lpbk_sn in zip(list(nic_loopback_sn_list.keys()), list(nic_loopback_sn_list.values())):
             extra_info_xml += "LOOPBACK_PORT{:s}=\"{:s}\" ".format(lpbk, lpbk_sn)
 
         extra_info_xml += "OCP_ADAPTER=\"{:s}\" ".format(ocp_adap_sn)
@@ -1184,12 +1229,12 @@ def flx_sn_to_factory(sn):
     if not sn:
         return None
 
-    for factory_location in SN_FORMAT_TABLE.keys():
+    for factory_location in list(SN_FORMAT_TABLE.keys()):
         if factory_location == Factory.LAB:
             # skip, dont use lab SN to match
             continue
 
-        for sn_regex in SN_FORMAT_TABLE[factory_location].values():
+        for sn_regex in list(SN_FORMAT_TABLE[factory_location].values()):
             if re.match(sn_regex, sn):
                 return factory_location
 
@@ -1201,7 +1246,7 @@ def FindDellSN(sn):
         PART_NUMBERS_MATCH.POMONTEDELL_PN_FMT
         ]
 
-    for factory_location in SN_FORMAT_TABLE.keys():
+    for factory_location in list(SN_FORMAT_TABLE.keys()):
         for pn_regex in SN_FORMAT_TABLE[factory_location]:
             if pn_regex in dell_cards:
                 sn_regex = SN_FORMAT_TABLE[factory_location][pn_regex]
@@ -1477,12 +1522,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
             # FST will give syntax error since nic_ctrl is not initialized
             if stage != FF_Stage.FF_FST:
                 # save infra serial numbers
-                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                if len(list(mtp_mgmt_ctrl._psu_sn.keys())) > 0:
                     mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
                 # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
                 if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                    if len(list(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys())) > 0:
                         nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
                 # save serial number of OCP adapter
@@ -1595,12 +1640,12 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
             # FST will give syntax error since nic_ctrl is not initialized
             if stage != FF_Stage.FF_FST:
                 # save infra serial numbers
-                if len(mtp_mgmt_ctrl._psu_sn.keys()) > 0:
+                if len(list(mtp_mgmt_ctrl._psu_sn.keys())) > 0:
                     mtp_psu_sn_list = mtp_mgmt_ctrl._psu_sn
 
                 # loopback SNs are read in P2C only for elba. P2C, 2C-L, 2C-H for capri
                 if stage == FF_Stage.FF_P2C or (mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._asic_type == "capri" and stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H)):
-                    if len(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys()) > 0:
+                    if len(list(mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn.keys())) > 0:
                         nic_loopback_sn_list = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._loopback_sn
 
                 # save serial number of OCP adapter
@@ -1688,7 +1733,7 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
 def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
     final_result = True
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
-    for mtp_id in summary_dict.keys():
+    for mtp_id in list(summary_dict.keys()):
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
         if len(summary_dict[mtp_id]) == 0:
             # test didnt finish properly
@@ -1719,7 +1764,7 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
     cli_inf("---------- Report: ----------")
     # summary_dict[MTP_ID] = [MTP_ID, SN, MTP_TYPE, PASS/FAIL]  ### MTP_ID stored twice because reusing same func as nic (mtp_id in place of slot)
     final_result = True
-    for mtp_id in summary_dict.keys():
+    for mtp_id in list(summary_dict.keys()):
         for slot, sn, nic_type, rc, retest in summary_dict[mtp_id]:
             if rc:
                 cli_inf("{:s} {:s} {:s} PASS".format(slot, sn, nic_type))
@@ -1735,7 +1780,7 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
 def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     result = True
-    for mtp_id in summary_dict.keys():
+    for mtp_id in list(summary_dict.keys()):
         cli_inf("---------- {:s} Report: ----------".format(mtp_id))
         if len(mtp_fail_list) > 0:
             cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
@@ -2129,7 +2174,7 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
             break
 
         # while True:
-        raw_input("Please re-insert the modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+        input("Please re-insert the modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
 
         mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
 
@@ -2200,7 +2245,7 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
         if not failure_detected:
             break
 
-        raw_input("Please re-insert the RJ45 modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+        input("Please re-insert the RJ45 modules above then press any key to continue.\nWARNING: do not power off the MTP yet. ")
 
         mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...", level=0)
 

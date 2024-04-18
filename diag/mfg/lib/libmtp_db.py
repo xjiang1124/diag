@@ -1,6 +1,7 @@
 import libmfg_utils
 
-class mtp_db(): 
+
+class mtp_db():
     def __init__(self, mtp_cfg_file_list):
         # terminal server info
         self._ts_type = dict()
@@ -31,7 +32,7 @@ class mtp_db():
 
         mtp_cfg = libmfg_utils.load_cfg_from_yaml_file_list(mtp_cfg_file_list)
 
-        for mtpid in mtp_cfg.keys():
+        for mtpid in list(mtp_cfg.keys()):
             if mtpid in self._mtpid_list:
                 libmfg_utils.sys_exit("Duplicate mtpid: " + mtpid + " detected!")
 
@@ -40,7 +41,7 @@ class mtp_db():
             self._ts_port[mtpid] = mtp_cfg[mtpid]["TS_PORT"]
             self._ts_userid[mtpid] = mtp_cfg[mtpid]["TS_USERID"]
             self._ts_passwd[mtpid] = mtp_cfg[mtpid]["TS_PASSWORD"]
-            
+
             self._apc1[mtpid] = mtp_cfg[mtpid]["APC1"]
             self._apc1_port[mtpid] = mtp_cfg[mtpid]["APC1_PORT"]
             self._apc1_userid[mtpid] = mtp_cfg[mtpid]["APC1_USERID"]
@@ -56,8 +57,8 @@ class mtp_db():
             self._passwd[mtpid] = mtp_cfg[mtpid]["PASSWORD"]
 
             self._max_slots[mtpid] = mtp_cfg[mtpid]["SLOTS"]
-            self._slots_to_skip[mtpid] = [False]*self._max_slots[mtpid] #True=skip, False=dont skip
-            if "SKIP_SLOTS" in mtp_cfg[mtpid].keys(): # for backward compatability with configs without SKIP_SLOTS field
+            self._slots_to_skip[mtpid] = [False]*self._max_slots[mtpid]  # True=skip, False=dont skip
+            if "SKIP_SLOTS" in list(mtp_cfg[mtpid].keys()):  # for backward compatability with configs without SKIP_SLOTS field
                 for slot in libmfg_utils.expand_range_of_numbers(mtp_cfg[mtpid]["SKIP_SLOTS"], range_min=1, range_max=self._max_slots[mtpid], dev=mtpid):
                     self._slots_to_skip[mtpid][slot-1] = True
             if isinstance(mtp_cfg[mtpid]["CAPABILITY"], str):
@@ -67,10 +68,8 @@ class mtp_db():
 
             self._mtpid_list.append(mtpid)
 
-
     def get_mtpid_list(self):
-        return self._mtpid_list;
-
+        return self._mtpid_list
 
     def mtpid_valid(self, mtpid):
         if mtpid in self._mtpid_list:
@@ -97,7 +96,6 @@ class mtp_db():
 
         return ts_cfg
 
-
     def get_mtp_apc(self, mtpid):
         apc_cfg = list()
         if not self.mtpid_valid(mtpid):
@@ -114,7 +112,6 @@ class mtp_db():
         apc_cfg.append(self._apc2_passwd[mtpid])
 
         return apc_cfg
-
 
     def get_mtp_mgmt(self, mtpid):
         mgmt_cfg = list()

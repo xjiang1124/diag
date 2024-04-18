@@ -48,7 +48,7 @@ def find_logfile_path(mtp_mgmt_ctrl, stage):
     mtp_id = mtp_mgmt_ctrl._id
     stage = str(stage)
     search_rgx = r"%s_MTPS?-[0-9A-Za-z\-]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
-    for item in os.listdir(log_parent_dir):
+    for item in sorted(os.listdir(log_parent_dir))[::-1]:
         if re.search(search_rgx, item):
             return os.path.join(log_parent_dir, item)
     mtp_mgmt_ctrl.cli_log_err("Could not find logfile directory after deploying", level=0)
@@ -95,11 +95,11 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
         mtp_test_log_file = logfile_path + "/test_fst.log"
         mtp_diag_log_file = logfile_path + "/diag_fst.log"
 
-    mtp_test_log_filep = open(mtp_test_log_file, MODIFIER, buffering=0)
+    mtp_test_log_filep = open(mtp_test_log_file, MODIFIER)
     open_file_track_list.append(mtp_test_log_filep)
-    mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER, buffering=0)
+    mtp_diag_log_filep = open(mtp_diag_log_file, MODIFIER)
     open_file_track_list.append(mtp_diag_log_filep)
-    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER, buffering=0)
+    mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER)
     open_file_track_list.append(mtp_diag_cmd_log_filep)
 
     diag_nic_log_filep_list = list()
@@ -108,7 +108,7 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
         diag_nic_log_file = logfile_path + "/mtp_{:s}_diag.log".format(key)
         if stage == FF_Stage.FF_FST:
             diag_nic_log_file = logfile_path + "/diag_{:s}_fst.log".format(key)
-        diag_nic_log_filep = open(diag_nic_log_file, MODIFIER, buffering=0)
+        diag_nic_log_filep = open(diag_nic_log_file, MODIFIER)
         open_file_track_list.append(diag_nic_log_filep)
         diag_nic_log_filep_list.append(diag_nic_log_filep)
 

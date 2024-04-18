@@ -12,7 +12,7 @@ class pro_srv_db():
 
         pro_srv_cfg = libmfg_utils.load_cfg_from_yaml(pro_srv_cfg_file)
 
-        for pro_srv_id in pro_srv_cfg.keys():
+        for pro_srv_id in list(pro_srv_cfg.keys()):
             if pro_srv_id in self._pro_srv_list:
                 libmfg_utils.sys_exit("Duplicate product server id: " + pro_srv_id + " detected in " + pro_srv_cfg_file)
 

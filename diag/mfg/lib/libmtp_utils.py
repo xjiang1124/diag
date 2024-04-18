@@ -101,8 +101,8 @@ def generate_cpld_img_full_path_list(cpld_json_dict, verbosity=False):
 
     cpld_files_with_path = []
     try:
-        for images in cpld_json_dict.values():
-            for k, image_files in images.items():
+        for images in list(cpld_json_dict.values()):
+            for k, image_files in list(images.items()):
                 if k == "working_imge" or k == "failsafe_imge" or k == "secure_imge" or k == "special_boot0_imge":
                     file_full_path = image_files["file_location"] + os.sep + image_files["name"]
                     if file_full_path not in cpld_files_with_path and image_files["name"]:

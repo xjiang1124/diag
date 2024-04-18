@@ -181,7 +181,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage):
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
     for image_name in images_needed:
-        if image_name not in image_method_map.keys():
+        if image_name not in list(image_method_map.keys()):
             mtp_mgmt_ctrl.cli_log_err("script error: could not find key as {:s}".format(image_name))
             return None
 
@@ -190,7 +190,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage):
         if img_details is None:
             mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing {:s} for {:s}".format(image_name, nic_type))
             return None
-        if "filename" not in img_details.keys():
+        if "filename" not in list(img_details.keys()):
             return None
         if not img_details["filename"]:
             mtp_mgmt_ctrl.cli_log_err("mfg_cfg is missing {:s} for {:s}".format(image_name, nic_type))

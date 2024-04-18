@@ -158,107 +158,108 @@ def update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_
 
     return pass_nic_list, fail_nic_list
 
-def get_test_constants(stage, mtp_id):
+def get_test_constants(stage, mtp_id, subcommand):
+
     testsuite_config = {
         FF_Stage.FF_DL:
             {
-            "mtp_script_dir": "mtp_dl_script/",
-            "mtp_script_pkg": "mtp_dl_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_dl_test.py",
-            "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             },
         FF_Stage.SCAN_DL:
             {
-            "mtp_script_dir": "mtp_dl_script/",
-            "mtp_script_pkg": "mtp_dl_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_dl_test.py --scandl",
-            "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             },
         FF_Stage.FF_P2C:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_P2C_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_P2C_TEST_TIMEOUT
             },
         FF_Stage.FF_2C_H:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_2C_L:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_4C_H:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_4C_L:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_ORT:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_ORT_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_ORT_TEST_TIMEOUT
             },
         FF_Stage.FF_RDT:
             {
-            "mtp_script_dir": "mtp_regression/",
-            "mtp_script_pkg": "mtp_regression.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_diag_regression.py --stage {:s}".format(stage),
-            "timeout": MTP_Const.MFG_RDT_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_RDT_TEST_TIMEOUT
             },
         FF_Stage.FF_SWI:
             {
-            "mtp_script_dir": "mtp_swi_script/",
-            "mtp_script_pkg": "mtp_swi_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_swi_test.py",
-            "timeout": MTP_Const.MFG_SW_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_SW_TEST_TIMEOUT
             },
         FF_Stage.FF_FST:
             {
-            "mtp_script_dir": "mtp_fst_script/",
-            "mtp_script_pkg": "mtp_fst_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_fst_test.py",
-            "timeout": MTP_Const.MFG_FST_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_FST_TEST_TIMEOUT
             },
         FF_Stage.FF_SRN:
             {
-            "mtp_script_dir": "mtp_srn_script/",
-            "mtp_script_pkg": "mtp_srn_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./mtp_screen_regression.py",
-            "timeout": MTP_Const.MFG_MTPSCREEN_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_MTPSCREEN_TEST_TIMEOUT
             },
         FF_Stage.CONVERT:
             {
-            "mtp_script_dir": "nic_convert_script/",
-            "mtp_script_pkg": "nic_convert_script.{:s}.tar".format(mtp_id),
-            "script_cmd": "./nic_convert_test.py",
-            "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
+                "mtp_script_dir": "mtp_test_script/",
+                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
+                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
+                "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             }
     }
-    if stage not in testsuite_config.keys():
-        mtp_mgmt_ctrl.cli_log_err("Script not defined for stage {:s}".format(stage))
+    if stage not in list(testsuite_config.keys()):
+        libmfg_utils.cli_err("Script not defined for stage {:s}".format(stage))
         return None, None, None, None
     mtp_script_dir = testsuite_config[stage]["mtp_script_dir"]
     mtp_script_pkg = testsuite_config[stage]["mtp_script_pkg"]
-    script_cmd     = testsuite_config[stage]["script_cmd"]
-    test_timeout   = testsuite_config[stage]["timeout"]
+    script_cmd = testsuite_config[stage]["script_cmd"]
+    test_timeout = testsuite_config[stage]["timeout"]
     mtp_script_dir = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + mtp_script_dir
     return mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout
 
@@ -306,17 +307,27 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
                     scan_rslt = scanning.mtp_screen_barcode_scan(mtp_mgmt_ctrl)
                     if scan_rslt and scan_rslt["VALID"]:
                         mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
-                        break;
+                        break
                     mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
                 mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
 
         if loop_cnt > 1:
-            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:03d} START ====".format(stage, loop_idx))
+            mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
+            mtp_mgmt_ctrl.cli_log_inf("#" * 80)
+            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:06d} START ====".format(stage, loop_idx))
+            mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
+            mtp_mgmt_ctrl.cli_log_inf("#" * 80)
 
         ### Power cycle MTP
         if stage in (FF_Stage.FF_RDT, FF_Stage.FF_ORT):
-            # leave looping/powercycling MTP in toplevel control for these stages
-            pass
+            # overwrite no_pc option for these stages,
+            if stage == FF_Stage.FF_ORT:
+                libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl], safely=False)
+                libmfg_utils.mtpid_list_poweron([mtp_mgmt_ctrl])
+            if stage == FF_Stage.FF_RDT:
+                if loop_idx == 1:
+                    libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl], safely=False)
+                libmfg_utils.mtpid_list_poweron([mtp_mgmt_ctrl])
         else:
             if not no_pc:
                 libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl], safely=False)
@@ -329,9 +340,17 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
         mtp_stop_ts = libmfg_utils.timestamp_snapshot()
 
         if loop_cnt > 1:
-            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:03d} END   ====".format(stage, loop_idx))
+            if stage in (FF_Stage.FF_RDT, FF_Stage.FF_ORT):
+                libmfg_utils.cli_inf("MFG {:s} Test Duration:{:s}".format(stage, str(mtp_stop_ts - mtp_start_ts)))
+            mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
+            mtp_mgmt_ctrl.cli_log_inf("#" * 80)
+            mtp_mgmt_ctrl.cli_log_inf("==== {:s} TEST ITERATION #{:06d} END   ====".format(stage, loop_idx))
+            mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
+            mtp_mgmt_ctrl.cli_log_inf("#" * 80)
 
-        if stop_on_err and not single_test_result:
+        if (stop_on_err or stage==FF_Stage.FF_RDT) and not single_test_result:
+            if stage==FF_Stage.FF_RDT:
+                mtp_mgmt_ctrl.cli_log_inf("******AT LEAST ONE SLOT FAILED IN RDT TEST, SO EXIT RDT TEST******", level=0)
             break
 
         ### Handle test logs
@@ -349,12 +368,8 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
             fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
 
     ### Final power off
-    if stage in (FF_Stage.FF_RDT, FF_Stage.FF_ORT):
-        # leave looping/powercycling MTP in toplevel control for these stages
-        pass
-    else:
-        if not no_pc:
-            libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl])
+    if not no_pc:
+        libmfg_utils.mtpid_list_poweroff([mtp_mgmt_ctrl])
 
 def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list=[], skip_slot_list=[], **kwargs):
     """
@@ -366,7 +381,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### Handle inner-test args
         mtp_id = mtp_mgmt_ctrl._id
         mtp_sn = mtp_mgmt_ctrl.get_mtp_sn()
-        mtpcfg_file   = kwargs.get("mtpcfg_file", None)
+        #mtpcfg_file   = kwargs.get("mtpcfg_file", None)
+        mtpcfg_file   = kwargs.get("mtpcfg", None)
         l1_sequence   = kwargs.get("l1_sequence", None)
         stop_on_err   = kwargs.get("stop_on_err", False)
         card_type     = kwargs.get("card_type",   None)
@@ -375,9 +391,10 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         dpn           = kwargs.get("dpn", None)
         only_test_list        = kwargs.get("only_test_list",        [])
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
-        sw_pn_list            = kwargs.get("sw_pn_list",            [])
+        sw_pn_list            = kwargs.get("sw_pn",            [])
         profile_cfg_file_list = kwargs.get("profile_cfg_file_list", [None]) # multiple profiles not supported
         loop_idx = kwargs.get("loop_idx", 1) # loop index if running the script multiple iterations
+        run_from_remote = kwargs.get("run_from_remote", True)
 
         if stage == FF_Stage.FF_SWI:
             if not handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
@@ -387,40 +404,45 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         test_cmd_args = ""
         test_cmd_args += " --mtpid {:s}".format(mtp_id)
         if stage in [FF_Stage.FF_P2C, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_ORT, FF_Stage.FF_RDT]:
-            test_cmd_args += " --loop_idx {:d}".format(loop_idx)
-        if swm_test_mode:
+            pass
+            # test_cmd_args += " --loop_idx {:d}".format(loop_idx)
+        if swm_test_mode and stage not in  (FF_Stage.FF_SWI, FF_Stage.FF_FST):  # looks we did not using this argument in mtp_swi_test.py and mfg_fst_test.py script.
             test_cmd_args += " --swm {:s}".format(swm_test_mode)
         if dpn:
             test_cmd_args += " --dpn {:s}".format(dpn)
         if skip_test_list:
-            test_cmd_args += " --skip-test {:s}".format('"'+'" "'.join(skip_test_list).strip()+'"')
+            test_cmd_args += " --skip_test {:s}".format('"'+'" "'.join(skip_test_list).strip()+'"')
         if only_test_list:
-            test_cmd_args += " --only-test {:s}".format('"'+'" "'.join(only_test_list).strip()+'"')
+            test_cmd_args += " --only_test {:s}".format('"'+'" "'.join(only_test_list).strip()+'"')
         if skip_slot_list:
-            test_cmd_args += " --skip-slots "
+            test_cmd_args += " --skip_slots "
             test_cmd_args += ' '.join(map(str,skip_slot_list))
         if mtpcfg_file:
             test_cmd_args += " --mtpcfg " + os.path.basename(mtpcfg_file) # file has been packaged into config/, discard full path
         if stop_on_err:
-            test_cmd_args += " --stop-on-err"
+            test_cmd_args += " --stop_on_err"
         if l1_sequence:
-            test_cmd_args += " --l1-seq "
+            test_cmd_args += " --l1_seq "
+
+        if  run_from_remote:
+            test_cmd_args += " --run_from_remote"
         ###### dont append fail_nic_list until after common_setup done
         # if fail_nic_list:
-        #     test_cmd_args += " --fail-slots "
+        #     test_cmd_args += " --fail_slots "
         #     test_cmd_args += ' '.join(map(str,fail_nic_list))
         ######
         if stage == FF_Stage.FF_SWI:
-            img_opts = ""
-            for nic_sw_img_file in nic_sw_img_file_list:
-                img_opts += nic_sw_img_file + " "
-            test_cmd_args += " --image {:s}".format(img_opts)
+            # img_opts = ""
+            # for nic_sw_img_file in nic_sw_img_file_list:
+            #     img_opts += nic_sw_img_file + " "
+            # test_cmd_args += " --image {:s}".format(img_opts)
 
             sw_pn_opts = ""
             for sw_pn in sw_pn_list:
                 sw_pn_opts += sw_pn + " "
             test_cmd_args += " --swpn {:s}".format(sw_pn_opts)
 
+            profile_cfg_file = ""
             if profile_cfg_file_list != [None]:
                 profile_cfg_file = profile_cfg_file_list[0] # multiple profiles not supported
                 test_cmd_args += " --profile {:s}".format(profile_cfg_file)
@@ -453,7 +475,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         if stage == FF_Stage.FF_SWI:
             # upload mainfw image received via args
-            if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, ["NIC_SW_IMG_UPDATE"], skip_test_list, nic_sw_img_file_list=nic_sw_img_file_list):
+            if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, ["NIC_SW_IMG_UPDATE"], skip_test_list, sw_pn_list=sw_pn_list, nic_sw_img_file_list=nic_sw_img_file_list, profile_cfg_file=[os.path.basename(profile_cfg_file)]):
                 return False
 
         fail_nic_list = list()
@@ -471,7 +493,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         ####### COPY script, config file on to each MTP Chassis
         mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(testsuite, mtp_id)
+        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(testsuite, mtp_id, kwargs['subcommand'])
         if mtp_script_dir is None:
             return False
         mtp_test_cleanup(mtp_mgmt_ctrl) # Close file handles before zip
@@ -490,10 +512,64 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
 
         if fail_nic_list:
-            test_cmd_args += " --fail-slots "
+            test_cmd_args += " --fail_slots "
             test_cmd_args += ' '.join(map(str,fail_nic_list))
 
-        ####### RUN script command
+        #re-assembly command line arguments to call next level script, which running on MTP locally
+        cmd_options = []
+        for k, v in kwargs.items():
+            # remove or convert options which not support by next layer script
+            if k == 'func':
+                continue
+            if k == 'subcommand':
+                continue
+            if k == 'iteration':
+                continue
+            if k == 'loop_idx':
+                if kwargs["subcommand"] in ('2c', 'p2c', '4c', 'ort', 'rdt'):
+                    #reuse iteration as loop index passdown to next layer
+                    cmd_options.append('--iteration')
+                    cmd_options.append(str(v))
+                continue
+            if k == 'no_pc':
+                continue
+            if k == 'testsuite_name':
+                continue
+            if k == 'mtpcfg':
+                if v:
+                    cmd_options.append('--'+ k)
+                    cmd_options.append(os.path.basename(v)) # file has been packaged into config/, discard full path
+                continue
+            if k == 'jobd_logdir':
+                continue
+            # assemly by option value type
+            if isinstance(v, list):
+                if v:
+                    cmd_options.append('--'+ k)
+                    cmd_options.append(' '.join(v))
+                continue
+            elif isinstance(v, bool):
+                if v:
+                    cmd_options.append('--'+ k)
+                continue
+            else:
+                if v:
+                    cmd_options.append('--'+ k)
+                    cmd_options.append(str(v))
+
+        if stage == FF_Stage.FF_SRN:
+            cmd_options.append("--mtpsn")
+            cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
+
+        test_cmd_args = " " + " ".join(cmd_options)
+        # RUN script command
+        mtp_mgmt_ctrl.cli_log_inf("", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("*" *80, level=0)
+        mtp_mgmt_ctrl.cli_log_inf("Execute remote command: " + script_cmd + test_cmd_args, level=0)
+        mtp_mgmt_ctrl.cli_log_inf("*" * 80, level=0)
+        mtp_mgmt_ctrl.cli_log_inf("", level=0)
+        mtp_mgmt_ctrl.cli_log_inf("", level=0)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(script_cmd + test_cmd_args, timeout=test_timeout)
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
@@ -505,40 +581,40 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         return False
 
 def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
+    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
 
 def mtp_common_setup_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
-    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
+    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
 
 def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    test_list = ["MTP_CONNECT",                                    "DSP_START",  "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
+    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     return True
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT",     "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
 
 def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
-                                                    "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT",     "NIC_FW_UPDATE"]
+                                                    "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
 
 def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["FST_CONNECT",     "MTP_TIME_SET", "FST_UPDATE",                                                 "FST_ID"]
+    test_list = ["FST_CONNECT", "MTP_TIME_SET", "FST_UPDATE", "FST_ID"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
@@ -578,6 +654,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "NIC_SW_IMG_UPDATE":
             ret = libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, kwargs["nic_sw_img_file_list"])
+            if kwargs["profile_cfg_file"]:
+                ret = libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, kwargs["profile_cfg_file"])
+            ret = libmfg_utils.mtp_prepare_swi_invoke_on_mtp(mtp_mgmt_ctrl, kwargs["sw_pn_list"], kwargs["nic_sw_img_file_list"])
 
         elif test == "FST_UPDATE":
             ret = libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl)
@@ -714,13 +793,13 @@ def test_pass_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts):
     return True
 
 
-def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
+def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list, file_dir="release"):
     for sw_pn in sw_pn_list:
         mtp_mgmt_ctrl.cli_log_inf("==> Scanned SW PN: {:s} <==".format(sw_pn))
 
     # get sw image name based on the sw pn
     for sw_pn in sw_pn_list:
-        nic_sw_link_file = "release/{:s}".format(sw_pn)
+        nic_sw_link_file = "{:s}/{:s}".format(file_dir, sw_pn)
         if not libmfg_utils.file_exist(nic_sw_link_file):
             mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
             return False
@@ -729,13 +808,13 @@ def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg
 
     # get path to profile, but doesnt work if multiple sw_pn supplied
     for sw_pn in sw_pn_list:
-        profile_link_cfg_file = "release/profile_{:s}.py".format(sw_pn)
+        profile_link_cfg_file = "{:s}/profile_{:s}.py".format(file_dir, sw_pn)
         if not libmfg_utils.file_exist(profile_link_cfg_file):
             mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
             profile_cfg_file = None
         else:
-            profile_cfg_file = "release/" + os.readlink(profile_link_cfg_file)
+            profile_cfg_file = profile_link_cfg_file
             mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
-            profile_cfg_file_list.insert(0, profile_link_cfg_file)
+            profile_cfg_file_list.insert(0, profile_cfg_file)
 
     return True
