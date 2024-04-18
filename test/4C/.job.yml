@@ -103,6 +103,66 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  naples25ocp-hpe:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25ocp-hpe --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 24h
+    build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
+     - package-capri-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: capri
+         - name: naples25ocp
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  naples25ocp-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25ocp-dell --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 24h
+    build-dependencies:
+     - build-amd64-capri
+     - build-arm64-capri
+     - package-capri-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: capri
+         - name: naples25ocp
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
   ortano-ti-orc:
     commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ortano-ti-orc --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]

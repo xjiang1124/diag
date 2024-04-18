@@ -41,17 +41,17 @@ class NIC_IMAGES:
     # write it down here so release script copies this file
     uboot_img["INSTALLER"] = "install_file"
 
-    # NAPLES25SWM HPE Enterprise (P26968-001)
+    # NAPLES25SWM HPE Enterprise (P26968-002)
     cpld_img["NAPLES25SWM"] = "naples25_swm_revf_03102021.bin"
     cpld_ver["NAPLES25SWM"] = "0xF"
     cpld_dat["NAPLES25SWM"] = "03-10"
     sec_cpld_img["NAPLES25SWM"] = "naples25_swm_rev8f_03102021.bin"
     sec_cpld_ver["NAPLES25SWM"] = "0x8F"
     sec_cpld_dat["NAPLES25SWM"] = "03-10"
-    diagfw_img["NAPLES25SWM"] = "naples_diagfw-1.3.1-E-43-EMMC-030321.tar"
-    diagfw_dat["NAPLES25SWM"] = "03-03-2021"
-    goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
-    goldfw_dat["NAPLES25SWM"] = "04-25-2022"
+    diagfw_img["NAPLES25SWM"] = "capri_diagfw_uboot_1.3.1-E-65_2022.10.04.tar"
+    diagfw_dat["NAPLES25SWM"] = "08-30-2022"
+    goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
+    goldfw_dat["NAPLES25SWM"] = "08-31-2022"
 
     cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev3_01062021.bin"
     cpld_ver["NAPLES25SWMDELL"] = "0x3"
