@@ -49,7 +49,7 @@ class PART_NUMBERS_MATCH:
     N25_EQI_PN_FMT = r"68-0008-0[0-9]{1} [0-9]{2}"                                                  #68-0008-xx yy    NAPLES25 EQUINIX
 
     N25_SWM_HPE_001_PN_FMT = r"P26968-001"                                                          #P26968-001       NAPLES25 SWM HPE
-    N25_SWM_HPE_PN_FMT     = r"P26968-00[1-9]{1}"                                                   #P26968-002       NAPLES25 SWM HPE
+    N25_SWM_HPE_PN_FMT     = r"P26968-00[2-9]{1}"                                                   #P26968-002       NAPLES25 SWM HPE
     N25_SWM_HPE_CLD_PN_FMT = r"P41851-00[0-9]{1}"                                                   #P41851-001       NAPLES25 SWM HPE CLOUD
     N25_SWM_HPE_TAA_PN_FMT = r"P46653-00[0-9]{1}"                                                   #P46653-001       NAPLES25 SWM HPE TAA
     N25_SWM_PEN_PN_FMT     = r"68-0016-0[0-9]{1} [A-Z0-9]{2}"                                       #68-0016-01 01    NAPLES25 SWM PENSANDO

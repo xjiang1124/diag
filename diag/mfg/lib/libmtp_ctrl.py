@@ -2880,7 +2880,7 @@ class mtp_ctrl():
             if software_pn != "90-0006-0001":
                 return False 
         elif naples_pn[0:6] == "P26968":     #NAPLES25 SWM HPE
-            if software_pn != "90-0002-0011":
+            if software_pn != "90-0002-0010":
                 return False 
         elif naples_pn[0:6] == "P41851":     #NAPLES25 SWM HPE CLOUD
             if software_pn != "90-0006-0002":

@@ -42,8 +42,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  naples25swm-hpe:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25swm-hpe --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
+  naples25swm-hpe-002:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type naples25swm-hpe-002 --testbed /warmd.json --test-type precheckin --asic capri --testsuite /psdiag/test/spec/testsuites/DL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
