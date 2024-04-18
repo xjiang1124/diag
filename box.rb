@@ -22,6 +22,8 @@ workdir "/psdiag"
 #env GOFLAGS: "-mod=vendor"
 
 env GO111MODULE: "auto"
+env GO111MODULE: "auto",
+    LANG: "C.UTF-8"
 
 #run "pip2.7 install redis IPython"
 

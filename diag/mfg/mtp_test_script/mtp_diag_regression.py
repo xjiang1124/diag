@@ -77,24 +77,24 @@ def naples_diag_cfg_show(card_type, naples_test_db, stage, mtp_mgmt_ctrl):
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Sequential Test List:")
     for item in seq_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     para_test_list = naples_test_db.get_diag_para_test_list()
     mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Test List:")
     for item in para_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     if card_type in (ELBA_NIC_TYPE_LIST) and card_type not in (FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT,
                                                                                                         NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]):
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
-            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
     if card_type in FPGA_TYPE_LIST:
         para_test_list = [("PHY", "XCVR")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Sequential Additional Test List:")
         for item in para_test_list:
-            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List End\n".format(card_type), level = 0)
 
@@ -1128,16 +1128,16 @@ def single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list,
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
-    parser.add_argument("--stop-on-error", help="leave the MTP in error state if error happens", action='store_true')
+    parser.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_P2C)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
-    parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
-    parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
-    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--only_test", help="run particular tests only", nargs="*", default=[])
+    parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
-    parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
+    parser.add_argument("--l1_seq", help="asic L1 run under sequence mode", action='store_true')
     parser.add_argument("--loop_idx", help="current loop index of uplevel loop calls; if MFG, this argument not used; if EDVT, for snake and eth_prbs, odd index internal loopback, even external loopback", default=1, type=int)
     args = parser.parse_args()
 
@@ -1235,29 +1235,29 @@ def main():
     test_cfg_file[NIC_Type.GINESTRA_S4] = "config/ginestra_d5_ssdk_mtp_test_cfg.yaml"
     
     test_db = dict()
-    for nic_type in test_cfg_file.keys():
+    for nic_type in list(test_cfg_file.keys()):
         test_db[nic_type] = diag_db(stage, test_cfg_file[nic_type])
 
     seq_test_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         seq_test_list[nic_type] = test_db[nic_type].get_diag_seq_test_list()
 
     mtp_para_test_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         mtp_para_test_list[nic_type] = test_db[nic_type].get_mtp_para_test_list()
         if stage in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H):
             mtp_para_test_list[nic_type] = libmfg_utils.list_subtract(mtp_para_test_list[nic_type], ["ETH_PRBS"])
 
     para_test_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         para_test_list[nic_type] = test_db[nic_type].get_diag_para_test_list()
 
     pre_test_check_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         pre_test_check_list[nic_type] = test_db[nic_type].get_pre_diag_test_intf_list()
 
     post_test_check_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         post_test_check_list[nic_type] = test_db[nic_type].get_post_diag_test_intf_list()
 
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id,

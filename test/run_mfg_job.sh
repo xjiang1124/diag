@@ -14,6 +14,7 @@ sudo apt-get install -y vim
 sudo apt-get install -y telnet
 
 sudo pip3 install -r ${PSDIAG_ROOT}/test/infra/requirements.txt
+mkdir -p ${HOME}/.local
 
 if [[ -f /warmd.json ]] ;
 then
@@ -140,7 +141,7 @@ then
 
     set -x
     # need to pass --iteration=1 to unset any iteration arg passed in TEST_ARGS
-    python ./mfg_scan_dl_test.py ${TEST_ARGS} --iteration=1 --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py sdl ${TEST_ARGS} --iteration=1 --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 else
     ret=0
@@ -149,56 +150,56 @@ fi
 if [[ $ret == 0 && "${JOB_TYPE}" == "DL" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_dl_test.py"
+    echo " Launching mfg_test.py dl"
     echo "**************************************************"
 
     set -x
-    python ./mfg_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py dl ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
 if [[ "${JOB_TYPE}" == "ScanDL" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_scan_dl_test.py"
+    echo " Launching mfg_test.py sdl"
     echo "**************************************************"
 
     set -x
-    python ./mfg_scan_dl_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py sdl ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
 if [[ $ret == 0 && "${JOB_TYPE}" == "P2C" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_p2c_test.py"
+    echo " Launching mfg_test.py p2c"
     echo "**************************************************"
 
     set -x
-    python ./mfg_p2c_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py p2c ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
 if [[ $ret == 0 && "${JOB_TYPE}" == "4C" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_4c_test.py --low-temp"
+    echo " Launching mfg_test.py 4c --low-temp"
     echo "**************************************************"
 
     set -x
     echo "STOP" > /tmp/4c_input
-    python ./mfg_4c_test.py ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
+    python3 ./mfg_test.py 4c ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
     ret=$?
 fi
 
 if [[ $ret == 0 && "${JOB_TYPE}" == "SWI" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_swi_test.py"
+    echo " Launching mfg_test.py swi"
     echo "**************************************************"
 
     set -x
-    python ./mfg_swi_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py swi ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
     ret=$?
     if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
     python ./mfg_convert_nic.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
@@ -208,11 +209,11 @@ fi
 if [[ "${JOB_TYPE}" == "FST" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_fst_test.py"
+    echo " Launching mfg_test.py fst"
     echo "**************************************************"
 
     set -x
-    python ./mfg_fst_test.py ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py fst ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 

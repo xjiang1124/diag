@@ -529,6 +529,7 @@ class MTP_IMAGES:
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
     rotctrl_img = "rotctrl"
+    python_site_package4mtp_img = "python3.6_site_package.tar.gz"
 
 # MFG release images
 class MFG_IMAGE_FILES:
@@ -892,19 +893,19 @@ MTP_INTERNAL_MGMT_NETMASK = "255.255.255.0"
 
 Factory_network_config = {
     Factory.FSP: {
-        "Networks": [u"192.168.1.0/24", u"192.168.2.0/24", u"192.168.3.0/24", u"192.168.4.0/24"],
+        "Networks": ["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24", "192.168.4.0/24"],
         "Flexflow": "10.206.9.68"
     },
     Factory.MILPITAS: {
-        "Networks": [u"192.168.5.0/24"],
+        "Networks": ["192.168.5.0/24"],
         "Flexflow": "10.20.33.140"
     },
     Factory.P1: {
-        "Networks": [u"192.168.8.0/22"],
+        "Networks": ["192.168.8.0/22"],
         "Flexflow": "10.192.39.48"
     },
     Factory.LAB: {
-        "Networks": [u"10.9.0.0/16"],
+        "Networks": ["10.9.0.0/16"],
         "Flexflow": ""
     }
 }

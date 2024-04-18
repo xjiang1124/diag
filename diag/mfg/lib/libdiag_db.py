@@ -59,36 +59,36 @@ class diag_db():
                 self._test_param_list.append(param_cmd)
 
         # pre test interface check:
-        for intf in diag_test_cfg["MTP_PRE"].keys():
+        for intf in list(diag_test_cfg["MTP_PRE"].keys()):
             if diag_test_cfg["MTP_PRE"][intf]:
                 self._pre_test_intf_list.append(intf)
 
         # sequential test:
-        if "MTP_SEQ" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_SEQ"]):
-            for dsp in diag_test_cfg["MTP_SEQ"].keys():
+        if "MTP_SEQ" in list(diag_test_cfg.keys()) and len(diag_test_cfg["MTP_SEQ"]):
+            for dsp in list(diag_test_cfg["MTP_SEQ"].keys()):
                 for test in diag_test_cfg["MTP_SEQ"][dsp]:
                     self._seq_test_id_list.append((dsp, test))
 
         # mtp parallel test:
-        if "MTP_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_PARA"]):
-            for test in diag_test_cfg["MTP_PARA"].keys():
+        if "MTP_PARA" in list(diag_test_cfg.keys()) and len(diag_test_cfg["MTP_PARA"]):
+            for test in list(diag_test_cfg["MTP_PARA"].keys()):
                 if diag_test_cfg["MTP_PARA"][test]:
                     self._mtp_para_test_list.append(test)
 
         # parallel test:
-        if "NIC_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["NIC_PARA"]):
-            for dsp in diag_test_cfg["NIC_PARA"].keys():
+        if "NIC_PARA" in list(diag_test_cfg.keys()) and len(diag_test_cfg["NIC_PARA"]):
+            for dsp in list(diag_test_cfg["NIC_PARA"].keys()):
                 for test in diag_test_cfg["NIC_PARA"][dsp]:
                     self._para_test_id_list.append((dsp, test))
 
         # post test interface check:
-        for intf in diag_test_cfg["MTP_POST"].keys():
+        for intf in list(diag_test_cfg["MTP_POST"].keys()):
             if diag_test_cfg["MTP_POST"][intf]:
                 self._post_test_intf_list.append(intf)
 
-        if "MTP_SEQ" in diag_test_cfg.keys() and len(diag_test_cfg["MTP_SEQ"]):
+        if "MTP_SEQ" in list(diag_test_cfg.keys()) and len(diag_test_cfg["MTP_SEQ"]):
             self._seq_tests = diag_test_cfg["MTP_SEQ"]
-        if "NIC_PARA" in diag_test_cfg.keys() and len(diag_test_cfg["NIC_PARA"]):
+        if "NIC_PARA" in list(diag_test_cfg.keys()) and len(diag_test_cfg["NIC_PARA"]):
             self._para_tests = diag_test_cfg["NIC_PARA"]
 
 
@@ -205,7 +205,7 @@ class diag_db():
 
 
     def get_diag_seq_dsp_list(self):
-        return self._seq_tests.keys()
+        return list(self._seq_tests.keys())
 
 
     def get_diag_para_test(self, dsp, test):
@@ -213,6 +213,6 @@ class diag_db():
 
 
     def get_diag_para_dsp_list(self):
-        return self._para_tests.keys()
+        return list(self._para_tests.keys())
 
 

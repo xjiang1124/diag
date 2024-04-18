@@ -311,7 +311,7 @@ class LaunchApp(object):
                 if "naples25swm" in nic_type.lower() and test_stage.upper() in ("P2C", "4C"):
                     skip_list += " SNAKE_HBM"
                 ############################################
-                test_args += f" --skip-test {skip_list}"
+                test_args += f" --skip_test {skip_list}"
             self.__settings["TEST_ARGS"] = test_args
 
             if hasattr(self.__testsuite.config, 'card_type'):

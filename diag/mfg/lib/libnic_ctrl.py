@@ -167,12 +167,12 @@ class nic_ctrl():
         return info_buf
 
     def nic_prompt_cfg(self, timeout=MTP_Const.NIC_CON_CMD_DELAY_10):
-        """
+        r"""
         try to set vaiable PS1 to '[$(date +%Y-%m-%d_%H:%M:%S)]\u# '
         return False if timeout, otherwise return True
         """
 
-        self._nic_handle.sendline('PS1="[$(date +%Y-%m-%d_)\\t] \u' + self._nic_con_prompt + '"')
+        self._nic_handle.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u' + self._nic_con_prompt + '"')
         idx = libmfg_utils.mfg_expect(self._nic_handle, [("root" + self._nic_con_prompt)], timeout)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
@@ -3251,7 +3251,7 @@ class nic_ctrl():
                 ]
 
         }
-        if self._nic_type not in pn_table.keys():
+        if self._nic_type not in list(pn_table.keys()):
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 
@@ -3278,7 +3278,7 @@ class nic_ctrl():
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.ALOM_HPE_PN_FMT)                      #P26971-001       NAPLES25 SWM HPE ALOM ADAPTER
                 ]
         }
-        if self._nic_type not in pn_table.keys():
+        if self._nic_type not in list(pn_table.keys()):
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 
@@ -3305,7 +3305,7 @@ class nic_ctrl():
                 (PROD_NUM_FIELD, "P26969\-B21")
                 ]
         }
-        if self._nic_type not in pn_table.keys():
+        if self._nic_type not in list(pn_table.keys()):
             self.nic_set_err_msg("Could not find this NIC TYPE in part number table")
             return False
 

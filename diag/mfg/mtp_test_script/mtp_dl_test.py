@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -213,9 +213,9 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
-    parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
-    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--scandl", help="Run ScanDL, i.e. reprogram all NIC FRUs", action='store_true', default=False)
 

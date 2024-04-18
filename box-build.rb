@@ -16,6 +16,7 @@ run "echo 'export GO111MODULE=auto' >> /etc/profile"
 
 env GOPATH: "/psdiag/diag/app",
     PATH: "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/usr/local/go/bin:/go/bin",
-    GO111MODULE: "auto"
+    GO111MODULE: "auto",
+    env LANG: "C.UTF-8"
 
 flatten

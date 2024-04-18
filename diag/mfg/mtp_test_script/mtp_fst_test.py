@@ -130,8 +130,8 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTPS-001, etc", required=True)
     parser.add_argument("-card_type", "--card_type", help="card type", type=str, default="general")
     parser.add_argument("-stage", "--stage", help="stage", type=str, default="FETCH_SN")
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
-    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--swm", help="SWM test mode")
 

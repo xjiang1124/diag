@@ -437,10 +437,10 @@ def main():
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
     parser.add_argument("--image", help="NIC eMMC image(s)", nargs="*", required=True, default=[])
     parser.add_argument("--profile", help="NIC Profile")
-    parser.add_argument("--swpn", help="Software Part Number(s)", nargs="*", default=[])
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
-    parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
-    parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
+    parser.add_argument("--swpn", "-swpn", "--sw_pn", "-sw_pn", help="Software Part Number(s)", nargs="*", default=[])
+    parser.add_argument("--skip_test", help="skip a particular test", nargs="*", default=[])
+    parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
+    parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--swm", help="SWM test mode")
 
@@ -714,7 +714,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
             if sku:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
-            for image_name, image_file_path in swi_image_dict.items():
+            for image_name, image_file_path in list(swi_image_dict.items()):
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
