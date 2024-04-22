@@ -598,7 +598,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
         cli_err("Get output: {:s}".format(Err.output))
         cli_err("Get returncode: {:s}".format(str(Err.returncode)))
         return False
-    local_md5sum = cmdoutput.split()[0]
+    local_md5sum = cmdoutput.split()[0].decode('utf-8').strip() # py3: convert byte to str
 
     # calculate remote file ms5sum
     cmd = get_ssh_connect_cmd(userid, ip_addr)
