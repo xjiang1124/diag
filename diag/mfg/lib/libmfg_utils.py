@@ -1063,7 +1063,7 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     mtp_id = mtp_mgmt_ctrl._id
     key = nic_key(slot)
-    if key not in list(mtp_mgmt_ctrl.barcode_scans[mtp_id].keys()):
+    if key not in list(mtp_mgmt_ctrl.barcode_scans):
         return False
     if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False
