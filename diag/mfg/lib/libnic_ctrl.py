@@ -4943,7 +4943,7 @@ class nic_ctrl():
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
 
-        cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(self._sn, self._slot+1)
+        cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(str(self._sn), self._slot+1)
         if skip_reboot:
             cmd += " 0" #skips VRM
         if not self.mtp_exec_cmd(cmd, timeout=180):

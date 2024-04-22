@@ -5274,7 +5274,10 @@ class mtp_ctrl():
         return type_check & pn_check
 
     def mtp_get_nic_sn(self, slot):
-        return self._nic_sn_list[slot]
+        sn = self._nic_sn_list[slot]
+        if not sn:
+            sn = "UNKNOWN"
+        return sn
 
     def mtp_set_nic_sn(self, slot, sn):
         self.cli_log_slot_inf(slot, "Set SN to {:s}".format(str(sn)))
