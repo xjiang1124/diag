@@ -200,10 +200,13 @@ then
 
     set -x
     python3 ./mfg_test.py swi ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
-    ret=$?
+    ret1=$?
     if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
-    python ./mfg_convert_nic.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+        python3 ./mfg_test.py cnic ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+        ret2=$?
+    else ret2=0
     fi
+    (( ret = ret1 || ret2 )) # both step should pass
 fi
 
 if [[ "${JOB_TYPE}" == "FST" ]];
@@ -224,7 +227,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_ort_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py ort ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
@@ -235,7 +238,7 @@ then
     echo "**************************************************"
 
     set -x
-    python ./mfg_rdt_test.py ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py rdt ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
     ret=$?
 fi
 
