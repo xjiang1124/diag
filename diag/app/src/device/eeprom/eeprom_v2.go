@@ -107,6 +107,9 @@ const (
     SKU_GIN_D5_SSDK     string = "DSC2A-2Q200-32S32F64P-S4"
     SKU_GIN_D5_SSDK_B3  string = "DSC2A-2Q200-32S32F64P-S4-B3"
     SKU_GIN_D5_SSDK_P3  string = "DSC2A-2Q200-32S32F64P-S4-P3"
+    SKU_GIN_D5_SSDK_A   string = "DSC2A-2Q200-32S32F64P-S4A"
+    SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
+    SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -667,6 +670,69 @@ var CardDataInfo = map[string]updateInfo {
         },
         nil,
     },
+
+    SKU_GIN_D5_SSDK_A: updateInfo {
+        GinestraSSDKTbl,
+        PROD_NAME_GIG_SSDK,
+        PN_GIN_D5_SSDK,
+        FRU_ID_GIN_D5_SSDK,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
+    SKU_GIN_D5_SSDK_B: updateInfo {
+        GinestraSSDKTbl,
+        PROD_NAME_GIG_SSDK,
+        PN_GIN_D5_SSDK,
+        FRU_ID_GIN_D5_SSDK,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
+    SKU_GIN_D5_SSDK_C: updateInfo {
+        GinestraSSDKTbl,
+        PROD_NAME_GIG_SSDK,
+        PN_GIN_D5_SSDK,
+        FRU_ID_GIN_D5_SSDK,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -702,6 +768,9 @@ var CardTypes = []card{
     card{"GIN_D5_SSDK",             SKU_GIN_D5_SSDK},
     card{"GIN_D5_SSDK_B3",          SKU_GIN_D5_SSDK_B3},
     card{"GIN_D5_SSDK_P3",          SKU_GIN_D5_SSDK_P3},
+    card{"GIN_D5_SSDK_A",           SKU_GIN_D5_SSDK_A},
+    card{"GIN_D5_SSDK_B",           SKU_GIN_D5_SSDK_B},
+    card{"GIN_D5_SSDK_C",           SKU_GIN_D5_SSDK_C},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
