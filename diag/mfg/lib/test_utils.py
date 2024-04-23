@@ -163,102 +163,63 @@ def get_test_constants(stage, mtp_id, subcommand):
     testsuite_config = {
         FF_Stage.FF_DL:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             },
         FF_Stage.SCAN_DL:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             },
         FF_Stage.FF_P2C:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_P2C_TEST_TIMEOUT
             },
         FF_Stage.FF_2C_H:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_2C_L:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_4C_H:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_4C_L:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_4C_TEST_TIMEOUT
             },
         FF_Stage.FF_ORT:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_ORT_TEST_TIMEOUT
             },
         FF_Stage.FF_RDT:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_RDT_TEST_TIMEOUT
             },
         FF_Stage.FF_SWI:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_SW_TEST_TIMEOUT
             },
         FF_Stage.FF_FST:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_FST_TEST_TIMEOUT
             },
         FF_Stage.FF_SRN:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_MTPSCREEN_TEST_TIMEOUT
             },
         FF_Stage.CONVERT:
             {
-                "mtp_script_dir": "mtp_test_script/",
-                "mtp_script_pkg": "mtp_test_script.{:s}.tar".format(mtp_id),
-                "script_cmd": "python3 ./mfg_test.py {:s}".format(subcommand),
                 "timeout": MTP_Const.MFG_DL_TEST_TIMEOUT
             }
     }
     if stage not in list(testsuite_config.keys()):
         libmfg_utils.cli_err("Script not defined for stage {:s}".format(stage))
         return None, None, None, None
-    mtp_script_dir = testsuite_config[stage]["mtp_script_dir"]
-    mtp_script_pkg = testsuite_config[stage]["mtp_script_pkg"]
-    script_cmd = testsuite_config[stage]["script_cmd"]
+    mtp_script_dir = "mtp_test_script/"
+    mtp_script_pkg = "mtp_test_script.{:s}.tar".format(mtp_id)
+    script_cmd = "python3 ./mfg_test.py {:s}".format(subcommand)
     test_timeout = testsuite_config[stage]["timeout"]
     mtp_script_dir = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + mtp_script_dir
     return mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout
@@ -378,81 +339,20 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         Returns False only if there is a failure in steps 1 or 2.
     """
     try:
-        ####### Handle inner-test args
+        ####### Intercept args at inner-test
         mtp_id = mtp_mgmt_ctrl._id
-        mtp_sn = mtp_mgmt_ctrl.get_mtp_sn()
-        #mtpcfg_file   = kwargs.get("mtpcfg_file", None)
         mtpcfg_file   = kwargs.get("mtpcfg", None)
-        l1_sequence   = kwargs.get("l1_sequence", None)
-        stop_on_err   = kwargs.get("stop_on_err", False)
-        card_type     = kwargs.get("card_type",   None)
-        swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
         testsuite     = kwargs.get("testsuite_name", stage)
-        dpn           = kwargs.get("dpn", None)
-        only_test_list        = kwargs.get("only_test_list",        [])
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn",            [])
         profile_cfg_file_list = kwargs.get("profile_cfg_file_list", [None]) # multiple profiles not supported
-        loop_idx = kwargs.get("loop_idx", 1) # loop index if running the script multiple iterations
-        run_from_remote = kwargs.get("run_from_remote", True)
 
         if stage == FF_Stage.FF_SWI:
             if not handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
                 return False
-
-        ####### TRANSLATE toplevel args to script args 
-        test_cmd_args = ""
-        test_cmd_args += " --mtpid {:s}".format(mtp_id)
-        if stage in [FF_Stage.FF_P2C, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_ORT, FF_Stage.FF_RDT]:
-            pass
-            # test_cmd_args += " --loop_idx {:d}".format(loop_idx)
-        if swm_test_mode and stage not in  (FF_Stage.FF_SWI, FF_Stage.FF_FST):  # looks we did not using this argument in mtp_swi_test.py and mfg_fst_test.py script.
-            test_cmd_args += " --swm {:s}".format(swm_test_mode)
-        if dpn:
-            test_cmd_args += " --dpn {:s}".format(dpn)
-        if skip_test_list:
-            test_cmd_args += " --skip_test {:s}".format('"'+'" "'.join(skip_test_list).strip()+'"')
-        if only_test_list:
-            test_cmd_args += " --only_test {:s}".format('"'+'" "'.join(only_test_list).strip()+'"')
-        if skip_slot_list:
-            test_cmd_args += " --skip_slots "
-            test_cmd_args += ' '.join(map(str,skip_slot_list))
-        if mtpcfg_file:
-            test_cmd_args += " --mtpcfg " + os.path.basename(mtpcfg_file) # file has been packaged into config/, discard full path
-        if stop_on_err:
-            test_cmd_args += " --stop_on_err"
-        if l1_sequence:
-            test_cmd_args += " --l1_seq "
-
-        if  run_from_remote:
-            test_cmd_args += " --run_from_remote"
-        ###### dont append fail_nic_list until after common_setup done
-        # if fail_nic_list:
-        #     test_cmd_args += " --fail_slots "
-        #     test_cmd_args += ' '.join(map(str,fail_nic_list))
-        ######
-        if stage == FF_Stage.FF_SWI:
-            # img_opts = ""
-            # for nic_sw_img_file in nic_sw_img_file_list:
-            #     img_opts += nic_sw_img_file + " "
-            # test_cmd_args += " --image {:s}".format(img_opts)
-
-            sw_pn_opts = ""
-            for sw_pn in sw_pn_list:
-                sw_pn_opts += sw_pn + " "
-            test_cmd_args += " --swpn {:s}".format(sw_pn_opts)
-
-            profile_cfg_file = ""
-            if profile_cfg_file_list != [None]:
-                profile_cfg_file = profile_cfg_file_list[0] # multiple profiles not supported
-                test_cmd_args += " --profile {:s}".format(profile_cfg_file)
-
-        if stage == FF_Stage.FF_FST:
-            test_cmd_args += " --card_type {:s}".format(card_type)
-
-        if stage == FF_Stage.FF_SRN:
-            test_cmd_args += " --mtpsn {:s}".format(mtp_sn)
-
+        profile_cfg_file = ""
+        if profile_cfg_file_list != [None]:
+            profile_cfg_file = profile_cfg_file_list[0] # multiple profiles not supported
 
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
@@ -511,10 +411,6 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
 
-        if fail_nic_list:
-            test_cmd_args += " --fail_slots "
-            test_cmd_args += ' '.join(map(str,fail_nic_list))
-
         #re-assembly command line arguments to call next level script, which running on MTP locally
         cmd_options = []
         for k, v in kwargs.items():
@@ -557,9 +453,14 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     cmd_options.append('--'+ k)
                     cmd_options.append(str(v))
 
+        # assemble arguments determined in inner function
         if stage == FF_Stage.FF_SRN:
             cmd_options.append("--mtpsn")
             cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
+
+        if fail_nic_list:
+            cmd_options.append("--fail_slots")
+            cmd_options.append(' '.join(map(str,fail_nic_list)))
 
         test_cmd_args = " " + " ".join(cmd_options)
         # RUN script command

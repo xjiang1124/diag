@@ -598,7 +598,7 @@ def network_md5_compare(ip_addr, userid, passwd, local_file, remote_file):
         cli_err("Get output: {:s}".format(Err.output))
         cli_err("Get returncode: {:s}".format(str(Err.returncode)))
         return False
-    local_md5sum = cmdoutput.split()[0]
+    local_md5sum = cmdoutput.split()[0].decode('utf-8').strip() # py3: convert byte to str
 
     # calculate remote file ms5sum
     cmd = get_ssh_connect_cmd(userid, ip_addr)
@@ -1063,7 +1063,7 @@ def load_barcode_sn_pn(mtp_mgmt_ctrl, slot):
         return False
     mtp_id = mtp_mgmt_ctrl._id
     key = nic_key(slot)
-    if key not in list(mtp_mgmt_ctrl.barcode_scans[mtp_id].keys()):
+    if key not in list(mtp_mgmt_ctrl.barcode_scans):
         return False
     if not mtp_mgmt_ctrl.barcode_scans[key]["VALID"]:
         return False

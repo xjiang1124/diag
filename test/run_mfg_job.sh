@@ -183,12 +183,12 @@ fi
 if [[ $ret == 0 && "${JOB_TYPE}" == "4C" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_test.py 4c --low-temp"
+    echo " Launching mfg_test.py 4c --low_temp"
     echo "**************************************************"
 
     set -x
     echo "STOP" > /tmp/4c_input
-    python3 ./mfg_test.py 4c ${TEST_ARGS} --low-temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
+    python3 ./mfg_test.py 4c ${TEST_ARGS} --low_temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
     ret=$?
 fi
 

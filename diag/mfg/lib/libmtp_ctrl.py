@@ -2855,7 +2855,7 @@ class mtp_ctrl():
             if software_pn != "90-0006-0001":
                 return False
         elif naples_pn[0:6] == "P26968":  # NAPLES25 SWM HPE
-            if software_pn != "90-0002-0011":
+            if software_pn != "90-0002-0010":
                 return False
         elif naples_pn[0:6] == "P41851":  # NAPLES25 SWM HPE CLOUD
             if software_pn != "90-0006-0002":
@@ -5274,7 +5274,10 @@ class mtp_ctrl():
         return type_check & pn_check
 
     def mtp_get_nic_sn(self, slot):
-        return self._nic_sn_list[slot]
+        sn = self._nic_sn_list[slot]
+        if not sn:
+            sn = "UNKNOWN"
+        return sn
 
     def mtp_set_nic_sn(self, slot, sn):
         self.cli_log_slot_inf(slot, "Set SN to {:s}".format(str(sn)))
