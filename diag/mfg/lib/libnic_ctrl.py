@@ -774,7 +774,7 @@ class nic_ctrl():
         # config the mgmt port
         cmd = MFG_DIAG_CMDS.NIC_SET_MGMT_IP_FMT.format(self._slot+101)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.after)
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -787,7 +787,7 @@ class nic_ctrl():
     def nic_set_extdiag_boot(self):
         # set default to extdiag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -796,7 +796,7 @@ class nic_ctrl():
 
         # sync
         self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -804,7 +804,7 @@ class nic_ctrl():
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -830,7 +830,7 @@ class nic_ctrl():
     def nic_erase_board_config(self):
         # earse board config
         self._nic_handle.sendline(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -840,7 +840,7 @@ class nic_ctrl():
     def nic_cpld_update_request(self):
         # get diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -856,7 +856,7 @@ class nic_ctrl():
 
         # get cpld version
         self._nic_handle.sendline("cpldapp -r 0")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -874,7 +874,7 @@ class nic_ctrl():
         img_name = os.path.basename(cert_img)
         # set ibm board config
         self._nic_handle.sendline(MFG_DIAG_CMDS.SET_IBM_BOARD_CONFIG_FMT.format(directory, img_name))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -887,7 +887,7 @@ class nic_ctrl():
 
         # show cert info
         self._nic_handle.sendline(MFG_DIAG_CMDS.GET_BOARD_CONFIG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -900,7 +900,7 @@ class nic_ctrl():
 
         # show fwupdate -l info
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_IMG_DISP1_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -913,7 +913,7 @@ class nic_ctrl():
         nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS.NIC_CHK_SECBOOT_FMT]
         for nic_cmd in nic_secboot_verify_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
                 return False
@@ -930,7 +930,7 @@ class nic_ctrl():
     def nic_cfg_verify(self):
         # dump cfg0
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -938,7 +938,7 @@ class nic_ctrl():
 
         # dump cfg1
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("5","1"))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue dump cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -946,7 +946,7 @@ class nic_ctrl():
 
         # md5sum cfg0
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("0"))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg0 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -954,7 +954,7 @@ class nic_ctrl():
 
         # md5sum cfg1
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_CHECKSUM_FMT.format("1"))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_err_msg("Unable to get response after issue md5sum cfg1 command")
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
@@ -966,7 +966,7 @@ class nic_ctrl():
     def nic_set_diag_boot(self):
         # set default to diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -975,7 +975,7 @@ class nic_ctrl():
 
         # sync
         self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -983,7 +983,7 @@ class nic_ctrl():
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -997,7 +997,7 @@ class nic_ctrl():
     def nic_set_mainfw_boot(self):
         # set default to mainfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1006,7 +1006,7 @@ class nic_ctrl():
 
         # sync
         self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1014,7 +1014,7 @@ class nic_ctrl():
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1028,7 +1028,7 @@ class nic_ctrl():
     def nic_set_goldfw_boot(self):
         # set default to goldfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1037,7 +1037,7 @@ class nic_ctrl():
 
         # sync
         self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1045,7 +1045,7 @@ class nic_ctrl():
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1059,7 +1059,7 @@ class nic_ctrl():
     def nic_set_extos_boot(self):
         # set default to extosa boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1068,7 +1068,7 @@ class nic_ctrl():
 
         # sync
         self._nic_handle.sendline("sync")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1076,7 +1076,7 @@ class nic_ctrl():
         # show and compare startup image
         expect_startup_img = MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT.replace("fwupdate -s", "").strip()
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_FW_SET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_FW_SET_DELAY)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             return False
@@ -1113,13 +1113,13 @@ class nic_ctrl():
 
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 return False
 
         # poweroff
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
@@ -1157,7 +1157,7 @@ class nic_ctrl():
             
         for nic_cmd in nic_shutdown_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 return False
 
@@ -1169,13 +1169,13 @@ class nic_ctrl():
         # poweroff ... Cloud build do not support this command & different command for Rel C
         if isRelC == True:
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_PEN_FMT)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False           
         elif cloud == False:
             self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_OS_SHUTDOWN_FMT)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [MFG_DIAG_SIG.NIC_OS_SHUTDOWN_OK_SIG], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -1200,7 +1200,7 @@ class nic_ctrl():
                                 "sync"]
         for nic_cmd in mode_switch_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -1208,7 +1208,7 @@ class nic_ctrl():
         self._nic_handle.sendline("sysreset.sh")
         time.sleep(MTP_Const.NIC_SYSRESET_DELAY)
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
@@ -1217,13 +1217,13 @@ class nic_ctrl():
     @nic_console_test_section
     def nic_sw_mode_switch_verify(self):
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             return False
@@ -1248,13 +1248,13 @@ class nic_ctrl():
     @nic_console_test_section
     def nic_pdsctl_system_show(self):
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.OS_CMD_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(cmd_buf)
             return False
@@ -1272,7 +1272,7 @@ class nic_ctrl():
     @nic_fast_console_test_section
     def nic_set_i2c_after_pw_cycle(self):
         self._nic_handle.sendline()
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1280,7 +1280,7 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_I2C_SET_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1288,7 +1288,7 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1296,7 +1296,7 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1304,7 +1304,7 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_WRITE_CPLD_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1312,7 +1312,7 @@ class nic_ctrl():
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_READ_CPLD_FMT)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=2)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=2)
         if idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
@@ -1337,7 +1337,7 @@ class nic_ctrl():
         else:
             cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_err_msg("Command {:s} failed".format(cmd))
             return False
@@ -1357,7 +1357,7 @@ class nic_ctrl():
     def nic_read_kernel_version(self):
         cmd = MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_CMD_DELAY_10)
         if idx < 0:
             self.nic_set_err_msg("Command {:s} failed".format(cmd))
             return False
@@ -1767,7 +1767,7 @@ class nic_ctrl():
     def nic_console_set_sw_profile(self, profile):
         nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
         self._nic_handle.sendline(nic_cmd)
-        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
@@ -3707,7 +3707,7 @@ class nic_ctrl():
     def nic_console_read_i2c(self, bus_num, dev_addr, reg_addr, read_data):
         nic_cmd = "i2cget -y {:d} {:x} {:x}".format(bus_num, dev_addr, reg_addr)
         self._nic_handle.sendline(nic_cmd)
-        idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt,  timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
@@ -3812,7 +3812,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4666,7 +4666,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4701,7 +4701,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4740,7 +4740,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4770,7 +4770,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4779,7 +4779,7 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PHY_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4809,7 +4809,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4818,7 +4818,7 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PHY_LINK_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4846,7 +4846,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4855,7 +4855,7 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_EDMA_TEST_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH+"nic_util/"))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4898,7 +4898,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4919,7 +4919,7 @@ class nic_ctrl():
         nic_cmd_list.append("env | grep -v PS1")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4962,7 +4962,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=10)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -4981,7 +4981,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5012,7 +5012,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5116,7 +5116,7 @@ class nic_ctrl():
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5144,7 +5144,7 @@ class nic_ctrl():
         for loop in range(0,2):
             nic_cmd = "fwupdate -l"
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5208,7 +5208,7 @@ class nic_ctrl():
         for loop in range(0,2):
             nic_cmd = "fwupdate -l"
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_CON_INIT_DELAY)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5384,7 +5384,7 @@ class nic_ctrl():
         nic_cmd_list.append("i2cset -y 0 0x1c 0x11 c")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5396,7 +5396,7 @@ class nic_ctrl():
             nic_cmd_list.append("i2cset -y 0 0x1b 0x11 c")
             for nic_cmd in nic_cmd_list:
                 self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
                     return False
@@ -5414,7 +5414,7 @@ class nic_ctrl():
         nic_cmd_list.append("fwenv")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5429,7 +5429,7 @@ class nic_ctrl():
         nic_cmd_list.append("i2cget -y 0 0x1c 0xd3")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5449,7 +5449,7 @@ class nic_ctrl():
         nic_cmd_list.append("i2cget -y 0 0x1c 0xd4")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5469,7 +5469,7 @@ class nic_ctrl():
         nic_cmd_list.append("fwenv")
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 return False
@@ -5489,7 +5489,7 @@ class nic_ctrl():
             nic_cmd_list.append("i2cget -y 0 0x1b 0xd3")
             for nic_cmd in nic_cmd_list:
                 self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
                     return False
@@ -5509,7 +5509,7 @@ class nic_ctrl():
             nic_cmd_list.append("i2cget -y 0 0x1b 0xd4")
             for nic_cmd in nic_cmd_list:
                 self._nic_handle.sendline(nic_cmd)
-                idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+                idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
                 if idx < 0:
                     self.nic_set_cmd_buf(self._nic_handle.before)
                     return False
@@ -5581,7 +5581,7 @@ class nic_ctrl():
         nic_cmd_list.append("{:s}/diag/scripts/eeprom_sn.sh -s -b {:s}".format("/data/", port))
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
-            idx = libmfg_utils.mfg_expect_new(self._nic_handle, [self._nic_con_prompt], timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
             if idx < 0:
                 self.nic_set_cmd_buf(self._nic_handle.before)
                 self.nic_set_err_msg("Can't read transceiver EEPROM")
@@ -5610,7 +5610,7 @@ class nic_ctrl():
         """
 
         self._nic_handle.sendline("sysreset.sh")
-        idx = libmfg_utils.mfg_expect(self._nic_handle, [ending], timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [ending], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         self.nic_set_cmd_buf(self._nic_handle.before)
 
         if idx < 0:

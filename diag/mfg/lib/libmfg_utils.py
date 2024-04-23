@@ -34,6 +34,7 @@ from libmfg_cfg import *
 from libsku_utils import *
 import image_control
 import test_utils
+import similar_expect
 
 def get_linux_prompt_list():
     return DIAG_OS_PROMPT_LIST
@@ -538,6 +539,62 @@ def load_cfg_from_yaml(yaml_file):
         sys_exit("No content in yaml config files")
 
     return cfg
+
+def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, similarity=90):
+    """
+    Sometime if there is a NULL Character(0xo00 or ^@) come out from console, it will cause random char missing, if the missing char is in the expect pattern string, then expect will timeout.
+    This function is workaround this kind of issue.
+    When timeout happen, save the expect.before, then send an Enter, if got prompt in the timeout same as command, means the session is still alive, then we merge the expect.before with the saved one
+    remove all special charaters, and do a silimar compare with expect pattern using fuzzywuzzy , if they are meet the threshold, we think the expect successful.   
+
+    Args:
+        session (_type_): spawned console session
+        exp_list (list): expect pattern string list
+        cmd_prompt (string): the command prompt of console session
+        timeout (int, optional): timout of the expect pattern. Defaults to None.
+        similarity (int, optional):similarity threshold. Defaults to 95.
+
+    Returns:
+        int: matched pattern index or -1
+    """
+
+    _exp_list = [pexpect.TIMEOUT, pexpect.EOF] + exp_list
+    idx = session.expect_exact(_exp_list, timeout)
+    # for test purpuse force using fuzzywuzzy to do the similarify expect
+    # idx = session.expect_exact([pexpect.TIMEOUT, pexpect.EOF], timeout)
+    if idx == 0:
+        cli_inf("Timeout Happened, Try to check if session back to prompt after sending a carriage return")
+        saved_buffer = session.before
+        _exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [cmd_prompt]
+        session.sendline("")
+        iidx = session.expect_exact(_exp_list, timeout)
+        if iidx == 0:
+            cli_inf("Timeout agian, give up")
+            saved_buffer += session.before
+            session.before = saved_buffer
+            return -1
+        elif iidx == 1:
+            cli_inf("Run into EOF, give up")
+            saved_buffer += session.before
+            session.before = saved_buffer
+            return -1
+        elif iidx == 2:
+            cli_inf("Session is still alive, apply Similar Match on expect buffer")
+            saved_buffer += session.before
+            saved_buffer = special_char_removal(saved_buffer)
+            for index, pattern in enumerate(exp_list):
+                cli_inf("applying similar match on pexpect pattern {:s}:{:s}".format(str(index), str(pattern)))
+                rc = similar_expect.similar_matches(saved_buffer, [(pattern, similarity)])
+                if rc:
+                    cli_inf("Similar match meet threshold {:s} for pattern {:s} with score {:s}".format(str(index), str(pattern), str(rc[1])))
+                    session.before = saved_buffer
+                    return index
+            session.before = saved_buffer
+            return -1
+    elif idx == 1:
+        return -1
+    else:
+        return idx - 2
 
 
 def mfg_expect_new(session, exp_list, timeout=None):
