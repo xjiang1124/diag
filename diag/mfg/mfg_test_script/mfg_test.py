@@ -18,6 +18,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+import scanning
 
 def load_mtp_cfg(cfg_yaml=None, subcommand=None):
     """
@@ -165,12 +166,7 @@ def run_sdl_tests(args):
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
 
-        libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
-        if not ENABLE_SCAN_VERIFY:
-            if "SCAN_VERIFY" not in args.skip_test:
-                args.skip_test.append("SCAN_VERIFY")
-        if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+        scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     if "--run_from_remote" in test_cmd_option:
@@ -252,7 +248,11 @@ def run_convert_nic_tests(args):
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
 
-        libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+        if not ENABLE_SCAN_VERIFY:
+            if "SCAN_VERIFY" not in args.skip_test:
+                args.skip_test.append("SCAN_VERIFY")
+        if "SCAN_VERIFY" not in args.skip_test:
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     if "--run_from_remote" in test_cmd_option:
@@ -335,12 +335,12 @@ def run_dl_tests(args):
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
         if not ENABLE_SCAN_VERIFY:
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
-
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     # test_cmd = [os.path.basename(sys.argv[0])]
@@ -726,7 +726,7 @@ def run_swi_tests(args):
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
 
@@ -818,12 +818,12 @@ def run_fst_tests(args):
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
         if not ENABLE_SCAN_VERIFY:
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), is_fst_test=True)
-
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     # test_cmd = [os.path.basename(sys.argv[0])]
