@@ -1,10 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import os
-import time
-import pexpect
-import threading
 import argparse
 import re
 import ntpath
@@ -14,27 +11,30 @@ sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 from libdefs import NIC_Type
 from libdefs import MTP_Const
-from libdefs import MTP_DIAG_Logfile
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
-from libdefs import MFG_DIAG_CMDS
-from libdefs import FF_Stage
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
-from libmfg_cfg import MFG_IMAGE_FILES
 from libmfg_cfg import NIC_IMAGES
+from libmfg_cfg import PSLC_MODE_TYPE_LIST
+from libmfg_cfg import CAPRI_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import FAILSAFE_CPLD_TYPE_LIST
 from libmfg_cfg import MAINFW_TYPE_LIST
 from libmfg_cfg import CTO_MODEL_TYPE_LIST
+from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libmfg_cfg import MTP_HEALTH_MONITOR
+from libmfg_cfg import DRY_RUN
+from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 import image_control
 import testlog
-import scanning
 import test_utils
+import parallelize
+import scanning
 
 def logfile_close(filep_list):
     for fp in filep_list:
@@ -67,372 +67,90 @@ def mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, test_log_filep, diag_log_filep, diag_
     mtp_slots_to_skip = mtp_cfg_db.get_mtp_slots_to_skip(mtp_id)
     mtp_mgmt_ctrl = mtp_ctrl(mtp_id, test_log_filep, diag_log_filep, diag_nic_log_filep_list, mgmt_cfg=mtp_mgmt_cfg, apc_cfg=mtp_apc_cfg, slots_to_skip=mtp_slots_to_skip)
     return mtp_mgmt_ctrl
-    
-def single_nic_fru_program(mtp_mgmt_ctrl, slot, fail_nic_list, pass_nic_list, skip_testlist = []):
+
+def swi_display_program_matrix(mtp_mgmt_ctrl, slot):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
+
+    swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, FF_Stage.FF_SWI)
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
+    if sku:
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
+    for image_name, image_file_path in list(swi_image_dict.items()):
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
+        img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
+
+    if nic_type == NIC_Type.NAPLES100:
+        nic_profile = "netapp_nic_profile.py"
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
+
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
+
+@parallelize.parallel_nic_using_ssh
+def swi_fru_program(mtp_mgmt_ctrl, slot):
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
     mac = mtp_mgmt_ctrl.mtp_get_nic_fru(slot)[1].replace('-', '')
     pn = mtp_mgmt_ctrl.mtp_get_nic_pn(slot)
     dpn = mtp_mgmt_ctrl.mtp_get_nic_dpn(slot)
     sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
     prog_date = mtp_mgmt_ctrl.get_scanned_ts(slot)
-    test_list = ["FRU_PROG"]
+    return mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
 
+@parallelize.parallel_nic_using_ssh
+def swi_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
+    cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
 
-    for skipped_test in skip_testlist:
-        if skipped_test in test_list:
-            test_list.remove(skipped_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        # program FRU
-        if test == "FRU_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fru(slot, prog_date, sn, mac, pn, dpn, sku)
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-def ping_precheck(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, slotA, slotB):
-    # fail other slot if either in pair is failed
-    if slotA in fail_nic_list or slotB in fail_nic_list:
-        if slotA in fail_nic_list:
-            keyA = libmfg_utils.nic_key(slotA)
-            keyB = libmfg_utils.nic_key(slotB)
-            mtp_mgmt_ctrl.cli_log_slot_err(slotB, "Skipping {:s} to {:s} ping test because {:s} failed".format(keyA, keyB, keyA))
-        if slotB in fail_nic_list:
-            keyA = libmfg_utils.nic_key(slotA)
-            keyB = libmfg_utils.nic_key(slotB)
-            mtp_mgmt_ctrl.cli_log_slot_err(slotA, "Skipping {:s} to {:s} ping test because {:s} failed".format(keyA, keyB, keyB))
-        return False
-    else:
-        return True
-
-def ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, skip_testlist):
-    import itertools
-
+@parallelize.parallel_nic_using_ssh
+def swi_fail_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
+    failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, failsafe_cpld_img_file)
 
-    ping_test_fail_list = list()
-    ping_test_slots = list()
-    ping_test_tuples = list()
-
-    nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-    for slot in range(len(nic_prsnt_list)):
-        if not nic_prsnt_list[slot]:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
-            continue
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
-            continue
-        if slot in fail_nic_list:
-            continue
-        ping_test_slots.append(slot)
-
-
-    if len(ping_test_slots) > 0:    
-        for cnt in range(5):
-            nic_start_slot = 0
-            test = "PING_PRE_PAIRING"
-            slot_A = nic_start_slot + (cnt * 2)
-            slot_B = nic_start_slot + (cnt * 2) + 1
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot_A, test)
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot_B, test)
-            if slot_A in ping_test_slots and slot_B in ping_test_slots:
-                ping_test_tuples.append([slot_A, slot_B])
-                sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_A) 
-                sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_B)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_A, test, start_ts)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_B, test, start_ts)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_A, dsp, test, duration))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot_B, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_B, dsp, test, duration))
-            elif slot_A in ping_test_slots and slot_B not in ping_test_slots:
-                sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_A)            
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_A, dsp, test))
-                if slot_A not in fail_nic_list:
-                    fail_nic_list.append(slot_A)
-                if slot_A in pass_nic_list:
-                    pass_nic_list.remove(slot_A)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot_A)
-                ping_test_fail_list.append(slot_A)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_A, test, start_ts)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_A, dsp, test, "FAILED", duration))
-            elif slot_A not in ping_test_slots and slot_B in ping_test_slots:
-                sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slot_B)            
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot_B, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_B, dsp, test))
-                if slot_B not in fail_nic_list:
-                    fail_nic_list.append(slot_B)
-                if slot_B in pass_nic_list:
-                    pass_nic_list.remove(slot_B)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot_B)
-                ping_test_fail_list.append(slot_B)
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot_B, test, start_ts)
-                mtp_mgmt_ctrl.cli_log_slot_err(slot_A, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_B, dsp, test, "FAILED", duration))
-
-    # a = iter(ping_test_slots)
-    # ping_test_tuples = zip(a,a)
-
-    for slotA, slotB in ping_test_tuples:
-        sn_A = mtp_mgmt_ctrl.mtp_get_nic_sn(slotA)
-        sn_B = mtp_mgmt_ctrl.mtp_get_nic_sn(slotB)
-        nic_type_A = mtp_mgmt_ctrl.mtp_get_nic_type(slotA)
-        nic_type_B = mtp_mgmt_ctrl.mtp_get_nic_type(slotB)
-
-        test_list = ["PING_PRE", "PING_TEST"]
-        for skipped_test in skip_testlist:
-            if skipped_test in test_list:
-                test_list.remove(skipped_test)
-
-        for test in test_list:
-            mtp_mgmt_ctrl.cli_log_slot_inf(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_A, dsp, test))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn_B, dsp, test))
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotA, test)
-            start_ts = mtp_mgmt_ctrl.log_slot_test_start(slotB, test)
-            if test == "PING_PRE":
-                ret = ping_precheck(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, slotA, slotB)
-            elif test == "PING_TEST":
-                ret = mtp_mgmt_ctrl.mtp_nic_ping_test(slotA, slotB)
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                continue
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slotA, test, start_ts)
-            duration = mtp_mgmt_ctrl.log_slot_test_stop(slotB, test, start_ts)
-            if not ret:
-                mtp_mgmt_ctrl.cli_log_slot_err(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_A, dsp, test, "FAILED", duration))
-                mtp_mgmt_ctrl.cli_log_slot_err(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn_B, dsp, test, "FAILED", duration))
-                if slotA not in fail_nic_list:
-                    fail_nic_list.append(slotA)
-                if slotB not in fail_nic_list:
-                    fail_nic_list.append(slotB)
-                if slotA in pass_nic_list:
-                    pass_nic_list.remove(slotA)
-                if slotB in pass_nic_list:
-                    pass_nic_list.remove(slotB)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slotA)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slotB)
-                ping_test_fail_list.append(slotA)
-                ping_test_fail_list.append(slotB)
-                break
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slotA, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_A, dsp, test, duration))
-                mtp_mgmt_ctrl.cli_log_slot_inf(slotB, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn_B, dsp, test, duration))
-
-    return ping_test_fail_list
-
-def single_nic_fw_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_secure_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    test_list = ["CPLD_PROG", "CPLD_REF"]
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.NAPLES25OCP:
-        test_list = ["CPLD_PROG"]
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
-        test_list = ["CPLD_PROG", "FSAFE_CPLD_PROG", "CPLD_REF"]
-    if nic_type in (NIC_Type.POMONTEDELL):
-        test_list = ["FPGA_PROG"]
-    if nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
-        test_list = ["FPGA_PROG", "FPGA_PROG_VERIFY"]
-    if nic_type == NIC_Type.ORTANO2:
-        test_list = ["FSAFE_CPLD_PROG", "CPLD_REF"]
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        # program CPLD
-        if test == "CPLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_cpld(slot, cpld_img_file, dl_step=False)
-        # program all FPGA partitions
-        elif test == "FPGA_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_fpga(slot)
-        # verify program of all FPGA partitions
-        elif test == "FPGA_PROG_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_fpga(slot)
-        # program failsafe CPLD
-        elif test == "FSAFE_CPLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_failsafe_cpld(slot, fail_cpld_img_file)
-        # refresh CPLD
-        elif test == "CPLD_REF":
-            ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+    sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
 
-
-def single_nic_sec_cpld_program(mtp_mgmt_ctrl, sec_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_cpld_compare(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
+    sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, sec_cpld_img_file, "cfg0")
 
-    test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.NAPLES25OCP:
-        test_list = ["NIC_INIT", "SEC_CPLD_PROG"]
-    if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-        test_list = ["NIC_INIT", "SEC_CPLD_PROG", "SEC_CPLD_REF"]
-    if nic_type in FPGA_TYPE_LIST:
-        test_list = ["NIC_INIT"]
-    if nic_type == NIC_Type.ORTANO2 or nic_type == NIC_Type.ORTANO2ADIMSFT:
-        test_list = ["NIC_INIT"]
-
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        # program secure cpld
-        if test == "SEC_CPLD_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_sec_cpld(slot, sec_cpld_img_file)
-        elif test == "SEC_CPLD_REF":
-            ret = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(slot)
-        # nic diag init status
-        elif test == "NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown SWI Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-
-def single_nic_copy_gold_program(mtp_mgmt_ctrl, gold_img_file, cert_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_fail_cpld_compare(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    test_list = ["NIC_INIT", "SEC_CPLD_VERIFY", "COPY_GOLD"]
-    if nic_type == NIC_Type.ORTANO2ADIIBM:
-        test_list = ["NIC_INIT", "SEC_CPLD_VERIFY", "COPY_GOLD", "COPY_CERT"]
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        if test == "SEC_CPLD_VERIFY":
-            ret = mtp_mgmt_ctrl.mtp_verify_nic_cpld(slot, sec_cpld=True, dl_step=False)
-        elif test == "COPY_GOLD":
-            ret = mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
-        elif test == "COPY_CERT":
-            ret = mtp_mgmt_ctrl.mtp_copy_nic_cert(slot, cert_img_file, directory="/data/")
-        elif test == "NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+    failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, failsafe_cpld_img_file, "cfg1")
 
-def single_nic_compare_cpld_image(mtp_mgmt_ctrl, final_cpld_img_file, failsafe_cpld_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_goldfw_copy(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    test_list = []
-    if nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and nic_type not in FPGA_TYPE_LIST:
-        test_list = ["COMPARE_CPLD", "COMPARE_FAILSAFE_CPLD"]
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_copy_nic_gold(slot, gold_img_file)
 
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        if test == "COMPARE_CPLD":
-            ret = mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, final_cpld_img_file, "cfg0")
-        elif test == "COMPARE_FAILSAFE_CPLD":
-            ret = mtp_mgmt_ctrl.mtp_compare_nic_cpld_img(slot, failsafe_cpld_img_file, "cfg1")
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-def single_nic_emmc_program(mtp_mgmt_ctrl, emmc_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_cert_copy(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    test_list = ["SW_INSTALL"]
-    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    if nic_type == NIC_Type.ORTANO2ADIIBM:
-        test_list = []
-    if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
-        test_list = []
-    if nic_type == NIC_Type.GINESTRA_S4:
-        test_list = []
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        # program sw image onto EMMC
-        if test == "SW_INSTALL":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
-        else:       
-            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+    cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cert(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_copy_nic_cert(slot, cert_img_file, directory="/data/")
 
-def single_nic_gold_program(mtp_mgmt_ctrl, gold_img_file, slot, sn, prog_fail_nic_list, skip_testlist):
+@parallelize.parallel_nic_using_ssh
+def swi_goldfw_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
-    test_list = ["GOLDFW_PROG"]
-    for skip_test in skip_testlist:
-        if skip_test in test_list:
-            test_list.remove(skip_test)
-    for test in test_list:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-        start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        if test == "GOLDFW_PROG":
-            ret = mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
-        else:
-            mtp_mgmt_ctrl.cli_log_err("Unknown SW Test: {:s}, Ignore".format(test))
-            continue
-        duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-        if not ret:
-            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            prog_fail_nic_list.append(slot)
-            mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-            break
-        else:
-            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+    gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_gold(slot, gold_img_file)
+
+@parallelize.parallel_nic_using_ssh
+def swi_mainfw_install(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
@@ -497,888 +215,278 @@ def main():
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
+        def get_slots_of_type(nic_type, except_type=[]):
+            return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
+
+        def run_swi_test(nic_list_orig, test, *test_args, **test_kwargs):
+            stage = FF_Stage.FF_SWI
+            nic_list = nic_list_orig[:]
+
+            if test in args.skip_test:
+                test_utils.test_skip_nic_log_message(mtp_mgmt_ctrl, nic_list, stage, test)
+                return nic_list
+
+            start_ts = mtp_mgmt_ctrl.log_test_start(test)
+            test_utils.test_start_nic_log_message(mtp_mgmt_ctrl, nic_list, stage, test)
+
+            if DRY_RUN:
+                rlist = []
+
+            elif test == "NIC_PWRCYC":
+                rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list)
+
+            elif test == "SCAN_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_scan_verify(nic_list)
+            elif test == "FAKE_SCAN_VERIFY":
+                rlist = mtp_mgmt_ctrl.fake_scan_verify(nic_list, scanned_sku=args.sku)
+
+            elif test == "NIC_POWER":
+                rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
+            elif test == "NIC_TYPE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_list_type_test(nic_list)
+            elif test == "NIC_PRSNT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_check_prsnt(nic_list)
+            elif test == "NIC_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)
+
+            elif test == "CONSOLE_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(nic_list)
+            elif test == "SET_MAINFW":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(nic_list)
+            elif test == "SET_DIAGFW":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(nic_list)
+            elif test == "SET_EXTDIAGFW":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extdiag_boot(nic_list)
+            elif test == "SET_GOLDFW":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(nic_list)
+            elif test == "SET_EXTOS":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(nic_list)
+
+            elif test == "NIC_DIAG_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_list_check_diag_boot(nic_list)
+            elif test == "GOLDFW_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(nic_list)
+            elif test == "DIAG_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(nic_list)
+            elif test == "SW_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(nic_list)
+            elif test == "EXTDIAG_BOOT":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_boot(nic_list)
+            elif test == "EXTDIAG_BOOT_SMODE":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_smode_boot(nic_list)
+            elif test == "SEC_BOOT_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_secboot_verify(nic_list)
+            elif test == "CFG_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_cfg_verify(nic_list)
+
+            elif test == "NIC_DIAG_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, **test_kwargs)
+            elif test == "SW_MGMT_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(nic_list)
+
+            elif test == "FRU_PROG":
+                rlist = swi_fru_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "NIC_FRU_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_fru_init(nic_list, False, False)
+            elif test == "SKU_VALIDATE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(nic_list)
+
+            elif test == "CPLD_PROG":
+                rlist = swi_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "FSAFE_CPLD_PROG":
+                rlist = swi_fail_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "SEC_CPLD_PROG":
+                rlist = swi_secure_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "CPLD_REF":
+                rlist = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(nic_list)
+            elif test == "SEC_CPLD_REF":
+                rlist = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(nic_list)
+            elif test == "SEC_CPLD_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld(nic_list, sec_cpld=True, dl_step=False)
+            elif test == "COMPARE_CPLD":
+                rlist = swi_cpld_compare(mtp_mgmt_ctrl, nic_list)
+            elif test == "COMPARE_FAILSAFE_CPLD":
+                rlist = swi_fail_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "FPGA_PROG":
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_fpga(nic_list)
+            elif test == "FPGA_PROG_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_fpga(nic_list)
+
+            elif test == "DISABLE_ESEC_WP":
+                rlist = mtp_mgmt_ctrl.mtp_nic_esec_write_protect(nic_list, enable=False)
+            elif test == "ENABLE_ESEC_WP":
+                rlist = mtp_mgmt_ctrl.mtp_nic_esec_write_protect(nic_list, enable=True)
+            elif test == "EFUSE_PROG":
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_efuse(nic_list)
+            elif test == "SEC_KEY_PROG":
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list)
+            elif test == "SEC_PROG_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(nic_list)
+
+            elif test == "COPY_GOLD":
+                rlist = swi_goldfw_copy(mtp_mgmt_ctrl, nic_list)
+            elif test == "COPY_CERT":
+                rlist = swi_cert_copy(mtp_mgmt_ctrl, nic_list)
+            elif test == "SW_INSTALL":
+                rlist = swi_mainfw_install(mtp_mgmt_ctrl, nic_list)
+            elif test == "GOLDFW_PROG":
+                rlist = swi_goldfw_program(mtp_mgmt_ctrl, nic_list)
+
+            elif test == "BOARD_CONFIG_CERT":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_set_board_config_cert(nic_list, test_kwargs["cert_img_file"], directory="/data/")
+            elif test == "SW_PROFILE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_sw_profile(nic_list, test_kwargs["nic_profile"])
+            elif test == "SW_MODE_SWITCH":
+                rlist = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch(nic_list)
+            elif test == "SW_MODE_SWITCH_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch_verify(nic_list)
+            elif test == "PDSCTL_SYSTEM":
+                rlist = mtp_mgmt_ctrl.mtp_pdsctl_system_show(nic_list)
+            elif test == "KEYS_CHECK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(nic_list)
+            elif test == "CONF_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_nic_device_conf_verify(nic_list)
+            elif test == "SW_CLEANUP":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(nic_list)
+            elif test == "SW_SHUTDOWN":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(nic_list)
+
+            else:
+                mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
+                rlist = nic_list
+
+            # catch bad return value
+            if not isinstance(rlist, list):
+                mtp_mgmt_ctrl.cli_log_err("Test {} failed with '{}', expected slot list".format(test, repr(rlist)))
+                rlist = nic_list[:]
+
+            for slot in rlist:
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                # update input list, could be pass_nic_list or a subset
+                if slot in nic_list_orig:
+                    nic_list_orig.remove(slot)
+                # update global pass/fail list
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+
+            duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
+            test_utils.test_fail_nic_log_message(mtp_mgmt_ctrl, rlist, stage, test, start_ts)
+            test_utils.test_pass_nic_log_message(mtp_mgmt_ctrl, nic_list_orig, stage, test, start_ts)
+            return rlist
+
         # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_off_nic()
-        mtp_mgmt_ctrl.mtp_power_on_nic(pass_nic_list)
+        mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
+        run_swi_test(pass_nic_list, "NIC_PWRCYC")
 
         dsp = FF_Stage.FF_SWI
-        NAPLES100IBM = 0
+        run_swi_test(pass_nic_list, "CONSOLE_BOOT")
+        run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
 
-        # Set Naples25SWM test mode
-        mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
-
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
-            if not nic_prsnt_list[slot]:
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-
-            test_list = ["CONSOLE_BOOT"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "CONSOLE_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-                    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-        # if "CONSOLE_BOOT" not in args.skip_test:
-        #     # power cycle all nic
-        #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list, nic_util=True):
-            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # read in current FRU
-        nic_fru_cfg = mtp_mgmt_ctrl.mtp_construct_nic_fru_config(fail_nic_list)
-        # failures from construct_nic_fru_config
-        for slot in pass_nic_list:
-            key = libmfg_utils.nic_key(slot)
-            if not nic_fru_cfg[key]["VALID"]:
-                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Failed to load current FRU")
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        if "SCAN_VERIFY" not in args.skip_test:
-            fru_reprogram_list = mtp_mgmt_ctrl.mtp_scan_verify(nic_fru_cfg, scanned_nic_fru_cfg, pass_nic_list, fail_nic_list, dsp)
-
-            nic_thread_list = list()
-            for slot in fru_reprogram_list:
-                nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
-                                                                                      slot,
-                                                                                      fail_nic_list,
-                                                                                      pass_nic_list,
-                                                                                      args.skip_test))
-                nic_thread.daemon = True
-                nic_thread.start()
-                nic_thread_list.append(nic_thread)
-                time.sleep(2)
-
-            # monitor all the thread
-            while True:
-                if len(nic_thread_list) == 0:
-                    break
-                for nic_thread in nic_thread_list[:]:
-                    if not nic_thread.is_alive():
-                        nic_thread.join()
-                        nic_thread_list.remove(nic_thread)
-                time.sleep(5)
-
-            for slot in fru_reprogram_list:
-                nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
-                    mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+        if "SCAN_VERIFY" in args.skip_test:
+            # only for QA, fake the scans
+            run_swi_test(pass_nic_list, "FAKE_SCAN_VERIFY")
         else:
-            mtp_mgmt_ctrl.mtp_populate_fru_to_scans(read_fru_cfg, pass_nic_list, sku=args.sku)
-
-        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
+            fru_reprogram_list = run_swi_test(pass_nic_list, "SCAN_VERIFY")
+            # for ortano-ti PN update from C0->C1, need to program C1 field in FRU
+            run_swi_test(fru_reprogram_list, "FRU_PROG")
+            run_swi_test(fru_reprogram_list, "NIC_FRU_INIT")
 
         # Reprogram FRU with final SKU
-        sku_fru_prog_list = list()
-        for slot in pass_nic_list[:]:
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in CTO_MODEL_TYPE_LIST:
-                continue
-            sku_fru_prog_list.append(slot)
-
+        sku_fru_prog_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
         # Before programming, check that scanned SKU is valid for this card
-        test_list = ["SKU_VALIDATE"]
-        for skipped_test in args.skip_test:
-            if skipped_test in test_list:
-                test_list.remove(skipped_test)
-        for slot in sku_fru_prog_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-
-                if test == "SKU_VALIDATE":
-                    ret = mtp_mgmt_ctrl.mtp_nic_validate_sku_dpn_match(slot)
-
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    if slot in sku_fru_prog_list:
-                        sku_fru_prog_list.remove(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        nic_thread_list = list()
-        for slot in sku_fru_prog_list:
-            nic_thread = threading.Thread(target = single_nic_fru_program, args = (mtp_mgmt_ctrl,
-                                                                                  slot,
-                                                                                  fail_nic_list,
-                                                                                  pass_nic_list,
-                                                                                  args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in sku_fru_prog_list:
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
-                mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-
-        test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
-
-        check_naples_pn = "SCAN_VERIFY" not in args.skip_test
-
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-
-        for slot in pass_nic_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
-
-            swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, FF_Stage.FF_SWI)
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
-            if sku:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
-            for image_name, image_file_path in list(swi_image_dict.items()):
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
-                img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
-
-            if nic_type == NIC_Type.NAPLES100:
-                nic_profile = "netapp_nic_profile.py"
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
-
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
-
-            if nic_type == NIC_Type.NAPLES100IBM:
-                NAPLES100IBM = 1
-
-            test_list = ["NIC_POWER", "NIC_TYPE", "NIC_PRSNT", "NIC_INIT", "NIC_DIAG_BOOT"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                # nic power status check
-                if test == "NIC_POWER":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
-                # nic type check
-                elif test == "NIC_TYPE":
-                    ret = mtp_mgmt_ctrl.mtp_nic_type_test(slot)
-                # nic present check
-                elif test == "NIC_PRSNT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
-                # check nic init status
-                elif test == "NIC_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
-                # check nic boot from diagfw
-                elif test == "NIC_DIAG_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-
-        # ping_test_fail_list = ping_test(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, args.skip_test)
-
-        # program the NIC firmware
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in pass_nic_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-
-            nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
-                                                                                  cpld_img_file,
-                                                                                  failsafe_cpld_img_file,
-                                                                                  slot,
-                                                                                  sn,
-                                                                                  prog_fail_nic_list,
-                                                                                  args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-        
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-        
-        for slot in prog_fail_nic_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-        # # power cycle all nic
-        # mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=False, dsp=dsp):
-            mtp_mgmt_ctrl.cli_log_err("Disable ESEC Write Protection failed", level=0)
-
-        # Ensure nic_util and nic_arm as needed for elba's efuse script
-        if "EFUSE_PROG" not in args.skip_test:
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
-                mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-            for slot in range(MTP_Const.MTP_SLOT_NUM):
-                if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                    if not nic_prsnt_list[slot]:
-                        continue
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-
-        # Efuse programming for Elba
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            test_list = ["NIC_INIT", "EFUSE_PROG"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "EFUSE_PROG":
-                    ret = mtp_mgmt_ctrl.mtp_program_nic_efuse(slot)
-                elif test == "NIC_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_check_nic_status(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        # Secure key programming
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-            test_list = ["SEC_KEY_PROG"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "SEC_KEY_PROG":
-                    ret = mtp_mgmt_ctrl.mtp_program_nic_sec_key(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        # # power cycle NIC
-        # if "EFUSE_PROG" not in args.skip_test and "SEC_KEY_PROG" not in args.skip_test:
-        #     mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
-            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # program the NIC Secure CPLD
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-
-            nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
-                                                                                        sec_cpld_img_file,
-                                                                                        slot,
-                                                                                        sn,
-                                                                                        prog_fail_nic_list,
-                                                                                        args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-
-        # Secure CPLD Check
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type in FPGA_TYPE_LIST:
-                # cant power up fpga only in 3.3v
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            test_list = ["SEC_PROG_VERIFY"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "SEC_PROG_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        if not mtp_mgmt_ctrl.mtp_nic_esec_write_protect(pass_nic_list=pass_nic_list ,fail_nic_list=fail_nic_list ,enable=True, dsp=dsp):
-            mtp_mgmt_ctrl.cli_log_err("Enable ESEC Write Protection failed", level=0)
-
-
-        if not mtp_mgmt_ctrl.mtp_nic_diag_init(pass_nic_list):
-            mtp_mgmt_ctrl.cli_log_err("Initialize NIC Diag Environment failed", level=0)
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if not nic_prsnt_list[slot]:
-                    continue
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-
-        # Copy the NIC Gold image
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
-            cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cert(mtp_mgmt_ctrl, slot, dsp)["filename"]
-
-            nic_thread = threading.Thread(target = single_nic_copy_gold_program, args = (mtp_mgmt_ctrl,
-                                                                                    gold_img_file,
-                                                                                    cert_img_file,
-                                                                                    slot,
-                                                                                    sn,
-                                                                                    prog_fail_nic_list,
-                                                                                    args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-
-        # program the NIC EMMC image
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type not in MAINFW_TYPE_LIST:
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
-            nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
-                                                                                    emmc_img_file,
-                                                                                    slot,
-                                                                                    sn,
-                                                                                    prog_fail_nic_list,
-                                                                                    args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-        # Copy cpld image & compare
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
-                continue
-
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
-            nic_thread = threading.Thread(target = single_nic_compare_cpld_image, args = (mtp_mgmt_ctrl,
-                                                                                    sec_cpld_img_file,
-                                                                                    failsafe_cpld_img_file,
-                                                                                    slot,
-                                                                                    sn,
-                                                                                    prog_fail_nic_list,
-                                                                                    args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-
-        # program the NIC Gold image
-        nic_thread_list = list()
-        prog_fail_nic_list = list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
-
-            nic_thread = threading.Thread(target = single_nic_gold_program, args = (mtp_mgmt_ctrl,
-                                                                                    gold_img_file,
-                                                                                    slot,
-                                                                                    sn,
-                                                                                    prog_fail_nic_list,
-                                                                                    args.skip_test))
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(2)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-
-        # power cycle all nic
-        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-        
-        # verify the NIC goldfw boot
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            test_list = ["GOLDFW_BOOT"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "GOLDFW_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        # power cycle NIC
-        if "GOLDFW_BOOT" not in args.skip_test:
-            mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
-        
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(5)
-
-        for slot in prog_fail_nic_list:
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-
-        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)                
-
-            test_list = ["SET_MAINFW", "SW_CLEANUP"]
-            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
-            if nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5):
-                test_list = ["CFG_VERIFY", "SET_MAINFW", "SW_CLEANUP"]
-            if nic_type == NIC_Type.GINESTRA_S4:
-                test_list = ["CFG_VERIFY", "SW_CLEANUP"]
-            if nic_type in FPGA_TYPE_LIST:
-                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SET_EXTDIAGFW", "SW_CLEANUP"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
-                test_list = ["BOARD_CONFIG_CERT", "SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
-                cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"]
-            if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
-                test_list = ["SEC_BOOT_VERIFY", "CFG_VERIFY", "SW_CLEANUP"]
-            for skipped_test in args.skip_test:
-                if skipped_test in test_list:
-                    test_list.remove(skipped_test)
-
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "SET_MAINFW":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_mainfw_boot(slot)
-                elif test == "SET_DIAGFW":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_diag_boot(slot)
-                elif test == "BOARD_CONFIG_CERT":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_board_config_cert(slot, cert_img_file, directory="/data/")
-                elif test == "CFG_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_cfg_verify(slot)
-                elif test == "SW_CLEANUP":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(slot)
-                elif test == "SET_EXTDIAGFW":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extdiag_boot(slot)
-                elif test == "SEC_BOOT_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_secboot_verify(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        # power cycle NIC
-        mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list)
+        run_swi_test(sku_fru_prog_list, "SKU_VALIDATE")
+        run_swi_test(sku_fru_prog_list, "FRU_PROG")
+        run_swi_test(sku_fru_prog_list, "NIC_FRU_INIT")
+
+        for slot in pass_nic_list:
+            swi_display_program_matrix(mtp_mgmt_ctrl, slot)
+
+        run_swi_test(pass_nic_list, "NIC_POWER")
+        run_swi_test(pass_nic_list, "NIC_PRSNT")
+        run_swi_test(pass_nic_list, "NIC_INIT")
+        run_swi_test(pass_nic_list, "NIC_DIAG_BOOT")
+
+        fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
+        run_swi_test(fpga_type_list, "FPGA_PROG")
+        run_swi_test(fpga_type_list, "FPGA_PROG_VERIFY")
+        cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2])
+        run_swi_test(cpld_type_list, "CPLD_PROG")
+        fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
+        run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
+        refresh_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.NAPLES25OCP])
+        run_swi_test(refresh_type_list, "CPLD_REF")
+
+        non_capri_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
+        run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
+        # Powercycle and also fix diag.exe as needed for elba's efuse script
+        run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
+        efuse_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
+        run_swi_test(efuse_type_list, "NIC_INIT")
+        run_swi_test(efuse_type_list, "EFUSE_PROG")
+        run_swi_test(pass_nic_list, "SEC_KEY_PROG")
+        run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
+        run_swi_test(pass_nic_list, "NIC_INIT")
+        sec_cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADIMSFT])
+        run_swi_test(sec_cpld_type_list, "SEC_CPLD_PROG")
+        sec_ref_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADIMSFT, NIC_Type.NAPLES25OCP])
+        run_swi_test(sec_ref_type_list, "SEC_CPLD_REF")
+        cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST) # cant power up fpga only in 3.3v
+        run_swi_test(cpld_type_list, "SEC_PROG_VERIFY")
+        non_capri_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
+        run_swi_test(non_capri_type_list, "ENABLE_ESEC_WP")
+
+        run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
+
+        run_swi_test(pass_nic_list, "NIC_INIT")
+        run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")
+        run_swi_test(pass_nic_list, "COPY_GOLD")
+        adiibm_type_list = get_slots_of_type(NIC_Type.ORTANO2ADIIBM)
+        run_swi_test(adiibm_type_list, "COPY_CERT")
+        # program sw image onto EMMC
+        mainfw_type_list = get_slots_of_type(MAINFW_TYPE_LIST)
+        run_swi_test(mainfw_type_list, "SW_INSTALL")
+        cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
+        run_swi_test(cpld_type_list, "COMPARE_CPLD")
+        run_swi_test(cpld_type_list, "COMPARE_FAILSAFE_CPLD")
+        # program goldfw package copied earlier
+        run_swi_test(pass_nic_list, "GOLDFW_PROG")
+        run_swi_test(pass_nic_list, "NIC_PWRCYC")
+        run_swi_test(pass_nic_list, "GOLDFW_BOOT")
+        # if "GOLDFW_BOOT" not in args.skip_test:
+        #     run_swi_test(pass_nic_list, "NIC_PWRCYC")
+        adiibm_type_list = get_slots_of_type(NIC_Type.ORTANO2ADIIBM)
+        run_swi_test(adiibm_type_list, "BOARD_CONFIG_CERT", cert_img_file=MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.cert_img["68-0028"])
+        secure_boot_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST)
+        run_swi_test(secure_boot_type_list, "SEC_BOOT_VERIFY")
+        sw_cfg_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
+        run_swi_test(sw_cfg_type_list, "CFG_VERIFY")
+        fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
+        run_swi_test(fpga_type_list, "SET_EXTDIAGFW")
+        mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4])
+        run_swi_test(mainfw_type_list, "SET_MAINFW")
+        run_swi_test(pass_nic_list, "SW_CLEANUP")
+        run_swi_test(pass_nic_list, "NIC_PWRCYC")
         libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
 
         # Verify the NIC Software boot
-        for slot in range(len(nic_prsnt_list)):
-            if not nic_prsnt_list[slot]:
-                continue
-            if slot in fail_nic_list:
-                continue
-            if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                continue
-
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sw_pn = mtp_mgmt_ctrl.check_swi_software_image(slot)
-            isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
-
-            sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.NAPLES100:
-                sw_test_list = ["SW_BOOT", "SW_MGMT_INIT", "CONF_VERIFY", "SW_PROFILE", "SW_SHUTDOWN"]
-            if isCloud or nic_type == NIC_Type.NAPLES100IBM:
-                sw_test_list = ["SW_BOOT", "SET_GOLDFW", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2 and not mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
-                sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADI or nic_type == NIC_Type.ORTANO2ADICR:
-                sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT or nic_type == NIC_Type.ORTANO2ADICRMSFT:
-                sw_test_list = ["SW_BOOT", "SW_MODE_SWITCH", "SW_BOOT", "SW_SHUTDOWN"]
-            if nic_type == NIC_Type.GINESTRA_S4:
-                sw_test_list = ["SW_SHUTDOWN"]
-            if nic_type in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
-                sw_test_list = []
-            if nic_type in FPGA_TYPE_LIST:
-                sw_test_list = ["EXTDIAG_BOOT_SMODE", "EXTDIAG_BOOT", "KEYS_CHECK", "SW_SHUTDOWN"]
-
-            for skipped_test in args.skip_test:
-                if skipped_test in sw_test_list:
-                    sw_test_list.remove(skipped_test)
-            for test in sw_test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-                if test == "SW_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_sw_boot(slot)
-                elif test == "DIAG_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(slot)
-                elif test == "EXTDIAG_BOOT":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_boot(slot)
-                elif test == "EXTDIAG_BOOT_SMODE":
-                    ret = mtp_mgmt_ctrl.mtp_verify_nic_extdiag_smode_boot(slot)
-                elif test == "SW_MGMT_INIT":
-                    ret = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(slot)
-                elif test == "SW_PROFILE":
-                    ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, "netapp_nic_profile.py")
-                elif test == "SW_MODE_SWITCH":
-                    ret = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch(slot)
-                    ret &= mtp_mgmt_ctrl.mtp_nic_sw_mode_switch_verify(slot)
-                elif test == "PDSCTL_SYSTEM":
-                    ret = mtp_mgmt_ctrl.mtp_pdsctl_system_show(slot)
-                elif test == "SET_GOLDFW":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_goldfw_boot(slot)
-                elif test == "SET_EXTOS":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
-                elif test == "SW_SHUTDOWN":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
-                elif test == "KEYS_CHECK":
-                    ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
-                elif test == "CONF_VERIFY":
-                    ret = mtp_mgmt_ctrl.mtp_nic_device_conf_verify(slot)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unknown SWI Test: {:s}, Ignore".format(test))
-                    continue
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
+        mainfw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST)
+        run_swi_test(mainfw_type_list, "SW_BOOT")
+        netapp_type_list = get_slots_of_type(NIC_Type.NAPLES100)
+        run_swi_test(netapp_type_list, "SW_MGMT_INIT")
+        run_swi_test(netapp_type_list, "CONF_VERIFY")
+        run_swi_test(netapp_type_list, "SW_PROFILE", nic_profile="netapp_nic_profile.py")
+        adimsft_type_list = get_slots_of_type([NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICRMSFT])
+        run_swi_test(adimsft_type_list, "SW_MODE_SWITCH")
+        run_swi_test(adimsft_type_list, "SW_MODE_SWITCH_VERIFY")
+        run_swi_test(adimsft_type_list, "SW_BOOT") # again
+        monterey_type_list = get_slots_of_type(FPGA_TYPE_LIST)
+        run_swi_test(monterey_type_list, "EXTDIAG_BOOT_SMODE")
+        run_swi_test(monterey_type_list, "EXTDIAG_BOOT")
+        run_swi_test(monterey_type_list, "KEYS_CHECK")
+        fw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST + CTO_MODEL_TYPE_LIST)
+        run_swi_test(fw_boot_type_list, "SW_SHUTDOWN")
 
         if MTP_HEALTH_MONITOR:
             mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()

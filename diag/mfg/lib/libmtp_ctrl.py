@@ -2279,15 +2279,17 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_verify_nic_extdiag_boot(self, slot):
-        if slot in self.mtp_nic_boot_info_init([slot], skip_check=True):
+        if slot in self.mtp_nic_boot_info_init(slot, skip_check=True):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
         return self.mtp_nic_check_extdiag_boot(slot)
 
+    @parallelize.parallel_nic_using_console
     def mtp_verify_nic_extdiag_smode_boot(self, slot):
-        if slot in self.mtp_nic_boot_info_init([slot], smode=True):
+        if slot in self.mtp_nic_boot_info_init(slot, smode=True):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
@@ -2349,6 +2351,7 @@ class mtp_ctrl():
 
         return self.mtp_nic_check_diag_boot(slot)
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
         if slot in self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC gold boot info failed")
@@ -2375,6 +2378,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_verify_nic_sw_boot(self, slot):
         if slot in self.mtp_nic_boot_info_init(slot):
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
@@ -2394,24 +2398,28 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_sw_mode_switch(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_mode_switch():
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_sw_mode_switch_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_mode_switch_verify():
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_pdsctl_system_show(self, slot):
         if not self._nic_ctrl_list[slot].nic_pdsctl_system_show():
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_sw_profile(self, slot, profile):
         if not self._nic_ctrl_list[slot].nic_sw_profile(profile):
             self.mtp_dump_nic_err_msg(slot)
@@ -2954,6 +2962,7 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
             return ""
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_sw_pn_search(self, slot, sw_pn_list, check_naples_pn):
         """ for each slot, match it to one of the SW PNs; fail slot if no match """
         for sw_pn in sw_pn_list:
@@ -3281,6 +3290,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_verify_nic_sec_cpld(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in self._proto_type_list:
@@ -3358,6 +3368,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_program_nic_efuse(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
@@ -3371,6 +3382,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_program_nic_sec_key(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in self._proto_type_list:
@@ -3541,6 +3553,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_read_secure_boot_keys(self, slot):
         if not self._nic_ctrl_list[slot].nic_console_read_secure_boot_keys():
             self.mtp_get_nic_err_msg(slot)
@@ -3918,6 +3931,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf_lock(slot, "Set NIC default gold boot")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_goldfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_goldfw_boot():
             self.cli_log_slot_err_lock(slot, "Set NIC default gold boot failed")
@@ -4945,6 +4959,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Get NIC Console Access")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_board_config_cert(self, slot, cert_img, directory="/data/"):
         if not self._nic_ctrl_list[slot].nic_set_board_config_cert(cert_img, directory):
             self.cli_log_slot_err(slot, "Set NIC board config cert failed")
@@ -4954,6 +4969,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC board config cert")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_nic_secboot_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_secboot_verify():
             self.cli_log_slot_err(slot, "NIC secure boot check failed")
@@ -4963,6 +4979,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC secure boot check passed")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_nic_cfg_verify(self, slot):
         if not self._nic_ctrl_list[slot].nic_cfg_verify():
             self.cli_log_slot_err(slot, "NIC cfg compare failed")
@@ -5104,6 +5121,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default diag boot")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_mainfw_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_mainfw_boot():
             self.cli_log_slot_err(slot, "Set NIC default boot with mainfw failed")
@@ -5113,6 +5131,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "Set NIC default mainfw boot")
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_extos_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_extos_boot():
             self.cli_log_slot_err(slot, "Set NIC default boot with diag failed")
@@ -5130,6 +5149,7 @@ class mtp_ctrl():
             return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_nic_sw_shutdown(self, slot):
         software_pn = self.check_swi_software_image(slot)
         isCloud = self.check_is_cloud_software_image(slot, software_pn)
@@ -5141,6 +5161,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_nic_sw_cleanup_shutdown(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_cleanup_shutdown():
             self.cli_log_slot_err(slot, "Graceful clean up shut down NIC failed")
@@ -5275,6 +5296,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_set_nic_extdiag_boot(self, slot):
         if not self._nic_ctrl_list[slot].nic_set_extdiag_boot():
             self.cli_log_slot_err(slot, "Set NIC default boot with extdiag failed")
@@ -6302,7 +6324,7 @@ class mtp_ctrl():
         return ret
 
     @parallelize.parallel_nic_using_ssh
-    def fake_scan_verify(self, slot, swmtestmode=Swm_Test_Mode.SW_DETECT, scanned_dpn=False):
+    def fake_scan_verify(self, slot, swmtestmode=Swm_Test_Mode.SW_DETECT, scanned_dpn="", scanned_sku=""):
         fail_scan_list = list()
         read_fru_cfg = dict()
         # read in current FRU
@@ -6311,38 +6333,8 @@ class mtp_ctrl():
         if not read_fru_cfg[key]["VALID"]:
             self.cli_log_slot_err(slot, "Failed to load current FRU")
             return False
-        self.mtp_populate_fru_to_scans(slot, read_fru_cfg, dpn=scanned_dpn)
+        self.mtp_populate_fru_to_scans(slot, read_fru_cfg, dpn=scanned_dpn, sku=scanned_sku)
         return True
-
-    def mtp_nic_validate_sku_dpn_match(self, pass_nic_list, fail_nic_list, dsp):
-        fru_reprogram_list = list()
-
-        test = "SKU_VALIDATE"
-        for slot in range(self._slots):
-            start_ts = self.log_slot_test_start(slot, test)
-            key = libmfg_utils.nic_key(slot)
-            if slot in fail_nic_list:
-                continue
-            if not self.mtp_check_nic_status(slot):
-                continue
-
-            sn = self.mtp_get_nic_sn(slot)
-            pn = self.mtp_get_nic_pn(slot)
-            dpn = self.mtp_get_nic_dpn(slot)
-            sku = self.get_scanned_sku(slot)
-            if match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-            else:
-                self.cli_log_slot_err_lock(slot, "Scanned SKU for this card not allowed {:s}".format())
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                if slot not in fail_nic_list:
-                    fail_nic_list.append(slot)
-                if slot in pass_nic_list:
-                    pass_nic_list.remove(slot)
-                self.mtp_set_nic_status_fail(slot, skip_fa=True)
-            duration = self.log_slot_test_stop(slot, test, start_ts)
-
-        return fru_reprogram_list
 
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_validate_pn_dpn_match(self, slot):
@@ -6361,6 +6353,7 @@ class mtp_ctrl():
         else:
             return False
 
+    @parallelize.parallel_nic_using_ssh
     def mtp_nic_validate_sku_dpn_match(self, slot):
         """
             Check that scanned SKU is allowed for the DPN in the FRU
@@ -6494,6 +6487,7 @@ class mtp_ctrl():
 
         return ecc_fail_list[:]
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_sw_mgmt_init(self, slot):
         if not self.mtp_nic_mgmt_reinit(slot):
             self.cli_log_slot_err(slot, "Failed to init mgmt port in production FW")
@@ -7059,6 +7053,7 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_device_conf_verify(self, slot):
         if not self._nic_ctrl_list[slot].device_conf_verify():
             self.mtp_get_nic_err_msg(slot)
