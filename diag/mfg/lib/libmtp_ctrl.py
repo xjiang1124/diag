@@ -1362,6 +1362,7 @@ class mtp_ctrl():
             return False
 
         cmd = "tar zxf {:s} -C /home/diag/.local/lib".format(image)
+        self.cli_log_inf(cmd, level=0)
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
             return False
@@ -4705,6 +4706,8 @@ class mtp_ctrl():
                     duration = libmfg_utils.timestamp_snapshot() - start_ts
                     self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, str(duration)))
                     start_ts = libmfg_utils.timestamp_snapshot()
+                    nic_ip_addr_list.append(nic_info[0])
+                    nic_mac_addr_list.append(nic_info[1])
 
             return True
         else:
