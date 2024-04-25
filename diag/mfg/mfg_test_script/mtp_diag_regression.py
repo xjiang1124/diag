@@ -1125,6 +1125,9 @@ def single_nic_fpga_prog(mtp_mgmt_ctrl, slot, skip_testlist, nic_test_rslt_list,
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+def health_status(mtp_health):
+    mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Diagnostics Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -1279,6 +1282,10 @@ def main():
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
             return
+
+        if MTP_HEALTH_MONITOR:
+            thread_health = threading.Thread(target=health_status, args=(mtp_mgmt_ctrl.get_mtp_health_monitor(),))
+            thread_health.start()
 
         # Set Naples25SWM test mode
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
@@ -2075,6 +2082,9 @@ def main():
             cmd = "cleanup.sh"
             mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
 
+        if MTP_HEALTH_MONITOR:
+            mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
+            thread_health.join()
 
         # Enable PCIe poll
         #ADD - Bypass shutting down slot right now for debug
@@ -2121,6 +2131,9 @@ def main():
         # err_msg = str(e)
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+        if MTP_HEALTH_MONITOR and 'thread_health' in locals():
+            mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
+            thread_health.join()
 
     mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_PASS, open_file_track_list)
 

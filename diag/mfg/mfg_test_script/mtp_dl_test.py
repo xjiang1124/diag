@@ -28,6 +28,7 @@ from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
+from libmfg_cfg import MTP_HEALTH_MONITOR
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -208,6 +209,9 @@ def single_nic_program(mtp_mgmt_ctrl, cpld_img_file, fail_cpld_img_file, fea_cpl
         else:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
 
+def health_status(mtp_health):
+    mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
+
 def main():
     parser = argparse.ArgumentParser(description="MTP DL Test Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -258,6 +262,10 @@ def main():
                 mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
                 logfile_close(open_file_track_list)
                 return
+
+        if MTP_HEALTH_MONITOR:
+            thread_health = threading.Thread(target=health_status, args=(mtp_mgmt_ctrl.get_mtp_health_monitor(),))
+            thread_health.start()
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
@@ -812,6 +820,10 @@ def main():
                     if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                         mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, dsp, test, duration))
 
+        if MTP_HEALTH_MONITOR:
+            mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
+            thread_health.join()
+
         # power off nic
         mtp_mgmt_ctrl.mtp_power_off_nic()
         mtp_mgmt_ctrl.cli_log_inf("MTP DL Test Complete", level=0)
@@ -841,6 +853,9 @@ def main():
         # err_msg = str(e)
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+        if MTP_HEALTH_MONITOR and 'thread_health' in locals():
+            mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
+            thread_health.join()
 
     logfile_close(open_file_track_list)
     return

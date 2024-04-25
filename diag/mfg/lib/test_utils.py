@@ -498,20 +498,23 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         return False
 
 def mtp_common_setup(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
+    test_list = ["MTP_CONNECT", "MTP_HEALTH_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
+    if not MTP_HEALTH_MONITOR: test_list.remove("MTP_HEALTH_CONNECT")
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
 
 def mtp_common_setup_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
-    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
+    test_list = ["MTP_CONNECT", "MTP_HEALTH_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT"]
+    if not MTP_HEALTH_MONITOR: test_list.remove("MTP_HEALTH_CONNECT")
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
 
 def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
-    test_list = ["MTP_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
+    test_list = ["MTP_CONNECT", "MTP_HEALTH_CONNECT", "DSP_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID"]
+    if not MTP_HEALTH_MONITOR: test_list.remove("MTP_HEALTH_CONNECT")
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
@@ -566,6 +569,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "MTP_CONNECT":
             ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True)
+
+        elif test == "MTP_HEALTH_CONNECT":
+            ret = mtp_mgmt_ctrl.get_mtp_health_monitor().mtp_health_mgmt_connect(prompt_cfg=True)
 
         elif test == "FST_CONNECT":
             ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, max_retry=10)

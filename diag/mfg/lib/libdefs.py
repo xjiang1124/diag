@@ -132,6 +132,9 @@ class MTP_Status:
     MTP_STA_READY = 10
     MTP_STA_MAX = 11
     
+class MTP_Health_Status:
+    MTP_NON_HEALTH = 0
+    MTP_HEALTH = 1
 
 class NIC_Port_Mask:
     NIC_PORT1_MASK = (0x1 << 0)
@@ -189,6 +192,7 @@ class MTP_Const:
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
     MTP_PCIE_EN_DIS_DELAY = 60
+    MTP_HEALTH_MONITOR_CYCLE = 180
 
     # single test, 1.5 hours
     DIAG_SEQ_TEST_TIMEOUT = 90*60
