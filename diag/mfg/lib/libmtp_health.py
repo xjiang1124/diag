@@ -61,8 +61,7 @@ class mtp_health_ctrl():
         try:
             cycle_cnt = self.get_cycle_cnt()
             rc = True
-            rc &= self.mtp_fan_init(cycle_cnt)
-            rc &= self.mtp_psu_init(cycle_cnt)
+            rc &= self.mtp_health_test(cycle_cnt)
             if not rc: 
                 self.set_event_status()
                 self.cli_log_err("MTP Monitoring Status Failed")
@@ -454,4 +453,61 @@ class mtp_health_ctrl():
         if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
             rc = False
 
+        return rc
+
+    def mtp_health_test(self, cycle_cnt=1):
+        rc = True
+        mtp_start_ts = self.log_test_start(testname="MTP HEALTH")
+        cmd = "devmgr -status"
+        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+            self.cli_log_err("{:d}th: Executing command {:s} failed".format(cycle_cnt, cmd))
+            rc = False
+            return rc
+
+        # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
+        apc1 = self._apc_cfg[0]
+        apc2 = self._apc_cfg[4]
+
+        if apc1 != "" :
+            match_psu = re.search(r"PSU_1\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+            if match_psu:
+                pout = match_psu.group(1)
+                pin = match_psu.group(4)
+                if "-" in pin or "-" in pout:
+                    self.cli_log_err("{:d}th: PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                    rc = False
+            else:
+                self.cli_log_err("{:d}th: PSU1 test failed.".format(cycle_cnt))
+                rc = False
+
+        if apc2 != "" :
+            match_psu = re.search(r"PSU_2\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+            if match_psu:
+                pout = match_psu.group(1)
+                pin = match_psu.group(4)
+                if "-" in pin or "-" in pout:
+                    self.cli_log_err("{:d}th: PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                    rc = False
+            else:
+                self.cli_log_err("{:d}th: PSU2 test failed.".format(cycle_cnt))
+                rc = False
+        if rc:
+            self.cli_log_inf("{:d}th: PSU test passed".format(cycle_cnt))
+
+        match_fan = re.search(r"FAN\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+        if match_fan:
+            fan1_in = match_fan.group(1)
+            fan1_out = match_fan.group(2)
+            fan2_in = match_fan.group(3)
+            fan2_out = match_fan.group(4)
+            fan3_in = match_fan.group(5)
+            fan3_out = match_fan.group(6)
+            if "-" in fan1_in or "-" in fan1_out or "-" in fan2_in or "-" in fan2_out or "-" in fan3_in or "-" in fan3_out:
+                self.cli_log_err("{:d}th: FAN test failed".format(cycle_cnt))
+                rc = False
+        else:
+            self.cli_log_err("{:d}th: FAN test failed.".format(cycle_cnt))
+            rc = False
+
+        mtp_stop_ts = self.log_test_stop(testname="MTP HEALTH",start=mtp_start_ts)
         return rc
