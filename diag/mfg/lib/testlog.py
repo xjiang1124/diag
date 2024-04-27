@@ -181,6 +181,14 @@ def mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_sc
     # remove the MTP-specific test script folder
     cmd = "rm -rf {:s}".format(mtp_script_dir)
     os.system(cmd)
+
+    # remove created tar file
+    cmd = "rm -rf {:s}".format(mtp_script_pkg)
+    os.system(cmd)
+    # remove logfile dir and log file
+    cmd = "rm -rf {:s}".format(logfile_dir)
+    os.system(cmd)
+
     return True
 
 

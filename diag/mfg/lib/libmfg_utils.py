@@ -563,35 +563,37 @@ def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, sim
     # for test purpuse force using fuzzywuzzy to do the similarify expect
     # idx = session.expect_exact([pexpect.TIMEOUT, pexpect.EOF], timeout)
     if idx == 0:
-        cli_inf("Timeout Happened, Try to check if session back to prompt after sending a carriage return")
+        cli_log_inf(session.logfile_read, "Timeout Happened, Try to check if session back to prompt after sending a carriage return")
         saved_buffer = session.before
         _exp_list = [pexpect.TIMEOUT, pexpect.EOF] + [cmd_prompt]
         session.sendline("")
         iidx = session.expect_exact(_exp_list, timeout)
         if iidx == 0:
-            cli_inf("Timeout agian, give up")
+            cli_log_inf(session.logfile_read, "Timeout after resend a carriage return, Session might not alive, give up")
             saved_buffer += session.before
             session.before = saved_buffer
             return -1
         elif iidx == 1:
-            cli_inf("Run into EOF, give up")
+            cli_log_inf(session.logfile_read, "Run into EOF, after resend a carriage return")
             saved_buffer += session.before
             session.before = saved_buffer
             return -1
         elif iidx == 2:
-            cli_inf("Session is still alive, apply Similar Match on expect buffer")
+            cli_log_inf(session.logfile_read, "Session is still alive, apply Similar Match on expect buffer")
             saved_buffer += session.before
             saved_buffer = special_char_removal(saved_buffer)
             for index, pattern in enumerate(exp_list):
-                cli_inf("applying similar match on pexpect pattern {:s}:{:s}".format(str(index), str(pattern)))
+                # cli_log_inf("applying similar match on pexpect pattern {:s}:{:s}".format(str(index), str(pattern)))
                 rc = similar_expect.similar_matches(saved_buffer, [(pattern, similarity)])
                 if rc:
-                    cli_inf("Similar match meet threshold {:s} for pattern {:s} with score {:s}".format(str(index), str(pattern), str(rc[1])))
+                    # cli_log_inf("Similar match meet threshold {:s} for pattern {:s} with score {:s}".format(str(index), str(pattern), str(rc[1])))
                     session.before = saved_buffer
                     return index
+            cli_log_inf(session.logfile_read, "Similar match Failed, NOT meet threshold {:s} for pattern {:s} in expect list {:s}".format(str(similarity), str(pattern), str(exp_list)))
             session.before = saved_buffer
             return -1
     elif idx == 1:
+        cli_log_inf(session.logfile_read, "Run into EOF")
         return -1
     else:
         return idx - 2

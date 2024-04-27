@@ -82,7 +82,7 @@ def load_cpld_info_json(cpld_json_file, verbosity=False):
     new_cpld_info = dict()
     try:
         with open(cpld_json_file) as json_file:
-            new_cpld_info = json.load(json_file)
+            new_cpld_info = json.load(json_file, parse_float=str, parse_int=str, parse_constant=str)
     except Exception as Err:
         print(str(Err))
         print("Failed to Load the New Version of CPLD JSON file, abort...")
@@ -106,7 +106,7 @@ def generate_cpld_img_full_path_list(cpld_json_dict, verbosity=False):
                 if k == "working_imge" or k == "failsafe_imge" or k == "secure_imge" or k == "special_boot0_imge":
                     file_full_path = image_files["file_location"] + os.sep + image_files["name"]
                     if file_full_path not in cpld_files_with_path and image_files["name"]:
-                        cpld_files_with_path.append(file_full_path.encode("ascii","ignore"))
+                        cpld_files_with_path.append(file_full_path)
     except Exception as Err:
         print(str(Err))
         print("Failed to Generate CPLD Binary File Full Path list from JSON dict, abort...")
@@ -342,9 +342,9 @@ def cpld_3v3_powercycle_test(mtp_mgmt_ctrl, slot, new_cpld_json_dict, pc_cycles=
     pn = first6_pn
 
     # new cpld version, validation target.
-    new_working_img_ver = new_cpld_json_dict[pn]["working_imge"]["version"].encode("ascii","ignore")
+    new_working_img_ver = new_cpld_json_dict[pn]["working_imge"]["version"]
     expMajorVer = "%02x" % int(new_working_img_ver.lower(), 16)
-    new_working_img_min_ver = new_cpld_json_dict[pn]["working_imge"]["minor_version"].encode("ascii","ignore")
+    new_working_img_min_ver = new_cpld_json_dict[pn]["working_imge"]["minor_version"]
     expMinorVer = "%02x" % int(new_working_img_min_ver.lower(), 16)
 
     if mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_attach_without_login():
@@ -534,16 +534,16 @@ def cpld_upgrade_downgrade_utility_function_test(mtp_mgmt_ctrl, slot, new_cpld_j
     prog_cmd_list = ["cpldapp -writeflash {:s} {:s}", "/data/nic_util/xo3dcpld -prog {:s} {:s}"]
 
     # new cpld version, validation target.
-    new_working_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["working_imge"]["name"].encode("ascii","ignore")
-    new_working_img_ver = new_cpld_json_dict[pn]["working_imge"]["version"].encode("ascii","ignore")
-    new_working_img_min_ver = new_cpld_json_dict[pn]["working_imge"]["minor_version"].encode("ascii","ignore")
-    new_working_img_nano_ver = new_cpld_json_dict[pn]["working_imge"]["nano_version"].encode("ascii","ignore")
-    new_working_img_sha512sum = new_cpld_json_dict[pn]["working_imge"]["sha512sum"].encode("ascii","ignore")
-    new_failsafe_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["failsafe_imge"]["name"].encode("ascii","ignore")
-    new_failsafe_img_ver = new_cpld_json_dict[pn]["failsafe_imge"]["version"].encode("ascii","ignore")
-    new_failsafe_img_min_ver = new_cpld_json_dict[pn]["failsafe_imge"]["minor_version"].encode("ascii","ignore")
-    new_failsafe_img_nano_ver = new_cpld_json_dict[pn]["failsafe_imge"]["nano_version"].encode("ascii","ignore")
-    new_failsafe_img_sha512sum = new_cpld_json_dict[pn]["failsafe_imge"]["sha512sum"].encode("ascii","ignore")
+    new_working_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["working_imge"]["name"]
+    new_working_img_ver = new_cpld_json_dict[pn]["working_imge"]["version"]
+    new_working_img_min_ver = new_cpld_json_dict[pn]["working_imge"]["minor_version"]
+    new_working_img_nano_ver = new_cpld_json_dict[pn]["working_imge"]["nano_version"]
+    new_working_img_sha512sum = new_cpld_json_dict[pn]["working_imge"]["sha512sum"]
+    new_failsafe_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["failsafe_imge"]["name"]
+    new_failsafe_img_ver = new_cpld_json_dict[pn]["failsafe_imge"]["version"]
+    new_failsafe_img_min_ver = new_cpld_json_dict[pn]["failsafe_imge"]["minor_version"]
+    new_failsafe_img_nano_ver = new_cpld_json_dict[pn]["failsafe_imge"]["nano_version"]
+    new_failsafe_img_sha512sum = new_cpld_json_dict[pn]["failsafe_imge"]["sha512sum"]
     # old cpld version, usisng current MFG released cpld version.
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     old_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, stage)["filename"]

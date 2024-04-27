@@ -58,7 +58,7 @@ def single_nic_qsfp_read_stress_test(mtp_mgmt_ctrl, slot, nic_test_rslt_list, ds
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got refernce QSFP SN, {:s}".format(qsfp_ref_sn))
 
     # stress test start
-    for port, ref_sn in qsfp_ports_sn.items():
+    for port, ref_sn in list(qsfp_ports_sn.items()):
         nic_cmd_list = list()
         nic_cmd_list.append("for i in $(seq {:d}); do /data/diag/scripts/eeprom_sn.sh -s -b {:s}; done".format(read_cycles, port))
         if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_MGMT_IP_SET_DELAY * read_cycles):
@@ -843,7 +843,7 @@ def main():
                 pn = first6_pn
                 if pn:
                     break
-            if new_cpld_json_dict[pn]["working_imge"]["name"].encode("ascii","ignore") == new_cpld_json_dict[pn]["secure_imge"]["name"].encode("ascii","ignore") and new_cpld_json_dict[pn]["working_imge"]["sha512sum"].encode("ascii","ignore") == new_cpld_json_dict[pn]["secure_imge"]["sha512sum"].encode("ascii","ignore"):
+            if new_cpld_json_dict[pn]["working_imge"]["name"] == new_cpld_json_dict[pn]["secure_imge"]["name"] and new_cpld_json_dict[pn]["working_imge"]["sha512sum"] == new_cpld_json_dict[pn]["secure_imge"]["sha512sum"]:
                 test_case_list.append("UFM3_RW_STRESS_FROM_SPI")
             test_case_list.append("RECOVER_BOOT0")
 
@@ -898,7 +898,7 @@ def main():
                     ##########################################################################################################################################################
                     if nic_list:
                         # get special_boot0_img_file name
-                        special_boot0_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["special_boot0_imge"]["name"].encode("ascii","ignore")
+                        special_boot0_img_file =  MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + new_cpld_json_dict[pn]["special_boot0_imge"]["name"]
                         boot0_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
                         testing_fail_list = cpld_programe_boot0(mtp_mgmt_ctrl, nic_type, nic_list, dsp, test_case, stop_on_err, special_boot0_img_file, boot0_installer_file)
                         for slot in testing_fail_list:

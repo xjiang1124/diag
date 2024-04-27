@@ -397,9 +397,9 @@ def run_2c_tests(args):
 
     # wait operator set chamber temperature
     if args.high_temp:
-        stage = str(FF_Stage.FF_2C_H)
+        stage = FF_Stage.FF_2C_H
     elif args.low_temp:
-        stage = str(FF_Stage.FF_2C_L)
+        stage = FF_Stage.FF_2C_L
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -461,7 +461,7 @@ def run_2c_tests(args):
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-jobd_logdir")] + test_cmd_option[test_cmd_option.index("-jobd_logdir")+2:]
 
     # re-use iteration option as loop_index for next layer
-    test_cmd_option += ["--stage", stage, "--loop_idx", str(args.iteration)]
+    test_cmd_option += ["--stage", str(stage), "--loop_idx", str(args.iteration)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -496,7 +496,7 @@ def run_p2c_tests(args):
 
     test_cmd = ["python3", "./mtp_diag_regression.py"]
     test_cmd_option = sys.argv[2:]
-    stage = str(FF_Stage.FF_P2C)
+    stage = FF_Stage.FF_P2C
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -549,7 +549,7 @@ def run_p2c_tests(args):
     if "-iteration" in test_cmd_option:
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-iteration")] + test_cmd_option[test_cmd_option.index("-iteration")+2:]
     # re-use iteration option as loop_index for next layer
-    test_cmd_option += ["--stage", stage, "--loop_idx", str(args.iteration)]
+    test_cmd_option += ["--stage", str(stage), "--loop_idx", str(args.iteration)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -584,9 +584,9 @@ def run_4c_tests(args):
     test_cmd = ["python3", "./mtp_diag_regression.py"]
     test_cmd_option = sys.argv[2:]
     if args.high_temp:
-        stage = str(FF_Stage.FF_4C_H)
+        stage = FF_Stage.FF_4C_H
     elif args.low_temp:
-        stage = str(FF_Stage.FF_4C_L)
+        stage = FF_Stage.FF_4C_L
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -648,7 +648,7 @@ def run_4c_tests(args):
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-jobd_logdir")] + test_cmd_option[test_cmd_option.index("-jobd_logdir")+2:]
 
     # re-use iteration option as loop_index for next layer
-    test_cmd_option += ["--stage", stage, "--loop_idx", str(args.iteration)]
+    test_cmd_option += ["--stage", str(stage), "--loop_idx", str(args.iteration)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -872,7 +872,7 @@ def run_ort_tests(args):
 
     test_cmd = ["python3", "./mtp_diag_regression.py"]
     test_cmd_option = sys.argv[2:]
-    stage = str(FF_Stage.FF_ORT)
+    stage = FF_Stage.FF_ORT
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -925,7 +925,7 @@ def run_ort_tests(args):
     if "-iteration" in test_cmd_option:
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-iteration")] + test_cmd_option[test_cmd_option.index("-iteration")+2:]
     # re-use iteration option as loop_index for next layer
-    test_cmd_option += ["--stage", stage, "--loop_idx", str(args.iteration)]
+    test_cmd_option += ["--stage", str(stage), "--loop_idx", str(args.iteration)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -960,7 +960,7 @@ def run_rdt_tests(args):
 
     test_cmd = ["python3", "./mtp_diag_regression.py"]
     test_cmd_option = sys.argv[2:]
-    stage = str(FF_Stage.FF_ORT)
+    stage = FF_Stage.FF_ORT
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -1013,7 +1013,7 @@ def run_rdt_tests(args):
     if "-iteration" in test_cmd_option:
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-iteration")] + test_cmd_option[test_cmd_option.index("-iteration")+2:]
     # re-use iteration option as loop_index for next layer
-    test_cmd_option += ["--stage", stage, "--loop_idx", str(args.iteration)]
+    test_cmd_option += ["--stage", str(stage), "--loop_idx", str(args.iteration)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -1048,7 +1048,7 @@ def run_mtp_screening_tests(args):
 
     test_cmd = ["python3", "./mtp_screen_regression.py"]
     test_cmd_option = sys.argv[2:]
-    stage = str(FF_Stage.FF_SRN)
+    stage = FF_Stage.FF_SRN
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -1145,14 +1145,21 @@ def run_emmc_validation_tests(args):
     test_cmd = ["python3", "./diag_screening_emmc.py"]
     test_cmd_option = sys.argv[2:]
     if args.high_temp:
-        stage = str(FF_Stage.FF_4C_H)
+        stage = FF_Stage.FF_2C_H
     elif args.low_temp:
-        stage = str(FF_Stage.FF_4C_L)
+        stage = FF_Stage.FF_2C_L
     else:
-        stage = str(FF_Stage.FF_P2C)
+        stage = FF_Stage.FF_P2C
 
     # launching script from MTP
     if not args.run_from_remote:
+        # Display test suite test cases
+        ddr_suite = libmfg_utils.load_cfg_from_yaml_file_list([args.cfgyaml])
+        libmfg_utils.cli_inf("Running TEST SUITE: {:s} With Following Test Case {:d} Iterations".format(
+            ddr_suite["TEST_SUITE_NAME"], ddr_suite["ITER"]))
+        for test_case in ddr_suite["TEST_CASE"]:
+            libmfg_utils.cli_inf("Test Case: {:s}".format(test_case["NAME"]))
+
         mtpcfg_file = None
 
         if hasattr(args, 'mtpcfg') and args.mtpcfg:
@@ -1210,6 +1217,196 @@ def run_emmc_validation_tests(args):
     if "-jobd_logdir" in test_cmd_option:
         test_cmd_option = test_cmd_option[:test_cmd_option.index("-jobd_logdir")] + test_cmd_option[test_cmd_option.index("-jobd_logdir")+2:]
 
+    test_cmd_option += ["--stage", str(stage)]
+    test_cmd += test_cmd_option
+    libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
+    libmfg_utils.cli_inf(str(" ".join(test_cmd)))
+
+    try:
+        com_proc = subprocess.run(test_cmd, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as Err:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Failed with exit code:{:s}".format(args.subcommand.upper(), str(Err.returncode)))
+        err_msg = traceback.format_exc()
+        print("-*"*50)
+        print(Err.output)
+        print("-*"*50)
+        print(err_msg)
+        exist_code = Err.returncode
+    else:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
+        exist_code = com_proc.returncode
+
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+        # upload test log to remote log server
+        # under development
+
+    return exist_code
+
+def run_ddr_validation_tests(args):
+    """
+    trigger ddr validation script to run
+    """
+
+    test_cmd = ["python3", "./diag_screening_ddr.py"]
+    test_cmd_option = sys.argv[2:]
+    if args.high_temp:
+        stage = FF_Stage.FF_2C_H
+    elif args.low_temp:
+        stage = FF_Stage.FF_2C_L
+    else:
+        stage = FF_Stage.FF_P2C
+
+    # launching script from MTP
+    if not args.run_from_remote:
+        # Display test suite test cases
+        test_suite = libmfg_utils.load_cfg_from_yaml_file_list([args.cfgyaml])
+        libmfg_utils.cli_inf("Running TEST SUITE: {:s} With Following Test Case".format(test_suite["TEST_SUITE_NAME"]))
+        for test_case in test_suite["TEST_CASE"]:
+            libmfg_utils.cli_inf("Test Case: {:s} With {:d} Iterations".format(test_case["NAME"], test_case["ITER"]))
+
+        mtpcfg_file = None
+
+        if hasattr(args, 'mtpcfg') and args.mtpcfg:
+            mtpcfg_file = os.path.relpath(args.mtpcfg)
+            mtp_cfg_db = load_mtp_cfg(mtpcfg_file, subcommand=args.subcommand)
+        else:
+            mtp_cfg_db = load_mtp_cfg(subcommand=args.subcommand)
+        if args.mtpid:
+            mtp_ids = libmfg_utils.mtpid_list_select(mtp_cfg_db, [args.mtpid])
+            if not mtp_ids:
+                sys.exit(1)
+            mtp_id = mtp_ids[0]
+        else:
+            mtp_id = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)[0]
+            args.mtpid = mtp_id
+
+        # init mtp_ctrl
+        if args.verbosity:
+            diag_log_filep = sys.stdout
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
+        else:
+            diag_log_filep = None
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list, skip_slots=[])
+        mfg_test_start_ts = libmfg_utils.timestamp_snapshot()
+
+        logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+        test_cmd_option = common_args2_cmd_options_list(vars(args))
+
+    libmfg_utils.cli_inf(str(args))
+    # test_cmd = [os.path.basename(sys.argv[0])]
+    # remove log-server command line option
+    if "--run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("--run_from_remote")
+    if "-run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("-run_from_remote")
+    # remove low_temp/high_temp option since it converted to stage
+    if "--low_temp" in test_cmd_option:
+        test_cmd_option.remove("--low_temp")
+    if "-low_temp" in test_cmd_option:
+        test_cmd_option.remove("-low_temp")
+    if "--high_temp" in test_cmd_option:
+        test_cmd_option.remove("--high_temp")
+    if "-high_temp" in test_cmd_option:
+        test_cmd_option.remove("-high_temp")
+    # remove iteration option since mtp_diag_regression.py does not have this option.
+    if "--iteration" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("--iteration")] + test_cmd_option[test_cmd_option.index("--iteration")+2:]
+    if "-iteration" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("-iteration")] + test_cmd_option[test_cmd_option.index("-iteration")+2:]
+    # remove jobd_logdir option since mtp_diag_regression.py does not have this option.
+    if "--jobd_logdir" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("--jobd_logdir")] + test_cmd_option[test_cmd_option.index("--jobd_logdir")+2:]
+    if "-jobd_logdir" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("-jobd_logdir")] + test_cmd_option[test_cmd_option.index("-jobd_logdir")+2:]
+
+    test_cmd_option += ["--stage", str(stage)]
+    test_cmd += test_cmd_option
+    libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
+    libmfg_utils.cli_inf(str(" ".join(test_cmd)))
+
+    try:
+        com_proc = subprocess.run(test_cmd, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as Err:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Failed with exit code:{:s}".format(args.subcommand.upper(), str(Err.returncode)))
+        err_msg = traceback.format_exc()
+        print("-*"*50)
+        print(Err.output)
+        print("-*"*50)
+        print(err_msg)
+        exist_code = Err.returncode
+    else:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
+        exist_code = com_proc.returncode
+
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+        # upload test log to remote log server
+        # under development
+
+    return exist_code
+
+def run_cpld_validation_tests(args):
+    """
+    trigger cpld validation script to run
+    """
+
+    test_cmd = ["python3", "./diag_screening_cpld.py"]
+    test_cmd_option = sys.argv[2:]
+    stage = FF_Stage.FF_P2C
+
+    # launching script from MTP
+    if not args.run_from_remote:
+        mtpcfg_file = None
+
+        if hasattr(args, 'mtpcfg') and args.mtpcfg:
+            mtpcfg_file = os.path.relpath(args.mtpcfg)
+            mtp_cfg_db = load_mtp_cfg(mtpcfg_file, subcommand=args.subcommand)
+        else:
+            mtp_cfg_db = load_mtp_cfg(subcommand=args.subcommand)
+        if args.mtpid:
+            mtp_ids = libmfg_utils.mtpid_list_select(mtp_cfg_db, [args.mtpid])
+            if not mtp_ids:
+                sys.exit(1)
+            mtp_id = mtp_ids[0]
+        else:
+            mtp_id = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)[0]
+            args.mtpid = mtp_id
+
+        # init mtp_ctrl
+        if args.verbosity:
+            diag_log_filep = sys.stdout
+            diag_nic_log_filep_list = [sys.stdout] * MTP_Const.MTP_SLOT_NUM
+        else:
+            diag_log_filep = None
+            diag_nic_log_filep_list = [None] * MTP_Const.MTP_SLOT_NUM
+        mtp_mgmt_ctrl = mtp_mgmt_ctrl_init(mtp_cfg_db, mtp_id, None, diag_log_filep, diag_nic_log_filep_list, skip_slots=[])
+        mfg_test_start_ts = libmfg_utils.timestamp_snapshot()
+
+        logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+        test_cmd_option = common_args2_cmd_options_list(vars(args))
+
+    libmfg_utils.cli_inf(str(args))
+    # test_cmd = [os.path.basename(sys.argv[0])]
+    # remove log-server command line option
+    if "--run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("--run_from_remote")
+    if "-run_from_remote" in test_cmd_option:
+        test_cmd_option.remove("-run_from_remote")
+    # remove jobd_logdir option since mtp_diag_regression.py does not have this option.
+    if "--jobd_logdir" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("--jobd_logdir")] + test_cmd_option[test_cmd_option.index("--jobd_logdir")+2:]
+    if "-jobd_logdir" in test_cmd_option:
+        test_cmd_option = test_cmd_option[:test_cmd_option.index("-jobd_logdir")] + test_cmd_option[test_cmd_option.index("-jobd_logdir")+2:]
+
+    test_cmd_option += ["--stage", str(stage)]
     test_cmd += test_cmd_option
     libmfg_utils.cli_inf("Re-assembly command line arguments, and calling Inner Layer Script .....")
     libmfg_utils.cli_inf(str(" ".join(test_cmd)))
@@ -1281,13 +1478,13 @@ if __name__ == "__main__":
     parser_ddr.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
     parser_ddr.add_argument("--high_temp", "-high_temp", help="high temperature environment", action='store_true')
     parser_ddr.add_argument("--low_temp", "-low_temp", help="low temperature environment", action='store_true')
-    parser_ddr.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_ddr.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     parser_ddr.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_ddr.add_argument("--vmarg", "-vmarg", help="specify the vmargin, deduced from environment temperature(normal temperature => no voltage margin; low/high temperature => low and low voltage margin) if not specified", nargs="*",  choices=["normal", "high", "low"], default=[])
+    parser_ddr.add_argument("--vmarg", "-vmarg", help="specify the vmargin, deduced from environment temperature(normal temperature => no voltage margin; low/high temperature => low and high voltage margin) if not specified", nargs="*",  choices=["normal", "high", "low"], default=[])
     parser_ddr.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_ddr.add_argument("--cfgyaml", "-cfgyaml", help="Test case config file for DDR Validation test suite, default to %(default)s", default="./config/ddr_test_suite.yaml")
     parser_ddr.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
-    parser_ddr.set_defaults(func=main)
+    parser_ddr.set_defaults(func=run_ddr_validation_tests)
 
     parser_emmc.add_argument("--verbosity", "-verbosity", help="Increase output verbosity", action='store_true')
     parser_emmc.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
@@ -1305,7 +1502,7 @@ if __name__ == "__main__":
     parser_cpld.add_argument( "--cpldfile", "-cpldfile", help="Validation Target, The New CPLD Binary files information Json files, default to %(default)s", default="config/latest_release_cpld_4validation.json")
     parser_cpld.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_cpld.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
-    parser_cpld.set_defaults(func=main)
+    parser_cpld.set_defaults(func=run_cpld_validation_tests)
 
     parser_sdl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
     parser_sdl.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
@@ -1346,7 +1543,7 @@ if __name__ == "__main__":
     parser_2c.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_2c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_2c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
-    parser_2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_2c.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     #parser_2c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_2c.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_2c.set_defaults(func=run_2c_tests)
@@ -1360,7 +1557,7 @@ if __name__ == "__main__":
     parser_p2c.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
     parser_p2c.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_p2c.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
-    parser_p2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_p2c.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     #parser_p2c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_p2c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_p2c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
@@ -1375,7 +1572,7 @@ if __name__ == "__main__":
     parser_4c.add_argument("--only_test", "-only_test", metavar=('testname1', 'testname2'), help="run particular tests only", nargs="*", default=[])
     parser_4c.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
     parser_4c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_4c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_4c.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     # parser_4c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_4c.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_4c.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
@@ -1417,7 +1614,7 @@ if __name__ == "__main__":
     parser_ort.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_ort.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_ort.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
-    parser_ort.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_ort.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     parser_ort.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_ort.set_defaults(func=run_ort_tests)
 
@@ -1431,7 +1628,7 @@ if __name__ == "__main__":
     parser_rdt.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_rdt.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_rdt.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_rdt.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle", type=int, required=False, default=1)
+    parser_rdt.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     parser_rdt.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
 
     parser_mtp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
