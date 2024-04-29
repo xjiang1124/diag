@@ -582,6 +582,9 @@ def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, sim
             cli_log_inf(session.logfile_read, "Session is still alive, apply Similar Match on expect buffer")
             saved_buffer += session.before
             saved_buffer = special_char_removal(saved_buffer)
+            if len(exp_list) == 1 and  exp_list[0].strip().lower() == cmd_prompt.strip().lower():
+                session.before = saved_buffer
+                return index
             for index, pattern in enumerate(exp_list):
                 # cli_log_inf("applying similar match on pexpect pattern {:s}:{:s}".format(str(index), str(pattern)))
                 rc = similar_expect.similar_matches(saved_buffer, [(pattern, similarity)])
