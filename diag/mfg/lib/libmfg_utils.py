@@ -2318,6 +2318,7 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
 
                 ## RJ45 PORT 2
                 if nic_type in TWO_OOB_MGMT_PORT_TYPE_LIST:
+                    cur_fail_list[slot+length] = 0
                     ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot, 2)
                     if ret != "SUCCESS":
                         if loopback_fail_list[slot+length] == max_retries_per_slot:
