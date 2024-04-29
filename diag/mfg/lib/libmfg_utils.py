@@ -1808,9 +1808,9 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
             else:
                 final_result = False
                 if not retest_blocked:
-                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL".format(nic_cli_id_str, nic_type, sn))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL".format(nic_cli_id_str, str(nic_type), str(sn)))
                 else:
-                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL {:s}".format(nic_cli_id_str, nic_type, sn, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL {:s}".format(nic_cli_id_str, str(nic_type), str(sn), MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
