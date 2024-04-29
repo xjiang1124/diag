@@ -2228,10 +2228,11 @@ class mtp_ctrl():
         return pass_count, err_msg_list
 
     # return list of error message
-
-    def mtp_mgmt_retrieve_mtp_para_err(self, sn, test):
+    def mtp_mgmt_retrieve_mtp_para_err(self, slot, test):
         err_msg_list = list()
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
+        nic_type = self.mtp_get_nic_type(slot)
+        sn = self.mtp_get_nic_sn(slot)
 
         if test == "PRBS_ETH":
             filename = "{:s}_prbs_eth.log".format(sn)
@@ -2242,16 +2243,37 @@ class mtp_ctrl():
         elif test == "SNAKE_PCIE":
             filename = "{:s}_snake_pcie.log".format(sn)
         elif test == "SNAKE_ELBA":
-            filename = "{:s}_snake_elba.log".format(sn)
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                filename = "{:s}_snake_giglio.log".format(sn)
+            elif nic_type in ELBA_NIC_TYPE_LIST:
+                filename = "{:s}_snake_elba.log".format(sn)
+            else:
+                return []
         elif test == "ETH_PRBS":
-            filename = "{:s}_elba_PRBS_MX.log".format(sn)
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                filename = "{:s}_giglio_PRBS_MX.log".format(sn)
+            elif nic_type in ELBA_NIC_TYPE_LIST:
+                filename = "{:s}_elba_PRBS_MX.log".format(sn)
+            else:
+                return []
+        elif test == "PCIE_PRBS":
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                filename = "{:s}_giglio_PRBS_PCIE.log".format(sn)
+            elif nic_type in ELBA_NIC_TYPE_LIST:
+                filename = "{:s}_elba_PRBS_PCIE.log".format(sn)
+            else:
+                return []
         elif test == "ARM_L1":
-            filename = "{:s}_elba_arm_l1_test.log".format(sn)
+            if nic_type in GIGLIO_NIC_TYPE_LIST:
+                filename = "{:s}_giglio_arm_l1_test.log".format(sn)
+            elif nic_type in ELBA_NIC_TYPE_LIST:
+                filename = "{:s}_elba_arm_l1_test.log".format(sn)
+            else:
+                return []
         elif test == "DDR_BIST":
             filename = "{:s}_arm_ddr_bist_0.log".format(sn)
             filename = "{:s}_arm_ddr_bist_1.log".format(sn)
         else:
-            self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
             return err_msg_list
 
         try:
@@ -2260,6 +2282,14 @@ class mtp_ctrl():
                     if MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG in line:
                         err_msg = line.replace('\n', '')
                         err_msg = err_msg[err_msg.find(MFG_DIAG_SIG.MFG_ASIC_ERR_MSG_SIG):]
+
+                        if "ERROR :: cap0.ms.em.int_groups.intreg: axi_interrupt : 1 EN 1 hier_enabled 1" in err_msg and nic_type in CAPRI_NIC_TYPE_LIST:
+                            # expected error found, ignore
+                            continue
+                        if "ERROR :: Unexpected int set: cap0.ms.em" in err_msg and nic_type in CAPRI_NIC_TYPE_LIST:
+                            # expected error found, ignore
+                            continue
+
                         err_msg_list.append(err_msg)
         except:
             err_msg_list.append("{:s} doesn't exist".format(filename))
@@ -2478,12 +2508,14 @@ class mtp_ctrl():
             return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_mgmt_test_nic_mem(self, slot):
         if not self._nic_ctrl_list[slot].nic_test_mem():
             return False
         else:
             return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_check_nic_jtag(self, slot):
         asic_type = "elba" if self.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST else "capri"
         if not self._nic_ctrl_list[slot].nic_check_jtag(asic_type):
@@ -3442,6 +3474,12 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_console
+    def mtp_verify_nic_cpld_console(self, slot, sec_cpld=False, timestamp_check=True, dl_step=True):
+        if slot in self.mtp_verify_nic_cpld(slot, sec_cpld, timestamp_check, dl_step, console=True):
+            return False
+        return True
+
     def mtp_program_nic_qspi(self, slot, qspi_img, force_update=True):
         if not force_update:
             # check for the desired qspi version
@@ -4098,7 +4136,7 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_nic_test
-    def mtp_nic_test_setup_multi(self, nic_list, mgmt=True, fpo=False, aapl=False, swm_lp=False, stop_on_err=False):
+    def mtp_nic_test_setup_multi(self, nic_list, mgmt=True, fpo=False, aapl=False, swm_lp=False):
         fail_nic_list = list()
 
         if not nic_list:
@@ -4115,7 +4153,7 @@ class mtp_ctrl():
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
-        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
+        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if not mgmt:
             for slot in nic_list:
@@ -4147,14 +4185,12 @@ class mtp_ctrl():
                     self.cli_log_slot_err(slot, "Para Init NIC MGMT failed")
                     self.mtp_set_nic_status_fail(slot)
                     fail_nic_list.append(slot)
-                    if stop_on_err:
-                        return fail_nic_list
 
         return fail_nic_list
 
 
     def mtp_nic_mgmt_para_init_fpo(self, nic_list, stop_on_err=False):
-        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, fpo=True, stop_on_err=stop_on_err)
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, fpo=True)
         if stop_on_err:
             return fail_setup_multi_list
         fail_mac_refresh_list = self.mtp_nic_mgmt_mac_refresh(nic_list)
@@ -4182,89 +4218,46 @@ class mtp_ctrl():
         return True
 
     def mtp_nic_mgmt_para_init(self, nic_list, aapl, swm_lp=False, stop_on_err=False):
-        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, aapl=aapl, swm_lp=swm_lp, stop_on_err=stop_on_err)
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, aapl=aapl, swm_lp=swm_lp)
         if stop_on_err:
             return fail_setup_multi_list
         fail_mac_refresh_list = self.mtp_nic_mgmt_mac_refresh(nic_list)
         return libmfg_utils.list_union(fail_setup_multi_list, fail_mac_refresh_list)
 
-    def mtp_nic_edma_env_init(self, nic_list, stop_on_err=False):
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_nic_edma_env_init(self, nic_list):
+        fail_nic_list = list()
         if not nic_list:
-            self.cli_log_err("No NICs passed")
-            return False
+            return fail_nic_list
 
-        # if 2D list passed from regression, need to flatten it
-        if isinstance(nic_list[0], list):
-            nic_list = libmfg_utils.flatten_list_of_lists(nic_list)
-
-        nic_test_list = list()
-        for slot in nic_list:
-            if self._nic_prsnt_list[slot]:
-                if not self.mtp_check_nic_status(slot):
-                    self.cli_log_slot_err(slot, "Para Init EDMA environment init bypassed for failed NIC")
-                    if stop_on_err:
-                        return False
-                    else:
-                        continue
-                nic_test_list.append(slot)
-        nic_list = nic_test_list
-
-        if not nic_list:
-            self.cli_log_err("No NICs passed")
-            return False
-
-        # parallel init mgmt/aapl
-        dsp = "EDMA_INIT"
-        sn = ""
-        test = "NIC_PARA_EDMA_ENV_INIT"
-        start_ts = libmfg_utils.timestamp_snapshot()
-
-        mtp_start_ts = self.log_test_start(test)
-        for slot in nic_list:
-            sn = self.mtp_get_nic_sn(int(slot))
-            slot_start_ts = self.log_slot_test_start(slot, test)
-            self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
+        # first slot will be the "main" slot to issue the commands on.
+        slot_main = nic_list[0]
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return False
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         sig_list = [MFG_DIAG_SIG.NIC_PARA_EDMA_ENV_INIT_SIG]
         cmd = MFG_DIAG_CMDS.MTP_PARA_EDMA_ENV_INIT_FMT.format(nic_list_param)
 
-        if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.NIC_EDMA_ENV_INIT_CMD_DELAY):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            duration = self.log_test_stop(test, start_ts)
-            for slot in nic_list:
-                self.log_slot_test_stop(slot, test, start_ts)
-                sn = self.mtp_get_nic_sn(int(slot))
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                self.mtp_set_nic_status_fail(slot)
-            return False
-        if "FAIL list:" in self.mtp_get_cmd_buf_before_sig():
-            match = re.search("FAIL list:', \[([0-9,']+)\]", self.mtp_get_cmd_buf_before_sig())
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.NIC_EDMA_ENV_INIT_CMD_DELAY):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+        if "FAIL list:" in self.mtp_get_nic_cmd_buf(slot_main):
+            match = re.search("FAIL list:', \[([0-9,']+)\]", self.mtp_get_nic_cmd_buf(slot_main))
             if match:
                 fail_slot_str = match.group(1).replace("'", "")
                 for slot in libmfg_utils.expand_range_of_numbers(fail_slot_str, range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
                     self.cli_log_slot_err_lock(slot, "Para Init EDMA environment init failed")
-                    self.mtp_set_nic_status_fail(slot)
+                    fail_nic_list.append(slot)
 
-        duration = self.log_test_stop(test, start_ts)
-        for slot in nic_list:
-            self.log_slot_test_stop(slot, test, start_ts)
-            sn = self.mtp_get_nic_sn(int(slot))
-            if not self.mtp_check_nic_status(slot):
-                self.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-            else:
-                self.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-        return True
+        return fail_nic_list
 
     def mtp_nic_para_init(self, nic_list, stop_on_err=False):
-        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, mgmt=False, stop_on_err=stop_on_err)
+        fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, mgmt=False)
         return fail_setup_multi_list
 
     @parallelize.parallel_nic_using_ssh
@@ -5215,72 +5208,7 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_mgmt_pre_post_diag_check(self, intf, slot, vmarg=Voltage_Margin.normal):
-        if intf == "NIC_JTAG":
-            if self.mtp_check_nic_jtag(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_POWER":
-            if self.mtp_mgmt_check_nic_pwr_status(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_MEM":
-            if self.mtp_mgmt_test_nic_mem(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_STATUS":
-            if self.mtp_check_nic_status(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_DIAG_BOOT":
-            if self.mtp_nic_check_diag_boot(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_CPLD":
-            if self.mtp_verify_nic_cpld(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_FPGA":
-            if self.mtp_verify_nic_cpld(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_ALOM_CABLE":
-            if self._swmtestmode[slot] == Swm_Test_Mode.SWMALOM or self._swmtestmode[slot] == Swm_Test_Mode.ALOM:
-                if self.mtp_nic_naples25swm_alom_cable_signal_test(slot, 1):
-                    return "SUCCESS"
-                else:
-                    return MTP_DIAG_Error.NIC_DIAG_FAIL
-            else:
-                return "SUCCESS"
-        elif intf == "NIC_N25SWM_CPLD":
-            if self._swmtestmode[slot] == Swm_Test_Mode.SWMALOM or self._swmtestmode[slot] == Swm_Test_Mode.SWM:
-                if self.mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(slot):
-                    return "SUCCESS"
-                else:
-                    return MTP_DIAG_Error.NIC_DIAG_FAIL
-            else:
-                return "SUCCESS"
-        elif intf == "NIC_OCP_SIGNALS":
-            if self.mtp_nic_naples25ocp_signal_test(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        elif intf == "NIC_TYPE":
-            if self.mtp_nic_type_test(slot):
-                return "SUCCESS"
-            else:
-                return MTP_DIAG_Error.NIC_DIAG_FAIL
-        else:
-            self.cli_log_slot_err(slot, "Unknown pre diag check module")
-            return MTP_DIAG_Error.NIC_DIAG_FAIL
-
+    @parallelize.parallel_nic_using_console
     def mtp_nic_pcie_poll_enable(self, slot, enable=True):
         if enable:
             self.cli_log_slot_inf(slot, "Enable NIC PCIE Polling")
@@ -5307,6 +5235,9 @@ class mtp_ctrl():
 
     @parallelize.parallel_nic_using_nic_test
     def mtp_mgmt_run_test_mtp_para(self, nic_list, test, vmarg, edvt_loop_idx=1):
+        if not nic_list:
+            return []
+
         nic_fail_list = list()
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5433,14 +5364,15 @@ class mtp_ctrl():
 
         return nic_fail_list
 
-    def mtp_mgmt_run_test_mtp_para_with_oneline_summary(self, test, nic_list, vmarg):
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_mgmt_run_test_mtp_para_with_oneline_summary(self, nic_list, test, vmarg):
         if not nic_list:
-            return [True, nic_list[:]]
+            return []
 
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return ["TIMEOUT", nic_list[:]]
+            return nic_list
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
 
@@ -5462,11 +5394,11 @@ class mtp_ctrl():
             sig_list = ["uart_loopback_test done"]
         else:
             self.cli_log_err("Unknown MTP Parallel Test {:s}".format(test))
-            return ["FAIL", nic_list[:]]
+            return nic_list
 
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.MTP_PARA_TEST_TIMEOUT):
             self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return ["FAIL", nic_list[:]]
+            return nic_list
 
         self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
 
@@ -5481,7 +5413,7 @@ class mtp_ctrl():
                         nic_fail_list.append(slot)
                         ret = "FAIL"
 
-        return [ret, nic_fail_list]
+        return nic_fail_list
 
     def mtp_mgmt_get_test_result(self, cmd, test):
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -5841,6 +5773,7 @@ class mtp_ctrl():
                 return False
         return True
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_naples25swm_alom_cable_signal_test(self, slot, highpowertest):
         errlist = list()
         rc = self._nic_ctrl_list[slot].nic_naples25swm_alom_cable_signal_test(errlist, highpowertest)
@@ -5861,6 +5794,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, "NIC NAPLES25SWM HIGH POWER MODE TEST PASSED")
         return rc
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_naples25swm_low_power_mode_test(self, slot):
         self.cli_log_slot_inf(slot, "Starting Naples25 SWM Low Power On Test")
         errlist = list()
@@ -5873,6 +5807,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf(slot, "NIC NAPLES25SWM LOW POWER MODE TEST PASSED")
         return rc
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_naples25swm_cpld_spi_to_smb_reg_test(self, slot):
         errlist = list()
         rc = self._nic_ctrl_list[slot].nic_naples25swm_cpld_reg_test(errlist)
@@ -5881,6 +5816,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "{:s}".format(errstr))
         return rc
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_naples25ocp_signal_test(self, slot):
         errlist = list()
         rc = self._nic_ctrl_list[slot].nic_naples25ocp_signal_test(errlist)
@@ -6054,94 +5990,49 @@ class mtp_ctrl():
                 err_msg = self.mtp_get_nic_err_msg(slot)
                 return [MTP_DIAG_Error.NIC_DIAG_FAIL, [err_msg]]
 
-        ret = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
+        result_msg = self.mtp_mgmt_get_test_result_para(slot, rslt_cmd, test)
+        if result_msg == "SUCCESS":
+            ret = True
+        else:
+            ret = False
         return [ret, err_msg_list]
 
+    @parallelize.parallel_nic_using_console
     def mtp_nic_mvl_acc_test(self, slot):
-        test = "ACC"
+        if not self._nic_ctrl_list[slot].nic_mvl_acc_test():
+            return False
+        return True
 
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_mvl_acc_test():
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
-
+    @parallelize.parallel_nic_using_console
     def mtp_nic_mvl_stub_test(self, slot, loopback=True):
-        test = "STUB"
         if not loopback:
             self.cli_log_slot_inf(slot, "Internal loopback")
+        if not self._nic_ctrl_list[slot].nic_mvl_stub_test(loopback):
+            return False
+        return True
 
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_mvl_stub_test(loopback):
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
-
+    @parallelize.parallel_nic_using_console
     def mtp_nic_mvl_link_test(self, slot, ports=1):
-        test = "LINK"
+        if not self._nic_ctrl_list[slot].nic_mvl_link_test(ports):
+            return False
+        return True
 
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_mvl_link_test(ports):
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
-
+    @parallelize.parallel_nic_using_console
     def mtp_nic_phy_xcvr_link_test(self, slot):
-        test = "PHY"
+        if not self._nic_ctrl_list[slot].nic_phy_xcvr_link_test():
+            return False
+        return True
 
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_phy_xcvr_link_test():
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
-
+    @parallelize.parallel_nic_using_console
     def mtp_nic_phy_xcvr_test(self, slot):
-        test = "PHY"
-
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_phy_xcvr_test():
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
+        if not self._nic_ctrl_list[slot].nic_phy_xcvr_test():
+            return False
+        return True
 
     def mtp_nic_edma_test(self, slot):
-        test = "EDMA"
-
-        retval = ""
-        err_msg_list = list()
-        if self._nic_ctrl_list[slot].nic_edma_test():
-            retval = "SUCCESS"
-        else:
-            retval = "FAIL"
-        err_msg_list.append(self.mtp_get_nic_err_msg(slot))
-        err_msg_list.append(self.mtp_get_nic_cmd_buf(slot))
-
-        return retval, err_msg_list
+        if not self._nic_ctrl_list[slot].nic_edma_test():
+            return False
+        return True
 
     def mtp_check_nic_rebooted(self, slot):
         self.cli_log_slot_inf(slot, "Init new NIC connection")
@@ -6556,7 +6447,7 @@ class mtp_ctrl():
 
     @parallelize.parallel_nic_using_console
     def mtp_nic_vdd_ddr_fix_console(self, slot):
-        return self.mtp_nic_vdd_ddr_fix(slot, True)
+        return slot not in self.mtp_nic_vdd_ddr_fix(slot, True)
 
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_vdd_ddr_fix(self, slot, console=False):

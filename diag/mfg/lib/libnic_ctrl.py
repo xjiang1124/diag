@@ -62,7 +62,7 @@ class nic_ctrl():
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
-        self._err_msg = None
+        self._err_msg = ""
         self._cmd_buf = None
         self._buf_before_sig = ""
 
@@ -1759,7 +1759,6 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         elif idx < len(fail_signatures):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_err_msg("Missing file {:s}".format(src_file))
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False
@@ -1772,7 +1771,6 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         elif idx < len(fail_signatures):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_err_msg("Missing file {:s}".format(src_file))
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False

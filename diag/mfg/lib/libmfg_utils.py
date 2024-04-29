@@ -2301,12 +2301,12 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
                 if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]:
                     continue
                 if nic_type in ELBA_NIC_TYPE_LIST and nic_type in FPGA_TYPE_LIST:
-                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
+                    fail_link_list = mtp_mgmt_ctrl.mtp_nic_phy_xcvr_link_test(slot)
                 elif nic_type in ELBA_NIC_TYPE_LIST or nic_type in CAPRI_NIC_TYPE_LIST:
-                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
+                    fail_link_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot)
 
                 if nic_type in ELBA_NIC_TYPE_LIST or nic_type in CAPRI_NIC_TYPE_LIST:
-                    if ret != "SUCCESS":
+                    if fail_link_list:
                         if loopback_fail_list[slot] == max_retries_per_slot:
                             if slot not in fail_nic_list:
                                 fail_nic_list.append(slot)
@@ -2320,8 +2320,8 @@ def rj45_sanity_check(mtp_mgmt_ctrl, nic_list):
                 ## RJ45 PORT 2
                 if nic_type in TWO_OOB_MGMT_PORT_TYPE_LIST:
                     cur_fail_list[slot+length] = 0
-                    ret, err_msg_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot, 2)
-                    if ret != "SUCCESS":
+                    fail_link_list = mtp_mgmt_ctrl.mtp_nic_mvl_link_test(slot, 2)
+                    if fail_link_list:
                         if loopback_fail_list[slot+length] == max_retries_per_slot:
                             if slot not in fail_nic_list:
                                 fail_nic_list.append(slot)
@@ -2358,7 +2358,7 @@ def sanity_check_setup(mtp_mgmt_ctrl, nic_list):
     cli_log_rslt("Begin Sanity Check .. Please monitor until complete", [], [], mtp_mgmt_ctrl._filep)
 
     fail_nic_list = list()
-    all_types_except_monterey = libmfg_utils.list_subtract(MFG_VALID_NIC_TYPE_LIST, FPGA_TYPE_LIST)
+    all_types_except_monterey = list_subtract(MFG_VALID_NIC_TYPE_LIST, FPGA_TYPE_LIST)
     para_nic_list = mtp_mgmt_ctrl.get_slots_of_type(all_types_except_monterey, nic_list)       # needs para_init
     mgmt_nic_list = mtp_mgmt_ctrl.get_slots_of_type(FPGA_TYPE_LIST, nic_list)                  # needs para_mgmt_init
 
