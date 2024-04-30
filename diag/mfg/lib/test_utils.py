@@ -217,8 +217,8 @@ def get_test_constants(stage, mtp_id, subcommand):
     if stage not in list(testsuite_config.keys()):
         libmfg_utils.cli_err("Script not defined for stage {:s}".format(stage))
         return None, None, None, None
-    mtp_script_dir = "mtp_test_script/"
-    mtp_script_pkg = "mtp_test_script.{:s}.tar".format(mtp_id)
+    mtp_script_dir = "mfg_test_script/"
+    mtp_script_pkg = "mfg_test_script.{:s}.tar".format(mtp_id)
     script_cmd = "python3 ./mfg_test.py {:s}".format(subcommand)
     test_timeout = testsuite_config[stage]["timeout"]
     mtp_script_dir = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + mtp_script_dir
@@ -370,8 +370,24 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list):
                 return False
         else:
-            if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
-                return False
+            if kwargs['subcommand'] == 'cpld':
+                # Get New CPLD binary file list
+                new_cpld_json_dict = libmtp_utils.load_cpld_info_json(kwargs['cpldfile'], kwargs['verbosity'])
+                if not new_cpld_json_dict:
+                    mtp_mgmt_ctrl.cli_log_err("Failed to Load CPLD JSON file, abort...")
+                    return False
+                new_cpld_files_path = libmtp_utils.generate_cpld_img_full_path_list(new_cpld_json_dict, kwargs['verbosity'])
+                if not new_cpld_files_path:
+                    mtp_mgmt_ctrl.cli_log_err("Failed to Got CPLD Binary file name and path from JSON file, abort...")
+                    return False
+                new_cpld_files = [os.path.basename(file) for file in new_cpld_files_path]
+                # force stage to DL to update MTP CPLD image files specified in libmfg_cfg.py, using the libmfg_cfg.py specified cpld image as downgrade target
+                if not mtp_common_setup_fpo_cpld_validation(mtp_mgmt_ctrl, new_cpld_files=new_cpld_files):
+                    fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
+                    return False
+            else:
+                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
+                    return False
 
         if stage == FF_Stage.FF_SWI:
             # upload mainfw image received via args
@@ -388,28 +404,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                 continue
             pass_nic_list.append(slot)
 
-        if stage != FF_Stage.FF_FST: # skip these tests until FST scanning is implemented
+        if stage != FF_Stage.FF_FST and kwargs['subcommand'] not in ('cpld', 'emmc', 'ddr'):  # skip these tests until FST scanning is implemented
             fail_nic_list += nic_common_setup(mtp_mgmt_ctrl, stage, pass_nic_list, skip_test_list)
-
-        ####### COPY script, config file on to each MTP Chassis
-        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
-        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(testsuite, mtp_id, kwargs['subcommand'])
-        if mtp_script_dir is None:
-            return False
-        mtp_test_cleanup(mtp_mgmt_ctrl) # Close file handles before zip
-        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=profile_cfg_file_list[0], extra_config=mtpcfg_file):
-            mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
-            return False
-        mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
-        
-        if stage == FF_Stage.FF_SRN:
-            cmd = "mkdir {:s}".format(mtp_script_dir)
-            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-        cmd = "cd {:s}".format(mtp_script_dir)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
-
-        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
 
         #re-assembly command line arguments to call next level script, which running on MTP locally
         cmd_options = []
@@ -452,25 +448,45 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                 if v:
                     cmd_options.append('--'+ k)
                     cmd_options.append(str(v))
-
         # assemble arguments determined in inner function
         if stage == FF_Stage.FF_SRN:
             cmd_options.append("--mtpsn")
             cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
-
         if fail_nic_list:
             cmd_options.append("--fail_slots")
             cmd_options.append(' '.join(map(str,fail_nic_list)))
-
         test_cmd_args = " " + " ".join(cmd_options)
-        # RUN script command
+
+        ####### COPY script, config file on to each MTP Chassis
+        mtp_mgmt_ctrl.cli_log_inf("Start deploy MTP {:s} Test script".format(stage), level=0)
+        mtp_script_dir, mtp_script_pkg, script_cmd, test_timeout = get_test_constants(testsuite, mtp_id, kwargs['subcommand'])
+        if mtp_script_dir is None:
+            return False
+
+        # Login the remote command to log file, before close and set log file handler to STDOUT
         mtp_mgmt_ctrl.cli_log_inf("", level=0)
         mtp_mgmt_ctrl.cli_log_inf("", level=0)
         mtp_mgmt_ctrl.cli_log_inf("*" *80, level=0)
-        mtp_mgmt_ctrl.cli_log_inf("Execute remote command: " + script_cmd + test_cmd_args, level=0)
+        mtp_mgmt_ctrl.cli_log_inf("After Deploy, will execute remote command: " + script_cmd + test_cmd_args, level=0)
         mtp_mgmt_ctrl.cli_log_inf("*" * 80, level=0)
         mtp_mgmt_ctrl.cli_log_inf("", level=0)
         mtp_mgmt_ctrl.cli_log_inf("", level=0)
+
+        mtp_test_cleanup(mtp_mgmt_ctrl) # Close file handles before zip
+        mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=profile_cfg_file_list[0], extra_config=mtpcfg_file):
+            mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
+            return False
+        mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
+
+        if stage == FF_Stage.FF_SRN:
+            cmd = "mkdir {:s}".format(mtp_script_dir)
+            mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+        cmd = "cd {:s}".format(mtp_script_dir)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd)
+
+        # RUN script command
+        mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(script_cmd + test_cmd_args, timeout=test_timeout)
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
@@ -523,6 +539,16 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
 def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
+        return False
+    return True
+
+def mtp_common_setup_fpo_cpld_validation(mtp_mgmt_ctrl, stage=FF_Stage.FF_DL, skip_test_list=[], new_cpld_files=[]):
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+        return False
+    # copy new version of CPLD binary files, which will be use as upgrade target
+    if not libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, new_cpld_files):
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Sync new CPLD Binary files with MTP failed, test abort...")
         return False
     return True
 

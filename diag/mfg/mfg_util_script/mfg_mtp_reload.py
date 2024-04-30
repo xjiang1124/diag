@@ -17,10 +17,10 @@ from libmtp_ctrl import mtp_ctrl
 
 def main():
     parser = argparse.ArgumentParser(description="Diag MTP Reload", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--image", help="New MTP image file")
-    parser.add_argument("--nic-image", help="New NIC image file")
-    parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
-    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--image", "-image", help="New MTP image file")
+    parser.add_argument("--nic_image", "-nic_image", help="New NIC image file")
+    parser.add_argument("--apc", "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
 
     skip_image_update = True
     nic_image_file = None

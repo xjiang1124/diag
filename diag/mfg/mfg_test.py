@@ -2,8 +2,11 @@
 import os
 import sys
 import argparse
+import subprocess
+import traceback
 sys.path.append("lib")
 import libmfg_utils
+import libmtp_utils
 import test_utils
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libdefs import Swm_Test_Mode
@@ -151,7 +154,12 @@ def main(args):
     elif args.subcommand == 'cnic':
         stage = FF_Stage.FF_DL
         args.testsuite_name = FF_Stage.CONVERT
-    elif args.subcommand == 'emmc':
+    elif args.subcommand == 'ddr':
+        # Display test suite test cases
+        test_suite = libmfg_utils.load_cfg_from_yaml_file_list([args.cfgyaml])
+        libmfg_utils.cli_inf("Running TEST SUITE: {:s} With Following Test Case".format(test_suite["TEST_SUITE_NAME"]))
+        for test_case in test_suite["TEST_CASE"]:
+            libmfg_utils.cli_inf("Test Case: {:s} With {:d} Iterations".format(test_case["NAME"], test_case["ITER"]))
         # wait operator set chamber temperature
         if args.high_temp:
             libmfg_utils.cli_inf("RUNNING TEST WITH TEMPERATURE SET TO {:d} DEGREE CENTIGRADE\n".format(
@@ -164,6 +172,54 @@ def main(args):
         else:
             libmfg_utils.cli_inf("RUNNING TEST WITH ROOM TEMPERATURE\n")
             stage = FF_Stage.FF_P2C
+    elif args.subcommand == 'emmc':
+        # Display EMMC test suite test cases
+        ddr_suite = libmfg_utils.load_cfg_from_yaml_file_list([args.cfgyaml])
+        libmfg_utils.cli_inf("Running TEST SUITE: {:s} With Following Test Case {:d} Iterations".format(
+            ddr_suite["TEST_SUITE_NAME"], ddr_suite["ITER"]))
+        for test_case in ddr_suite["TEST_CASE"]:
+            libmfg_utils.cli_inf("Test Case: {:s}".format(test_case["NAME"]))
+        # wait operator set chamber temperature
+        if args.high_temp:
+            libmfg_utils.cli_inf("RUNNING TEST WITH TEMPERATURE SET TO {:d} DEGREE CENTIGRADE\n".format(
+                MTP_Const.MFG_EDVT_HIGH_TEMP))
+            stage = FF_Stage.FF_2C_H
+        elif args.low_temp:
+            libmfg_utils.cli_inf("RUNNING TEST WITH TEMPERATURE SET TO TO {:d} DEGREE CENTIGRADE\n".format(
+                MTP_Const.MFG_EDVT_LOW_TEMP))
+            stage = FF_Stage.FF_2C_L
+        else:
+            libmfg_utils.cli_inf("RUNNING TEST WITH ROOM TEMPERATURE\n")
+            stage = FF_Stage.FF_P2C
+    elif args.subcommand == 'cpld':
+        stage = FF_Stage.FF_P2C
+
+        # Get New CPLD binary file list
+        new_cpld_json_dict = libmtp_utils.load_cpld_info_json(args.cpldfile, args.verbosity)
+        if not new_cpld_json_dict:
+            libmfg_utils.cli_err("Failed to Load CPLD JSON file, abort...")
+            return False
+        new_cpld_files_path = libmtp_utils.generate_cpld_img_full_path_list(new_cpld_json_dict, args.verbosity)
+        if not new_cpld_files_path:
+            libmfg_utils.cli_err("Failed to Got CPLD Binary file name and path from JSON file, abort...")
+            return False
+        new_cpld_files = [os.path.basename(file) for file in new_cpld_files_path]
+
+        # Copy New CPLD image files to the script running directory, since existing architecture will delivery these images to every MTP from this directory
+        dest_dir = os.getcwd() + os.sep + "release"
+        for src_file in new_cpld_files_path:
+            try:
+                rc = os.system("cp {:s} {:s}".format(src_file, dest_dir))
+            except OSError as Err:
+                libmfg_utils.cli_err(str(Err))
+                libmfg_utils.cli_err("Copy {:s} to {:s} run into OSError Exceprion, abort...".format(src_file, dest_dir))
+                return False
+            else:
+                if rc == 0:
+                    if args.verbosity:
+                        libmfg_utils.cli_inf("Copied {:s} to {:s}".format(src_file, dest_dir))
+                else:
+                    libmfg_utils.cli_err("Copy {:s} to {:s} run into CMD failed, abort...".format(src_file, dest_dir))
 
     mtpcfg_file = None
     if hasattr(args, 'mtpcfg') and args.mtpcfg:
@@ -234,9 +290,58 @@ def main(args):
         return False
 
 
-def mtp_validation(args):
-    print(args)
-    pass
+def launch_remote_server_only_script(args):
+    """
+    trigger scripts utility only run from remote server
+    """
+
+    subcom_2script_name = {
+        'cmtp' : 'mfg_convert_mtp.py',
+        'msanityl' : 'mfg_loop_sanity_check_test.py',
+        'mconn' : 'mfg_mtp_connect.py',
+        'mpcl' : 'mfg_mtp_powercycle_loop.py',
+        'mpc' : 'mfg_mtp_powercycle.py',
+        'mpo' : 'mfg_mtp_poweroff.py',
+        'mreload' : 'mfg_mtp_reload.py',
+        'mrestore' : 'mfg_rma_restore.py',
+        'msanity' : 'mtp_sanity_test.py',
+        'pocp' : 'mfg_scan_dl_ocp_test.py',
+    }
+
+    if args.subcommand not in subcom_2script_name:
+        print("Unspported sub command")
+        return None
+
+    test_cmd = ["python3"]
+    mfg_util_script_path = 'mfg_util_script'
+    test_cmd += [mfg_util_script_path + os.sep + subcom_2script_name[args.subcommand]]
+    print(test_cmd)
+    test_cmd_option = sys.argv[2:]
+
+    test_cmd += test_cmd_option
+    libmfg_utils.cli_inf("Calling Inner Layer Script .....")
+    libmfg_utils.cli_inf(str(" ".join(test_cmd)))
+
+    try:
+        com_proc = subprocess.run(test_cmd, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as Err:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Failed with exit code:{:s}".format(args.subcommand.upper(), str(Err.returncode)))
+        err_msg = traceback.format_exc()
+        print("-*"*50)
+        print(Err.output)
+        print("-*"*50)
+        print(err_msg)
+        exist_code = Err.returncode
+    else:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
+        exist_code = com_proc.returncode
+
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
+    return exist_code
 
 
 if __name__ == "__main__":
@@ -259,6 +364,16 @@ if __name__ == "__main__":
     parser_emmc = subparsers.add_parser('emmc', help='Invoke NIC card EMMC Validation test suite')
     parser_cpld = subparsers.add_parser('cpld', help='Invoke NIC card CPLD Validation test suite')
     parser_mtp = subparsers.add_parser('mtp', help='Invoke MFG MTP SCREEN Test test suite')
+    parser_cmtp = subparsers.add_parser('cmtp', help='Invoke Convert MTP test suite; Lauch From Remote Server Only')
+    parser_mconn = subparsers.add_parser('mconn', help='Invoke Diag connect to MTP test suite; Lauch From Remote Server Only')
+    parser_mpc = subparsers.add_parser('mpc', help='Invoke Diag MTP Powercycle test suite; Lauch From Remote Server Only')
+    parser_mpcl = subparsers.add_parser('mpcl', help='Invoke Diag MTP Powercycle test suite in loop mode; Lauch From Remote Server Only')
+    parser_mpo = subparsers.add_parser('mpo', help='Invoke Diag MTP Poweroff test suite; Lauch From Remote Server Only')
+    parser_mreload = subparsers.add_parser('mreload', help='Invoke Diag MTP Reload test suite; Lauch From Remote Server Only')
+    parser_mrestore = subparsers.add_parser('mrestore', help='Invoke MTP Set NIC to Diag boot test suite; Lauch From Remote Server Only')
+    parser_msanity = subparsers.add_parser('msanity', help='Invoke MTP Sanity test suite; Lauch From Remote Server Only')
+    parser_msanityl = subparsers.add_parser('msanityl', help='Invoke MTP Sanity test suite loop mode; Lauch From Remote Server Only')
+    parser_pocp = subparsers.add_parser('pocp', help='Invoke Program OCP test suite; Lauch From Remote Server Only')
 
     # python3.10
     # subparsers = parser.add_subparsers(title="subcommands list", dest="subcommand", required=True, description="'%(prog)s {subcommand} -h or --help' for detail usage of specified subcommand", help='sub-command description')
@@ -281,12 +396,13 @@ if __name__ == "__main__":
     parser_ddr.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
     parser_ddr.add_argument("--high_temp", "-high_temp", help="high temperature environment", action='store_true')
     parser_ddr.add_argument("--low_temp", "-low_temp", help="low temperature environment", action='store_true')
-    parser_ddr.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s ", type=int, required=False, default=1)
+    parser_ddr.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s ", type=int, required=False, default=1)
     parser_ddr.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_ddr.add_argument("--vmarg", "-vmarg", help="specify the vmargin, deduced from environment temperature(normal temperature => no voltage margin; low/high temperature => low and low voltage margin) if not specified",
+    parser_ddr.add_argument("--vmarg", "-vmarg", help="specify the vmargin, deduced from environment temperature(normal temperature => no voltage margin; low/high temperature => low and high voltage margin) if not specified",
                             nargs="*",  choices=["normal", "high", "low"], default=[])
     parser_ddr.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_ddr.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
+    parser_ddr.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
     parser_ddr.add_argument("--cfgyaml", "-cfgyaml", help="Test case config file for DDR Validation test suite, default to %(default)s", default="./config/ddr_test_suite.yaml")
     parser_ddr.set_defaults(func=main)
 
@@ -308,6 +424,7 @@ if __name__ == "__main__":
                              default="config/latest_release_cpld_4validation.json")
     parser_cpld.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_cpld.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
+    parser_cpld.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
     parser_cpld.set_defaults(func=main)
 
     parser_sdl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
@@ -318,7 +435,7 @@ if __name__ == "__main__":
     parser_sdl.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_sdl.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_sdl.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
-    parser_sdl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_sdl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_sdl.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="c", default=None)
     parser_sdl.set_defaults(func=main)
 
@@ -330,7 +447,7 @@ if __name__ == "__main__":
     parser_dl.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_dl.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_dl.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
-    parser_dl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_dl.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_dl.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_dl.set_defaults(func=main)
 
@@ -346,7 +463,7 @@ if __name__ == "__main__":
     parser_2c.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_2c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_2c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
-    parser_2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_2c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_2c.add_argument("--stop_on_err", "-stop_on_err", help="Break out of test on failure; default to %(default)s", required=False, action='store_true', default=False)
     parser_2c.set_defaults(func=main)
@@ -359,7 +476,7 @@ if __name__ == "__main__":
     parser_p2c.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_p2c.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_p2c.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
-    parser_p2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_p2c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_p2c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_p2c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_p2c.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
@@ -374,7 +491,7 @@ if __name__ == "__main__":
     parser_4c.add_argument("--only_test", "-only_test", metavar=('testname1', 'testname2'), help="run particular tests only", nargs="*", default=[])
     parser_4c.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
     parser_4c.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_4c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_4c.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_4c.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP between iterations; default to %(default)s", action='store_true', required=False, default=False)
     parser_4c.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_4c.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
@@ -414,7 +531,7 @@ if __name__ == "__main__":
     parser_ort.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_ort.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_ort.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
-    parser_ort.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_ort.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_ort.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_ort.set_defaults(func=main)
 
@@ -427,7 +544,7 @@ if __name__ == "__main__":
     parser_rdt.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_rdt.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_rdt.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_rdt.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_rdt.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_rdt.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_rdt.set_defaults(func=main)
 
@@ -448,9 +565,55 @@ if __name__ == "__main__":
     parser_cnic.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_cnic.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_cnic.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
-    parser_cnic.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle, default to %(default)s", type=int, required=False, default=1)
+    parser_cnic.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_cnic.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_cnic.set_defaults(func=main)
+
+    parser_cmtp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_cmtp.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_cmtp.add_argument("-to", "--convert_to", help="Convert this MTP to ", choices=["ELBA", "CAPRI", "TURBO_ELBA"], required=True)
+    parser_cmtp.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mconn.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_mconn.add_argument("--apc" "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mconn.add_argument("--init", '-init', help="Init the diag environment", action='store_true')
+    parser_mconn.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mconn.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpc.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_mpc.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mpc.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpcl.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpo.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mpo.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mreload.add_argument("--image", "-image", help="New MTP image file")
+    parser_mreload.add_argument("--nic_image", "-nic_image", help="New NIC image file")
+    parser_mreload.add_argument("--apc", "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mreload.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
+    parser_mreload.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mrestore.add_argument("--apc", "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mrestore.set_defaults(func=launch_remote_server_only_script)
+
+    parser_msanity.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_msanity.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_msanity.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_msanity.set_defaults(func=launch_remote_server_only_script)
+
+    parser_msanityl.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_msanityl.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_msanityl.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_msanityl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_msanityl.add_argument("--loop", "-loop", help="Step up loop time")
+    parser_msanityl.set_defaults(func=launch_remote_server_only_script)
+
+    parser_pocp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_pocp.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_pocp.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_pocp.set_defaults(func=launch_remote_server_only_script)
 
     try:
         args = parser.parse_args()

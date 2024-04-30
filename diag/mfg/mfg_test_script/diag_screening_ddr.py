@@ -110,7 +110,7 @@ def args2optionstring(argdict):
     this function to handle some args which have a value of + or - in config file, inidate this args exist or not 
     """
     args_str = ""
-    for k, valuses in argdict.items():
+    for k, valuses in list(argdict.items()):
         for v in valuses:
             if v == "+":
                 args_str += " {:s}".format(k)
@@ -926,11 +926,11 @@ def main():
     test_cfg_file[NIC_Type.GINESTRA_S4] = "config/ginestra_d5_ssdk_mtp_test_cfg.yaml"
 
     test_db = dict()
-    for nic_type in test_cfg_file.keys():
+    for nic_type in list(test_cfg_file.keys()):
         test_db[nic_type] = diag_db(stage, test_cfg_file[nic_type])
 
     mtp_para_test_list = dict()
-    for nic_type in test_db.keys():
+    for nic_type in list(test_db.keys()):
         mtp_para_test_list[nic_type] = test_db[nic_type].get_mtp_para_test_list()
 
     # load DDR test suite test cases and test steps

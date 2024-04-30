@@ -50,7 +50,7 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
     cols = HEADER_COLS
     max_iter = 0
     ite = 0
-    for k, v in nic_test_data.items():
+    for k, v in list(nic_test_data.items()):
         if not v:
             continue
         ite += 1
@@ -63,14 +63,14 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
     rows_head = 0 
     rows_high = 0
     rows_low = 0
-    for k, v in nic_test_data.items():
+    for k, v in list(nic_test_data.items()):
         if not v: 
             continue
         for item in v:
             m_rows_head = 0
             m_rows_high = 0
             m_rows_low = 0
-            for kk, vv in item.items():
+            for kk, vv in list(item.items()):
                 if kk == "head":
                     m_rows_head += len(vv)
                 if kk == "data":
@@ -99,7 +99,7 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
 
     # Fill raw_data_table header
     running_slot =0 
-    for k, v in nic_test_data.items():
+    for k, v in list(nic_test_data.items()):
         if not v:
             continue
         col_index = max_iter * int(running_slot) + 4
@@ -115,62 +115,62 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
 
     # Fill raw_data_table with data:
     running_slot =0 
-    for k, v in nic_test_data.items():
+    for k, v in list(nic_test_data.items()):
         if not v:
             continue
         for ite, item in enumerate(v):
             col_index = ite +  max_iter * int(running_slot) + 4
             raw_data_table[rows_head-1][col_index] = "Iteration" + str(ite+1)
-            for kk, vv in item["data"].items():
+            for kk, vv in list(item["data"].items()):
                 if kk == "high":
                     for r in range((rows_high)):
                         row_index = r+rows_head
                         raw_data_table[row_index][0] = kk
-                        raw_data_table[row_index][1] = item["data"][kk].keys()[r//2]
+                        raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
                         if r % 2 == 0:
                             raw_data_table[row_index][2] = "IOPS"
                             #raw_data_table[row_index][3] = "K"
                             raw_data_table[row_index][3] = ""
-                            if item["data"][kk].keys()[r//2] == "STRESSAPPTEST":
+                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
                                 raw_data_table[row_index][2] = ""
                                 raw_data_table[row_index][3] = "P/F"
                             # print("-"*10)
                             # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = item["data"][kk].values()[r//2][0]
+                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
                         if r % 2 == 1:
                             raw_data_table[row_index][2] = "BW"
                             raw_data_table[row_index][3] = "MB/s"
-                            if item["data"][kk].keys()[r//2] == "STRESSAPPTEST":
+                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
                                 raw_data_table[row_index][2] = ""
                                 raw_data_table[row_index][3] = "MB/s"
                             # print("+"*10)
                             # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = item["data"][kk].values()[r//2][1]
+                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
 
                 if kk == "low":
                     for r in range(rows_low):
                         row_index = r+rows_head+rows_high
                         raw_data_table[row_index][0] = kk
-                        raw_data_table[row_index][1] = item["data"][kk].keys()[r//2]
+                        raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
                         if r % 2 == 0:
                             raw_data_table[row_index][2] = "IOPS"
                             #raw_data_table[row_index][3] = "K"
                             raw_data_table[row_index][3] = ""
-                            if item["data"][kk].keys()[r//2] == "STRESSAPPTEST":
+                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
                                 raw_data_table[row_index][2] = ""
                                 raw_data_table[row_index][3] = "P/F"
                             # print("-"*10)
                             # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = item["data"][kk].values()[r//2][0]
+                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
                         if r % 2 == 1:
                             raw_data_table[row_index][2] = "BW"
                             raw_data_table[row_index][3] = "MB/s"
-                            if item["data"][kk].keys()[r//2] == "STRESSAPPTEST":
+                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
                                 raw_data_table[row_index][2] = ""
                                 raw_data_table[row_index][3] = "MB/s"
                             # print("+"*10)
                             # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = item["data"][kk].values()[r//2][1]
+                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
         running_slot += 1
 
     # Calcalue min, max and average from all test iterations
@@ -233,7 +233,7 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
         for j in i:
             row += j + ","
         mtp_mgmt_ctrl.cli_log_inf(row.strip(","))
-    with open(csvfilename, 'wb') as csvfile:
+    with open(csvfilename, 'w') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(finally_table)
     return csvfilename
@@ -274,6 +274,7 @@ def diag_para_emmc_validation_test(mtp_mgmt_ctrl, nic_type, nic_list, emmc_suite
     for idx in range(1, int(iterations)+1):
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30)
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} EMMC Validation Test Iteration {:d}".format(nic_type, idx), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("--*" * 30)
         # power cycle every iteration
         if idx > 1: 
             mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_NIC_DIAG_INIT To Power Cycle NIC Card and Re-init it ".format(nic_type), level=0)
