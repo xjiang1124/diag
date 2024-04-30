@@ -217,8 +217,8 @@ def get_test_constants(stage, mtp_id, subcommand):
     if stage not in list(testsuite_config.keys()):
         libmfg_utils.cli_err("Script not defined for stage {:s}".format(stage))
         return None, None, None, None
-    mtp_script_dir = "mtp_test_script/"
-    mtp_script_pkg = "mtp_test_script.{:s}.tar".format(mtp_id)
+    mtp_script_dir = "mfg_test_script/"
+    mtp_script_pkg = "mfg_test_script.{:s}.tar".format(mtp_id)
     script_cmd = "python3 ./mfg_test.py {:s}".format(subcommand)
     test_timeout = testsuite_config[stage]["timeout"]
     mtp_script_dir = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + mtp_script_dir
