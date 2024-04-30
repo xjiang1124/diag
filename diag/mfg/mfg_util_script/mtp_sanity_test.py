@@ -12,6 +12,7 @@ import traceback
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import testlog
+import test_utils
 from libdefs import NIC_Type
 from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
@@ -59,7 +60,7 @@ def main():
     parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
     parser.add_argument("--skip-test", help="skip a particular test or test section", nargs="*", default=[])
     parser.add_argument("--only-test", help="run particular tests only", nargs="*", default=[])
-    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--stop-on-error", help="Stop test when fail occur", action='store_true')
     parser.add_argument("--iteration", help="Iteration to run with MTP power cycle", type=int, required=False, default=1)

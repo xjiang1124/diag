@@ -142,11 +142,11 @@ def single_mtp_p2c_test(mtp_script_dir, mtp_mgmt_ctrl, mtp_id, fail_nic_list, mt
 
 def main():
     parser = argparse.ArgumentParser(description="MFG FAN Test", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--verbosity", help="Increase output verbosity", action='store_true')
-    parser.add_argument("--swm", type=Swm_Test_Mode, help="SWM test mode", choices=list(Swm_Test_Mode))
-    parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
-    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
-    parser.add_argument("--loop", help="Step up loop time")
+    parser.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser.add_argument("--loop", "-loop", help="Step up loop time")
 
     verbosity = False
     swmtestmode = Swm_Test_Mode.SW_DETECT
@@ -165,7 +165,7 @@ def main():
     print("MFG FAN Test SET LOOPS: {}".format(running_loop))
 
     mtp_cfg_db = load_mtp_cfg()
-    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, args.mtpid)
+    mtpid_list = libmfg_utils.mtpid_list_select(mtp_cfg_db, [args.mtpid])
     mtpid_fail_list = list()
     mtp_mgmt_ctrl_list = list()
     fail_nic_list = dict()

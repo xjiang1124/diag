@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description="Diag connect to MTP", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--apc", help="MTP is power down, need to power on apc first", action='store_true')
     parser.add_argument("--init", help="Init the diag environment", action='store_true')
-    parser.add_argument("--mtp", help="MTP ID")
+    parser.add_argument("--mtpid", "-mtpid", help="MTP ID")
 
     apc = False
     diag_init = False
@@ -29,8 +29,8 @@ def main():
         apc = True
     if args.init:
         diag_init = True
-    if args.mtp:
-        mtp_id = args.mtp
+    if args.mtpid:
+        mtp_id = args.mtpid
 
     mtp_chassis_cfg_file_list = list()
     mtp_chassis_cfg_file_list.append(os.path.abspath("config/qa_mtp_chassis_cfg.yaml"))

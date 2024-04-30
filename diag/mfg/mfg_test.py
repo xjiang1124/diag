@@ -2,6 +2,8 @@
 import os
 import sys
 import argparse
+import subprocess
+import traceback
 sys.path.append("lib")
 import libmfg_utils
 import libmtp_utils
@@ -288,9 +290,58 @@ def main(args):
         return False
 
 
-def mtp_validation(args):
-    print(args)
-    pass
+def launch_remote_server_only_script(args):
+    """
+    trigger scripts utility only run from remote server
+    """
+
+    subcom_2script_name = {
+        'cmtp' : 'mfg_convert_mtp.py',
+        'msanityl' : 'mfg_loop_sanity_check_test.py',
+        'mconn' : 'mfg_mtp_connect.py',
+        'mpcl' : 'mfg_mtp_powercycle_loop.py',
+        'mpc' : 'mfg_mtp_powercycle.py',
+        'mpo' : 'mfg_mtp_poweroff.py',
+        'mreload' : 'mfg_mtp_reload.py',
+        'mrestore' : 'mfg_rma_restore.py',
+        'msanity' : 'mtp_sanity_test.py',
+        'pocp' : 'mfg_scan_dl_ocp_test.py',
+    }
+
+    if args.subcommand not in subcom_2script_name:
+        print("Unspported sub command")
+        return None
+
+    test_cmd = ["python3"]
+    mfg_util_script_path = 'mfg_util_script'
+    test_cmd += [mfg_util_script_path + os.sep + subcom_2script_name[args.subcommand]]
+    print(test_cmd)
+    test_cmd_option = sys.argv[2:]
+
+    test_cmd += test_cmd_option
+    libmfg_utils.cli_inf("Calling Inner Layer Script .....")
+    libmfg_utils.cli_inf(str(" ".join(test_cmd)))
+
+    try:
+        com_proc = subprocess.run(test_cmd, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as Err:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Failed with exit code:{:s}".format(args.subcommand.upper(), str(Err.returncode)))
+        err_msg = traceback.format_exc()
+        print("-*"*50)
+        print(Err.output)
+        print("-*"*50)
+        print(err_msg)
+        exist_code = Err.returncode
+    else:
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
+        exist_code = com_proc.returncode
+
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
+    return exist_code
 
 
 if __name__ == "__main__":
@@ -313,6 +364,16 @@ if __name__ == "__main__":
     parser_emmc = subparsers.add_parser('emmc', help='Invoke NIC card EMMC Validation test suite')
     parser_cpld = subparsers.add_parser('cpld', help='Invoke NIC card CPLD Validation test suite')
     parser_mtp = subparsers.add_parser('mtp', help='Invoke MFG MTP SCREEN Test test suite')
+    parser_cmtp = subparsers.add_parser('cmtp', help='Invoke Convert MTP test suite; Lauch From Remote Server Only')
+    parser_mconn = subparsers.add_parser('mconn', help='Invoke Diag connect to MTP test suite; Lauch From Remote Server Only')
+    parser_mpc = subparsers.add_parser('mpc', help='Invoke Diag MTP Powercycle test suite; Lauch From Remote Server Only')
+    parser_mpcl = subparsers.add_parser('mpcl', help='Invoke Diag MTP Powercycle test suite in loop mode; Lauch From Remote Server Only')
+    parser_mpo = subparsers.add_parser('mpo', help='Invoke Diag MTP Poweroff test suite; Lauch From Remote Server Only')
+    parser_mreload = subparsers.add_parser('mreload', help='Invoke Diag MTP Reload test suite; Lauch From Remote Server Only')
+    parser_mrestore = subparsers.add_parser('mrestore', help='Invoke MTP Set NIC to Diag boot test suite; Lauch From Remote Server Only')
+    parser_msanity = subparsers.add_parser('msanity', help='Invoke MTP Sanity test suite; Lauch From Remote Server Only')
+    parser_msanityl = subparsers.add_parser('msanityl', help='Invoke MTP Sanity test suite loop mode; Lauch From Remote Server Only')
+    parser_pocp = subparsers.add_parser('pocp', help='Invoke Program OCP test suite; Lauch From Remote Server Only')
 
     # python3.10
     # subparsers = parser.add_subparsers(title="subcommands list", dest="subcommand", required=True, description="'%(prog)s {subcommand} -h or --help' for detail usage of specified subcommand", help='sub-command description')
@@ -507,6 +568,52 @@ if __name__ == "__main__":
     parser_cnic.add_argument("--iteration", "-iteration", help="Iteration to run with or without MTP power cycle by PDU, depends on '-no_pc' option, default to %(default)s", type=int, required=False, default=1)
     parser_cnic.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)
     parser_cnic.set_defaults(func=main)
+
+    parser_cmtp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_cmtp.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_cmtp.add_argument("-to", "--convert_to", help="Convert this MTP to ", choices=["ELBA", "CAPRI", "TURBO_ELBA"], required=True)
+    parser_cmtp.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mconn.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_mconn.add_argument("--apc" "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mconn.add_argument("--init", '-init', help="Init the diag environment", action='store_true')
+    parser_mconn.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mconn.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpc.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_mpc.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mpc.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpcl.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mpo.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_mpo.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mreload.add_argument("--image", "-image", help="New MTP image file")
+    parser_mreload.add_argument("--nic_image", "-nic_image", help="New NIC image file")
+    parser_mreload.add_argument("--apc", "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mreload.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
+    parser_mreload.set_defaults(func=launch_remote_server_only_script)
+
+    parser_mrestore.add_argument("--apc", "-apc", help="MTP is power down, need to power on apc first", action='store_true')
+    parser_mrestore.set_defaults(func=launch_remote_server_only_script)
+
+    parser_msanity.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_msanity.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_msanity.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_msanity.set_defaults(func=launch_remote_server_only_script)
+
+    parser_msanityl.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_msanityl.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_msanityl.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_msanityl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
+    parser_msanityl.add_argument("--loop", "-loop", help="Step up loop time")
+    parser_msanityl.set_defaults(func=launch_remote_server_only_script)
+
+    parser_pocp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
+    parser_pocp.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_pocp.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
+    parser_pocp.set_defaults(func=launch_remote_server_only_script)
 
     try:
         args = parser.parse_args()

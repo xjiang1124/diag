@@ -17,7 +17,7 @@ from libmtp_ctrl import mtp_ctrl
 
 def main():
     parser = argparse.ArgumentParser(description="Diag MTP Powercycle", formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--mtpid", "--mtp-id", help="pre-select MTPs", nargs="*", default=[])
+    parser.add_argument("--mtpid", "-mtpid", help="pre-select MTPs", nargs="*", default=[])
     args = parser.parse_args()
 
     libmfg_utils.cli_inf("!!! Only use this command when mtp can not connected, console is stuck!!!")
