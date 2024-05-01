@@ -949,8 +949,7 @@ def main():
                     else:
                         loopback = True
 
-                    elba_type_list = get_slots_of_type(libmfg_utils.list_subtract(ELBA_NIC_TYPE_LIST, FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]))
-                    elba_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4])
+                    elba_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + NO_OOB_MGMT_PORT_TYPE_LIST)
                     run_test(elba_type_list, "NIC_PARA_INIT")
                     run_regression_test(elba_type_list, "ACC", "MVL")
                     run_regression_test(elba_type_list, "STUB", "MVL", loopback=loopback)
@@ -1052,14 +1051,14 @@ def main():
                     run_dsp_test(dsp_test_list, "I2C", "I2C")
                     # Remove QSFP loopbacks in chamber for non-capri
                     if vmarg == Voltage_Margin.normal or stage == FF_Stage.QA:
-                        qsfp_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=[NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP, NIC_Type.LACONA32, NIC_Type.LACONA32DELL])
+                        qsfp_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=ETH_25G_TYPE_LIST)
                         run_dsp_test(qsfp_type_list, "I2C", "QSFP")
                     else:
                         # only capri
-                        qsfp_type_list = get_slots_of_type(CAPRI_NIC_TYPE_LIST, except_type=[NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP])
+                        qsfp_type_list = get_slots_of_type(CAPRI_NIC_TYPE_LIST, except_type=ETH_25G_TYPE_LIST)
                         run_dsp_test(qsfp_type_list, "I2C", "QSFP")
 
-                    sfp_type_list = get_slots_of_type([NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP, NIC_Type.LACONA32, NIC_Type.LACONA32DELL])
+                    sfp_type_list = get_slots_of_type(ETH_25G_TYPE_LIST)
                     for slot in sfp_type_list[:]:
                         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                             sfp_type_list.remove(slot)

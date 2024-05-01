@@ -20,6 +20,9 @@ from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import CTO_MODEL_TYPE_LIST
+from libmfg_cfg import FAILSAFE_CPLD_TYPE_LIST
+from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
+from libmfg_cfg import ADI_VRM_TYPE_LIST
 from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
 from libmfg_cfg import MTP_HEALTH_MONITOR
@@ -564,7 +567,7 @@ def main():
         run_dl_test(fpga_list, "FPGA_PROG")
         cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
         run_dl_test(cpld_list, "CPLD_PROG")
-        ecpld_list = get_slots_of_type(libmfg_utils.list_subtract(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, FPGA_TYPE_LIST))
+        ecpld_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
         run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
         run_dl_test(ecpld_list, "FEA_CPLD_PROG")
         cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.NAPLES25OCP])
@@ -586,14 +589,13 @@ def main():
         run_dl_test(hpeswm_nic_list, "REWORK_VERIFY")
         run_dl_test(pass_nic_list, "CPLD_VERIFY")
         run_dl_test(pass_nic_list, "DIAGFW_STORE")
-        ecpld_list = get_slots_of_type(libmfg_utils.list_subtract(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, FPGA_TYPE_LIST))
+        ecpld_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
         run_dl_test(ecpld_list, "FEA_VERIFY")
         fpga_list = get_slots_of_type(FPGA_TYPE_LIST)
         run_dl_test(fpga_list, "FPGA_PROG_VERIFY")
         esec_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
         run_dl_test(esec_list, "L1_ESEC_PROG")
-        avs_list = get_slots_of_type(libmfg_utils.list_subtract(MFG_VALID_NIC_TYPE_LIST, [NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]))
-        avs_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=[NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4])
+        avs_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=ADI_VRM_TYPE_LIST)
         run_dl_test(avs_list, "AVS_SET")
 
         if MTP_HEALTH_MONITOR:

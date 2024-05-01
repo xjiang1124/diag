@@ -2517,7 +2517,7 @@ class mtp_ctrl():
 
     @parallelize.parallel_nic_using_console
     def mtp_check_nic_jtag(self, slot):
-        asic_type = "elba" if self.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST else "capri"
+        asic_type = "elba" if self.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST else "capri"
         if not self._nic_ctrl_list[slot].nic_check_jtag(asic_type):
             self.mtp_dump_nic_err_msg(slot)
             return False
