@@ -838,8 +838,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not nic_prsnt_list[slot]:
             continue
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage)
+        images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage)
         if images_for_nic_type is None:
             return None
         image_list += list(images_for_nic_type.values())

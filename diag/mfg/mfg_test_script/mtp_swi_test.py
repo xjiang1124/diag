@@ -25,6 +25,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import CTO_MODEL_TYPE_LIST
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -616,7 +617,7 @@ def main():
         # Reprogram FRU with final SKU
         sku_fru_prog_list = list()
         for slot in pass_nic_list[:]:
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.GINESTRA_S4:
+            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in CTO_MODEL_TYPE_LIST:
                 continue
             sku_fru_prog_list.append(slot)
 
@@ -717,7 +718,7 @@ def main():
             if emmc_img_file:
                 emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
 
-            swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_SWI)
+            swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, FF_Stage.FF_SWI)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
             if sku:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SKU: {:s}".format(sku))
@@ -789,8 +790,8 @@ def main():
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_fw_program, args = (mtp_mgmt_ctrl,
                                                                                   cpld_img_file,
@@ -942,7 +943,7 @@ def main():
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_sec_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         sec_cpld_img_file,
@@ -1041,8 +1042,8 @@ def main():
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cert(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            cert_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cert(mtp_mgmt_ctrl, slot, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_copy_gold_program, args = (mtp_mgmt_ctrl,
                                                                                     gold_img_file,
@@ -1132,20 +1133,8 @@ def main():
             if nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
                 continue
 
-            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img[nic_type]
-            failsafe_cpld_img_file = ""
-            if nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img[nic_type]
-            if nic_type == NIC_Type.ORTANO2ADI:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0026"]
-                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0026"]
-            if nic_type == NIC_Type.ORTANO2ADIIBM:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0028"]
-                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0028"]
-            if nic_type == NIC_Type.ORTANO2ADIMSFT:
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.fail_cpld_img["68-0034"]
-                sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.sec_cpld_img["68-0034"]
-
+            sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
             nic_thread = threading.Thread(target = single_nic_compare_cpld_image, args = (mtp_mgmt_ctrl,
                                                                                     sec_cpld_img_file,
                                                                                     failsafe_cpld_img_file,
@@ -1192,7 +1181,7 @@ def main():
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_gold_program, args = (mtp_mgmt_ctrl,
                                                                                     gold_img_file,

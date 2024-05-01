@@ -2343,8 +2343,7 @@ class mtp_ctrl():
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
 
-        nic_type = self.mtp_get_nic_type(slot)
-        expected_timestamp = image_control.get_goldfw(self, nic_type, FF_Stage.FF_SWI)["timestamp"]
+        expected_timestamp = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["timestamp"]
 
         if (boot_image != "goldfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
@@ -3088,8 +3087,8 @@ class mtp_ctrl():
             stage = FF_Stage.FF_DL
         else:
             stage = FF_Stage.FF_SWI
-        expected_version = image_control.get_cpld(self, nic_type, stage)["version"]
-        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3161,8 +3160,8 @@ class mtp_ctrl():
         #     return False
         # cur_ver = nic_cpld_info[0]
         # cur_timestamp = nic_cpld_info[1]
-        # expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
-        # expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        # expected_version   = image_control.get_cpld(self, slot, stage)["version"]
+        # expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         # if nic_type in self._proto_type_list:
         #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3174,10 +3173,10 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
+            "cfg0": image_control.get_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, slot, FF_Stage.FF_DL)["filename"]
         }
         program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
 
@@ -3213,10 +3212,10 @@ class mtp_ctrl():
             return False
 
         partition_img_dict = {
-            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
+            "cfg0": image_control.get_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, slot, FF_Stage.FF_DL)["filename"]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
@@ -3241,7 +3240,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "No feature row update for Proto NIC")
             return True
 
-        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
+        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, slot, FF_Stage.FF_DL)["filename"]
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
@@ -3304,7 +3303,7 @@ class mtp_ctrl():
 
         fea_regex = r"00000000  (.*)  \|.*\|"  # first 16 bytes
 
-        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
+        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, slot, FF_Stage.FF_DL)["filename"]
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -3406,11 +3405,11 @@ class mtp_ctrl():
             stage = FF_Stage.FF_DL
         else:
             stage = FF_Stage.FF_SWI
-        expected_version = image_control.get_cpld(self, nic_type, stage)["version"]
-        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
         if sec_cpld:
-            expected_version = image_control.get_sec_cpld(self, nic_type, stage)["version"]
-            expected_timestamp = image_control.get_sec_cpld(self, nic_type, stage)["timestamp"]
+            expected_version = image_control.get_sec_cpld(self, slot, stage)["version"]
+            expected_timestamp = image_control.get_sec_cpld(self, slot, stage)["timestamp"]
 
         if cur_ver != expected_version or (timestamp_check and cur_timestamp != expected_timestamp):
             self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
@@ -3511,7 +3510,7 @@ class mtp_ctrl():
         boot_image = qspi_info[0]
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
-        expected_timestamp = image_control.get_diagfw(self, nic_type, FF_Stage.FF_DL)["timestamp"]
+        expected_timestamp = image_control.get_diagfw(self, slot, FF_Stage.FF_DL)["timestamp"]
 
         if (boot_image != "diagfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
@@ -3955,9 +3954,6 @@ class mtp_ctrl():
             self.barcode_scans[key][bf.PN] = nic_fru_cfg[key][bf.PN]
             if dpn:
                 self.barcode_scans[key][bf.DPN] = dpn
-            elif self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_S4:
-                self.cli_log_slot_err(slot, "A DPN must be supplied via --dpn args.")
-                self.mtp_set_nic_status_fail(slot)
             if sku:
                 self.barcode_scans[key][bf.SKU] = sku
 
@@ -4071,7 +4067,7 @@ class mtp_ctrl():
                     return False
         return True
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, stop_on_err, vmarg_percentage=""):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, fpo, stop_on_err, vmarg_percentage=""):
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -4128,7 +4124,7 @@ class mtp_ctrl():
         # (DIAG_INIT, CPLD_DIAG) END
 
         if ret and fru_valid:
-            if emmc_format:
+            if fpo:
                 init_date = False
             else:
                 init_date = True
@@ -4645,6 +4641,7 @@ class mtp_ctrl():
                                                 aapl,
                                                 dis_hal,
                                                 fru_fpo,
+                                                fpo,
                                                 stop_on_err,
                                                 vmarg_percentage))
             nic_thread.daemon = True
@@ -4934,19 +4931,11 @@ class mtp_ctrl():
                     continue
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_D5:
                 pn = self.mtp_get_nic_pn(slot)
-                sku = self.get_scanned_sku(slot)
+                final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_D5
                 elif re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_S4
-
-                    if sku == PRODUCT_SKU.GIN_S4:
-                        final_nic_type = NIC_Type.GINESTRA_S4
-                    elif sku == PRODUCT_SKU.GIN_S4_B3:
-                        final_nic_type = NIC_Type.GINESTRA_S4_B3
-                    elif sku == PRODUCT_SKU.GIN_S4_P3:
-                        final_nic_type = NIC_Type.GINESTRA_S4_P3
-
                 if final_nic_type:
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
@@ -5825,7 +5814,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
                 preset_config = "8"
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -6589,7 +6578,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         pn = self.mtp_get_nic_pn(slot)
         dpn = self.get_scanned_dpn(slot)
-        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+        if nic_type not in CTO_MODEL_TYPE_LIST:
             self.cli_log_slot_err(slot, "PN-DPN check doesnt apply to this NIC")
             return False
 
@@ -6606,7 +6595,7 @@ class mtp_ctrl():
         pn = self.mtp_get_nic_pn(slot)
         dpn = self.mtp_get_nic_dpn(slot)
         sku = self.get_scanned_sku(slot)
-        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+        if nic_type not in CTO_MODEL_TYPE_LIST:
             self.cli_log_slot_err(slot, "DPN-SKU check doesnt apply to this NIC")
             return False
 

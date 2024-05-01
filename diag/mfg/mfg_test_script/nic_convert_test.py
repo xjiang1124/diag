@@ -240,9 +240,8 @@ def main():
             if not nic_prsnt_list[slot]:
                 continue
 
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
             nic_thread = threading.Thread(target = single_nic_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                     cpld_img_file,
                                                                                     failsafe_cpld_img_file,

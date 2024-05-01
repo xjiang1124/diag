@@ -15,19 +15,24 @@ class NIC_IMAGES:
     cpld_img = dict()
     cpld_ver = dict()
     cpld_dat = dict()
+    cpld_md5 = dict()
     sec_cpld_img = dict()
     sec_cpld_ver = dict()
     sec_cpld_dat = dict()
+    sec_cpld_md5 = dict()
     fail_cpld_img = dict()
     fail_cpld_ver = dict()
     fail_cpld_dat = dict()
+    fail_cpld_md5 = dict()
     fea_cpld_img = dict()
     timer1_img = dict()
     timer2_img = dict()
     diagfw_img = dict()
     diagfw_dat = dict()
+    diagfw_md5 = dict()
     goldfw_img = dict()
     goldfw_dat = dict()
+    goldfw_md5 = dict()
     uboot_img = dict()
     uboot_dat = dict()
     uboota_img = dict()
@@ -476,20 +481,79 @@ class NIC_IMAGES:
     goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.68-G-9_2024.02.29.tar"
     goldfw_dat["GINESTRA_D5"] = "12-13-2023"
 
-    cpld_img["GINESTRA_S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
-    cpld_ver["GINESTRA_S4"] = "0x2"
-    cpld_dat["GINESTRA_S4"] = "0x07"
-    sec_cpld_img["GINESTRA_S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
-    sec_cpld_ver["GINESTRA_S4"] = "0x2"
-    sec_cpld_dat["GINESTRA_S4"] = "0x07"
-    fail_cpld_img["GINESTRA_S4"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
-    fail_cpld_ver["GINESTRA_S4"] = "0x2"
-    fail_cpld_dat["GINESTRA_S4"] = "0x07"
-    fea_cpld_img["GINESTRA_S4"] = "ginestra_impl1.bin"
-    diagfw_img["GINESTRA_S4"] = "naples_diagfw_elba_1.68-G-9_2024.02.29.tar"
-    diagfw_dat["GINESTRA_S4"] = "12-14-2023"
-    goldfw_img["GINESTRA_S4"] = "naples_goldfw_elba_1.68-G-9_2024.02.29.tar"
-    goldfw_dat["GINESTRA_S4"] = "12-13-2023"
+    cpld_img["58-0001-01"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["58-0001-01"] = "0x2"
+    cpld_dat["58-0001-01"] = "0x07"
+    cpld_md5["58-0001-01"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["58-0001-01"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["58-0001-01"] = "0x2"
+    fail_cpld_dat["58-0001-01"] = "0x07"
+    fail_cpld_md5["58-0001-01"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    fea_cpld_img["58-0001-01"] = "ginestra_impl1.bin"
+    diagfw_img["58-0001-01"] = "naples_diagfw_elba_1.68-G-9_2024.02.29.tar"
+    diagfw_dat["58-0001-01"] = "12-14-2023"
+    diagfw_md5["58-0001-01"] = "b7f21e82758d04b22096ad9801a2cb25"
+
+    cpld_img["58-0002-01"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["58-0002-01"] = "0x2"
+    cpld_dat["58-0002-01"] = "0x07"
+    cpld_md5["58-0002-01"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["58-0002-01"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["58-0002-01"] = "0x2"
+    fail_cpld_dat["58-0002-01"] = "0x07"
+    fail_cpld_md5["58-0002-01"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    fea_cpld_img["58-0002-01"] = "ginestra_impl1.bin"
+    diagfw_img["58-0002-01"] = "naples_diagfw_elba_1.68-G-17_2024.03.21.tar"
+    diagfw_dat["58-0002-01"] = "03-21-2024"
+    diagfw_md5["58-0002-01"] = "209134861198a13872b4e25129177746"
+
+    cpld_img["DSC2A-2Q200-32S32F64P-S4A"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["DSC2A-2Q200-32S32F64P-S4A"] = "0x2"
+    cpld_dat["DSC2A-2Q200-32S32F64P-S4A"] = "0x07"
+    cpld_md5["DSC2A-2Q200-32S32F64P-S4A"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    sec_cpld_img["DSC2A-2Q200-32S32F64P-S4A"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["DSC2A-2Q200-32S32F64P-S4A"] = "0x2"
+    sec_cpld_dat["DSC2A-2Q200-32S32F64P-S4A"] = "0x07"
+    sec_cpld_md5["DSC2A-2Q200-32S32F64P-S4A"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["DSC2A-2Q200-32S32F64P-S4A"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["DSC2A-2Q200-32S32F64P-S4A"] = "0x2"
+    fail_cpld_dat["DSC2A-2Q200-32S32F64P-S4A"] = "0x07"
+    fail_cpld_md5["DSC2A-2Q200-32S32F64P-S4A"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    goldfw_img["DSC2A-2Q200-32S32F64P-S4A"] = "naples_goldfw_elba_1.68-G-17_2024.03.21.tar"
+    goldfw_dat["DSC2A-2Q200-32S32F64P-S4A"] = "03-21-2024"
+    goldfw_md5["DSC2A-2Q200-32S32F64P-S4A"] = "312206364c4e8180df9405b40c4a44ba"
+
+    cpld_img["DSC2A-2Q200-32S32F64P-S4B"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["DSC2A-2Q200-32S32F64P-S4B"] = "0x2"
+    cpld_dat["DSC2A-2Q200-32S32F64P-S4B"] = "0x07"
+    cpld_md5["DSC2A-2Q200-32S32F64P-S4B"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    sec_cpld_img["DSC2A-2Q200-32S32F64P-S4B"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["DSC2A-2Q200-32S32F64P-S4B"] = "0x2"
+    sec_cpld_dat["DSC2A-2Q200-32S32F64P-S4B"] = "0x07"
+    sec_cpld_md5["DSC2A-2Q200-32S32F64P-S4B"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["DSC2A-2Q200-32S32F64P-S4B"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["DSC2A-2Q200-32S32F64P-S4B"] = "0x2"
+    fail_cpld_dat["DSC2A-2Q200-32S32F64P-S4B"] = "0x07"
+    fail_cpld_md5["DSC2A-2Q200-32S32F64P-S4B"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    goldfw_img["DSC2A-2Q200-32S32F64P-S4B"] = "naples_goldfw_elba_1.68-G-18_2024.04.03.tar"
+    goldfw_dat["DSC2A-2Q200-32S32F64P-S4B"] = "04-03-2024"
+    goldfw_md5["DSC2A-2Q200-32S32F64P-S4B"] = "0c24d9811ac703382cfe046a2106fde9"
+
+    cpld_img["DSC2A-2Q200-32S32F64P-S4C"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["DSC2A-2Q200-32S32F64P-S4C"] = "0x2"
+    cpld_dat["DSC2A-2Q200-32S32F64P-S4C"] = "0x07"
+    cpld_md5["DSC2A-2Q200-32S32F64P-S4C"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    sec_cpld_img["DSC2A-2Q200-32S32F64P-S4C"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["DSC2A-2Q200-32S32F64P-S4C"] = "0x2"
+    sec_cpld_dat["DSC2A-2Q200-32S32F64P-S4C"] = "0x07"
+    sec_cpld_md5["DSC2A-2Q200-32S32F64P-S4C"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["DSC2A-2Q200-32S32F64P-S4C"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["DSC2A-2Q200-32S32F64P-S4C"] = "0x2"
+    fail_cpld_dat["DSC2A-2Q200-32S32F64P-S4C"] = "0x07"
+    fail_cpld_md5["DSC2A-2Q200-32S32F64P-S4C"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    goldfw_img["DSC2A-2Q200-32S32F64P-S4C"] = "naples_goldfw_elba_1.68-G-19_2024.04.06.tar"
+    goldfw_dat["DSC2A-2Q200-32S32F64P-S4C"] = "04-06-2024"
+    goldfw_md5["DSC2A-2Q200-32S32F64P-S4C"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
 class MTP_IMAGES:
     amd64_img = dict()
@@ -788,7 +852,7 @@ MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw", "extdiag"]
 MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
-    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3
+    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
     ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -796,12 +860,12 @@ MTP_REV02_CAPABLE_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NI
 MTP_REV03_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32,
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
-    NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3,
+    NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4,
     ]
 MTP_REV04_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32,
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
-    NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3,
+    NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
     ]
 
 CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
@@ -810,7 +874,7 @@ ELBA_NIC_TYPE_LIST = [
     NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4
     ]
 GIGLIO_NIC_TYPE_LIST = [
-    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3
+    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
     ]
 
 PSLC_MODE_TYPE_LIST = [
@@ -828,7 +892,7 @@ NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Typ
 
 #ARM_L1 test set mode hod_1100
 ARM_L1_MODE_HOD_1100 = [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4]
-
+CTO_MODEL_TYPE_LIST = [NIC_Type.GINESTRA_S4]
 # Card Type List Which need attash ROT cable when run FST test
 ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2SOLOORCTHS,

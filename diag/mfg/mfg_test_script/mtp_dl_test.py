@@ -27,6 +27,7 @@ from libmfg_cfg import CAPRI_NIC_TYPE_LIST
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import CTO_MODEL_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libdefs import FF_Stage
@@ -323,7 +324,7 @@ def main():
                 test_list.remove(skipped_test)
         for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type != NIC_Type.GINESTRA_S4:
+            if nic_type not in CTO_MODEL_TYPE_LIST:
                 continue
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -379,7 +380,7 @@ def main():
             if nic_type == NIC_Type.NAPLES25OCP:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
 
-            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, dsp)
+            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, dsp)
             for image_name, image_file_path in dl_image_dict.items():
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
@@ -461,8 +462,8 @@ def main():
             test_list = []
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 test_list = ["NOSECURE_CPLD_PROG", "NOSECURE_FAILSAFE_CPLD_PROG", "SET_DIAGFW_BOOT"]
-                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+                cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+                failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
             for test in test_list:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
                 start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
@@ -591,11 +592,11 @@ def main():
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboot(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboota(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            ubootb_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ubootb(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            uboot_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboot(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            uboota_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_uboota(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            ubootb_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ubootb(mtp_mgmt_ctrl, slot, dsp)["filename"]
             uboot_installer_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.uboot_img["INSTALLER"]
 
             nic_thread = threading.Thread(target = single_nic_qspi_program, args = (mtp_mgmt_ctrl,
@@ -671,9 +672,9 @@ def main():
         nic_test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
         for slot in pass_nic_list[:]:
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
-            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, dsp)["filename"]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
 
             nic_thread = threading.Thread(target = single_nic_program, args = (mtp_mgmt_ctrl,
                                                                                cpld_img_file,

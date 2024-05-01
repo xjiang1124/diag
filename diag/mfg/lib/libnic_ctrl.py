@@ -2910,7 +2910,7 @@ class nic_ctrl():
             asic_prod_num = self._prod_num
 
         ### 1c. Validate Diagnostic part number, if applicable
-        if self._pn_format in (PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT):
+        if init_date and self._nic_type in CTO_MODEL_TYPE_LIST:
             if not self.nic_fru_parse_dpn(fru_buf):
                 self.nic_set_err_msg("DPN field doesn't match any known formats in ASIC FRU")
                 self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -2958,7 +2958,7 @@ class nic_ctrl():
                         return False
 
             ### 2c. Validate Diagnostic part number, if applicable
-            if self._pn_format == PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT:
+            if init_date and self._nic_type in CTO_MODEL_TYPE_LIST:
                 if not self.nic_fru_parse_dpn(fru_buf):
                     self.nic_set_err_msg("DPN field doesn't match any known formats in SMB FRU")
                     self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
@@ -3211,12 +3211,6 @@ class nic_ctrl():
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT)                   #68-0075-01 XX    GINESTRA_D5
                 ],
             NIC_Type.GINESTRA_S4: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
-                ],
-            NIC_Type.GINESTRA_S4_B3: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
-                ],
-            NIC_Type.GINESTRA_S4_P3: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT)                   #68-0076-01 XX    GINESTRA_S4
                 ],
             NIC_Type.ORTANO2SOLO: [
