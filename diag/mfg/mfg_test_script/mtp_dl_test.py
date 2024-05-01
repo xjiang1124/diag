@@ -349,7 +349,7 @@ def main():
             elif test == "NIC_POWER":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
             elif test == "NIC_TYPE":
-                rlist = mtp_mgmt_ctrl.mtp_nic_list_type_test(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
             elif test == "NIC_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)
             elif test == "NIC_PRSNT":
@@ -365,7 +365,7 @@ def main():
             elif test == "NIC_BOOT_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(nic_list)
             elif test == "NIC_DIAG_BOOT":
-                rlist = mtp_mgmt_ctrl.mtp_nic_list_check_diag_boot(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(nic_list)
 
             elif test == "NIC_PWRCYC":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list, dl=True)

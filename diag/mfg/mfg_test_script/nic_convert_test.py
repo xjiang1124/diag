@@ -182,7 +182,7 @@ def main():
             elif test == "SET_DIAGFW_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_set_nic_diagfw_boot(nic_list)
             elif test == "NIC_DIAG_BOOT":
-                rlist = mtp_mgmt_ctrl.mtp_nic_list_check_diag_boot(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(nic_list)
             elif test == "CPLD_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld(nic_list)
             else:

@@ -524,7 +524,7 @@ def main():
                 elif test == "NIC_STATUS":
                     rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)
                 elif test == "NIC_DIAG_BOOT":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_list_check_diag_boot(nic_list)
+                    rlist = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(nic_list)
                 elif test == "NIC_CPLD":
                     rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld_console(nic_list)
                 elif test == "NIC_FPGA":
@@ -536,7 +536,7 @@ def main():
                 elif test == "NIC_OCP_SIGNALS":
                     rlist = mtp_mgmt_ctrl.mtp_nic_naples25ocp_signal_test(nic_list)
                 elif test == "NIC_TYPE":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_list_type_test(nic_list)
+                    rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
 
                 elif test == "SWM_LP_MODE":
                     rlist = mtp_mgmt_ctrl.mtp_nic_naples25swm_low_power_mode_test(nic_list)

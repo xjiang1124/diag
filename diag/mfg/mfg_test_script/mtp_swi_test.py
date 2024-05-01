@@ -243,7 +243,7 @@ def main():
             elif test == "NIC_POWER":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
             elif test == "NIC_TYPE":
-                rlist = mtp_mgmt_ctrl.mtp_nic_list_type_test(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
             elif test == "NIC_PRSNT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_check_prsnt(nic_list)
             elif test == "NIC_INIT":
@@ -263,7 +263,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(nic_list)
 
             elif test == "NIC_DIAG_BOOT":
-                rlist = mtp_mgmt_ctrl.mtp_nic_list_check_diag_boot(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_nic_check_diag_boot(nic_list)
             elif test == "GOLDFW_BOOT":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_verify_nic_gold_boot(nic_list)
             elif test == "DIAG_BOOT":

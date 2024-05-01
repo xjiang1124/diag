@@ -548,7 +548,7 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
         test_start_nic_log_message(mtp_mgmt_ctrl, pass_nic_list, stage, test)
 
         if test == "NIC_TYPE":
-            test_fail_nic_list = mtp_mgmt_ctrl.mtp_nic_list_type_test(pass_nic_list)
+            test_fail_nic_list = mtp_mgmt_ctrl.mtp_nic_type_test(pass_nic_list)
         elif test == "FF_AREA_CHECK":
             test_fail_nic_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, pass_nic_list, stage, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
         elif test == "SANITY_CHECK_SETUP":

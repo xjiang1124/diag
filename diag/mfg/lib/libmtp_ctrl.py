@@ -2357,9 +2357,6 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_nic_list_check_diag_boot(self, slot):
-        return self.mtp_nic_check_diag_boot(slot)
-
     def mtp_nic_check_diag_boot(self, slot):
         qspi_info = self._nic_ctrl_list[slot].nic_get_boot_info()
         if not qspi_info:
@@ -2379,7 +2376,7 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Init NIC sw boot info failed")
             return False
 
-        return self.mtp_nic_check_diag_boot(slot)
+        return slot not in self.mtp_nic_check_diag_boot(slot)
 
     @parallelize.parallel_nic_using_console
     def mtp_mgmt_verify_nic_gold_boot(self, slot):
@@ -5043,10 +5040,6 @@ class mtp_ctrl():
             return False
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_nic_list_type_test(self, slot):
-        # same as mtp_nic_type_test but call on a nic_list instead of single slot
-        return self.mtp_nic_type_test(slot)
-
     def mtp_nic_type_test(self, slot):
         type_check = self.mtp_nic_type_valid(slot)
         pn_check = self.mtp_nic_pn_valid(slot)
