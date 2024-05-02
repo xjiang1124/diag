@@ -33,6 +33,8 @@ from libdefs import Swm_Test_Mode
 from libdefs import Voltage_Margin
 from libdefs import Factory
 from libnic_ctrl import nic_ctrl
+from libmtp_health import mtp_health_ctrl
+
 import test_utils
 import image_control
 import scanning
@@ -62,6 +64,7 @@ class mtp_ctrl():
         self._status = MTP_Status.MTP_STA_POWEROFF
         self._fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD    # variable to track the fan speed (%) set by the script
         self._factory_location = Factory.UNKNOWN
+        self._mtp_health = mtp_health_ctrl(mtpid, mgmt_health_cfg=mgmt_cfg, apc_health_cfg=apc_cfg)
 
         self._nic_ctrl_list = [None] * self._slots
         self._nic_alom_ctrl_list = [None] * self._slots
@@ -238,6 +241,9 @@ class mtp_ctrl():
         ts_record_cmd = "#######= {:s} =#######".format(ts_record)
         self.log_mtp_file(ts_record_cmd)
         return str(duration)
+
+    def get_mtp_health_monitor(self):
+        return self._mtp_health
 
     def mtp_sys_info_disp(self):
         self.cli_log_inf("MTP System Info Dump:", level=0)

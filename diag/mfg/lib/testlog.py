@@ -10,6 +10,7 @@ from libdefs import NIC_Type
 from libdefs import Voltage_Margin
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import RUNNING_EDVT
+from libmfg_cfg import MTP_HEALTH_MONITOR
 
 
 QA_LOG_DIR          = "/vol/hw/diag/diag_qa/regression_log/"
@@ -87,6 +88,9 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
 
     mtp_test_log_file = logfile_path + "/mtp_test.log"
     mtp_diag_log_file = logfile_path + "/mtp_diag.log"
+    mtp_health_test_log_file = logfile_path + "/mtp_health_test.log"
+    mtp_health_diag_log_file = logfile_path + "/mtp_health_diag.log"
+    mtp_health_diag_cmd_file = logfile_path + "/mtp_health_diag_cmd.log"
     mtp_diag_cmd_log_file = logfile_path + "/mtp_diag_cmd.log"
     mtp_diagmgr_log_file = logfile_path + "/mtp_diagmgr.log"
 
@@ -101,6 +105,13 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
     open_file_track_list.append(mtp_diag_log_filep)
     mtp_diag_cmd_log_filep = open(mtp_diag_cmd_log_file, MODIFIER)
     open_file_track_list.append(mtp_diag_cmd_log_filep)
+    if MTP_HEALTH_MONITOR:
+        mtp_health_test_log_filep = open(mtp_health_test_log_file, MODIFIER)
+        open_file_track_list.append(mtp_health_test_log_filep)
+        mtp_health_diag_log_filep = open(mtp_health_diag_log_file, MODIFIER)
+        open_file_track_list.append(mtp_health_diag_log_filep)
+        mtp_health_diag_cmd_filep = open(mtp_health_diag_cmd_file, MODIFIER)
+        open_file_track_list.append(mtp_health_diag_cmd_filep)
 
     diag_nic_log_filep_list = list()
     for slot in range(mtp_mgmt_ctrl._slots):
@@ -119,6 +130,10 @@ def open_logfiles(mtp_mgmt_ctrl, run_from_mtp, stage):
     mtp_mgmt_ctrl._diag_cmd_filep = mtp_diag_cmd_log_filep
     mtp_mgmt_ctrl._diag_nic_filep_list = diag_nic_log_filep_list[:]
     mtp_mgmt_ctrl._diagmgr_logfile = mtp_diagmgr_log_file
+    if MTP_HEALTH_MONITOR:
+        mtp_mgmt_ctrl._mtp_health._filep = mtp_health_test_log_filep
+        mtp_mgmt_ctrl._mtp_health._diag_filep = mtp_health_diag_log_filep
+        mtp_mgmt_ctrl._mtp_health._diag_cmd_filep = mtp_health_diag_cmd_filep
 
     return logfile_path, open_file_track_list
 

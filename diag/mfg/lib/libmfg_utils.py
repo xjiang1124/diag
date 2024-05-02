@@ -66,25 +66,25 @@ def cli_wrn(err):
     print("\033[0;33m" + "## [" + get_timestamp() + "] WRN: " + err + "\033[0m")
 
 
-def cli_log_inf(fp, info):
+def cli_log_inf(fp, info, print_msg=True):
     msg = "## [" + get_timestamp() + "] LOG: " + info
     fp.write(msg + "\n")
 
-    cli_inf(info)
+    if print_msg: cli_inf(info)
 
 
-def cli_log_err(fp, err):
+def cli_log_err(fp, err, print_msg=True):
     msg = "## [" + get_timestamp() + "] ERR: " + err
     fp.write(msg + "\n")
 
-    cli_err(err)
+    if print_msg: cli_err(err)
 
 
-def cli_log_wrn(fp, wrn):
+def cli_log_wrn(fp, wrn, print_msg=True):
     msg = "## [" + get_timestamp() + "] WRN: " + wrn
     fp.write(msg + "\n")
 
-    cli_wrn(wrn)
+    if print_msg: cli_wrn(wrn)
 
 
 def cli_log_rslt(title, pass_list, fail_list, fp):
@@ -584,7 +584,7 @@ def mfg_expect_console_fuzzywuzzy(session, exp_list, cmd_prompt, timeout=-1, sim
             saved_buffer = special_char_removal(saved_buffer)
             if len(exp_list) == 1 and  exp_list[0].strip().lower() == cmd_prompt.strip().lower():
                 session.before = saved_buffer
-                return index
+                return 0
             for index, pattern in enumerate(exp_list):
                 # cli_log_inf("applying similar match on pexpect pattern {:s}:{:s}".format(str(index), str(pattern)))
                 rc = similar_expect.similar_matches(saved_buffer, [(pattern, similarity)])
