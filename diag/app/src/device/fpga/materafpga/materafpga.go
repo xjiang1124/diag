@@ -127,7 +127,10 @@ func init () {
                 return
             }
             scanner := bufio.NewScanner(file)
-            bar, _ = strconv.ParseUint(strings.TrimSuffix(scanner.Text(), "\n"), 0, 64)
+            for scanner.Scan() {
+                line := scanner.Text()
+                bar, _ = strconv.ParseUint(strings.TrimSuffix(line, "\n"), 0, 64)
+            }
             file.Close()
         } else {
             shcmds := []string{ "lspci -v -d 1dd8:000B | grep 'Memory at' | awk '{print $3}'"}
