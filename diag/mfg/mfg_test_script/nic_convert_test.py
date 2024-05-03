@@ -185,51 +185,6 @@ def main():
         for slot in range(MTP_Const.MTP_SLOT_NUM):
             if slot in fail_nic_list:
                 continue
-            key = libmfg_utils.nic_key(slot)
-            valid = nic_fru_cfg[key]["VALID"]
-            if not valid:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Bypass empty slot")
-                continue
-
-            sn = nic_fru_cfg[key]["SN"]
-            mac = nic_fru_cfg[key]["MAC"]
-            pn = nic_fru_cfg[key]["PN"]
-            prog_date = str(nic_fru_cfg[key]["TS"])
-            mac_ui = libmfg_utils.mac_address_format(mac)
-            alom_sn = None
-            alom_pn = None
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-               if "SN_ALOM" in nic_fru_cfg[key]:
-                   alom_sn = nic_fru_cfg[key]["SN_ALOM"]
-                   alom_pn = nic_fru_cfg[key]["PN_ALOM"]
-
-            riser_sn = None
-            if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25OCP:
-                riser_sn = mtp_mgmt_ctrl.mtp_get_nic_ocp_adapter_sn(slot)
-
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-
-            print("")
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix:")
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}; SN_ALOM = {:s}; PN_ALOM = {:s}".format(sn, mac_ui, pn, alom_sn, alom_pn))
-            else:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "SN = {:s}; MAC = {:s}; PN = {:s}".format(sn, mac_ui, pn))
-            if nic_type == NIC_Type.NAPLES25OCP:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, "OCP Adapter SN = {:s}".format(riser_sn))
-
-            dl_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, dsp)
-            for image_name, image_file_path in dl_image_dict.items():
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " image: " + os.path.basename(image_file_path))
-            mtp_mgmt_ctrl.cli_log_slot_inf(slot, "FW Program Matrix end")
-
-
-        for slot in range(MTP_Const.MTP_SLOT_NUM):
-            if slot in fail_nic_list:
-                continue
             if not nic_prsnt_list[slot]:
                 continue
                 
@@ -341,28 +296,7 @@ def main():
                 continue
 
             # DL Verify process
-            sn = nic_fru_cfg[key]["SN"]
-            mac = nic_fru_cfg[key]["MAC"]
-            pn = nic_fru_cfg[key]["PN"]
-            prog_date = str(nic_fru_cfg[key]["TS"])
-            exp_sn = sn
-            exp_mac = "-".join(re.findall("..", mac))
-            exp_pn = pn
-            exp_date = prog_date
-            alom_sn = None
-            alom_pn = None
-            exp_alom_sn = None
-            exp_alom_pn = None
-            exp_assettag = None
-            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
-                alom_sn = nic_fru_cfg[key]["SN_ALOM"]
-                alom_pn = nic_fru_cfg[key]["PN_ALOM"]
-                exp_alom_sn = alom_sn
-                exp_alom_pn = alom_pn
-                exp_assettag = 'C0'
-                hpe_pn = "000000-000"
-
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             testlist = ["NIC_POWER", "NIC_DIAG_BOOT", "CPLD_VERIFY", ]
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
             if nic_type in FPGA_TYPE_LIST:
