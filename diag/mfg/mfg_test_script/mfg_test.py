@@ -685,8 +685,6 @@ def run_swi_tests(args):
     test_cmd = ["python3", "./mtp_swi_test.py"]
     test_cmd_option = sys.argv[2:]
     stage = FF_Stage.FF_SWI
-    nic_sw_img_file_list  = list()
-    profile_cfg_file_list = [None] # multiple profiles not supported
     libmfg_utils.cli_inf(str(args))
 
     mfg_test_start_ts = libmfg_utils.timestamp_snapshot()
@@ -716,8 +714,6 @@ def run_swi_tests(args):
 
     # running from remote
     if not args.run_from_remote:
-        if not args.sw_pn:
-            args.sw_pn = [libmfg_utils.sw_pn_scan(),]
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
@@ -728,19 +724,6 @@ def run_swi_tests(args):
         if "SCAN_VERIFY" not in args.skip_test:
             scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
-
-
-    if not test_utils.handle_swi_args(mtp_mgmt_ctrl, args.sw_pn, nic_sw_img_file_list, profile_cfg_file_list, ".."):
-        exist_code = 1
-        return exist_code
-    
-    if nic_sw_img_file_list:
-        test_cmd_option += ["--image"]
-        test_cmd_option += nic_sw_img_file_list
-
-    if profile_cfg_file_list != [None]:
-        profile_cfg_file = profile_cfg_file_list[0]
-        test_cmd_option += ["--profile", profile_cfg_file]
 
     if "--run_from_remote" in test_cmd_option:
         test_cmd_option.remove("--run_from_remote")
@@ -1586,7 +1569,6 @@ if __name__ == "__main__":
     parser_swi.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
     parser_swi.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
     parser_swi.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
-    parser_swi.add_argument("--sw_pn", "-swpn", "--swpn", "-sw_pn", help="pre-select SW PN or list of SW PNs", nargs="*", default=[])
     parser_swi.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_swi.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
     parser_swi.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])

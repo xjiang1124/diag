@@ -11,6 +11,7 @@ timer1 = "FPGA timer1"
 timer2 = "FPGA timer2"
 diagfw = "DiagFW"
 goldfw = "GoldFW"
+mainfw = "MainFW"
 uboot = "uboot"
 uboota = "uboota"
 ubootb = "ubootb"
@@ -86,6 +87,13 @@ def get_goldfw(mtp_mgmt_ctrl, slot, stage):
     "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.goldfw_dat, nic_type)
     }
 
+def get_mainfw(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, mainfw)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mainfw_img, nic_type),
+    "timestamp": get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mainfw_dat, nic_type)
+    }
+
 def get_uboot(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, uboot)
     return {
@@ -126,6 +134,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         timer2: get_timer2,
         diagfw: get_diagfw,
         goldfw: get_goldfw,
+        mainfw: get_mainfw,
         uboot: get_uboot,
         uboota: get_uboota,
         ubootb: get_ubootb,
@@ -172,12 +181,16 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(timer1)
             images_needed.append(timer2)
             images_needed.append(uboot)
+            images_needed.append(mainfw)
 
         elif nic_type in ELBA_NIC_TYPE_LIST or nic_type in GIGLIO_NIC_TYPE_LIST:
             images_needed.append(fail_cpld)
 
         if nic_type == NIC_Type.ORTANO2ADIIBM:
             images_needed.append(cert)
+
+        if nic_type in MAINFW_TYPE_LIST:
+            images_needed.append(mainfw)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
@@ -220,7 +233,7 @@ def pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, image_name):
             return str(dpn)
 
     if stage == FF_Stage.FF_SWI:
-        if image_name == goldfw:
+        if image_name in (goldfw, mainfw):
             if nic_type == NIC_Type.ORTANO2:# and mtp_mgmt_ctrl.mtp_is_nic_ortano_oracle(slot):
                 return "68-0015"
             if nic_type == NIC_Type.ORTANO2ADI:
@@ -229,6 +242,10 @@ def pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, image_name):
                 return "68-0028"
             if nic_type == NIC_Type.ORTANO2ADIMSFT:
                 return "68-0034"
+            if nic_type == NIC_Type.ORTANO2ADICR:
+                return "68-0049"
+            if nic_type == NIC_Type.ORTANO2ADICRMSFT:
+                return "68-0091"
 
         if image_name in (cpld, sec_cpld, fail_cpld):
             if nic_type == NIC_Type.ORTANO2ADI:

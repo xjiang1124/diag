@@ -884,18 +884,6 @@ def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
 
     return True
 
-def mtp_prepare_swi_invoke_on_mtp(mtp_mgmt_ctrl, swpn_list, image_list):
-    """
-    setup sw_pn to sw image symbol link, so that SWI can invoke on MTP locallly.
-    """
-
-    for swpn, filename in zip(swpn_list, image_list):
-        cmd = "cd /home/diag; ln -s {:s} {:s}".format(filename, swpn)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=5):
-            mtp_mgmt_ctrl.cli_log_err("Failed to establish symbol link from image file {:s} to {:s}".format(filename, swpn), level=0)
-            return False
-    return True
-
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
     if not image_list:
         mtp_mgmt_ctrl.cli_log_err("Copy Firmware images failed... Abort", level=0)

@@ -69,15 +69,6 @@ then
     cat ${NIC_BARCODE_FILE}
 fi
 
-SWI_INPUT_FILE=${PSDIAG_ROOT}/swi_input
-if [[ -f ${SWI_INPUT_FILE} ]];
-then
-    echo ""
-    echo "Contents of ${SWI_INPUT_FILE}"
-    cat ${SWI_INPUT_FILE}
-    echo ""
-fi
-
 echo "**************************************************"
 echo " Install python tool-set from ${PSDIAG_ROOT}/tools/python_packets/amd64/lib"
 echo "**************************************************"
@@ -199,7 +190,7 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py swi ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log  --swpn $(cat ${SWI_INPUT_FILE}) < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py swi ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
     ret1=$?
     if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
         python3 ./mfg_test.py cnic ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}

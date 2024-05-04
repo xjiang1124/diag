@@ -25,6 +25,7 @@ from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import ELBA_NIC_TYPE_LIST
 from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
+from libmfg_cfg import MAINFW_TYPE_LIST
 from libmfg_cfg import CTO_MODEL_TYPE_LIST
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmtp_db import mtp_db
@@ -439,9 +440,6 @@ def health_status(mtp_health):
 def main():
     parser = argparse.ArgumentParser(description="MTP Software Install Script", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
-    parser.add_argument("--image", help="NIC eMMC image(s)", nargs="*", required=True, default=[])
-    parser.add_argument("--profile", help="NIC Profile")
-    parser.add_argument("--swpn", "-swpn", "--sw_pn", "-sw_pn", help="Software Part Number(s)", nargs="*", default=[])
     parser.add_argument("--skip_test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
@@ -449,17 +447,9 @@ def main():
     parser.add_argument("--swm", help="SWM test mode")
     parser.add_argument("--sku", help="Supply CTO SKU, for QA/lab only...MFG should enter SKU through scanning", default=None)
 
-    nic_profile = None
     args = parser.parse_args()
     if args.mtpid:
         mtp_id = args.mtpid
-    if args.image:
-        img_file_list = args.image
-    if args.profile:
-        #nic_profile = args.profile
-        nic_profile = ntpath.basename(args.profile)
-    if args.swpn:
-        sw_pn_list = args.swpn
     if not args.skip_test:
         args.skip_test = []
 
@@ -472,10 +462,6 @@ def main():
     # find the mtp capability
     mtp_capability = mtp_cfg_db.get_mtp_capability(mtp_id)
 
-    # get the absolute file path
-    emmc_img_file_list = {"":""}
-    for sw_pn, sw_img in zip(sw_pn_list, img_file_list):
-        emmc_img_file_list[sw_pn] = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + sw_img
 
     try:
         # read scanned barcode file except when we're skipping in dev environment
@@ -686,40 +672,10 @@ def main():
 
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
 
-        test_list = ["SW_PN_CHECK"]
-        for skipped_test in args.skip_test:
-            if skipped_test in test_list:
-                test_list.remove(skipped_test)
-        for slot in pass_nic_list[:]:
-            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            for test in test_list:
-                mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
-                start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-
-                if test == "SW_PN_CHECK":
-                    ret = mtp_mgmt_ctrl.mtp_nic_sw_pn_search(slot, sw_pn_list, check_naples_pn)
-
-                duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-                if not ret:
-                    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, dsp, test, "FAILED", duration))
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
-                    break
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
-
-
         for slot in pass_nic_list[:]:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
             sku = mtp_mgmt_ctrl.get_scanned_sku(slot)
-            emmc_img_file = emmc_img_file_list[sw_pn]
-            if emmc_img_file:
-                emmc_img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(emmc_img_file)
 
             swi_image_dict = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, FF_Stage.FF_SWI)
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix:")
@@ -730,14 +686,8 @@ def main():
                 img_chksum = mtp_mgmt_ctrl.mtp_get_file_md5sum(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file_path)
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, image_name + " MD5 checksum: " + img_chksum)
 
-            if nic_type not in (NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4):
-                if emmc_img_file:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + os.path.basename(emmc_img_file))
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + emmc_img_chksum)
-                else:
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW image: " + "N/A")
-                    mtp_mgmt_ctrl.cli_log_slot_inf(slot, "MainFW MD5 checksum: " + "N/A")
-            if nic_profile:
+            if nic_type == NIC_Type.NAPLES100:
+                nic_profile = "netapp_nic_profile.py"
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Profile: " + os.path.basename(nic_profile))
 
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Software Program Matrix end\n")
@@ -1092,9 +1042,12 @@ def main():
                     pass_nic_list.remove(slot)
                 continue
 
+            nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+            if nic_type not in MAINFW_TYPE_LIST:
+                continue
+
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-            sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
-            emmc_img_file = emmc_img_file_list[sw_pn]
+            emmc_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
             nic_thread = threading.Thread(target = single_nic_emmc_program, args = (mtp_mgmt_ctrl,
                                                                                     emmc_img_file,
                                                                                     slot,
@@ -1358,7 +1311,7 @@ def main():
 
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            sw_pn = mtp_mgmt_ctrl.mtp_get_nic_sw_pn(slot)
+            sw_pn = mtp_mgmt_ctrl.check_swi_software_image(slot)
             isCloud =  mtp_mgmt_ctrl.check_is_cloud_software_image(slot, sw_pn)
 
             sw_test_list = ["SW_BOOT", "SW_SHUTDOWN"]
@@ -1396,7 +1349,7 @@ def main():
                 elif test == "SW_MGMT_INIT":
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_mgmt_init(slot)
                 elif test == "SW_PROFILE":
-                    ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, nic_profile)
+                    ret = mtp_mgmt_ctrl.mtp_nic_sw_profile(slot, "netapp_nic_profile.py")
                 elif test == "SW_MODE_SWITCH":
                     ret = mtp_mgmt_ctrl.mtp_nic_sw_mode_switch(slot)
                     ret &= mtp_mgmt_ctrl.mtp_nic_sw_mode_switch_verify(slot)
@@ -1407,7 +1360,7 @@ def main():
                 elif test == "SET_EXTOS":
                     ret = mtp_mgmt_ctrl.mtp_mgmt_set_nic_extos_boot(slot)
                 elif test == "SW_SHUTDOWN":
-                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot, sw_pn)
+                    ret = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(slot)
                 elif test == "KEYS_CHECK":
                     ret = mtp_mgmt_ctrl.mtp_nic_read_secure_boot_keys(slot)
                 elif test == "CONF_VERIFY":

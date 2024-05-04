@@ -141,8 +141,6 @@ def main(args):
             libmfg_utils.sys_exit("Unknown 4C Corner... Abort")
     elif args.subcommand == 'swi':
         stage = FF_Stage.FF_SWI
-        if not args.sw_pn:
-            args.sw_pn = [libmfg_utils.sw_pn_scan(),]
     elif args.subcommand == 'fst':
         stage = FF_Stage.FF_FST
     elif args.subcommand == 'ort':
@@ -504,7 +502,6 @@ if __name__ == "__main__":
     parser_swi.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
     parser_swi.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
     parser_swi.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
-    parser_swi.add_argument("--sw_pn", "-swpn", "--swpn", "-sw_pn", help="pre-select SW PN or list of SW PNs", nargs="*", default=[])
     parser_swi.add_argument("--no_pc", "-no_pc", help="Don't powercycle MTP before test; default to %(default)s", action='store_true', required=False, default=False)
     parser_swi.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_swi.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=True)

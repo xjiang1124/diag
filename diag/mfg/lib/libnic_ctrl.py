@@ -1784,7 +1784,7 @@ class nic_ctrl():
         return True
 
     def nic_sw_profile(self, profile):
-        if not self.nic_copy_image("/home/diag/mtp_swi_script/{:s}".format(profile)):
+        if not self.nic_copy_image("/home/diag/mfg_test_script/{:s}".format(profile)):
             return False
         if not self.nic_console_set_sw_profile(profile):
             return False

@@ -33,6 +33,8 @@ class NIC_IMAGES:
     goldfw_img = dict()
     goldfw_dat = dict()
     goldfw_md5 = dict()
+    mainfw_img = dict()
+    mainfw_dat = dict()
     uboot_img = dict()
     uboot_dat = dict()
     uboota_img = dict()
@@ -58,6 +60,8 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25SWM"] = "08-30-2022"
     goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
     goldfw_dat["NAPLES25SWM"] = "08-31-2022"
+    mainfw_img["NAPLES25SWM"] = "capri_fw_iris_1.28.3-E-4_C+_patch_2022.10.06.tar"
+    mainfw_dat["NAPLES25SWM"] = ""
 
     cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev3_01062021.bin"
     cpld_ver["NAPLES25SWMDELL"] = "0x3"
@@ -69,6 +73,8 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25SWMDELL"] = "03-03-2021"
     goldfw_img["NAPLES25SWMDELL"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
     goldfw_dat["NAPLES25SWMDELL"] = "04-25-2022"
+    mainfw_img["NAPLES25SWMDELL"] = "naples_fw_iris_1.28.2-E-93_2022_05_03.tar"
+    mainfw_dat["NAPLES25SWMDELL"] = ""
 
     # OCP HPE (P37689-001) and OCP DELL (68-0010)
     cpld_img["NAPLES25OCP"] = "NAPLES25_OCP_REV0B_03102021.bin"
@@ -81,6 +87,8 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25OCP"] = "03-03-2021"
     goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
     goldfw_dat["NAPLES25OCP"] = "04-25-2022"
+    mainfw_img["NAPLES25OCP"] = "naples_fw_iris_1.28.2-E-93_2022_05_03.tar"
+    mainfw_dat["NAPLES25OCP"] = ""
 
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
     cpld_ver["NAPLES100"] = "0x9"
@@ -92,6 +100,8 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES100"] = "05-21-2020"
     goldfw_img["NAPLES100"] = "naples_goldfw_09182019.tar"
     goldfw_dat["NAPLES100"] = "09-17-2019"
+    mainfw_img["NAPLES100"] = "capri_fw_iris_1.4.0-E-110_2022.09.28.tar"
+    mainfw_dat["NAPLES100"] = ""
 
     cpld_img["NAPLES100IBM"] = "naples100_ibm_rev3_09082020.bin"
     cpld_ver["NAPLES100IBM"] = "0x3"
@@ -144,6 +154,8 @@ class NIC_IMAGES:
     diagfw_dat["68-0015"] = "05-03-2023"
     goldfw_img["68-0015"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["68-0015"] = "05-03-2023"
+    mainfw_img["68-0015"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["68-0015"] = ""
 
     cpld_img["POMONTEDELL"] = "naples200_pom_dell_main_rev2_8_08162022.bin"
     cpld_ver["POMONTEDELL"] = "0x2"
@@ -165,6 +177,8 @@ class NIC_IMAGES:
     goldfw_dat["POMONTEDELL"] = "08-16-2022"
     uboot_img["POMONTEDELL"] = "boot0.rev14.img"
     uboot_dat["POMONTEDELL"] = "14"
+    mainfw_img["POMONTEDELL"] = "naples_uefi_sb_prod_diag_fw_elba_1.46.0-E-31_2022.08.16.tar"
+    mainfw_dat["POMONTEDELL"] = ""
 
     cpld_img["LACONA32DELL"] = "naples200_lac32_dell_main_rev2_8_08162022.bin"
     cpld_ver["LACONA32DELL"] = "0x2"
@@ -186,6 +200,8 @@ class NIC_IMAGES:
     goldfw_dat["LACONA32DELL"] = "08-16-2022"
     uboot_img["LACONA32DELL"] = "boot0.rev14.img"
     uboot_dat["LACONA32DELL"] = "14"
+    mainfw_img["LACONA32DELL"] = "naples_uefi_sb_prod_diag_fw_elba_1.46.0-E-31_2022.08.16.tar"
+    mainfw_dat["LACONA32DELL"] = ""
 
     cpld_img["LACONA32"] = "naples200_lac32_hpe_main_rev2_8_08162022.bin"
     cpld_ver["LACONA32"] = "0x2"
@@ -207,6 +223,8 @@ class NIC_IMAGES:
     goldfw_dat["LACONA32"] = "08-16-2022"
     uboot_img["LACONA32"] = "boot0.rev14.img"
     uboot_dat["LACONA32"] = "14"
+    mainfw_img["LACONA32"] = "naples_uefi_sb_prod_diag_fw_elba_1.46.0-E-31_2022.08.16.tar"
+    mainfw_dat["LACONA32"] = ""
 
     cpld_img["ORTANO2ADI"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     cpld_ver["ORTANO2ADI"] = "0x1"
@@ -235,6 +253,8 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0026"] = "0x14"
     goldfw_img["68-0026"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["68-0026"] = "05-03-2023"
+    mainfw_img["68-0026"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["68-0026"] = ""
     #IBM ADI
     cpld_img["ORTANO2ADIIBM"] = "ortano_adi_rev1.14_working_041023_12pm.bin"
     cpld_ver["ORTANO2ADIIBM"] = "0x1"
@@ -295,6 +315,8 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0034"] = "0x14"
     goldfw_img["68-0034"] = "elba_goldfw_1.51.0-G-37_2023.05.17.tar"
     goldfw_dat["68-0034"] = "05-17-2023"
+    mainfw_img["68-0034"] = "dsc_fw_elba_1.61.0-C-96-3_2023.09.29.tar"
+    mainfw_dat["68-0034"] = ""
 
     cpld_img["ORTANO2INTERP"] = "ortano_interposer_working_rev3.14_033023.bin"
     cpld_ver["ORTANO2INTERP"] = "0x3"
@@ -310,6 +332,8 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO2INTERP"] = "05-03-2023"
     goldfw_img["ORTANO2INTERP"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["ORTANO2INTERP"] = "05-03-2023"
+    mainfw_img["ORTANO2INTERP"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["ORTANO2INTERP"] = ""
 
     cpld_img["ORTANO2SOLO"] = "ortano_solo_working_rev1.5_033123.bin"
     cpld_ver["ORTANO2SOLO"] = "0x1"
@@ -325,6 +349,8 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO2SOLO"] = "05-03-2023"
     goldfw_img["ORTANO2SOLO"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["ORTANO2SOLO"] = "05-03-2023"
+    mainfw_img["ORTANO2SOLO"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["ORTANO2SOLO"] = ""
 
     # Ortano2 SOLO Oracle Tall Heat Sink
     cpld_img["ORTANO2SOLOORCTHS"] = "ortano_solo_working_rev1.5_033123.bin"
@@ -341,6 +367,8 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO2SOLOORCTHS"] = "05-03-2023"
     goldfw_img["ORTANO2SOLOORCTHS"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["ORTANO2SOLOORCTHS"] = "05-03-2023"
+    mainfw_img["ORTANO2SOLOORCTHS"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["ORTANO2SOLOORCTHS"] = ""
 
     # Ortano2 SOLO Microsoft
     cpld_img["ORTANO2SOLOMSFT"] = "ortano_solo_working_rev1.5_033123.bin"
@@ -357,6 +385,8 @@ class NIC_IMAGES:
     diagfw_dat["ORTANO2SOLOMSFT"] = "05-17-2023"
     goldfw_img["ORTANO2SOLOMSFT"] = "elba_goldfw_1.51.0-G-37_2023.05.17.tar"
     goldfw_dat["ORTANO2SOLOMSFT"] = "05-17-2023"
+    mainfw_img["ORTANO2SOLOMSFT"] = "dsc_fw_elba_1.61.0-C-96-3_2023.09.29.tar"
+    mainfw_dat["ORTANO2SOLOMSFT"] = ""
 
     # Ortano2 SOLO S4 # No Mainfw
     cpld_img["ORTANO2SOLOS4"] = "ortano_solo_working_rev1.5_033123.bin"
@@ -403,6 +433,8 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0049"] = "0x05"
     goldfw_img["68-0049"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
     goldfw_dat["68-0049"] = "05-03-2023"
+    mainfw_img["68-0049"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    mainfw_dat["68-0049"] = ""
 
     # ORTANO2ADI CR Mircosoft
     cpld_img["ORTANO2ADICRMSFT"] = "ortano_adi_cr_working_rev1.5_033123.bin"
@@ -432,6 +464,8 @@ class NIC_IMAGES:
     fail_cpld_dat["68-0091"] = "0x05"
     goldfw_img["68-0091"] = "elba_goldfw_1.51.0-G-37_2023.05.17.tar"
     goldfw_dat["68-0091"] = "05-17-2023"
+    mainfw_img["68-0091"] = "dsc_fw_elba_1.61.0-C-96-3_2023.09.29.tar"
+    mainfw_dat["68-0091"] = ""
 
     # ORTANO2ADI CR S4 # No Mainfw
     cpld_img["ORTANO2ADICRS4"] = "ortano_adi_cr_working_rev1.5_033123.bin"
@@ -465,6 +499,8 @@ class NIC_IMAGES:
     diagfw_dat["GINESTRA_D4"] = "08-21-2023"
     goldfw_img["GINESTRA_D4"] = "naples_goldfw_elba_1.68-G-4_2023.08.21.tar"
     goldfw_dat["GINESTRA_D4"] = "08-21-2023"
+    mainfw_img["GINESTRA_D4"] = "dsc_fw_elba_1.64.0-31.tar"
+    mainfw_dat["GINESTRA_D4"] = ""
 
     cpld_img["GINESTRA_D5"] = "ginestra_d5_rev2_7_working_12132023.bin"
     cpld_ver["GINESTRA_D5"] = "0x2"
@@ -480,6 +516,8 @@ class NIC_IMAGES:
     diagfw_dat["GINESTRA_D5"] = "12-14-2023"
     goldfw_img["GINESTRA_D5"] = "naples_goldfw_elba_1.68-G-9_2024.02.29.tar"
     goldfw_dat["GINESTRA_D5"] = "12-13-2023"
+    mainfw_img["GINESTRA_D5"] = "dsc_fw_elba_1.65.0-C-12-12_2023.08.21.tar"
+    mainfw_dat["GINESTRA_D5"] = ""
 
     cpld_img["58-0001-01"] = "ginestra_d5_rev2_7_working_12132023.bin"
     cpld_ver["58-0001-01"] = "0x2"
@@ -889,6 +927,12 @@ CONSOLE_DDR_BIST_NIC_LIST = [
     ] #temporary list to hold nic types while gradually offloading ddr_bist from L1 test
 DDR_HARCODED_TRAINING_NIC_LIST = []
 NEED_UBOOT_IMG_CARD_TYPE_LIST = [NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4]
+MAINFW_TYPE_LIST = [
+    NIC_Type.NAPLES100, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25OCP,
+    NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2ADICR,
+    NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT,
+    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5
+    ]
 
 #ARM_L1 test set mode hod_1100
 ARM_L1_MODE_HOD_1100 = [NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.ORTANO2SOLOS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4]

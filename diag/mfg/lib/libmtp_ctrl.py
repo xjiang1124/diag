@@ -2828,135 +2828,133 @@ class mtp_ctrl():
 
     # Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image,
     # and etnerprise card get an enterprise image
-    def check_swi_software_image(self, slot, software_pn, pn_check=True):
+    def check_swi_software_image(self, slot, pn_check=True):
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
             return False
         if naples_pn[0:7] == "68-0003":  # NAPLES 100 PENSANDO
-            if software_pn != "90-0001-0003":
-                return False
+            return "90-0001-0003"
+
         elif naples_pn[0:9] == "111-05363":  # NAPLES 100 NETAPP
-            if software_pn != "90-0001-0002":
-                return False
+            return "90-0001-0002"
+
         elif naples_pn[0:7] == "68-0013":  # NAPLES100 IBM
-            if software_pn != "90-0004-0001":
-                return False
+            return "90-0004-0001"
+
         elif naples_pn[0:6] == "P37692":  # NAPLES100 HPE
-            if software_pn != "90-0002-0009":
-                return False
+            return "90-0002-0009"
+
         elif naples_pn[0:6] == "P41854":  # NAPLES100 HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:7] == "68-0024":  # NAPLES100 DELL
-            if software_pn != "90-0013-0001":
-                return False
+            return "90-0013-0001"
+
         elif naples_pn[0:7] == "68-0005":  # NAPLES25 PENSANDO
-            if software_pn != "90-0002-0003":
-                return False
+            return "90-0002-0003"
+
         elif naples_pn[0:6] == "P18669":  # NAPLES25 HPE
-            if software_pn != "90-0006-0001":
-                return False
+            return "90-0006-0001"
+
         elif naples_pn[0:7] == "68-0008":  # NAPLES25 EQUINIX
-            if software_pn != "90-0006-0001":
-                return False
+            return "90-0006-0001"
+
         elif naples_pn[0:6] == "P26968":  # NAPLES25 SWM HPE
-            if software_pn != "90-0002-0010":
-                return False
+            return "90-0002-0010"
+
         elif naples_pn[0:6] == "P41851":  # NAPLES25 SWM HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:6] == "P46653":    # NAPLES25 SWM HPE TAA
-            if software_pn != "90-0014-0001":
-                return False
+            return "90-0014-0001"
+
         elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):  # NAPLES25 SWM PENSANDO & TAA
-            if software_pn != "90-0002-0005":
-                return False
+            return "90-0002-0005"
+
         elif naples_pn[0:7] == "68-0014":  # NAPLES25 SWM DELL
-            if software_pn != "90-0007-0004":
-                return False
+            return "90-0007-0004"
+
         elif naples_pn[0:7] == "68-0019":  # NAPLES25 SWM 833
-            if software_pn != "90-0002-0007":
-                return False
+            return "90-0002-0007"
+
         elif naples_pn[0:7] == "68-0023":  # NAPLES25 OCP PENSANDO
-            if software_pn != "90-0002-0007":
-                return False
+            return "90-0002-0007"
+
         elif naples_pn[0:6] == "P37689":  # NAPLES25 OCP HPE
-            if software_pn != "90-0002-0011":
-                return False
+            return "90-0002-0011"
+
         elif naples_pn[0:6] == "P41857":  # NAPLES25 OCP HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:7] == "68-0010":  # NAPLES25 OCP DELL
-            if software_pn != "90-0007-0004":
-                return False
+            return "90-0007-0004"
+
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):  # FORIO/VOMERO/VOMERO2
-            if software_pn != "90-0003-0001":
-                return False
+            return "90-0003-0001"
+
         elif naples_pn[0:7] == "68-0015":  # ORTANO
-            if software_pn != "90-0021-0001":
-                return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
                 self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PEN_PN_MINUS_REV_MASK]+" C1", naples_pn))
-                return False
+                return ""
+            else:
+                return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0021":  # ORTANO PENSANDO
-            if software_pn != "90-0019-0001":
-                return False
+            return "90-0019-0001"
+
         elif naples_pn[0:6] == "0PCFPC":  # POMONTE DELL
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:6] in ("0X322F", "0W5WGK"):  # LACONA32 DELL
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:6] == "P47930":  # LACONA32 HPE
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:7] == "68-0026":  # ORTANO2 ADI ORACLE
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0028":  # ORTANO2 ADI IBM
-            if software_pn != "90-0016-0004":
-                return False
+            return "90-0016-0004"
+
         elif naples_pn[0:7] == "68-0034":  # ORTANO2 ADI MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0029":  # ORTANO2 INTERPOSER
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0077":  # ORTANO2 SOLO
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0089":  # ORTANO2 SOLO Tall Heat Sink
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0090":  # ORTANO2 SOLO MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0092":  # ORTANO2 (ADI CR/ SOLO) S4
-            if software_pn != "90-0022-0001":
-                return False
+            return "90-0022-0001"
+
         elif naples_pn[0:7] == "68-0049":  # ORTANO2 ADI CR
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0091":  # ORTANO2 ADI CR MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0074":  # GINESTRA_D4
-            if software_pn != "90-0023-0001":
-                return False
+            return "90-0023-0001"
+
         elif naples_pn[0:7] == "68-0075":  # GINESTRA_D5
-            if software_pn != "90-0023-0002":
-                return False
+            return "90-0023-0002"
+
         elif naples_pn[0:7] == "68-0076":     #GINESTRA_S4
-            if software_pn != "90-0023-0003":
-                return False
+            return "90-0023-0003"
+
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
-            return False
-
-        self.cli_log_slot_inf_lock(slot, "==> SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))
-        return True
+            return ""
 
     def mtp_nic_sw_pn_search(self, slot, sw_pn_list, check_naples_pn):
         """ for each slot, match it to one of the SW PNs; fail slot if no match """
@@ -5374,7 +5372,8 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
+    def mtp_mgmt_nic_sw_shutdown(self, slot):
+        software_pn = self.check_swi_software_image(slot)
         isCloud = self.check_is_cloud_software_image(slot, software_pn)
         isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003", "90-0019-0001", "90-0002-0011", "90-0007-0004") else False
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
