@@ -62,6 +62,20 @@ class LaunchApp(object):
 
         return testbed_id, mtp_resource_name
 
+    def __check_mtp_available(self, mtp_resource_name):
+        try:
+            with open("/vol/hw/diag/cicd/mtp.db", "r") as mtp_db_fh:
+                for line in mtp_db_fh.readlines():
+                    mtp_id, mtp_status = line.split(" ")
+                    if mtp_id == mtp_resource_name:
+                        if mtp_status.lower().strip() == "online":
+                            return True
+                        else:
+                            return False
+        except Exception as e:
+            Logger.error(f"Caught exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
     def __parse_warmd(self, testbed_json):
         Logger.info(f"Loading {testbed_json} to parse MTP info")
         try:
@@ -309,6 +323,13 @@ class LaunchApp(object):
             return ret
 
         testbed_id, mtp_resource_name = self.__get_testbed_id(GlobalOptions.testbed_json)
+
+        if not self.__check_mtp_available(mtp_resource_name):
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            while not self.__check_mtp_available(mtp_resource_name):
+                continue
 
         ret, barcode_scans = self.__gen_barcode_scans(mtp_resource_name)
         if ret != defs.Result.SUCCESS:
