@@ -3957,6 +3957,20 @@ class mtp_ctrl():
             if sku:
                 self.barcode_scans[key][bf.SKU] = sku
 
+    def mtp_populate_dpn_sku_to_scans(self, slot, dpn="", sku=""):
+        """
+            When skipping scanning (e.g. for modeling/QA), still need the barcode_scans object to be filled.
+            This is in case FRU has not been read yet. Just save DPN or SKU.
+        """
+        key = libmfg_utils.nic_key(slot)
+        self.barcode_scans[key] = dict()
+        if dpn:
+            self.cli_log_slot_inf(slot, "Scanned DPN {:s}".format(dpn))
+            self.barcode_scans[key][bf.DPN] = dpn
+        if sku:
+            self.cli_log_slot_inf(slot, "Scanned SKU {:s}".format(sku))
+            self.barcode_scans[key][bf.SKU] = sku
+
     def mtp_nic_info_disp(self, nic_list, fru_valid=True):
         self.cli_log_inf("MTP NIC Info Dump:")
 
@@ -4017,9 +4031,9 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "NIC is Absent")
         self.cli_log_inf("End MTP NIC Info Dump")
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None):
-        self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
 
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
+        self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
         # open ssh session to each NIC
         if new_ssh_sessions:
             self.cli_log_inf("Init NIC Connections", level=0)
@@ -4033,7 +4047,7 @@ class mtp_ctrl():
                 self.cli_log_inf("Failed to init NICs in the FST", level=0)
                 return False
         else:
-            if not self.mtp_init_nic_type(stage, scanned_fru):
+            if not self.mtp_init_nic_type(stage, scanned_fru, scanned_dpn, scanned_sku):
                 self.cli_log_inf("Failed to init NICs in the MTP Chassis", level=0)
                 return False
 
@@ -4790,7 +4804,7 @@ class mtp_ctrl():
         rc = self.mtp_power_on_nic(slot_list, dl, count_down)
         return rc
 
-    def mtp_init_nic_type(self, stage=None, scanned_fru=None):
+    def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -4859,6 +4873,8 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     self.mtp_set_nic_status_fail(slot)
                     continue
+                if scanned_dpn or scanned_sku:
+                    self.mtp_populate_dpn_sku_to_scans(slot, scanned_dpn, scanned_sku)
             else:
                 # In ScanDL, use scanned SN, PN as ground truth
                 mtp_id = self._id

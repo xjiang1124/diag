@@ -342,6 +342,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### Intercept args at inner-test
         mtp_id = mtp_mgmt_ctrl._id
         mtpcfg_file   = kwargs.get("mtpcfg", None)
+        scanned_dpn   = kwargs.get("dpn", None)
+        scanned_sku   = kwargs.get("sku", None)
         testsuite     = kwargs.get("testsuite_name", stage)
         nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
         sw_pn_list            = kwargs.get("sw_pn",            [])
@@ -386,7 +388,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                     return False
             else:
-                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
+                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list, scanned_dpn, scanned_sku):
                     return False
 
         if stage == FF_Stage.FF_SWI:
@@ -520,9 +522,10 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     return True
 
-def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+    # test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "NIC_INIT", "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
 
@@ -619,7 +622,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.fst_sys_info_disp()
 
         elif test == "NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_dpn=kwargs.get("scanned_dpn", None), scanned_sku=kwargs.get("scanned_sku", None))
 
         elif test == "SCAN_NIC_INIT":
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"])

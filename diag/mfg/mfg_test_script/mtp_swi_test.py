@@ -447,6 +447,7 @@ def main():
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
     parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--swm", help="SWM test mode")
+    parser.add_argument("--sku", help="Supply CTO SKU, for QA/lab only...MFG should enter SKU through scanning", default=None)
 
     nic_profile = None
     args = parser.parse_args()
@@ -611,6 +612,8 @@ def main():
                 if not mtp_mgmt_ctrl.mtp_nic_fru_init(slot, True, nic_type, False):
                     mtp_mgmt_ctrl.cli_log_err("FRU re-init failed", level=0)
                     mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+        else:
+            mtp_mgmt_ctrl.mtp_populate_fru_to_scans(read_fru_cfg, pass_nic_list, sku=args.sku)
 
         test_utils.update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list)
 
