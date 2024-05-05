@@ -361,8 +361,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  ginestra:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+  ginestra-S4_58-0001-01:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-S4_58-0001-01 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -390,8 +390,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  ginestra-s4:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+  ginestra-S4_58-0002-01:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-S4_58-0002-01 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
