@@ -670,19 +670,22 @@ var LipariTbl = []I2cInfo {
 
 var MateraI2cTbl = []I2cInfo {
     //       name    comp          Bus   devAddr  page  HubName     HubPort  Flag
-    I2cInfo {"FRU",  "AT24C04C",    7,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM}, //MB FRU
-    I2cInfo {"IOB1", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
-    I2cInfo {"IOB2", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
-    I2cInfo {"FPIC", "AT24C04C",   11,   0x50,    0x0,  "HUB_NONE", 0,       FLAG_16BIT_EEPROM},
+    I2cInfo {"FRU",  "AT24C04C",   20,   0x50,    0x0,  "HUB_NONE", 0,       0}, //MB FRU
+    I2cInfo {"IOBL", "AT24C04C",   18,   0x50,    0x0,  "HUB_NONE", 0,       0},
+    I2cInfo {"IOBR", "AT24C04C",   17,   0x50,    0x0,  "HUB_NONE", 0,       0},
+    I2cInfo {"FPIC", "AT24C04C",   19,   0x50,    0x0,  "HUB_NONE", 0,       0},
     // TODO: CPLD_ELBA0 to simulate MTP_MATERA CPLD, but it's ARM based?
     I2cInfo {"CPLD", "MACHXO3",     0,   0x4A,    0x0,  "FPGA1_HUB_0",  0,   0},
     I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
     I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
     I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
-    I2cInfo {"TEMP_IOB1", "LM75",     6,  0x48,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TEMP_MB",   "LM75",     6,  0x49,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TEMP_IOB2", "LM75",     6,  0x4A,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"CLK_BUF",      "RC19013",  20, 0x6C,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_MB",   "LM75",     20, 0x48,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBL", "LM75",     18, 0x48,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBR", "LM75",     17, 0x48,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"EXPDER_IOBL",  "MCP23008", 18, 0x20,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"EXPDER_IOBR",  "MCP23008", 17, 0x20,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"P12V",      "TPS25990", 10, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
     I2cInfo {"CPU_VDDCR", "ISL69247", 10, 0x60,   0x0,  "HUB_NONE",  0,    0},
     //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
@@ -705,10 +708,10 @@ var MateraHubI2cTbl = []I2cInfo {
     //I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE",  0,  0},
     //I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE",  0,  0},
 
-    I2cInfo {"HUB_1",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    I2cInfo {"HUB_2",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    I2cInfo {"HUB_3",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    I2cInfo {"HUB_4",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
+    //I2cInfo {"HUB_1",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
+    //I2cInfo {"HUB_2",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
+    //I2cInfo {"HUB_3",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
+    //I2cInfo {"HUB_4",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
 }
 
 func init() {

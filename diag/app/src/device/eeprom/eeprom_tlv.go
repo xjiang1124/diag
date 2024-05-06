@@ -361,8 +361,8 @@ var CardTypesTlv = []cardDevPn{
     //MTP_MATERA
     cardDevPn{"MTP_MATERA",  "FRU",         PN_MTP_MATERA_FRU},
     cardDevPn{"MTP_MATERA",  "MB",          PN_MTP_MATERA_MB},
-    cardDevPn{"MTP_MATERA",  "IOB1",        PN_MTP_MATERA_IOB},
-    cardDevPn{"MTP_MATERA",  "IOB2",        PN_MTP_MATERA_IOB},
+    cardDevPn{"MTP_MATERA",  "IOBL",        PN_MTP_MATERA_IOB},
+    cardDevPn{"MTP_MATERA",  "IOBR",        PN_MTP_MATERA_IOB},
     cardDevPn{"MTP_MATERA",  "FPIC",        PN_MTP_MATERA_FPIC},
 }
 
