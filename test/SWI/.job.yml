@@ -584,7 +584,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
          - name: ginestra
            value: yes
     provision:
@@ -613,7 +613,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
          - name: ginestra
            value: yes
     provision:
@@ -642,7 +642,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
          - name: ginestra
            value: yes
     provision:
