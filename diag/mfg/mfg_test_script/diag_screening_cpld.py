@@ -763,9 +763,9 @@ def main():
                 continue
 
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
-            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
-            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, FF_Stage.FF_DL)["filename"]
+            cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, FF_Stage.FF_DL)["filename"]
+            failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, FF_Stage.FF_DL)["filename"]
+            fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, slot, FF_Stage.FF_DL)["filename"]
             nic_thread = threading.Thread(target=single_nic_para_cpld_program, args = (mtp_mgmt_ctrl,
                                                                                         slot,
                                                                                         nic_test_rslt_list,

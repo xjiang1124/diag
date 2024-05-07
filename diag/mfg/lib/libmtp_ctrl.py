@@ -2343,8 +2343,7 @@ class mtp_ctrl():
         boot_image = gold_info[0]
         kernel_timestamp = gold_info[1]
 
-        nic_type = self.mtp_get_nic_type(slot)
-        expected_timestamp = image_control.get_goldfw(self, nic_type, FF_Stage.FF_SWI)["timestamp"]
+        expected_timestamp = image_control.get_goldfw(self, slot, FF_Stage.FF_SWI)["timestamp"]
 
         if (boot_image != "goldfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is GoldFW Failed, NIC is booted from {:s}".format(boot_image))
@@ -2829,135 +2828,133 @@ class mtp_ctrl():
 
     # Check if the loaded image correct for the cards p/n.  i.e. cloud card gets a cloud image,
     # and etnerprise card get an enterprise image
-    def check_swi_software_image(self, slot, software_pn, pn_check=True):
+    def check_swi_software_image(self, slot, pn_check=True):
         naples_pn = self._nic_ctrl_list[slot].nic_get_naples_pn()
         if not naples_pn:
             self.cli_log_slot_err_lock(slot, "Check SWI Software Image: Retreive PN Failed")
             return False
         if naples_pn[0:7] == "68-0003":  # NAPLES 100 PENSANDO
-            if software_pn != "90-0001-0003":
-                return False
+            return "90-0001-0003"
+
         elif naples_pn[0:9] == "111-05363":  # NAPLES 100 NETAPP
-            if software_pn != "90-0001-0002":
-                return False
+            return "90-0001-0002"
+
         elif naples_pn[0:7] == "68-0013":  # NAPLES100 IBM
-            if software_pn != "90-0004-0001":
-                return False
+            return "90-0004-0001"
+
         elif naples_pn[0:6] == "P37692":  # NAPLES100 HPE
-            if software_pn != "90-0002-0009":
-                return False
+            return "90-0002-0009"
+
         elif naples_pn[0:6] == "P41854":  # NAPLES100 HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:7] == "68-0024":  # NAPLES100 DELL
-            if software_pn != "90-0013-0001":
-                return False
+            return "90-0013-0001"
+
         elif naples_pn[0:7] == "68-0005":  # NAPLES25 PENSANDO
-            if software_pn != "90-0002-0003":
-                return False
+            return "90-0002-0003"
+
         elif naples_pn[0:6] == "P18669":  # NAPLES25 HPE
-            if software_pn != "90-0006-0001":
-                return False
+            return "90-0006-0001"
+
         elif naples_pn[0:7] == "68-0008":  # NAPLES25 EQUINIX
-            if software_pn != "90-0006-0001":
-                return False
+            return "90-0006-0001"
+
         elif naples_pn[0:6] == "P26968":  # NAPLES25 SWM HPE
-            if software_pn != "90-0002-0010":
-                return False
+            return "90-0002-0010"
+
         elif naples_pn[0:6] == "P41851":  # NAPLES25 SWM HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:6] == "P46653":    # NAPLES25 SWM HPE TAA
-            if software_pn != "90-0014-0001":
-                return False
+            return "90-0014-0001"
+
         elif (naples_pn[0:7] == "68-0016") or (naples_pn[0:7] == "68-0017"):  # NAPLES25 SWM PENSANDO & TAA
-            if software_pn != "90-0002-0005":
-                return False
+            return "90-0002-0005"
+
         elif naples_pn[0:7] == "68-0014":  # NAPLES25 SWM DELL
-            if software_pn != "90-0007-0004":
-                return False
+            return "90-0007-0004"
+
         elif naples_pn[0:7] == "68-0019":  # NAPLES25 SWM 833
-            if software_pn != "90-0002-0007":
-                return False
+            return "90-0002-0007"
+
         elif naples_pn[0:7] == "68-0023":  # NAPLES25 OCP PENSANDO
-            if software_pn != "90-0002-0007":
-                return False
+            return "90-0002-0007"
+
         elif naples_pn[0:6] == "P37689":  # NAPLES25 OCP HPE
-            if software_pn != "90-0002-0011":
-                return False
+            return "90-0002-0011"
+
         elif naples_pn[0:6] == "P41857":  # NAPLES25 OCP HPE CLOUD
-            if software_pn != "90-0006-0002":
-                return False
+            return "90-0006-0002"
+
         elif naples_pn[0:7] == "68-0010":  # NAPLES25 OCP DELL
-            if software_pn != "90-0007-0004":
-                return False
+            return "90-0007-0004"
+
         elif ((naples_pn[0:7] == "68-0007") or (naples_pn[0:7] == "68-0009") or (naples_pn[0:7] == "68-0011")):  # FORIO/VOMERO/VOMERO2
-            if software_pn != "90-0003-0001":
-                return False
+            return "90-0003-0001"
+
         elif naples_pn[0:7] == "68-0015":  # ORTANO
-            if software_pn != "90-0021-0001":
-                return False
             if pn_check and not naples_pn.endswith("C1"):
                 self.cli_log_slot_err_lock(slot, "Check PN REV: Software Image match to nic part number failed")
                 self.cli_log_slot_err_lock(slot, "Expected: {:s}, Got: {:s}".format(naples_pn[:PEN_PN_MINUS_REV_MASK]+" C1", naples_pn))
-                return False
+                return ""
+            else:
+                return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0021":  # ORTANO PENSANDO
-            if software_pn != "90-0019-0001":
-                return False
+            return "90-0019-0001"
+
         elif naples_pn[0:6] == "0PCFPC":  # POMONTE DELL
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:6] in ("0X322F", "0W5WGK"):  # LACONA32 DELL
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:6] == "P47930":  # LACONA32 HPE
-            if software_pn != "90-0017-0003":
-                return False
+            return "90-0017-0003"
+
         elif naples_pn[0:7] == "68-0026":  # ORTANO2 ADI ORACLE
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0028":  # ORTANO2 ADI IBM
-            if software_pn != "90-0016-0004":
-                return False
+            return "90-0016-0004"
+
         elif naples_pn[0:7] == "68-0034":  # ORTANO2 ADI MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0029":  # ORTANO2 INTERPOSER
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0077":  # ORTANO2 SOLO
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0089":  # ORTANO2 SOLO Tall Heat Sink
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0090":  # ORTANO2 SOLO MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0092":  # ORTANO2 (ADI CR/ SOLO) S4
-            if software_pn != "90-0022-0001":
-                return False
+            return "90-0022-0001"
+
         elif naples_pn[0:7] == "68-0049":  # ORTANO2 ADI CR
-            if software_pn != "90-0021-0001":
-                return False
+            return "90-0021-0001"
+
         elif naples_pn[0:7] == "68-0091":  # ORTANO2 ADI CR MICROSOFT
-            if software_pn != "90-0019-0002":
-                return False
+            return "90-0019-0002"
+
         elif naples_pn[0:7] == "68-0074":  # GINESTRA_D4
-            if software_pn != "90-0023-0001":
-                return False
+            return "90-0023-0001"
+
         elif naples_pn[0:7] == "68-0075":  # GINESTRA_D5
-            if software_pn != "90-0023-0002":
-                return False
+            return "90-0023-0002"
+
         elif naples_pn[0:7] == "68-0076":     #GINESTRA_S4
-            if software_pn != "90-0023-0003":
-                return False
+            return "90-0023-0003"
+
         else:
             self.cli_log_slot_err_lock(slot, "check_swi_software_image Unknown Part Number {:s} !!".format(naples_pn))
-            return False
-
-        self.cli_log_slot_inf_lock(slot, "==> SOFTWARE IMAGE PN {:s}    CARD PN {:s} ".format(software_pn, naples_pn))
-        return True
+            return ""
 
     def mtp_nic_sw_pn_search(self, slot, sw_pn_list, check_naples_pn):
         """ for each slot, match it to one of the SW PNs; fail slot if no match """
@@ -3088,8 +3085,8 @@ class mtp_ctrl():
             stage = FF_Stage.FF_DL
         else:
             stage = FF_Stage.FF_SWI
-        expected_version = image_control.get_cpld(self, nic_type, stage)["version"]
-        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3161,8 +3158,8 @@ class mtp_ctrl():
         #     return False
         # cur_ver = nic_cpld_info[0]
         # cur_timestamp = nic_cpld_info[1]
-        # expected_version   = image_control.get_cpld(self, nic_type, stage)["version"]
-        # expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        # expected_version   = image_control.get_cpld(self, slot, stage)["version"]
+        # expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
         # if nic_type in self._proto_type_list:
         #     self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
@@ -3174,10 +3171,10 @@ class mtp_ctrl():
         #     return True
 
         partition_img_dict = {
-            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
+            "cfg0": image_control.get_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, slot, FF_Stage.FF_DL)["filename"]
         }
         program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
 
@@ -3213,10 +3210,10 @@ class mtp_ctrl():
             return False
 
         partition_img_dict = {
-            "cfg0": image_control.get_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg1": image_control.get_fail_cpld(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg2": image_control.get_timer1(self, nic_type, FF_Stage.FF_DL)["filename"],
-            "cfg3": image_control.get_timer2(self, nic_type, FF_Stage.FF_DL)["filename"]
+            "cfg0": image_control.get_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg1": image_control.get_fail_cpld(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg2": image_control.get_timer1(self, slot, FF_Stage.FF_DL)["filename"],
+            "cfg3": image_control.get_timer2(self, slot, FF_Stage.FF_DL)["filename"]
         }
         if not main_only:
             program_sequence = ["cfg1", "cfg2", "cfg0", "cfg3"]
@@ -3241,7 +3238,7 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "No feature row update for Proto NIC")
             return True
 
-        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
+        cpld_img = "/home/diag/"+image_control.get_fea_cpld(self, slot, FF_Stage.FF_DL)["filename"]
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "fea"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD feature row failed")
@@ -3304,7 +3301,7 @@ class mtp_ctrl():
 
         fea_regex = r"00000000  (.*)  \|.*\|"  # first 16 bytes
 
-        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, nic_type, FF_Stage.FF_DL)["filename"]
+        cmd = "hexdump -C /home/diag/"+image_control.get_fea_cpld(self, slot, FF_Stage.FF_DL)["filename"]
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
@@ -3406,11 +3403,11 @@ class mtp_ctrl():
             stage = FF_Stage.FF_DL
         else:
             stage = FF_Stage.FF_SWI
-        expected_version = image_control.get_cpld(self, nic_type, stage)["version"]
-        expected_timestamp = image_control.get_cpld(self, nic_type, stage)["timestamp"]
+        expected_version = image_control.get_cpld(self, slot, stage)["version"]
+        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
         if sec_cpld:
-            expected_version = image_control.get_sec_cpld(self, nic_type, stage)["version"]
-            expected_timestamp = image_control.get_sec_cpld(self, nic_type, stage)["timestamp"]
+            expected_version = image_control.get_sec_cpld(self, slot, stage)["version"]
+            expected_timestamp = image_control.get_sec_cpld(self, slot, stage)["timestamp"]
 
         if cur_ver != expected_version or (timestamp_check and cur_timestamp != expected_timestamp):
             self.cli_log_slot_err_lock(slot, "Verify NIC CPLD Failed")
@@ -3511,7 +3508,7 @@ class mtp_ctrl():
         boot_image = qspi_info[0]
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
-        expected_timestamp = image_control.get_diagfw(self, nic_type, FF_Stage.FF_DL)["timestamp"]
+        expected_timestamp = image_control.get_diagfw(self, slot, FF_Stage.FF_DL)["timestamp"]
 
         if (boot_image != "diagfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
@@ -3955,11 +3952,22 @@ class mtp_ctrl():
             self.barcode_scans[key][bf.PN] = nic_fru_cfg[key][bf.PN]
             if dpn:
                 self.barcode_scans[key][bf.DPN] = dpn
-            elif self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_S4:
-                self.cli_log_slot_err(slot, "A DPN must be supplied via --dpn args.")
-                self.mtp_set_nic_status_fail(slot)
             if sku:
                 self.barcode_scans[key][bf.SKU] = sku
+
+    def mtp_populate_dpn_sku_to_scans(self, slot, dpn="", sku=""):
+        """
+            When skipping scanning (e.g. for modeling/QA), still need the barcode_scans object to be filled.
+            This is in case FRU has not been read yet. Just save DPN or SKU.
+        """
+        key = libmfg_utils.nic_key(slot)
+        self.barcode_scans[key] = dict()
+        if dpn:
+            self.cli_log_slot_inf(slot, "Scanned DPN {:s}".format(dpn))
+            self.barcode_scans[key][bf.DPN] = dpn
+        if sku:
+            self.cli_log_slot_inf(slot, "Scanned SKU {:s}".format(sku))
+            self.barcode_scans[key][bf.SKU] = sku
 
     def mtp_nic_info_disp(self, nic_list, fru_valid=True):
         self.cli_log_inf("MTP NIC Info Dump:")
@@ -4021,9 +4029,9 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "NIC is Absent")
         self.cli_log_inf("End MTP NIC Info Dump")
 
-    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None):
-        self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
 
+    def mtp_nic_init(self, stage=None, new_ssh_sessions=True, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
+        self.cli_log_inf("Init NICs in the MTP Chassis", level=0)
         # open ssh session to each NIC
         if new_ssh_sessions:
             self.cli_log_inf("Init NIC Connections", level=0)
@@ -4037,7 +4045,7 @@ class mtp_ctrl():
                 self.cli_log_inf("Failed to init NICs in the FST", level=0)
                 return False
         else:
-            if not self.mtp_init_nic_type(stage, scanned_fru):
+            if not self.mtp_init_nic_type(stage, scanned_fru, scanned_dpn, scanned_sku):
                 self.cli_log_inf("Failed to init NICs in the MTP Chassis", level=0)
                 return False
 
@@ -4071,7 +4079,7 @@ class mtp_ctrl():
                     return False
         return True
 
-    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, stop_on_err, vmarg_percentage=""):
+    def mtp_single_nic_diag_init(self, slot, emmc_format, emmc_check, fru_valid, vmargin, aapl, dis_hal, fru_fpo, fpo, stop_on_err, vmarg_percentage=""):
         ret = True
         nic_type = self.mtp_get_nic_type(slot)
 
@@ -4128,7 +4136,7 @@ class mtp_ctrl():
         # (DIAG_INIT, CPLD_DIAG) END
 
         if ret and fru_valid:
-            if emmc_format:
+            if fpo:
                 init_date = False
             else:
                 init_date = True
@@ -4645,6 +4653,7 @@ class mtp_ctrl():
                                                 aapl,
                                                 dis_hal,
                                                 fru_fpo,
+                                                fpo,
                                                 stop_on_err,
                                                 vmarg_percentage))
             nic_thread.daemon = True
@@ -4793,7 +4802,7 @@ class mtp_ctrl():
         rc = self.mtp_power_on_nic(slot_list, dl, count_down)
         return rc
 
-    def mtp_init_nic_type(self, stage=None, scanned_fru=None):
+    def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -4862,6 +4871,8 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     self.mtp_set_nic_status_fail(slot)
                     continue
+                if scanned_dpn or scanned_sku:
+                    self.mtp_populate_dpn_sku_to_scans(slot, scanned_dpn, scanned_sku)
             else:
                 # In ScanDL, use scanned SN, PN as ground truth
                 mtp_id = self._id
@@ -4934,19 +4945,11 @@ class mtp_ctrl():
                     continue
             if self.mtp_check_nic_status(slot) and self.mtp_get_nic_type(slot) == NIC_Type.GINESTRA_D5:
                 pn = self.mtp_get_nic_pn(slot)
-                sku = self.get_scanned_sku(slot)
+                final_nic_type = None
                 if re.match(PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_D5
                 elif re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, pn):
                     final_nic_type = NIC_Type.GINESTRA_S4
-
-                    if sku == PRODUCT_SKU.GIN_S4:
-                        final_nic_type = NIC_Type.GINESTRA_S4
-                    elif sku == PRODUCT_SKU.GIN_S4_B3:
-                        final_nic_type = NIC_Type.GINESTRA_S4_B3
-                    elif sku == PRODUCT_SKU.GIN_S4_P3:
-                        final_nic_type = NIC_Type.GINESTRA_S4_P3
-
                 if final_nic_type:
                     self._nic_type_list[slot] = final_nic_type
                     self._nic_ctrl_list[slot].nic_set_type(final_nic_type)
@@ -5369,7 +5372,8 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_nic_sw_shutdown(self, slot, software_pn):
+    def mtp_mgmt_nic_sw_shutdown(self, slot):
+        software_pn = self.check_swi_software_image(slot)
         isCloud = self.check_is_cloud_software_image(slot, software_pn)
         isRelC = True if software_pn in ("90-0013-0001", "90-0014-0001", "90-0002-0010", "90-0007-0003", "90-0019-0001", "90-0002-0011", "90-0007-0004") else False
         if not self._nic_ctrl_list[slot].nic_sw_shutdown(cloud=isCloud, isRelC=isRelC):
@@ -5825,7 +5829,7 @@ class mtp_ctrl():
                 preset_config = "1"
             elif nic_type in (NIC_Type.LACONA32, NIC_Type.LACONA32DELL):
                 preset_config = "18"
-            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+            elif nic_type in (NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4):
                 preset_config = "8"
             else:
                 self.cli_log_slot_err_lock(slot, "Board config not supported on this NIC")
@@ -6589,7 +6593,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
         pn = self.mtp_get_nic_pn(slot)
         dpn = self.get_scanned_dpn(slot)
-        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+        if nic_type not in CTO_MODEL_TYPE_LIST:
             self.cli_log_slot_err(slot, "PN-DPN check doesnt apply to this NIC")
             return False
 
@@ -6606,7 +6610,7 @@ class mtp_ctrl():
         pn = self.mtp_get_nic_pn(slot)
         dpn = self.mtp_get_nic_dpn(slot)
         sku = self.get_scanned_sku(slot)
-        if nic_type not in (NIC_Type.GINESTRA_S4, NIC_Type.GINESTRA_S4_B3, NIC_Type.GINESTRA_S4_P3):
+        if nic_type not in CTO_MODEL_TYPE_LIST:
             self.cli_log_slot_err(slot, "DPN-SKU check doesnt apply to this NIC")
             return False
 

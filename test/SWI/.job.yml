@@ -477,8 +477,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  monterey:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type monterey --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+  lacona-hpe:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type lacona-hpe --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -498,7 +498,7 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: elba
-         - name: monterey
+         - name: laconahpe
            value: yes
     provision:
       username: diag
@@ -506,8 +506,66 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  ginestra:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+  lacona-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type lacona-dell --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: laconadell
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  pomonte-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type pomonte-dell --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-elba
+     - build-arm64-elba
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: pomonte
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  DSC2A-2Q200-32S32F64P-S4A:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type DSC2A-2Q200-32S32F64P-S4A --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -526,7 +584,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
          - name: ginestra
            value: yes
     provision:
@@ -535,8 +593,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  ginestra-s4:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-s4 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+  DSC2A-2Q200-32S32F64P-S4B:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type DSC2A-2Q200-32S32F64P-S4B --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -555,7 +613,36 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
+         - name: ginestra
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  DSC2A-2Q200-32S32F64P-S4C:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type DSC2A-2Q200-32S32F64P-S4C --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/SWI.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-giglio
+     - build-arm64-giglio
+     - package-giglio-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
          - name: ginestra
            value: yes
     provision:

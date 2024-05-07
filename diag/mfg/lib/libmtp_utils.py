@@ -546,11 +546,11 @@ def cpld_upgrade_downgrade_utility_function_test(mtp_mgmt_ctrl, slot, new_cpld_j
     new_failsafe_img_sha512sum = new_cpld_json_dict[pn]["failsafe_imge"]["sha512sum"]
     # old cpld version, usisng current MFG released cpld version.
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-    old_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, nic_type, stage)["filename"]
-    old_cpld_img_ver   = image_control.get_cpld(mtp_mgmt_ctrl, nic_type, stage)["version"]
-    old_cpld_img_min_ver = image_control.get_cpld(mtp_mgmt_ctrl, nic_type, stage)["timestamp"]
-    old_failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, nic_type, stage)["filename"]
-    old_fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, nic_type, stage)["filename"]
+    old_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["filename"]
+    old_cpld_img_ver   = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["version"]
+    old_cpld_img_min_ver = image_control.get_cpld(mtp_mgmt_ctrl, slot, stage)["timestamp"]
+    old_failsafe_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fail_cpld(mtp_mgmt_ctrl, slot, stage)["filename"]
+    old_fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, slot, stage)["filename"]
 
     # copy cpld image files from MTP to NIC
     for cpld_img_file in [new_working_img_file, new_failsafe_img_file, old_cpld_img_file, old_failsafe_cpld_img_file, old_fea_cpld_img_file]:

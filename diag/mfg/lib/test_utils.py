@@ -342,17 +342,9 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         ####### Intercept args at inner-test
         mtp_id = mtp_mgmt_ctrl._id
         mtpcfg_file   = kwargs.get("mtpcfg", None)
+        scanned_dpn   = kwargs.get("dpn", None)
+        scanned_sku   = kwargs.get("sku", None)
         testsuite     = kwargs.get("testsuite_name", stage)
-        nic_sw_img_file_list  = kwargs.get("nic_sw_img_file_list",  [])
-        sw_pn_list            = kwargs.get("sw_pn",            [])
-        profile_cfg_file_list = kwargs.get("profile_cfg_file_list", [None]) # multiple profiles not supported
-
-        if stage == FF_Stage.FF_SWI:
-            if not handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list):
-                return False
-        profile_cfg_file = ""
-        if profile_cfg_file_list != [None]:
-            profile_cfg_file = profile_cfg_file_list[0] # multiple profiles not supported
 
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
@@ -386,13 +378,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     fail_mtp_test(mtp_mgmt_ctrl, mtp_test_summary)
                     return False
             else:
-                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list):
+                if not mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list, scanned_dpn, scanned_sku):
                     return False
-
-        if stage == FF_Stage.FF_SWI:
-            # upload mainfw image received via args
-            if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, ["NIC_SW_IMG_UPDATE"], skip_test_list, sw_pn_list=sw_pn_list, nic_sw_img_file_list=nic_sw_img_file_list, profile_cfg_file=[os.path.basename(profile_cfg_file)]):
-                return False
 
         fail_nic_list = list()
         pass_nic_list = list()
@@ -474,7 +461,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         mtp_test_cleanup(mtp_mgmt_ctrl) # Close file handles before zip
         mtp_mgmt_ctrl.set_mtp_diag_logfile(sys.stdout)
-        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_script=profile_cfg_file_list[0], extra_config=mtpcfg_file):
+        if not testlog.mtp_init_test_script(mtp_mgmt_ctrl, mtp_script_dir, mtp_script_pkg, extra_config=mtpcfg_file):
             mtp_mgmt_ctrl.cli_log_err("Deploy MTP {:s} Test script failed".format(stage), level=0)
             return False
         mtp_mgmt_ctrl.cli_log_inf("Deploy MTP {:s} Test script complete".format(stage), level=0)
@@ -520,9 +507,10 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     mtp_mgmt_ctrl.cli_log_inf("MTP Inlet temp = {:2.2f}".format(mtp_mgmt_ctrl.mtp_get_inlet_temp(None, None)))
     return True
 
-def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[]):
+def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+    # test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "NIC_INIT", "NIC_FW_UPDATE"]
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
 
@@ -585,12 +573,6 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
         elif test == "NIC_FW_UPDATE":
             ret = libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, libmfg_utils.mtp_get_sw_image_list(mtp_mgmt_ctrl, stage))
 
-        elif test == "NIC_SW_IMG_UPDATE":
-            ret = libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, kwargs["nic_sw_img_file_list"])
-            if kwargs["profile_cfg_file"]:
-                ret = libmfg_utils.mtp_update_firmware(mtp_mgmt_ctrl, kwargs["profile_cfg_file"])
-            ret = libmfg_utils.mtp_prepare_swi_invoke_on_mtp(mtp_mgmt_ctrl, kwargs["sw_pn_list"], kwargs["nic_sw_img_file_list"])
-
         elif test == "FST_UPDATE":
             ret = libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl)
 
@@ -619,7 +601,7 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = mtp_mgmt_ctrl.fst_sys_info_disp()
 
         elif test == "NIC_INIT":
-            ret = mtp_mgmt_ctrl.mtp_nic_init(stage)
+            ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_dpn=kwargs.get("scanned_dpn", None), scanned_sku=kwargs.get("scanned_sku", None))
 
         elif test == "SCAN_NIC_INIT":
             ret = mtp_mgmt_ctrl.mtp_nic_init(stage, scanned_fru=kwargs["scanned_fru_cfg"])
@@ -725,29 +707,3 @@ def test_pass_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts):
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration))
     return True
 
-
-def handle_swi_args(mtp_mgmt_ctrl, sw_pn_list, nic_sw_img_file_list, profile_cfg_file_list, file_dir="release"):
-    for sw_pn in sw_pn_list:
-        mtp_mgmt_ctrl.cli_log_inf("==> Scanned SW PN: {:s} <==".format(sw_pn))
-
-    # get sw image name based on the sw pn
-    for sw_pn in sw_pn_list:
-        nic_sw_link_file = "{:s}/{:s}".format(file_dir, sw_pn)
-        if not libmfg_utils.file_exist(nic_sw_link_file):
-            mtp_mgmt_ctrl.cli_log_err("Software image link {:s} doesn't exist... Abort".format(nic_sw_link_file), level=0)
-            return False
-        nic_sw_img_file = os.readlink(nic_sw_link_file)
-        nic_sw_img_file_list.append(nic_sw_img_file)
-
-    # get path to profile, but doesnt work if multiple sw_pn supplied
-    for sw_pn in sw_pn_list:
-        profile_link_cfg_file = "{:s}/profile_{:s}.py".format(file_dir, sw_pn)
-        if not libmfg_utils.file_exist(profile_link_cfg_file):
-            mtp_mgmt_ctrl.cli_log_inf("No Profile will apply to PN: {:s}".format(sw_pn), level=0)
-            profile_cfg_file = None
-        else:
-            profile_cfg_file = profile_link_cfg_file
-            mtp_mgmt_ctrl.cli_log_inf("Profile {:s} will apply to PN: {:s}".format(profile_cfg_file, sw_pn), level=0)
-            profile_cfg_file_list.insert(0, profile_cfg_file)
-
-    return True

@@ -1026,6 +1026,10 @@ def naples_image_verify(mtp_mgmt_ctrl, nic_type_full_list, nic_test_full_list, f
         return fail_nic_list
 
     for nic_type, nic_list in zip(nic_type_full_list, nic_test_full_list):
+        if nic_type in CTO_MODEL_TYPE_LIST:
+            # cannot verify these things at this stage, as DPN is needed to be read from FRU first.
+            continue
+
         for slot in nic_list:
             if slot in fail_nic_list:
                 continue

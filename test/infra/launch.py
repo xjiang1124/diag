@@ -62,6 +62,20 @@ class LaunchApp(object):
 
         return testbed_id, mtp_resource_name
 
+    def __check_mtp_available(self, mtp_resource_name):
+        try:
+            with open("/vol/hw/diag/cicd/mtp.db", "r") as mtp_db_fh:
+                for line in mtp_db_fh.readlines():
+                    mtp_id, mtp_status = line.split(" ")
+                    if mtp_id == mtp_resource_name:
+                        if mtp_status.lower().strip() == "online":
+                            return True
+                        else:
+                            return False
+        except Exception as e:
+            Logger.error(f"Caught exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
     def __parse_warmd(self, testbed_json):
         Logger.info(f"Loading {testbed_json} to parse MTP info")
         try:
@@ -224,32 +238,6 @@ class LaunchApp(object):
 
         return defs.Result.SUCCESS
 
-    def __gen_mtp_sw_pn(self, mtp_resource_name, barcode_scans):
-        # write to a file with all SW PNs in one line
-        swi_input = "swi_input"
-        Logger.info(f"Generating {mtp_resource_name} SW PN in input file: {swi_input}")
-
-        sw_pn_test_args = ""
-        for slot in barcode_scans.keys():
-            if "SW_PN" not in barcode_scans[slot].keys():
-                Logger.error(f"Missing 'SW_PN' field from slot {slot} in /vol/hw/diag/cicd/{mtp_resource_name}.yaml")
-                return defs.Result.INFRA_FAILURE
-            sw_pn = barcode_scans[slot]["SW_PN"]
-
-            if not sw_pn.strip():
-                sw_pn = "90-0000-0000" # enter something so we dont get stuck at "Scan SW PN:" input
-
-            sw_pn_test_args += str(barcode_scans[slot]["SW_PN"]) + " "
-
-        try:
-            with open(os.path.join(GlobalOptions.topdir, swi_input), "w") as fh:
-                fh.write(sw_pn_test_args)
-        except Exception as e:
-            Logger.error("Failed to write {:s}".format(swi_input))
-            return defs.Result.INFRA_FAILURE
-
-        return defs.Result.SUCCESS
-
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
         self.__settings["NIC_TYPE"] = GlobalOptions.nic_type.lower()
@@ -336,6 +324,13 @@ class LaunchApp(object):
 
         testbed_id, mtp_resource_name = self.__get_testbed_id(GlobalOptions.testbed_json)
 
+        if not self.__check_mtp_available(mtp_resource_name):
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            Logger.info(f"{mtp_resource_name} is down for maintenance. Once resolved, please cancel and re-run this job.")
+            while not self.__check_mtp_available(mtp_resource_name):
+                continue
+
         ret, barcode_scans = self.__gen_barcode_scans(mtp_resource_name)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract testing slots from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
@@ -350,12 +345,6 @@ class LaunchApp(object):
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract NIC SN, MAC, PN from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
             return ret
-
-        if self.__testsuite.config.job == "SWI":
-            ret = self.__gen_mtp_sw_pn(mtp_resource_name, barcode_scans)
-            if ret != defs.Result.SUCCESS:
-                Logger.error(f"Failed to extract SW PNs from from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
-                return ret
 
         ret =  self.__load_image_manifest()
         if ret != defs.Result.SUCCESS:

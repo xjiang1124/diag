@@ -18,6 +18,7 @@ from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libdefs import Swm_Test_Mode
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
+import scanning
 
 def load_mtp_cfg(cfg_yaml=None, subcommand=None):
     """
@@ -165,12 +166,7 @@ def run_sdl_tests(args):
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
 
-        libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
-        if not ENABLE_SCAN_VERIFY:
-            if "SCAN_VERIFY" not in args.skip_test:
-                args.skip_test.append("SCAN_VERIFY")
-        if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+        scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     if "--run_from_remote" in test_cmd_option:
@@ -252,7 +248,11 @@ def run_convert_nic_tests(args):
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
 
-        libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+        if not ENABLE_SCAN_VERIFY:
+            if "SCAN_VERIFY" not in args.skip_test:
+                args.skip_test.append("SCAN_VERIFY")
+        if "SCAN_VERIFY" not in args.skip_test:
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     if "--run_from_remote" in test_cmd_option:
@@ -335,12 +335,12 @@ def run_dl_tests(args):
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
         if not ENABLE_SCAN_VERIFY:
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
-
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     # test_cmd = [os.path.basename(sys.argv[0])]
@@ -685,8 +685,6 @@ def run_swi_tests(args):
     test_cmd = ["python3", "./mtp_swi_test.py"]
     test_cmd_option = sys.argv[2:]
     stage = FF_Stage.FF_SWI
-    nic_sw_img_file_list  = list()
-    profile_cfg_file_list = [None] # multiple profiles not supported
     libmfg_utils.cli_inf(str(args))
 
     mfg_test_start_ts = libmfg_utils.timestamp_snapshot()
@@ -716,8 +714,6 @@ def run_swi_tests(args):
 
     # running from remote
     if not args.run_from_remote:
-        if not args.sw_pn:
-            args.sw_pn = [libmfg_utils.sw_pn_scan(),]
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=False, stage=stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
@@ -726,21 +722,8 @@ def run_swi_tests(args):
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), args.swm)
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
-
-
-    if not test_utils.handle_swi_args(mtp_mgmt_ctrl, args.sw_pn, nic_sw_img_file_list, profile_cfg_file_list, ".."):
-        exist_code = 1
-        return exist_code
-    
-    if nic_sw_img_file_list:
-        test_cmd_option += ["--image"]
-        test_cmd_option += nic_sw_img_file_list
-
-    if profile_cfg_file_list != [None]:
-        profile_cfg_file = profile_cfg_file_list[0]
-        test_cmd_option += ["--profile", profile_cfg_file]
 
     if "--run_from_remote" in test_cmd_option:
         test_cmd_option.remove("--run_from_remote")
@@ -818,12 +801,12 @@ def run_fst_tests(args):
 
         logfile_path, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, False, stage)
         libmfg_utils.cli_inf("MFG MTP {:s} Test Log will be in in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
         if not ENABLE_SCAN_VERIFY:
             if "SCAN_VERIFY" not in args.skip_test:
                 args.skip_test.append("SCAN_VERIFY")
         if "SCAN_VERIFY" not in args.skip_test:
-            libmfg_utils.single_mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl), is_fst_test=True)
-
+            scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
     # test_cmd = [os.path.basename(sys.argv[0])]
@@ -1519,6 +1502,7 @@ if __name__ == "__main__":
 
     parser_dl.add_argument("--verbosity", "-verbosity", help="Increase output verbosity; default to %(default)s", action='store_true', default=False)
     parser_dl.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
+    parser_dl.add_argument("--dpn", help="Supply Diagnostic Part Number, for QA/lab only...MFG should enter DPN through scanning", default=None)
     parser_dl.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
     parser_dl.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
     parser_dl.add_argument("--skip_slots", "-skip_slots", metavar=('1', '1 2'), help="skip one or more particular slot", nargs="*", default=[])
@@ -1585,12 +1569,12 @@ if __name__ == "__main__":
     parser_swi.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
     parser_swi.add_argument("--skip_test", "-skip_test", metavar=('testname1', 'testname2'), help="skip a particular test or test section", nargs="*", default=[])
     parser_swi.add_argument("--mtpid", "-mtpid", help="pre-select MTP",  nargs="?", default=[])
-    parser_swi.add_argument("--sw_pn", "-swpn", "--swpn", "-sw_pn", help="pre-select SW PN or list of SW PNs", nargs="*", default=[])
     parser_swi.add_argument("--mtpcfg", "-mtpcfg", help="JobD reserved MTP", default=None)
     parser_swi.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
     parser_swi.add_argument("--skip_slots", "-skip_slots", metavar=('1', '2'), help="skip one or more particular slot", nargs="*", default=[])
     parser_swi.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_swi.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
+    parser_swi.add_argument("--sku", help="Supply CTO SKU, for QA/lab only...MFG should enter SKU through scanning", default=None)
     parser_swi.set_defaults(func=run_swi_tests)
 
     parser_fst.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')

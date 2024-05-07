@@ -838,8 +838,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not nic_prsnt_list[slot]:
             continue
-        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-        images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, nic_type, stage)
+        images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage)
         if images_for_nic_type is None:
             return None
         image_list += list(images_for_nic_type.values())
@@ -883,18 +882,6 @@ def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
     if new_version != cur_version:
         return False
 
-    return True
-
-def mtp_prepare_swi_invoke_on_mtp(mtp_mgmt_ctrl, swpn_list, image_list):
-    """
-    setup sw_pn to sw image symbol link, so that SWI can invoke on MTP locallly.
-    """
-
-    for swpn, filename in zip(swpn_list, image_list):
-        cmd = "cd /home/diag; ln -s {:s} {:s}".format(filename, swpn)
-        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=5):
-            mtp_mgmt_ctrl.cli_log_err("Failed to establish symbol link from image file {:s} to {:s}".format(filename, swpn), level=0)
-            return False
     return True
 
 def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
@@ -1210,7 +1197,7 @@ def email_report(email_to, title, body = None):
 
 ###################################################################################
 
-def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
+def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpn=None, sku=None):
     test_xml = ""
     if mac:
         test_xml += FLX_SAVE_UUT_MAC_RSLT_FMT.format(mac)
@@ -1238,7 +1225,7 @@ def flx_soap_save_uut_result_xml(stage, nic_type, sn, rslt, start_ts, stop_ts, d
 
     if dpn:
         extra_info_xml += "DPN=\"{:s}\" ".format(dpn)
-    if SKU:
+    if sku:
         extra_info_xml += "DSC-SKU=\"{:s}\" ".format(sku)
 
     if extra_info_xml:
@@ -1464,7 +1451,7 @@ def soap_get_uut_resp(xml, factory=Factory.FSP):
     finally:
         webservice.close()
 
-def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None,  rot_sn=None, dpu=None, sku=None):
+def flx_web_srv_post_uut_report(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpn=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1513,7 +1500,7 @@ def flx_web_srv_precheck_uut_status(sn, factory, stage=None):
     ret = soap_get_uut_info(xml, factory)
     return int(ret)
 
-def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpu=None, sku=None):
+def flx_web_srv_post_uut_status(stage, nic_type, sn, rslt, start_ts, stop_ts, duration, test_list, test_rslt_list, err_dsc_list, err_code_list, mtp_psu_sn_list, nic_loopback_sn_list, ocp_adap_sn, mfg_script_ver, factory, mac=None, pn=None, rot_sn=None, dpn=None, sku=None):
     if factory is None or factory == Factory.UNKNOWN:
         factory = flx_sn_to_factory(sn)
 
@@ -1808,9 +1795,9 @@ def mfg_summary_disp(stage, summary_dict, mtp_fail_list):
             else:
                 final_result = False
                 if not retest_blocked:
-                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL".format(nic_cli_id_str, nic_type, sn))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL".format(nic_cli_id_str, str(nic_type), str(sn)))
                 else:
-                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL {:s}".format(nic_cli_id_str, nic_type, sn, MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
+                    cli_err("{:s} {:s} {:s} FINAL RESULT FAIL {:s}".format(nic_cli_id_str, str(nic_type), str(sn), MTP_DIAG_Report.NIC_RETEST_BLOCKED_MSG))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
     for mtp_id in mtp_fail_list:
         cli_err("-------- {:s} Test Aborted -------\n".format(mtp_id))
