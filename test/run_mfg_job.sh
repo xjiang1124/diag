@@ -77,6 +77,18 @@ then
     cat ${NIC_BARCODE_FILE}
 fi
 
+PARSER_SN_FILE=${PSDIAG_ROOT}/parser_sn.txt
+if [[ -f ${PARSER_SN_FILE} ]];
+then
+    echo ""
+    echo "Contents of ${PARSER_SN_FILE}"
+    cat ${PARSER_SN_FILE}
+else
+    echo "Missing ${PARSER_SN_FILE}"
+fi
+sudo mkdir -p /mfg_log
+sudo mkdir -p /tmp/mfg_log
+
 echo "**************************************************"
 echo " Install python tool-set from ${PSDIAG_ROOT}/tools/python_packets/amd64/lib"
 echo "**************************************************"
@@ -140,7 +152,7 @@ then
 
     set -x
     # need to pass --iteration=1 to unset any iteration arg passed in TEST_ARGS
-    python3 ./mfg_test.py sdl ${TEST_ARGS} --iteration=1 --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py sdl ${TEST_ARGS} --iteration=1 < ${NIC_BARCODE_FILE}
     ret=$?
 else
     ret=0
@@ -153,7 +165,7 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py dl ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py dl ${TEST_ARGS} < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
@@ -164,7 +176,7 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py sdl ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py sdl ${TEST_ARGS} < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
@@ -175,7 +187,7 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py p2c ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py p2c ${TEST_ARGS}
     ret=$?
 fi
 
@@ -187,7 +199,7 @@ then
 
     set -x
     echo "STOP" > /tmp/4c_input
-    python3 ./mfg_test.py 4c ${TEST_ARGS} --low_temp --logdir ${PSDIAG_ROOT}/log < /tmp/4c_input
+    python3 ./mfg_test.py 4c ${TEST_ARGS} --low_temp < /tmp/4c_input
     ret=$?
 fi
 
@@ -198,10 +210,10 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py swi ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py swi ${TEST_ARGS} < ${NIC_BARCODE_FILE}
     ret1=$?
     if [[ "${NIC_TYPE}" == "ortano-adi-ibm" ]]; then # convert back the cpld
-        python3 ./mfg_test.py cnic ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+        python3 ./mfg_test.py cnic ${TEST_ARGS} < ${NIC_BARCODE_FILE}
         ret2=$?
     else ret2=0
     fi
@@ -215,29 +227,29 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py fst ${TEST_ARGS} --card_type ${CARD_TYPE} --logdir ${PSDIAG_ROOT}/log < ${NIC_BARCODE_FILE}
+    python3 ./mfg_test.py fst ${TEST_ARGS} --card_type ${CARD_TYPE} < ${NIC_BARCODE_FILE}
     ret=$?
 fi
 
 if [[ $ret == 0 && "${JOB_TYPE}" == "ORT" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_ort_test.py for two loops"
+    echo " Launching mfg_test.py ort for two loops"
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py ort ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py ort ${TEST_ARGS}
     ret=$?
 fi
 
 if [[ $ret == 0 && "${JOB_TYPE}" == "RDT" ]];
 then
     echo "**************************************************"
-    echo " Launching mfg_rdt_test.py for two loops"
+    echo " Launching mfg_test.py rdt for two loops"
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py rdt ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    python3 ./mfg_test.py rdt ${TEST_ARGS}
     ret=$?
 fi
 
@@ -248,11 +260,33 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py mtp ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log --mtp_type TURBO_ELBA < ${MTP_BARCODE_FILE}
+    python3 ./mfg_test.py mtp ${TEST_ARGS} --mtp_type TURBO_ELBA < ${MTP_BARCODE_FILE}
     ret=$?
 fi
 
+if [[ $ret != 0 ]]; then
+    set +x
+    echo "**************************************************"
+    echo " Performing failure analysis with parser"
+    echo "**************************************************"
+
+    cd /psdiag/diag/mfg/scripts/fail_anal/
+    mkdir scripts
+    mv /psdiag/diag/mfg/scripts/fail_anal/*.pl scripts/
+    cp ${PARSER_SN_FILE} .
+    ./mfg_parse.sh -c $(python3 /psdiag/qa-infra/get_nic_type.py ${NIC_TYPE}) -s DL,${JOB_TYPE} -f all -l $(basename ${PARSER_SN_FILE}) -e /tmp/mfg_log/ > ${PSDIAG_ROOT}/log/fail_anal_run.log 2>&1
+    parser_ret=$?
+    if [[ $parser_ret != 0 ]]; then
+        cat ${PSDIAG_ROOT}/log/fail_anal_run.log
+    else
+        python3 /psdiag/qa-infra/parser-display.py .
+        mv parse_result*.xlsx ${PSDIAG_ROOT}/log
+    fi
+    set -x
+fi
+
 cd ${PSDIAG_ROOT}
+mv /tmp/mfg_log log/
 tar -zcvf diag_detailed_log.tgz log
 
 exit $ret
