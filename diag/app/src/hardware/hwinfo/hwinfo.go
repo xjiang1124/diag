@@ -33,6 +33,8 @@ import (
     "device/tempsensor/lm75a"
     "device/tempsensor/tmp451"
     "device/cpu/XeonD"
+    "device/clkgen/rc19013"
+    "device/ioexpander/mcp23008"
 
     "gopkg.in/yaml.v2"
 )
@@ -89,7 +91,7 @@ var CpldInfo interface{}
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
 var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
-var materaEepList = []string {"FRU", "MB", "IOB1", "IOB2", "FPIC"}
+var materaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 
 //===============================
 // Naples100 
@@ -511,9 +513,12 @@ func init() {
     materaDispStaList["P3V3"]      = mp8796.DispStatus
     materaDispStaList["P3V3S1"]    = tps53688.DispStatus
     materaDispStaList["P3V3S2"]    = tps53688.DispStatus
-    materaDispStaList["TEMP_MB"]   = lm75a.DispStatus
-    materaDispStaList["TEMP_IOB1"] = lm75a.DispStatus
-    materaDispStaList["TEMP_IOB2"] = lm75a.DispStatus
+    materaDispStaList["TSENSOR_MB"]   = lm75a.DispStatus
+    materaDispStaList["TSENSOR_IOBL"] = lm75a.DispStatus
+    materaDispStaList["TSENSOR_IOBR"] = lm75a.DispStatus
+    materaDispStaList["EXPDER_IOBL"]  = mcp23008.DispStatus
+    materaDispStaList["EXPDER_IOBR"]  = mcp23008.DispStatus
+    materaDispStaList["CLK_BUF"]      = rc19013.DispStatus
     materaDispStaList["P12V"] = tps25990.DispStatus
     materaDispStaList["CPU_VDDCR"] = isl69247.DispStatus
 

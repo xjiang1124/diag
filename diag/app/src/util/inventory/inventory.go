@@ -631,7 +631,7 @@ func main() {
     }
 
     if *cpuPtr == true {
-        out, errGo = exec.Command("bash", "-c", "dmidecode -t processor | grep Version:").Output()
+        out, errGo = exec.Command("bash", "-c", "sudo -SE <<< \"lab123\" dmidecode -t processor | grep Version:").Output()
         if errGo != nil {
             cli.Println("e", errGo)
         } else {
@@ -659,7 +659,7 @@ func main() {
     }
 
     if *ddrPtr == true {
-        out, errGo = exec.Command("bash", "-c", "dmidecode -t memory | grep \"Number Of Devices\"").Output()
+        out, errGo = exec.Command("bash", "-c", "sudo -SE <<< \"lab123\" dmidecode -t memory | grep \"Number Of Devices\"").Output()
         if errGo != nil {
             cli.Println("e", errGo)
         } else {
@@ -667,7 +667,7 @@ func main() {
         }
 
         //cmdStr := string("dmidecode -t memory | grep -A32 \"Memory Device\" | grep -e \"Memory Device\" -e \"Size:\" -e \"Bank Locator:\" -e \"Type:\" -e \"Speed:\" -e \"Manufacturer:\" | grep -v \"Config\" | grep -v \"Volatile\" | grep -v \"Cache\" | grep -v \"Logical\"")
-        cmdStr := string("dmidecode -t memory | grep -A32 \"Memory Device\" | grep -e \"Memory Device\" -e \"Size:\" -e \"Bank Locator:\" -e \"Type:\" -e \"Speed:\" -e \"Manufacturer:\" | grep -v \"Volatile\" | grep -v \"Cache\" | grep -v \"Logical\"")
+        cmdStr := string("sudo -SE <<< \"lab123\" dmidecode -t memory | grep -A32 \"Memory Device\" | grep -e \"Memory Device\" -e \"Size:\" -e \"Bank Locator:\" -e \"Type:\" -e \"Speed:\" -e \"Manufacturer:\" | grep -v \"Volatile\" | grep -v \"Cache\" | grep -v \"Logical\"")
         out, errGo = exec.Command("bash", "-c", cmdStr).Output()
         if errGo != nil {
             cli.Println("e", errGo)
