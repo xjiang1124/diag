@@ -1626,8 +1626,8 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             block_retest = False
             for test in test_list:
@@ -1738,8 +1738,8 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+            dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+            sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             if FLEX_SHOP_FLOOR_CONTROL:
                 if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
