@@ -694,24 +694,6 @@ var MateraI2cTbl = []I2cInfo {
 
 // simulate UUT on Lipari using its 8 Elba CPLD
 var MateraHubI2cTbl = []I2cInfo {
-    //I2cInfo {"CPLD_ELBA0",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA1",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA2",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA3",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA4",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA5",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA6",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    //I2cInfo {"CPLD_ELBA7",      "MACHXO3",    1,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
-
-    //I2cInfo {"HUB_1", "TCA9546A",  0x0, 0x70,    0x0,    "HUB_NONE",  0,  0},
-    //I2cInfo {"HUB_2", "TCA9546A",  0x0, 0x71,    0x0,    "HUB_NONE",  0,  0},
-    //I2cInfo {"HUB_3", "TCA9546A",  0x0, 0x72,    0x0,    "HUB_NONE",  0,  0},
-    //I2cInfo {"HUB_4", "TCA9546A",  0x0, 0x73,    0x0,    "HUB_NONE",  0,  0},
-
-    //I2cInfo {"HUB_1",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_0",  0,    I2C_TEST_ENABLE},
-    //I2cInfo {"HUB_2",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_1",  1,    I2C_TEST_ENABLE},
-    //I2cInfo {"HUB_3",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_2",  2,    I2C_TEST_ENABLE},
-    //I2cInfo {"HUB_4",      "MACHXO3",    0,   0x4A,    0x0,    "FPGA1_HUB_3",  3,    I2C_TEST_ENABLE},
 }
 
 func init() {
