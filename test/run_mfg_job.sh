@@ -61,6 +61,14 @@ else
     exit 249
 fi
 
+MTP_BARCODE_FILE=${PSDIAG_ROOT}/mtp_barcode_scan
+if [[ -f ${MTP_BARCODE_FILE} ]];
+then
+    echo ""
+    echo "Contents of ${MTP_BARCODE_FILE}"
+    cat ${MTP_BARCODE_FILE}
+fi
+
 NIC_BARCODE_FILE=${PSDIAG_ROOT}/nic_barcode_scan
 if [[ -f ${NIC_BARCODE_FILE} ]];
 then
@@ -230,6 +238,17 @@ then
 
     set -x
     python3 ./mfg_test.py rdt ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log
+    ret=$?
+fi
+
+if [[ $ret == 0 && "${JOB_TYPE}" == "SRN" ]];
+then
+    echo "**************************************************"
+    echo " Launching mfg_test.py mtp screening test"
+    echo "**************************************************"
+
+    set -x
+    python3 ./mfg_test.py mtp ${TEST_ARGS} --logdir ${PSDIAG_ROOT}/log --mtp_type TURBO_ELBA < ${MTP_BARCODE_FILE}
     ret=$?
 fi
 

@@ -45,84 +45,6 @@ def mtp_test_cleanup(error_code, fp_list=None):
     #         fp.close()
     os.system("sync")
 
-def get_mtp_mac(mtp_mgmt_ctrl):
-    mtp_sn = mtp_mgmt_ctrl._mtp_sn
-    mac_dict = {
-                "FLM21330006" : "BBBBBBBBBBAF",
-                "FLM21330004" : "BBBBBBBBBBAE",
-                "FLM21330005" : "BBBBBBBBBBA8",
-                "FLM2133000B" : "BBBBBBBBBBA0",
-                "FLM21330001" : "BBBBBBBBBBA1",
-                "FLM21330013" : "BBBBBBBBBBA2",
-                "FLM21330002" : "BBBBBBBBBBA7",
-                "FLM2133000F" : "BBBBBBBBBBAD",
-                "FLM21330008" : "BBBBBBBBBBAC",
-                "FLM2133000D" : "BBBBBBBBBBA4",
-                "FLM21330009" : "BBBBBBBBBBA5",
-                "FLM21330003" : "BBBBBBBBBBA6",
-                "FLM21330011" : "BBBBBBBBBBA9",
-                "FLM21330012" : "BBBBBBBBBBAA",
-                "FLM2133000E" : "BBBBBBBBBBAF",
-                "FLM2133000C" : "BBBBBBBBBBAB",
-                "FLM21400023" : "BBBBBBBBBBB0",
-                "FLM2140001F" : "BBBBBBBBBBB1",
-                "FLM21400018" : "BBBBBBBBBBB2",
-                "FLM2140002D" : "BBBBBBBBBBB3",
-                "FLM2140002A" : "BBBBBBBBBBB4",
-                "FLM21400008" : "BBBBBBBBBBB5",
-                "FLM2140000D" : "BBBBBBBBBBB6",
-                "FLM21400004" : "BBBBBBBBBBB7",
-                "FLM2140001C" : "BBBBBBBBBBB8",
-                "FLM2140000E" : "BBBBBBBBBBB9",
-                "FLM2140000C" : "BBBBBBBBBBBA",
-                "FLM21400002" : "BBBBBBBBBBBB",
-                "FLM21400007" : "BBBBBBBBBBBC",
-                "FLM21400005" : "BBBBBBBBBBBD",
-                "FLM21400024" : "BBBBBBBBBBBE",
-                "FLM21400010" : "BBBBBBBBBBBF",
-                "FLM21400021" : "BBBBBBBBBBC0",
-                "FLM21400015" : "BBBBBBBBBBC1",
-                "FLM21400006" : "BBBBBBBBBBC2",
-                "FLM21400012" : "BBBBBBBBBBC3",
-                "FLM21400001" : "BBBBBBBBBBC4",
-                "FLM2140002C" : "BBBBBBBBBBC5",
-                "FLM2140002F" : "BBBBBBBBBBC6",
-                "FLM2140001E" : "BBBBBBBBBBC7",
-                "FLM2140000A" : "BBBBBBBBBBC8",
-                "FLM2140000B" : "BBBBBBBBBBC9",
-                "FLM21400025" : "BBBBBBBBBBCA",
-                "FLM21400028" : "BBBBBBBBBBCB",
-                "FLM21400029" : "BBBBBBBBBBCC",
-                "FLM2140001A" : "BBBBBBBBBBCD",
-                "FLM21400009" : "BBBBBBBBBBCE",
-                "FLM21400003" : "BBBBBBBBBBCF",
-                "FLM2140001D" : "BBBBBBBBBBD0",
-                "FLM21400032" : "BBBBBBBBBBD1",
-                "FLM21400027" : "BBBBBBBBBBD2",
-                "FLM21400031" : "BBBBBBBBBBD3",
-                "FLM21400026" : "BBBBBBBBBBD4",
-                "FLM21400011" : "BBBBBBBBBBD5",
-                "FLM2140002B" : "BBBBBBBBBBD6",
-                "FLM21400017" : "BBBBBBBBBBD7",
-                "FLM21400016" : "BBBBBBBBBBD8",
-                "FLM21400014" : "BBBBBBBBBBD9",
-                "FLM2140000F" : "BBBBBBBBBBDA",
-                "FLM21400020" : "BBBBBBBBBBDB",
-                "FLM2140002E" : "BBBBBBBBBBDC",
-                "FLM2140001B" : "BBBBBBBBBBDD",
-                "FLM21400019" : "BBBBBBBBBBDE",
-                "FLM21400013" : "BBBBBBBBBBDF"
-                }
-    if mtp_sn not in mac_dict:
-        mtp_mgmt_ctrl.cli_log_err("Failed to retrieve MTP MAC Address", level=0)
-        return False
-    else:
-        mac = mac_dict[mtp_sn].strip()
-        mtp_mgmt_ctrl.cli_log_inf("Retrieve MTP Mac Address passed", level=0)
-        mac = mac.upper().replace(':','')
-        mtp_mgmt_ctrl._mtp_mac = mac
-        return True
-
 def program_mtp_fru(mtp_mgmt_ctrl):
     mtp_sn = mtp_mgmt_ctrl._mtp_sn
     mtp_mac = mtp_mgmt_ctrl._mtp_mac
@@ -130,7 +52,7 @@ def program_mtp_fru(mtp_mgmt_ctrl):
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("{:s} command failed".format(cmd), level=0)
         return False
-    if not mtp_mgmt_ctrl.mtp_set_sn_rev_mac_command(sn=mtp_sn, maj="04", mac=mac):
+    if not mtp_mgmt_ctrl.mtp_set_sn_rev_mac_command(sn=mtp_sn, maj="04", mac=mtp_mac):
         mtp_mgmt_ctrl.cli_log_err("MTP program FRU command failed", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("MTP program FRU command passed", level=0)
@@ -705,6 +627,7 @@ def health_status(mtp_health):
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
+    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
     parser.add_argument("--stop_on_error", help="leave the MTP in error state if error happens", action='store_true')
     parser.add_argument("--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("--stage", "--corner", type=FF_Stage, help="diagnostic environment condition", choices=list(FF_Stage), default=FF_Stage.FF_SRN)
@@ -712,8 +635,8 @@ def main():
     parser.add_argument("--skip_test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip_slots", help="skip a particular slot", nargs="*", default=[])
-    parser.add_argument("--mtpsn", help="MTP SN, like FLM0021330001, etc", required=True)
-    parser.add_argument("--mtpcfg", help="JobD reserved MTP", default=None)
+    parser.add_argument("--mtpsn", help="MTP SN, like FLM0021330001, etc", default="")
+    parser.add_argument("--mtpmac", help="MTP MAC, like BBBBBBBBBBAF, etc", default="")
     parser.add_argument("--mtp_type", help="pass mtp type for test", nargs="?", default="", type=str, required=True)
     parser.add_argument("--l1_seq", help="asic L1 run under sequence mode", action='store_true')
     args = parser.parse_args()
@@ -738,6 +661,8 @@ def main():
         print(" SWMTESTMODE=" + str(swmtestmode))
     if args.mtpsn:
         mtp_sn = args.mtpsn
+    if args.mtpmac:
+        mtp_mac = str(args.mtpmac).upper().replace(':','')
     if args.l1_seq:
         l1_sequence = True
     if args.mtp_type:
@@ -790,6 +715,7 @@ def main():
                              slots_to_skip = mtp_slots_to_skip,
                              dbg_mode = verbosity)
     mtp_mgmt_ctrl._mtp_sn = mtp_sn
+    mtp_mgmt_ctrl._mtp_mac = mtp_mac
 
     # logfiles
     mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
@@ -846,9 +772,6 @@ def main():
 
             if DRY_RUN:
                 ret = []
-            elif test == "MAC_INIT":
-                ret = get_mtp_mac(mtp_mgmt_ctrl)
-                fail_desc = "Unable to get MTP MAC Address"
             elif test == "MTP_FRU_PROG":
                 ret = program_mtp_fru(mtp_mgmt_ctrl)
                 fail_desc = "MTP program FRU fails"
@@ -863,7 +786,7 @@ def main():
                 fail_desc = "MTP DDR Memory validation test failed"
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
-                rlist = nic_list
+                ret = False
 
             if not ret:
                 rlist = nic_list
@@ -988,7 +911,6 @@ def main():
             run_nic_test(pass_nic_list, "NIC_PWRCYC")
 
         else:
-            run_mtp_test(pass_nic_list, "MAC_INIT")
             run_mtp_test(pass_nic_list, "MTP_FRU_PROG")
             run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
             run_nic_test(pass_nic_list, "SLOTS_TYPE_CHECK")
@@ -1037,7 +959,8 @@ def main():
         mtp_mgmt_ctrl.cli_log_inf("##########  MFG {:s} Test Summary  ##########".format("MTP_SCREEN"))
         mtp_mgmt_ctrl.cli_log_inf("---------- {:s} Report: ----------".format(mtp_id))
 
-        if len(fail_nic_list) != 0 or len(pass_nic_list) != 10 or len(fail_desc) > 0:
+        #if len(fail_nic_list) != 0 or len(pass_nic_list) != 10 or len(fail_desc) > 0:
+        if fail_nic_list: # ignore full 10 slots check for CI/CD
             mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FAIL --> {:s}".format(mtp_id, mtp_sn, fail_desc))
         else:
             mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))

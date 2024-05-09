@@ -1886,6 +1886,7 @@ def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn=""):
         else:
             cli_err("[{:s}] {:s} FAIL".format(mtp_id, mtp_sn))
         cli_inf("--------- {:s} Report End --------\n".format(mtp_id))
+    return result
 
 def mtp_common_setup(*args, **kwargs):
     # for backward compatability

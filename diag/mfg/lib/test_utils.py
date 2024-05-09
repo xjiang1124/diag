@@ -156,6 +156,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
                             break
                         mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
                     mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
+                    mtp_mgmt_ctrl.set_mtp_mac(scan_rslt["MTP_MAC"].strip())
 
         if loop_cnt > 1:
             mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
@@ -326,6 +327,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             if mtp_type == MTP_TYPE.TURBO_ELBA:
                 cmd_options.append("--mtpsn")
                 cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
+                cmd_options.append("--mtpmac")
+                cmd_options.append(mtp_mgmt_ctrl.get_mtp_mac())
         if fail_nic_list:
             cmd_options.append("--fail_slots")
             cmd_options.append(' '.join(map(str,fail_nic_list)))

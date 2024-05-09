@@ -16,7 +16,7 @@ import sys, os
     cd test
     MASTER=1 python3 generate_job_yml.py
 
-    this will skip 4C, ORT, RDT, etc (default)
+    this will skip 4C, ORT, RDT, SRN, etc (default)
 
 
  - FOR ASIC TOT,
@@ -29,7 +29,7 @@ import sys, os
 DEFAULT = ["FST"]
 DIAG_CHANGES = ["P2C"]
 SCRIPT_CHANGES = ["P2C", "SWI", "FST"]
-RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST"]
+RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST", "SRN"]
 
 cwd = os.path.basename(os.getcwd())
 if cwd == "test-asic":

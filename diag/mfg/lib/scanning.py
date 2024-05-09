@@ -187,25 +187,40 @@ def mtp_screen_barcode_scan(mtp_mgmt_ctrl):
 
     sn = ""
     sn_scanned = False
-    while not sn_scanned:
-        usr_prompt = "Please Scan {:s} Serial Number Barcode: ".format(mtp_mgmt_ctrl._id)
-        raw_scan = input(usr_prompt)
-        if raw_scan == "STOP":
-            break
-        sn = libmfg_utils.serial_number_validate(raw_scan)
+    mac_scanned = False
+    while True:
+        while not sn_scanned:
+            usr_prompt = "Please Scan {:s} Serial Number Barcode: ".format(mtp_mgmt_ctrl._id)
+            raw_scan = input(usr_prompt)
+            if raw_scan == "STOP":
+                break
+            sn = libmfg_utils.serial_number_validate(raw_scan)
 
-        if not sn:
-            mtp_mgmt_ctrl.cli_log_err("Invalid MTP Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
-            #return None
-        elif sn in scan_sn_list:
-            mtp_mgmt_ctrl.cli_log_err("MTP Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
-            #return None
-        else:
-            scan_sn_list.append(sn)
-            sn_scanned = True
-            mtp_scan_rslt["VALID"] = True
+            if not sn:
+                mtp_mgmt_ctrl.cli_log_err("Invalid MTP Serial Number: {:s} detected, please restart the scan process\n".format(raw_scan), level=0)
+                #return None
+            elif sn in scan_sn_list:
+                mtp_mgmt_ctrl.cli_log_err("MTP Serial Number: {:s} is double scanned, please restart the scan process\n".format(sn), level=0)
+                #return None
+            else:
+                scan_sn_list.append(sn)
+                sn_scanned = True
+                mtp_scan_rslt["VALID"] = True
     
-    mtp_scan_rslt["MTP_SN"] = sn
+        mtp_scan_rslt["MTP_SN"] = sn
+
+        while not mac_scanned:
+            usr_prompt = "Please Scan {:s} MAC Address Barcode: ".format(mtp_mgmt_ctrl._id)
+            raw_scan = input(usr_prompt)
+            if raw_scan in scan_sn_list:
+                mtp_mgmt_ctrl.cli_log_err("MTP MAC Address: {:s} is double scanned, please restart the scan process\n".format(raw_scan), level=0)
+            else:
+                scan_sn_list.append(raw_scan)
+                mtp_scan_rslt["MTP_MAC"] = raw_scan
+                mac_scanned = True
+
+        if sn_scanned and mac_scanned:
+            break
 
     return mtp_scan_rslt
 

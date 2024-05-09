@@ -460,6 +460,13 @@ class mtp_ctrl():
         self._mtp_sn = sn
         self.cli_log_inf("Set MTP SN to {:s}".format(sn), level=0)
 
+    def get_mtp_mac(self):
+        return self._mtp_mac
+
+    def set_mtp_mac(self, mac):
+        self._mtp_mac = mac
+        self.cli_log_inf("Set MTP MAC to {:s}".format(mac), level=0)
+
     def close_file_handles(self):
         fp_list = self._open_file_handles
         for fp in fp_list:

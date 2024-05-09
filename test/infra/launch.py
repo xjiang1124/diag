@@ -202,6 +202,40 @@ class LaunchApp(object):
         self.__settings['MTP_ID'] = testbed_id
         return defs.Result.SUCCESS
 
+    def __gen_mtp_barcodes(self, mtp_resource_name):
+        if self.__testsuite.config.job != "SRN":
+            return defs.Result.SUCCESS
+        ## READ
+        try:
+            mtp_barcode_scans = dict()
+            with open("/vol/hw/diag/cicd/srn.db", "r") as mtp_db_fh:
+                for line in mtp_db_fh.readlines():
+                    mtp_id, mtp_sn, mtp_mac = line.split(" ")
+                    if mtp_id == mtp_resource_name:
+                        mtp_barcode_scans["SN"] = mtp_sn
+                        mtp_barcode_scans["MAC"] = mtp_mac
+                        try:
+                            SRN_input = "mtp_barcode_scan"
+                            Logger.info(f"Generating {mtp_resource_name} MTP barcodes in input file: {SRN_input}")
+                            with open(os.path.join(GlobalOptions.topdir, SRN_input), "w") as fh:
+                                if "SN" not in mtp_barcode_scans.keys():
+                                    Logger.error(f"Missing SN column from {mtp_resource_name} in mtp.db")
+                                    return defs.Result.INFRA_FAILURE
+                                if "MAC" not in mtp_barcode_scans.keys():
+                                    Logger.error(f"Missing MAC column from {mtp_resource_name} in mtp.db")
+                                    return defs.Result.INFRA_FAILURE
+                                fh.write(mtp_barcode_scans['SN'] + "\n")
+                                fh.write(mtp_barcode_scans['MAC'] + "\n")
+                        except Exception as e:
+                            Logger.error(f"Failed to write {SRN_input}: {e}")
+                            return defs.Result.INFRA_FAILURE
+
+        except Exception as e:
+            Logger.error(f"Caught exception: {e}")
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS
+
     def __gen_nic_barcodes(self, mtp_resource_name, barcode_scans):
         # write to a file same as it is scanned into scan_dl...
         scanDL_input = "nic_barcode_scan"
@@ -339,6 +373,11 @@ class LaunchApp(object):
         ret = self.__gen_mtp_inventory(mtp_resource, testbed_id, barcode_scans)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract mtp-inventory from {GlobalOptions.testbed_json} - ABORT")
+            return ret
+
+        ret = self.__gen_mtp_barcodes(mtp_resource_name)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract MTP SN, MAC from /vol/hw/diag/cicd/srn.db for {mtp_resource_name} - ABORT")
             return ret
 
         ret = self.__gen_nic_barcodes(mtp_resource_name, barcode_scans)
