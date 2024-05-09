@@ -1134,7 +1134,7 @@ class mtp_ctrl():
             if match:
                 prog_sn = match[0].strip()
                 if prog_sn != sn:
-                    self.cli_log_err("Failed to set MTP SN info; got {:s} expected {:s}".format(sn, prog_sn), level=0)
+                    self.cli_log_err("Failed to set MTP SN info; got {:s} expected {:s}".format(prog_sn, sn), level=0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP SN info", level=0)
@@ -1144,7 +1144,7 @@ class mtp_ctrl():
             if match:
                 prog_maj = match[0].strip()
                 if prog_maj != maj:
-                    self.cli_log_err("Failed to set MTP REV info; got {:s} expected {:s}".format(maj, prog_maj), level=0)
+                    self.cli_log_err("Failed to set MTP REV info; got {:s} expected {:s}".format(prog_maj, maj), level=0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP REV info", level=0)
@@ -1154,7 +1154,7 @@ class mtp_ctrl():
             if match:
                 prog_mac = match[0].strip()
                 if prog_mac != mac:
-                    self.cli_log_err("Failed to set MTP MAC info; got {:s} expected {:s}".format(mac, prog_mac), level=0)
+                    self.cli_log_err("Failed to set MTP MAC info; got {:s} expected {:s}".format(prog_mac, mac), level=0)
                     return False
             else:
                 self.cli_log_err("Failed to locate MTP MAC info", level=0)
