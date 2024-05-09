@@ -258,7 +258,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
             elif stage in (FF_Stage.FF_DL, FF_Stage.FF_SWI):
                 if "SCAN_VERIFY" not in skip_test_list:
                     scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage, swmtestmode=swm_test_mode)
-            elif False and stage == FF_Stage.FF_FST:
+            elif FST_SCAN_ENABLE and stage == FF_Stage.FF_FST:
                 if "SCAN_VERIFY" not in skip_test_list:
                     scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
 
@@ -508,7 +508,7 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     # test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
@@ -522,7 +522,7 @@ def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["FST_CONNECT", "MTP_TIME_SET", "FST_UPDATE", "FST_ID"]
+    test_list = ["FST_CONNECT", "MTP_TIME_SET", "FST_UPDATE", "PYTHON_UPDATE", "FST_ID"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     return True
@@ -575,6 +575,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "FST_UPDATE":
             ret = libmfg_utils.mtp_update_fst_image(mtp_mgmt_ctrl)
+
+        elif test == "PYTHON_UPDATE":
+            ret = libmfg_utils.mtp_python369_sitepackage_update(mtp_mgmt_ctrl)
 
         elif test == "DIAG_START":
             ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False)

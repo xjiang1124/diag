@@ -928,10 +928,15 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
 
     return True
 
-def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir='/home/diag/', mtp_python_site_package_file="release/"+MTP_IMAGES.python_site_package4mtp_img):
+def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_python_site_package_file="release/"+MTP_IMAGES.python_site_package4mtp_img):
     """
     force update python3.6.9 third party packages even if it is exist, since just in case we may have more third party image to install
     """
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    remote_dir = "/home/diag/"
 
     mtp_mgmt_ctrl.cli_log_inf("Copy Python3.6 site-packge image to MTP: {:s}".format(mtp_python_site_package_file), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Force update site-packge even if it is exist, since just in case we may have more third party image to install", level=0)
@@ -1000,11 +1005,6 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
     elif not running_diag_img_match(mtp_mgmt_ctrl, mtp_image):
         mtp_mgmt_ctrl.cli_log_inf("Loaded diag image doesn't match...updating", level=0)
         update_needed = True
-
-    # check if python3.6.9 installed and update python3.6.9 site-package
-    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
-        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
-        return False
 
     if not update_needed:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
@@ -1099,11 +1099,6 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_mgmt_ctrl.cli_log_err("Update FST Penctl TOKEN image failed... Abort", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
-
-    # check if python3.6.9 installed and update python3.6.9 site-package
-    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
-        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
-        return False
 
     return True
 
@@ -1626,8 +1621,13 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
+            if stage == FF_Stage.FF_FST:
+                # cant save in FST stage right now
+                dpn = ""
+                sku = ""
+            else:
+                dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+                sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             block_retest = False
             for test in test_list:
@@ -1738,8 +1738,13 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
+            if stage == FF_Stage.FF_FST:
+                # cant save in FST stage right now
+                dpn = ""
+                sku = ""
+            else:
+                dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+                sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             if FLEX_SHOP_FLOOR_CONTROL:
                 if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
