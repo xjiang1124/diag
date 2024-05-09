@@ -14,7 +14,7 @@ import sys, os
  - FOR MASTER BRANCH,
 
     cd test
-    MASTER=1 python3 generate_job_yml.py
+    python3 generate_job_yml.py
 
     this will skip 4C, ORT, RDT, SRN, etc (default)
 
@@ -34,10 +34,8 @@ RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST", "SR
 cwd = os.path.basename(os.getcwd())
 if cwd == "test-asic":
     job_set = "asic"
-elif "MASTER" in os.environ.keys():
-    job_set = "diag"
 else:
-    job_set = "modeling"
+    job_set = "diag"
 
 NICS_BY_STAGE = dict()
 
@@ -84,7 +82,7 @@ def write_targets(fh, asic, hardware, nic_type, stage):
     fh.write("    build-dependencies:\n")
     if stage == "FST":
         pass
-    elif job_set == "diag" or job_set == "modeling":
+    elif job_set == "diag":
         fh.write("     - build-amd64-{:s}\n".format(asic))
         fh.write("     - build-arm64-{:s}\n".format(asic))
     elif job_set == "asic":
@@ -149,7 +147,7 @@ def write_stage_jobyml():
 
 def update_root_job_yml():
     ### remove old lines
-    if job_set == "diag" or job_set == "modeling":
+    if job_set == "diag":
         sections = [ "JOB LABELS", "TEST DIAG CHANGES", "TEST SCRIPT CHANGES" ]
     elif job_set == "asic":
         sections = [ "ASIC JOB LABELS" ]
@@ -161,7 +159,7 @@ def update_root_job_yml():
     import fileinput
     ### add a new line below the line in .job.yml "### xx{{NIC_TYPE}}"
     for rline in fileinput.FileInput("../.job.yml", inplace=True):
-        if job_set == "diag" or job_set == "modeling":
+        if job_set == "diag":
             if "### JOB LABELS ###" in rline:
                 for stage in NICS_BY_STAGE:
                     new_line  = f"  test/{stage}:\n"
