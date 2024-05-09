@@ -47,6 +47,7 @@ class mtp_ctrl():
     def __init__(self, mtpid, filep, diag_log_filep, diag_nic_log_filep_list, diag_cmd_log_filep=None, ts_cfg=None, mgmt_cfg=None, apc_cfg=None, slots_to_skip=[False]*MTP_Const.MTP_SLOT_NUM, dbg_mode=False):
         self._id = mtpid
         self._mtp_sn = None
+        self._mtp_mac = None
         self._ts_handle = None
         self._mgmt_handle = None
         self._mgmt_prompt = None
