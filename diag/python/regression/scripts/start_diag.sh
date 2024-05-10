@@ -142,7 +142,6 @@ then
 elif [[ $mtp_id == "0x000b" ]]
 then
     echo "Matera  MTP"
-    #echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
 else
