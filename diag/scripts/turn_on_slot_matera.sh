@@ -1,0 +1,234 @@
+#!/bin/bash
+
+matera_P12V_addr="0x174"
+matera_P3V3_addr="0x178"
+matera_perst_addr="0x17c"
+
+
+declare -a slotI2Cmap=(
+[1]=3
+[2]=4
+[3]=5
+[4]=6
+[5]=7
+[6]=8
+[7]=9
+[8]=10
+[9]=11
+[10]=12
+)
+
+
+# Enable Elba card JTAG
+elba_enable_jtag() {
+    slot=$1
+
+    #echo "slot=$slot"
+    #echo "i2cslot=${slotI2Cmap[$slot]}"
+    reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x22)
+    if [ $? -ne 0 ]
+    then
+        echo "Empty slot $slot"
+    fi
+
+    reg1=$(( $reg1 & 0xFC ))
+    i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x22 $reg1
+}
+
+# Enable NIC MTP Rev3 mode
+enable_nic_mtp_r3() {
+    slot=$1
+
+    reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x21)
+    #echo $reg1
+    if [ $? -ne 0 ]
+    then
+        echo "Empty slot $slot"
+        return
+    fi
+
+    reg1=$(( $reg1 | 0x25 ))
+    reg1=$(( $reg1 & 0xBF ))
+    i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
+}
+
+control_slot_matera() {
+    wValue=$pc
+    if [[ $wValue -eq 0 ]]
+    then
+        return 0
+    fi
+
+    printf "Setting power control to $on_off with 0x%x\n" $wValue
+
+    v12=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P12V_addr | awk '{print $4}')
+    v3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
+    perst=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_perst_addr | awk '{print $4}')
+
+    if [[ $on_off == "off" ]]
+    then
+        wValue=$(( ~$wValue ))
+        wValue=$(( $wValue & 0x3ff ))
+        fpgautil w32 $matera_perst_addr $(( $perst & $wValue ))
+        sleep 0.2
+        fpgautil w32 $matera_P12V_addr $(( $v12 & $wValue ))
+        sleep 0.2
+        fpgautil w32 $matera_P3V3_addr $(( $v3v3 & $wValue ))
+        sleep 0.2
+    else
+        fpgautil w32 $matera_P3V3_addr $(( $v3v3 | $wValue ))
+        sleep 0.2
+        fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
+        fpgautil w32 $matera_perst_addr  $(( $perst | $wValue ))
+    fi
+
+    fpgautil r32 $matera_P12V_addr
+    fpgautil r32 $matera_P3V3_addr
+    fpgautil r32 $matera_perst_addr
+}
+
+control_all() {
+    if [[ "$1" == "on" ]]
+    then
+        echo "Turning on all slots"
+        fpgautil w32 $matera_P3V3_addr 0x3ff
+        sleep 0.2
+        fpgautil w32 $matera_P12V_addr 0x3ff
+        sleep 0.2
+        fpgautil w32 $matera_perst_addr 0x3ff
+        sleep 0.2
+
+        for i in {1..10}
+        do
+            enable_nic_mtp_r3 $i
+            elba_enable_jtag $i
+        done
+
+        echo "All slots turned on"
+    
+    else
+        echo "Turning off all slots"
+        fpgautil w32 $matera_P3V3_addr 0x0
+        fpgautil w32 $matera_P12V_addr 0x0
+        fpgautil w32 $matera_perst_addr 0x0
+        echo "All slots turned off"
+    fi
+
+    fpgautil r32 $matera_P12V_addr
+    fpgautil r32 $matera_P3V3_addr
+    fpgautil r32 $matera_perst_addr
+}
+
+usage() {
+    echo "========================="
+    echo "Turn_on_slot.sh Usage"
+    echo "========================="
+    echo "Turn on specific slot"
+    echo "turn_on_slot.sh on <slot_id>"
+
+    echo "-------------------------"
+    echo "Turn off_specific slot"
+    echo "turn_on_slot.sh off <slot_id>"
+
+    echo "-------------------------"
+    echo "Turn on all slots"
+    echo "turn_on_slot.sh on all"
+
+    echo "-------------------------"
+    echo "Turn off all slots"
+    echo "turn_on_slot.sh off all"
+    echo "========================="
+}
+
+if [[ $1 == "show" ]]
+then
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        fpgautil r32 $matera_P12V_addr
+        fpgautil r32 $matera_P3V3_addr
+        fpgautil r32 $matera_perst_addr
+    else
+        cpldutil -cpld-rd -addr=0x10
+        cpldutil -cpld-rd -addr=0x11
+        cpldutil -cpld-rd -addr=0x12
+        cpldutil -cpld-rd -addr=0x13
+        cpldutil -cpld-rd -addr=0x16
+        cpldutil -cpld-rd -addr=0x17
+    fi
+    exit
+fi
+
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
+then
+    usage
+    exit
+fi
+
+
+if [[ $2 == "all" ]]
+then
+    control_all $1
+else
+    slot_list=$(echo $2 | tr "," "\n")
+	pc_low=0
+	pc_high=0
+	pc=0
+	on_off=$1
+
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        for slot in $slot_list
+        do
+            slot=$(( $slot - 1 ))
+            bitPos=$(( 1 << $slot ))
+            pc=$(( $pc | $bitPos ))
+        done
+        #printf "pc: 0x%x\n" $pc
+    else
+        for slot in $slot_list
+        do
+            slot=$(( $slot - 1 ))
+            if [[ $slot -ge 8 ]]
+            then
+                slot=$(( $slot - 8 ))
+                bitPos=$(( 1 << $slot ))
+                pc_high=$(( $pc_high | $bitPos ))
+            else
+                bitPos=$(( 1 << $slot ))
+                pc_low=$(( $pc_low | $bitPos ))
+            fi
+        done
+        #printf "pc_low: 0x%x\n" $pc_low
+        #printf "pc_high: 0x%x\n" $pc_high
+    fi
+
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        control_slot_matera
+    else
+        declare -a low_high_list=("low" "high")
+        for low_high in "${low_high_list[@]}"
+        do
+            echo "remove"
+            #control_slot
+        done
+    fi
+
+    if [[ $on_off == "off" ]]
+    then
+        exit 0
+    fi
+
+    for slot in $slot_list
+    do
+        if [[ $MTP_TYPE != "MTP_MATERA" ]]
+        then
+            turn_on_hub.sh $slot
+        fi
+        enable_nic_mtp_r3 $slot
+        elba_enable_jtag $slot
+    done
+
+    
+    #control_slot $1 $2
+fi
