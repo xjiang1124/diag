@@ -928,10 +928,15 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
 
     return True
 
-def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir='/home/diag/', mtp_python_site_package_file="release/"+MTP_IMAGES.python_site_package4mtp_img):
+def mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_python_site_package_file="release/"+MTP_IMAGES.python_site_package4mtp_img):
     """
     force update python3.6.9 third party packages even if it is exist, since just in case we may have more third party image to install
     """
+    mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
+    mtp_ip_addr = mtp_mgmt_cfg[0]
+    mtp_usrid = mtp_mgmt_cfg[1]
+    mtp_passwd = mtp_mgmt_cfg[2]
+    remote_dir = "/home/diag/"
 
     mtp_mgmt_ctrl.cli_log_inf("Copy Python3.6 site-packge image to MTP: {:s}".format(mtp_python_site_package_file), level=0)
     mtp_mgmt_ctrl.cli_log_inf("Force update site-packge even if it is exist, since just in case we may have more third party image to install", level=0)
@@ -1000,11 +1005,6 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
     elif not running_diag_img_match(mtp_mgmt_ctrl, mtp_image):
         mtp_mgmt_ctrl.cli_log_inf("Loaded diag image doesn't match...updating", level=0)
         update_needed = True
-
-    # check if python3.6.9 installed and update python3.6.9 site-package
-    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
-        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
-        return False
 
     if not update_needed:
         mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
@@ -1099,11 +1099,6 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_mgmt_ctrl.cli_log_err("Update FST Penctl TOKEN image failed... Abort", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
-
-    # check if python3.6.9 installed and update python3.6.9 site-package
-    if not mtp_python369_sitepackage_update(mtp_mgmt_ctrl, mtp_ip_addr, mtp_usrid, mtp_passwd, remote_dir):
-        mtp_mgmt_ctrl.cli_log_err("Deploy Python3.6.9 env on MTP Failed", level=0)
-        return False
 
     return True
 
@@ -1334,12 +1329,12 @@ def soap_post_report(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
         else:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
@@ -1347,18 +1342,21 @@ def soap_post_report(xml, factory=Factory.FSP):
         webservice.putheader("Content-length", "%d" % len(xml))
         webservice.endheaders()
 
-        webservice.send(xml)
+        webservice.send(xml.encode('utf-8'))
     except Exception as Err:
         cli_dbg(Err)
         cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
         return 88888888
     else:
-        statuscode, reason, msg = webservice.getreply()
+        soap_response = webservice.getresponse()
+        statuscode = soap_response.status
+        reason = soap_response.reason
+        msg = str(soap_response.msg)
         cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
         if not str(statuscode).startswith('2'):
             cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
             return int(statuscode)
-        resp = webservice.getfile().read()
+        resp = soap_response.read().decode('utf-8')
         match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
         cli_inf("HTTP POST request successful")
         if match:
@@ -1378,12 +1376,12 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
         else:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
@@ -1391,18 +1389,21 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
         webservice.putheader("Content-length", "%d" % len(xml))
         webservice.endheaders()
 
-        webservice.send(xml)
+        webservice.send(xml.encode('utf-8'))
     except Exception as Err:
         cli_dbg(Err)
         cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
         return 88888888
     else:
-        statuscode, reason, msg = webservice.getreply()
+        soap_response = webservice.getresponse()
+        statuscode = soap_response.status
+        reason = soap_response.reason
+        msg = str(soap_response.msg)
         cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
         if not str(statuscode).startswith('2'):
             cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
             return int(statuscode)
-        resp = webservice.getfile().read()
+        resp = soap_response.read().decode('utf-8')
         match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
         cli_inf("HTTP POST request successful")
         if match:
@@ -1626,8 +1627,13 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[-1][:6] + sn[2:] + matchsn2[-1][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+            if stage == FF_Stage.FF_FST:
+                # cant save in FST stage right now
+                dpn = ""
+                sku = ""
+            else:
+                dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+                sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             block_retest = False
             for test in test_list:
@@ -1647,8 +1653,8 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                         else:
                             if rs in FLEX_ERR_CODE_MAP.err_code:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Database Server Access Error: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
-                            elif rs in httplib.responses:
-                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), httplib.responses[rs])
+                            elif rs in http.client.responses:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), http.client.responses[rs])
                             elif rs == 88888888:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Sending HTTP Request Error: error code ({:s}) --> Please check server avaiblity and network connectivity]".format((post_cnt + 1), sn, str(rs)))
                             elif rs == 58888888:
@@ -1738,8 +1744,13 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                     if matchsn2:
                         sn = sn[:2] + matchsn2[0][:6] + sn[2:] + matchsn2[0][6:]
 
-            dpn = mtp_mgmt_ctrl._nic_ctrl_list[slot]._dpn
-            sku = mtp_mgmt_ctrl._nic_ctrl_list[slot]._sku
+            if stage == FF_Stage.FF_FST:
+                # cant save in FST stage right now
+                dpn = ""
+                sku = ""
+            else:
+                dpn = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._dpn
+                sku = mtp_mgmt_ctrl._nic_ctrl_list[int(slot)-1]._sku
 
             if FLEX_SHOP_FLOOR_CONTROL:
                 if sn is not None and str(sn).upper() != "UNKNOWN" and str(sn).upper() != "NONE" and len(str(sn)) > 6:
