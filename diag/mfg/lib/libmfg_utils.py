@@ -1329,12 +1329,12 @@ def soap_post_report(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
         else:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
@@ -1342,18 +1342,21 @@ def soap_post_report(xml, factory=Factory.FSP):
         webservice.putheader("Content-length", "%d" % len(xml))
         webservice.endheaders()
 
-        webservice.send(xml)
+        webservice.send(xml.encode('utf-8'))
     except Exception as Err:
         cli_dbg(Err)
         cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
         return 88888888
     else:
-        statuscode, reason, msg = webservice.getreply()
+        soap_response = webservice.getresponse()
+        statuscode = soap_response.status
+        reason = soap_response.reason
+        msg = str(soap_response.msg)
         cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
         if not str(statuscode).startswith('2'):
             cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
             return int(statuscode)
-        resp = webservice.getfile().read()
+        resp = soap_response.read().decode('utf-8')
         match = re.findall(FLX_SAVE_UUT_RSLT_CODE_RE, resp)
         cli_inf("HTTP POST request successful")
         if match:
@@ -1373,12 +1376,12 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
         else:
-            webservice = httplib.HTTP(webserverip)
+            webservice = http.client.HTTPConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
@@ -1386,18 +1389,21 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
         webservice.putheader("Content-length", "%d" % len(xml))
         webservice.endheaders()
 
-        webservice.send(xml)
+        webservice.send(xml.encode('utf-8'))
     except Exception as Err:
         cli_dbg(Err)
         cli_dbg("Exception occur when send HTTP POST request to webserver, please check server avaiblity")
         return 88888888
     else:
-        statuscode, reason, msg = webservice.getreply()
+        soap_response = webservice.getresponse()
+        statuscode = soap_response.status
+        reason = soap_response.reason
+        msg = str(soap_response.msg)
         cli_dbg("HTTP POST response, status code: {:s},  status reason: {:s}, status message: {:s}".format(str(statuscode), reason, msg))
         if not str(statuscode).startswith('2'):
             cli_dbg("HTTP POST request NOT successful, return HTTP statuscode")
             return int(statuscode)
-        resp = webservice.getfile().read()
+        resp = soap_response.read().decode('utf-8')
         match = re.findall(FLX_GET_UUT_INFO_CODE_RE, resp)
         cli_inf("HTTP POST request successful")
         if match:
@@ -1647,8 +1653,8 @@ def mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, buf, stage, mtp
                         else:
                             if rs in FLEX_ERR_CODE_MAP.err_code:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Database Server Access Error: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs), FLEX_ERR_CODE_MAP.err_code[rs]))
-                            elif rs in httplib.responses:
-                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), httplib.responses[rs])
+                            elif rs in http.client.responses:
+                                cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [HTTP Response ERROR: error code ({:s}) --> {:s}]".format((post_cnt + 1), sn, str(rs)), http.client.responses[rs])
                             elif rs == 88888888:
                                 cli_err(mtp_cli_id_str + "{:d}th: Post [{:s}] result to webserver failed. [Sending HTTP Request Error: error code ({:s}) --> Please check server avaiblity and network connectivity]".format((post_cnt + 1), sn, str(rs)))
                             elif rs == 58888888:
