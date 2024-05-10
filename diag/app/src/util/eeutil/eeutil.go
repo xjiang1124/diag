@@ -695,7 +695,14 @@ func main() {
     if *dispPtr == true {
         //Try to sort out which FRU table to load for cards that have multiple part numbers and table formats (like HPE SWM, HPE SWM CLOUD, HPE SWM TAA)
         if (os.Getenv("CARD_TYPE") == "MTP" && uut != "UUT_NONE") || (os.Getenv("CARD_TYPE") != "MTP") {
-            isTlv, _ := eeprom.CardInListTlv(devName)
+            isTlv := false
+            if (uut == "UUT_NONE") {
+                isTlv, _ = eeprom.CardInListTlv(devName)
+            } else {
+                // TO-DO: check if uut eeprom is tlv-format based on uutType
+                //        Ortano2: non-tlv
+                //        Salina nic: likely to be tlv-based
+            }
             if isTlv == true {
                 err = hwdev.EepromDisplayTlvs(devName, field, *fpoPtr)
                 if err != errType.SUCCESS {

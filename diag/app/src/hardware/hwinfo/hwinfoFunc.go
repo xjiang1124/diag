@@ -232,25 +232,35 @@ func UnlockDev(lockName string) {
  * Lock UUT I2C root device
  */
 func PreUutSetup(uutName string) (lockName string, err int) {
-    i2cDevIdx, err := FindUutI2cDev(uutName)
-    if err != errType.SUCCESS {
-        return
-    }
+    lockName = "i2c-"
+    var i2cDevIdx int = 0
 
-    lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
+    //Matera does not lock dmutex, neither EnableHubChannelUut
+    if cardType != "MTP_MATERA" {
+        i2cDevIdx, err = FindUutI2cDev(uutName)
+        if err != errType.SUCCESS {
+            cli.Println("d", "FindUutI2cDev(uutName) returns error! uutName =", uutName)
+            return
+        }
 
-    err = EnableHubChannelUut(uutName)
-    if err != errType.SUCCESS {
-        return
+        lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
+        err = dmutex.Lock(lockName)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        err = EnableHubChannelUut(uutName)
+        if err != errType.SUCCESS {
+            return
+        }
     }
 
     err = i2cinfo.SwitchI2cTbl(uutName)
     if err != errType.SUCCESS {
         return
+    }
+    if cardType == "MTP_MATERA" {
+        i2cinfo.UpdateNicI2cBus(uutName)
     }
 
     err = SwitchHwInfo(uutName)
@@ -265,25 +275,35 @@ func PreUutSetup(uutName string) (lockName string, err int) {
  * Lock UUT I2C root device
  */
 func PreUutSetupBlind(uutName string) (lockName string, err int) {
-    i2cDevIdx, err := FindUutI2cDev(uutName)
-    if err != errType.SUCCESS {
-        return
-    }
+    lockName = "i2c-"
+    var i2cDevIdx int = 0
 
-    lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
-    err = dmutex.Lock(lockName)
-    if err != errType.SUCCESS {
-        return
-    }
+    //Matera does not lock dmutex, neither EnableHubChannelUut
+    if cardType != "MTP_MATERA" {
+        i2cDevIdx, err = FindUutI2cDev(uutName)
+        if err != errType.SUCCESS {
+            cli.Println("d", "PreUutSetupBlind :: uutName =", uutName, "Failed FindUutI2cDev(uutName)")
+            return
+        }
 
-    err = EnableHubChannelUut(uutName)
-    if err != errType.SUCCESS {
-        return
+        lockName = "i2c-"+strconv.Itoa(i2cDevIdx)
+        err = dmutex.Lock(lockName)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        err = EnableHubChannelUut(uutName)
+        if err != errType.SUCCESS {
+            return
+        }
     }
 
     err = i2cinfo.SwitchI2cTbl("UUT_BLIND")
     if err != errType.SUCCESS {
         return
+    }
+    if cardType == "MTP_MATERA" {
+        i2cinfo.UpdateNicI2cBus(uutName)
     }
 
     err = SwitchHwInfo("UUT_BLIND")
@@ -298,7 +318,10 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
  * Unlock UUT I2C device
  */
 func PostUutClean(lockName string) {
-    dmutex.Unlock(lockName)
+    //Matera does not lock/unlock dmutex
+    if cardType != "MTP_MATERA" {
+        dmutex.Unlock(lockName)
+    }
     SwitchHwInfo("UUT_NONE")
     i2cinfo.SwitchI2cTbl("UUT_NONE")
 }
