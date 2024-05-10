@@ -183,7 +183,7 @@ def main():
         # load the barcode config file made in toplevel
         scanning.read_scanned_barcodes(mtp_mgmt_ctrl)
         scanned_fru_cfg = mtp_mgmt_ctrl.barcode_scans
-
+        nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
         for slot in range(mtp_mgmt_ctrl._slots):
             key = libmfg_utils.nic_key(slot)
             if not nic_prsnt_list[slot]:
