@@ -686,8 +686,8 @@ var MateraI2cTbl = []I2cInfo {
     I2cInfo {"TSENSOR_IOBR", "LM75",     17, 0x48,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"EXPDER_IOBL",  "MCP23008", 18, 0x20,   0x0,  "HUB_NONE",  0,    0},
     I2cInfo {"EXPDER_IOBR",  "MCP23008", 17, 0x20,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"P12V",      "TPS25990", 10, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
-    I2cInfo {"CPU_VDDCR", "ISL69247", 10, 0x60,   0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"P12V",      "TPS25990", 16, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
+    I2cInfo {"CPU_VDDCR", "ISL69247", 16, 0x60,   0x0,  "HUB_NONE",  0,    0},
     //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
     I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
 }

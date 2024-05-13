@@ -88,6 +88,7 @@ const MVL_GLOBAL_STATS_COUNTER_1_0_REG  uint8 = 0x1F
 const MVL_GLOBAL_STATS_OP_BUSY          uint16 = 1 << 15
 const MVL_GLOBAL_STATS_OP_READ_CAPTURED uint16 = 4 << 12
 const MVL_GLOBAL_STATS_OP_CAPTURE_PORT  uint16 = 5 << 12
+const MVL_GLOBAL_STATS_OP_FLUSH_ALL     uint16 = 1 << 12
 const MVL_GLOBAL_STATS_OP_HIST_RX_TX    uint16 = 3 << 10
 
 type mvlStat struct {
@@ -512,6 +513,7 @@ func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
     cmd = uint32(regAddr) & MDIO_REG_ADDR_MASK
     cmd |= (uint32(phy) & MDIO_DEV_ADDR_MASK) << MDIO_DEV_ADDR_SHIFT
     cmd |= (MDIO_RD_ENA << MDIO_OP_SHIFT) | MDIO_RUN_BUSY_MASK
+    //cli.Printf("i", "addr=0x%x, cmd=0x%x\n", FPGA_E0_SMI_CMD_REG + uint64(inst * 8), cmd)
     err = MateraWriteU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8), cmd)
     if err != nil {
         return
@@ -520,6 +522,7 @@ func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
         data, err = MateraReadU32(FPGA_E0_SMI_CMD_REG + uint64(inst * 8))
         if ((data & MDIO_RUN_BUSY_MASK) == 0) {
             data, err = MateraReadU32(FPGA_E0_SMI_DATA_REG + uint64(inst * 8))
+            //cli.Printf("i", "addr=0x%x, data=0x%x\n", FPGA_E0_SMI_DATA_REG + uint64(inst * 8), data)
             value = uint16(data & MDIO_DATA_MASK)
             return
         }
@@ -710,23 +713,54 @@ func MvlPortStatsPolicyBased(inst uint8, port uint8) (err error) {
     return
 }
 
+func MvlPortStatus(inst uint8, port uint8) (err error) {
+    data, err := MdioRead(inst, 0x10 + port, 0x0)
+    if err != nil {
+        return
+    }
+    fmt.Printf("Port Status Register: 0x%04x\n", data)
+    return
+}
 
-func MvlDump(inst uint8) () {
-    var port uint8
+func MvlPortDump(inst uint8, port uint8) () {
+    fmt.Printf("\nstats for Port %d\n", port)
+    MvlPortStatus(inst, port)
+    MvlPortStatsPolicyBased(inst, port)
+    MvlPortStatsMacBased(inst, port)
+    for i := 0; i < len(MvlStatTbl); i++ {
+        stat := MvlStatTbl[i]
+        fmt.Printf("%-15s: %-20v\n", stat.Name, stat.counters[port])
+    }
+    return
+}
 
+func MvlDump(inst uint8, port int8) () {
     if (inst != 0  && inst != 1) {
         cli.Println("e", "Invalid instance number")
         return
     }
     fmt.Printf("MATERA MARVELL instance %d REGISTER DUMP\n", inst)
-    for port = 0; port < 10; port++ {
-        fmt.Printf("\nstats for Port %d\n", port)
-        MvlPortStatsPolicyBased(inst, port)
-        MvlPortStatsMacBased(inst, port)
-        for i := 0; i < len(MvlStatTbl); i++ {
-            stat := MvlStatTbl[i]
-            fmt.Printf("%-15s: %-20v\n", stat.Name, stat.counters[port])
+    // if port is not specified, dump all ports
+    if port == -1 {
+        for idx := 0; idx < 10; idx++ {
+            MvlPortDump(inst, uint8(idx))
         }
+    } else {
+        MvlPortDump(inst, uint8(port))
     }
-    return
+}
+
+func MvlClear(inst uint8) () {
+    if (inst != 0  && inst != 1) {
+        cli.Println("e", "Invalid instance number")
+        return
+    }
+    // flush all counters for this port
+    err := MdioWrite(inst, MVL_REG_GLOBAL, MVL_GLOBAL_STATS_OP_REG,
+        MVL_GLOBAL_STATS_OP_FLUSH_ALL | MVL_GLOBAL_STATS_OP_BUSY)
+    if err != nil {
+        return
+    }
+    // wait for the flush to complete
+    MvlStatsWait(inst)
 }

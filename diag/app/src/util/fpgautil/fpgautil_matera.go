@@ -24,7 +24,8 @@ const errhelpMatera = "\nfpgautil:\n" +
         "\n" +
         "fpgautil mdiord <inst#> <phy> <addr>\n" +
         "fpgautil mdiowr <inst#> <phy> <addr> <data>\n" +
-        "fpgautil mvldump <inst#>\n"
+        "fpgautil mvldump <inst#> <port#>, use port#=-1 to dump all ports\n" +
+        "fpgautil mvlclear <inst#>\n"
         
 
                                
@@ -35,6 +36,7 @@ func matera_fpga_cli() {
     var data64, addr, bar uint64
     var err error
     var inst, phy uint64
+    var port int64
     var data16 uint16
     //var i int = 0
 
@@ -279,7 +281,24 @@ func matera_fpga_cli() {
         }
         os.Exit(0)
     } else if os.Args[1] == "mvldump" {
-        materafpga.MvlDump(uint8(inst))
+        inst, err = strconv.ParseUint(os.Args[2], 0, 8)
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
+        }
+        port, err = strconv.ParseInt(os.Args[3], 0, 8)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
+        }
+        materafpga.MvlDump(uint8(inst), int8(port))
+    } else if os.Args[1] == "mvlclear" {
+        inst, err = strconv.ParseUint(os.Args[2], 0, 8)
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err)
+            os.Exit(-1)
+        }
+        materafpga.MvlClear(uint8(inst))
     } else {
         fmt.Printf("\n Incorrect Arg or Command used.  See the help Below!!\n")
         fmt.Printf(" %s \n", errhelpMatera)
