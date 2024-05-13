@@ -668,6 +668,19 @@ var LipariTbl = []I2cInfo {
     I2cInfo {"FAN",             "FPGA",       2,    0x44,    0x0,    "NONE",         0,    0},
 }
 
+var MateraNicI2cBus = map[string]uint32 {
+    "UUT_1": 3,
+    "UUT_2": 4,
+    "UUT_3": 5,
+    "UUT_4": 6,
+    "UUT_5": 7,
+    "UUT_6": 8,
+    "UUT_7": 9,
+    "UUT_8": 10,
+    "UUT_9": 11,
+    "UUT_10": 12,
+}
+
 var MateraI2cTbl = []I2cInfo {
     //       name    comp          Bus   devAddr  page  HubName     HubPort  Flag
     I2cInfo {"FRU",  "AT24C04C",   20,   0x50,    0x0,  "HUB_NONE", 0,       0}, //MB FRU
@@ -814,7 +827,7 @@ func FindUutTypeMtp(uutName string) (uutType string, err int) {
         return
     }
 
-    if (cardType != "MTP" && cardType != "MTPS") {
+    if (cardType != "MTP" && cardType != "MTPS" && cardType != "MTP_MATERA") {
         return "UUT_NONE", errType.SUCCESS
     }
 
@@ -847,6 +860,32 @@ func FindUutType(uutName string) (uutType string, err int) {
             err = errType.INVALID_PARAM
         }
     }
+    return
+}
+
+/** 
+ * MTP_Matera has specific i2c bus for every slot respectively
+ * It needs to update nic i2c bus number after switch CurI2cTbl
+ */
+func UpdateNicI2cBus(uutName string) (err int) {
+    mCardTyp, _ := os.LookupEnv("CARD_TYPE")
+    if (mCardTyp != "MTP_MATERA") {
+        err = errType.INVALID_PARAM
+        cli.Println("e", "Currently only MATERA needs to update nic i2c bus! CARD_TYPE is", mCardTyp)
+        return
+    }
+
+    _, err = FindUutTypeMtp(uutName)
+    if err != errType.SUCCESS {
+        //No uutType found, no need to update nic i2c bus
+        cli.Println("d", "UpdateNicI2cBus:: no uutType found for", uutName)
+        return
+    }
+
+    for i, _ := range(CurI2cTbl) {
+        CurI2cTbl[i].Bus = MateraNicI2cBus[uutName] 
+    }
+
     return
 }
 
@@ -1033,8 +1072,8 @@ func DispI2cInfoAll() (err int) {
     for _, title := range(i2cTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    cli.Println("i", "--------------------")
     cli.Println("i", outStr)
+    cli.Println("i", "------------------------------------")
 
     for _, i2cInfo := range(CurI2cTbl) {
         outStr = ""
