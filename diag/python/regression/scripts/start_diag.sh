@@ -102,9 +102,12 @@ if [[ $FPGA_PRST == "YES" ]]
 then
     CARD_TYPE="MTP_MATERA"
     mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
-    mtp_id_str1=$(echo $mtp_id_str | tail -1 | awk -F " " '{print $5}')
+    mtp_id_str1=$(echo $mtp_id_str | cut -b 15-20)
     mtp_id="${mtp_id_str1:0:6}"
     echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
+    echo "setting fan PWM to 50%"
+    /home/diag/diag/util/fpgautil w32 0x154 0x80808080
+    /home/diag/diag/util/fpgautil w32 0x158 0x80
 else
     mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
     mtp_id_str1=($mtp_id_str)
@@ -136,7 +139,7 @@ then
     echo "CAPRI MTP"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
     ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
-elif [[ $mtp_id == "0x0009" ]]
+elif [[ $mtp_id == "0x000b" ]]
 then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
@@ -159,8 +162,16 @@ echo "export ASIC_GEN=\$ASIC_SRC" >> temp_profile
 echo "source \$ASIC_LIB/source_env_path" >> temp_profile
 
 #==================================
-source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
-echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
+if [[ $mtp_id == "0x000b" ]]
+then
+    #export CARD_TYPE=MTP_MATERA
+    echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
+    export REDIS_IP="127.0.0.1"
+else
+    source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
+    echo "source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp" >> temp_profile
+fi
+
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
