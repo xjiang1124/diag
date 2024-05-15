@@ -189,7 +189,7 @@ def mtp_screen_barcode_scan(mtp_mgmt_ctrl):
     sn_scanned = False
     while not sn_scanned:
         usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(mtp_mgmt_ctrl._id)
-        raw_scan = raw_keyboard_input(usr_prompt)
+        raw_scan = input(usr_prompt)
         if raw_scan == "STOP":
             break
         sn = libmfg_utils.serial_number_validate(raw_scan)

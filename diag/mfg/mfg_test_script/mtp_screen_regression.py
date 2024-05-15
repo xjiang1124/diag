@@ -11,13 +11,15 @@ import datetime
 import threading
 import traceback
 import json
+import concurrent.futures
 
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import testlog
+from collections import OrderedDict
 from libdefs import MTP_Const
 from libdefs import NIC_Type
-from libdefs import MTP_ASIC_SUPPORT
+from libdefs import MTP_TYPE
 from libdefs import MTP_DIAG_Error
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Logfile
@@ -37,7 +39,10 @@ from libmfg_cfg import GIGLIO_NIC_TYPE_LIST
 from libmfg_cfg import FPGA_TYPE_LIST
 from libmfg_cfg import MTP_REV02_CAPABLE_NIC_TYPE_LIST
 from libmfg_cfg import MTP_REV03_CAPABLE_NIC_TYPE_LIST
-
+from diag_screening_emmc import save_test_data2csv_file
+from diag_screening_ddr import get_test_arguments
+from diag_screening_ddr import args2optionstring
+from emmc_test_parameters import test2args as emmctest2args
 
 
 # test cleanup.
@@ -504,8 +509,8 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         nic_top_test_list = nic_list[:nic_split]
         nic_bottom_test_list = nic_list[nic_split:]
 
-    if (mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_ELBA or
-        mtp_mgmt_ctrl._asic_support == MTP_ASIC_SUPPORT.TURBO_CAPRI):
+    if (mtp_mgmt_ctrl._asic_support == MTP_TYPE.TURBO_ELBA or
+        mtp_mgmt_ctrl._asic_support == MTP_TYPE.TURBO_CAPRI):
         nic_top_test_list    = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
         nic_bottom_test_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
 
@@ -862,6 +867,465 @@ def sanity_check(mtp_cfg_db, mtp_id, mtp_mgmt_ctrl):
 
     return fail_nic_list
 
+def mtp_ssd_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+    """MTP SSD validation test
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        slot (_type_): _description_
+        test_steps (_type_): _description_
+        nic_test_rslt_list (_type_): _description_
+        nic_test_data (_type_): _description_
+        stop_on_err (_type_): _description_
+    """
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} SSD Validation Test Start".format("M.2"), level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("GET SSD SMART info", level=0)
+    smart_info = read_mtp_ssd_para(mtp_mgmt_ctrl)
+    if not smart_info:
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Failed To Get SSD SMART attribute info")
+        return False
+    mtp_mgmt_ctrl.cli_log_inf(str(smart_info), level=0)
+
+    # load test configuration
+    parameter_cfg_yaml = "config/emmc_test_suite.yaml"
+    emmc_suite = libmfg_utils.load_cfg_from_yaml_file_list([parameter_cfg_yaml])
+
+    iterations = emmc_suite["ITER"]
+    iterations = 1
+
+    # test data is the parsed results from emmc bench mark test tool,  the key is the nic slot number, the value is the list of all test iteratrions
+    nic_test_data = {
+        1:[],
+        2:[],
+        3:[],
+        4:[],
+        5:[],
+        6:[],
+        7:[],
+        8:[],
+        9:[],
+        10:[]
+    }
+    test_steps = [step["NAME"] for step in  emmc_suite["TEST_CASE"]]
+
+    for idx in range(1, int(iterations)+1):
+        mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP SSD Validation Test Iteration {:d}".format(idx), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
+        # Run Test
+
+        sn = smart_info["Serial Number"]
+        emmc_test_data = {}
+
+        # run test steps under both vmargin high and vmargin low for all Normal temperature, Low temperature and High temperature
+        for vmargin in [Voltage_Margin.high, Voltage_Margin.low]:
+            # set vmargin to low or high
+            # (EMMC_PRE_SET, NIC_VMARG) START
+            # test = "NIC_VMARG"
+            # mtp_mgmt_ctrl.cli_log_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "EMMC_PRE_SET", test))
+            # start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+            # if not mtp_mgmt_ctrl.mtp_set_nic_vmarg(slot, vmargin):
+            #     nic_test_rslt_list[slot] = False
+            # if not mtp_mgmt_ctrl.mtp_nic_display_voltage(slot):
+            #     nic_test_rslt_list[slot] = False
+            # duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+            # mtp_mgmt_ctrl.cli_log_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "EMMC_PRE_SET", test, duration))
+            # (EMMC_PRE_SET, NIC_VMARG) END
+
+            # Sleep 30 seconds before emmc performace test
+            time.sleep(30)
+
+            # Start emmc performace test commands
+            fio_stressapp_data = {}
+            fio_stressapp_order_data = OrderedDict()
+            dir_in_ssd_partition = '/home/diag'
+            for test in test_steps:
+                cmds = ["cd "+dir_in_ssd_partition, "rm -rf Random*", "rm -rf Sequen*"]
+                tout = MTP_Const.NIC_CON_CMD_DELAY
+                argsdict = get_test_arguments(test_case_name=test, test2args=emmctest2args)
+                if not argsdict:
+                    mtp_mgmt_ctrl.cli_log_inf("{:s} -> Test Step {:s} Failed".format(sn, test), level=0)
+                    return False
+                cmd_options =  args2optionstring(argsdict)
+                if "FIO_" in test:
+                    cmd = "/usr/bin/fio "
+                elif "STRESSAPPTEST" in test:
+                    cmd = "/home/diag/diag/tools/stressapptest "
+                    tout = max([int(arg_s_val) for arg_s_val in argsdict["-s"]]) + 300
+                else:
+                    return
+                cmd += cmd_options
+                mtp_mgmt_ctrl.cli_log_inf(cmd)
+                cmds.append(cmd)
+                for cmd in cmds:
+                    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
+                    if not cmd_result:
+                        mtp_mgmt_ctrl.cli_log_inf("{:s} -> Command {:s} Failed".format(sn, cmd))
+                        return False
+                cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+                if not cmd_result:
+                    mtp_mgmt_ctrl.cli_log_err("Failed to get command {:s} Output".format(cmd))
+                    return False
+
+                #parse cmd_results
+                if "FIO_" in test:
+                    pattern = r':\s+IOPS=(.*),\s+BW=(.*?)\s+'
+                    match_obj = re.search(pattern, cmd_result)
+                    if match_obj:
+                        iops = match_obj.group(1).lower()
+                        if 'k' in iops:
+                            iops = iops.strip('k')
+                            iops = str(int(float(iops) * 1000))
+                        bw = match_obj.group(2)
+                        bw = bw.strip("MiB/s")
+                        fio_stressapp_data[test] = (iops, bw)
+                        mtp_mgmt_ctrl.cli_log_inf("{:s} IOPS={:s}, BW={:s}MiB/s".format(test, iops, bw))
+                elif "STRESSAPPTEST" in test:
+                    pattern1 = r'Status:\s+(\w+)\s+-+\s+please verify no corrected errors'
+                    match_obj1 = re.search(pattern1, cmd_result)
+                    pattern2 = r'Stats: File Copy: .* at (\d+\.+\d*MB\/s)'
+                    match_obj2 = re.search(pattern2, cmd_result)
+                    if match_obj1 and match_obj2:
+                        res = match_obj1.group(1)
+                        file_cp_bw = match_obj2.group(1)
+                        file_cp_bw = file_cp_bw.strip("MB/s")
+                        fio_stressapp_data[test] = (res, file_cp_bw)
+                        mtp_mgmt_ctrl.cli_log_inf("{:s} Status:{:s}, File Copy At {:s}MB/s".format(test, res, file_cp_bw))
+
+            # sort data
+            for key in sorted(fio_stressapp_data.keys()):
+                fio_stressapp_order_data[key] = fio_stressapp_data[key]
+            emmc_test_data[vmargin] = fio_stressapp_order_data
+
+        head_data = OrderedDict()
+        #head_data["SlotID"] = "Slot1"
+        head_data["Serial_Number"] = sn
+        head_data["Model Number"] = smart_info["Model Number"]
+        head_data["Capacity"] = smart_info["device size"]
+        head_data["Firmware Revision"] = smart_info["Firmware Revision"]
+        nic_test_data[1].append({"head": head_data, "data": emmc_test_data})
+
+    savedfile = save_test_data2csv_file(mtp_mgmt_ctrl, nic_test_data, csvfilename="ssd_validation.csv.log")
+    if savedfile:
+        cmd = "mv /home/diag/mfg_test_script/{:s} {:s}".format(savedfile, mtp_script_dir)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+            mtp_mgmt_ctrl.cli_log_inf("Command {:s} Failed".format(cmd))
+            return False
+        mtp_mgmt_ctrl.cli_log_inf("Test data saved to CSV file {:s}".format(savedfile))
+
+    return True
+
+def read_mtp_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/sda'):
+    """read SSD smart atttibute using standard liunx tool hdparm
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+    """
+
+    ret = dict()
+    dev_size = None
+    dev_form_factor = None
+
+    cmd = "hdparm -I "
+    cmd += dev_name
+
+    rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
+    if rs.startswith("[FAIL]:"):
+        mtp_mgmt_ctrl.cli_log_err("Read SSD parameter command failed.{:s}".format(cmd), level=0)
+        mtp_mgmt_ctrl.cli_log_err(rs)
+        return False
+    ssd_confirm_pattern = r'Nominal Media Rotation Rate: Solid State Device'
+    if ssd_confirm_pattern not in rs:
+        mtp_mgmt_ctrl.cli_log_err("Give Partition is NOT SSD", level=0)
+        return False
+
+    sn_pattern = r'ATA device, with non-removable media(.*)Transport:\s+Serial,'
+    sn_match_obj = re.search(sn_pattern, rs, flags=re.DOTALL)
+    if not sn_match_obj:
+        mtp_mgmt_ctrl.cli_log_err("Failed to parse SSD drive Model Number, Serial Number")
+        return False
+    sn_misc_info = sn_match_obj.group(1).split("\n")
+    for m_info in sn_misc_info:
+        m_info = m_info.strip()
+        if m_info:
+            k = m_info.split(":")[0].strip()
+            v = m_info.split(":")[1].strip()
+            ret[k] = v
+
+    size_pattern = r'device size with M = 1024\*1024:\s+(\d+) MBytes'
+    size_matche_obj = re.finditer(size_pattern, rs)
+    if not size_matche_obj:
+        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD drive size", level=0)
+        return False
+    for match_obj in size_matche_obj:
+        dev_size = match_obj.group(1)
+        dev_size = str(int(dev_size)//1024) + "GB"
+        ret["device size"] = dev_size
+        break
+
+    form_factor_pattern = r'Form Factor: (.*)\n'
+    ff_matche_obj = re.finditer(form_factor_pattern, rs)
+    if not ff_matche_obj:
+        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD form factor", level=0)
+        return False
+    for match_obj in ff_matche_obj:
+        dev_form_factor = match_obj.group(1)
+        ret["Form Factor"] = dev_form_factor
+        break
+
+    return ret
+
+def mtp_cpu_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+    """MTP CPU validation Test, AMD CPU only Since using AMD Validation Toolkits(AVT)
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        stop_on_err (_type_): _description_
+    """
+
+    avt_installation_dir = "/home/diag/AMD_tool_AVT/"
+    avt_test_log_template = "avt_mfg_test.utp"
+    avt_test_log_csv = "avt_stress_log.csv"
+    avt_pmm_log_csv = "/tmp/avt_pmm_log.csv.log"
+    cpu_validation_result = True
+
+    def mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, handle, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
+
+        rc = True
+        handle.sendline(cmd)
+        cmd_before = ""
+        buf_before_sig = ""
+        for sig in sig_list:
+            idx = libmfg_utils.mfg_expect(handle, [sig], timeout)
+            buf_before_sig += handle.before
+            if idx < 0:
+                rc = False
+                cmd_before = handle.before
+                break
+        idx = libmfg_utils.mfg_expect(handle, ["$"], timeout)
+        # signature match fails
+        if not rc:
+            mtp_mgmt_ctrl.mtp_dump_err_msg(cmd_before)
+            return (False, cmd_before)
+        elif idx < 0:
+            mtp_mgmt_ctrl.mtp_dump_err_msg(handle.before)
+            return (False, buf_before_sig + handle.before)
+        else:
+            cmd_output = buf_before_sig + handle.before
+            # print(cmd_buf + "$")
+
+        # get command return code
+        handle.sendline("echo $?")
+        idx = libmfg_utils.mfg_expect(handle, ["$"], 3)
+        idx = libmfg_utils.mfg_expect(handle, ["$"], 5)
+        if idx < 0:
+            mtp_mgmt_ctrl.cli_log_slot_wrn("Failed to Get Command Return Value" + handle.before)
+            return (True, cmd_output)
+
+        cmd_return_code = handle.before.splitlines()[2].strip("\r").strip()
+        if cmd_return_code != '0':
+            return (False, cmd_output + " echo $?" + handle.before)
+
+        return (True, cmd_output)
+
+    def mtp_2nd_mgmt_exec_sudo_cmd_resp(mtp_mgmt_ctrl, handle, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+
+        userid = mtp_mgmt_ctrl._mgmt_cfg[1]
+        passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
+
+        handle.sendline("sudo -k " + cmd)
+        idx = libmfg_utils.mfg_expect(handle, [userid + ":", "$"], timeout=10)
+        if idx < 0:
+            rs = handle.before
+            return (False, "[FAIL]: " + rs)
+        elif idx == 0:
+            handle.sendline(passwd)
+            idx = libmfg_utils.mfg_expect(handle, ["$"], timeout=timeout)
+            if idx < 0:
+                mtp_mgmt_ctrl.cli_log_err("sudo password not correct", level=0)
+                return (False, "[FAIL]: sudo password not correct" + handle.before)
+            else:
+                rs = handle.before
+        elif idx == 1:
+            rs = handle.before
+
+        # get command return code
+        handle.sendline("echo $?")
+        idx = libmfg_utils.mfg_expect(handle, ["$"], 3)
+        idx = libmfg_utils.mfg_expect(handle, ["$"], 5)
+        if idx < 0:
+            mtp_mgmt_ctrl.cli_log_slot_wrn("Failed to Get Command Return Value" + handle.before)
+            return (True, rs)
+
+        cmd_return_code = handle.before.splitlines()[2].strip("\r").strip()
+        if cmd_return_code != '0':
+            return (False, rs + " echo $?" + handle.before)
+
+        return (True, rs)
+
+    def run_avt_stress_system(mtp_mgmt_ctrl):
+
+        mtp_mgmt_ctrl.cli_log_inf_lock("start running avt stress system", level=0)
+        result = False
+
+        tout = MTP_Const.NIC_CON_CMD_DELAY
+        cmd = "cd " + avt_installation_dir
+        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
+        if not cmd_result:
+            mtp_mgmt_ctrl.cli_log_err_lock("Command {:s} Failed".format(cmd), level=0)
+            return result
+
+        cmd = './AVT -module tct "settargetpower(65,maxcpustress) settesttime(1m) log(T=' + avt_test_log_template + ',O=./' + avt_test_log_csv + ',I=1000) -multi"'
+        mtp_mgmt_ctrl.cli_log_inf_lock(cmd, level=0)
+        rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd, timeout=tout)
+        mtp_mgmt_ctrl.cli_log_inf_lock(str(rs), level=0)
+        mtp_mgmt_ctrl.cli_log_inf_lock("finished avt stress system", level=0)
+        if not rs or rs.startswith("[FAIL]:"):
+            mtp_mgmt_ctrl.cli_log_err_lock("AVS stress command failed.{:s}".format(cmd), level=0)
+            mtp_mgmt_ctrl.cli_log_err_lock(rs, level=0)
+            return result
+        result = True
+        return result
+
+    def run_avt_loop_pstates(mtp_mgmt_ctrl, avt_stress_handle):
+
+        mtp_mgmt_ctrl.cli_log_inf_lock("start runing avt loop pstates", level=0)
+        result = False
+
+        tout = MTP_Const.NIC_CON_CMD_DELAY
+        cmd = "cd " + avt_installation_dir
+        cmd_result = mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, avt_stress_handle, cmd, timeout=30)
+        if not cmd_result[0]:
+            mtp_mgmt_ctrl.cli_log_err_lock("command {:s} on 2nd mtp mgmt session failed".format(cmd), level=0)
+            mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+            return result
+
+        cmd = './AVT -module pstates "mode(up) loop(40) -multi"' # 40 loops takes about 1 min, match stress time setting
+        mtp_mgmt_ctrl.cli_log_inf_lock(cmd, level=0)
+        cmd_result = mtp_2nd_mgmt_exec_sudo_cmd_resp(mtp_mgmt_ctrl, avt_stress_handle, cmd, timeout=tout)
+        mtp_mgmt_ctrl.cli_log_inf_lock(cmd_result[1], level=0)
+        mtp_mgmt_ctrl.cli_log_inf_lock("finished avt loop pstates", level=0)
+        if not cmd_result[0] or cmd_result[1].startswith("[FAIL]:"):
+            mtp_mgmt_ctrl.cli_log_err_lock("AVT loop pstates command failed.{:s}".format(cmd), level=0)
+            mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+            return result
+        result = True
+        return result
+
+    def run_avt_pmm_getdata(mtp_mgmt_ctrl, avt_pmm_getdata_handle):
+        mtp_mgmt_ctrl.cli_log_inf_lock("start runing avt pmm get data for PPT_VALUE", level=0)
+        result = False
+
+        tout = MTP_Const.NIC_CON_CMD_DELAY
+        cmd = "cd " + avt_installation_dir
+        cmd_result = mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, avt_pmm_getdata_handle, cmd, timeout=30)
+        if not cmd_result[0]:
+            mtp_mgmt_ctrl.cli_log_err_lock("command {:s} on 3rd mtp mgmt session failed".format(cmd), level=0)
+            mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+            return result
+
+        frs = []
+        # 15 loops is approximate 1 miniute
+        for i in range(15):
+            cmd = "date +%H:%M:%S:%3N"
+            cmd_result = mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, avt_pmm_getdata_handle, cmd, timeout=30)
+            if not cmd_result[0]:
+                mtp_mgmt_ctrl.cli_log_err_lock("command {:s} on 3rd mtp mgmt session failed".format(cmd), level=0)
+                mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+                return result
+
+            timestamp = ""
+            for timestamp in re.finditer(r'\d{2}:\d{2}:\d{2}:\d{3}', cmd_result[1]):
+                timestamp = timestamp.group(0)
+                break
+
+            cmd = './AVT -module pmm "get_pmdata(2)"'
+            if i == 0:
+                mtp_mgmt_ctrl.cli_log_inf_lock(cmd, level=0)
+            cmd_result = mtp_2nd_mgmt_exec_sudo_cmd_resp(mtp_mgmt_ctrl, avt_pmm_getdata_handle, cmd, timeout=tout)
+            if not cmd_result[0] or cmd_result[1].startswith("[FAIL]:"):
+                mtp_mgmt_ctrl.cli_log_err_lock("AVT pmm get data command failed.{:s}".format(cmd), level=0)
+                mtp_mgmt_ctrl.cli_log_err_lock(cmd_result[1], level=0)
+                return result
+            rs_line_head = "TIMESTAMP,"
+            rs_line_value = timestamp + ","
+            for line in cmd_result[1].split("\n"):
+                line = line.strip("\r")
+                if "[INFRASTRUCTURE]" in line:
+                    rs_line_head += ",".join([item.split(":")[0].strip() for item in line.split(",")[2:]])
+                    rs_line_value += ",".join([item.split(":")[1].strip() for item in line.split(",")[2:]])
+                if "[FREQUENCIES]" in line:
+                    rs_line_head += "," + ",".join([item.split(":")[0].strip() for item in line.split(",")[2:]])
+                    rs_line_value += "," + ",".join([item.split(":")[1].strip() for item in line.split(",")[2:]])
+            if not frs:
+                frs.append(rs_line_head)
+            frs.append(rs_line_value)
+            if i == 0:
+                for line in frs:
+                    mtp_mgmt_ctrl.cli_log_inf_lock(line, level=0)
+            # no sleep needed since PM bus is slow bus, it takes 3 seconds to get one batch of data.
+            # time.sleep(1)
+
+        with open(avt_pmm_log_csv, 'w') as logfile:
+            for line in frs:
+                logfile.write(line + "\n")
+
+        mtp_mgmt_ctrl.cli_log_inf_lock("finished pmm get data", level=0)
+        result = True
+        return result
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Validation Test Start".format("AMD CPU"), level=0)
+    # copy avt customized logging template file to avt tool desired destination directory
+    cmd = "cp /home/diag/mfg_test_script/config/{:s} {:s}/Log/Template/STD/".format(avt_test_log_template, avt_installation_dir)
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    avt_loop_pstates_handle = mtp_mgmt_ctrl.mtp_session_create()
+    avt_pmm_getdata_handle = mtp_mgmt_ctrl.mtp_session_create()
+    if not avt_loop_pstates_handle:
+        mtp_mgmt_ctrl.cli_log_err("Failed to create new ssh connection for AVT pstates monitor", level=0)
+        return False
+    if not avt_pmm_getdata_handle:
+        mtp_mgmt_ctrl.cli_log_err("Failed to create new ssh connection for AVT PPT_VALUE monitor", level=0)
+        return False
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit the task to the executor
+        avt_pmm_result = executor.submit(run_avt_pmm_getdata, mtp_mgmt_ctrl, avt_pmm_getdata_handle)
+        #let pmm monitor start first, so that we can see CPU power change when stress
+        time.sleep(10)
+        avt_pstates_result = executor.submit(run_avt_loop_pstates, mtp_mgmt_ctrl, avt_loop_pstates_handle)
+        avt_stress_result = executor.submit(run_avt_stress_system , mtp_mgmt_ctrl)
+
+    avt_loop_pstates_handle.close()
+    avt_pmm_getdata_handle.close()
+
+    if not avt_stress_result.result():
+        cpu_validation_result = False
+        mtp_mgmt_ctrl.cli_log_err("AVT system stress test thread failed")
+    if not avt_pstates_result.result():
+        cpu_validation_result = False
+        mtp_mgmt_ctrl.cli_log_err("AVT loop pstates thread failed")
+    if not avt_pmm_result.result():
+        cpu_validation_result = False
+        mtp_mgmt_ctrl.cli_log_err("AVT pmm PPT_VALUE monitor thread failed")
+
+    cmd = "cp {:s}/{:s} {:s}/{:s}".format(avt_installation_dir, avt_test_log_csv, mtp_script_dir, avt_test_log_csv+".log")
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd = "mv {:s} {:s}".format(avt_pmm_log_csv, mtp_script_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("Test data saved to CSV file {:s}/{:s} and {:s}".format(mtp_script_dir, avt_test_log_csv+".log", os.path.basename(avt_pmm_log_csv)))
+    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Validation Test Finished".format("AMD CPU"), level=0)
+    return cpu_validation_result
 
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
@@ -1146,6 +1610,32 @@ def main():
                 rs = False
             else:
                 mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
+
+        # Matera MTP validation Test
+        # SSD validation
+        if not mtp_ssd_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP M.2 SSD validation test failed")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            fail_step = "MTP M.2 SSD validation test failed"
+            fail_desc = "MTP M.2 SSD validation test failed"
+            for slot in range(10):
+                fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+            rs = False
+        # AMD validation
+        if not mtp_cpu_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP CPU validation test failed")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            fail_step = "MTP CPU validation test failed"
+            fail_desc = "MTP CPU validation test failed"
+            for slot in range(10):
+                fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+            rs = False
 
         #get MTP MAC AA:BB:CC:DD:EE:FF
         if rs:
