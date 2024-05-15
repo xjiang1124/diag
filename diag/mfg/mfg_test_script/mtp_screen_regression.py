@@ -867,7 +867,7 @@ def sanity_check(mtp_cfg_db, mtp_id, mtp_mgmt_ctrl):
 
     return fail_nic_list
 
-def mtp_ssd_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+def mtp_ssd_validation_test(mtp_mgmt_ctrl):
     """MTP SSD validation test
 
     Args:
@@ -879,6 +879,7 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
         stop_on_err (_type_): _description_
     """
 
+    mtp_script_dir = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} SSD Validation Test Start".format("M.2"), level=0)
 
     mtp_mgmt_ctrl.cli_log_inf("GET SSD SMART info", level=0)
@@ -1077,7 +1078,7 @@ def read_mtp_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/sda'):
 
     return ret
 
-def mtp_cpu_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+def mtp_cpu_validation_test(mtp_mgmt_ctrl):
     """MTP CPU validation Test, AMD CPU only Since using AMD Validation Toolkits(AVT)
 
     Args:
@@ -1090,6 +1091,7 @@ def mtp_cpu_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
     avt_test_log_csv = "avt_stress_log.csv"
     avt_pmm_log_csv = "/tmp/avt_pmm_log.csv.log"
     cpu_validation_result = True
+    mtp_script_dir = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
 
     def mtp_2nd_mgmt_exec_cmd(mtp_mgmt_ctrl, handle, cmd, sig_list=[], timeout=MTP_Const.OS_CMD_DELAY):
 
@@ -1613,7 +1615,7 @@ def main():
 
         # Matera MTP validation Test
         # SSD validation
-        if not mtp_ssd_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+        if not mtp_ssd_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP M.2 SSD validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1625,7 +1627,7 @@ def main():
                     pass_nic_list.remove(slot)
             rs = False
         # AMD validation
-        if not mtp_cpu_validation_test(mtp_mgmt_ctrl, mtp_script_dir):
+        if not mtp_cpu_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP CPU validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
