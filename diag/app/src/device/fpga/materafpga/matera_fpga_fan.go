@@ -21,6 +21,8 @@ import (
 // *
 // ***********************************************************************************
 func FAN_Get_RPM(fanNumber uint32) (inner uint32, outer uint32, err int) {
+    inner = 0
+    outer = 0
 
     if fanNumber > (MAXFAN - 1) {
         cli.Printf("e", " Error: FAN_Get_RPM.  FAN NUMBER PASSED (%d) IS NOT VALID!", fanNumber)
@@ -34,8 +36,12 @@ func FAN_Get_RPM(fanNumber uint32) (inner uint32, outer uint32, err int) {
         return
     }
 
-    inner = (90000*60) / ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) 
-    outer = (90000*60) / ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT) 
+    if ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) > 0 {
+        inner = (90000*60) / ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) 
+    }
+    if ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT)  > 0 {
+        outer = (90000*60) / ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT) 
+    }
 
     return
 }
@@ -126,7 +132,7 @@ func FAN_Get_PWM(fanNumber uint32) (pwm uint32, err int) {
     if fanNumber == (MAXFAN - 1) {
         FanCtrlReg = FPGA_FAN_PWM_CTRL1_REG
     } else {
-        FanCtrlReg = FPGA_FAN_PWM_CTRL1_REG
+        FanCtrlReg = FPGA_FAN_PWM_CTRL0_REG
     }
 
     data32, errGo = MateraReadU32(FanCtrlReg)
@@ -217,20 +223,21 @@ func FAN_Get_Fault(fanNumber uint32) (fanErr uint32, err int) {
 
     switch fanNumber {
         case 0: 
-            errorMask = FPGA_FAN_STAT_REG_FAULT_FAN0 
+            errorMask = FPGA_FAN_STAT_REG_NO_FAULT_FAN0 
         case 1: 
-            errorMask = FPGA_FAN_STAT_REG_FAULT_FAN1 
+            errorMask = FPGA_FAN_STAT_REG_NO_FAULT_FAN1 
         case 2: 
-            errorMask = FPGA_FAN_STAT_REG_FAULT_FAN2 
+            errorMask = FPGA_FAN_STAT_REG_NO_FAULT_FAN2 
         case 3: 
-            errorMask = FPGA_FAN_STAT_REG_FAULT_FAN3 
+            errorMask = FPGA_FAN_STAT_REG_NO_FAULT_FAN3 
         case 4: 
-            errorMask = FPGA_FAN_STAT_REG_FAULT_FAN4 
+            errorMask = FPGA_FAN_STAT_REG_NO_FAULT_FAN4 
     }
 
 
+    //Logic here is kind of odd.  Bit on is basically fan good (no fault).  So check if it's off for a fault.
     fanErr = 0
-    if (data32 &  errorMask) > 0x00 {
+    if (data32 &  errorMask) == 0x00 {
         fanErr = 1
     }
     return

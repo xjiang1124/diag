@@ -118,7 +118,7 @@ func main() {
                 mask = 0x7
             } else if i2cinfo.CardType == "LIPARI" {
                 mask = 0xF
-            } else if i2cinfo.CardType == "MATERA_MTP" {
+            } else if i2cinfo.CardType == "MTP_MATERA" {
                 mask = 0x1F
             } else {
                 mask = 0xFF
@@ -145,7 +145,7 @@ func get_fan_device_name(devNumber int) (device string, err int) {
         device = fmt.Sprintf("FAN_%d", devNumber+1)
     } else if i2cinfo.CardType == "LIPARI" {
         device = fmt.Sprintf("FAN")
-    } else if i2cinfo.CardType == "MATERA_MTP" {
+    } else if i2cinfo.CardType == "MTP_MATERA" {
         device = fmt.Sprintf("FAN")
     } else {
         cli.Printf("e", "INVALID CARD_TYPE.  Make sure card type is set in the environment\n")

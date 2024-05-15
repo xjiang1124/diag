@@ -100,7 +100,7 @@ echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
 if [[ $FPGA_PRST == "YES" ]]
 then
-    CARD_TYPE="MTP_MATERA"
+    export CARD_TYPE=MTP_MATERA
     mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
     mtp_id_str1=$(echo $mtp_id_str | cut -b 15-20)
     mtp_id="${mtp_id_str1:0:6}"

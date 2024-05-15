@@ -178,7 +178,7 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
     for x=0; x<timeout; x++ {
         data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_RXDATA_OFFSET)
         if ((data32 & 0xC0000000) > 0) {
-            //time.Sleep(time.Duration(150) * time.Nanosecond)
+            time.Sleep(time.Duration(150) * time.Nanosecond)
             return;
         }
         
@@ -306,10 +306,10 @@ func matera_spi_generic_transaction(spiNumber uint32, opCode []byte, rdLength ui
 SPI_TRANSACTION_END:
         MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00) //turn off spi output
         MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_MUXSEL_OFFSET, 0x01)  //turn mux select to FPGA off
-        
-
-
-    } 
+    } else {
+        err = fmt.Errorf("ERROR matera_spi_generic_transaction. Spi-%d, STATUS REGISTER, BIT31 (FIFO MODE) NOT SET.  Status Reg = 0x%x\n", spiNumber, data32)
+        cli.Printf("e", "%s", err)
+    }
     return 
 }
 

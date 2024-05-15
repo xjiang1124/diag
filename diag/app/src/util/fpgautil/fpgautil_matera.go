@@ -17,6 +17,12 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil r32 <addr>\n" +
         "fpgautil w32 <addr> <data>\n" +
         "\n" +
+        "fpgautil i2c bus mux i2c_addr w byte0 [byte1. . . byteN] r len   -- write/read\n" +
+        "fpgautil i2c bus mux i2c_addr r len                              -- read\n" +
+        "fpgautil i2c bus mux i2c_addr w byte0 [byte1 . . . byteN]        -- write\n" +
+        "fpgautil i2c bus mux scan\n" +
+        "fpgautil i2c debug enable/disable\n" +
+        "\n" +
         "fpgautil flash help  << Display debug commands in the CLI >>\n" +
         "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" +
         "\n" +
@@ -33,12 +39,12 @@ const errhelpMatera = "\nfpgautil:\n" +
 func matera_fpga_cli() {
     
     var data32 uint32
-    var data64, addr, bar uint64
+    var data64, addr uint64
     var err error
     var inst, phy uint64
     var port int64
     var data16 uint16
-    //var i int = 0
+    var i int = 0
 
     argc := len(os.Args[0:])
 
@@ -74,18 +80,173 @@ func matera_fpga_cli() {
         }
 
         if (os.Args[1] == "r32") {
-            data32, err = materafpga.MateraReadU32(uint64(bar + addr))
+            data32, err = materafpga.MateraReadU32(uint64(addr))
             if err != nil {
-                cli.Printf("e", "LipariReadU32 Failed")
+                cli.Printf("e", "MateraReadU32 Failed")
                 os.Exit(-1)
             }
-            fmt.Printf("RD [0x%.04x] = 0x%.08x\n", bar + addr, data32)
+            fmt.Printf("RD [0x%.04x] = 0x%.08x\n", addr, data32)
         } else {
             data64, err = strconv.ParseUint(os.Args[3], 0, 32)
-            err = materafpga.MateraWriteU32(uint64(bar + addr), uint32(data64))
-            fmt.Printf("WR [0x%.04x] = 0x%.08x\n", bar + addr, uint32(data64))
+            err = materafpga.MateraWriteU32(uint64(addr), uint32(data64))
+            fmt.Printf("WR [0x%.04x] = 0x%.08x\n", addr, uint32(data64))
         }
         os.Exit(0)
+    //
+    //I2C Debug commands
+    //
+    } else if os.Args[1] == "i2c" {
+        wrData := []byte{}
+        rdData := []byte{}
+        var rdSize uint32 = 0
+
+        if argc == 4 {
+            if os.Args[3] == "reset" {
+                bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                fmt.Printf(" Resetting Bus %d\n", int(bus))
+                materafpga.I2cResetController2(int(bus)) 
+            } else if os.Args[3][0] == 'd' {
+                materafpga.MateraWriteU32(materafpga.FPGA_SCRATCH_3_REG, 0x00)
+            } else if os.Args[3][0] == 'e' {
+                materafpga.MateraWriteU32(materafpga.FPGA_SCRATCH_3_REG, 0xDEBDEB99)
+            } else {
+                fmt.Printf(" %s \n", errhelp)
+            }
+            return
+        }
+        if argc == 5 {   //scan
+            matrix := make([]byte, 128)
+            bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            materafpga.ExecutingScanChain = 1
+            for i:=3; i<0x78; i++ {
+
+                //if ((i >= 0x30 && i <= 0x37) || (i >= 0x50 && i <= 0x5F)) {
+                    //fmt.Printf("RD(%x) \n", i)
+                    rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 1 )
+                //} else {
+                    //fmt.Printf("WR(%x) \n", i)
+                //    rdData, err = I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 0x00 )
+                //}
+                if err == nil {
+                    matrix[i] = byte(i)
+                } else {
+                    matrix[i] = 0x99
+                }
+                //time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 2ms
+            }
+            materafpga.ExecutingScanChain = 0
+            fmt.Printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f")
+            for i:=0; i<0x80; i++ {
+                if (i%0x10)==0 { fmt.Printf("\n%.02x:", i) }
+                if matrix[i] == 0 { fmt.Printf("   ") 
+                } else if matrix[i] == 0x99 { fmt.Printf(" --") 
+                } else { fmt.Printf(" %.02x", matrix[i]) }
+            }
+            fmt.Printf("\n")
+            return
+        }
+        if argc < 6 {
+            fmt.Printf(" ERROR: Not Enough ARGS!!\n")
+            fmt.Printf(" %s \n", errhelp)
+            return
+        }
+        bus, err := strconv.ParseUint(os.Args[2], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        mux, err := strconv.ParseUint(os.Args[3], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+        i2cAddr, err := strconv.ParseUint(os.Args[4], 0, 32)
+        if err != nil {
+            fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+        }
+
+        if os.Args[5] == "b" || os.Args[5] == "b" {
+            fmt.Printf(" Attempting to wipe secure key from the eeprom\n")
+            wrData = append(wrData, 0xFF)
+            for i:=0x100;i<0x1000;i++ {
+                fmt.Printf(".")
+                rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, 0 )
+                if err != nil {
+                    os.Exit(-1)
+                }
+            }
+            os.Exit(0)
+        }
+        if os.Args[5] == "w" || os.Args[5] == "W" {
+            for i=6; i<argc; i++ {
+                if os.Args[i] == "r" || os.Args[i] == "R" {
+                    rdLength, err := strconv.ParseUint(os.Args[i+1], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i+1,  err); return
+                    }
+                    rdSize = uint32(rdLength)
+                    rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+                    if err == nil {
+                        if err == nil {
+                            fmt.Printf("\nWR: ")
+                            for i=0;i<len(wrData);i++ {
+                                fmt.Printf("0x%02x ", wrData[i])
+                            }
+                        }
+                        fmt.Printf("\nRD: ")
+                        for j:=0; j<len(rdData); j++ {
+                            fmt.Printf("0x%.02x ", rdData[j])
+                        }
+                        fmt.Printf("\n")
+                        return
+                    } else {
+                        os.Exit(-1)
+                    }
+                } else {
+                    dataArg, err := strconv.ParseUint(os.Args[i], 0, 32)
+                    if err != nil {
+                        fmt.Printf(" Args[%d] ParseUint is showing ERR = %v.   Exiting Program\n", i, err); return
+                    }
+                    wrData = append(wrData, byte(dataArg))
+                }
+            }
+
+            rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, rdSize )
+            if err == nil {
+                fmt.Printf("\nWR: ")
+                for i=0;i<len(wrData);i++ {
+                    fmt.Printf("0x%02x ", wrData[i])
+                }
+                fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
+            }
+        } else {       //read only
+            rdLength, err := strconv.ParseUint(os.Args[6], 0, 32)
+            if err != nil {
+                fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+            }
+            rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), 0x00, wrData, uint32(rdLength) )
+            if err == nil {
+                fmt.Printf("\nRD: ")
+                for j:=0; j<len(rdData); j++ {
+                    fmt.Printf("0x%.02x ", rdData[j])
+                }
+                fmt.Printf("\n")
+            } else {
+                os.Exit(-1)
+            }
+        }
+
+
     //
     //FPGA Local Flash commands 
     //
@@ -98,7 +259,7 @@ func matera_fpga_cli() {
         "fpgautil flash flash sectorerase <addr>/all\n" +
         "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" 
 
-        if argc < 2 {
+        if argc < 3 {
             fmt.Printf(" %s \n", errhelpMatera)
             os.Exit(-1)
         }
@@ -109,26 +270,41 @@ func matera_fpga_cli() {
         }
 
         if os.Args[2] == "devid" {
-            value, _ := materafpga.Spi_flash_read_id(flashID) 
-            fmt.Printf(" FLASH DEV ID=%.08x\n", value)
+            value, err := materafpga.Spi_flash_read_id(flashID) 
+            if err != nil {
+                fmt.Printf(" Error reading flash ID\n")
+                os.Exit(-1)
+            } else {
+                fmt.Printf(" FLASH DEV ID=%.08x\n", value)
+            }
         } else if os.Args[2] == "we" {
             materafpga.Spi_flash_WriteEnable(flashID)
             materafpga.Spi_flash_CheckWriteEnable(flashID)
         } else if os.Args[2] == "readsr" {
-            rd32, _  := materafpga.Spi_flash_read_status_register(flashID)
-            fmt.Printf(" SR=%.02x\n", rd32 & 0xFF)
+            rd32, err  := materafpga.Spi_flash_read_status_register(flashID)
+            if err != nil {
+                fmt.Printf(" Error reading status register\n")
+                os.Exit(-1)
+            } else {
+                fmt.Printf(" SR=%.02x\n", rd32 & 0xFF)
+            }
         } else if os.Args[2] == "writesr" {
             wr32, _ := strconv.ParseUint(os.Args[3], 0, 32)
-            materafpga.Spi_flash_write_status_register(flashID, uint32(wr32))
-            fmt.Printf("WROTE %.02x to SR\n", wr32 & 0xFF)
+            err := materafpga.Spi_flash_write_status_register(flashID, uint32(wr32))
+            if err != nil {
+                fmt.Printf(" Error reading flash ID\n")
+                os.Exit(-1)
+            } else {
+                fmt.Printf("WROTE %.02x to SR\n", wr32 & 0xFF)
+            }
         } else if os.Args[2] == "verify" || os.Args[2] == "generate" || os.Args[2] == "program" || os.Args[2] == "test" {
             if argc < 5 {
-                fmt.Printf(" %s \n", errhelpLipari)
+                fmt.Printf(" %s \n", errhelpMateraFlash)
                 os.Exit(-1)
             }
             if os.Args[2] == "test" {
                 if argc < 6 {
-                    fmt.Printf(" %s \n", errhelpLipari)
+                    fmt.Printf(" %s \n", errhelpMateraFlash)
                     return
                 }
                 var err error = nil
@@ -185,7 +361,7 @@ func matera_fpga_cli() {
             }
         } else if os.Args[2] == "read" || os.Args[2] == "Read" {
             if argc < 5 {
-                fmt.Printf(" %s \n", errhelpLipari)
+                fmt.Printf(" %s \n", errhelpMateraFlash)
                 return
             }
             addr, err := strconv.ParseUint(os.Args[3], 0, 32)
