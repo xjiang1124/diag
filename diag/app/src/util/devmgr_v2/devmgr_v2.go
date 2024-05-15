@@ -27,6 +27,7 @@ func init() {
     rootCmd.AddCommand(statusCmd)
     rootCmd.AddCommand(faninitCmd)
     rootCmd.AddCommand(fanctrlCmd)
+    rootCmd.AddCommand(marginCmd)
     rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 
