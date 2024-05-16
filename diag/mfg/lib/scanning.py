@@ -188,7 +188,7 @@ def mtp_screen_barcode_scan(mtp_mgmt_ctrl):
     sn = ""
     sn_scanned = False
     while not sn_scanned:
-        usr_prompt = "Please Scan {:s} Serial Number Barcode:".format(mtp_mgmt_ctrl._id)
+        usr_prompt = "Please Scan {:s} Serial Number Barcode: ".format(mtp_mgmt_ctrl._id)
         raw_scan = input(usr_prompt)
         if raw_scan == "STOP":
             break

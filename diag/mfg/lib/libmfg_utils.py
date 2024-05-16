@@ -1358,12 +1358,12 @@ def soap_post_report(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = http.client.HTTPConnection(webserverip)
+            webservice = http.client.HTTPSConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_SAVE_UUT_RSLT_SOAP)
         else:
-            webservice = http.client.HTTPConnection(webserverip)
+            webservice = http.client.HTTPSConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_SAVE_UUT_RSLT_SOAP)
@@ -1405,12 +1405,12 @@ def soap_get_uut_info(xml, factory=Factory.FSP):
     try:
         webserverip = Factory_network_config[factory]["Flexflow"]
         if factory == Factory.FSP or factory == Factory.P1:
-            webservice = http.client.HTTPConnection(webserverip)
+            webservice = http.client.HTTPSConnection(webserverip)
             webservice.putrequest("POST", FLX_PENANG_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_PENANG_GET_UUT_INFO_SOAP)
         else:
-            webservice = http.client.HTTPConnection(webserverip)
+            webservice = http.client.HTTPSConnection(webserverip)
             webservice.putrequest("POST", FLX_API_URL)
             webservice.putheader("Content-Type", "text/xml")
             webservice.putheader("SOAPAction", FLX_GET_UUT_INFO_SOAP)
