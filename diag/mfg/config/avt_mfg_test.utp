@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<components>                                               
+    <component>                                            
+        <name>PowerServer</name>                           
+        <group>                                            
+            <name>Core's PState:Frequency:Voltage</name>   
+            <attribute>                                    
+                <name>PhysicalCore 0</name>                
+            </attribute>                                   
+        </group>                                           
+        <group>
+            <name>Memory Current PState:Frequency:</name>
+            <attribute>
+                <name>Die 0 Umc 0</name>
+            </attribute>
+        </group>
+    </component>                                           
+    <component>               
+        <name>pmmserver</name>
+        <group>               
+            <name>SVI2</name> 
+            <attribute>                            
+                <name>SVI2 VDD Volt (volts)</name> 
+            </attribute>                          
+        </group>
+        <group>
+            <name>Power Data (P-Package D-Die)</name>
+            <attribute>
+                <name>P0 D0 Core0 Effective Frequency (GHz)</name>
+            </attribute>
+            <attribute>
+                <name>P0 D0 Core0 C0 residency(approx) (%)</name>
+            </attribute>
+        </group>
+    </component>
+    <component>
+        <name>ThermalServer</name>
+        <group>
+            <name>Thermal Node Information</name>
+            <attribute>
+                <name> Temperature-Die0 ('C)</name>
+            </attribute>
+        </group>
+    </component>
+</components>                                              

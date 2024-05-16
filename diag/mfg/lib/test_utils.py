@@ -579,6 +579,10 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
         elif test == "PYTHON_UPDATE":
             ret = libmfg_utils.mtp_python369_sitepackage_update(mtp_mgmt_ctrl)
 
+        elif test == "AMD_AVT_TOOL_INSTALL":
+            # Install AMD CPU validation tool AVT onto MTP
+            ret = libmfg_utils.mtp_avt_tool_installation(mtp_mgmt_ctrl)
+
         elif test == "DIAG_START":
             ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False)
 

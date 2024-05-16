@@ -111,7 +111,7 @@ class mtp_ctrl():
         self._test_log_folder = None  # relative path to log folder
         self._open_file_handles = []
 
-    def cli_log_inf(self, msg, level=1):
+    def cli_log_inf(self, msg, level=0):
         if msg is None:
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp=self._id)
@@ -132,7 +132,7 @@ class mtp_ctrl():
         else:
             libmfg_utils.cli_inf(cli_id_str + prefix + msg + postfix)
 
-    def cli_log_err(self, msg, level=1):
+    def cli_log_err(self, msg, level=0):
         if msg is None:
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp=self._id)
@@ -142,7 +142,7 @@ class mtp_ctrl():
         else:
             libmfg_utils.cli_err(cli_id_str + indent + msg)
 
-    def cli_log_wrn(self, msg, level=1):
+    def cli_log_wrn(self, msg, level=0):
         if msg is None:
             msg = ""
         cli_id_str = libmfg_utils.id_str(mtp=self._id)
@@ -151,6 +151,16 @@ class mtp_ctrl():
             libmfg_utils.cli_log_wrn(self._filep, cli_id_str + indent + msg)
         else:
             libmfg_utils.cli_wrn(cli_id_str + indent + msg)
+
+    def cli_log_inf_lock(self, msg, level=0):
+        self._lock.acquire()
+        self.cli_log_inf(msg, level)
+        self._lock.release()
+
+    def cli_log_err_lock(self, msg, level=0):
+        self._lock.acquire()
+        self.cli_log_err(msg, level)
+        self._lock.release()
 
     def cli_log_slot_inf(self, slot, msg, level=0):
         if msg is None:
@@ -1361,7 +1371,7 @@ class mtp_ctrl():
 
     def mtp_update_python36_site_package(self, image):
 
-        cmd = "mkdir -p /home/diag/.local/lib".format(image)
+        cmd = "mkdir -p /home/diag/.local/lib"
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Failed to execute command: {:s}".format(cmd), level=0)
 

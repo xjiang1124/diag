@@ -633,6 +633,7 @@ class MTP_IMAGES:
     penctl_token_img = "penctl.token"
     rotctrl_img = "rotctrl"
     python_site_package4mtp_img = "python3.6_site_package.tar.gz"
+    mtp_cpu_validation_tool_avt_img = "AVT_Linux_NDA_2.8.24.tar"
 
 # MFG release images
 class MFG_IMAGE_FILES:
