@@ -90,8 +90,8 @@ var FieldTlvCode = map[string]byte {
     "SERVICETAG":   service_tag,
     "PCBPN":        pcba_part_number,
     "PCBSN":        pcba_serial_number,
-    "HW_MAJ_REV":   hw_maj_rev,
-    "HW_MIN_REV":   hw_min_rev,
+    "HW_MAJOR_REV":   hw_maj_rev,
+    "HW_MINOR_REV":   hw_min_rev,
     "MFG_DEVIATION":  mfg_deviation,
     "MFG_BITS":     mfg_bits,
     "ENG_BITS":     eng_bits,
@@ -1455,9 +1455,9 @@ func getTlvName(tlvcode byte) (Name string) {
     case pcba_serial_number:
         Name = "PCBA Serial Number"
     case  hw_maj_rev:
-        Name = "HW Major Rev"
+        Name = "HW_MAJOR_REV"
     case  hw_min_rev:
-        Name = "HW Minor Rev"
+        Name = "HW_MINOR_REV"
     case  mfg_deviation:
         Name = "MFG Deviation"
     case  mfg_bits:

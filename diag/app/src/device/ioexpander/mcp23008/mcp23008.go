@@ -27,6 +27,20 @@ const (
     OLAT    uint = 0x0A
 )
 
+var regName = [...]string {
+    IODIR:   "IODIR",
+    IPOL:    "IPOL",
+    GPINTEN: "GPINTEN",
+    DEFVAL:  "DEFVAL",
+    INTCON:  "INTCON",
+    IOCON:   "IOCON",
+    GPPU:    "GPPU",
+    INTF:    "INTF",
+    INTCAP:  "INTCAP",
+    GPIO:    "GPIO",
+    OLAT:    "OLAT",
+}
+
 func readByteSmbus(devName string, offset uint) (Data byte, err int) {
     err = errType.SUCCESS
 
@@ -80,13 +94,17 @@ func writeByteSmbus(devName string, offset uint, val byte) (err int) {
 
 func DispStatus(devName string) (err int) {
     err = errType.SUCCESS
-    data, errSmbus := readByteSmbus(devName, GPIO)
-    if errSmbus != errType.SUCCESS {
-        cli.Println("e", fmt.Sprintf("Failed to read @ 0x%x", GPIO))
-        err = errSmbus
-        return
+    var data byte
+    var errSmbus int
+
+    for r := IODIR; r < OLAT; r++ {
+        data, errSmbus = readByteSmbus(devName, r)
+        if errSmbus != errType.SUCCESS {
+            cli.Println("e", fmt.Sprintf("MCP23008: Reg[%s (0x%02x)] reading failed!", regName[r], r))
+            err = errSmbus
+        }
+        cli.Println("i", fmt.Sprintf("MCP23008: Reg[%s (0x%02x)] = 0x%02x", regName[r], r, data))
     }
-    cli.Println("i", fmt.Sprintf("MCP23008: Reg[\"GPIO\"] = 0x%02x", data))
 
     return
 }
