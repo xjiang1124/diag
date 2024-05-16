@@ -177,8 +177,10 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
 
     for x=0; x<timeout; x++ {
         data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_RXDATA_OFFSET)
+        //BIT[31:30] represent how many bytes can be read from 1 to 3 bytes.
+        //If any bit[31:30] is set there is data to read
+        //If we never see these bits set, there is no read data.  Return an error
         if ((data32 & 0xC0000000) > 0) {
-            time.Sleep(time.Duration(150) * time.Nanosecond)
             return;
         }
         
