@@ -452,7 +452,7 @@ class mtp_ctrl():
         return Factory.UNKNOWN
 
     def get_mtp_sn(self):
-        return self._mtp_sn
+        return "" if self._mtp_sn is None else self._mtp_sn
 
     def set_mtp_sn(self, sn):
         self._mtp_sn = sn

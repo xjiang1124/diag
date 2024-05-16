@@ -88,18 +88,18 @@ def naples_diag_cfg_show(card_type, naples_test_db, mtp_mgmt_ctrl):
     seq_test_list = naples_test_db.get_diag_seq_test_list()
     mtp_mgmt_ctrl.cli_log_inf("MTP Sequential Test List:")
     for item in seq_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     para_test_list = naples_test_db.get_diag_para_test_list()
     mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Test List:")
     for item in para_test_list:
-        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+        mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     if card_type in ELBA_NIC_TYPE_LIST or card_type in GIGLIO_NIC_TYPE_LIST:
         para_test_list = [("MVL", "ACC"), ("MVL", "STUB")]
         mtp_mgmt_ctrl.cli_log_inf("NIC Parallel Additional Test List:")
         for item in para_test_list:
-            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(item), level = 2)
+            mtp_mgmt_ctrl.cli_log_inf("{:s}".format(str(item)), level = 2)
 
     mtp_mgmt_ctrl.cli_log_inf("{:s} Diag Regression Test List End\n".format(card_type), level = 0)
 
@@ -505,12 +505,11 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         nic_bottom_test_list = []
     # split test nic list into half & half
     else:
-        nic_split = len(nic_list)/2
+        nic_split = int(len(nic_list)/2)
         nic_top_test_list = nic_list[:nic_split]
         nic_bottom_test_list = nic_list[nic_split:]
 
-    if (mtp_mgmt_ctrl._asic_support == MTP_TYPE.TURBO_ELBA or
-        mtp_mgmt_ctrl._asic_support == MTP_TYPE.TURBO_CAPRI):
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() in (MTP_TYPE.TURBO_ELBA ,MTP_TYPE.TURBO_CAPRI):
         nic_top_test_list    = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
         nic_bottom_test_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
 
@@ -1329,6 +1328,48 @@ def mtp_cpu_validation_test(mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Validation Test Finished".format("AMD CPU"), level=0)
     return cpu_validation_result
 
+def mtp_mem_validation_test(mtp_mgmt_ctrl):
+    """using the Stressful Application Test (stressapptest) for DDR stress test.
+    same tool as SDD and EMMC validation, we will not specify '-f" option, it means no write data to disk thread. we focus on memory test here.
+    and we only specify test time, not specify megabytes of ram to test option '-M', let to tool auto decide the maxiumum available memory for stress test.
+
+    Args:
+        mtp_mgmt_ctrl (_type_): mtp management controller instance
+    """
+
+    stress_test_time = 60  # Set stress test running time in seconds
+    cmd = "/home/diag/diag/tools/stressapptest"
+    tout = stress_test_time * 1.2
+    cmd += " -s " + str(stress_test_time)
+    mtp_mgmt_ctrl.cli_log_inf("MTP DDR Memory Validation Test Start")
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if "Found 0 hardware incidents".lower() not in cmd_result.lower() or "Status: PASS - please verify no corrected errors".lower() not in cmd_result.lower():
+        mtp_mgmt_ctrl.cli_log_err("Hardware Error Found By stressapptest Tool:")
+        mtp_mgmt_ctrl.cli_log_err(cmd_result)
+        return False
+    bandwidth = ""
+    for m in re.finditer(r'Stats:\s+Memory\s+Copy:\s+.*M\s+at\s+(.*)', cmd_result):
+        bandwidth = m.group(1)
+        break
+    if bandwidth:
+        mtp_mgmt_ctrl.cli_log_inf("MTP DDR Memory Validation Passed with data bandwidth {:s}".format(bandwidth))
+    mtp_mgmt_ctrl.cli_log_inf("MTP DDR Memory Validation Test Finished")
+    return True
+
+def mtp_usb_validation_test(mtp_mgmt_ctrl):
+    """Matera MTP USB validation test
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+    """
+
+    pass
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -1339,7 +1380,8 @@ def main():
     parser.add_argument("--skip-test", help="skip a particular test", nargs="*", default=[])
     parser.add_argument("--fail-slots", help="consider these slots failed", nargs="*", default=[])
     parser.add_argument("--skip-slots", help="skip a particular slot", nargs="*", default=[])
-    parser.add_argument("--mtpsn", help="MTP SN, like FLM0021330001, etc", required=True)
+    parser.add_argument("--mtpsn", help="MTP SN, like FLM0021330001, etc", default="")
+    parser.add_argument("--mtp_type", help="pass mtp type for test", nargs="?", default="", type=str, required=True)
     parser.add_argument("--l1-seq", help="asic L1 run under sequence mode", action='store_true')
     args = parser.parse_args()
 
@@ -1365,6 +1407,8 @@ def main():
         mtp_sn = args.mtpsn
     if args.l1_seq:
         l1_sequence = True
+    if args.mtp_type:
+        mtp_type = args.mtp_type
 
     fail_step = ""
     fail_desc = ""
@@ -1553,7 +1597,6 @@ def main():
     # logfiles
     mtp_script_dir, open_file_track_list = testlog.open_logfiles(mtp_mgmt_ctrl, run_from_mtp=True, stage=stage)
 
-
     try:
 
         naples100_nic_list = list()
@@ -1597,25 +1640,37 @@ def main():
             return False
         mtp_mgmt_ctrl.cli_log_inf("MTP Chassis is connected", level=0)
 
-        if rs:
-            if not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
-                mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
-                libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
-                mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
-                fail_step = "MTP common setup failed"
-                fail_desc = "MTP common setup fails"
-                for slot in range(10):
-                    if slot not in fail_nic_list:
-                        fail_nic_list.append(slot)
-                    if slot in pass_nic_list:
-                        pass_nic_list.remove(slot)
-                rs = False
-            else:
-                mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
+        if rs and not libmfg_utils.mtp_common_setup(mtp_mgmt_ctrl, stage=stage):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP common setup fails, test abort...")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_INV_PARAM, open_file_track_list)
+            fail_step = "MTP common setup failed"
+            fail_desc = "MTP common setup fails"
+            for slot in range(10):
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+            rs = False
+        else:
+            mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
+
 
         # Matera MTP validation Test
+        # Memory validation
+        if rs and not mtp_mem_validation_test(mtp_mgmt_ctrl):
+            mtp_mgmt_ctrl.mtp_diag_fail_report("MTP DDR Mermory validation test failed")
+            libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
+            mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
+            fail_step = "MTP DDR Mermory validation test failed"
+            fail_desc = "MTP DDR Mermory validation test failed"
+            for slot in range(10):
+                fail_nic_list.append(slot)
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+            rs = False
         # SSD validation
-        if not mtp_ssd_validation_test(mtp_mgmt_ctrl):
+        if rs and not mtp_ssd_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP M.2 SSD validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1626,8 +1681,8 @@ def main():
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
             rs = False
-        # AMD validation
-        if not mtp_cpu_validation_test(mtp_mgmt_ctrl):
+        # AMD CPU validation
+        if rs and not mtp_cpu_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP CPU validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1658,68 +1713,6 @@ def main():
 
             mac_dict = {
                         "FLM21330006" : "BBBBBBBBBBAF",
-                        "FLM21330004" : "BBBBBBBBBBAE",
-                        "FLM21330005" : "BBBBBBBBBBA8",
-                        "FLM2133000B" : "BBBBBBBBBBA0",
-                        "FLM21330001" : "BBBBBBBBBBA1",
-                        "FLM21330013" : "BBBBBBBBBBA2",
-                        "FLM21330002" : "BBBBBBBBBBA7",
-                        "FLM2133000F" : "BBBBBBBBBBAD",
-                        "FLM21330008" : "BBBBBBBBBBAC",
-                        "FLM2133000D" : "BBBBBBBBBBA4",
-                        "FLM21330009" : "BBBBBBBBBBA5",
-                        "FLM21330003" : "BBBBBBBBBBA6",
-                        "FLM21330011" : "BBBBBBBBBBA9",
-                        "FLM21330012" : "BBBBBBBBBBAA",
-                        "FLM2133000E" : "BBBBBBBBBBAF",
-                        "FLM2133000C" : "BBBBBBBBBBAB",
-                        "FLM21400023" : "BBBBBBBBBBB0",
-                        "FLM2140001F" : "BBBBBBBBBBB1",
-                        "FLM21400018" : "BBBBBBBBBBB2",
-                        "FLM2140002D" : "BBBBBBBBBBB3",
-                        "FLM2140002A" : "BBBBBBBBBBB4",
-                        "FLM21400008" : "BBBBBBBBBBB5",
-                        "FLM2140000D" : "BBBBBBBBBBB6",
-                        "FLM21400004" : "BBBBBBBBBBB7",
-                        "FLM2140001C" : "BBBBBBBBBBB8",
-                        "FLM2140000E" : "BBBBBBBBBBB9",
-                        "FLM2140000C" : "BBBBBBBBBBBA",
-                        "FLM21400002" : "BBBBBBBBBBBB",
-                        "FLM21400007" : "BBBBBBBBBBBC",
-                        "FLM21400005" : "BBBBBBBBBBBD",
-                        "FLM21400024" : "BBBBBBBBBBBE",
-                        "FLM21400010" : "BBBBBBBBBBBF",
-                        "FLM21400021" : "BBBBBBBBBBC0",
-                        "FLM21400015" : "BBBBBBBBBBC1",
-                        "FLM21400006" : "BBBBBBBBBBC2",
-                        "FLM21400012" : "BBBBBBBBBBC3",
-                        "FLM21400001" : "BBBBBBBBBBC4",
-                        "FLM2140002C" : "BBBBBBBBBBC5",
-                        "FLM2140002F" : "BBBBBBBBBBC6",
-                        "FLM2140001E" : "BBBBBBBBBBC7",
-                        "FLM2140000A" : "BBBBBBBBBBC8",
-                        "FLM2140000B" : "BBBBBBBBBBC9",
-                        "FLM21400025" : "BBBBBBBBBBCA",
-                        "FLM21400028" : "BBBBBBBBBBCB",
-                        "FLM21400029" : "BBBBBBBBBBCC",
-                        "FLM2140001A" : "BBBBBBBBBBCD",
-                        "FLM21400009" : "BBBBBBBBBBCE",
-                        "FLM21400003" : "BBBBBBBBBBCF",
-                        "FLM2140001D" : "BBBBBBBBBBD0",
-                        "FLM21400032" : "BBBBBBBBBBD1",
-                        "FLM21400027" : "BBBBBBBBBBD2",
-                        "FLM21400031" : "BBBBBBBBBBD3",
-                        "FLM21400026" : "BBBBBBBBBBD4",
-                        "FLM21400011" : "BBBBBBBBBBD5",
-                        "FLM2140002B" : "BBBBBBBBBBD6",
-                        "FLM21400017" : "BBBBBBBBBBD7",
-                        "FLM21400016" : "BBBBBBBBBBD8",
-                        "FLM21400014" : "BBBBBBBBBBD9",
-                        "FLM2140000F" : "BBBBBBBBBBDA",
-                        "FLM21400020" : "BBBBBBBBBBDB",
-                        "FLM2140002E" : "BBBBBBBBBBDC",
-                        "FLM2140001B" : "BBBBBBBBBBDD",
-                        "FLM21400019" : "BBBBBBBBBBDE",
                         "FLM21400013" : "BBBBBBBBBBDF"
                         }
             if mtp_sn not in mac_dict:
