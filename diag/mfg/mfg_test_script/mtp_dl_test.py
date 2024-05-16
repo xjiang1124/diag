@@ -534,6 +534,7 @@ def main():
             mtp_mgmt_ctrl.mtp_power_cycle_nic(pass_nic_list, dl=True)
 
         for slot in pass_nic_list[:]:
+            sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             if nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
             elif nic_type in MTP_REV03_CAPABLE_NIC_TYPE_LIST:

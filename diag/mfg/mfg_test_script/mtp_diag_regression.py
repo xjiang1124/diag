@@ -589,7 +589,7 @@ def naples_diag_seq_test(mtp_mgmt_ctrl, nic_type, nic_list, test_db, test_list, 
         nic_bottom_test_list = []
     # split test nic list into half & half
     else:
-        nic_split = len(nic_list)/2
+        nic_split = int(len(nic_list)/2)
         nic_top_test_list = nic_list[:nic_split]
         nic_bottom_test_list = nic_list[nic_split:]
 

@@ -1010,7 +1010,7 @@ Factory_network_config = {
     },
     Factory.P1: {
         "Networks": ["192.168.8.0/22"],
-        "Flexflow": "10.192.39.48"
+        "Flexflow": "pnapsotesterws.flex.com"
     },
     Factory.LAB: {
         "Networks": ["10.9.0.0/16"],

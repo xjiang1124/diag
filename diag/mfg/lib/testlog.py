@@ -50,6 +50,8 @@ def find_logfile_path(mtp_mgmt_ctrl, stage):
     stage = str(stage)
     search_rgx = r"%s_MTPS?-[0-9A-Za-z\-]{3,}_[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}" % stage
     for item in sorted(os.listdir(log_parent_dir))[::-1]:
+        if "tar.gz" in item:
+            continue
         if re.search(search_rgx, item):
             return os.path.join(log_parent_dir, item)
     mtp_mgmt_ctrl.cli_log_err("Could not find logfile directory after deploying", level=0)
