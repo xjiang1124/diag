@@ -1361,15 +1361,6 @@ def mtp_mem_validation_test(mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("MTP DDR Memory Validation Test Finished")
     return True
 
-def mtp_usb_validation_test(mtp_mgmt_ctrl):
-    """Matera MTP USB validation test
-
-    Args:
-        mtp_mgmt_ctrl (_type_): _description_
-    """
-
-    pass
-
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -1653,12 +1644,12 @@ def main():
                     pass_nic_list.remove(slot)
             rs = False
         else:
-            mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
+            if rs: mtp_mgmt_ctrl.cli_log_inf("MTP common setup passed", level=0)
 
 
         # Matera MTP validation Test
         # Memory validation
-        if rs and not mtp_mem_validation_test(mtp_mgmt_ctrl):
+        if not mtp_mem_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP DDR Mermory validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1670,7 +1661,7 @@ def main():
                     pass_nic_list.remove(slot)
             rs = False
         # SSD validation
-        if rs and not mtp_ssd_validation_test(mtp_mgmt_ctrl):
+        if not mtp_ssd_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP M.2 SSD validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
@@ -1682,7 +1673,7 @@ def main():
                     pass_nic_list.remove(slot)
             rs = False
         # AMD CPU validation
-        if rs and not mtp_cpu_validation_test(mtp_mgmt_ctrl):
+        if not mtp_cpu_validation_test(mtp_mgmt_ctrl):
             mtp_mgmt_ctrl.mtp_diag_fail_report("MTP CPU validation test failed")
             libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
             mtp_test_cleanup(MTP_DIAG_Error.MTP_DIAG_SANITY, open_file_track_list)
