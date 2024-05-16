@@ -164,7 +164,6 @@ echo "source \$ASIC_LIB/source_env_path" >> temp_profile
 #==================================
 if [[ $mtp_id == "0x000b" ]]
 then
-    #export CARD_TYPE=MTP_MATERA
     echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
     export REDIS_IP="127.0.0.1"
 else

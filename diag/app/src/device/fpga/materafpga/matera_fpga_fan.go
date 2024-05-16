@@ -9,6 +9,11 @@ import (
     "common/errType"
 )
 
+const (
+    //RPM numberator from fpga spec.  Also follows typical fan controller rpm algorigthm.
+    RPMNUMERATOR  = 5400000  
+)
+
 
 // ***********************************************************************************
 // *
@@ -37,10 +42,10 @@ func FAN_Get_RPM(fanNumber uint32) (inner uint32, outer uint32, err int) {
     }
 
     if ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) > 0 {
-        inner = (90000*60) / ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) 
+        inner = RPMNUMERATOR / ((data32 & FPGA_FAN0_TACH_INLET_RPM_MASK) >> FPGA_FAN0_TACH_INLET_RPM_SHIFT) 
     }
     if ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT)  > 0 {
-        outer = (90000*60) / ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT) 
+        outer = RPMNUMERATOR / ((data32 & FPGA_FAN0_TACH_OUTLET_RPM_MASK) >> FPGA_FAN0_TACH_OUTLET_RPM_SHIFT) 
     }
 
     return
