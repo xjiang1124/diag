@@ -661,7 +661,7 @@ PRIVEK <ek.sk>"""
             print "iteration %d\n" % (retry + 1)
             try:
                 expstr = ["capri login:", "elba login:"]
-                self.nic_con.uart_session_start(uartsession, rate)
+                self.nic_con.uart_session_start(uartsession, slot)
                 cmd = "sysreset.sh"
                 uartsession.sendline(cmd)
                 uartsession.expect(expstr, 300)
@@ -788,7 +788,7 @@ PRIVEK <ek.sk>"""
         session = common.session_start()
         session.timeout = 60
         baud_rate = 115200
-        nic_con1.uart_session_start(session, baud_rate)
+        nic_con1.uart_session_start(session, slot)
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x2a")
         nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
         nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")

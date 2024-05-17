@@ -79,7 +79,7 @@ class nic_test:
             else:
                 sleepTime=6.0
 
-            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            ret = self.nic_con.uart_session_start_login(session, slot)
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "fsck -y /dev/mmcblk0p10")
                 self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
@@ -167,7 +167,8 @@ class nic_test:
 
     def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True, do_untar=""):
         nic_list_remain = nic_list[:]
-        timeout = 60
+        #timeout = 60
+        #timeout = 0
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
             print("slot_list", nic_list_remain)
@@ -189,6 +190,29 @@ class nic_test:
         print(ret, nic_list_pass, nic_list_remain)
 
         return [ret, nic_list_pass, nic_list_remain]
+
+    # setup_env for single slot
+    def setup_env_single(self, slot, mgmt=False, timeout=0, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True, do_untar=""):
+        nic_list = [slot]
+        nic_list_remain = nic_list[:]
+        for retry in range(numRetry):
+            print("Setting up #{}".format(retry))
+            print("slot_list", nic_list_remain)
+            print("timestamp", datetime.datetime.now().time())
+            ret, nic_list_remain = self.setup_env_multi(nic_list_remain, mgmt, timeout, first_pwr_on, pwr_cycle, aapl, swm_lp, asic_type, uefi, dis_net_port, env=env, do_untar=do_untar)
+            timeout += retry*10
+            if ret == 0:
+                break
+
+        if ret != 0:
+            print("=== Setup env top failed!", ",".join(nic_list_remain))
+        else:
+            print("=== Setup env top done #", retry, "===")
+
+        print("timestamp", datetime.datetime.now().time())
+
+        print(ret, nic_list_remain)
+        return ret
 
     def setup_env_multi_mainfw(self, nic_list=[], mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, dis_net_port=False):
         ret_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -272,7 +296,7 @@ class nic_test:
                 self.nic_con.switch_console(slot)
 
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
@@ -302,7 +326,7 @@ class nic_test:
 
                 self.nic_con.switch_console(slot)
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
@@ -380,7 +404,7 @@ class nic_test:
             session = common.session_start()
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     print("Failed to start uart!")
                     self.nic_con.uart_session_stop(session)
@@ -433,7 +457,7 @@ class nic_test:
         self.nic_con.switch_console(slot)
 
         session = common.session_start()
-        ret = self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session, slot)
         if ret != 0:
             print("=== AAPL setup failed; slot {} ===".format(slot))
             self.nic_con.uart_session_stop(session)
@@ -542,7 +566,7 @@ class nic_test:
             if pc_mode == "gpio3":
                 print("=== sysreset ===")
                 session = common.session_start()
-                self.nic_con.uart_session_start(session)
+                self.nic_con.uart_session_start(session, slot)
                 self.nic_con.uart_session_cmd(session, "ls -l")
                 self.nic_con.uart_session_cmd(session, "sysreset.sh", ending=["Restarting system", "Boot0"])
                 self.nic_con.uart_session_stop(session)
@@ -589,7 +613,7 @@ class nic_test:
         session = common.session_start()
         try:
             session.timeout = timeout
-            self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
+            self.nic_con.uart_session_start_slot(session, slot)
             if vmarg != "normal":
                 vmarg = vmarg.replace('_', ' ')
                 self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
@@ -619,7 +643,7 @@ class nic_test:
 
         self.nic_con.switch_console(slot)
         session = common.session_start()
-        ret = self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session, slot)
         if ret != 0:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
@@ -663,7 +687,7 @@ class nic_test:
 
         self.nic_con.switch_console(slot)
         session = common.session_start()
-        ret = self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session, slot)
         if ret != 0:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
@@ -881,7 +905,7 @@ class nic_test:
 
         for slot in nic_list:
             session = common.session_start()
-            ret = self.nic_con.uart_session_start(session)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 print("Connecting to console failed!")
             else:
@@ -924,7 +948,7 @@ class nic_test:
             intr_set = 0
             intr_cleared = 0
             session = common.session_start()
-            ret = self.nic_con.uart_session_start(session)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 print("Connecting to console failed!")
             else:
@@ -989,7 +1013,7 @@ class nic_test:
 
         for slot in nic_list:
             session = common.session_start()
-            ret = self.nic_con.uart_session_start(session)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 print("Connecting to console failed!")
             else:
@@ -1102,7 +1126,7 @@ class nic_test:
         for slot in nic_list:
             self.nic_con.switch_console(slot)
             session = common.session_start()
-            ret = self.nic_con.uart_session_start(session)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "cpldapp -w 0x9c 0")
                 self.nic_con.uart_session_cmd(session, "cpldapp -r 0x9c")
@@ -1324,7 +1348,7 @@ class nic_test:
             self.nic_con.switch_console(slot)
 
             try:
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     print("Faied to enter uart session")
 #                self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
@@ -1537,7 +1561,7 @@ class nic_test:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
                 try:
-                    ret = self.nic_con.uart_session_start(session)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         print("Faied to enter uart session")
 
