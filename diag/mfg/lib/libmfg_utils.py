@@ -1866,7 +1866,7 @@ def mfg_mtp_summary_disp(stage, summary_dict, mtp_fail_list):
         final_result = False
     return final_result
 
-def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn):
+def mfg_summary_srn_disp(stage, summary_dict, mtp_fail_list, mtp_sn=""):
     cli_inf("##########  MFG {:s} Test Summary  ##########".format(stage))
     result = True
     for mtp_id in list(summary_dict.keys()):

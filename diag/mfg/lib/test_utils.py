@@ -243,6 +243,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
     mirror_logdir = kwargs.get("jobd_logdir", None)
     swm_test_mode = kwargs.get("swm_test_mode", Swm_Test_Mode.SW_DETECT)
     testsuite     = kwargs.get("testsuite_name", stage)
+    mtp_type      = kwargs.get("mtp_type", None)
 
     for loop_idx in range(1, loop_cnt+1):
         ### Begin logging
@@ -263,14 +264,15 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
                     scanning.mtp_barcode_scan(mtp_id, mtp_mgmt_ctrl, stage)
 
             elif stage == FF_Stage.FF_SRN:
-                mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
-                while True:
-                    scan_rslt = scanning.mtp_screen_barcode_scan(mtp_mgmt_ctrl)
-                    if scan_rslt and scan_rslt["VALID"]:
-                        mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
-                        break
-                    mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
-                mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
+                if mtp_type == MTP_TYPE.TURBO_ELBA:
+                    mtp_mgmt_ctrl.cli_log_inf("Start the Barcode Scan Process", level=0)
+                    while True:
+                        scan_rslt = scanning.mtp_screen_barcode_scan(mtp_mgmt_ctrl)
+                        if scan_rslt and scan_rslt["VALID"]:
+                            mtp_mgmt_ctrl.cli_log_inf("Scan validate MTP SN", level=0)
+                            break
+                        mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
+                    mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
 
         if loop_cnt > 1:
             mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
@@ -345,6 +347,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         scanned_dpn   = kwargs.get("dpn", None)
         scanned_sku   = kwargs.get("sku", None)
         testsuite     = kwargs.get("testsuite_name", stage)
+        mtp_type      = kwargs.get("mtp_type", None)
 
         ####### MTP SETUP: start_diag, MTP sanity check, ...
         mtp_mgmt_ctrl.mtp_mgmt_disconnect()
@@ -359,7 +362,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             if not mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list):
                 return False
         elif stage == FF_Stage.FF_SRN:
-            if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list):
+            if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list, mtp_type):
                 return False
         else:
             if kwargs['subcommand'] == 'cpld':
@@ -437,8 +440,9 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
                     cmd_options.append(str(v))
         # assemble arguments determined in inner function
         if stage == FF_Stage.FF_SRN:
-            cmd_options.append("--mtpsn")
-            cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
+            if mtp_type == MTP_TYPE.TURBO_ELBA:
+                cmd_options.append("--mtpsn")
+                cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
         if fail_nic_list:
             cmd_options.append("--fail_slots")
             cmd_options.append(' '.join(map(str,fail_nic_list)))
@@ -514,10 +518,14 @@ def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=No
         return False
     return True
 
-def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
-                 "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
-    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
+def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[], mtp_type=MTP_TYPE.MATERA):
+    if mtp_type == MTP_TYPE.TURBO_ELBA:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
+                     "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    else:
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE"]
+
+    if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, mtp_type=mtp_type):
         return False
     return True
 
