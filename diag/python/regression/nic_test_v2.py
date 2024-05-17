@@ -521,6 +521,11 @@ class nic_test_v2:
         fail_nic_list = self.split_into_threads(self.nic_test.setup_env_single, slot_list, *test_args, **test_kwargs)
         print ("Failed NIC list:", fail_nic_list)
 
+    def setup_env_single(self, args):
+        print(args)
+        ret = self.nic_test.setup_env_single(args.slot, timeout=0, mgmt=args.mgmt, first_pwr_on=args.first_pwr_on, pwr_cycle=not args.no_pwr_cycle, asic_type=args.asic_type, uefi=args.uefi, dis_net_port=args.dis_net_port, env=args.skip_env)
+        return ret
+
     def setup_multi(self, args):
         print(args)
 
@@ -725,6 +730,21 @@ if __name__ == "__main__":
     parser_setup_multi.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
     parser_setup_multi.set_defaults(func=test.setup_multi)
+
+    # setup env for single slot
+    parser_setup_single = subparsers.add_parser('setup_single', help='Set up single card', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_setup_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_setup_single.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser_setup_single.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
+    parser_setup_single.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_true')
+    parser_setup_single.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="elba")
+    parser_setup_single.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
+    parser_setup_single.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
+    parser_setup_single.add_argument("-skip_env", "--skip_env", help="Set up env", action='store_false')
+    parser_setup_single.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
+
+    parser_setup_single.set_defaults(func=test.setup_env_single)
 
     # setup env parallel
     parser_setup_parallel = subparsers.add_parser('setup_parallel', help='Set up multiple cards in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
