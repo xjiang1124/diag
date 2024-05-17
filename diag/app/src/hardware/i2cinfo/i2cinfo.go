@@ -681,29 +681,30 @@ var MateraNicI2cBus = map[string]uint32 {
     "UUT_10": 12,
 }
 
+
 var MateraI2cTbl = []I2cInfo {
-    //       name    comp          Bus   devAddr  page  HubName     HubPort  Flag
-    I2cInfo {"FRU",  "AT24C04C",   20,   0x50,    0x0,  "HUB_NONE", 0,       0}, //MB FRU
-    I2cInfo {"IOBL", "AT24C04C",   18,   0x50,    0x0,  "HUB_NONE", 0,       0},
-    I2cInfo {"IOBR", "AT24C04C",   17,   0x50,    0x0,  "HUB_NONE", 0,       0},
-    I2cInfo {"FPIC", "AT24C04C",   19,   0x50,    0x0,  "HUB_NONE", 0,       0},
-    // TODO: CPLD_ELBA0 to simulate MTP_MATERA CPLD, but it's ARM based?
-    I2cInfo {"CPLD", "MACHXO3",     0,   0x4A,    0x0,  "FPGA1_HUB_0",  0,   0},
-    I2cInfo {"MEM_VDDIO", "TPS53688", 10, 0x5E,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
-    I2cInfo {"P3V3"  ,    "MP8796",   16, 0x31,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"P3V3S1",    "TPS53688", 12, 0x6C,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
-    I2cInfo {"P3V3S2",    "TPS53688", 16, 0x69,   0x0,  "HUB_NONE",  0,    0},   //cannot ping
-    I2cInfo {"CLK_BUF",      "RC19013",  20, 0x6C,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR_MB",   "LM75",     20, 0x48,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR_IOBL", "LM75",     18, 0x48,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"TSENSOR_IOBR", "LM75",     17, 0x48,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"EXPDER_IOBL",  "MCP23008", 18, 0x20,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"EXPDER_IOBR",  "MCP23008", 17, 0x20,   0x0,  "HUB_NONE",  0,    0},
-    I2cInfo {"P12V",      "TPS25990", 16, 0x41,   0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
-    I2cInfo {"CPU_VDDCR", "ISL69247", 16, 0x60,   0x0,  "HUB_NONE",  0,    0},
+    //       name            comp         Bus  devAddr  page  HubName     HubPort  Flag
+    I2cInfo {"FRU",          "AT24C04C",  20,  0x50,    0x0,  "HUB_NONE",  0,    0},   //MB FRU
+    I2cInfo {"IOBL",         "AT24C04C",  18,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"IOBR",         "AT24C04C",  17,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"FPIC",         "AT24C04C",  19,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"CLK_BUF",      "RC19013",   20,  0x6C,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_MB",   "LM75",      20,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBL", "LM75",      18,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"TSENSOR_IOBR", "LM75",      17,  0x48,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"EXPDER_IOBL",  "MCP23008",  18,  0x20,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"EXPDER_IOBR",  "MCP23008",  17,  0x20,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"MEM_VDDIO",    "TPS53688",  16,  0x5E,    0x0,  "HUB_NONE",  0,    0},   //cannot ping
+    I2cInfo {"P12V",         "TPS25990",  16,  0x41,    0x0,  "HUB_NONE",  0,    0},   //hot swap contorller
+    I2cInfo {"CPU_VDDCR",    "ISL69247",  16,  0x60,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_1_FRU",    "DPS-2100",  14,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_1",        "DPS-2100",  14,  0x58,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_2_FRU",    "DPS-2100",  15,  0x50,    0x0,  "HUB_NONE",  0,    0},
+    I2cInfo {"PSU_2",        "DPS-2100",  15,  0x58,    0x0,  "HUB_NONE",  0,    0},
     //THESE DEVICES DONT HAVE I2C, BUT DUE TO HOW HWINFO AND DEVMGR WORKS, THEY NEED ENTRIES IN THIS TABLE
     I2cInfo {"FAN",       "FPGA",      0, 0xff,    0x0,  "HUB_NONE",  0,    0},
 }
+
 
 // simulate UUT on Lipari using its 8 Elba CPLD
 var MateraHubI2cTbl = []I2cInfo {

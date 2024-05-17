@@ -31,6 +31,8 @@ func init() {
     rootCmd.AddCommand(programCmd)
     rootCmd.AddCommand(validateCmd)
     rootCmd.AddCommand(flashDumpCmd)
+    rootCmd.AddCommand(regrdCmd)
+    rootCmd.AddCommand(regwrCmd)
     rootCmd.CompletionOptions.DisableDefaultCmd = true
 }
 

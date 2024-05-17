@@ -12,7 +12,7 @@ import (
 )
 
 
-func ReadStatus(devName string) (status uint16, err int) {
+func ReadStatusWord(devName string) (status uint16, err int) {
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
@@ -22,6 +22,76 @@ func ReadStatus(devName string) (status uint16, err int) {
     defer smbus.Close()
 
     status, err = pmbus.ReadWord(devName, STATUS_WORD)
+    return
+}
+
+
+func ReadStatusVout(devName string) (status uint8, err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, STATUS_VOUT)
+    return
+}
+
+
+func ReadStatusIout(devName string) (status uint8, err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, STATUS_IOUT)
+    return
+}
+
+
+func ReadStatusInput(devName string) (status uint8, err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, STATUS_INPUT)
+    return
+}
+
+
+func ReadStatusTemp(devName string) (status uint8, err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, STATUS_TEMPERATURE)
+    return
+}
+
+
+func ReadStatusFan(devName string) (status uint8, err int) {
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    defer smbus.Close()
+
+    status, err = pmbus.ReadByte(devName, STATUS_FANS_1_2)
     return
 }
 
@@ -524,7 +594,8 @@ func DispVoltWattAmp(devName string) (err int) {
 
 
 func DispStatus(devName string) (err int) {
-    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP1", "TEMP2", "TEMP3", "STATUS"}
+    vrmTitle := []string {"POUT", "VOUT", "IOUT", "PIN", "VIN", "IIN", "TEMP1", "TEMP2", "TEMP3"}
+    vrmTitle1 := []string {"FAN-RPM", "STS_WORD", "STS_VOUT", "STS_IOUT", "STS_INP", "STS_TEMP", "STS_FAN"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -599,9 +670,44 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    status, _ := ReadStatus(devName)
-    outStrTemp = fmt.Sprintf("0x%X", status)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)// + "\n"
+    cli.Println("i", outStr)
+    
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
+    for _, title := range(vrmTitle1) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "------------")
+    cli.Println("i", outStr)
+
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+
+    fanRPM, _ := ReadFanSpeed(devName)
+    outStrTemp = fmt.Sprintf("%d", fanRPM)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusWord, _ := ReadStatusWord(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusWord)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusVout, _ := ReadStatusVout(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusVout)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusIout, _ := ReadStatusIout(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusIout)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusInput, _ := ReadStatusInput(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusInput)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusTemperature, _ := ReadStatusTemp(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusTemperature)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+
+    statusFan, _ := ReadStatusFan(devName)
+    outStrTemp = fmt.Sprintf("0x%X", statusFan)
+    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     cli.Println("i", outStr)
     return

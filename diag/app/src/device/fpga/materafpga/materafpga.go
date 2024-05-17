@@ -141,8 +141,8 @@ func init () {
                 return
             }
             tmp := "0x" + strings.TrimSuffix(string(execOutput), "\n")
-            fmt.Printf("%s\n", execOutput);
-            fmt.Printf("%s\n", tmp);
+            //fmt.Printf("%s\n", execOutput);
+            //fmt.Printf("%s\n", tmp);
             bar, _ = strconv.ParseUint(tmp, 0, 64) 
 
             file, errGo := os.OpenFile("/tmp/fpgabars", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)

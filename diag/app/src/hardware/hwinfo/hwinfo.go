@@ -509,18 +509,17 @@ func init() {
     //===============================
     // MTP_MATERA
     materaDispStaList = make(map[string]DispStaFunc)
-    materaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
-    materaDispStaList["P3V3"]      = mp8796.DispStatus
-    materaDispStaList["P3V3S1"]    = tps53688.DispStatus
-    materaDispStaList["P3V3S2"]    = tps53688.DispStatus
     materaDispStaList["TSENSOR_MB"]   = lm75a.DispStatus
     materaDispStaList["TSENSOR_IOBL"] = lm75a.DispStatus
     materaDispStaList["TSENSOR_IOBR"] = lm75a.DispStatus
     materaDispStaList["EXPDER_IOBL"]  = mcp23008.DispStatus
     materaDispStaList["EXPDER_IOBR"]  = mcp23008.DispStatus
     materaDispStaList["CLK_BUF"]      = rc19013.DispStatus
+    materaDispStaList["MEM_VDDIO"] = tps53688.DispStatus
     materaDispStaList["P12V"] = tps25990.DispStatus
     materaDispStaList["CPU_VDDCR"] = isl69247.DispStatus
+    materaDispStaList["PSU_1"]   = dps2100.DispStatus
+    materaDispStaList["PSU_2"]   = dps2100.DispStatus
 
     materaI2cHubMap = make(map[string]I2cHubInfo)
 
