@@ -168,7 +168,6 @@ class nic_test:
     def setup_env_multi_top(self, nic_list=[], mgmt=False, timeout=60, first_pwr_on=False, pwr_cycle=True, aapl=False, swm_lp=False, asic_type="capri", uefi=False, dis_net_port=False, numRetry=2, env=True, do_untar=""):
         nic_list_remain = nic_list[:]
         #timeout = 60
-        #timeout = 0
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
             print("slot_list", nic_list_remain)

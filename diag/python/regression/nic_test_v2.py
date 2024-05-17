@@ -512,7 +512,7 @@ class nic_test_v2:
                 fail_nic_list.append(idx + 1)
         return fail_nic_list
 
-    def setup_in_parallel(self, args):
+    def setup_env_in_parallel(self, args):
         print(args)
         # run setup_env_single in parallel
         slot_list = args.slot_list.split(',')
@@ -726,7 +726,7 @@ if __name__ == "__main__":
 
     parser_setup_multi.set_defaults(func=test.setup_multi)
 
-    # setup parallel
+    # setup env parallel
     parser_setup_parallel = subparsers.add_parser('setup_parallel', help='Set up multiple cards in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_setup_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     parser_setup_parallel.add_argument("-skip_env", "--skip_env", help="Set up env", action='store_false')
     parser_setup_parallel.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
-    parser_setup_parallel.set_defaults(func=test.setup_in_parallel)
+    parser_setup_parallel.set_defaults(func=test.setup_env_in_parallel)
 
     # Multi nic cmd
     parser_multi_nic_cmds = subparsers.add_parser('multi_nic_cmds', help='Run commands on each nic console', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
