@@ -381,44 +381,58 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
 
-    def nic_snake(self, args):
-        print(args)
-    
-        if args.slot_list == "":
-            print ("Invalide input slot_list:", slot_list)
-    
-        slot_list = args.slot_list.split(',')
-
-        for idx in range(args.ite):
+    def nic_snake(self, slot, ite, mode, dura, int_lpbk, verbose, snake_num, timeout):
+        slot_list = [slot]
+        for idx in range(ite):
             print("=== Ite", idx, "===")
 
             [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=0, mgmt=False, asic_type="elba", do_untar="0")
+            if ret != 0:
+                return ret
 
-            for slot1 in nic_list_pass:
-                slot = int(slot1)
+            int_lpbk_str = ""
+            if int_lpbk == True:
+                int_lpbk_str = "-int_lpbk"
+            verbose_str = ""
+            if verbose == True:
+                verbose_str = "-verbose"
 
-                #self.nic_con.switch_console(slot)
-                session = common.session_start()
-                ret = self.nic_con.uart_session_start(session, slot)
-                if ret != 0:
-                    return False
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session, slot)
+            if ret != 0:
+                return ret
 
-                try:
-                    cmd = ("date; "
-                           "/data/nic_util/asicutil -snake "
-                           "-mode {} -dura {} -verbose {} -int_lpbk {} -snake_num {}; "
-                           "date").format(args.mode, args.dura, args.verbose, args.int_lpbk, args.snake_num)
-                    sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
-                    ret = self.nic_con.uart_session_cmd_sig(session, cmd, args.timeout, "\#", sig, args.verbose)
-                    if ret < 0:
-                        print("P000", ret)
-                        return False
-                    time.sleep(3)
-                except pexpect.TIMEOUT:
-                    return False
+            try:
+                cmd = ("date; "
+                        "/data/nic_util/asicutil -snake "
+                        "-mode {} -dura {} {} {} -snake_num {}; "
+                        "date").format(mode, dura, verbose_str, int_lpbk_str, snake_num)
+                sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
+                ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
+                if ret < 0:
+                    print("P000", ret)
+                    return ret
+                time.sleep(3)
+            except pexpect.TIMEOUT:
+                return -1
 
-                self.nic_con.uart_session_stop(session)
-                common.session_stop(session)
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+            return 0
+
+    def nic_snake_in_parallel(self, args):
+        print(args)
+        # run nic_snake in parallel
+        slot_list = args.slot_list.split(',')
+        test_args = ()
+        test_kwargs = {"ite": args.ite, "mode": args.mode, "dura": args.dura, "int_lpbk": args.int_lpbk, "verbose": args.verbose, "snake_num": args.snake_num, "timeout": args.timeout}
+        fail_nic_list = self.split_into_threads(self.nic_snake, slot_list, *test_args, **test_kwargs)
+        print ("Failed NIC list:", fail_nic_list)
+
+    def nic_snake_single(self, args):
+        print(args)
+        ret = self.nic_snake(args.slot, args.ite, args.mode, args.dura, args.int_lpbk, args.verbose, args.snake_num, args.timeout)
+        return ret
 
     def check_edma_ready(self, args):
         slot_list = args.slot_list.split(',')
@@ -653,19 +667,33 @@ if __name__ == "__main__":
 
     parser_fw_update.set_defaults(func=test.ddr_stress)
 
-    # NIC snake test
-    parser_fw_update = subparsers.add_parser('nic_snake', help='NIC snake test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # NIC snake test for single slot
+    parser_nic_snake_single = subparsers.add_parser('nic_snake_single', help='NIC snake test for single slot', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser_fw_update.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
-    parser_fw_update.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
-    parser_fw_update.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
-    parser_fw_update.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
-    parser_fw_update.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
-    parser_fw_update.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
-    parser_fw_update.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
-    parser_fw_update.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
+    parser_nic_snake_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_snake_single.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_nic_snake_single.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
+    parser_nic_snake_single.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_single.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_single.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
+    parser_nic_snake_single.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
+    parser_nic_snake_single.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
 
-    parser_fw_update.set_defaults(func=test.nic_snake)
+    parser_nic_snake_single.set_defaults(func=test.nic_snake_single)
+
+    # NIC snake test in parallel
+    parser_nic_snake_parallel = subparsers.add_parser('nic_snake_parallel', help='NIC snake test in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_snake_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_nic_snake_parallel.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_nic_snake_parallel.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
+    parser_nic_snake_parallel.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_parallel.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_parallel.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
+    parser_nic_snake_parallel.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
+    parser_nic_snake_parallel.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
+
+    parser_nic_snake_parallel.set_defaults(func=test.nic_snake_in_parallel)
 
     # Chamber temp show/set
     parser_fw_update = subparsers.add_parser('chamber_ctrl', help='Chamber temperature control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
