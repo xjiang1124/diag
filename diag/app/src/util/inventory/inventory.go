@@ -94,7 +94,9 @@ func InterposerID(uutName string) (data byte, err int) {
     devName := "CPLD"
     addr := uint64(naples100Cpld.REG_INTERPOSER_ID)
 
+    cli.DisableVerbose()
     data, err = hwdev.NaplesCpldRd(devName, addr, uutName)
+    cli.EnableVerbose()
 
     return
 }
@@ -103,7 +105,9 @@ func CapabilityID(uutName string) (data byte, err int) {
     devName := "CPLD"
     addr := uint64(naples100Cpld.REG_CAPABILITY_ID)
 
+    cli.DisableVerbose()
     data, err = hwdev.NaplesCpldRd(devName, addr, uutName)
+    cli.EnableVerbose()
 
     return
 }

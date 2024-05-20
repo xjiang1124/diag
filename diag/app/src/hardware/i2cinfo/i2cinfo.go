@@ -876,10 +876,7 @@ func UpdateNicI2cBus(uutName string) (err int) {
         return
     }
 
-    _, err = FindUutTypeMtp(uutName)
-    if err != errType.SUCCESS {
-        //No uutType found, no need to update nic i2c bus
-        cli.Println("d", "UpdateNicI2cBus:: no uutType found for", uutName)
+    if uutName == "UUT_NONE" {
         return
     }
 
