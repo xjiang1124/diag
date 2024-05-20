@@ -688,7 +688,7 @@ class nic_con:
         print(("asic_type:", asic_type))
         return asic_type
 
-    def enable_mnic(self, slot=0, first_pwr_on=False):
+    def enable_mnic(self, slot=0, first_pwr_on=False, existing_session=None):
         fmt_dummy_fru_json = """
 {{
     "manufacturing-date": "1616630400",
@@ -719,8 +719,11 @@ class nic_con:
         else:
             dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot, "68-0015-02 01")
 
-        session = common.session_start()
-        self.uart_session_start(session, slot)
+        if existing_session == None:
+            session = common.session_start()
+            self.uart_session_start(session, slot)
+        else:
+            session = existing_session
 
         session.timeout = 60
 
@@ -760,8 +763,9 @@ class nic_con:
             print("=== TIMEOUT: Faled to enable management port ===")
             ret = -1
 
-        self.uart_session_stop(session)
-        common.session_stop(session)
+        if existing_session == None:
+            self.uart_session_stop(session)
+            common.session_stop(session)
         return ret
 
     def run_mes_mtp_reset_commands(self, session):
@@ -771,23 +775,30 @@ class nic_con:
         self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
         self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
 
-    def mes_mtp_reset(self, slot):
-        session = common.session_start()
-        self.uart_session_start(session, slot)
+    def mes_mtp_reset(self, slot, existing_session=None):
+        if existing_session == None:
+            session = common.session_start()
+            self.uart_session_start(session, slot)
+        else:
+            session = existing_session
 
         session.timeout = 30
         self.run_mes_mtp_reset_commands(session)
-        self.uart_session_stop(session)
-        common.session_stop(session)
+        if existing_session == None:
+            self.uart_session_stop(session)
+            common.session_stop(session)
 
-    def config_mnic(self, slot=0, uefi=False, dis_net_port=False):
+    def config_mnic(self, slot=0, uefi=False, dis_net_port=False, existing_session=None):
         ret = 0
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
             return -1
 
-        session = common.session_start()
-        self.uart_session_start(session, slot)
+        if existing_session == None:
+            session = common.session_start()
+            self.uart_session_start(session, slot)
+        else:
+            session = existing_session
 
         session.timeout = 30
 
@@ -819,7 +830,8 @@ class nic_con:
             ret = -1
 
         self.uart_session_stop(session)
-        common.session_stop(session)
+        if existing_session == None:
+            common.session_stop(session)
         return ret
 
     def turn_off_sgmii(self, slot=0):
@@ -849,9 +861,12 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def ping_check_mtp(self, slot=0):
+    def ping_check_mtp(self, slot=0, existing_session=None):
         ret = 0
-        session = common.session_start()
+        if existing_session == None:
+            session = common.session_start()
+        else:
+            session = existing_session
 
         try:
             cmd = "ping 10.1.1.{} -c 3 -s 64".format(100+slot)
@@ -866,14 +881,17 @@ class nic_con:
             print("=== TIMEOUT: Failed to ping slot {} ===".format(slot))
             ret = -1
 
-        common.session_stop(session)
+        if existing_session == None:
+            common.session_stop(session)
         return ret
 
-    def fix_elba_bx(self, slot=0):
+    def fix_elba_bx(self, slot=0, existing_session=None):
         ret = 0
-        self.switch_console(slot)
-
-        session = common.session_start()
+        if existing_session == None:
+            self.switch_console(slot)
+            session = common.session_start()
+        else:
+            session = existing_session
         session.timeout = 30
         try:
             self.uart_session_start(session, slot)
@@ -894,31 +912,34 @@ class nic_con:
                 self.uart_session_stop(session)
 
         except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
+            if existing_session == None:
+                self.uart_session_stop(session)
             print("=== TIMEOUT: Faled to fix elb bx ===")
             ret = -1
 
         self.uart_session_stop(session)
-        common.session_stop(session)
+        if existing_session == None:
+            common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False):
+    def get_mgmt_rdy(self, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False, existing_session=None):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
             return -1
 
-        self.switch_console(slot)
+        if existing_session == None:
+            self.switch_console(slot)
 
         if skip_enable == False:
-            ret = self.enable_mnic(slot, first_pwr_on)
+            ret = self.enable_mnic(slot, first_pwr_on, existing_session)
             if ret != 0:
                 print("=== FAIL to enable management port! ===")
                 return ret
 
         for i in range(numRetry):
-            ret = self.config_mnic(slot, uefi, dis_net_port)
+            ret = self.config_mnic(slot, uefi, dis_net_port, existing_session)
             if ret == -1:
                 print("=== FAIL to enable management port! ===")
                 return ret
@@ -937,21 +958,21 @@ class nic_con:
         if asic_type == "GIGLIO_CPLD":
             print "sleep 10"
             time.sleep(10)
-        ret = self.ping_check_mtp(slot)
+        ret = self.ping_check_mtp(slot, existing_session)
         print(("ret:", ret))
 
         # if ping test fails, apply WA for Elba
         mtpType = os.environ['MTP_TYPE']
         if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
-            self.fix_elba_bx(slot)
-            ret = self.ping_check_mtp(slot)
+            self.fix_elba_bx(slot, existing_session)
+            ret = self.ping_check_mtp(slot, existing_session)
 
         # if ping test fails, retry the MTP port reset
         asic_type = self.get_asic_type(slot)
         if ret != 0 and asic_type == "ELBA_FPGA":
             for i in range(numRetry):
-                self.mes_mtp_reset(slot)
-                ret = self.ping_check_mtp(slot)
+                self.mes_mtp_reset(slot, existing_session)
+                ret = self.ping_check_mtp(slot, existing_session)
                 if ret == 0:
                     break
 
