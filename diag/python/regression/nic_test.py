@@ -27,7 +27,7 @@ class nic_test:
         self.nic_con = nic_con()
 
     def switch_fw(self, slot=0):
-        self.nic_con.switch_fw(self.baud_rate, slot);
+        self.nic_con.switch_fw(slot);
 
     def get_mtp_rev(self):
         file1 = open("/home/diag/mtp_rev","r")
@@ -48,7 +48,7 @@ class nic_test:
 
         try:
             if pwr_cycle == True:
-                ret = self.nic_con.power_cycle_uart(self.baud_rate, slot)
+                ret = self.nic_con.power_cycle_uart(slot)
                 if ret != 0:
                     print("Failed to change baud rate")
                     return -1
@@ -150,12 +150,12 @@ class nic_test:
             common.session_stop(session)
 
             if aapl == True:
-                ret = self.aapl_setup(self.baud_rate, slot)
+                ret = self.aapl_setup(slot)
                 if ret != 0:
                     return ret
 
             if mgmt == True:
-                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, slot, first_pwr_on)
+                ret = self.nic_con.get_mgmt_rdy(slot, first_pwr_on)
 
             print("=== Setup env on slot {} env setup done ===".format(slot))
 
@@ -224,12 +224,12 @@ class nic_test:
         slot_list = ",".join(nic_list)
 
         if pwr_cycle == True:
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 60)
+            self.nic_con.power_cycle_multi(slot_list, 60)
 
         if mgmt == True:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
-                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret = self.nic_con.enable_mnic(int(slot), first_pwr_on)
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
             if ret != 0:
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
@@ -242,7 +242,7 @@ class nic_test:
             for slot in nic_list:
                 if ret_list[int(slot)-1] != 0:
                     continue
-                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True, dis_net_port)
+                ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, dis_net_port)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
@@ -269,7 +269,7 @@ class nic_test:
         slot_list = ",".join(nic_list)
 
         if pwr_cycle == True:
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, timeout, swm_lp)
+            self.nic_con.power_cycle_multi(slot_list, timeout, swm_lp)
 
         if env == True:
             for slot in nic_list:
@@ -283,7 +283,7 @@ class nic_test:
         if mgmt == True:
             for slot in nic_list:
                 self.nic_con.switch_console(slot)
-                ret = self.nic_con.enable_mnic(self.baud_rate, int(slot), first_pwr_on)
+                ret = self.nic_con.enable_mnic(int(slot), first_pwr_on)
                 ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
             for slot in nic_list:
@@ -313,7 +313,7 @@ class nic_test:
             
         if aapl == True:
             for slot in nic_list:
-                ret = self.aapl_setup(self.baud_rate, int(slot), True)
+                ret = self.aapl_setup(int(slot), True)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
 
@@ -360,7 +360,7 @@ class nic_test:
             for slot in nic_list:
                 if ret_list[int(slot)-1] != 0:
                     continue
-                ret = self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port)
+                ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port)
                 if ret != 0:
                     ret_list[int(slot)-1] = ret_list[int(slot)-1] + ret
         for slot in nic_list:
@@ -446,7 +446,7 @@ class nic_test:
         print("timestamp", datetime.datetime.now().time())
         return ret, nic_list_remain
 
-    def aapl_setup(self, rate, slot=0, skip=False):
+    def aapl_setup(self, slot=0, skip=False):
         numRetry = 3
         ret = -1
         if slot == 0 or slot > 10:
@@ -537,7 +537,7 @@ class nic_test:
 
         if pc_mode != "board":
             nic_list_str = ",".join(nic_list)
-            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
+            self.nic_con.power_cycle_multi(nic_list_str, 60)
 
         for i in range(iteration):
             print("=== Ite {} ===".format(i))
@@ -545,7 +545,7 @@ class nic_test:
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60)
             elif pc_mode == "12v":
                 slot_list = ",".join(nic_list)
-                self.nic_con.power_cycle_12v_multi(self.baud_rate, slot_list, 60)
+                self.nic_con.power_cycle_12v_multi(slot_list, 60)
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
             else:
                 ret, nic_list_remain = self.setup_env_multi(nic_list, False, 60, pwr_cycle=False)
@@ -607,7 +607,7 @@ class nic_test:
             sys.exit(0)
 
         if pc == "on":
-            self.nic_con.power_cycle_uart(self.baud_rate, slot)
+            self.nic_con.power_cycle_uart(slot)
 
         session = common.session_start()
         try:
@@ -722,7 +722,7 @@ class nic_test:
 
         #slot_list = ",".join(nic_list)
         print("slot_list:", slot_list)
-        #self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+        #self.nic_con.power_cycle_multi(slot_list)
         if test_type == "snake":
             self.setup_env_multi_top(slot_list, False, 30, False, True, False, do_untar="0")
         else:
@@ -807,7 +807,7 @@ class nic_test:
         for retry in range(self.num_retry):
             print("Trying break into uboot {}".format(retry))
             nic_list_str = ",".join(nic_list_remain)
-            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
+            self.nic_con.power_cycle_multi(nic_list_str, 60)
             for slot in nic_list_remain:
                 if enable == True:
                     ret = self.nic_con.enable_pcie_uboot(int(slot))
@@ -845,7 +845,7 @@ class nic_test:
         for retry in range(self.num_retry):
             print("Trying break into uboot {}".format(retry))
             nic_list_str = ",".join(nic_list_remain)
-            self.nic_con.power_cycle_multi(self.baud_rate, nic_list_str, 60)
+            self.nic_con.power_cycle_multi(nic_list_str, 60)
             for slot in nic_list_remain:
                 ret = self.nic_con.ena_dis_esec_wp(int(slot), enable)
                 ret_list[int(slot)-1] = ret
@@ -1303,7 +1303,7 @@ class nic_test:
 
         slot_list = ",".join(nic_list)
         print("slot_list:", slot_list)
-#        self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
+#        self.nic_con.power_cycle_multi(slot_list, 1)
 
         print("fan_ctrl:", fan_ctrl, "tgt_die_temp:", tgt_die_temp)
         if fan_ctrl == False:
@@ -1460,12 +1460,11 @@ class nic_test:
         slot_list = ",".join(nic_list)
 
         session = common.session_start()
-        cmd = self.nic_con.fmt_con_cmd.format(self.baud_rate)
-        session.sendline(cmd)
 
         # Quite tcl shell
         for slot in nic_list:
-            self.nic_con.switch_console(slot)
+            cmd = self.nic_con.fmt_con_cmd.format(slot)
+            session.sendline(cmd)
             try:
                 ret = self.nic_con.uart_session_cmd(session, "puts 'xxx'", 3, "%")
                 if ret != 0:
@@ -1495,7 +1494,7 @@ class nic_test:
             print("=== Ite:", ite, "===")
             slot_list = ",".join(nic_list)
             print("slot_list:", slot_list)
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 1)
+            self.nic_con.power_cycle_multi(slot_list, 1)
 
             session = common.session_start()
 
@@ -1823,6 +1822,6 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.fix_bx == True:
-        test.nic_con.fix_elba_bx_1(115200, args.slot)
+        test.nic_con.fix_elba_bx_1(args.slot)
         sys.exit()
 

@@ -49,7 +49,7 @@ class nic_test_v2:
                 #uart_session.sendline(cmd)
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi_via_3v3(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi_via_3v3(slot, wtime=0, swm_lp=False)
 
                 self.nic_con.uart_session_stop(uart_session)
                 ret = self.nic_con.uart_session_start_login(uart_session, slot)
@@ -63,7 +63,7 @@ class nic_test_v2:
 
                 ## Winbond prog test
                 #uart_session = common.session_start()
-                ##ret = self.nic_con.uart_session_start(uart_session, self.baud_rate)
+                ##ret = self.nic_con.uart_session_start(uart_session)
                 #try:
                 #    cmd = self.fmt_con_cmd.format(slot)
                 #    uart_session.sendline(cmd)
@@ -97,7 +97,7 @@ class nic_test_v2:
                     common.session_stop(uart_session)
                     continue
 
-                self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), args.first_pwr_on)
+                self.nic_con.get_mgmt_rdy(int(slot), args.first_pwr_on)
                 if ret != 0:
                     return -1
 
@@ -112,7 +112,7 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(uart_session)
                 common.session_stop(uart_session)
 
-                self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), args.first_pwr_on)
+                self.nic_con.get_mgmt_rdy(int(slot), args.first_pwr_on)
                 if ret != 0:
                     return -1
 
@@ -139,7 +139,7 @@ class nic_test_v2:
                 #session = common.session_start()
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi(slot, wtime=0, swm_lp=False)
 
                 ret = self.nic_con.uart_session_start_login(session, slot)
                 if ret != 0:
@@ -222,7 +222,7 @@ class nic_test_v2:
 
             for mode in mode_list:
                 session = common.session_start()
-                ret = self.nic_con.enter_uboot(session, slot, self.baud_rate)
+                ret = self.nic_con.enter_uboot(session, slot)
                 if ret == -1:
                     print "=== Failed to change uboot board rate! Slot: {} ===".format(slot)
                     common.session_stop(session)
@@ -567,7 +567,7 @@ class nic_test_v2:
                 session = common.session_start()
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi(slot, wtime=0, swm_lp=False)
 
                 ret = self.nic_con.uart_session_start_login(session, slot)
                 if ret != 0:

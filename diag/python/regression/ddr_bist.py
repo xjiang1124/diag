@@ -61,7 +61,7 @@ class arm_ddrbist:
         nic_list_remain = nic_list[:]
         slot_list = ",".join(nic_list)
 
-        self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+        self.nic_con.power_cycle_multi(slot_list)
 
         for slot in nic_list:
             ret = self.setup_env(int(slot), ddr_freq, addrspace, dualrank, ddr5, ctrl_pi_bitmask)

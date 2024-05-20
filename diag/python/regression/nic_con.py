@@ -210,7 +210,7 @@ class nic_con:
                 return ret
         return 0
 
-    def power_cycle_uart(self, baud_rate=115200, slot=0):
+    def power_cycle_uart(self, slot=0):
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
             sys.exit(0)
@@ -242,7 +242,7 @@ class nic_con:
         return ret
 
 
-    def power_cycle_multi(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
+    def power_cycle_multi(self, slot_list="", wtime=30, swm_lp=False):
         ret = 0
         session = common.session_start()
 
@@ -261,7 +261,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def power_cycle_multi_via_3v3(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
+    def power_cycle_multi_via_3v3(self, slot_list="", wtime=30, swm_lp=False):
         ret = 0
         session = common.session_start()
 
@@ -283,7 +283,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def power_cycle_12v_multi(self, baud_rate=115200, slot_list="", wtime=30, swm_lp=False):
+    def power_cycle_12v_multi(self, slot_list="", wtime=30, swm_lp=False):
         ret = 0
         session = common.session_start()
 
@@ -302,7 +302,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def enter_uboot(self, session, slot=0, rate=115200, timeout=30):
+    def enter_uboot(self, session, slot=0, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -349,7 +349,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_by_sysreset_after_pwr_cycle(self, session, slot=0, rate=115200, timeout=30):
+    def enter_uboot_by_sysreset_after_pwr_cycle(self, session, slot=0, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -382,7 +382,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_by_sysreset(self, session, slot=0, rate=115200, timeout=30):
+    def enter_uboot_by_sysreset(self, session, slot=0, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -430,7 +430,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_esec(self, session, slot=0, rate=115200, timeout=30):
+    def enter_uboot_esec(self, session, slot=0, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -521,7 +521,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_after_reset(self, session, slot=0, rate=115200, timeout=30,):
+    def enter_uboot_after_reset(self, session, slot=0, timeout=30,):
         ret = -1
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
@@ -544,9 +544,9 @@ class nic_con:
 
         return ret
 
-    def boot_goldfw_uboot(self, slot=0, rate=115200, timeout=30):
+    def boot_goldfw_uboot(self, slot=0, timeout=30):
         session = common.session_start()
-        ret = self.enter_uboot(session, slot, rate, timeout)
+        ret = self.enter_uboot(session, slot, timeout)
         if ret != 0:
             print("Failed to enter uboot")
             common.session_stop(session)
@@ -599,7 +599,7 @@ class nic_con:
         err = 0
         numRetry = 3
         session = common.session_start()
-        ret = self.enter_uboot(session, slot, baud_rate)
+        ret = self.enter_uboot(session, slot)
         if ret == -1:
             print("=== Failed to change uboot board rate! ===")
             print("=== MTEST FAILED ===")
@@ -688,7 +688,7 @@ class nic_con:
         print(("asic_type:", asic_type))
         return asic_type
 
-    def enable_mnic(self, rate=115200, slot=0, first_pwr_on=False):
+    def enable_mnic(self, slot=0, first_pwr_on=False):
         fmt_dummy_fru_json = """
 {{
     "manufacturing-date": "1616630400",
@@ -771,7 +771,7 @@ class nic_con:
         self.uart_session_cmd(session, "diag_test ps48_reg_op -d serdes -o 72 -r")
         self.uart_session_cmd(session, "diag_test ps48_reg_op -d mes -o 0xA68 -w --mask 0x1 -v 0x1")
 
-    def mes_mtp_reset(self, slot, rate=115200):
+    def mes_mtp_reset(self, slot):
         session = common.session_start()
         self.uart_session_start(session, slot)
 
@@ -780,7 +780,7 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
-    def config_mnic(self, rate=115200, slot=0, uefi=False, dis_net_port=False):
+    def config_mnic(self, slot=0, uefi=False, dis_net_port=False):
         ret = 0
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
@@ -829,7 +829,7 @@ class nic_con:
         common.session_cmd(session, cmd)
         common.session_stop(session)
 
-    def ping_check(self, rate=115200, slot=0):
+    def ping_check(self, slot=0):
         ret = 0
         session = common.session_start()
         self.uart_session_start(session, slot)
@@ -869,7 +869,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def fix_elba_bx(self, rate=115200, slot=0):
+    def fix_elba_bx(self, slot=0):
         ret = 0
         self.switch_console(slot)
 
@@ -902,7 +902,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def get_mgmt_rdy(self, rate, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False):
+    def get_mgmt_rdy(self, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False):
         numRetry = 6
         ret = 0
         if slot == 0 or slot > 10:
@@ -912,13 +912,13 @@ class nic_con:
         self.switch_console(slot)
 
         if skip_enable == False:
-            ret = self.enable_mnic(rate, slot, first_pwr_on)
+            ret = self.enable_mnic(slot, first_pwr_on)
             if ret != 0:
                 print("=== FAIL to enable management port! ===")
                 return ret
 
         for i in range(numRetry):
-            ret = self.config_mnic(rate, slot, uefi, dis_net_port)
+            ret = self.config_mnic(slot, uefi, dis_net_port)
             if ret == -1:
                 print("=== FAIL to enable management port! ===")
                 return ret
@@ -943,7 +943,7 @@ class nic_con:
         # if ping test fails, apply WA for Elba
         mtpType = os.environ['MTP_TYPE']
         if ret == -2 and mtpType == "MTP_ELBA" and first_pwr_on == True: 
-            self.fix_elba_bx(115200, slot)
+            self.fix_elba_bx(slot)
             ret = self.ping_check_mtp(slot)
 
         # if ping test fails, retry the MTP port reset
@@ -957,7 +957,7 @@ class nic_con:
 
         return ret
 
-    def switch_fw(self, rate, slot=0):
+    def switch_fw(self, slot=0):
         ret = 0
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
@@ -1388,11 +1388,11 @@ if __name__ == "__main__":
     con = nic_con()
 
     if args.ena_mgmt_port == True:
-        con.get_mgmt_rdy(args.baud_rate, args.slot, args.first_pwr_on)
+        con.get_mgmt_rdy(args.slot, args.first_pwr_on)
         sys.exit()
 
     if args.mtest == True:
-        con.mtest_uboot(args.baud_rate, args.slot)
+        con.mtest_uboot(args.slot)
         sys.exit()
 
     if args.dis_pcie == True:
