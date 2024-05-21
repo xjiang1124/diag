@@ -688,7 +688,7 @@ class nic_con:
         print(("asic_type:", asic_type))
         return asic_type
 
-    def enable_mnic(self, slot=0, first_pwr_on=False, existing_session=None):
+    def enable_mnic(self, slot=0, first_pwr_on=False, session_uart=None):
         fmt_dummy_fru_json = """
 {{
     "manufacturing-date": "1616630400",
@@ -719,11 +719,11 @@ class nic_con:
         else:
             dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot, "68-0015-02 01")
 
-        if existing_session == None:
+        if session_uart == None:
             session = common.session_start()
             self.uart_session_start(session, slot)
         else:
-            session = existing_session
+            session = session_uart
         session.timeout = 60
 
         cmd_pre = "ulimit -c unlimited"
@@ -762,7 +762,7 @@ class nic_con:
             print("=== TIMEOUT: Faled to enable management port ===")
             ret = -1
 
-        if existing_session == None:
+        if session_uart == None:
             self.uart_session_stop(session)
             common.session_stop(session)
         return ret

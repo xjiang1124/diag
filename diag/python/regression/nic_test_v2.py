@@ -452,9 +452,10 @@ class nic_test_v2:
 
                 slot = int(slot1)
 
-                self.nic_con.switch_console(slot)
+                #self.nic_con.switch_console(slot)
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session, slot, numRetry=1)
+                # with con_connect.sh, the first iteration always times out
+                ret = self.nic_con.uart_session_start(session, slot, numRetry=2)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
