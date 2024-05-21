@@ -9,7 +9,8 @@ config:
 
 test_types:
   precheckin:
-    skip:
+    skip: 
+      - SLOTS_FULL_CHECK
     slots: 2
 
   sanity:

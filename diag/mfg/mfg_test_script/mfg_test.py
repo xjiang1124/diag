@@ -1076,7 +1076,9 @@ def run_mtp_screening_tests(args):
                     break
                 mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
             mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
+            mtp_mgmt_ctrl.set_mtp_mac(scan_rslt["MTP_MAC"].strip())
             args.mtpsn = mtp_mgmt_ctrl.get_mtp_sn()
+            args.mtpmac = mtp_mgmt_ctrl.get_mtp_mac()
 
         test_cmd_option = common_args2_cmd_options_list(vars(args))
 
@@ -1623,8 +1625,9 @@ if __name__ == "__main__":
     parser_mtp.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
     parser_mtp.add_argument("--fail_slots", help="consider these slots failed", nargs="*", default=[])
     parser_mtp.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
-    parser_mtp.add_argument("--mtpsn", "-mtpsn",  help="MTP SN, like FLM0021330001, etc", default=None)
     parser_mtp.add_argument("--mtp_type", "-mtp_type", help="specify the mtp type TURBO_ELBA or MATERA", nargs="?", choices=["TURBO_ELBA", "MATERA"], default="MATERA", const="MATERA")
+    parser_mtp.add_argument("--mtpsn", "-mtpsn",  help="MTP SN, like FLM0021330001, etc", default=None)
+    parser_mtp.add_argument("--mtpmac", help="MTP MAC, like BBBBBBBBBBAF, etc", default=None)
     parser_mtp.add_argument("--run_from_remote", "-run_from_remote", help='kick in test test from MTP or remote server, default to %(default)s', action='store_true', default=False)
     parser_mtp.set_defaults(func=run_mtp_screening_tests)
 

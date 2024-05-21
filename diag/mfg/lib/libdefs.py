@@ -292,6 +292,7 @@ class MTP_DIAG_Report:
     NIC_DIAG_TEST_ERR_MSG = "{:s} DIAG TEST {:s} {:s}, ERR MSG == {:s} == ERR MSG END"
     NIC_DIAG_TEST_RSLT_RE = r"\[NIC-{:s}\]: +{:s} DIAG TEST (.*) (.*) (.*), DURATION"
     NIC_DIAG_TEST_ERR_MSG_RE = r"\[NIC-{:s}\]: +{:s} DIAG TEST {:s} {:s}, ERR MSG == (.*) == ERR MSG END"
+    NIC_DIAG_TEST_SKIPPED = "{:s} DIAG TEST ({:s}, {:s}) SKIPPED"
     NIC_DIAG_SLOT_SKIPPED = "SKIPPING ALL TESTS ON THIS SLOT"
     MTP_DIAG_REGRESSION_FAIL = "MTP_DIAG_REGRESSION_TEST_FAIL"
     NIC_DIAG_REGRESSION_FAIL = "NIC_DIAG_REGRESSION_TEST_FAIL"
@@ -327,7 +328,7 @@ class MFG_DIAG_CMDS:
 
     MTP_NIC_FRU_DUMP_FMT = "eeutil -uut=UUT_{:d} -dump -numBytes=512 && mv eeprom eeprom_{:d}"
     NIC_FRU_DUMP_FMT = "{:s}eeutil -dump -numBytes=512"
-    MTP_FRU_PROG_SN_MAJ_MAC_FMT = "eeutil -update  -sn='{:s}' -maj='{:s}' -mac='{:s}'"
+    MTP_FRU_PROG_SN_MAJ_MAC_FMT = "eeutil -update -erase -numBytes=64 -sn='{:s}' -maj='{:s}' -mac='{:s}'"
 
     NIC_JTAG_TEST_FMT = "sys_sanity.sh {:d}"
 

@@ -1,7 +1,5 @@
 import sys, os
-import time
 import traceback
-import threading
 from libdefs import *
 from libmfg_cfg import *
 import barcode_field as bf
@@ -9,157 +7,42 @@ import libmfg_utils
 import libmtp_utils
 import testlog
 import scanning
+import parallelize
 
-def single_nic_test_start(mtp_mgmt_ctrl, slot, test_name):
-    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test_name)
-    return start_ts
-
-def single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts):
-    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test_name, start_ts)
-    return duration
-
-def log_test_start(mtp_mgmt_ctrl, slot, test_section, test_name):
+@parallelize.sequential_nic_test
+def test_start_nic_log_message(mtp_mgmt_ctrl, slot, stage, test):
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, test_section, test_name))
+    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, stage, test))
+    return True
 
-def log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, rslt, duration):
+@parallelize.sequential_nic_test
+def test_skip_nic_log_message(mtp_mgmt_ctrl, slot, stage, test):
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    if not rslt:
-        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, test_section, test_name, "FAILED", duration))
-    else:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, test_section, test_name, duration))
+    mtp_mgmt_ctrl.cli_log_slot_wrn(slot, MTP_DIAG_Report.NIC_DIAG_TEST_SKIPPED.format(sn, stage, test))
+    return True
 
-def map_rslt_to_slot(rslt_list):
-    # rslt_list as e.g. [True, True, False, False, True, True, True, True, True, True]
-    # return fail_nic_list as e.g. [3,4]
-    fail_nic_list = list()
-    for idx, slot_rslt in enumerate(rslt_list):
-        if not slot_rslt:
-            fail_nic_list.append(idx)
-    return fail_nic_list
+@parallelize.sequential_nic_test
+def test_fail_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts, swmtestmode=Swm_Test_Mode.SW_DETECT):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, stage, test, "FAILED", duration))
+    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        alom_sn = mtp_mgmt_ctrl.get_scanned_alom_sn(slot)
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(alom_sn, stage, test, "FAILED", duration))
+    return True
 
-"""
-    Wrapper to run a function on multiple slots, passing in a nic_list and returning a fail_nic_list.
-
-    Define the function as:
-        @test_utils.semi_parallel_test_section
-        def function_name(mtp_mgmt_ctrl, slot, ...):
-
-    First two arguments MUST match exactly. Return value must be True/False.
-
-
-    Call the function as:
-        test_fail_nic_list = function_name(mtp_mgmt_ctrl, nic_list, ...)
-
-"""
-def semi_parallel_test_section(func):
-
-    def single_slot_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *args, **kwargs):
-        try:
-            ###### RUN THE TEST #####
-            ret = func(mtp_mgmt_ctrl, slot, *args, **kwargs)
-            #########################
-            if ret:
-                test_rslt_list[slot] = True
-            else:
-                test_rslt_list[slot] = False
-        except Exception:
-            test_rslt_list[slot] = False
-            err_msg = traceback.format_exc()
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, err_msg)
-
-    def start_end(mtp_mgmt_ctrl, nic_list=None, *test_args, **test_kwargs):
-        test_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-        for slot in nic_list:
-            single_slot_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *test_args, **test_kwargs)
-        return map_rslt_to_slot(test_rslt_list)
-
-    return start_end
-
-"""
-    Wrapper to run a function on multiple slots in parallel, passing in a nic_list and returning a fail_nic_list.
-
-    Define the function as:
-        @test_utils.single_slot_test
-        def function_name(mtp_mgmt_ctrl, slot, ...):
-
-    First 2 arguments MUST match exactly. Return value must be True/False.
-
-
-    Call the function with the following required arguments:
-        ret = function_name(mtp_mgmt_ctrl, nic_list, "test section name", "test name", ...)
-
-"""
-def parallel_threaded_test(func):
-
-    def threaded_func(func, mtp_mgmt_ctrl, slot, test_section, test_name, thread_rslt_list, *args, **kwargs):
-        try:
-            log_test_start(mtp_mgmt_ctrl, slot, test_section, test_name)
-            start_ts = single_nic_test_start(mtp_mgmt_ctrl, slot, test_name)
-            ###### RUN THE TEST #####
-            ret = func(mtp_mgmt_ctrl, slot, *args, **kwargs)
-            #########################
-            duration = single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts)
-            log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, ret, duration)
-            if ret:
-                thread_rslt_list[slot] = True
-            else:
-                thread_rslt_list[slot] = False
-        except Exception:
-            err_msg = traceback.format_exc()
-            mtp_mgmt_ctrl.cli_log_slot_err(slot, err_msg)
-            duration = single_nic_test_stop(mtp_mgmt_ctrl, slot, test_name, start_ts)
-            log_test_result(mtp_mgmt_ctrl, slot, test_section, test_name, False, duration)
-            thread_rslt_list[slot] = False
-
-    def start_end(mtp_mgmt_ctrl, nic_list, test_section, test_name, *test_args, **test_kwargs):
-        nic_thread_list = list()
-        thread_rslt_list = [True] * MTP_Const.MTP_SLOT_NUM
-
-        for slot in nic_list:
-            thread_args = tuple([func, mtp_mgmt_ctrl, slot, test_section, test_name, thread_rslt_list]) + test_args
-            nic_thread = threading.Thread(
-                target = threaded_func,
-                args = thread_args,
-                kwargs = test_kwargs
-            )
-            nic_thread.daemon = True
-            nic_thread.start()
-            nic_thread_list.append(nic_thread)
-            time.sleep(1)
-
-        # monitor all the thread
-        while True:
-            if len(nic_thread_list) == 0:
-                break
-            for nic_thread in nic_thread_list[:]:
-                if not nic_thread.is_alive():
-                    nic_thread.join()
-                    nic_thread_list.remove(nic_thread)
-            time.sleep(1)
-
-        return map_rslt_to_slot(thread_rslt_list)
-
-    return start_end
-
-def update_pass_list(mtp_mgmt_ctrl, pass_nic_list, fail_nic_list, nic_test_rslt_list=[True]*MTP_Const.MTP_SLOT_NUM):
-    for slot in pass_nic_list[:]:
-        if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-        if not nic_test_rslt_list[slot]:
-            if slot not in fail_nic_list:
-                fail_nic_list.append(slot)
-            if slot in pass_nic_list:
-                pass_nic_list.remove(slot)
-
-    return pass_nic_list, fail_nic_list
+@parallelize.sequential_nic_test
+def test_pass_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts, swmtestmode=Swm_Test_Mode.SW_DETECT):
+    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
+    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
+    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration))
+    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
+        alom_sn = mtp_mgmt_ctrl.get_scanned_alom_sn(slot)
+        mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(alom_sn, stage, test, duration))
+    return True
 
 def get_test_constants(stage, mtp_id, subcommand):
-
     testsuite_config = {
         FF_Stage.FF_DL:
             {
@@ -273,6 +156,7 @@ def single_mtp_test(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_list, *arg
                             break
                         mtp_mgmt_ctrl.cli_log_inf("Restart the Barcode Scan Process", level=0)
                     mtp_mgmt_ctrl.set_mtp_sn(scan_rslt["MTP_SN"].strip())
+                    mtp_mgmt_ctrl.set_mtp_mac(scan_rslt["MTP_MAC"].strip())
 
         if loop_cnt > 1:
             mtp_mgmt_ctrl.cli_log_inf("\n" * 3)
@@ -443,6 +327,8 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
             if mtp_type == MTP_TYPE.TURBO_ELBA:
                 cmd_options.append("--mtpsn")
                 cmd_options.append(mtp_mgmt_ctrl.get_mtp_sn())
+                cmd_options.append("--mtpmac")
+                cmd_options.append(mtp_mgmt_ctrl.get_mtp_mac())
         if fail_nic_list:
             cmd_options.append("--fail_slots")
             cmd_options.append(' '.join(map(str,fail_nic_list)))
@@ -513,7 +399,6 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
     test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
-    # test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
@@ -658,13 +543,14 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
 
     for test in test_list:
         if test in skip_test_list:
+            test_skip_nic_log_message(mtp_mgmt_ctrl, pass_nic_list, stage, test)
             continue
 
         start_ts = mtp_mgmt_ctrl.log_test_start(test)
         test_start_nic_log_message(mtp_mgmt_ctrl, pass_nic_list, stage, test)
 
         if test == "NIC_TYPE":
-            test_fail_nic_list = mtp_mgmt_ctrl.mtp_nic_list_type_test(pass_nic_list)
+            test_fail_nic_list = mtp_mgmt_ctrl.mtp_nic_type_test(pass_nic_list)
         elif test == "FF_AREA_CHECK":
             test_fail_nic_list = libmfg_utils.flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, pass_nic_list, stage, retry=FLEX_TWO_WAY_COMM.PRE_POST_RETRY)
         elif test == "SANITY_CHECK_SETUP":
@@ -700,25 +586,4 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
         test_pass_nic_log_message(mtp_mgmt_ctrl, pass_nic_list, stage, test, start_ts)
 
     return fail_nic_list
-
-@semi_parallel_test_section
-def test_start_nic_log_message(mtp_mgmt_ctrl, slot, stage, test):
-    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, stage, test))
-    return True
-
-@semi_parallel_test_section
-def test_fail_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts):
-    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-    mtp_mgmt_ctrl.cli_log_slot_err(slot, MTP_DIAG_Report.NIC_DIAG_TEST_FAIL.format(sn, stage, test, "FAILED", duration))
-    return True
-
-@semi_parallel_test_section
-def test_pass_nic_log_message(mtp_mgmt_ctrl, slot, stage, test, start_ts):
-    sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
-    duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
-    mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, stage, test, duration))
-    return True
 

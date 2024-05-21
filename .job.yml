@@ -97,6 +97,8 @@ jobs:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-4C"]
   test/SWI:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-SWI"]
+  test/SRN:
+    labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-SRN"]
   test/ScanDL:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-ScanDL"]
   test/ORT:

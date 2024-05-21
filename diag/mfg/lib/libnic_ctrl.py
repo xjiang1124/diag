@@ -62,8 +62,9 @@ class nic_ctrl():
         self._nic_type = None
         self._nic_handle = None
         self._nic_prompt = None
-        self._err_msg = None
+        self._err_msg = ""
         self._cmd_buf = None
+        self._buf_before_sig = ""
 
         self._asic_type = None
         self._ip_addr = None
@@ -143,14 +144,31 @@ class nic_ctrl():
         elif self._nic_type in GIGLIO_NIC_TYPE_LIST:
             self._asic_type = "giglio"
 
-    def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+    def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
+        rc = True
         self._nic_handle.sendline(cmd)
+        cmd_before = ""
+        self._buf_before_sig = ""
+        for sig in sig_list:
+            idx = libmfg_utils.mfg_expect(self._nic_handle, [sig], timeout)
+            self._buf_before_sig += self._nic_handle.before
+            if idx < 0:
+                rc = False
+                cmd_before = self._nic_handle.before
+                break
         idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt], timeout)
-        if idx < 0:
+        # signature match fails
+        if not rc:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
-        self.nic_set_cmd_buf(self._nic_handle.before)
+        elif idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            self.nic_set_err_msg("Encountered script timeout with command buffer: " + str(repr(self._nic_handle.before)))
+            return False
+        else:
+            self.nic_set_cmd_buf(self._buf_before_sig + self._nic_handle.before)
         return True
 
     def mtp_get_info(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
@@ -1741,7 +1759,6 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         elif idx < len(fail_signatures):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_err_msg("Missing file {:s}".format(src_file))
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False
@@ -1754,7 +1771,6 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
         elif idx < len(fail_signatures):
-            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             self.nic_set_err_msg("Missing file {:s}".format(src_file))
             self.nic_set_cmd_buf(self._nic_handle.before + fail_signatures[idx])
             return False

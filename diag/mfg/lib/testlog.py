@@ -235,6 +235,7 @@ def analyze_and_update(mtp_mgmt_ctrl, mtp_test_summary, stage, mtp_start_ts, mtp
 
     if GLB_CFG_MFG_TEST_MODE and send_report:
         mtp_id = mtp_mgmt_ctrl._id
+        mtp_sn = mtp_mgmt_ctrl._mtp_sn
         libmfg_utils.mfg_report(mtp_mgmt_ctrl, mtp_id, mtp_start_ts, mtp_stop_ts, test_log_file, stage, mtp_test_summary)
 
         if stage == FF_Stage.FF_SRN:
@@ -242,7 +243,7 @@ def analyze_and_update(mtp_mgmt_ctrl, mtp_test_summary, stage, mtp_start_ts, mtp
             duration = mtp_stop_ts - mtp_start_ts
 
             # dump the summary
-            for slot, sn, nic_type, rc in mtp_test_summary:
+            for slot, sn, nic_type, rc, *_ in mtp_test_summary:
                 nic_cli_id_str = libmfg_utils.id_str(mtp=mtp_id, nic=int(slot), base=0)
                 if rc:
                     mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))
