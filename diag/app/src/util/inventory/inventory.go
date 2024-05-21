@@ -687,24 +687,33 @@ func main() {
     }
 
     if *hdparmPtr == true {
-        cmdStr := string("fdisk -l | grep -e Disk | grep -e sectors | grep -iv loop | grep -iv nvme | grep -iv usb")
+        cmdStr := string("sudo -SE <<< \"lab123\" fdisk -l | grep -e Disk | grep -e sectors | grep -iv loop | grep -iv usb | grep -iv nvme")
         out, errGo = exec.Command("bash", "-c", cmdStr).Output()
-        if errGo != nil {
-            cli.Println("e", errGo)
-        } else {
-            cli.Println("i", strings.TrimSpace(string(out[:])))
+        if errGo != nil || len(out) == 0 {
+            cmdStr = string("sudo -SE <<< \"lab123\" fdisk -l | grep -e Disk | grep -e sectors | grep -e nvme")
+            out, errGo = exec.Command("bash", "-c", cmdStr).Output()
+            if errGo != nil {
+                cli.Println("e", errGo)
+                return
+            }
         }
+        cli.Println("i", strings.TrimSpace(string(out[:])))
+
         strArray := strings.Split(string(out[:]), ":")
         hdName := strings.Split(strArray[0], " ")
 
-        cmdStr = string("hdparm -I " + strings.TrimSpace(hdName[1]) + " | grep -A4 \"ATA device\"")
+        if !strings.Contains(hdName[1], "nvme") {
+            cmdStr = string("sudo -SE <<< \"lab123\" hdparm -I " + strings.TrimSpace(hdName[1]) + " | grep -A4 \"ATA device\"")
+        } else {
+            cmdStr = string("sudo -SE <<< \"lab123\" nvme list -o json " + strings.TrimSpace(hdName[1]) + " | grep -e \"ModelNumber\x5c\x7cSerialNumber\x5c\x7cProductName\x5c\x7cFirmware\"")
+        }
         out, errGo = exec.Command("bash", "-c", cmdStr).Output()
         if errGo != nil {
             cli.Println("e", errGo)
         } else {
-            strArray = strings.Split(strings.TrimSpace(string(out[:])), "\n")
+            strArray = strings.Split(string(out[:]), "\n")
             for i := 0; i < len(strArray); i++ {
-                cli.Println("i", strArray[i])
+                cli.Println("i", strings.Trim(strArray[i], ","))
             }
         }
 
