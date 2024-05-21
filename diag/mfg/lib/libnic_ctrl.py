@@ -1665,6 +1665,14 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            local_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(mtp_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
         nic_cmd = "{} \" md5sum {:s} \"".format(ssh_pipe_cmd, directory+os.path.basename(img_name))
         self._nic_handle.sendline(nic_cmd)
@@ -1683,6 +1691,19 @@ class nic_ctrl():
         elif idx == 1:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            nic_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(nic_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if local_md5sum != nic_md5sum:
+            self.nic_set_err_msg("Checksums for {:s} don't match after copying to NIC".format(os.path.basename(img_name)))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         return True
