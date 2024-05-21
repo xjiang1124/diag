@@ -35,7 +35,7 @@ class nic_test:
         file1.close()
         return mtp_rev[0][:-1]
 
-    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, do_untar="", existing_session=None):
+    def setup_env(self, slot=0, mgmt=False, timeout=30, first_pwr_on=False, pwr_cycle=True, aapl=False, do_untar=""):
         print("=== Starting setup env on slot {} ===".format(slot))
 
         mtp_rev = self.get_mtp_rev()
@@ -53,11 +53,9 @@ class nic_test:
                     print("Failed to change baud rate")
                     return -1
 
-            if existing_session == None:
-                self.nic_con.switch_console(int(slot))
-                session = common.session_start()
-            else:
-                session = existing_session
+            self.nic_con.switch_console(int(slot))
+
+            session = common.session_start()
             session.timeout = timeout
             cmd = "turn_on_hub.sh {}".format(slot)
             common.session_cmd_no_rc(session, cmd)
@@ -67,8 +65,7 @@ class nic_test:
             cpldID = re.findall(r"data=(0x[0-9a-fA-F]+)", session.before)
             if cpldID == []:
                 print("Failed to find CPLD ID! Read back", session.before)
-                if existing_session == None:
-                    common.session_stop(session)
+                common.session_stop(session)
                 return -1
             cpldIDs = cpldID[0].upper()
 
@@ -142,18 +139,15 @@ class nic_test:
                 except:
                     print("Failed to turn off sgmii")
                     self.nic_con.uart_session_stop(session)
-                    if existing_session == None:
-                        common.session_stop(session)
+                    common.session_stop(session)
                     return -1
             else:
                 self.nic_con.uart_session_stop(session)
-                if existing_session == None:
-                    common.session_stop(session)
+                common.session_stop(session)
                 return -1
 
             self.nic_con.uart_session_stop(session)
-            if existing_session == None:
-                common.session_stop(session)
+            common.session_stop(session)
 
             if aapl == True:
                 ret = self.aapl_setup(slot)
@@ -161,7 +155,7 @@ class nic_test:
                     return ret
 
             if mgmt == True:
-                ret = self.nic_con.get_mgmt_rdy(slot, first_pwr_on, existing_session)
+                ret = self.nic_con.get_mgmt_rdy(slot, first_pwr_on)
 
             print("=== Setup env on slot {} env setup done ===".format(slot))
 

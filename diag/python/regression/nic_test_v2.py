@@ -179,7 +179,7 @@ class nic_test_v2:
                     #self.nic_con.uart_session_cmd(session, "fwupdate -s diagfw")
                     self.nic_con.uart_session_cmd(session, "pwd")
                 except pexpect.TIMEOUT:
-                    print "DIAGFW PROG FAILED!"
+                    print ("DIAGFW PROG FAILED!")
                     return False
 
                 self.nic_con.uart_session_stop(session)
@@ -224,7 +224,7 @@ class nic_test_v2:
                 session = common.session_start()
                 ret = self.nic_con.enter_uboot(session, slot)
                 if ret == -1:
-                    print "=== Failed to change uboot board rate! Slot: {} ===".format(slot)
+                    print ("=== Failed to change uboot board rate! Slot: {} ===".format(slot))
                     common.session_stop(session)
                     continue
 
@@ -326,7 +326,7 @@ class nic_test_v2:
                 self.nic_con.uart_session_cmd(session, cmd, 60)
                 self.nic_con.uart_session_cmd(session, "pwd")
             except pexpect.TIMEOUT:
-                print "UBOOT PROG FAILED!"
+                print ("UBOOT PROG FAILED!")
                 return False
 
             self.nic_con.uart_session_stop(session)
@@ -531,51 +531,72 @@ class nic_test_v2:
         # run setup_env_single in parallel
         slot_list = args.slot_list.split(',')
         test_args = ()
-        test_kwargs = {"mgmt": args.mgmt, "first_pwr_on": args.first_pwr_on, "pwr_cycle": not args.no_pwr_cycle, "asic_type": args.asic_type, "uefi": args.uefi, "dis_net_port": args.dis_net_port, "numRetry": 1, "env": not args.skip_env, "do_untar": ""}
+        test_kwargs = {"mgmt": args.mgmt, "first_pwr_on": args.first_pwr_on, "pwr_cycle": not args.no_pwr_cycle, "asic_type": args.asic_type, "uefi": args.uefi, "dis_net_port": args.dis_net_port, "numRetry": 1, "do_untar": ""}
         fail_nic_list = self.split_into_threads(self.setup_env_single, slot_list, *test_args, **test_kwargs)
         print ("Failed NIC list:", fail_nic_list)
 
     # setup_env for single slot
-    def setup_env_single(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=2, env=True, do_untar=""):
+    def setup_env_single(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=2, do_untar=""):
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
             print("slot", slot)
             print("timestamp", datetime.datetime.now().time())
             try:
-                session = common.session_start()
-                session.timeout = 30
+                session_bash = common.session_start()
+                session_bash.timeout = 30
                 if pwr_cycle == True:
                     cmd = "turn_on_slot.sh off {}".format(slot)
-                    common.session_cmd(session, cmd)
+                    common.session_cmd(session_bash, cmd)
                     time.sleep(1)
                     cmd = "turn_on_slot.sh on {}".format(slot)
-                    common.session_cmd(session, cmd)
-                if env == True:
-                    #ret = self.nic_con.uart_session_start_login(session, slot)
-                    ret = self.nic_test.setup_env(int(slot), False, 30, False, False, False, do_untar, session)
-                    if ret != 0:
-                        print("=== Setup env single failed!", slot)
-                        return ret
+                    common.session_cmd(session_bash, cmd)
+
+                session_uart = common.session_start()
+                session_uart.timeout = 30
+                print("=== Starting setup env on slot {} ===".format(slot))
+                # get_mtp_rev() not work on Matera
+                #mtp_rev = self.nic_test.get_mtp_rev()
+                #print("MTP_REV: ", mtp_rev)
+                ret = self.nic_con.uart_session_start_login(session_uart, slot)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(session_uart)
+                    common.session_stop(session_uart)
+                    continue
+                self.nic_con.uart_session_cmd(session_uart, "fsck -y /dev/mmcblk0p10")
+                self.nic_con.uart_session_cmd(session_uart, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(session_uart, "source /data/nic_arm/nic_setup_env.sh " + do_untar, 120)
+                self.nic_con.uart_session_cmd(session_uart, "source /etc/profile", 10)
+                self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -w 1 0x0")
+                self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -r 1")
+                self.nic_con.uart_session_cmd(session_uart, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+                self.nic_con.uart_session_cmd(session_uart, "export PCIE_ENABLED_PORTS=0")
+                #self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
+                # if this file exists, it means the card is not rebooted
+                self.nic_con.uart_session_cmd(session_uart, "touch /root/reboot_check")
+
                 if mgmt == True:
-                    self.nic_con.uart_session_start(session, slot)
-                    ret = self.nic_con.enable_mnic(int(slot), first_pwr_on, session)
+                    ret = self.nic_con.enable_mnic(int(slot), first_pwr_on, session_uart)
                     print("Sleep 30 sec")
                     time.sleep(30)
                     # Disable link manager
                     # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
-                    time.sleep(5)
-                    self.nic_con.uart_session_cmd(session, "halctl debug port --port 1 --admin-state down")
-                    self.nic_con.uart_session_cmd(session, "halctl debug port --port 5 --admin-state down")
+                    #time.sleep(5)
+                    self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port 1 --admin-state down")
+                    self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port 5 --admin-state down")
                     if asic_type == "ELBA":
-                        self.nic_con.uart_session_cmd(session, "halctl debug port --admin-state down")
-                    #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/1 --admin-state down")
-                    #self.nic_con.uart_session_cmd(session, "halctl debug port --port eth1/2 --admin-state down")
-                    self.nic_con.uart_session_cmd(session, "halctl show port status")
+                        self.nic_con.uart_session_cmd(session_uart, "halctl debug port --admin-state down")
+                    #self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port eth1/1 --admin-state down")
+                    #self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port eth1/2 --admin-state down")
+                    self.nic_con.uart_session_cmd(session_uart, "halctl show port status")
                     if dis_net_port == True:
-                        self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
-                        self.nic_con.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smird 0 0x3")
+                        self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
+                        self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smird 0 0x3")
                     sleep(0.5)
-                    ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session)
+                    ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session_bash, session_uart)
+
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                common.session_stop(session_bash)
 
             except pexpect.TIMEOUT:
                 print("=== TIMEOUT: Failed to set up env single slot {} ===".format(slot))
@@ -589,7 +610,6 @@ class nic_test_v2:
         else:
             print("=== Setup env single slot done #", retry, "===")
         print("timestamp", datetime.datetime.now().time())
-        print(ret)
         return ret
 
     def setup_multi(self, args):
@@ -821,7 +841,6 @@ if __name__ == "__main__":
     parser_setup_parallel.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="elba")
     parser_setup_parallel.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
     parser_setup_parallel.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
-    parser_setup_parallel.add_argument("-skip_env", "--skip_env", help="Set up env", action='store_true')
     parser_setup_parallel.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
     parser_setup_parallel.set_defaults(func=test.setup_env_in_parallel)
