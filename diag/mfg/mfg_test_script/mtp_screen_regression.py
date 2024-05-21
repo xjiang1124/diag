@@ -624,6 +624,130 @@ def mtp_mem_validation_test(mtp_mgmt_ctrl):
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
+def mtp_usb_validation_test(mtp_mgmt_ctrl):
+    """
+    Matera MTP USB validation test
+    assuming USB device will be /dev/sda, and partion is /dev/sda1
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+    """
+
+    def waiting_usb_insert(seconds):
+        secs = seconds
+        while secs:
+            sys.stdout.write("Please insert USB drive, auto detect the device again in {:03d} seconds....\r".format(secs))
+            sys.stdout.flush()
+            time.sleep(1)
+            secs -= 1
+
+    start_time = datetime.datetime.now()
+    current_time = datetime.datetime.now()
+    delta_time = current_time - start_time
+    total_wait_time = 600
+
+    while delta_time.total_seconds() < 600:
+        usb_probe_result = mtp_probe_usb(mtp_mgmt_ctrl, devicetype='usb')
+        if usb_probe_result:
+            mtp_mgmt_ctrl.cli_log_inf("USB Drive Found")
+            break
+        mtp_mgmt_ctrl.cli_log_inf("USB Drive NOT Found")
+        waiting_usb_insert(30)
+        current_time = datetime.datetime.now()
+        delta_time = current_time - start_time
+    else:
+        mtp_mgmt_ctrl.cli_log_err("No More waiting, USB Drive not found in {:s} seconds".format(str(total_wait_time)))
+        return False
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP USB Validation Test Start")
+    tout = MTP_Const.NIC_CON_CMD_DELAY
+    #cmd = "cd " + usb_probe_result["MOUNTPOINTS"]
+    cmd = "cd /home/diag/usbtest"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    stress_test_time = 60  # Set stress test running time in seconds
+    cmd = "/home/diag/diag/tools/stressapptest -M 400 -f file.1 -f file.2"
+    tout = stress_test_time * 1.2
+    cmd += " -s " + str(stress_test_time)
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if "Found 0 hardware incidents".lower() not in cmd_result.lower() or "Status: PASS - please verify no corrected errors".lower() not in cmd_result.lower():
+        mtp_mgmt_ctrl.cli_log_err("Hardware Error Found By stressapptest Tool:")
+        mtp_mgmt_ctrl.cli_log_err(cmd_result)
+        return False
+
+    pattern = r'Stats: File Copy: .* at (\d+\.+\d*MB\/s)'
+    match_obj = re.search(pattern, cmd_result)
+    file_cp_bw = ""
+    if match_obj:
+        file_cp_bw = match_obj.group(1)
+
+    if not file_cp_bw:
+        mtp_mgmt_ctrl.cli_log_inf("Did not get USB bandwidth data, Ignore")
+    mtp_mgmt_ctrl.cli_log_inf("{:s} USB Drive {:s} Validation Pass with bandwidth {:s}".format(usb_probe_result["SIZE"], usb_probe_result["MODEL"], file_cp_bw))
+    mtp_mgmt_ctrl.cli_log_inf("USB DriveValidation Test Finished")
+
+    # clean up
+    cmd = "rm -rf *"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
+    cmd = "cd -; umount " + usb_probe_result["MOUNTPOINTS"]
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
+
+    return True
+
+def mtp_probe_usb(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
+    """probe if use drive existing, if the device is existing but not mount, it will try to mount it to /home/diag/usb
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        devicetype (str, optional): _description_. Defaults to 'usb'.
+    """
+
+    parse_result = {}
+    cmd = 'lsblk -o NAME,TRAN,SIZE,MODEL,MOUNTPOINTS'
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if devicetype.lower() not in cmd_result.lower() or 'sda1' not in cmd_result.lower():
+        mtp_mgmt_ctrl.cli_log_err("{:s} device not found".format(devicetype))
+        mtp_mgmt_ctrl.cli_log_err(cmd_result)
+        return False
+    for line in cmd_result.split("\n"):
+        if devicetype.lower() in line:
+            size = line.split()[2].strip()
+            model = " ".join(line.split()[3:]).strip()
+        if 'sda1' in line:
+            print(line.split())
+            mount_point = line.split()[-1]
+
+    if not mount_point:
+        # try to mount use to /home/diag/usb
+        cmd = 'mkdir /home/diag/usb'
+        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
+        if not cmd_result:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+            return False
+        cmd = 'mount /dev/sda1 /home/diag/usb'
+        if not cmd_result:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+            return False
+
+    parse_result["SIZE"] = size
+    parse_result["MODEL"] = model
+    parse_result["MOUNTPOINTS"] = mount_point
+    return parse_result
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -784,6 +908,9 @@ def main():
             elif test == "MEM_BENCHMARK":
                 ret = mtp_mem_validation_test(mtp_mgmt_ctrl)
                 fail_desc = "MTP DDR Memory validation test failed"
+            elif test == "USB_BENCHMARK":
+                ret = mtp_usb_validation_test(mtp_mgmt_ctrl)
+                fail_desc = "MTP USB validation test failed"
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 ret = False
@@ -892,6 +1019,7 @@ def main():
             return rlist
 
         if mtp_mgmt_ctrl.mtp_get_mtp_type == MTP_TYPE.MATERA:
+            run_mtp_test(pass_nic_list, "USB_BENCHMARK")
             run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
             run_mtp_test(pass_nic_list, "CPU_BENCHMARK")
             run_mtp_test(pass_nic_list, "DDR_BENCHMARK")
