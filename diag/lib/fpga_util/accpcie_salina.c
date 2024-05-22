@@ -3,8 +3,29 @@
 
 #define WAIT_CNT 1000
 int verbosity = 0;
+int asic_index = 0;
+
 ULONGLONG bar_addr = 0x10020300000;
 FT_HANDLE ftHandle = 0;
+
+FPGA_ASIC_TARGET fpga_asic_target[ ] = {
+	/* asic name, nst size, top pos of address bit */
+	{"elba", 256, 5},
+	{"salina", 256, 15},
+	{"", 0, 0}
+};
+
+DWORD gen_mask(int bits)
+{
+    int i;
+    DWORD mask = 0x1, bit_mask = 0;
+
+    for ( i = 0; i < bits; i++ ) {
+        bit_mask |= mask;
+	mask = mask << 1;
+    }
+    return bit_mask;
+}
 
 ULONGLONG xtoi(char *hexstring)
 {
@@ -30,6 +51,21 @@ void set_verbosity(int level)
     return;
 }
 
+void set_target(char *asic_name)
+{
+    int i = 0;
+    while ( strcpy(fpga_asic_target[i].name, "")  ) {
+        if ( !strcmp(fpga_asic_target[i].name, asic_name) ) {
+            asic_index = i;
+            return;
+        }
+        i++;
+    };
+    printf("invalid asic name %s\n", asic_name);
+    asic_index = -1;
+    return;
+}
+
 void set_bar(ULONGLONG addr)
 {
     bar_addr = addr;
@@ -52,7 +88,7 @@ ULONGLONG get_bar_from_proc(void)
     while ( fgets(line, sizeof(line), fileptr) ) {
         ptr = strtok(line, delim);
         while ( ptr != NULL ) {
-           if ( strcmp(ptr, "1dd8000a") == 0 ) {
+           if ( strcmp(ptr, "1dd8000b") == 0 ) {
                ptr = strtok(NULL, delim);
                ptr = strtok(NULL, delim);
                len = strlen(ptr);
@@ -168,7 +204,7 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;;
     DWORD cmd;
     DWORD resp;
-    DWORD dummy = inst;
+    DWORD dummy = inst, upper_mask, msb_addr_pos;
     int wait_cnt = WAIT_CNT;
     int i;
     int rc = 0;
@@ -181,13 +217,21 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         return -1;
     }
 
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+        return -1;
+    }
+
+    msb_addr_pos = fpga_asic_target[asic_index].addr_msb_pos;
+    upper_mask = gen_mask(msb_addr_pos);
+
     rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address lower 32 bit\n");
         return -1;
     }
-    address = ((address >> 32) & 0x1F) | (size << 8) | ((flag & 0x1) << 10); 
+    address = ((address >> 32) & upper_mask) | (size << (msb_addr_pos + 3)) | ((flag & 0x1) << (msb_addr_pos + 5)); 
     rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
     if ( rc ) {
         if ( verbosity )
@@ -201,6 +245,96 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         return -1;
     }
  
+    cmd = J2C_WRITE_COMMAND;
+    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wrte write command\n");
+        return -1;
+    }
+    for ( i = 0; i < wait_cnt; i++ ) {
+        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( !(resp & 0x1) )
+            break;
+    }
+    if ( resp & 0x1 ) {
+        if ( verbosity )
+            printf("write command time out\n");
+        return FT_RESP_TIMEOUT;
+    }
+    if ( verbosity == 2 )
+        printf("FINISH WRITE\n");
+    return ftStatus;
+}
+
+FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWORD num_bits)
+{
+    FT_STATUS ftStatus = FT_OK;
+    DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;;
+    DWORD cmd;
+    DWORD resp;
+    DWORD dummy = inst, upper_mask, msb_addr_pos, bits_remain;
+    int wait_cnt = WAIT_CNT;
+    int i;
+    int rc = 0;
+
+    inst = dummy;
+
+    if ( ftHandle == 0 ) {
+        if ( verbosity != 0 )
+            printf("j2c port is not opened\n");
+        return -1;
+    }
+
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+        return -1;
+    }
+
+    msb_addr_pos = fpga_asic_target[asic_index].addr_msb_pos;
+    upper_mask = gen_mask(msb_addr_pos);
+
+    rc = write_fpga_mem32(ftHandle, J2C_0_SIZE_REG, num_bits);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address lower 32 bit\n");
+        return -1;
+    }
+    bits_remain = num_bits;
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address lower 32 bit\n");
+        return -1;
+    }
+    address = ((address >> 32) & upper_mask) | (size << (msb_addr_pos + 3)) | ((flag & 0x1) << (msb_addr_pos + 5)); 
+
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address higher 32 bit\n");
+        return -1;
+    }
+
+    while ( bits_remain != 0 ) {
+        rc = write_fpga_mem32(ftHandle, J2C_0_TXFIFO_REG, data);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to wring data\n");
+            return -1;
+        }
+	if ( bits_remain >= 32 )
+            bits_remain = bits_remain -32;
+        else
+            bits_remain = 0;
+	data++;
+    };
+
     cmd = J2C_WRITE_COMMAND;
     rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
@@ -262,17 +396,25 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     DWORD cmd;
     DWORD resp;
     DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
-    DWORD dummy = inst;
+    DWORD dummy = inst, upper_mask, msb_addr_pos;
     int wait_cnt = WAIT_CNT;
     int i, rc = 0;
  
     inst = dummy;
-
+    
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
             printf("j2c port is not opened\n");
         return -1;
     }
+
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+	return -1;
+    }
+
+    msb_addr_pos = fpga_asic_target[asic_index].addr_msb_pos;
+    upper_mask = gen_mask(msb_addr_pos);
 
     rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
@@ -280,7 +422,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
             printf("failed to wring address lower 32 bit\n");
         return -1;
     }
-    address = ((address >> 32) & 0x1F) | (size << 8) | ((flag & 0x1) << 10); 
+    address = ((address >> 32) & upper_mask) | (size << (msb_addr_pos + 3)) | ((flag & 0x1) << (msb_addr_pos + 5)); 
     rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
     if ( rc ) {
         if ( verbosity )
@@ -356,6 +498,128 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     return ftStatus;
 }
 
+FT_STATUS jtag_rd_inc(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag, DWORD num_bits)
+{
+    FT_STATUS ftStatus = FT_OK;
+    DWORD cmd;
+    DWORD resp;
+    DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;
+    DWORD dummy = inst, upper_mask, msb_addr_pos, bits_remain;
+    int wait_cnt = WAIT_CNT;
+    int i, rc = 0;
+ 
+    inst = dummy;
+    
+    if ( ftHandle == 0 ) {
+        if ( verbosity != 0 )
+            printf("j2c port is not opened\n");
+        return -1;
+    }
+
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+	return -1;
+    }
+
+    msb_addr_pos = fpga_asic_target[asic_index].addr_msb_pos;
+    upper_mask = gen_mask(msb_addr_pos);
+
+    rc = write_fpga_mem32(ftHandle, J2C_0_SIZE_REG, num_bits);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address lower 32 bit\n");
+        return -1;
+    }
+    bits_remain = num_bits;
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address lower 32 bit\n");
+        return -1;
+    }
+    address = ((address >> 32) & upper_mask) | (size << (msb_addr_pos + 3)) | ((flag & 0x1) << (msb_addr_pos + 5)); 
+    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wring address higher 32 bit\n");
+        return -1;
+    }
+
+    cmd = J2C_READ_COMMAND;
+    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to wrte read command\n");
+        return -1;
+    }
+    for ( i = 0; i < wait_cnt; i++ ) {
+        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( !(resp & 0x1) )
+            break;
+    }
+    if ( resp & 0x1 ) {
+        if ( verbosity )
+            printf("read command time out\n");
+        return FT_RESP_TIMEOUT;
+    }
+
+    cmd = J2C_RESP_COMMAND;
+    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to write response command\n");
+        return -1;
+    }
+    for ( i = 0; i < wait_cnt; i++ ) {
+        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( !(resp & 0x1) )
+            break;
+    }
+    if ( resp & 0x1 ) {
+        if ( verbosity )
+            printf("response command time out\n");
+        return FT_RESP_TIMEOUT;
+    }
+    if ( (resp & J2C_VALID_BIT) == 0 ) {
+        if ( verbosity ) {
+            printf("response value = %x\n", resp);
+            printf("invalid response\n");
+        }
+        return FT_INVALID_RESP;
+    } else if ( resp & J2C_ID_BIT ) {
+        if ( verbosity )
+            printf("invalid ID %x\n", resp);
+        /* return FT_ERROR_ID; */
+    } 
+    while ( bits_remain != 0 ) {
+        rc = read_fpga_mem32(ftHandle, J2C_0_RXFIFO_REG, data);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read data\n");
+            *data = 0xdeadbeef;
+            return -1;
+        }
+	if ( bits_remain >= 32 )
+	    bits_remain = bits_remain - 32;
+	else
+	    bits_remain = 32;
+	data++;
+    }
+    if ( verbosity == 2 )
+        printf("FINISH READ\n");
+    return ftStatus;
+}
+
 FT_STATUS jtag_init(DWORD portNum)
 {
     time_t rawtime;
@@ -373,8 +637,14 @@ FT_STATUS jtag_init(DWORD portNum)
         bar_addr = pcie_bar;
     }
 
-    j2c_mem_addr = (ULONGLONG)(J2C_0_OFFSET + (portNum - 1) * 32);
-    printf("05-08-2024 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+	return -1;
+    }
+
+    j2c_mem_addr = (ULONGLONG)(J2C_0_OFFSET + (portNum - 1) * fpga_asic_target[asic_index].size);
+    printf("05-16-2024 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    printf("asic target is %s\n", fpga_asic_target[asic_index].name);
     printf("bar address is set with  0x%llx\n", bar_addr);
     write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0x1);
     read_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, &magic);
@@ -522,7 +792,7 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 
     dummy = address;
     dummy = *data;
-    *data = dummy;
+    address = dummy;
 
     return FT_OK;
 }

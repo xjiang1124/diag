@@ -55,15 +55,24 @@ enum {
 #define J2C_ID_BIT           0x20000
 #define J2C_SEM_BIT          0x00001
 
-#define J2C_0_OFFSET     0xA00
-#define J2C_0_CMD_REG    0x000
-#define J2C_0_STAT_REG   0x004
-#define J2C_0_ADDR0_REG  0x008
-#define J2C_0_ADDR1_REG  0x00C
-#define J2C_0_TXDATA_REG 0x010
-#define J2C_0_RXDATA_REG 0x014
-#define J2C_0_SEM_REG    0x018
-#define J2C_0_MAGIC_REG  0x01C
+#define J2C_0_OFFSET      0xA00
+#define J2C_0_CMD_REG     0x000
+#define J2C_0_STAT_REG    0x004
+#define J2C_0_ADDR0_REG   0x008
+#define J2C_0_ADDR1_REG   0x00C
+#define J2C_0_TXDATA_REG  0x010
+#define J2C_0_RXDATA_REG  0x014
+#define J2C_0_SEM_REG     0x018
+#define J2C_0_MAGIC_REG   0x01C
+#define J2C_0_TXFIFO_REG  0x020
+#define J2C_0_RXFIFO_REG  0x024
+#define J2C_0_SIZE_REG    0x028
+#define OW_0_INIT_REG     0x02C
+#define OW_0_CMD_REG      0x030
+#define OW_0_STAT_REG     0x034
+#define OW_0_DATA_REG     0x038
+#define OW_0_ADDR0_REG    0x040
+#define OW_0_ADDR1_REG    0x044
 
 #define UART_0_OFFSET     0x10000
 #define UART_INST_OFFSET  0x0100
@@ -99,6 +108,8 @@ ULONGLONG show_bar(void);
 FT_STATUS jtag_init(DWORD portNum);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
+FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWORD num_bits);
+FT_STATUS jtag_rd_inc(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag, DWORD num_bits);
 FT_STATUS jtag_wg(ULONGLONG address, DWORD data);
 FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
 FT_STATUS jtag_reset(DWORD inst);
@@ -110,4 +121,10 @@ FT_STATUS spi_reg_init();
 FT_STATUS spi_wr(BYTE address, BYTE data);
 FT_STATUS spi_rd(BYTE address, BYTE* data);
 void ftHandle_close();
+
+typedef struct _fpga_asic_target {
+    char name[10];    /* asic name - no effect for code */
+    int size;         /* j2c instance memory space */
+    int addr_msb_pos; /* msb position for upper 32 bit address */
+} FPGA_ASIC_TARGET;
 
