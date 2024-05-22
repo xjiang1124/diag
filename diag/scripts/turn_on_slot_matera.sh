@@ -167,7 +167,9 @@ fi
 
 if [[ $2 == "all" ]]
 then
-    control_all $1
+    on_off=$1
+    (flock -x -w 10 99 || exit 1; control_all $on_off;
+    ) 99>/home/diag/turn_on_slot.lock
 else
     slot_list=$(echo $2 | tr "," "\n")
 	pc_low=0
