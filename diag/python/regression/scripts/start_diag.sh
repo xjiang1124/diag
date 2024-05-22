@@ -40,23 +40,18 @@ asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
 
-#if [[ $FPGA_PRST == "YES" ]]
-#then
-#    echo "FIXME: 000 Deal ASIC lib later"
-#else
-    if [[ -n $skip_untar ]]
-    then
-        echo "Using existing ASIC lib"
-    else
-        echo "Untar ASIC lib"
-        chmod -R 755 $DIAG_DIR/asic_all/$asic/
-        rm -rf  $DIAG_DIR/asic_all/$asic/*
-        tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
-        cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
-        cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
-        rm -rf $DIAG_DIR/asic_all/$asic/nic
-    fi
-#fi
+if [[ -n $skip_untar ]]
+then
+    echo "Using existing ASIC lib"
+else
+    echo "Untar ASIC lib"
+    chmod -R 755 $DIAG_DIR/asic_all/$asic/
+    rm -rf  $DIAG_DIR/asic_all/$asic/*
+    tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+    cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+    cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+    rm -rf $DIAG_DIR/asic_all/$asic/nic
+fi
 
 mkdir -p $DIAG_DIR/log/
 
