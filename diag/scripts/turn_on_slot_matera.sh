@@ -204,7 +204,8 @@ else
 
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        control_slot_matera
+        (flock -x -w 10 99 || exit 1; control_slot_matera;
+        ) 99>/home/diag/turn_on_slot.lock
     else
         declare -a low_high_list=("low" "high")
         for low_high in "${low_high_list[@]}"
