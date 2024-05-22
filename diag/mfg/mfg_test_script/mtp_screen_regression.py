@@ -17,6 +17,7 @@ from collections import OrderedDict
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import test_utils
+import libmtp_utils
 import testlog
 import parallelize
 from libdefs import MTP_Const
@@ -633,36 +634,12 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
         mtp_mgmt_ctrl (_type_): _description_
     """
 
-    def waiting_usb_insert(seconds):
-        secs = seconds
-        while secs:
-            sys.stdout.write("Please insert USB drive, auto detect the device again in {:03d} seconds....\r".format(secs))
-            sys.stdout.flush()
-            time.sleep(1)
-            secs -= 1
-
-    start_time = datetime.datetime.now()
-    current_time = datetime.datetime.now()
-    delta_time = current_time - start_time
-    total_wait_time = 600
-
-    while delta_time.total_seconds() < 600:
-        usb_probe_result = mtp_probe_usb(mtp_mgmt_ctrl, devicetype='usb')
-        if usb_probe_result:
-            mtp_mgmt_ctrl.cli_log_inf("USB Drive Found")
-            break
-        mtp_mgmt_ctrl.cli_log_inf("USB Drive NOT Found")
-        waiting_usb_insert(30)
-        current_time = datetime.datetime.now()
-        delta_time = current_time - start_time
-    else:
-        mtp_mgmt_ctrl.cli_log_err("No More waiting, USB Drive not found in {:s} seconds".format(str(total_wait_time)))
-        return False
-
     mtp_mgmt_ctrl.cli_log_inf("MTP USB Validation Test Start")
+    usb_probe_result = libmtp_utils.mtp_usb_sanity_check(mtp_mgmt_ctrl)
+    if not usb_probe_result:
+        return False
     tout = MTP_Const.NIC_CON_CMD_DELAY
-    #cmd = "cd " + usb_probe_result["MOUNTPOINTS"]
-    cmd = "cd /home/diag/usbtest"
+    cmd = "cd " + usb_probe_result["MOUNTPOINTS"]
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
         mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
         return False
@@ -703,50 +680,6 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
 
     return True
 
-def mtp_probe_usb(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
-    """probe if use drive existing, if the device is existing but not mount, it will try to mount it to /home/diag/usb
-
-    Args:
-        mtp_mgmt_ctrl (_type_): _description_
-        devicetype (str, optional): _description_. Defaults to 'usb'.
-    """
-
-    parse_result = {}
-    cmd = 'lsblk -o NAME,TRAN,SIZE,MODEL,MOUNTPOINTS'
-    mtp_mgmt_ctrl.cli_log_inf(cmd)
-    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
-    if not cmd_result:
-        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
-        return False
-    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
-    if devicetype.lower() not in cmd_result.lower() or 'sda1' not in cmd_result.lower():
-        mtp_mgmt_ctrl.cli_log_err("{:s} device not found".format(devicetype))
-        mtp_mgmt_ctrl.cli_log_err(cmd_result)
-        return False
-    for line in cmd_result.split("\n"):
-        if devicetype.lower() in line:
-            size = line.split()[2].strip()
-            model = " ".join(line.split()[3:]).strip()
-        if 'sda1' in line:
-            print(line.split())
-            mount_point = line.split()[-1]
-
-    if not mount_point:
-        # try to mount use to /home/diag/usb
-        cmd = 'mkdir /home/diag/usb'
-        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
-        if not cmd_result:
-            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
-            return False
-        cmd = 'mount /dev/sda1 /home/diag/usb'
-        if not cmd_result:
-            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
-            return False
-
-    parse_result["SIZE"] = size
-    parse_result["MODEL"] = model
-    parse_result["MOUNTPOINTS"] = mount_point
-    return parse_result
 
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)

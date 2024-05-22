@@ -408,7 +408,7 @@ def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[], mtp_type=MTP_T
         test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
                      "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     else:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE"]
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "MTP_USB_SANITY_CHECK", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE"]
 
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, mtp_type=mtp_type):
         return False
@@ -487,6 +487,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "MTP_SANITY_CHECK":
             ret = mtp_mgmt_ctrl.mtp_hw_init(stage)
+
+        elif test == "MTP_USB_SANITY_CHECK":
+            ret = libmtp_utils.mtp_usb_sanity_check(mtp_mgmt_ctrl)
 
         elif test == "I210_PRSNT_CHECK":
             ret = libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl)
