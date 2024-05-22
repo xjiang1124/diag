@@ -507,8 +507,11 @@ FT_STATUS spi_reg_init(void)
 
 FT_STATUS spi_wr(BYTE address, BYTE data)
 {
-    address = 0;
-    data = 0;
+    BYTE dummy;
+
+    dummy = address;
+    dummy = data;
+    data = dummy;
 
     return FT_OK;
 }
@@ -517,8 +520,9 @@ FT_STATUS spi_rd(BYTE address, BYTE* data)
 {
     BYTE dummy;
 
+    dummy = address;
     dummy = *data;
-    dummy = 0;
+    *data = dummy;
 
     return FT_OK;
 }

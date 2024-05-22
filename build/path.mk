@@ -43,6 +43,7 @@ AMD64_SRC_DIR=			\
 
 AMD64_C_SRC_DIR=		\
 	lib/cpld			\
+	lib/fpga_util		\
 	util/jtag
 
 ARM64_SRC_DIR=			\
