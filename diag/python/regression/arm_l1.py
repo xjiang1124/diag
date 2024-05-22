@@ -35,7 +35,7 @@ class arm_l1:
         session = common.session_start()
         try:
             session.timeout = 30
-            self.nic_con.uart_session_start_slot(session, self.baud_rate, slot)
+            self.nic_con.uart_session_start_slot(session, slot)
             vmarg = vmarg.replace('_', ' ')
             self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
             self.nic_con.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
@@ -64,7 +64,7 @@ class arm_l1:
 
         self.nic_con.switch_console(slot)
         session = common.session_start()
-        ret = self.nic_con.uart_session_start(session)
+        ret = self.nic_con.uart_session_start(session, slot)
         if ret != 0:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)

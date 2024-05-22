@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+import threading
 from collections import OrderedDict
 from time import sleep
 
@@ -23,7 +24,7 @@ class nic_test_v2:
     def __init__(self):
         self.name = "nic_snake"
         self.baud_rate = 115200
-        self.fmt_con_cmd = "picocom -q -b {} -f h /dev/ttyS1"
+        self.fmt_con_cmd = "con_connect.sh {}"
         self.nic_con = nic_con()
         self.nic_test = nic_test()
         self.encoding = common.encoding
@@ -40,18 +41,18 @@ class nic_test_v2:
             for slot in slot_list:
                 self.nic_con.switch_console(slot)
                 uart_session = common.session_start()
-                cmd = self.fmt_con_cmd.format(self.baud_rate)
+                cmd = self.fmt_con_cmd.format(slot)
                 uart_session.sendline(cmd)
 
                 #uart_session = common.session_start()
-                #cmd = self.fmt_con_cmd.format(self.baud_rate)
+                #cmd = self.fmt_con_cmd.format(slot)
                 #uart_session.sendline(cmd)
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi_via_3v3(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi_via_3v3(slot, wtime=0, swm_lp=False)
 
                 self.nic_con.uart_session_stop(uart_session)
-                ret = self.nic_con.uart_session_start_login(uart_session, self.baud_rate)
+                ret = self.nic_con.uart_session_start_login(uart_session, slot)
 
                 #common.session_stop(uart_session)
 
@@ -62,9 +63,9 @@ class nic_test_v2:
 
                 ## Winbond prog test
                 #uart_session = common.session_start()
-                ##ret = self.nic_con.uart_session_start(uart_session, self.baud_rate)
+                ##ret = self.nic_con.uart_session_start(uart_session)
                 #try:
-                #    cmd = self.fmt_con_cmd.format(self.baud_rate)
+                #    cmd = self.fmt_con_cmd.format(slot)
                 #    uart_session.sendline(cmd)
                 #    cmd = 'fwupdate -p /data/naples_gold_elba.tar -i all; sleep 10; echo "DIAGFW PROG DONE"'
                 #    cmd = 'date;sleep 10; date; echo "DIAGFW PROG DONE"'
@@ -96,11 +97,11 @@ class nic_test_v2:
                     common.session_stop(uart_session)
                     continue
 
-                self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), args.first_pwr_on)
+                self.nic_con.get_mgmt_rdy(int(slot), args.first_pwr_on)
                 if ret != 0:
                     return -1
 
-                ret = self.nic_con.uart_session_start(uart_session, self.baud_rate)
+                ret = self.nic_con.uart_session_start(uart_session, slot)
                 if ret != 0:
                     return -1
                 
@@ -111,7 +112,7 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(uart_session)
                 common.session_stop(uart_session)
 
-                self.nic_con.get_mgmt_rdy(self.baud_rate, int(slot), args.first_pwr_on)
+                self.nic_con.get_mgmt_rdy(int(slot), args.first_pwr_on)
                 if ret != 0:
                     return -1
 
@@ -132,15 +133,15 @@ class nic_test_v2:
 
                 self.nic_con.switch_console(slot)
                 session = common.session_start()
-                cmd = self.fmt_con_cmd.format(self.baud_rate)
+                cmd = self.fmt_con_cmd.format(slot)
                 session.sendline(cmd)
 
                 #session = common.session_start()
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi(slot, wtime=0, swm_lp=False)
 
-                ret = self.nic_con.uart_session_start_login(session, self.baud_rate)
+                ret = self.nic_con.uart_session_start_login(session, slot)
                 if ret != 0:
                     return False
                 self.nic_con.uart_session_stop(session)
@@ -165,7 +166,7 @@ class nic_test_v2:
                     print("P000")
                     #return False
 
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     return False
                 try:
@@ -178,7 +179,7 @@ class nic_test_v2:
                     #self.nic_con.uart_session_cmd(session, "fwupdate -s diagfw")
                     self.nic_con.uart_session_cmd(session, "pwd")
                 except pexpect.TIMEOUT:
-                    print "DIAGFW PROG FAILED!"
+                    print ("DIAGFW PROG FAILED!")
                     return False
 
                 self.nic_con.uart_session_stop(session)
@@ -221,13 +222,13 @@ class nic_test_v2:
 
             for mode in mode_list:
                 session = common.session_start()
-                ret = self.nic_con.enter_uboot(session, slot, self.baud_rate)
+                ret = self.nic_con.enter_uboot(session, slot)
                 if ret == -1:
-                    print "=== Failed to change uboot board rate! Slot: {} ===".format(slot)
+                    print ("=== Failed to change uboot board rate! Slot: {} ===".format(slot))
                     common.session_stop(session)
                     continue
 
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
@@ -305,7 +306,7 @@ class nic_test_v2:
 
             self.nic_con.switch_console(slot)
             session = common.session_start()
-            #cmd = self.fmt_con_cmd.format(self.baud_rate)
+            #cmd = self.fmt_con_cmd.format(slot)
             #session.sendline(cmd)
 
             # Copy image file to NIC
@@ -316,7 +317,7 @@ class nic_test_v2:
                 print("P000")
                 #return False
 
-            ret = self.nic_con.uart_session_start(session)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 return False
             try:
@@ -325,7 +326,7 @@ class nic_test_v2:
                 self.nic_con.uart_session_cmd(session, cmd, 60)
                 self.nic_con.uart_session_cmd(session, "pwd")
             except pexpect.TIMEOUT:
-                print "UBOOT PROG FAILED!"
+                print ("UBOOT PROG FAILED!")
                 return False
 
             self.nic_con.uart_session_stop(session)
@@ -349,7 +350,7 @@ class nic_test_v2:
 
                 self.nic_con.switch_console(slot)
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session)
+                ret = self.nic_con.uart_session_start(session, slot)
                 if ret != 0:
                     return False
 
@@ -380,44 +381,58 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
 
-    def nic_snake(self, args):
-        print(args)
-    
-        if args.slot_list == "":
-            print ("Invalide input slot_list:", slot_list)
-    
-        slot_list = args.slot_list.split(',')
-
-        for idx in range(args.ite):
+    def nic_snake(self, slot, ite, mode, dura, int_lpbk, verbose, snake_num, timeout):
+        slot_list = [slot]
+        for idx in range(ite):
             print("=== Ite", idx, "===")
 
-            [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, mgmt=False, asic_type="elba")
+            [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=0, mgmt=False, asic_type="elba", do_untar="0")
+            if ret != 0:
+                return ret
 
-            for slot1 in nic_list_pass:
-                slot = int(slot1)
+            int_lpbk_str = ""
+            if int_lpbk == True:
+                int_lpbk_str = "-int_lpbk"
+            verbose_str = ""
+            if verbose == True:
+                verbose_str = "-verbose"
 
-                self.nic_con.switch_console(slot)
-                session = common.session_start()
-                ret = self.nic_con.uart_session_start(session)
-                if ret != 0:
-                    return False
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session, slot)
+            if ret != 0:
+                return ret
 
-                try:
-                    cmd = ("date; "
-                           "/data/nic_util/asicutil -snake "
-                           "-mode {} -dura {} -verbose {} -int_lpbk {} -snake_num {}; "
-                           "date").format(args.mode, args.dura, args.verbose, args.int_lpbk, args.snake_num)
-                    sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
-                    ret = self.nic_con.uart_session_cmd_sig(session, cmd, args.timeout, "\#", sig, args.verbose)
-                    if ret < 0:
-                        print("P000", ret)
-                        return False
-                    time.sleep(3)
-                except pexpect.TIMEOUT:
-                    return False
+            try:
+                cmd = ("date; "
+                        "/data/nic_util/asicutil -snake "
+                        "-mode {} -dura {} {} {} -snake_num {}; "
+                        "date").format(mode, dura, verbose_str, int_lpbk_str, snake_num)
+                sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
+                ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
+                if ret < 0:
+                    print("P000", ret)
+                    return ret
+                time.sleep(3)
+            except pexpect.TIMEOUT:
+                return -1
 
-                self.nic_con.uart_session_stop(session)
-                common.session_stop(session)
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
+            return 0
+
+    def nic_snake_in_parallel(self, args):
+        print(args)
+        # run nic_snake in parallel
+        slot_list = args.slot_list.split(',')
+        test_args = ()
+        test_kwargs = {"ite": args.ite, "mode": args.mode, "dura": args.dura, "int_lpbk": args.int_lpbk, "verbose": args.verbose, "snake_num": args.snake_num, "timeout": args.timeout}
+        fail_nic_list = self.split_into_threads(self.nic_snake, slot_list, *test_args, **test_kwargs)
+        print ("Failed NIC list:", fail_nic_list)
+
+    def nic_snake_single(self, args):
+        print(args)
+        ret = self.nic_snake(args.slot, args.ite, args.mode, args.dura, args.int_lpbk, args.verbose, args.snake_num, args.timeout)
+        return ret
 
     def check_edma_ready(self, args):
         slot_list = args.slot_list.split(',')
@@ -437,9 +452,10 @@ class nic_test_v2:
 
                 slot = int(slot1)
 
-                self.nic_con.switch_console(slot)
+                #self.nic_con.switch_console(slot)
                 session = common.session_start()
-                ret = self.nic_con.uart_session_start(session, numRetry=1)
+                # with con_connect.sh, the first iteration always times out
+                ret = self.nic_con.uart_session_start(session, slot, numRetry=2)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     common.session_stop(session)
@@ -473,11 +489,135 @@ class nic_test_v2:
         print("EDMA checking: FAIL list:", slot_list_remain)
         print('EDMA Checking Done')
 
+    def split_into_threads(self, func, nic_list, *test_args, **test_kwargs):
+        def single_thread_func(func, slot, thread_rslt_list, *test_args, **test_kwargs):
+            try:
+                ret = func(slot, *test_args, **test_kwargs)
+                if ret != 0:
+                    thread_rslt_list[int(slot) - 1] = False
+            except Exception:
+                thread_rslt_list[int(slot) - 1] = False
+
+        nic_thread_list = list()
+        fail_nic_list = list()
+        thread_rslt_list = [True] * 10
+        for slot in nic_list:
+            thread_args = tuple([func, slot, thread_rslt_list]) + test_args
+            nic_thread = threading.Thread(
+                target = single_thread_func,
+                args = thread_args,
+                kwargs = test_kwargs
+            )
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(1)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(1)
+        for idx, slot_rslt in enumerate(thread_rslt_list):
+            if not slot_rslt:
+                fail_nic_list.append(idx + 1)
+        return fail_nic_list
+
+    def setup_env_in_parallel(self, args):
+        print(args)
+        # run setup_env_single in parallel
+        slot_list = args.slot_list.split(',')
+        test_args = ()
+        test_kwargs = {"mgmt": args.mgmt, "first_pwr_on": args.first_pwr_on, "pwr_cycle": not args.no_pwr_cycle, "asic_type": args.asic_type, "uefi": args.uefi, "dis_net_port": args.dis_net_port, "numRetry": 1, "do_untar": ""}
+        fail_nic_list = self.split_into_threads(self.setup_env_single, slot_list, *test_args, **test_kwargs)
+        print ("Failed NIC list:", fail_nic_list)
+
+    # setup_env for single slot
+    def setup_env_single(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=2, do_untar=""):
+        for retry in range(numRetry):
+            print("Setting up #{}".format(retry))
+            print("slot", slot)
+            print("timestamp", datetime.datetime.now().time())
+            try:
+                session_bash = common.session_start()
+                session_bash.timeout = 30
+                if pwr_cycle == True:
+                    cmd = "turn_on_slot.sh off {}".format(slot)
+                    common.session_cmd(session_bash, cmd)
+                    time.sleep(1)
+                    cmd = "turn_on_slot.sh on {}".format(slot)
+                    common.session_cmd(session_bash, cmd)
+
+                session_uart = common.session_start()
+                session_uart.timeout = 30
+                print("=== Starting setup env on slot {} ===".format(slot))
+                # get_mtp_rev() not work on Matera
+                #mtp_rev = self.nic_test.get_mtp_rev()
+                #print("MTP_REV: ", mtp_rev)
+                ret = self.nic_con.uart_session_start_login(session_uart, slot)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(session_uart)
+                    common.session_stop(session_uart)
+                    continue
+                self.nic_con.uart_session_cmd(session_uart, "fsck -y /dev/mmcblk0p10")
+                self.nic_con.uart_session_cmd(session_uart, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(session_uart, "source /data/nic_arm/nic_setup_env.sh " + do_untar, 120)
+                self.nic_con.uart_session_cmd(session_uart, "source /etc/profile", 10)
+                self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -w 1 0x0")
+                self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -r 1")
+                self.nic_con.uart_session_cmd(session_uart, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
+                self.nic_con.uart_session_cmd(session_uart, "export PCIE_ENABLED_PORTS=0")
+                #self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
+                # if this file exists, it means the card is not rebooted
+                self.nic_con.uart_session_cmd(session_uart, "touch /root/reboot_check")
+
+                if mgmt == True:
+                    ret = self.nic_con.enable_mnic(int(slot), first_pwr_on, session_uart)
+                    print("Sleep 30 sec")
+                    time.sleep(30)
+                    # Disable link manager
+                    # Not Pretty..depedning on the f/w version running the command to bring a port to the down state may be different
+                    #time.sleep(5)
+                    self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port 1 --admin-state down")
+                    self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port 5 --admin-state down")
+                    if asic_type == "ELBA":
+                        self.nic_con.uart_session_cmd(session_uart, "halctl debug port --admin-state down")
+                    #self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port eth1/1 --admin-state down")
+                    #self.nic_con.uart_session_cmd(session_uart, "halctl debug port --port eth1/2 --admin-state down")
+                    self.nic_con.uart_session_cmd(session_uart, "halctl show port status")
+                    if dis_net_port == True:
+                        self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
+                        self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smird 0 0x3")
+                    sleep(0.5)
+                    ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session_bash, session_uart)
+
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                common.session_stop(session_bash)
+
+            except pexpect.TIMEOUT:
+                print("=== TIMEOUT: Failed to set up env single slot {} ===".format(slot))
+                ret = -1
+
+            if ret == 0:
+                break
+
+        if ret != 0:
+            print("=== Setup env single slot failed!", slot)
+        else:
+            print("=== Setup env single slot done #", retry, "===")
+        print("timestamp", datetime.datetime.now().time())
+        return ret
+
     def setup_multi(self, args):
         print(args)
 
         slot_list = args.slot_list.split(',')
-        [ret, pass_list, fail_list] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=30, mgmt=args.mgmt, first_pwr_on=args.first_pwr_on, pwr_cycle=args.no_pc, asic_type=args.asic_type, uefi=args.uefi, dis_net_port=args.dis_net_port, env=args.skip_env)
+        [ret, pass_list, fail_list] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=0, mgmt=args.mgmt, first_pwr_on=args.first_pwr_on, pwr_cycle=not args.no_pwr_cycle, asic_type=args.asic_type, uefi=args.uefi, dis_net_port=args.dis_net_port, env=args.skip_env)
 
     def setup_multi_w_console(self, args):
         print(args)
@@ -492,17 +632,17 @@ class nic_test_v2:
             for slot1 in slot_list:
                 slot = int(slot1)
 
-                self.nic_con.switch_console(slot)
-                session = common.session_start()
-                cmd = self.fmt_con_cmd.format(self.baud_rate)
-                session.sendline(cmd)
-
+                #self.nic_con.switch_console(slot)
                 #session = common.session_start()
+                #cmd = self.fmt_con_cmd.format(slot)
+                #session.sendline(cmd)
+
+                session = common.session_start()
 
                 print("=== Slot:", slot, "===")
-                self.nic_con.power_cycle_multi(self.baud_rate, slot, wtime=0, swm_lp=False)
+                self.nic_con.power_cycle_multi(slot, wtime=0, swm_lp=False)
 
-                ret = self.nic_con.uart_session_start_login(session, self.baud_rate)
+                ret = self.nic_con.uart_session_start_login(session, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session)
                     return False
@@ -538,7 +678,7 @@ class nic_test_v2:
             self.nic_con.switch_console(slot)
             session = common.session_start()
 
-            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
@@ -600,19 +740,33 @@ if __name__ == "__main__":
 
     parser_fw_update.set_defaults(func=test.ddr_stress)
 
-    # NIC snake test
-    parser_fw_update = subparsers.add_parser('nic_snake', help='NIC snake test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    # NIC snake test for single slot
+    parser_nic_snake_single = subparsers.add_parser('nic_snake_single', help='NIC snake test for single slot', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser_fw_update.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
-    parser_fw_update.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
-    parser_fw_update.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
-    parser_fw_update.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
-    parser_fw_update.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
-    parser_fw_update.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
-    parser_fw_update.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
-    parser_fw_update.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
+    parser_nic_snake_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_snake_single.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_nic_snake_single.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
+    parser_nic_snake_single.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_single.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_single.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
+    parser_nic_snake_single.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
+    parser_nic_snake_single.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
 
-    parser_fw_update.set_defaults(func=test.nic_snake)
+    parser_nic_snake_single.set_defaults(func=test.nic_snake_single)
+
+    # NIC snake test in parallel
+    parser_nic_snake_parallel = subparsers.add_parser('nic_snake_parallel', help='NIC snake test in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_snake_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_nic_snake_parallel.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_nic_snake_parallel.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
+    parser_nic_snake_parallel.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_parallel.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_parallel.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
+    parser_nic_snake_parallel.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
+    parser_nic_snake_parallel.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
+
+    parser_nic_snake_parallel.set_defaults(func=test.nic_snake_in_parallel)
 
     # Chamber temp show/set
     parser_fw_update = subparsers.add_parser('chamber_ctrl', help='Chamber temperature control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -669,7 +823,7 @@ if __name__ == "__main__":
     parser_setup_multi.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser_setup_multi.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
     parser_setup_multi.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
-    parser_setup_multi.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_false')
+    parser_setup_multi.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_true')
     parser_setup_multi.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="elba")
     parser_setup_multi.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
     parser_setup_multi.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
@@ -677,6 +831,20 @@ if __name__ == "__main__":
     parser_setup_multi.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
     parser_setup_multi.set_defaults(func=test.setup_multi)
+
+    # setup env parallel
+    parser_setup_parallel = subparsers.add_parser('setup_parallel', help='Set up multiple cards in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_setup_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_setup_parallel.add_argument("-fpo", "--first_pwr_on", help="First time power on", action='store_true')
+    parser_setup_parallel.add_argument("-mgmt", "--mgmt", help="Set up management port", action='store_true')
+    parser_setup_parallel.add_argument("-no_pc", "--no_pwr_cycle", help="Power cycle", action='store_true')
+    parser_setup_parallel.add_argument("-asic_type", "--asic_type", help="ASIC type: capri/elba", type=str, default="elba")
+    parser_setup_parallel.add_argument("-uefi", "--uefi", help="UEFI mode", action='store_true')
+    parser_setup_parallel.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
+    parser_setup_parallel.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
+
+    parser_setup_parallel.set_defaults(func=test.setup_env_in_parallel)
 
     # Multi nic cmd
     parser_multi_nic_cmds = subparsers.add_parser('multi_nic_cmds', help='Run commands on each nic console', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
