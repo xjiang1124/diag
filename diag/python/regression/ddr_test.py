@@ -56,9 +56,9 @@ class ddr_test:
                     common.session_cmd(con_session, "killall picocom", 20)
 
                     if pc_mode == "board":
-                        self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+                        self.nic_con.power_cycle_multi(slot, 0)
 
-                    #ret = self.nic_con.uart_session_start(con_session)
+                    #ret = self.nic_con.uart_session_start(con_session, slot)
                     self.nic_con.switch_console(int(slot))
                     con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
 
@@ -139,7 +139,7 @@ class ddr_test:
 
                 print("Sleep 60 sec")
                 time.sleep(60)
-                ret = self.nic_con.uart_session_start(con_session)
+                ret = self.nic_con.uart_session_start(con_session, slot)
                 if ret != 0:
                     print("Connecting to console failed!")
                 else:
@@ -193,7 +193,7 @@ class ddr_test:
                     common.session_cmd(con_session, "killall picocom", 20)
 
                     if pc_mode == "board":
-                        self.nic_con.power_cycle_multi(self.baud_rate, slot, 0)
+                        self.nic_con.power_cycle_multi(slot, 0)
                     #ret = self.nic_con.uart_session_start(con_session)
                     self.nic_con.switch_console(int(slot))
                     con_session.sendline("picocom -q -b 115200 -f h /dev/ttyS1")
@@ -275,7 +275,7 @@ class ddr_test:
 
                 print("Sleep 60 sec")
                 time.sleep(60)
-                ret = self.nic_con.uart_session_start(con_session)
+                ret = self.nic_con.uart_session_start(con_session, slot)
                 if ret != 0:
                     print("Connecting to console failed!")
                 else:
@@ -310,10 +310,10 @@ class ddr_test:
                 try:
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 30)
+                    self.nic_con.power_cycle_multi(slot, 30)
 
                     self.nic_con.switch_console(int(slot))
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)
                         common.session_stop(session)
@@ -559,7 +559,7 @@ class ddr_test:
         # self.set_temp_for_ddr('10.9.6.249', 50)
         # print("=====power cycle=====")
         # # power cycle
-        # self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 30)
+        # self.nic_con.power_cycle_multi(slot_list, 30)
         # print("=====run edma and stress=====")
         # self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, "normal")
         # self.edma_and_stress_parallel(nic_list, num_ite, num_edma, num_stress, "high")
@@ -592,10 +592,10 @@ class ddr_test:
                 try:
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    self.nic_con.power_cycle_multi(self.baud_rate, slot, 30)
+                    self.nic_con.power_cycle_multi(slot, 30)
 
                     self.nic_con.switch_console(int(slot))
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)
                         common.session_stop(session)
@@ -652,14 +652,14 @@ class ddr_test:
             print("slot_list:", slot_list)
 
             slot_list = ",".join(nic_list)
-            self.nic_con.power_cycle_multi(self.baud_rate, slot_list, 60)
+            self.nic_con.power_cycle_multi(slot_list, 60)
 
             for slot in nic_list:
                 try:
                     self.nic_con.switch_console(int(slot))
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)
                         common.session_stop(session)
@@ -691,7 +691,7 @@ class ddr_test:
                     self.nic_con.switch_console(int(slot))
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         print("Failed to connect UART of slot", slot)
                         self.nic_con.uart_session_stop(session)
@@ -734,7 +734,7 @@ class ddr_test:
                     self.nic_con.switch_console(int(slot))
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)
                         common.session_stop(session)
@@ -766,7 +766,7 @@ class ddr_test:
                     self.nic_con.switch_console(int(slot))
                     session = common.session_start()
                     common.session_cmd(session, "killall picocom", 20)
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         print("Failed to connect UART of slot", slot)
                         self.nic_con.uart_session_stop(session)
@@ -811,7 +811,7 @@ class ddr_test:
                 try:
                     self.nic_con.switch_console(int(slot))
                     common.session_cmd(session, "killall picocom")
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         self.nic_con.uart_session_stop(session)
                         common.session_stop(session)
@@ -833,7 +833,7 @@ class ddr_test:
             for slot in nic_list:
                 try:
                     self.nic_con.switch_console(int(slot))
-                    ret = self.nic_con.uart_session_start(session, self.baud_rate)
+                    ret = self.nic_con.uart_session_start(session, slot)
                     if ret != 0:
                         print("Failed to connect UART of slot", slot)
                         self.nic_con.uart_session_stop(session)

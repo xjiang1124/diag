@@ -34,7 +34,7 @@ class arm_ddrbist:
             common.session_cmd_no_rc(session, cmd)
             sleep(0.5)
 
-            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret == 0:
                 self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh", 120)
                 self.nic_con.uart_session_cmd(session, "source /etc/profile", 10)
@@ -61,7 +61,7 @@ class arm_ddrbist:
         nic_list_remain = nic_list[:]
         slot_list = ",".join(nic_list)
 
-        self.nic_con.power_cycle_multi(self.baud_rate, slot_list)
+        self.nic_con.power_cycle_multi(slot_list)
 
         for slot in nic_list:
             ret = self.setup_env(int(slot), ddr_freq, addrspace, dualrank, ddr5, ctrl_pi_bitmask)
@@ -88,7 +88,7 @@ class arm_ddrbist:
         common.session_cmd_no_rc(session, cmd)
 
         try:
-            ret = self.nic_con.uart_session_start(session, self.baud_rate)
+            ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 print "==failed to start uart session=="
                 self.nic_con.uart_session_stop(session)
@@ -127,7 +127,7 @@ class arm_ddrbist:
 
         self.nic_con.switch_console(slot)
         session = common.session_start()
-        ret = self.nic_con.uart_session_start(session, self.baud_rate)
+        ret = self.nic_con.uart_session_start(session, slot)
         if ret != 0:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
