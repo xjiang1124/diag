@@ -1683,6 +1683,14 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            local_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(mtp_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
         nic_cmd = "{} \" md5sum {:s} \"".format(ssh_pipe_cmd, directory+os.path.basename(img_name))
         self._nic_handle.sendline(nic_cmd)
@@ -1701,6 +1709,19 @@ class nic_ctrl():
         elif idx == 1:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            nic_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(nic_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if local_md5sum != nic_md5sum:
+            self.nic_set_err_msg("Checksums for {:s} don't match after copying to NIC".format(os.path.basename(img_name)))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         return True
@@ -1730,7 +1751,7 @@ class nic_ctrl():
         img_name = os.path.basename(cpld_img)
         if self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
             nic_cmd_list = list()
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format("", img_name, partition))
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_DUMP_FMT.format(img_name, partition))
             if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_FPGA_PROG_DELAY):
                 return False
 
@@ -1818,11 +1839,14 @@ class nic_ctrl():
 
         nic_cmd_list = list()
         # Elba-based:
-        if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+        if partition == "fea":
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FEA_FMT.format(img_name))
+            timeout = MTP_Const.OS_CMD_DELAY
+        elif self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(img_name, partition))
             timeout = MTP_Const.OS_CMD_DELAY
         elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format(img_name, partition))
             timeout = MTP_Const.NIC_FPGA_PROG_DELAY
         # Capri-based:
         else:
@@ -1851,7 +1875,7 @@ class nic_ctrl():
         nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
         # Elba-based:
         if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-            nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH)
+            nic_cpld_ref_cmd = MFG_DIAG_CMDS.NIC_CPLD_REF_ELBA_FMT
         if not self.nic_exec_rst_cmd(nic_cpld_ref_cmd, timeout=MTP_Const.OS_CMD_DELAY, dontwait=dontwait):
             return False
 
@@ -3787,7 +3811,7 @@ class nic_ctrl():
     def nic_read_cpld(self, reg_addr, read_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr)
+            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(reg_addr)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
@@ -3803,7 +3827,7 @@ class nic_ctrl():
     def nic_write_cpld(self, reg_addr, write_data):
         nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, reg_addr, write_data)
+            nic_cmd = MFG_DIAG_CMDS.NIC_CPLD_WRITE_ELBA_FMT.format(reg_addr, write_data)
         cpld_buf = self.nic_get_info(nic_cmd)
         if not cpld_buf:
             return False
@@ -3816,7 +3840,7 @@ class nic_ctrl():
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT)
         nic_cmd_list.append("cd {:s}nic_util/".format(MTP_DIAG_Path.ONBOARD_NIC_DIAG_UTIL_PATH))
         if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format("./", reg_addr))
+            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_ELBA_FMT.format(reg_addr))
         else:
             nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_READ_FMT.format("./", reg_addr))
 

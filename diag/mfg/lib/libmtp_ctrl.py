@@ -3727,6 +3727,8 @@ class mtp_ctrl():
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
         self.log_nic_file(slot, "#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
+        powered_on = self.mtp_mgmt_check_nic_pwr_status(slot)
+
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
             ret = False
