@@ -381,12 +381,10 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
 
-    def nic_snake(self, slot, ite, mode, dura, int_lpbk, verbose, snake_num, timeout):
-        slot_list = [slot]
+    def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
         for idx in range(ite):
             print("=== Ite", idx, "===")
-
-            [ret, nic_list_pass, nic_list_fail] = self.nic_test.setup_env_multi_top(nic_list=slot_list, timeout=0, mgmt=False, asic_type="elba", do_untar="0")
+            ret = self.setup_env(slot, False, False, True, "elba", False, False, 2, "0")
             if ret != 0:
                 return ret
 
@@ -401,8 +399,9 @@ class nic_test_v2:
             ret = self.nic_con.uart_session_start(session, slot)
             if ret != 0:
                 return ret
-
+            vmarg = vmarg.replace('_', ' ')
             try:
+                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
                 cmd = ("date; "
                         "/data/nic_util/asicutil -snake "
                         "-mode {} -dura {} {} {} -snake_num {}; "
@@ -411,27 +410,67 @@ class nic_test_v2:
                 ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
                 if ret < 0:
                     print("P000", ret)
-                    return ret
-                time.sleep(3)
+                    #return ret
+                #time.sleep(3)
             except pexpect.TIMEOUT:
-                return -1
+                ret = -1
 
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
-            return 0
+            return ret
 
-    def nic_snake_in_parallel(self, args):
+    def nic_snake_parallel(self, args):
         print(args)
         # run nic_snake in parallel
         slot_list = args.slot_list.split(',')
-        test_args = ()
-        test_kwargs = {"ite": args.ite, "mode": args.mode, "dura": args.dura, "int_lpbk": args.int_lpbk, "verbose": args.verbose, "snake_num": args.snake_num, "timeout": args.timeout}
+        test_args = (args.ite, args.mode, args.dura, args.vmarg, args.int_lpbk, args.verbose, args.snake_num, args.timeout)
+        test_kwargs = {}
         fail_nic_list = self.split_into_threads(self.nic_snake, slot_list, *test_args, **test_kwargs)
         print ("Failed NIC list:", fail_nic_list)
 
     def nic_snake_single(self, args):
         print(args)
-        ret = self.nic_snake(args.slot, args.ite, args.mode, args.dura, args.int_lpbk, args.verbose, args.snake_num, args.timeout)
+        ret = self.nic_snake(args.slot, args.ite, args.mode, args.dura, args.vmarg, args.int_lpbk, args.verbose, args.snake_num, args.timeout)
+        return ret
+
+    def nic_pcie_prbs(self, slot, mode, dura, lpbk, poly, vmarg, timeout):
+        print ("=== ARM {} PRBS {} {} {}".format(mode, dura, lpbk, vmarg))
+        ret = self.setup_env(slot, False, False, True, "elba", False, False, 2, "")
+        if ret != 0:
+            return ret
+        print ("=== Starting NIC arm {} prbs {} {} on slot {} ===".format(mode, dura, lpbk, slot))
+        vmarg = vmarg.replace('_', ' ')
+        session = common.session_start()
+        ret = self.nic_con.uart_session_start(session, slot)
+        if ret != 0:
+            return ret
+        try:
+            self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
+            cmd = ("date; "
+                    "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/nic_prbs.sh {} {} {} {};"
+                    "date").format(mode, dura, lpbk, poly)
+            sig = ["PCIE PRBS PASSED", "FAILED"]
+            ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, False)
+            if ret < 0:
+                print("P000", ret)
+        except pexpect.TIMEOUT:
+            ret = -1
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+        return ret
+
+    def nic_pcie_prbs_parallel(self, args):
+        print(args)
+        slot_list = args.slot_list.split(',')
+        test_args = (args.mode, args.dura, args.lpbk, args.poly, args.vmarg, args.timeout)
+        test_kwargs = {}
+        fail_nic_list = self.split_into_threads(self.nic_pcie_prbs, slot_list, *test_args, **test_kwargs)
+        print ("Failed NIC list:", fail_nic_list)
+
+    def nic_pcie_prbs_single(self, args):
+        print(args)
+        ret = self.nic_pcie_prbs(args.slot, args.mode, args.dura, args.lpbk, args.poly, args.vmarg, args.timeout)
         return ret
 
     def check_edma_ready(self, args):
@@ -527,7 +566,7 @@ class nic_test_v2:
                 fail_nic_list.append(idx + 1)
         return fail_nic_list
 
-    def setup_env_in_parallel(self, args):
+    def setup_env_parallel(self, args):
         print(args)
         # run setup_env_single in parallel
         slot_list = args.slot_list.split(',')
@@ -560,9 +599,10 @@ class nic_test_v2:
                 session_uart = common.session_start()
                 session_uart.timeout = 30
                 print("=== Starting setup env on slot {} ===".format(slot))
-                # get_mtp_rev() not work on Matera
+                # get_mtp_rev() not work on Matera, hard code for now
                 #mtp_rev = self.nic_test.get_mtp_rev()
-                #print("MTP_REV: ", mtp_rev)
+                mtp_rev = "REV_04"
+                print("MTP_REV: ", mtp_rev)
                 ret = self.nic_con.uart_session_start_login(session_uart, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session_uart)
@@ -576,7 +616,7 @@ class nic_test_v2:
                 self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -r 1")
                 self.nic_con.uart_session_cmd(session_uart, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh/")
                 self.nic_con.uart_session_cmd(session_uart, "export PCIE_ENABLED_PORTS=0")
-                #self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
+                self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
                 # if this file exists, it means the card is not rebooted
                 self.nic_con.uart_session_cmd(session_uart, "touch /root/reboot_check")
 
@@ -751,8 +791,9 @@ if __name__ == "__main__":
     parser_nic_snake_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
     parser_nic_snake_single.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
     parser_nic_snake_single.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
-    parser_nic_snake_single.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_single.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_snake_single.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_single.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default='normal')
     parser_nic_snake_single.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
     parser_nic_snake_single.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
     parser_nic_snake_single.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
@@ -765,13 +806,40 @@ if __name__ == "__main__":
     parser_nic_snake_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
     parser_nic_snake_parallel.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
     parser_nic_snake_parallel.add_argument("-mode", "--mode", help="snake mode", type=str, default="hod")
-    parser_nic_snake_parallel.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=180)
+    parser_nic_snake_parallel.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_snake_parallel.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_parallel.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default='normal')
     parser_nic_snake_parallel.add_argument("-verbose", "--verbose", help="verbose level", type=bool, default=True)
     parser_nic_snake_parallel.add_argument("-int_lpbk", "--int_lpbk", help="internal loopback", type=bool, default=False)
     parser_nic_snake_parallel.add_argument("-snake_num", "--snake_num", help="snake test number (4: EDMA+regular; 6: regular)", type=int, default=6)
 
-    parser_nic_snake_parallel.set_defaults(func=test.nic_snake_in_parallel)
+    parser_nic_snake_parallel.set_defaults(func=test.nic_snake_parallel)
+
+    # NIC pcie prbs test for single slot
+    parser_nic_pcic_prbs_single = subparsers.add_parser('nic_pcie_prbs_single', help='NIC PCIE prbs test for single slot', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_pcic_prbs_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_pcic_prbs_single.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_pcic_prbs_single.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default='normal')
+    parser_nic_pcic_prbs_single.add_argument("-lpbk", "--lpbk", help="Loop Back Level", type=int, default=0)
+    parser_nic_pcic_prbs_single.add_argument("-dura", "--dura", help="Duration", type=int, default=60)
+    parser_nic_pcic_prbs_single.add_argument("-poly", "--poly", help="Polynomial", type=str, default="PRBS31")
+    parser_nic_pcic_prbs_single.add_argument("-mode", "--mode", help="PRBS Type", type=str, default="PCIE")
+
+    parser_nic_pcic_prbs_single.set_defaults(func=test.nic_pcie_prbs_single)
+
+    # NIC pcie prbs test in parallel
+    parser_nic_pcic_prbs_parallel = subparsers.add_parser('nic_pcie_prbs_parallel', help='NIC PCIE prbs test in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_pcic_prbs_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_nic_pcic_prbs_parallel.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_pcic_prbs_parallel.add_argument("-vmarg", "--vmarg", help="Voltage Margin", type=str, default='normal')
+    parser_nic_pcic_prbs_parallel.add_argument("-lpbk", "--lpbk", help="Loop Back Level", type=int, default=0)
+    parser_nic_pcic_prbs_parallel.add_argument("-dura", "--dura", help="Duration", type=int, default=60)
+    parser_nic_pcic_prbs_parallel.add_argument("-poly", "--poly", help="Polynomial", type=str, default="PRBS31")
+    parser_nic_pcic_prbs_parallel.add_argument("-mode", "--mode", help="PRBS Type", type=str, default="PCIE")
+
+    parser_nic_pcic_prbs_parallel.set_defaults(func=test.nic_pcie_prbs_parallel)
 
     # Chamber temp show/set
     parser_fw_update = subparsers.add_parser('chamber_ctrl', help='Chamber temperature control', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -863,7 +931,7 @@ if __name__ == "__main__":
     parser_setup_parallel.add_argument("-dis_net_port", "--dis_net_port", help="Disable RJ45 Network port", action='store_true')
     parser_setup_parallel.add_argument("-edma", "--edma", help="EDMA setup", action='store_true')
 
-    parser_setup_parallel.set_defaults(func=test.setup_env_in_parallel)
+    parser_setup_parallel.set_defaults(func=test.setup_env_parallel)
 
     # Multi nic cmd
     parser_multi_nic_cmds = subparsers.add_parser('multi_nic_cmds', help='Run commands on each nic console', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
