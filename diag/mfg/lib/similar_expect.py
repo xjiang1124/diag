@@ -17,6 +17,7 @@ def similar_match(lines=[], pattern="", threshold=95):
     choices = []
     pattern_start_word = pattern.split()[0]
     pattern_end_word = pattern.split()[-1]
+    is_pattern_single_word = True if len(pattern.split()) == 1 else False
 
     # figure our the the expression start with pattern start word or end with pattern end word
     for line in lines:
@@ -38,8 +39,21 @@ def similar_match(lines=[], pattern="", threshold=95):
     h_score = 0
     h_choice = ""
     for choice in choices:
-        score = fuzz.ratio(choice, pattern)
-        libmfg_utils.cli_inf("Choice {:s} got score {:s}".format(str(choice), str(score)))
+        if is_pattern_single_word:
+            h_score_sub = 0
+            h_sub_choice = ""
+            for sub_choice in choice.split():
+                sub_score = fuzz.ratio(sub_choice, pattern)
+                # libmfg_utils.cli_inf("sub_choice word {:s} got score {:s}".format(str(sub_choice), str(sub_score)))
+                if sub_score > h_score_sub:
+                    h_score_sub =sub_score
+                    h_sub_choice = sub_choice
+            score = h_score_sub
+            libmfg_utils.cli_inf("Choice {:s} got score {:s} by the highest score word {:s} with score {:s}".format(str(choice), str(score), str(h_sub_choice), str(h_score_sub)))
+        else:
+            score = fuzz.ratio(choice, pattern)
+            libmfg_utils.cli_inf("Choice {:s} got score {:s}".format(str(choice), str(score)))
+
         if score > h_score:
             h_score =score
             h_choice = choice

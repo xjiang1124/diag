@@ -308,13 +308,13 @@ def read_mtp_nvme_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
         device_info_in_json = json.loads(json_output)
     except Exception as Err:
         mtp_mgmt_ctrl.cli_log_err(rs)
-        mtp_mgmt_ctrl.cli_log_err(Err)
+        mtp_mgmt_ctrl.cli_log_err(str(Err))
         return False
 
     try:
         device_info = device_info_in_json["Devices"][0]
     except Exception as Err:
-        mtp_mgmt_ctrl.cli_log_err(Err)
+        mtp_mgmt_ctrl.cli_log_err(str(Err))
         return False
 
     dev_form_factor = get_mtp_nvme_ssd_formfactor(mtp_mgmt_ctrl, dev_name)
