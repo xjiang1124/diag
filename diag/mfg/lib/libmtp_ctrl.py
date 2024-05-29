@@ -888,9 +888,8 @@ class mtp_ctrl():
             return None
 
         cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
-        sig_list = [userid]
         handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(handle, sig_list + self._prompt_list)
+        idx = libmfg_utils.mfg_expect(handle, self._prompt_list, 5)
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt failed", level=0)
             return None
@@ -1073,7 +1072,7 @@ class mtp_ctrl():
             return "[FAIL]: Management port is not connected"
 
         self._mgmt_handle.sendline("sudo -k " + cmd)
-        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [userid + ":", self._mgmt_prompt])
+        idx = libmfg_utils.mfg_expect(self._mgmt_handle, [userid + ":", self._mgmt_prompt], timeout=timeout)
         if idx < 0:
             rs = self._mgmt_handle.before
             self._mgmt_handle.logfile_read = None
