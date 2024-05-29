@@ -127,8 +127,8 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
 
     return fail_j2c_list
 
-def mtp_ssd_validation_test(mtp_mgmt_ctrl):
-    """MTP SSD validation test
+def mtp_nvme_ssd_validation_test(mtp_mgmt_ctrl):
+    """MTP NVME SSD validation test
 
     Args:
         mtp_mgmt_ctrl (_type_): _description_
@@ -140,14 +140,14 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
     """
 
     mtp_script_dir = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} SSD Validation Test Start".format("M.2"), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP NVME SSD Validation Test Start")
 
-    mtp_mgmt_ctrl.cli_log_inf("GET SSD SMART info", level=0)
-    smart_info = read_mtp_ssd_para(mtp_mgmt_ctrl)
-    if not smart_info:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Failed To Get SSD SMART attribute info")
+    mtp_mgmt_ctrl.cli_log_inf("GET NVME SSD drive info")
+    drive_info = read_mtp_nvme_ssd_para(mtp_mgmt_ctrl)
+    if not drive_info:
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Failed To Get NVME SSD drive info")
         return False
-    mtp_mgmt_ctrl.cli_log_inf(str(smart_info), level=0)
+    mtp_mgmt_ctrl.cli_log_inf(str(drive_info))
 
     # load test configuration
     parameter_cfg_yaml = "config/emmc_test_suite.yaml"
@@ -173,11 +173,11 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
 
     for idx in range(1, int(iterations)+1):
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
-        mtp_mgmt_ctrl.cli_log_inf("MTP SSD Validation Test Iteration {:d}".format(idx), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} NVME SSD Validation Test Iteration {:d}".format(drive_info["FormFactor"], idx), level=0)
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
         # Run Test
 
-        sn = smart_info["Serial Number"]
+        sn = drive_info["SerialNumber"]
         emmc_test_data = {}
 
         # run test steps under both vmargin high and vmargin low for all Normal temperature, Low temperature and High temperature
@@ -263,9 +263,9 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
         head_data = OrderedDict()
         #head_data["SlotID"] = "Slot1"
         head_data["Serial_Number"] = sn
-        head_data["Model Number"] = smart_info["Model Number"]
-        head_data["Capacity"] = smart_info["device size"]
-        head_data["Firmware Revision"] = smart_info["Firmware Revision"]
+        head_data["Model Number"] = drive_info["ModelNumber"]
+        head_data["Capacity"] = str(round(float(drive_info["PhysicalSize"]) / 1024 / 1024 / 1024, 2)) + 'GB'
+        head_data["Firmware Revision"] = drive_info["Firmware"]
         nic_test_data[1].append({"head": head_data, "data": emmc_test_data})
 
     savedfile = save_test_data2csv_file(mtp_mgmt_ctrl, nic_test_data, csvfilename="ssd_validation.csv.log")
@@ -278,65 +278,51 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
 
     return True
 
-def read_mtp_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/sda'):
-    """read SSD smart atttibute using standard liunx tool hdparm
+def get_mtp_nvme_ssd_formfactor(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
+    """so we don't have a command to get nvme ssd drive formfactor, so we just hardcode to M.2, if we found some utility in the future, we can rewrite the function
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        dev_name (str, optional): _description_. Defaults to '/dev/nvme0n1'.
+    """
+
+    return "M.2"
+
+def read_mtp_nvme_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
+    """read NVME SSD drive info using nvme cli tool
 
     Args:
         mtp_mgmt_ctrl (_type_): _description_
     """
 
-    ret = dict()
-    dev_size = None
-    dev_form_factor = None
-
-    cmd = "hdparm -I "
+    cmd = "nvme list -o json "
     cmd += dev_name
 
     rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
     if rs.startswith("[FAIL]:"):
-        mtp_mgmt_ctrl.cli_log_err("Read SSD parameter command failed.{:s}".format(cmd), level=0)
+        mtp_mgmt_ctrl.cli_log_err("Read NVMD SSD parameter command failed. {:s}".format(cmd), level=0)
         mtp_mgmt_ctrl.cli_log_err(rs)
         return False
-    ssd_confirm_pattern = r'Nominal Media Rotation Rate: Solid State Device'
-    if ssd_confirm_pattern not in rs:
-        mtp_mgmt_ctrl.cli_log_err("Give Partition is NOT SSD", level=0)
+    json_output = "".join(rs.split('\r\n')[:-1])
+    try:
+        device_info_in_json = json.loads(json_output)
+    except Exception as Err:
+        mtp_mgmt_ctrl.cli_log_err(rs)
+        mtp_mgmt_ctrl.cli_log_err(Err)
         return False
 
-    sn_pattern = r'ATA device, with non-removable media(.*)Transport:\s+Serial,'
-    sn_match_obj = re.search(sn_pattern, rs, flags=re.DOTALL)
-    if not sn_match_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed to parse SSD drive Model Number, Serial Number")
+    try:
+        device_info = device_info_in_json["Devices"][0]
+    except Exception as Err:
+        mtp_mgmt_ctrl.cli_log_err(Err)
         return False
-    sn_misc_info = sn_match_obj.group(1).split("\n")
-    for m_info in sn_misc_info:
-        m_info = m_info.strip()
-        if m_info:
-            k = m_info.split(":")[0].strip()
-            v = m_info.split(":")[1].strip()
-            ret[k] = v
 
-    size_pattern = r'device size with M = 1024\*1024:\s+(\d+) MBytes'
-    size_matche_obj = re.finditer(size_pattern, rs)
-    if not size_matche_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD drive size", level=0)
+    dev_form_factor = get_mtp_nvme_ssd_formfactor(mtp_mgmt_ctrl, dev_name)
+    if not dev_form_factor:
         return False
-    for match_obj in size_matche_obj:
-        dev_size = match_obj.group(1)
-        dev_size = str(int(dev_size)//1024) + "GB"
-        ret["device size"] = dev_size
-        break
+    device_info["FormFactor"] = dev_form_factor
 
-    form_factor_pattern = r'Form Factor: (.*)\n'
-    ff_matche_obj = re.finditer(form_factor_pattern, rs)
-    if not ff_matche_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD form factor", level=0)
-        return False
-    for match_obj in ff_matche_obj:
-        dev_form_factor = match_obj.group(1)
-        ret["Form Factor"] = dev_form_factor
-        break
-
-    return ret
+    return device_info
 
 def mtp_cpu_validation_test(mtp_mgmt_ctrl):
     """MTP CPU validation Test, AMD CPU only Since using AMD Validation Toolkits(AVT)
@@ -833,8 +819,8 @@ def main():
                 ret = program_mtp_fru(mtp_mgmt_ctrl)
                 fail_desc = "MTP program FRU fails"
             elif test == "SSD_BENCHMARK":
-                ret = mtp_ssd_validation_test(mtp_mgmt_ctrl)
-                fail_desc = "MTP M.2 SSD validation test failed"
+                ret = mtp_nvme_ssd_validation_test(mtp_mgmt_ctrl)
+                fail_desc = "MTP M.2 NVME SSD validation test failed"
             elif test == "CPU_BENCHMARK":
                 ret = mtp_cpu_validation_test(mtp_mgmt_ctrl)
                 fail_desc = "MTP CPU validation test failed"
