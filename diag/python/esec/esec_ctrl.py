@@ -713,7 +713,7 @@ PRIVEK <ek.sk>"""
         if ret != 0:
             print "Failed to enter uboot"
             return ret
-        ret = self.nic_con.conn_uboot(session)
+        ret = self.nic_con.conn_uboot(session, slot)
         if ret != 0:
             print "Failed to connect uboot"
             return ret
