@@ -309,7 +309,7 @@ class MTP_DIAG_Report:
 
 class MFG_DIAG_CMDS:
     MTP_DIAG_VERSION_FMT = "version"
-    MTP_LOGIN_VERIFY_FMT = "whoami"
+    MTP_LOGIN_VERIFY_FMT = "echo $USER"
     MTP_ASIC_VERSION_FMT = "head /home/diag/diag/asic/asic_version.txt"
     MTP_REV_FMT =  "env | grep MTP_REV | cat"
     MTP_TYPE_FMT =  "env | grep MTP_TYPE | cat"
