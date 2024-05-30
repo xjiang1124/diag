@@ -887,8 +887,15 @@ class mtp_ctrl():
             self.cli_log_err("Connect to mtp mgmt timeout", level=0)
             return None
 
+        sig_list = [userid]
+
         cmd = MFG_DIAG_CMDS.MTP_LOGIN_VERIFY_FMT
         handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect(handle, sig_list, 5)
+        if idx < 0:
+            self.cli_log_err("Unable to locate diag user", level=0)
+            return None
+
         idx = libmfg_utils.mfg_expect(handle, self._prompt_list, 5)
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt failed", level=0)
