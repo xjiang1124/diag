@@ -82,7 +82,7 @@ def check_mtp_usb_drive_presence(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
             size = line.split()[2].strip()
             model = " ".join(line.split()[3:]).strip()
         if 'sda1' in line:
-            mount_point = line.split()[-1]
+            mount_point = "" if len(line.split()) == 2 else line.split()[-1]
 
     if not mount_point:
         # try to mount use to /home/diag/usb
@@ -92,6 +92,7 @@ def check_mtp_usb_drive_presence(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
             mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
             return False
         cmd = 'mount /dev/sda1 /home/diag/usb'
+        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=timeout)
         if not cmd_result:
             mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
             return False

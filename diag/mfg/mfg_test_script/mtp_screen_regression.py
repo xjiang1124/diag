@@ -630,6 +630,11 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
         mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
         return False
 
+    cmd = "fsck -y /dev/sda1"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
     stress_test_time = 60  # Set stress test running time in seconds
     cmd = "/home/diag/diag/tools/stressapptest -M 400 -f file.1 -f file.2"
     tout = stress_test_time * 1.2
@@ -686,6 +691,7 @@ def main():
 
     mtp_id = "MTP-000"
     mtp_sn = ""
+    mtp_mac = ""
     stop_on_err = False
     verbosity = False
     swm_lp_boot_mode = False
@@ -815,6 +821,9 @@ def main():
 
             if DRY_RUN:
                 ret = []
+            elif test == "MTP_CONNECT":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True)
+                fail_desc = "MTP connection fails"
             elif test == "MTP_FRU_PROG":
                 ret = program_mtp_fru(mtp_mgmt_ctrl)
                 fail_desc = "MTP program FRU fails"
@@ -938,10 +947,11 @@ def main():
             return rlist
 
         if mtp_mgmt_ctrl.mtp_get_mtp_type == MTP_TYPE.MATERA:
+            run_mtp_test(pass_nic_list, "MTP_CONNECT")
             run_mtp_test(pass_nic_list, "USB_BENCHMARK")
             run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
             run_mtp_test(pass_nic_list, "CPU_BENCHMARK")
-            run_mtp_test(pass_nic_list, "DDR_BENCHMARK")
+            run_mtp_test(pass_nic_list, "MEM_BENCHMARK")
             run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN")
             run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
             run_nic_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
