@@ -5,6 +5,42 @@ proc test_proc {input} {
     return $input
 }
 
+proc print_pmic_events {} {
+    plog_msg "=================="
+    plog_msg "PMIC fault events:"
+    plog_msg "=================="
+
+    set val [gig_smbus_read_byte_data 2 0x4F 0x08]
+    set vin_bulk_sts [expr ($val >> 0) & 0x1]
+    plog_msg "\tVIN_BULK_INPUT_OVER_VOLTAGE_STATUS     : $vin_bulk_sts"
+    set temp_shutdown_sts [expr ($val >> 6) & 0x1]
+    plog_msg "\tCRITICAL_TEMPERATURE_SHUTDOWN_STATUS   : $temp_shutdown_sts"
+
+    set val [gig_smbus_read_byte_data 2 0x4F 0x0A]
+    set swa_over_vol_sts [expr ($val >> 7) & 0x1]
+    plog_msg "\tSWA_OUTPUT_OVER_VOLTAGE_STATUS         : $swa_over_vol_sts"
+    set swb_over_vol_sts [expr ($val >> 6) & 0x1]
+    plog_msg "\tSWB_OUTPUT_OVER_VOLTAGE_STATUS         : $swb_over_vol_sts"
+    set swc_over_vol_sts [expr ($val >> 5) & 0x1]
+    plog_msg "\tSWC_OUTPUT_OVER_VOLTAGE_STATUS         : $swc_over_vol_sts"
+    set swd_over_vol_sts [expr ($val >> 4) & 0x1]
+    plog_msg "\tSWD_OUTPUT_OVER_VOLTAGE_STATUS         : $swd_over_vol_sts"
+
+    set val [gig_smbus_read_byte_data 2 0x4F 0x0B]
+    set swa_under_volt_sts [expr ($val >> 3) & 0x1]
+    plog_msg "\tSWA_OUTPUT_UNDER_VOLTAGE_LOCKOUT_STATUS: $swa_under_volt_sts"
+    set swb_under_volt_sts [expr ($val >> 2) & 0x1]
+    plog_msg "\tSWB_OUTPUT_UNDER_VOLTAGE_LOCKOUT_STATUS: $swb_under_volt_sts"
+    set swc_under_volt_sts [expr ($val >> 1) & 0x1]
+    plog_msg "\tSWC_OUTPUT_UNDER_VOLTAGE_LOCKOUT_STATUS: $swc_under_volt_sts"
+    set swd_under_volt_sts [expr ($val >> 0) & 0x1]
+    plog_msg "\tSWD_OUTPUT_UNDER_VOLTAGE_LOCKOUT_STATUS: $swd_under_volt_sts"
+
+    set val [gig_smbus_read_byte_data 2 0x4F 0x33]
+    set vbias_under_volt_stat [expr ($val >> 3) & 0x1]
+    plog_msg "\tVBIAS_UNDER_VOLTAGE_LOCKOUT_STATUS     : $vbias_under_volt_stat"
+}
+
 set sn      [lindex $argv 0]
 set slot    [lindex $argv 1]
 set check_vrm    [lindex $argv 2]
@@ -12,6 +48,7 @@ set check_vrm    [lindex $argv 2]
 set port 10
 
 set err_cnt 0
+set slot_num $slot
 
 set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
@@ -175,6 +212,15 @@ set val [_msrd]
 if { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
     exit 0
+}
+
+if {$ASIC_TYPE == "GIGLIO"} {
+    set pmic_gsi [exec inventory -pw -slot=$slot_num | grep gilo_ddr_pmic_gsi | rev | cut -d " " -f 1]
+    if { $pmic_gsi == 1 } {
+        gig_assert_arm_rst 0 0xf
+        ssi_cpld_write 0x20 0x0
+        print_pmic_events
+    }
 }
 
 if { $check_vrm != 0 } {
