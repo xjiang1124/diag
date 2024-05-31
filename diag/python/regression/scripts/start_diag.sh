@@ -79,6 +79,9 @@ then
         export UUT_9="UUT_NONE"
         export UUT_10="UUT_NONE"
         export PATH=$PATH:$DIAG_DIR/util
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/skel/.bashrc
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /home/diag/.bashrc
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/bash.bashrc
         /home/diag/diag/python/regression/envinit_matera.py
     else 
         /home/diag/diag/python/regression/envinit.py
