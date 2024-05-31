@@ -79,6 +79,7 @@ then
         export UUT_9="UUT_NONE"
         export UUT_10="UUT_NONE"
         export PATH=$PATH:$DIAG_DIR/util
+        /home/diag/diag/python/regression/envinit_matera.py
     else 
         /home/diag/diag/python/regression/envinit.py
     fi
@@ -112,8 +113,8 @@ then
     mtp_id="${mtp_id_str1:0:6}"
     echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
     echo "setting fan PWM to 50%"
-    /home/diag/diag/util/fpgautil w32 0x154 0x80808080
-    /home/diag/diag/util/fpgautil w32 0x158 0x80
+    /home/diag/diag/util/fanutil 0 pwm 50 all
+    
 else
     mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
     mtp_id_str1=($mtp_id_str)
