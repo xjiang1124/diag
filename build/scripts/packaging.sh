@@ -45,6 +45,18 @@ then
     asiclib=$3
 fi
 
+
+## initialize defaults for j2cdriver
+if [[ $(echo ${asic_list[@]} | grep "giglio") ]]
+then
+    declare -a j2cd_list=("ftdi" "fpga")
+elif [[ $(echo ${asic_list[@]} | grep "elba") ]]
+then
+    declare -a j2cd_list=("ftdi" "fpga")
+else
+    declare -a j2cd_list=("ftdi")
+fi
+
 echo "============================================"
 echo "Start packaging Diag environment for $arch"
 
@@ -232,14 +244,20 @@ do
         if [[ $asiclib == "stable" ]]
         then
             echo "Copying stable ASIC lib for $asic"
-            ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}.tar.gz"
-            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+            for j2cd in ${j2cd_list[@]}
+            do
+                ASIC_IMG="/vol/hw/diag/diag_repo/asic_lib_rel_stable/nic_${arch}_${asic}_${j2cd}.tar.gz"
+                cp $ASIC_IMG $TEMP_DIR_TOP/
+            done
         fi
         if [[ $asiclib == "latest" ]]
         then
-            echo "Copying latest ASIC lib for $asic"
-            ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}.tar.gz"
-            cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
+            echo "Copying latest ASIC libs for $asic"
+            for j2cd in ${j2cd_list[@]}
+            do
+                ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}_${j2cd}.tar.gz"
+                cp $ASIC_IMG $TEMP_DIR_TOP/
+            done
         fi
     fi
     

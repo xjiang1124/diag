@@ -35,10 +35,16 @@ echo "-------------------"
 echo "Preparing diag environment"
 DIAG_DIR=/home/diag/diag
 
-ASIC_IMG=/home/diag/nic.tar.gz
 asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
+
+if [[ $FPGA_PRSNT == "YES" ]]
+then
+    ASIC_IMG=/home/diag/nic_amd64_${asic}_fpga.tar.gz
+else
+    ASIC_IMG=/home/diag/nic_amd64_${asic}_ftdi.tar.gz
+fi
 
 if [[ -n $skip_untar ]]
 then
