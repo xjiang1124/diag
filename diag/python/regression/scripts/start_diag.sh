@@ -40,22 +40,17 @@ asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
 
-if [[ $FPGA_PRST == "YES" ]]
+if [[ -n $skip_untar ]]
 then
-    echo "FIXME: 000 Deal ASIC lib later"
+    echo "Using existing ASIC lib"
 else
-    if [[ -n $skip_untar ]]
-    then
-        echo "Using existing ASIC lib"
-    else
-        echo "Untar ASIC lib"
-        chmod -R 755 $DIAG_DIR/asic_all/$asic/
-        rm -rf  $DIAG_DIR/asic_all/$asic/*
-        tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
-        cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
-        cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
-        rm -rf $DIAG_DIR/asic_all/$asic/nic
-    fi
+    echo "Untar ASIC lib"
+    chmod -R 755 $DIAG_DIR/asic_all/$asic/
+    rm -rf  $DIAG_DIR/asic_all/$asic/*
+    tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
+    cp -r $DIAG_DIR/asic_all/$asic/nic/* $DIAG_DIR/asic_all/$asic/
+    cp $DIAG_DIR/asic_all/$asic/asic_src/ip/cosim/tclsh/.git_rev.tcl $DIAG_DIR/asic_all/$asic/asic_version.txt
+    rm -rf $DIAG_DIR/asic_all/$asic/nic
 fi
 
 mkdir -p $DIAG_DIR/log/
@@ -71,14 +66,30 @@ then
     cat $DIAG_DIR/python/regression/scripts/dft_profile_mtp > temp_profile
     if [[ $FPGA_PRST == "YES" ]]
     then
-        echo "FIXME: 001 Make it work for Matera"
-    else
+        export MTP_TYPE=MTP_MATERA
+        export CARD_TYPE=MTP_MATERA
+        export UUT_1="UUT_NONE"
+        export UUT_2="UUT_NONE"
+        export UUT_3="UUT_NONE"
+        export UUT_4="UUT_NONE"
+        export UUT_5="UUT_NONE"
+        export UUT_6="UUT_NONE"
+        export UUT_7="UUT_NONE"
+        export UUT_8="UUT_NONE"
+        export UUT_9="UUT_NONE"
+        export UUT_10="UUT_NONE"
+        export PATH=$PATH:$DIAG_DIR/util
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/skel/.bashrc
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /home/diag/.bashrc
+        cp /home/diag/diag/python/regression/scripts/dft_bashrc /etc/bash.bashrc
+        /home/diag/diag/python/regression/envinit_matera.py
+    else 
         /home/diag/diag/python/regression/envinit.py
-        turn_on_slot.sh on all
-        /home/diag/diag/util/inventory -env
-        cat $DIAG_DIR/log/board_env.txt >> temp_profile
-        echo "export DIAG_HOME=/home/diag/" >> temp_profile
     fi
+    /home/diag/diag/scripts/turn_on_slot.sh on all
+    /home/diag/diag/util/inventory -env
+    cat $DIAG_DIR/log/board_env.txt >> temp_profile
+    echo "export DIAG_HOME=/home/diag/" >> temp_profile
 else
     cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
 fi
@@ -100,14 +111,13 @@ echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 
 if [[ $FPGA_PRST == "YES" ]]
 then
-    export CARD_TYPE=MTP_MATERA
     mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
     mtp_id_str1=$(echo $mtp_id_str | cut -b 15-20)
     mtp_id="${mtp_id_str1:0:6}"
     echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
     echo "setting fan PWM to 50%"
-    /home/diag/diag/util/fpgautil w32 0x154 0x80808080
-    /home/diag/diag/util/fpgautil w32 0x158 0x80
+    /home/diag/diag/util/fanutil 0 pwm 50 all
+    
 else
     mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
     mtp_id_str1=($mtp_id_str)
@@ -143,7 +153,7 @@ elif [[ $mtp_id == "0x000b" ]]
 then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
-    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/capri
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
 else
     echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
@@ -174,7 +184,7 @@ fi
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" ]]
 then
     hack_asic_elba.sh
 else

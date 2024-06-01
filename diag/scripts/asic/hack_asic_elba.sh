@@ -12,5 +12,11 @@ ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_lib
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
 
+#Need to source python 2.7 on matera mtp.  It is not natively installed on linux
+if [[ $CARD_TYPE == "MTP_MATERA" ]] 
+then
+ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack
+fi
+
 cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh/
 head -n -6 .tclrc.diag.elb > .tclrc.diag.elb.new
