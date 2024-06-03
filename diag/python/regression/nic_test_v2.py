@@ -384,40 +384,43 @@ class nic_test_v2:
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
         for idx in range(ite):
             print("=== Ite", idx, "===")
+            sts = "NO RESULT"
             ret = self.setup_env(slot, False, False, True, "elba", False, False, 2, "0")
-            if ret != 0:
-                return ret
+            if ret == 0:
+                int_lpbk_str = ""
+                if int_lpbk == True:
+                    int_lpbk_str = "-int_lpbk"
+                verbose_str = ""
+                if verbose == True:
+                    verbose_str = "-verbose"
 
-            int_lpbk_str = ""
-            if int_lpbk == True:
-                int_lpbk_str = "-int_lpbk"
-            verbose_str = ""
-            if verbose == True:
-                verbose_str = "-verbose"
-
-            session = common.session_start()
-            ret = self.nic_con.uart_session_start(session, slot)
-            if ret != 0:
-                return ret
-            vmarg = vmarg.replace('_', ' ')
-            try:
-                self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
-                cmd = ("date; "
-                        "/data/nic_util/asicutil -snake "
-                        "-mode {} -dura {} {} {} -snake_num {}; "
-                        "date").format(mode, dura, verbose_str, int_lpbk_str, snake_num)
-                sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
-                ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
-                if ret < 0:
-                    print("P000", ret)
-                    #return ret
-                #time.sleep(3)
-            except pexpect.TIMEOUT:
-                ret = -1
-
-            self.nic_con.uart_session_stop(session)
-            common.session_stop(session)
-            return ret
+                session = common.session_start()
+                ret = self.nic_con.uart_session_start(session, slot)
+                if ret == 0:
+                    vmarg = vmarg.replace('_', ' ')
+                    try:
+                        self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
+                        cmd = ("date; "
+                                "/data/nic_util/asicutil -snake "
+                                "-mode {} -dura {} {} {} -snake_num {}; "
+                                "date").format(mode, dura, verbose_str, int_lpbk_str, snake_num)
+                        sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
+                        ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
+                        if ret < 0:
+                            print ("=== snake Result at Slot {}: Failed".format(slot))
+                            sts = "FAIL"
+                        else:
+                            print ("=== snake Result at Slot {}: Passed".format(slot))
+                            sts = "PASS"
+                    except pexpect.TIMEOUT:
+                        ret = -1
+                self.nic_con.uart_session_stop(session)
+                common.session_stop(session)
+            # Print result
+            print("\n====== TEST RESULT: SNAKE {:<5} ======".format(mode.upper()))
+            print ("Slot {:<2}: {:<5}".format(slot, sts))
+            print("======================================")
+        return ret
 
     def nic_snake_parallel(self, args):
         print(args)
@@ -435,29 +438,36 @@ class nic_test_v2:
 
     def nic_pcie_prbs(self, slot, mode, dura, lpbk, poly, vmarg, timeout):
         print ("=== ARM {} PRBS {} {} {}".format(mode, dura, lpbk, vmarg))
+        sts = "NO RESULT"
         ret = self.setup_env(slot, False, False, True, "elba", False, False, 2, "")
-        if ret != 0:
-            return ret
-        print ("=== Starting NIC arm {} prbs {} {} on slot {} ===".format(mode, dura, lpbk, slot))
-        vmarg = vmarg.replace('_', ' ')
-        session = common.session_start()
-        ret = self.nic_con.uart_session_start(session, slot)
-        if ret != 0:
-            return ret
-        try:
-            self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
-            cmd = ("date; "
-                    "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/nic_prbs.sh {} {} {} {};"
-                    "date").format(mode, dura, lpbk, poly)
-            sig = ["PCIE PRBS PASSED", "FAILED"]
-            ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, False)
-            if ret < 0:
-                print("P000", ret)
-        except pexpect.TIMEOUT:
-            ret = -1
+        if ret == 0:
+            print ("=== Starting NIC arm {} prbs {} {} on slot {} ===".format(mode, dura, lpbk, slot))
+            vmarg = vmarg.replace('_', ' ')
+            session = common.session_start()
+            ret = self.nic_con.uart_session_start(session, slot)
+            if ret == 0:
+                try:
+                    self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
+                    cmd = ("date; "
+                            "/data/nic_arm/nic/asic_src/ip/cosim/tclsh/nic_prbs.sh {} {} {} {};"
+                            "date").format(mode, dura, lpbk, poly)
+                    sig = ["PCIE PRBS PASSED", "FAILED"]
+                    ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, False)
+                    if ret < 0:
+                        print ("=== Result at Slot {}: Failed".format(slot))
+                        sts = "FAILED"
+                    else:
+                        print ("=== Result at Slot {}: Passed".format(slot))
+                        sts = "PASSED"
+                except pexpect.TIMEOUT:
+                    ret = -1
+            self.nic_con.uart_session_stop(session)
+            common.session_stop(session)
 
-        self.nic_con.uart_session_stop(session)
-        common.session_stop(session)
+        # Print result
+        print ("\n====== NIC ARM {} PRBS TEST RESULT: ======".format(mode))
+        print ("Slot {:<2}: {:<5}".format(slot, sts))
+        print ("======================================")
         return ret
 
     def nic_pcie_prbs_parallel(self, args):
