@@ -175,6 +175,7 @@ echo "source \$ASIC_LIB/source_env_path" >> temp_profile
 if [[ $mtp_id == "0x000b" ]]
 then
     echo "export CARD_TYPE=MTP_MATERA" >> temp_profile
+    echo "export REDIS_IP=127.0.0.1" >> temp_profile
     export REDIS_IP="127.0.0.1"
 else
     source $DIAG_DIR/python/infra/config/scripts/pre_dsp_mtp
