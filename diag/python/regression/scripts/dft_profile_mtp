@@ -16,7 +16,7 @@ if [ -n "$BASH_VERSION" ]; then
 	cp /etc/skel/.bashrc $HOME/.bashrc
 	if [ -f "/dev/prompt" ]; then # volatile file to track if script should change the prompt or not
 	    # change the prompt to add timestamp
-	    echo "PS1='[\D{%Y-%m-%d}_\t] \u@\h:$ '" >> $HOME/.bashrc
+	    echo "PS1='[\D{%Y-%m-%d}_\t] $USER@\h:$ '" >> $HOME/.bashrc
 	fi
 	. "$HOME/.bashrc"
     fi
