@@ -52,7 +52,7 @@ then
     declare -a j2cd_list=("ftdi" "fpga")
 elif [[ $(echo ${asic_list[@]} | grep "elba") ]]
 then
-    declare -a j2cd_list=("ftdi" "fpga")
+    declare -a j2cd_list=("ftdi" "lipari" "fpga")
 else
     declare -a j2cd_list=("ftdi")
 fi
