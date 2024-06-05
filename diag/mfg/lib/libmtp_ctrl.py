@@ -91,6 +91,7 @@ class mtp_ctrl():
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
+        self._fpga_ver = None
         self._mtp_type = None
         self._mtp_rev = None
         self._os_ver = None
@@ -274,15 +275,21 @@ class mtp_ctrl():
             if self._psu_sn[psu]:
                 self.cli_log_report_inf("MTP PSU_{:s} MFR ID: {:s}".format(psu, self._psu_sn[psu]))
 
-        if not self._io_cpld_ver:
-            self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
-            return False
-        self.cli_log_report_inf("MTP IO-CPLD Version: {:s}".format(self._io_cpld_ver))
+        if self._mtp_type == "MATERA":
+            if not self._fpga_ver:
+                self.cli_log_err("Unable to retrieve MTP FPGA Version")
+                return False
+            self.cli_log_report_inf("MTP FPGA Version: {:s}".format(self._fpga_ver))
+        else:
+            if not self._io_cpld_ver:
+                self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
+                return False
+            self.cli_log_report_inf("MTP IO-CPLD Version: {:s}".format(self._io_cpld_ver))
 
-        if not self._jtag_cpld_ver:
-            self.cli_log_err("Unable to retrieve MTP JTAG-CPLD Version")
-            return False
-        self.cli_log_report_inf("MTP JTAG-CPLD Version: {:s}".format(self._jtag_cpld_ver))
+            if not self._jtag_cpld_ver:
+                self.cli_log_err("Unable to retrieve MTP JTAG-CPLD Version")
+                return False
+            self.cli_log_report_inf("MTP JTAG-CPLD Version: {:s}".format(self._jtag_cpld_ver))
 
         if not self._mtp_type:
             self.cli_log_err("Unable to retrieve MTP TYPE")
@@ -1211,31 +1218,6 @@ class mtp_ctrl():
         return True
 
     def mtp_sys_info_init(self):
-        # MTP IO cpld version
-        reg_addr = 0x0
-        cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to get MTP IO-CPLD image version info", level=0)
-            return False
-        match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
-        if match:
-            self._io_cpld_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get MTP IO-CPLD image version info", level=0)
-            return False
-
-        # MTP JTAG cpld version
-        reg_addr = 0x19
-        cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level=0)
-            return False
-        match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
-        if match:
-            self._jtag_cpld_ver = match[0]
-        else:
-            self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level=0)
-            return False
 
         # MTP_TYPE
         cmd = MFG_DIAG_CMDS.MTP_TYPE_FMT
@@ -1248,6 +1230,48 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Failed to get MTP type", level = 0)
             return False
+
+        if self._mtp_type == "MATERA":
+            # MTP FPGA version
+            reg_addr = '0x0'
+            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("FPGA Command Failed to get MTP FPGA version info", level=0)
+                return False
+            match = re.findall(r"RD \[0x0000\] = 0x(\w+)", self.mtp_get_cmd_buf())
+            if match:
+                self._fpga_ver = match[0][-4:]
+                if not self._fpga_ver.upper().startswith("A"):
+                    self.cli_log_wrn("FPGA version {:s} of Matera MTP NOT support Salina NIC cards".format(self._fpga_ver))
+            else:
+                self.cli_log_err("Failed to parse get MTP FPGA version info", level=0)
+                return False
+        else:
+            # MTP IO cpld version
+            reg_addr = 0x0
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to get MTP IO-CPLD image version info", level=0)
+                return False
+            match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
+            if match:
+                self._io_cpld_ver = match[0]
+            else:
+                self.cli_log_err("Failed to get MTP IO-CPLD image version info", level=0)
+                return False
+
+            # MTP JTAG cpld version
+            reg_addr = 0x19
+            cmd = MFG_DIAG_CMDS.MTP_CPLD_READ_FMT.format(reg_addr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level=0)
+                return False
+            match = re.findall(r"addr 0x{:x} with data (0x[0-9a-fA-F]+)".format(reg_addr), self.mtp_get_cmd_buf())
+            if match:
+                self._jtag_cpld_ver = match[0]
+            else:
+                self.cli_log_err("Failed to get MTP JTAG-CPLD image version info", level=0)
+                return False
 
         # MTP_REV
         cmd = MFG_DIAG_CMDS.MTP_REV_FMT
@@ -2003,7 +2027,10 @@ class mtp_ctrl():
 
         self.cli_log_inf("Start MTP chassis sanity check", level=0)
         # mtp cpld test
-        rc &= self.mtp_cpld_test()
+        if self._mtp_type == "MATERA":
+            rc &= self.mtp_fpga_ver_chk_test()
+        else:
+            rc &= self.mtp_cpld_test()
         # fan init
         rc &= self.mtp_fan_init(fan_spd)
         # read psu info and test psu
@@ -2098,10 +2125,11 @@ class mtp_ctrl():
 
     def mtp_cpld_test(self):
         cpld_ver_list = self.mtp_get_hw_version()
-        if not cpld_ver_list:
-            self.cli_log_err("Unable to retrieve MTP CPLD version")
-            self.cli_log_err("MTP CPLD test failed")
-            return False
+        for ver_info in cpld_ver_list:
+            if not ver_info:
+                self.cli_log_err("Unable to retrieve MTP CPLD version")
+                self.cli_log_err("MTP CPLD test failed")
+                return False
 
         io_version = MTP_IMAGES.mtp_io_cpld_ver[self._mtp_type]
         jtag_version = MTP_IMAGES.mtp_jtag_cpld_ver[self._mtp_type]
@@ -2119,6 +2147,16 @@ class mtp_ctrl():
             self.cli_log_inf("MTP CPLD test passed")
         else:
             self.cli_log_inf("MTP CPLD test skipped for REV_{:s}".format(self._mtp_rev))
+        return True
+
+    def mtp_fpga_ver_chk_test(self):
+
+        fpga_running_ver = self._fpga_ver
+        fpga_img_ver = MTP_IMAGES.mtp_fpga_ver[self._mtp_type]
+        if fpga_running_ver != fpga_img_ver:
+            self.cli_log_err("MTP FPGA Runing Version: {:s}, expect: {:s}".format(fpga_running_ver, fpga_img_ver))
+            self.cli_log_err("MTP FPGA Version Check Test failed")
+            return False
         return True
 
     def mtp_inlet_sensor_test(self):

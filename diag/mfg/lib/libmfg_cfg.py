@@ -601,6 +601,8 @@ class MTP_IMAGES:
     mtp_io_cpld_ver = dict()
     mtp_jtag_cpld_img = dict()
     mtp_jtag_cpld_ver = dict()
+    mtp_fpga_img = dict()
+    mtp_fpga_ver = dict()
 
     amd64_img["CAPRI"] = "image_amd64_capri.tar"
     arm64_img["CAPRI"] = "image_arm64_capri.tar"
@@ -629,6 +631,11 @@ class MTP_IMAGES:
     mtp_io_cpld_ver["TURBO_ELBA"] = "0x1"
     mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
     mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
+
+    amd64_img["MATERA"] = "image_amd64_elba.tar"
+    arm64_img["MATERA"] = "image_arm64_elba.tar"
+    mtp_fpga_img["MATERA"] = "to_be_define.bin"
+    mtp_fpga_ver["MATERA"] = "a007"
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
