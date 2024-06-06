@@ -634,7 +634,7 @@ class MTP_IMAGES:
 
     amd64_img["MATERA"] = "image_amd64_elba.tar"
     arm64_img["MATERA"] = "image_arm64_elba.tar"
-    mtp_fpga_img["MATERA"] = "to_be_define.bin"
+    # mtp_fpga_img["MATERA"] = "to_be_define.bin"
     mtp_fpga_ver["MATERA"] = "a007"
 
     penctl_img = "penctl.linux.042021"
