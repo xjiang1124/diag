@@ -53,7 +53,7 @@ set arm_freq 3000
 puts "sn: $sn; slot: $slot"
 cd $ASIC_SRC/ip/cosim/tclsh
 
-if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
+if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE == "MTP_MATERA")} {
     set uut "UUT_$slot"
     set card_type $::env($uut)
     puts "card type: $card_type; UUT: $uut"
@@ -63,11 +63,15 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
         set port [get_port_turbo $slot]
         set slot 1
     }
+    if {$MTP_TYPE == "MTP_MATERA"} {
+        set port $slot
+        set slot $slot
+    }
 
     if {[string first "LACONA" $card_type] != -1} {
         set arm_freq 2000
     }
-    if {$MTP_TYPE == "MTP_ELBA" || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
+    if {$MTP_TYPE == "MTP_ELBA" || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE == "MTP_MATERA")} {
         puts "Elba MTP"
         set ddr_freq 3200
         if { $card_type == "LACONA32DELL"   ||
