@@ -322,6 +322,7 @@ class MFG_DIAG_CMDS:
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
 
+    MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
     MTP_MAC_FMT = "cat /sys/class/net/enp4s0/address"
