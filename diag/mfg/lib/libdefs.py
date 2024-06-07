@@ -321,6 +321,7 @@ class MFG_DIAG_CMDS:
     MTP_FAN_PRSNT_FMT = "mtptest -present"
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
+    MTP_I2C_PRESENT_DISP_FMT = "devmgr_v2 -status"
 
     MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
@@ -527,6 +528,15 @@ class MFG_DIAG_CMDS:
     MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
     MTP_PARA_EDMA_ENV_INIT_FMT  = "nic_test_v2.py check_edma -slot_list {:s}"
 
+    #MATER MTP
+    MATERA_MTP_PARA_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s}"
+    MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
+    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s} -mode hod"
+    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s}  -mode hod_1100"
+    MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 300 -vmarg {:s} -mode nod_525"
+    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s}  -mode nod"
+    MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 600 -vmarg {:s} -mode=hod_1100"
+
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
     MTP_DISP_ECC_FMT = "nic_test.py -disp_ecc -slot_list {:s}"
@@ -534,6 +544,7 @@ class MFG_DIAG_CMDS:
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
     MTP_NIC_PING_FMT = "ping -c 4 {:s}"
+    MATERA_MTP_NIC_MAC_DISP_FMT = "arp -n -i enp3s0f1"
 
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
@@ -618,6 +629,7 @@ class MFG_DIAG_SIG:
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_PARA_SIG = "=== Setup env top"
+    MATERA_NIC_MGMT_PARA_SIG = "=== Setup env"
     NIC_PARA_EDMA_ENV_INIT_SIG = "EDMA Checking Done"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
