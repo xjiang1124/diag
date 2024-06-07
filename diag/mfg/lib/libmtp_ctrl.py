@@ -4250,15 +4250,22 @@ class mtp_ctrl():
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
         asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
+        if asic_type == "capri" and self._mtp_type == MTP_TYPE.MATERA:
+            self.cli_log_slot_err(slot_main, "Unable to run capri in matera mtp")
+            return fail_nic_list
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
+        if self._mtp_type == MTP_TYPE.MATERA: sig_list = [MFG_DIAG_SIG.MATERA_NIC_MGMT_PARA_SIG]
+
         if not mgmt:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC environment")
             cmd = MFG_DIAG_CMDS.MTP_PARA_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_INIT_FMT.format(nic_list_param, asic_type)
         elif fpo:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
         elif aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
@@ -4267,11 +4274,10 @@ class mtp_ctrl():
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
                 cmd = "".join((cmd, " -swm_lp"))
-        if self._mtp_type == MTP_TYPE.MATERA:
-            cmd = MFG_DIAG_CMDS.MATERA_MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
-            sig_list = [MFG_DIAG_SIG.MATERA_NIC_MGMT_PARA_SIG]
+
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, sig_list=sig_list, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
