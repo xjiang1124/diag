@@ -299,19 +299,19 @@ def read_mtp_nvme_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
         mtp_mgmt_ctrl (_type_): _description_
     """
 
-    cmd = "nvme list -o json "
-    cmd += dev_name
+    json_file = "/tmp/nveme_info.json"
+    cmd = "nvme list -o json {:s} > {:s}".format(dev_name, json_file)
 
-    rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
-    if rs.startswith("[FAIL]:"):
+    if not  mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Read NVMD SSD parameter command failed. {:s}".format(cmd), level=0)
-        mtp_mgmt_ctrl.cli_log_err(rs)
+        mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
         return False
-    json_output = "".join(rs.split('\r\n')[:-1])
+
     try:
-        device_info_in_json = json.loads(json_output)
+        with open(json_file) as json_file_obj:
+            device_info_in_json = json.load(json_file_obj)
     except Exception as Err:
-        mtp_mgmt_ctrl.cli_log_err(rs)
+        mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl.mtp_get_cmd_buf())
         mtp_mgmt_ctrl.cli_log_err(str(Err))
         return False
 
