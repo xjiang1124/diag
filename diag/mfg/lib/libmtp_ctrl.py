@@ -4562,7 +4562,7 @@ class mtp_ctrl():
         if self._mtp_type == MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS.MATERA_MTP_NIC_MAC_DISP_FMT
         else:
-            cmd = MFG_DIAG_CMDS.MTP_NIC_MAC_DISP_FMTT
+            cmd = MFG_DIAG_CMDS.MTP_NIC_MAC_DISP_FMT
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Failed to validate NIC MAC address")
             return False
