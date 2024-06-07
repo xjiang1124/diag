@@ -4252,7 +4252,7 @@ class mtp_ctrl():
         asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
         if asic_type == "capri" and self._mtp_type == MTP_TYPE.MATERA:
             self.cli_log_slot_err(slot_main, "Unable to run capri in matera mtp")
-            return fail_nic_list
+            return [slot_main]
         sig_list = [MFG_DIAG_SIG.NIC_MGMT_PARA_SIG]
         if self._mtp_type == MTP_TYPE.MATERA: sig_list = [MFG_DIAG_SIG.MATERA_NIC_MGMT_PARA_SIG]
 
