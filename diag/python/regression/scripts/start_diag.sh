@@ -39,7 +39,7 @@ asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
 
-if [[ $FPGA_PRSNT == "YES" ]]
+if [[ $FPGA_PRST == "YES" ]]
 then
     ASIC_IMG=/home/diag/nic_amd64_${asic}_fpga.tar.gz
 else
