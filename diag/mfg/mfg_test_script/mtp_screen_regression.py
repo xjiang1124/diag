@@ -76,11 +76,12 @@ def check_fully_populated(mtp_mgmt_ctrl, nic_list):
 def check_nic_type(mtp_mgmt_ctrl, nic_list):
     if len(nic_list) == 0: return False
     first_slot = nic_list[0]
+    nic_fail_list = list()
     for slot in nic_list:
         if mtp_mgmt_ctrl.mtp_get_nic_type(first_slot) != mtp_mgmt_ctrl.mtp_get_nic_type(slot):
             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Incorrect NIC Type mismatch with first slot {:s}".foramt(mtp_mgmt_ctrl.mtp_get_nic_type(first_slot)))
-            return False
-    return True
+            nic_fail_list.append(slot)
+    return nic_fail_list
 
 def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
     @parallelize.parallel_nic_using_j2c
