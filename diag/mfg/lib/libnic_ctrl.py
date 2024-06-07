@@ -642,7 +642,7 @@ class nic_ctrl():
 
         cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
@@ -2751,7 +2751,7 @@ class nic_ctrl():
 
             time.sleep(5)
 
-    def nic_start_diag(self, aapl, dis_hal=False):
+    def nic_start_diag(self, aapl, dis_hal=False, mtp_type=None):
         # setup diag env on nic
         nic_cmd_list = list()
 
@@ -2781,6 +2781,7 @@ class nic_ctrl():
 
         # Start NIC DSP
         cmd = MFG_DIAG_CMDS.NIC_DSP_START_FMT.format(self._slot+1)
+        if mtp_type == MTP_TYPE.MATERA: cmd = "python2.7 {:s}".format(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("Unable to start diagmgr")
             return False
