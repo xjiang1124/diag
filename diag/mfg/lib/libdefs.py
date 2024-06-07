@@ -529,7 +529,9 @@ class MFG_DIAG_CMDS:
     MTP_PARA_EDMA_ENV_INIT_FMT  = "nic_test_v2.py check_edma -slot_list {:s}"
 
     #MATER MTP
-    MATERA_MTP_PARA_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s}"
+    MATERA_MTP_SINGLE_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s}"
+    MATERA_MTP_SINGLE_MGMT_FPO_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -fpo"
+    MATERA_MTP_SINGLE_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -asic_type {:s}"
     MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
     MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s} -mode hod"
     MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s}  -mode hod_1100"
