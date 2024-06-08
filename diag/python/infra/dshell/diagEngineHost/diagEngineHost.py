@@ -80,7 +80,8 @@ class diagEngineHost:
         
         # Init redis
         redisIP = os.environ['REDIS_IP']
-        self.r = redis.StrictRedis(host=redisIP, port=6379, db=0)
+        pool = redis.ConnectionPool(host=redisIP, port=6379, db=0, decode_responses=True)
+        self.r = redis.Redis(connection_pool=pool)
 
         self.dshid = self.r.incr("DSHID")
 
