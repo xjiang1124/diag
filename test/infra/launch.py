@@ -272,6 +272,26 @@ class LaunchApp(object):
 
         return defs.Result.SUCCESS
 
+    def __gen_nic_serial_number_list(self, mtp_resource_name, barcode_scans):
+        # write to a file same as it is scanned into scan_dl...
+        scanDL_input = "parser_sn.txt"
+        Logger.info(f"Generating {mtp_resource_name} NIC Serial Numbers in input file: {scanDL_input}")
+        try:
+            with open(os.path.join(GlobalOptions.topdir, scanDL_input), "w") as fh:
+                for slot in barcode_scans.keys():
+                    if "SN" not in barcode_scans[slot].keys():
+                        Logger.error(f"Missing 'SN' field from slot {slot} in /vol/hw/diag/cicd/{mtp_resource_name}.yaml")
+                        return defs.Result.INFRA_FAILURE
+                    if barcode_scans[slot]["SN"].startswith("US") or barcode_scans[slot]["SN"].startswith("MY"):
+                        dell_ppid = barcode_scans[slot]["SN"]
+                        barcode_scans[slot]["SN"] = dell_ppid[0:2] + dell_ppid[8:20]
+                    fh.write(barcode_scans[slot]['SN'] + "\n")
+        except Exception as e:
+            Logger.error(f"Failed to write {scanDL_input}: {e}")
+            return defs.Result.INFRA_FAILURE
+
+        return defs.Result.SUCCESS
+
     def __gen_mtp_env(self):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
         self.__settings["NIC_TYPE"] = GlobalOptions.nic_type.lower()
@@ -383,6 +403,11 @@ class LaunchApp(object):
         ret = self.__gen_nic_barcodes(mtp_resource_name, barcode_scans)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to extract NIC SN, MAC, PN from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
+            return ret
+
+        ret = self.__gen_nic_serial_number_list(mtp_resource_name, barcode_scans)
+        if ret != defs.Result.SUCCESS:
+            Logger.error(f"Failed to extract NIC SN from /vol/hw/diag/cicd/{mtp_resource_name}.yaml - ABORT")
             return ret
 
         ret =  self.__load_image_manifest()

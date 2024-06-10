@@ -25,7 +25,7 @@ sync
 rm -rf $mfg_script_dir/*
 rm -f ${working_dir}/${release_name}/*.tar.gz
 sync
-cp -r $top_dir/diag/${mfg_folder}/* $mfg_script_dir/
+rsync -aPv $top_dir/diag/${mfg_folder}/* $mfg_script_dir/ --exclude log --exclude scripts --exclude release
 sync
 mkdir -p $mfg_script_dir/release/
 chmod 777 $mfg_script_dir/release/
@@ -63,9 +63,6 @@ if [[ ${mfg_folder} == "mfg_taormina" ]]; then
     mkdir $mfg_script_dir/release/packages
     cp --preserve=timestamps -r /vol/hw/diag/mfg_release/prog/packages/ $mfg_script_dir/release/
 fi
-
-## PRUNING
-rm -rf $mfg_script_dir/scripts
 
 ## TAR THE MFG SCRIPTS
 cd $working_dir
