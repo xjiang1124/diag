@@ -672,6 +672,32 @@ FT_STATUS jtag_init(DWORD portNum)
     return rc;
 }
 
+FT_STATUS jtag_clear(DWORD portNum)
+{
+    ULONGLONG j2c_mem_addr;
+    ULONGLONG pcie_bar;
+    DWORD magic;
+    int rc;
+
+    pcie_bar = get_bar_from_proc();
+    if ( pcie_bar != 0 ) {
+        bar_addr = pcie_bar;
+    }
+
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+	return -1;
+    }
+
+    j2c_mem_addr = (ULONGLONG)(J2C_0_OFFSET + (portNum - 1) * fpga_asic_target[asic_index].size);
+    rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
+    printf("magic number %x\n", magic);
+
+    write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, 0);
+    write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0);
+    return rc;
+}
+
 void jtag_close()
 {
     if ( verbosity )

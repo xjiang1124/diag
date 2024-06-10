@@ -402,6 +402,12 @@ FT_STATUS jtag_init(DWORD portNum)
     return rc;
 }
 
+FT_STATUS jtag_clear(DWORD portNum)
+{
+    printf("To be implemented %d\n", portNum);
+    return 0;
+}
+
 void jtag_close()
 {
     if ( verbosity )
