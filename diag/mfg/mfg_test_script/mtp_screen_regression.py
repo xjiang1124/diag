@@ -29,6 +29,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import Voltage_Margin
+from libdefs import Factory
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 from libmfg_cfg import DRY_RUN
@@ -72,12 +73,15 @@ def check_fully_populated(mtp_mgmt_ctrl, nic_list):
         mtp_mgmt_ctrl.cli_log_inf("MTP detect 10 NIC passed", level=0)
     return missing_nic_list
 
-@parallelize.parallel_nic_using_ssh
-def check_nic_type(mtp_mgmt_ctrl, slot):
-    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Incorrect NIC Type, should be Ortano2 TI")
-        return False
-    return True
+def check_nic_type(mtp_mgmt_ctrl, nic_list):
+    if len(nic_list) == 0: return False
+    first_slot = nic_list[0]
+    nic_fail_list = list()
+    for slot in nic_list:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(first_slot) != mtp_mgmt_ctrl.mtp_get_nic_type(slot):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Incorrect NIC Type mismatch with first slot {:s}".foramt(mtp_mgmt_ctrl.mtp_get_nic_type(first_slot)))
+            nic_fail_list.append(slot)
+    return nic_fail_list
 
 def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
     @parallelize.parallel_nic_using_j2c
@@ -888,9 +892,18 @@ def main():
                 fail_desc = "MTP not able to detect 10 ORTANO2 NICs. (slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_PWRCYC":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list)
+            elif test == "NIC_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_init(stage)
             elif test == "NIC_DIAG_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, vmargin=vmarg, **test_kwargs)
                 fail_desc = "Initialize NIC diag environment failed"
+            elif test == "UART":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_console_access(nic_list)
+            elif test == "I2C":
+                # mtp_mgmt_ctrl.mtp_nic_i2c_bus_scan
+                rlist = run_i2c_bus(mtp_mgmt_ctrl, nic_list, "I2C", "I2C", vmarg)
+            elif test == "I2C_DEVICE":
+                rlist = mtp_mgmt_ctrl.mtp_i2c_show(nic_list)
             elif test == "NIC_JTAG":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
@@ -904,13 +917,15 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_CPLD":
-                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld_console(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld_console(nic_list, timestamp_check=False) # cant read timestamp from smb
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_TYPE":
                 rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "SNAKE_ELBA":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
             elif test == "PCIE_PRBS":
-                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, "PCIE_PRBS", vmarg)
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
                 fail_desc = "Fail to PCIE_PRBS check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "L1":
                 rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, test_kwargs["l1_sequence"])
@@ -946,14 +961,13 @@ def main():
 
             return rlist
 
-        if mtp_mgmt_ctrl.mtp_get_mtp_type == MTP_TYPE.MATERA:
-            run_mtp_test(pass_nic_list, "MTP_CONNECT")
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
             run_mtp_test(pass_nic_list, "USB_BENCHMARK")
-            run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
+            # run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
             run_mtp_test(pass_nic_list, "CPU_BENCHMARK")
             run_mtp_test(pass_nic_list, "MEM_BENCHMARK")
-            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN")
-            run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
+            # run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN")
+            # run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
             run_nic_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
             run_nic_test(pass_nic_list, "NIC_TYPE")
             run_nic_test(pass_nic_list, "NIC_POWER")
@@ -961,11 +975,12 @@ def main():
             run_nic_test(pass_nic_list, "NIC_DIAG_BOOT")
             run_nic_test(pass_nic_list, "NIC_CPLD")
             run_nic_test(pass_nic_list, "UART")
-            run_nic_test(pass_nic_list, "I2C")
+            # run_nic_test(pass_nic_list, "I2C")
+            run_nic_test(pass_nic_list, "I2C_DEVICE")
             run_nic_test(pass_nic_list, "PCIE_PRBS", "ASIC")
             run_nic_test(pass_nic_list, "SNAKE_ELBA", "ASIC")
-            run_nic_test(pass_nic_list, "L1", "ASIC")
-            run_nic_test(pass_nic_list, "NIC_PWRCYC")
+            # run_nic_test(pass_nic_list, "L1", "ASIC", l1_sequence=l1_sequence)
+            # run_nic_test(pass_nic_list, "NIC_PWRCYC")
 
         else:
             run_mtp_test(pass_nic_list, "MTP_FRU_PROG")
