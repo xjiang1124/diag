@@ -58,8 +58,8 @@ int main(int argc, char *argv[])
         data = (DWORD)xtoi(argv[3]);    
         jtag_wg(address, data);
     } else if ( !strcmp("clr", acc_mode) ) {
-        printf("Clear port %d\n", port);
         port = (DWORD)xtoi(argv[2]);
+        printf("Clear port %d\n", port);
         jtag_clear(port);
     } else {
         printf("Unsupported access mode\n");
