@@ -862,11 +862,19 @@ def read_amd64_img_version(mtp_mgmt_ctrl, diag_img_tarball):
     return rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf())
 
 def read_asiclib_version(mtp_mgmt_ctrl, diag_img_tarball):
-    cmd = "tar xfO {:s} nic.tar.gz | tar xzO nic/asic_src/ip/cosim/tclsh/.git_rev.tcl | head".format(diag_img_tarball)
+    cmd = "tar tvf {:s} | grep -E 'nic.*\.tar\.gz' | awk '{{print $NF}}'".format(diag_img_tarball)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd), level=0)
         return None
-    return rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+    cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    asiclib_version_list = []
+    for asiclib in cmd_buf.splitlines():
+        cmd = "tar xfO {:s} {:s} | tar xzO nic/asic_src/ip/cosim/tclsh/.git_rev.tcl | head".format(diag_img_tarball, asiclib)
+        if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} failed".format(cmd), level=0)
+            return None
+        asiclib_version_list.append(rgx_extract_commit_date(mtp_mgmt_ctrl.mtp_get_cmd_buf()))
+    return asiclib_version_list
 
 def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
     # wrong diag binaries
@@ -880,7 +888,7 @@ def running_diag_img_match(mtp_mgmt_ctrl, new_mtp_image):
     mtp_mgmt_ctrl.mtp_init_diag_asiclib_version()
     cur_version = mtp_mgmt_ctrl.mtp_get_asic_version()
     new_version = read_asiclib_version(mtp_mgmt_ctrl, new_mtp_image)
-    if new_version != cur_version:
+    if True not in [n == cur_version for n in new_version]:
         return False
 
     return True

@@ -17,10 +17,15 @@ DIAG_DIR=/home/diag/diag
 ln -sf /fs/nos/home_diag $DIAG_HOME
 
 echo "Untar ASIC lib"
-ASIC_IMG=$DIAG_HOME/nic.tar.gz
 asic_type=$(grep "ASIC_TYPE" $DIAG_DIR/python/regression/scripts/dft_profile_mtp | cut -d "=" -f 2)
 asic=$(echo $asic_type | awk '{print tolower($0)}')
 echo "ASIC: $asic"
+if [[ $Lipari == "0" ]]
+then
+    ASIC_IMG=$DIAG_HOME/nic_amd64_${asic}_ftdi.tar.gz
+else
+    ASIC_IMG=$DIAG_HOME/nic_amd64_${asic}_lipari.tar.gz
+fi
 chmod -R 755 $DIAG_DIR/asic_all/$asic/
 rm -rf  $DIAG_DIR/asic_all/$asic/*
 tar xzf $ASIC_IMG -C $DIAG_DIR/asic_all/$asic/
