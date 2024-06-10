@@ -21,18 +21,18 @@ int main(int argc, char *argv[])
         set_bar((ULONGLONG)xtoi(argv[3]));
         set_verbosity(1);
         show_bar();
-        set_verbosity(0);	
+        set_verbosity(0);    
     } else if ( !strcmp("wr", acc_mode) ) {
         port = (DWORD)xtoi(argv[2]);
         jtag_init(port);
         address = (ULONGLONG)xtoi(argv[3]);
-	data = (DWORD)xtoi(argv[4]);	
+        data = (DWORD)xtoi(argv[4]);    
         jtag_wr(0, address, data, 2);
         jtag_close();
     } else if ( !strcmp("rd", acc_mode) ) {
         port = (DWORD)xtoi(argv[2]);
         jtag_init(port);
-	printf("jtag read %d\n", port);
+        printf("jtag read %d\n", port);
         address = (ULONGLONG)xtoi(argv[3]);
         jtag_rd(0, address, &data, 2);
         printf("DATA READ = %x\n", data);
@@ -48,18 +48,22 @@ int main(int argc, char *argv[])
         jtag_enable(port);
         jtag_close();
     } else if ( !strcmp("rg", acc_mode) ) {
-	printf("jtag read register %d\n", port);
+        printf("jtag read register %d\n", port);
         address = (ULONGLONG)xtoi(argv[2]);
         jtag_rg(address, &data);
         printf("DATA READ = %x\n", data);
     } else if ( !strcmp("wg", acc_mode) ) {
-	printf("jtag write register %d\n", port);
+        printf("jtag write register %d\n", port);
         address = (ULONGLONG)xtoi(argv[2]);
-	data = (DWORD)xtoi(argv[3]);	
+        data = (DWORD)xtoi(argv[3]);    
         jtag_wg(address, data);
+    } else if ( !strcmp("clr", acc_mode) ) {
+        printf("Clear port %d\n", port);
+        port = (DWORD)xtoi(argv[2]);
+        jtag_clear(port);
     } else {
         printf("Unsupported access mode\n");
-	return -1;
+        return -1;
     }
-    return 0;
+        return 0;
 }

@@ -15,13 +15,13 @@ libaccpcie.a: accpcie.c
 	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
 	$(CC) accpcie.c -I.. -fPIC $(CFLAGSl) -c
 	ar rcs libaccpcie.a accpcie.o
-	mv libaccpcie.a ${GOPATH}/bin/linux_$(ARCH)/clib/libaccpcie.a
+	#mv libaccpcie.a ${GOPATH}/bin/linux_$(ARCH)/clib/libaccpcie.a
 
 libaccpcie_salina.a: accpcie_salina.c
 	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
 	$(CC) accpcie_salina.c -I.. -fPIC $(CFLAGSl) -c
 	ar rcs libaccpcie_salina.a accpcie_salina.o
-	mv libaccpcie_salina.a ${GOPATH}/bin/linux_$(ARCH)/clib/libaccpcie_salina.a
+	#mv libaccpcie_salina.a ${GOPATH}/bin/linux_$(ARCH)/clib/libaccpcie_salina.a
 
 fpga_uart: fpga_uart.c
 	@mkdir -p ${GOPATH}/bin/linux_$(ARCH)/clib/
@@ -39,4 +39,4 @@ jtag_accpcie_salina: jtag_accpcie.c
 	mv jtag_accpcie_salina ${GOPATH}/bin/linux_$(ARCH)/cbin/jtag_accpcie_salina
 
 clean:
-	-rm -f *.o 
+	-rm -f *.o *.a
