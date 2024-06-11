@@ -695,6 +695,10 @@ FT_STATUS jtag_clear(DWORD portNum)
 
     write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, 0);
     write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0);
+
+    rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
+    printf("Done magic number %x\n", magic);
+
     return rc;
 }
 
