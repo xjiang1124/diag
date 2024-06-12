@@ -209,7 +209,7 @@ def mtp_nvme_ssd_validation_test(mtp_mgmt_ctrl):
             for test in test_steps:
                 cmds = ["cd "+dir_in_ssd_partition, "rm -rf Random*", "rm -rf Sequen*"]
                 tout = MTP_Const.NIC_CON_CMD_DELAY
-                argsdict = get_test_arguments(test_case_name=test, test2args=emmctest2args)
+                argsdict = get_test_arguments(test_case_name=test, part_number="MATERA_PN_NVME", test2args=emmctest2args)
                 if not argsdict:
                     mtp_mgmt_ctrl.cli_log_inf("{:s} -> Test Step {:s} Failed".format(sn, test), level=0)
                     return False

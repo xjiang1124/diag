@@ -27,6 +27,7 @@ test2args = {
         #./fio --name=Random-Write-BS4K-1G   --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=1 --size=1g   --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-WRITE-BS4K-1G         posixaio            randwrite       4k              1               1g           1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-WRITE-BS4K-1G         posixaio            randwrite       4k              1               1g           1              20                +                 1",
     },
     "FIO_RANDOM-WRITE-BS4K-512M"     : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -34,6 +35,7 @@ test2args = {
         #./fio --name=Random-Write-BS4K-512M --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=1 --size=512m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-WRITE-BS4K-512M       posixaio            randwrite       4k              1               512m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-WRITE-BS4K-512M       posixaio            randwrite       4k              1               512m         1              20                +                 1",
     },
     "FIO_RANDOM-WRITE-BS4K-256M"     : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -41,6 +43,7 @@ test2args = {
         #./fio --name=Random-Write-BS4K-256M --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=1 --size=256m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-WRITE-BS4K-256M       posixaio            randwrite       4k              1               256m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-WRITE-BS4K-256M       posixaio            randwrite       4k              1               256m         1              20                +                 1",
     },
     "FIO_RANDOM-WRITE-BS4K-128M"     : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -48,6 +51,7 @@ test2args = {
         #./fio --name=Random-Write-BS4K-128M --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=1 --size=128m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-WRITE-BS4K-128M       posixaio            randwrite       4k              1               128m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-WRITE-BS4K-128M       posixaio            randwrite       4k              1               128m         1              20                +                 1",
     },
     "FIO_RANDOM-READ-BS4K-1G"        : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -55,6 +59,7 @@ test2args = {
         #./fio --name=Random-Read-BS4K-1G    --ioengine=posixaio --rw=randread  --bs=4k --numjobs=1 --size=1g   --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-READ-BS4K-1G          posixaio            randread        4k              1               1g           1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-READ-BS4K-1G          posixaio            randread        4k              1               1g           1              20                +                 1",
     },
     "FIO_RANDOM-READ-BS4K-512M"      : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -62,6 +67,7 @@ test2args = {
         #./fio --name=Random-Read-BS4K-512M  --ioengine=posixaio --rw=randread  --bs=4k --numjobs=1 --size=512m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-READ-BS4K-512M        posixaio            randread        4k              1               512m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-READ-BS4K-512M        posixaio            randread        4k              1               512m         1              20                +                 1",
     },
     "FIO_RANDOM-READ-BS4K-256M"      : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -69,6 +75,7 @@ test2args = {
         #./fio --name=Random-Read-BS4K-256M  --ioengine=posixaio --rw=randread  --bs=4k --numjobs=1 --size=256m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-READ-BS4K-256M        posixaio            randread        4k              1               256m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-READ-BS4K-256M        posixaio            randread        4k              1               256m         1              20                +                 1",
     },
     "FIO_RANDOM-READ-BS4K-128M"      : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -76,6 +83,7 @@ test2args = {
         #./fio --name=Random-Read-BS4K-128M  --ioengine=posixaio --rw=randread  --bs=4k --numjobs=1 --size=128m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "RANDOM-READ-BS4K-128M        posixaio            randread        4k              1               128m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "RANDOM-READ-BS4K-128M        posixaio            randread        4k              1               128m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-WRITE-BS4K-1G"   : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -83,6 +91,7 @@ test2args = {
         #./fio --name=Sequen-Write-BS4K-1G   --ioengine=posixaio --rw=write     --bs=4k --numjobs=1 --size=1g   --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                       --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-WRITE-BS4K-1G     posixaio            write           4k              1               1g           1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-WRITE-BS4K-1G     posixaio            write           4k              1               1g           1              20                +                 1",
     },
     "FIO_SEQUENTIAL-WRITE-BS4K-512M" : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -90,6 +99,7 @@ test2args = {
         #./fio --name=Sequen-Write-BS4K-512M --ioengine=posixaio --rw=write     --bs=4k --numjobs=1 --size=512m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-WRITE-BS4K-512M     posixaio            write           4k              1               512m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-WRITE-BS4K-512M     posixaio            write           4k              1               512m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-WRITE-BS4K-256M" : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -97,6 +107,7 @@ test2args = {
         #./fio --name=Sequen-Write-BS4K-256M --ioengine=posixaio --rw=write     --bs=4k --numjobs=1 --size=256m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-WRITE-BS4K-256M     posixaio            write           4k              1               256m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-WRITE-BS4K-256M     posixaio            write           4k              1               256m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-WRITE-BS4K-128M" : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -104,6 +115,7 @@ test2args = {
         #./fio --name=Sequen-Write-BS4K-128M --ioengine=posixaio --rw=write     --bs=4k --numjobs=1 --size=128m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-WRITE-BS4K-128M     posixaio            write           4k              1               128m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-WRITE-BS4K-128M     posixaio            write           4k              1               128m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-READ-BS4K-1G"    : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -111,6 +123,7 @@ test2args = {
         #./fio --name=Sequen-Read-BS4K-1G    --ioengine=posixaio --rw=read      --bs=4k --numjobs=1 --size=1g   --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-READ-BS4K-1G        posixaio            read            4k              1               1g           1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-READ-BS4K-1G        posixaio            read            4k              1               1g           1              20                +                 1",
     },
     "FIO_SEQUENTIAL-READ-BS4K-512M"  : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -118,6 +131,7 @@ test2args = {
         #./fio --name=Sequen-Read-BS4K-512M  --ioengine=posixaio --rw=read      --bs=4k --numjobs=1 --size=512m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-READ-BS4K-512M      posixaio            read            4k              1               512m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-READ-BS4K-512M      posixaio            read            4k              1               512m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-READ-BS4K-256M"  : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -125,6 +139,7 @@ test2args = {
         #./fio --name=Sequen-Read-BS4K-256M  --ioengine=posixaio --rw=read      --bs=4k --numjobs=1 --size=256m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-READ-BS4K-256M      posixaio            read            4k              1               256m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-READ-BS4K-256M      posixaio            read            4k              1               256m         1              20                +                 1",
     },
     "FIO_SEQUENTIAL-READ-BS4K-128M"  : {
         "IS_SUITE_COMMON_ARGS_APPLY" : False,
@@ -132,6 +147,7 @@ test2args = {
         #./fio --name=Sequen-Read-BS4K-128M  --ioengine=posixaio --rw=read      --bs=4k --numjobs=1 --size=128m --iodepth=1 --runtime=60 --time_based --end_fsync=1
         "ARGUMENT_SPEC"              : "--name                         --ioengine          --rw            --bs            --numjobs       --size       --iodepth      --runtime         --time_based      --end_fsync",
         "DEFAULT"                    : "SEQUENTIAL-READ-BS4K-128M      posixaio            read            4k              1               128m         1              60                +                 1",
+        "MATERA_PN_NVME"             : "SEQUENTIAL-READ-BS4K-128M      posixaio            read            4k              1               128m         1              20                +                 1",
     },
     "STRESSAPPTEST"                  : {
         ##### STRESSAPPTEST Test call /data/nic_util/stressapptest_arm, /data/nic_util/stressapptest_arm  -M 400  -f file.1 -f file.2 -s <test_time_in_sec>
@@ -140,6 +156,7 @@ test2args = {
         "IS_SUITE_COMMON_ARGS_APPLY" : False, # Flag to indicate if using the comman test suite and test case arguments, if this key is not show up in this dict, means default to True
         "IS_CASE_COMMON_ARGS_APPLY"  : False,
         "ARGUMENT_SPEC"              : "-M              -f              -f         -s",
-        "DEFAULT"                    : "400             file.1          file.2     1800",           
+        "DEFAULT"                    : "400             file.1          file.2     1800",
+        "MATERA_PN_NVME"             : "400             file.1          file.2     180",
     },
 }
