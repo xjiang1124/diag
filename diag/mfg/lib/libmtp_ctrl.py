@@ -1618,101 +1618,111 @@ class mtp_ctrl():
 
     def mtp_fan_init(self, fan_pwm):
         rc = True
-        # Fan present test
-        cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
-        if self.get_mtp_factory_location() == Factory.LAB:
-            pass_sig_list = [MFG_DIAG_SIG.MTP_FAN0_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN1_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN2_PRSNT_SIG]
-        else:
-            pass_sig_list = [MFG_DIAG_SIG.MTP_PRSNT_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-        if rc:
-            self.cli_log_inf("FAN present test passed")
-        else:
-            self.cli_log_err("FAN present test failed")
-            return rc
-
-        # Fan speed test
-        cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
-        pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
-        rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-        if rc:
-            self.cli_log_inf("FAN speed test passed")
-        else:
-            self.cli_log_err("FAN speed test failed")
-            return rc
-
-        # Fan speed set
-        self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
-        cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_pwm)
-        rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-        if not rc:
-            self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
-            return rc
-        self._fanspd = fan_pwm          # update class variable
-
-        # fan speed verify after set
-        fan_read_ite = 1
-        fan_read_interval = 10
-        fan1_spd_chk_ret = False
-        fan2_spd_chk_ret = False
-        fan3_spd_chk_ret = False
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        while fan_read_ite <= 6:
-            self.cli_log_inf("Wait for {:d}th {:d} seconds, before check fan speed".format(fan_read_ite, fan_read_interval))
-            libmfg_utils.count_down(fan_read_interval)
-            fan_read_ite += 1
-
-            # Fan status dump
-            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-                self.cli_log_err("Read fan speed failed by command {:s}".format(cmd))
-                rc = False
-                break
-
-            # Fan speed verify, if PWM 60%, RPM = 6000 +-20%; if PWM 100%, RPM >= 9000
-            matcher = re.search(r'FAN\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
-            if not matcher:
-                self.cli_log_err("Parse Read Fan speed command output failed")
-                rc = False
-                break
-            fan1_inlet = int(matcher.group(1))
-            fan1_outlet = int(matcher.group(2))
-            fan2_inlet = int(matcher.group(3))
-            fan2_outlet = int(matcher.group(4))
-            fan3_inlet = int(matcher.group(5))
-            fan3_outlet = int(matcher.group(6))
-
-            if fan_pwm == 60:
-                if abs(fan1_inlet - 6000) <= 6000 * 0.2 and abs(fan1_outlet - 6000) <= 6000 * 0.2:
-                    fan1_spd_chk_ret = True
-                if abs(fan2_inlet - 6000) <= 6000 * 0.2 and abs(fan2_outlet - 6000) <= 6000 * 0.2:
-                    fan2_spd_chk_ret = True
-                if abs(fan3_inlet - 6000) <= 6000 * 0.2 and abs(fan3_outlet - 6000) <= 6000 * 0.2:
-                    fan3_spd_chk_ret = True
-            elif fan_pwm == 100:
-                if (fan1_inlet - 9000) >= 0 and (fan1_outlet - 9000) >= 0:
-                    fan1_spd_chk_ret = True
-                if (fan2_inlet - 9000) >= 0 and (fan2_outlet - 9000) >= 0:
-                    fan2_spd_chk_ret = True
-                if (fan3_inlet - 9000) >= 0 and (fan3_outlet - 9000) >= 0:
-                    fan3_spd_chk_ret = True
+        if self._mtp_type != MTP_TYPE.MATERA:
+            # Fan present test
+            cmd = MFG_DIAG_CMDS.MTP_FAN_PRSNT_FMT
+            if self.get_mtp_factory_location() == Factory.LAB:
+                pass_sig_list = [MFG_DIAG_SIG.MTP_FAN0_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN1_PRSNT_SIG, MFG_DIAG_SIG.MTP_FAN2_PRSNT_SIG]
             else:
-                # Not verify fan rpm for other pwm currently, just baseline check, rpm >=1000
-                if (fan1_inlet - 1000) >= 0 and (fan1_outlet - 1000) >= 0:
-                    fan1_spd_chk_ret = True
-                if (fan2_inlet - 1000) >= 0 and (fan2_outlet - 1000) >= 0:
-                    fan2_spd_chk_ret = True
-                if (fan3_inlet - 1000) >= 0 and (fan3_outlet - 1000) >= 0:
-                    fan3_spd_chk_ret = True
-
-            if fan1_spd_chk_ret and fan2_spd_chk_ret and fan2_spd_chk_ret:
-                break
-
-        for fan_idx, fan_spd_chk_ret in enumerate([fan1_spd_chk_ret, fan2_spd_chk_ret, fan3_spd_chk_ret]):
-            if not fan_spd_chk_ret:
-                self.cli_log_err("FAN{:d} Speed at PWM {:d} verify FAIL".format(fan_idx+1, fan_pwm))
-                rc = False
+                pass_sig_list = [MFG_DIAG_SIG.MTP_PRSNT_SIG]
+            rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if rc:
+                self.cli_log_inf("FAN present test passed")
             else:
-                self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
+                self.cli_log_err("FAN present test failed")
+                return rc
+
+            # Fan speed test
+            cmd = MFG_DIAG_CMDS.MTP_FAN_TEST_FMT
+            pass_sig_list = [MFG_DIAG_SIG.MTP_FAN_OK_SIG]
+            rc = self.mtp_mgmt_exec_cmd(cmd, pass_sig_list, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if rc:
+                self.cli_log_inf("FAN speed test passed")
+            else:
+                self.cli_log_err("FAN speed test failed")
+                return rc
+
+            # Fan speed set
+            self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
+            cmd = MFG_DIAG_CMDS.MTP_FAN_SET_SPD_FMT.format(fan_pwm)
+            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if not rc:
+                self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
+                return rc
+            self._fanspd = fan_pwm          # update class variable
+
+            # fan speed verify after set
+            fan_read_ite = 1
+            fan_read_interval = 10
+            fan1_spd_chk_ret = False
+            fan2_spd_chk_ret = False
+            fan3_spd_chk_ret = False
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            while fan_read_ite <= 6:
+                self.cli_log_inf("Wait for {:d}th {:d} seconds, before check fan speed".format(fan_read_ite, fan_read_interval))
+                libmfg_utils.count_down(fan_read_interval)
+                fan_read_ite += 1
+
+                # Fan status dump
+                if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                    self.cli_log_err("Read fan speed failed by command {:s}".format(cmd))
+                    rc = False
+                    break
+
+                # Fan speed verify, if PWM 60%, RPM = 6000 +-20%; if PWM 100%, RPM >= 9000
+                matcher = re.search(r'FAN\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})\s+(\d{2,})(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+                if not matcher:
+                    self.cli_log_err("Parse Read Fan speed command output failed")
+                    rc = False
+                    break
+                fan1_inlet = int(matcher.group(1))
+                fan1_outlet = int(matcher.group(2))
+                fan2_inlet = int(matcher.group(3))
+                fan2_outlet = int(matcher.group(4))
+                fan3_inlet = int(matcher.group(5))
+                fan3_outlet = int(matcher.group(6))
+
+                if fan_pwm == 60:
+                    if abs(fan1_inlet - 6000) <= 6000 * 0.2 and abs(fan1_outlet - 6000) <= 6000 * 0.2:
+                        fan1_spd_chk_ret = True
+                    if abs(fan2_inlet - 6000) <= 6000 * 0.2 and abs(fan2_outlet - 6000) <= 6000 * 0.2:
+                        fan2_spd_chk_ret = True
+                    if abs(fan3_inlet - 6000) <= 6000 * 0.2 and abs(fan3_outlet - 6000) <= 6000 * 0.2:
+                        fan3_spd_chk_ret = True
+                elif fan_pwm == 100:
+                    if (fan1_inlet - 9000) >= 0 and (fan1_outlet - 9000) >= 0:
+                        fan1_spd_chk_ret = True
+                    if (fan2_inlet - 9000) >= 0 and (fan2_outlet - 9000) >= 0:
+                        fan2_spd_chk_ret = True
+                    if (fan3_inlet - 9000) >= 0 and (fan3_outlet - 9000) >= 0:
+                        fan3_spd_chk_ret = True
+                else:
+                    # Not verify fan rpm for other pwm currently, just baseline check, rpm >=1000
+                    if (fan1_inlet - 1000) >= 0 and (fan1_outlet - 1000) >= 0:
+                        fan1_spd_chk_ret = True
+                    if (fan2_inlet - 1000) >= 0 and (fan2_outlet - 1000) >= 0:
+                        fan2_spd_chk_ret = True
+                    if (fan3_inlet - 1000) >= 0 and (fan3_outlet - 1000) >= 0:
+                        fan3_spd_chk_ret = True
+
+                if fan1_spd_chk_ret and fan2_spd_chk_ret and fan2_spd_chk_ret:
+                    break
+
+            for fan_idx, fan_spd_chk_ret in enumerate([fan1_spd_chk_ret, fan2_spd_chk_ret, fan3_spd_chk_ret]):
+                if not fan_spd_chk_ret:
+                    self.cli_log_err("FAN{:d} Speed at PWM {:d} verify FAIL".format(fan_idx+1, fan_pwm))
+                    rc = False
+                else:
+                    self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
+        else:
+            # Fan speed set
+            self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(fan_pwm)
+            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if not rc:
+                self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
+                return rc
+            self._fanspd = fan_pwm          # update class variable
 
         return rc
 
@@ -2057,12 +2067,14 @@ class mtp_ctrl():
     def mtp_hw_init(self, stage=None):
         rc = True
 
-        fan_spd = libmfg_utils.pick_fan_speed(stage)
+        fan_spd = libmfg_utils.pick_fan_speed(stage, self._mtp_type)
 
         self.cli_log_inf("Start MTP chassis sanity check", level=0)
         # mtp cpld test
         if self._mtp_type == "MATERA":
             rc &= self.mtp_fpga_ver_chk_test()
+            # fan spd set
+            rc &= self.mtp_fan_init(fan_spd)
         else:
             rc &= self.mtp_cpld_test()
             # fan init
@@ -4183,16 +4195,51 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_l1_setup(self, nic_list):
+        fail_nic_list = list()
+
+        if not nic_list:
+            # self.cli_log_err("No NICs passed")
+            return fail_nic_list
+
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        # first slot will be the "main" slot to issue the commands on.
+        slot_main = nic_list[0]
+
+        cmd = "export MTP_REV=REV_04"
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+
+        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}".format(nic_list_param)
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+
+        return fail_nic_list
+
     def mtp_i2c_show(self, nic_list):
         self.cli_log_inf("Show I2C device in the MTP Chassis", level=0)
         cmd = MFG_DIAG_CMDS.MTP_I2C_PRESENT_DISP_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to show I2C device in the MTP Chassis", level=0)
             self.mtp_dump_err_msg(self._mgmt_handle.before)
-            return nic_list[:]
+            return False
 
         self.cli_log_inf("Show I2C device in the MTP Chassis complete\n", level=0)
-        return []
+        return True
+
+    def mtp_set_mem_vddio(self, nic_list, margin=0):
+        self.cli_log_inf("Set MEM VDDIO margin in the MTP Chassis", level=0)
+        cmd = MFG_DIAG_CMDS.MTP_DEVICE_MARGIN_SET_FMT.format("MEM_VDDIO",margin)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to set mem vddio margin in the MTP Chassis", level=0)
+            self.mtp_dump_err_msg(self._mgmt_handle.before)
+            return False
+
+        self.cli_log_inf("Set MEM VDDIO margin in the MTP Chassis complete\n", level=0)
+        return True
 
     # validate the fru to double confirm scan process
     def mtp_nic_scan_fru_validate(self, nic_list):
@@ -5987,7 +6034,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
 
         # 0 = skip l1_ddr_bist; 1 = default
-        skip_ddr_bist = "1"
+        skip_ddr_bist = "1" if self._mtp_type != MTP_TYPE.MATERA else "0"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
