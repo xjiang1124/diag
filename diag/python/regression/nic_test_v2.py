@@ -748,6 +748,88 @@ class nic_test_v2:
             self.nic_con.uart_session_stop(session)
             common.session_stop(session)
 
+    def en_dis_esec_wp_single(self, args):
+        print(args)
+        enable = True
+        slot = args.slot
+
+        if args.en_dis == "enable":
+            enable = True
+        else:
+            enable = False
+
+        try:
+            session_bash = common.session_start()
+            session_bash.timeout = 30
+
+            # Start console first to get all output
+            session_uart = common.session_start()
+            session_uart.timeout = 60
+
+            ret = self.nic_con.uart_session_connect(session_uart, slot)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            # Power cycle NIC
+            cmd = "turn_on_slot.sh off {}".format(slot)
+            common.session_cmd(session_bash, cmd)
+            time.sleep(1)
+            cmd = "turn_on_slot.sh on {}".format(slot)
+            common.session_cmd(session_bash, cmd)
+            common.session_stop(session_bash)
+
+            ret = self.nic_con.uart_session_wait_for_login(session_uart)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            ret = self.nic_con.uart_session_enter_uboot_sysreset(session_uart)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            #========================================
+            # Enable/Disable ESEC QSPI WP
+            # deassert CPLD WP# to make sure SR is not in locked state
+            ret = self.nic_con.config_cpld_qspi_wp(session_uart, False)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            # change hwprot setting
+            ret = self.nic_con.config_esec_qspi_wp(session_uart, enable)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            # put CPLD WP# to the requested state
+            ret = self.nic_con.config_cpld_qspi_wp(session_uart, enable)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+            # read/verify hwprot setting
+            ret = self.nic_con.check_esec_qspi_wp(session_uart, enable)
+            if ret != 0:
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                return ret
+
+        except pexpect.TIMEOUT:
+            ret = -1
+
+        self.nic_con.uart_session_stop(session_uart)
+        common.session_stop(session_uart)
+
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -952,6 +1034,14 @@ if __name__ == "__main__":
     parser_multi_nic_cmds.add_argument("-sd_only", "--send_only", help="Only send command and do not wait for it finish", action='store_true')
 
     parser_multi_nic_cmds.set_defaults(func=test.multi_nic_cmds)
+
+    # Enable/Disable WP single
+    parser_setup_single = subparsers.add_parser('en_dis_esec_wp_single', help='Set up for single slot', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_setup_single.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_setup_single.add_argument("-en_dis", "--en_dis", help="Enable/Disable", type=str, default="enable")
+
+    parser_setup_single.set_defaults(func=test.en_dis_esec_wp_single)
 
     try:
         args = parser.parse_args()

@@ -210,6 +210,99 @@ class nic_con:
                 return ret
         return 0
 
+    #================================================== 
+    #
+    # Function wait till NIC boots up to prompt,
+    #   then log in with password
+    # 1. Assume that session is on console already
+    # 2. Assume card is just power cycled
+    # 
+    #================================================== 
+    def uart_session_wait_for_login(self, session, timeout=15):
+        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+
+        for ite in range(3):
+            print("ite: ", ite)
+            #timeout = 15
+
+            try:
+                #session.expect("Terminal ready")
+                print("sending r")
+                session.send("\r")
+
+                i = session.expect(expstr, timeout)
+                if i != len(expstr)-1:
+                    session.sendline(self.usr)
+                    session.expect("assword:")
+                    session.sendline(self.pwd)
+                    session.expect("\#")
+                else:
+                    return -1
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                print("=== Card not ready in ite {} ===".format(ite))
+                ret = -1
+
+        if ret != 0:
+            print("=== TIMEOUT: Can not connect to NIC on UART!")
+
+        return ret
+
+    #================================================== 
+    #
+    # Function uses "systeset" command to reboot, 
+    #   then enter uboot with CTRL+c
+    # 1. Assume that session is on console already
+    # 2. Assume card has logged in already
+    # 
+    #================================================== 
+    def uart_session_enter_uboot_sysreset(self, session):
+        expstr = ["Capri# ", "DSC# "]
+        ret = -1
+
+        cmd = "sysreset.sh\r"
+        session.sendline(cmd)
+        time.sleep(1)
+        for i in range(60):
+            session.timeout = 1
+            try:
+                print("C+C", i)
+                session.send(chr(3))
+                session.expect(expstr)
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                print("Retry:", i)
+                ret = -1
+
+        if ret == -1:
+            print("=== Failed to enter uboot ===")
+
+        # When sending to manay C+C, there are multiple pending DSC# prompt.
+        # Following section is to clear the pending prompt to avoid mismatch
+        for i in range(20):
+            try:
+                session.timeout = 1
+                session.expect(expstr)
+            except pexpect.TIMEOUT:
+                print("No more expect")
+                break
+
+        return ret
+
+    def uart_session_connect(self, session, slot, timeout=15):
+        ret = 0
+        cmd = self.fmt_con_cmd.format(slot)
+        expstr = "tx/rx buffer cleared"
+        try:
+            session.sendline(cmd)
+            session.expect(expstr, timeout)
+        except pexpect.TIMEOUT:
+            print("=== TIMEOUT: Failed to connect console")
+            ret = -1
+        return ret
+
     def power_cycle_uart(self, slot=0):
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
@@ -360,6 +453,31 @@ class nic_con:
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd)
         time.sleep(1)
+
+        self.uart_session_start(session, slot)
+        cmd = "sysreset.sh\r"
+        session.sendline(cmd)
+        time.sleep(1)
+        for i in range(60):
+            session.timeout = 0.5
+            try:
+                print("C+C", i)
+                session.send(chr(3))
+                session.expect(expstr)
+                ret = 0
+                break
+            except pexpect.TIMEOUT:
+                print("timeout:", i)
+                ret = -1
+        self.uart_session_stop(session)
+
+        if ret == -1:
+            print("=== Failed to enter uboot ===")
+        return ret
+
+    def enter_uboot_by_sysreset_after_pwr_cycle_v2(self, session, timeout=30):
+        expstr = ["Capri# ", "DSC# "]
+        ret = -1
 
         self.uart_session_start(session, slot)
         cmd = "sysreset.sh\r"
@@ -1120,11 +1238,14 @@ class nic_con:
             session.sendline(cmd)
             session.expect(expstr)
 
-            if int(session.before.splitlines()[1], 16) & 0x80 != rd_value:
+            # Remove empty lines: happened on Matera MTP
+            before = [s for s in session.before.splitlines() if s]
+
+            #if int(session.before.splitlines()[1], 16) & 0x80 != rd_value:
+            if int(before[1], 16) & 0x80 != rd_value:
                 print("unexpected status after", str, "WP")
                 ret = -1
         except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
             print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
@@ -1144,7 +1265,6 @@ class nic_con:
             session.sendline(cmd)
             session.expect(expstr)
         except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
             print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
@@ -1167,7 +1287,6 @@ class nic_con:
                 print("unexpected status after", str, "WP")
                 ret = -1
         except pexpect.TIMEOUT:
-            self.uart_session_stop(session)
             print("=== TIMEOUT: Failed to", str, "WP ===")
             ret = -1
         if ret != 0:
