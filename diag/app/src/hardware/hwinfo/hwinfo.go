@@ -505,6 +505,9 @@ func init() {
     malfaDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
     malfaDispStaList["VDDQ"]         = ina3221a.DispStatus
     malfaDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
+    malfaDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
+    malfaDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
+    malfaDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
