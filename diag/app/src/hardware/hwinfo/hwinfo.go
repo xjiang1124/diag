@@ -25,6 +25,7 @@ import (
     "device/powermodule/tps25990"
     "device/powermodule/isl69247"
     "device/powermodule/ina3221a"
+    "device/powermodule/ad7997"
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/psu/dps2100"
@@ -489,6 +490,12 @@ func init() {
 
     //Malfa
     malfaDispStaList = make(map[string]DispStaFunc)
+    malfaDispStaList["CORE"]         = tps53688.DispStatus
+    malfaDispStaList["ARM"]          = tps53688.DispStatus
+    malfaDispStaList["P12V"]         = ina3221a.DispStatus
+    malfaDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
+    malfaDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
+    malfaDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
     malfaDispStaList["P3V3"]         = ina3221a.DispStatus
     malfaDispStaList["P1V8"]         = ina3221a.DispStatus
     malfaDispStaList["VDD_DDR"]      = ina3221a.DispStatus
@@ -497,6 +504,7 @@ func init() {
     malfaDispStaList["VDD_12_PCIE"]  = ina3221a.DispStatus
     malfaDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
     malfaDispStaList["VDDQ"]         = ina3221a.DispStatus
+    malfaDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)

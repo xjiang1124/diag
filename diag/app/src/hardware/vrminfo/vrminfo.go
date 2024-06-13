@@ -10,6 +10,8 @@ func init() {
     // MALFA
     malfaSensorTbl := make(map[string]float64)
     malfaSensorTbl = map[string]float64 {
+        "P12V_ADC": 0.06,
+        "P12V_AUX_ADC": 0.06,
         "P12V": 0.002,
         "P3V3": 0.02,
         "VDD_DDR": 0.005,
