@@ -232,6 +232,12 @@ class MTP_Const:
     MFG_TEMP_SOAK_TIMEOUT = 180
     MFG_TEMP_CHECK_INTERVAL = 10
 
+    MFG_MATERA_ORT_HIGH_FAN_SPD = 80
+    MFG_MATERA_RDT_HIGH_FAN_SPD = 80
+    MFG_MATERA_EDVT_HIGH_FAN_SPD = 80
+    MFG_MATERA_EDVT_NORM_FAN_SPD = 50
+    MFG_MATERA_EDVT_LOW_FAN_SPD = 50
+
     # MTP temperature controls for chamber and outside
     HIGH_CHAMBER_UPPER_LIMIT = 60
     HIGH_CHAMBER_LOWER_LIMIT = 40
@@ -322,6 +328,7 @@ class MFG_DIAG_CMDS:
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
     MTP_I2C_PRESENT_DISP_FMT = "devmgr_v2 -status"
+    MTP_MATERA_FAN_SET_SPD_FMT = "devmgr_v2 fanctrl --pct {:d}"
 
     MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
@@ -419,6 +426,7 @@ class MFG_DIAG_CMDS:
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
+    NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}  -e /0"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -605,6 +613,7 @@ class MFG_DIAG_CMDS:
     NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh {:s}"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
+    MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

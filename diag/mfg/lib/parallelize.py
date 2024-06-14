@@ -157,7 +157,7 @@ def parallel_nic_using_j2c(func):
         nic_list = sanitize_input(func, mtp_mgmt_ctrl, nic_list)
         if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
             # run parallel
-            fail_nic_list = split_into_threads(func, mtp_mgmt_ctrl, nic_list, *test_args, **test_kwargs)
+            fail_nic_list = split_into_threads(func, mtp_mgmt_ctrl, nic_list, False, *test_args, **test_kwargs)
         elif mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.TURBO_ELBA:
             # run odd slots together and even slots together
             top_nic_list = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots

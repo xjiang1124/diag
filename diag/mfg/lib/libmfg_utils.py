@@ -30,6 +30,7 @@ from libdefs import Swm_Test_Mode
 from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
 from libdefs import Voltage_Margin
+from libdefs import MTP_TYPE
 from libmfg_cfg import *
 from libsku_utils import *
 import image_control
@@ -2489,42 +2490,54 @@ def pick_temperature_thresholds(stage):
 
     return low_temp_threshold, high_temp_threshold
 
-def pick_fan_speed(stage):
+def pick_fan_speed(stage, mtp_type=None):
     if stage == FF_Stage.FF_P2C:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_NORM_FAN_SPD
 
     elif stage == FF_Stage.FF_2C_L:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_LOW_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
+            if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_LOW_FAN_SPD
 
     elif stage == FF_Stage.FF_4C_L:
         fanspd = MTP_Const.MFG_EDVT_LOW_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_LOW_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_LOW_FAN_SPD
+            if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_LOW_FAN_SPD
 
     elif stage == FF_Stage.FF_2C_H:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
+            if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_4C_H:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
 
         if not GLB_CFG_MFG_TEST_MODE:
             fanspd = MTP_Const.MFG_MODEL_EDVT_HIGH_FAN_SPD
+            if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_MODEL_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_ORT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
 
     elif stage == FF_Stage.FF_RDT:
         fanspd = MTP_Const.MFG_EDVT_HIGH_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_HIGH_FAN_SPD
 
     else:
         fanspd = MTP_Const.MFG_EDVT_NORM_FAN_SPD
+        if mtp_type == MTP_TYPE.MATERA: fanspd = MTP_Const.MFG_MATERA_EDVT_NORM_FAN_SPD
 
     return fanspd
 
