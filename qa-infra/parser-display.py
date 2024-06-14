@@ -18,6 +18,8 @@ except SystemExit:
 except:
     xslx_file = glob.glob("parse_result*.xlsx")[0]
 df = pd.read_excel(xslx_file, engine='openpyxl')
+df = df.dropna(subset=["Slot"]) # drop records with missing info as NaN
+df["Slot"] = df["Slot"].astype('int') # dont store as float
 nic_list = df["SN"].tolist()
 slot_list = df["Slot"].tolist()
 df = df.drop(columns=["Stage", "SN", "Test", "MTP", "EMMC Vendor", "Date", "Rev"]) # reduce text on screen
