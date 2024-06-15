@@ -612,11 +612,11 @@ class nic_test_v2:
                     time.sleep(1)
                     cmd = "turn_on_slot.sh on {}".format(slot)
                     common.session_cmd(session_bash, cmd)
-                    common.session_stop(session_bash)
                 ret = self.nic_con.uart_session_wait_for_login(session_uart)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session_uart)
                     common.session_stop(session_uart)
+                    common.session_stop(session_bash)
                     continue
                 print("=== Starting setup env on slot {} ===".format(slot))
                 # get_mtp_rev() not work on Matera, hard code for now
@@ -657,6 +657,7 @@ class nic_test_v2:
 
                 self.nic_con.uart_session_stop(session_uart)
                 common.session_stop(session_uart)
+                common.session_stop(session_bash)
 
             except pexpect.TIMEOUT:
                 print("=== TIMEOUT: Failed to set up env single slot {} ===".format(slot))
