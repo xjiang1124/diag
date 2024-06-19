@@ -19,7 +19,8 @@ elif [[ $CARD_TYPE == "MTP_MATERA" ]]
 then
     slot=$1
     echo "UART connected to slot $1"
-    fpga_uart $((slot - 1))
+    # Assign CPU thread to each of fpga_uart as it takes a lot of CPU reserouce
+    taskset -c $slot fpga_uart $((slot - 1))
 else
 cpldutil -cpld-wr -addr=0x18 -data=0
 cpldutil -cpld-wr -addr=0x18 -data=$1

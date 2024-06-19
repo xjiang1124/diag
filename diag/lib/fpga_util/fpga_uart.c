@@ -249,12 +249,12 @@ void *send_tx_input(void *port)
                     printf("sending character %c\n", ch);
                 write_fpga_mem32(uart_addr, UART_0_TXDATA_REG, (DWORD)ch);
                 usleep(80);
-		/*
+        /*
                 read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
-		printf("uart stat register value %x\n", data);
+        printf("uart stat register value %x\n", data);
                 read_fpga_mem32(uart_addr, UART_0_TXDATA_REG, &data);
-		printf("uart tx data register value %x\n", data);
-		*/
+        printf("uart tx data register value %x\n", data);
+        */
                 ch = getch_local();
             }
             if ( verbosity > 1 )
@@ -275,15 +275,25 @@ void get_rx_buffer(int port)
 
     uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
     read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+    if ( data & 0xe0 ) {
+        printf("UART ERROR1: uart status register = %x\n", data);
+    }
+
     while ( data & 0x1 ) {
-        if ( verbosity )  
+        if ( verbosity ) {
             printf(" uart status register = %x\n", data);
+        }
+
         read_fpga_mem32(uart_addr, UART_0_RXDATA_REG, &data);
         if ( verbosity )  
             printf(" uart received data = %c\n", data);
         printf("%c", (unsigned char)(data & 0xff));
-	fflush(stdout);
+        fflush(stdout);
         read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+
+        if ( data & 0xe0 ) {
+            printf("UART ERROR2: uart status register = %x\n", data);
+        }
     }
     return;
 }
@@ -294,6 +304,7 @@ int main(int argc, char **argv)
     pthread_t id;
     ULONGLONG pcie_bar;
     DWORD data;
+    DWORD wait_us;
     ULONGLONG uart_addr;
 
     if ( argc < 2 ) { 
@@ -308,20 +319,21 @@ int main(int argc, char **argv)
     uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
     data = UART_RESET_TXFIFO | UART_RESET_RXFIFO;
     write_fpga_mem32(uart_addr, UART_0_CTRL_REG, data);
+    wait_us = (rand() & 0xf) + 1;
     printf("tx/rx buffer cleared\n");
 
     pthread_create(&id, NULL, send_tx_input, (void *)&port);
     for ( ; ; ) { 
         /* printf("\ruart console %d>", (int)port); */
-	get_rx_buffer(port);
-	fflush(stdout);
-	/* send_tx_input(port); */
+    get_rx_buffer(port);
+    fflush(stdout);
+    /* send_tx_input(port); */
         if ( exit_all ) {
             printf("\n");
             fflush(stdout);
             return 0;
         }
-        usleep(40);
+        usleep(wait_us);
     }
     return 0;
 }
