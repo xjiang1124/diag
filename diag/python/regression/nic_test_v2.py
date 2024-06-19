@@ -591,7 +591,7 @@ class nic_test_v2:
         return ret
 
     # setup_env for single slot
-    def setup_env(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=2, do_untar=""):
+    def setup_env(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=1, do_untar=""):
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
             print("slot", slot)
@@ -612,6 +612,7 @@ class nic_test_v2:
                     time.sleep(1)
                     cmd = "turn_on_slot.sh on {}".format(slot)
                     common.session_cmd(session_bash, cmd)
+
                 ret = self.nic_con.uart_session_wait_for_login(session_uart)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session_uart)
