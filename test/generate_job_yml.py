@@ -28,7 +28,7 @@ import sys, os
 
 DEFAULT = ["FST"]
 DIAG_CHANGES = ["P2C"]
-SCRIPT_CHANGES = ["P2C", "SWI", "FST"]
+SCRIPT_CHANGES = ["P2C", "SWI", "FST", "SRN"]
 RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST", "SRN"]
 
 cwd = os.path.basename(os.getcwd())
@@ -42,7 +42,7 @@ NICS_BY_STAGE = dict()
 if job_set != "asic":
     # always keep FST test even if ortano-ti-orc is skipped
     # since infra tests depend on it
-    NICS_BY_STAGE["FST"] = {"ortano-ti-orc": ("elba", "ortano-ti")}
+    NICS_BY_STAGE["FST"] = {"ortano-ti-orc": ("elba", "elba", "ortano-ti")}
 
 
 
@@ -65,7 +65,7 @@ def write_headers(fh):
 
     fh.write("e2e-targets:\n")
 
-def write_targets(fh, asic, hardware, nic_type, stage):
+def write_targets(fh, mtp_type, asic, hardware, nic_type, stage):
     fh.write("  {:s}:\n".format(nic_type))
     fh.write("    commands: [\"sh\", \"-c\", \"/psdiag/test/run_mfg_job.sh \
 --nic-type {:s} \
@@ -103,10 +103,7 @@ def write_targets(fh, asic, hardware, nic_type, stage):
         fh.write("           value: supermicro\n")
     else:
         fh.write("         - name: mtp-nic-processor\n")
-        if asic == "giglio":
-            fh.write("           value: elba\n") # can share with elba MTP
-        else:
-            fh.write("           value: {:s}\n".format(asic))
+        fh.write("           value: {:s}\n".format(mtp_type))
     fh.write("         - name: {:s}\n".format(hardware))
     fh.write("           value: yes\n")
     fh.write("    provision:\n")
@@ -130,11 +127,11 @@ def write_stage_jobyml():
                 continue
             if line.startswith("#"):
                 continue
-            *stages, asic, hardware, nic_type = line.split("\t")
+            *stages, mtp_type, asic, hardware, nic_type = line.split("\t")
 
             for stage in stages:
                 if not stage: continue # skip empty
-                add_stage(stage, nic_type, (asic, hardware))
+                add_stage(stage, nic_type, (mtp_type, asic, hardware))
 
     # write the new .job.ymls for each stage
     for stage in NICS_BY_STAGE:
@@ -143,7 +140,7 @@ def write_stage_jobyml():
         with open(f"{stage}/.job.yml", "w") as fh:
             write_headers(fh)
             for nic_type, nic_detail in NICS_BY_STAGE[stage].items():
-                write_targets(fh, nic_detail[0], nic_detail[1], nic_type, stage)
+                write_targets(fh, nic_detail[0], nic_detail[1], nic_detail[2], nic_type, stage)
 
 def update_root_job_yml():
     ### remove old lines

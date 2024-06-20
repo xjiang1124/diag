@@ -14,6 +14,7 @@ script_nic_type = {
         "ortano-solo-orc": "ORTANO2SOLO",
         "ortano-solo-orc_th": "ORTANO2SOLOORCTHS",
         "ortano-adicr-orc": "ORTANO2ADICR",
+        "ortano-solo-orc-matera": "ORTANO2SOLO",
 
         "ortano-ti-msft": "ORTANO2",
         "ortano-adi-msft": "ORTANO2ADIMSFT",
@@ -30,8 +31,8 @@ script_nic_type = {
         "pomonte-dell": "POMONTEDELL",
 
         "ginestra": "GINESTRA_D5",
-        "ginestra-S4_58-0001-01": "GINESTRA_S4",
-        "ginestra-S4_58-0002-01": "GINESTRA_S4",
+        "ginestra-s4_58-0001-01": "GINESTRA_S4",
+        "ginestra-s4_58-0002-01": "GINESTRA_S4",
         "dsc2a-2q200-32s32f64p-s4a": "GINESTRA_S4",
         "dsc2a-2q200-32s32f64p-s4b": "GINESTRA_S4",
         "dsc2a-2q200-32s32f64p-s4c": "GINESTRA_S4",
