@@ -239,7 +239,6 @@ func PreUutSetup(uutName string) (lockName string, err int) {
     if cardType != "MTP_MATERA" {
         i2cDevIdx, err = FindUutI2cDev(uutName)
         if err != errType.SUCCESS {
-            cli.Println("d", "FindUutI2cDev(uutName) returns error! uutName =", uutName)
             return
         }
 
@@ -282,7 +281,6 @@ func PreUutSetupBlind(uutName string) (lockName string, err int) {
     if cardType != "MTP_MATERA" {
         i2cDevIdx, err = FindUutI2cDev(uutName)
         if err != errType.SUCCESS {
-            cli.Println("d", "PreUutSetupBlind :: uutName =", uutName, "Failed FindUutI2cDev(uutName)")
             return
         }
 

@@ -886,8 +886,6 @@ func DumpEepromTlvs(devName string, numBytes int) (err int) {
         }
     }
 
-    //debug
-    cli.Println("d", rdData)
     f.WriteString(string(rdData[:]))
     f.Close()
     cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
