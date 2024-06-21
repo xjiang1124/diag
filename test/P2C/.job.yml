@@ -593,32 +593,3 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  ginestra-S4_58-0002-01:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type ginestra-S4_58-0002-01 --testbed /warmd.json --test-type precheckin --asic giglio --testsuite /psdiag/test/spec/testsuites/P2C.testsuite"]
-    owners: ["email:nabeel@pensando.io"]
-    area:
-    sub-area:
-    feature:
-    build-dependencies:
-     - build-amd64-giglio
-     - build-arm64-giglio
-     - package-giglio-mfg-script
-     - package-fw-assets
-    deployment:
-      skip-pxe-install: true
-    resources:
-     - generic:
-       - type: MTP
-         vendor: Pensando
-         count: 1
-         props:
-         - name: mtp-nic-processor
-           value: elba
-         - name: ginestra
-           value: yes
-    provision:
-      username: diag
-      password: lab123
-      vars:
-        BmOs: linux
-

@@ -529,9 +529,9 @@ class NIC_IMAGES:
     fail_cpld_dat["58-0001-01"] = "0x07"
     fail_cpld_md5["58-0001-01"] = "b1a45f86b7889a8d1bf4513c67c17492"
     fea_cpld_img["58-0001-01"] = "ginestra_impl1.bin"
-    diagfw_img["58-0001-01"] = "naples_diagfw_elba_1.68-G-9_2024.02.29.tar"
-    diagfw_dat["58-0001-01"] = "12-14-2023"
-    diagfw_md5["58-0001-01"] = "b7f21e82758d04b22096ad9801a2cb25"
+    diagfw_img["58-0001-01"] = "naples_diagfw_elba_1.68-G-17_2024.03.21.tar"
+    diagfw_dat["58-0001-01"] = "03-21-2024"
+    diagfw_md5["58-0001-01"] = "209134861198a13872b4e25129177746"
 
     cpld_img["58-0002-01"] = "ginestra_d5_rev2_7_working_12132023.bin"
     cpld_ver["58-0002-01"] = "0x2"
@@ -593,6 +593,22 @@ class NIC_IMAGES:
     goldfw_img["DSC2A-2Q200-32S32F64P-S4C"] = "naples_goldfw_elba_1.68-G-19_2024.04.06.tar"
     goldfw_dat["DSC2A-2Q200-32S32F64P-S4C"] = "04-06-2024"
     goldfw_md5["DSC2A-2Q200-32S32F64P-S4C"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
+
+    cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    sec_cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    sec_cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    sec_cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    fail_cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    fail_cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    goldfw_img["DSC2A-2Q200-32S32F64P-S4"] = "naples_goldfw_elba_1.68-G-19_2024.04.06.tar"
+    goldfw_dat["DSC2A-2Q200-32S32F64P-S4"] = "04-06-2024"
+    goldfw_md5["DSC2A-2Q200-32S32F64P-S4"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
 class MTP_IMAGES:
     amd64_img = dict()
