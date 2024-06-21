@@ -183,7 +183,7 @@ func GetOutEn(devName string) (out_en_sts uint16, err int) {
     out_en_sts = uint16(data1)
     out_en_sts = out_en_sts << 8
     out_en_sts = out_en_sts | uint16(data0)
-    cli.Println("d", fmt.Sprintf("dev %s CLK_EN sts: 0x%04x", devName, out_en_sts))
+    //cli.Println("d", fmt.Sprintf("dev %s CLK_EN sts: 0x%04x", devName, out_en_sts))
 
     return
 }
@@ -215,7 +215,7 @@ func SetOutEn(devName string, clk_idx uint, setting bool) (err int) {
         old_setting = true
     }
     if setting == old_setting {
-        cli.Println("d", fmt.Sprint("Setting CLK%d OUTPUT_EN to '%s': It was already '%s'", clk_idx, strconv.FormatBool(setting), strconv.FormatBool(old_setting)))
+        cli.Println("i", fmt.Sprint("Setting CLK%d OUTPUT_EN to '%s': It was already '%s'", clk_idx, strconv.FormatBool(setting), strconv.FormatBool(old_setting)))
         return
     }
     if setting {
