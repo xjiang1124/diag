@@ -29,6 +29,7 @@ elba_enable_jtag() {
     if [ $? -ne 0 ]
     then
         echo "Empty slot $slot"
+        return
     fi
 
     reg1=$(( $reg1 & 0xFC ))
