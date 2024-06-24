@@ -406,12 +406,12 @@ class nic_test_v2:
                                 "date").format(mode, dura, verbose_str, int_lpbk_str, snake_num)
                         sig = ["SNAKE TEST PASSED", "SNAKE TEST FAILED"]
                         ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, verbose)
-                        if ret < 0:
-                            print ("=== snake Result at Slot {}: Failed".format(slot))
-                            sts = "FAIL"
-                        else:
+                        if ret == 0:
                             print ("=== snake Result at Slot {}: Passed".format(slot))
                             sts = "PASS"
+                        elif ret == 1:
+                            print ("=== snake Result at Slot {}: Failed".format(slot))
+                            sts = "FAIL"
                     except pexpect.TIMEOUT:
                         ret = -1
                 self.nic_con.uart_session_stop(session)
@@ -453,12 +453,12 @@ class nic_test_v2:
                             "date").format(mode, dura, lpbk, poly)
                     sig = ["PCIE PRBS PASSED", "FAILED"]
                     ret = self.nic_con.uart_session_cmd_sig(session, cmd, timeout, "\#", sig, False)
-                    if ret < 0:
-                        print ("=== Result at Slot {}: Failed".format(slot))
-                        sts = "FAILED"
-                    else:
+                    if ret == 0:
                         print ("=== Result at Slot {}: Passed".format(slot))
                         sts = "PASSED"
+                    elif ret == 1:
+                        print ("=== Result at Slot {}: Failed".format(slot))
+                        sts = "FAILED"
                 except pexpect.TIMEOUT:
                     ret = -1
             self.nic_con.uart_session_stop(session)
