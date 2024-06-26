@@ -50,7 +50,7 @@ def load_mtp_cfg(cfg_yaml=None, subcommand=None):
     elif subcommand == 'rdt':
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
     elif subcommand == 'ort':
-        mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
     else:
         print('Warning: Loading all possiable mtp chassis cfg file, there might have duplicated overwrite')
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/dl_p2c_mtp_chassis_cfg.yaml"))
@@ -58,7 +58,7 @@ def load_mtp_cfg(cfg_yaml=None, subcommand=None):
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/swi_mtp_chassis_cfg.yaml"))
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/fst_mtps_chassis_cfg.yaml"))
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
-        mtp_chassis_cfg_file_list.append(os.path.abspath("config/rdt_mtp_chassis_cfg.yaml"))
+        mtp_chassis_cfg_file_list.append(os.path.abspath("config/ort_mtp_chassis_cfg.yaml"))
         mtp_chassis_cfg_file_list.append(os.path.abspath("config/mtp_screen_chassis_cfg.yaml"))
     
     mtp_cfg_db = mtp_db(mtp_chassis_cfg_file_list)
@@ -943,7 +943,7 @@ def run_rdt_tests(args):
 
     test_cmd = ["python3", "./mtp_diag_regression.py"]
     test_cmd_option = sys.argv[2:]
-    stage = FF_Stage.FF_ORT
+    stage = FF_Stage.FF_RDT
 
     # launching script from MTP
     if not args.run_from_remote:
@@ -1616,6 +1616,7 @@ if __name__ == "__main__":
     parser_rdt.add_argument("--l1_seq", "-l1_seq",  help="asic L1 run under sequence mode", action='store_true')
     parser_rdt.add_argument("--iteration", "--NthIteration", "-iteration", "-NthIteration", help="The Index(Nth Iteration), Some Test may define parameter according the index. E.g. Snake, odd Ite use extrernal loopback, even Ite use internal loopback", type=int, required=False, default=1)
     parser_rdt.add_argument("--jobd_logdir", "--logdir", "-jobd_logdir", help="Store final log to different path for CI/CD", default=None)
+    parser_rdt.set_defaults(func=run_rdt_tests)
 
     parser_mtp.add_argument("--verbosity", "-verbosity", help="increase output verbosity", action='store_true')
     parser_mtp.add_argument("--swm", "-swm", type=Swm_Test_Mode, help="SWM test mode; default to %(default)s", choices=list(Swm_Test_Mode), default=Swm_Test_Mode.SW_DETECT)
