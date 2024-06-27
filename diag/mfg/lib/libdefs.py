@@ -542,11 +542,11 @@ class MFG_DIAG_CMDS:
     MATERA_MTP_SINGLE_MGMT_FPO_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -fpo"
     MATERA_MTP_SINGLE_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -asic_type {:s}"
     MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
-    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s} -mode hod"
-    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s}  -mode hod_1100"
-    MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 300 -vmarg {:s} -mode nod_525"
-    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 600 -vmarg {:s}  -mode nod"
-    MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 600 -vmarg {:s} -mode=hod_1100"
+    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s} -mode hod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode hod_1100 -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 500 -vmarg {:s} -mode nod_525 -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode nod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 700 -vmarg {:s} -mode=hod_1100 -int_lpbk True"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
@@ -615,6 +615,7 @@ class MFG_DIAG_CMDS:
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
     MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
+    MTP_STOP_REDIS_FMT = "systemctl stop redis-server"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"

@@ -30,10 +30,10 @@ from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import Voltage_Margin
 from libdefs import Factory
+from libdefs import MTP_DIAG_Logfile
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libmfg_cfg import DRY_RUN
-from libmfg_cfg import MTP_HEALTH_MONITOR
+from libmfg_cfg import *
 from diag_screening_emmc import save_test_data2csv_file
 from diag_screening_ddr import get_test_arguments
 from diag_screening_ddr import args2optionstring
@@ -675,6 +675,149 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
 
     return True
 
+@parallelize.parallel_nic_using_ssh
+def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
+    ret = True
+    mtp_para_test_list = mtp_para_test_list[slot]
+    logfile_list = list()
+    path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if "SNAKE_HBM" in mtp_para_test_list:
+        logfile_list.append(path+"snake_hbm.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_PCIE" in mtp_para_test_list:
+        logfile_list.append(path+"snake_pcie.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "PRBS_ETH" in mtp_para_test_list:
+        logfile_list.append(path+"prbs_eth.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_ELBA" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"snake_giglio.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"snake_elba.log")
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+            logfile_list.append("/data/nic_util/asicutil*log")
+    if "ETH_PRBS" in mtp_para_test_list:
+        if nic_type in CAPRI_NIC_TYPE_LIST:
+            # uses DSP log
+            pass
+        elif nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_MX.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_PRBS_MX.log")
+    if "ARM_L1" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_arm_l1_test.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_arm_l1_test.log")
+    if "PCIE_PRBS" in mtp_para_test_list:
+        if nic_type in CAPRI_NIC_TYPE_LIST:
+            # uses DSP log
+            pass
+        elif nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_PCIE.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_PRBS_PCIE.log")
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+            logfile_list.append("/data/nic_util/asicutil*log")
+    if "DDR_BIST" in mtp_para_test_list:
+        logfile_list.append(path+"arm_ddr_bist_0.log")
+        logfile_list.append(path+"arm_ddr_bist_1.log")
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
+        return False
+
+    # for test in mtp_para_test_list:
+    #     err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(slot, test)
+    #     for err_msg in err_msg_list:
+    #         mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+    #         ret = False
+
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def single_nic_dsp_test(mtp_mgmt_ctrl, slot, test, dsp, vmarg, swmtestmode):
+    def get_diag_para_test_run_cmd(dsp, test, slot, opts, sn, mode):
+        card_name = "NIC{:d}".format(slot+1)
+        param = '"'
+        if "SN" in opts and opts["SN"]:
+            param += 'sn={:s} '.format(sn)
+        if "SLOT" in opts and opts["SLOT"]:
+            param += 'slot={:d}'.format(slot+1)
+        if "MODE" in opts and opts["MODE"]:
+            param += 'mode={:s}'.format(mode)
+        param += '"'
+        return libmfg_utils.diag_para_run_cmd(card_name, dsp, test, param)
+
+    def get_diag_para_test_errcode_cmd(dsp, slot, opts):
+        card_name = "NIC{:d}".format(slot+1)
+        return libmfg_utils.diag_para_errcode_cmd(card_name, dsp)
+
+    diag_test_timeout = MTP_Const.DIAG_MEM_DDR_STRESS_TEST_TIMEOUT if dsp == "MEM" and test == "DDR_STRESS" else MTP_Const.DIAG_PARA_TEST_TIMEOUT
+    opts = {"NIC_NAME": True, "SN": False, "SLOT": False}
+    mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
+    diag_cmd = get_diag_para_test_run_cmd(dsp, test, slot, opts, None, mode)
+    rslt_cmd = get_diag_para_test_errcode_cmd(dsp, slot, opts)
+
+    card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
+        # external loopback for P2C
+        if vmarg == Voltage_Margin.normal:
+            diag_cmd += " -p 'int_lpbk=0'"
+        # internal loopback for 2C/4C
+        else:
+            diag_cmd += " -p 'int_lpbk=1'"
+
+    ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, timeout=diag_test_timeout)
+
+    if test == "I2C":
+        mtp_mgmt_ctrl.mtp_nic_i2c_bus_scan(slot)
+
+    # Collect NIC onboard logfiles
+    asic_dir_logfile_list = []
+    path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+    if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_PRBS_PCIE.log")
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_PRBS_MX.log")
+    if dsp == "NIC_ASIC" and test == "L1" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
+
+    if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_PRBS_PCIE.log")
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
+    if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+    if dsp == "MEM" and test == "DDR_STRESS":
+        asic_dir_logfile_list.append("/data/nic_util/" + "stressapptest.log")
+
+    if asic_dir_logfile_list:
+        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC onboard asic logfile for ({:s}, {:s}) test failed".format(dsp, test))
+            ret = False
+
+    if dsp == "NIC_ASIC" and test == "L1":
+        pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
+        number_of_arm_l1_tests = 2
+        if pass_count != number_of_arm_l1_tests:
+            err_msg_list.append("ARM L1 Sub Test only passed: {:d}".format(pass_count))
+            ret = False
+        if log_err_msg_list:
+            err_msg_list += log_err_msg_list
+
+    # only display first 3 and last 3 error messages
+    if len(err_msg_list) < 6:
+        err_msg_disp_list = err_msg_list
+    else:
+        err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+    for err_msg in err_msg_disp_list:
+        mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+
+    return ret
+
 
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
@@ -810,6 +953,12 @@ def main():
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
+        nic_test_history = {slot: [] for slot in pass_nic_list}
+
+        @parallelize.parallel_nic_using_ssh
+        def update_nic_test_history(mtp_mgmt_ctrl, slot, test):
+            nic_test_history[slot].append(test)
+
         def get_slots_of_type(nic_type, except_type=[]):
             return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
 
@@ -912,8 +1061,6 @@ def main():
                 fail_desc = "Initialize NIC diag environment failed"
             elif test == "UART":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_console_access(nic_list)
-            elif test == "I2C":
-                rlist = run_i2c_bus(mtp_mgmt_ctrl, nic_list, "I2C", "I2C", vmarg)
             elif test == "NIC_JTAG":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
@@ -933,8 +1080,10 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "SNAKE_ELBA":
+                update_nic_test_history(mtp_mgmt_ctrl, nic_list, test)
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
             elif test == "PCIE_PRBS":
+                update_nic_test_history(mtp_mgmt_ctrl, nic_list, test)
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
                 fail_desc = "Fail to PCIE_PRBS check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "L1_SETUP":
@@ -943,9 +1092,15 @@ def main():
             elif test == "L1":
                 rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, test_kwargs["l1_sequence"])
                 fail_desc = "Fail to L1 check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "I2C":
+                rlist = single_nic_dsp_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, swmtestmode)
+                fail_desc = "Fail to run I2C(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "SEC_KEY_PROG":
                 rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list)
                 fail_desc = "Fail to SEC_KEY_PROG(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "ASIC_LOG_SAVE":
+                rlist = naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_test_history)
+                fail_desc = "Fail to Collect ASIC Log(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 rlist = nic_list
@@ -982,20 +1137,22 @@ def main():
             run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_HIGH")
             run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_NORMAL")
             run_mtp_test(pass_nic_list, "I2C_DEVICE")
-            # run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
+            run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
+            run_nic_test(pass_nic_list, "NIC_PWRCYC")
+            run_nic_test(pass_nic_list, "UART")
             run_nic_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
             run_nic_test(pass_nic_list, "NIC_TYPE")
             run_nic_test(pass_nic_list, "NIC_POWER")
             run_nic_test(pass_nic_list, "NIC_JTAG")
             run_nic_test(pass_nic_list, "NIC_DIAG_BOOT")
             run_nic_test(pass_nic_list, "NIC_CPLD")
-            run_nic_test(pass_nic_list, "UART")
-            # run_nic_test(pass_nic_list, "I2C")
+            run_nic_test(pass_nic_list, "I2C", "I2C")
             run_nic_test(pass_nic_list, "PCIE_PRBS", "ASIC")
             run_nic_test(pass_nic_list, "SNAKE_ELBA", "ASIC")
+            run_nic_test(pass_nic_list, "NIC_DIAG_INIT")
+            run_nic_test(pass_nic_list, "ASIC_LOG_SAVE")
             run_nic_test(pass_nic_list, "L1_SETUP")
             run_nic_test(pass_nic_list, "L1", "ASIC", l1_sequence=l1_sequence)
-            run_nic_test(pass_nic_list, "NIC_PWRCYC")
 
         else:
             run_mtp_test(pass_nic_list, "MTP_FRU_PROG")
@@ -1048,9 +1205,9 @@ def main():
 
         #if len(fail_nic_list) != 0 or len(pass_nic_list) != 10 or len(fail_desc) > 0:
         if fail_nic_list: # ignore full 10 slots check for CI/CD
-            mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FAIL --> {:s}".format(mtp_id, mtp_sn, fail_desc))
+            mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FINAL_SRN_MTP_RESULT_FAIL --> {:s}".format(mtp_id, mtp_sn, fail_desc))
         else:
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} FINAL_SRN_MTP_RESULT_PASS".format(mtp_id, mtp_sn))
 
         mtp_mgmt_ctrl.cli_log_inf("--------- {:s} Report End --------\n".format(mtp_id))
 

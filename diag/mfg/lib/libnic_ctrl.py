@@ -452,7 +452,7 @@ class nic_ctrl():
                     continue
                 cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
                 self._nic_handle.sendline(cmd)
-                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=time_out)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=time_out)
                 console_login_screen += self._nic_handle.before
                 if idx >= 0:
                     break
@@ -699,7 +699,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=4)
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=2)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=2)
         if idx < 0:
             return False
         time.sleep(2)
@@ -2778,7 +2778,6 @@ class nic_ctrl():
 
         # Start NIC DSP
         cmd = MFG_DIAG_CMDS.NIC_DSP_START_FMT.format(self._slot+1)
-        if mtp_type == MTP_TYPE.MATERA: cmd = "python2.7 {:s}".format(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.OS_CMD_DELAY):
             self.nic_set_err_msg("Unable to start diagmgr")
             return False
