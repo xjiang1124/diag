@@ -1752,6 +1752,11 @@ class mtp_ctrl():
             self.cli_log_err("{:s} command failed".format(cmd), level=0)
             return False
 
+        cmd = MFG_DIAG_CMDS.MTP_STOP_REDIS_FMT
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+            self.cli_log_slot_err(slot, "Command sudo {:s} failed".format(cmd))
+            return False
+
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
         sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
         if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
@@ -1792,6 +1797,11 @@ class mtp_ctrl():
                 self.cli_log_err("Command {:s} failed".format(cmd), level=0)
                 return False
 
+            cmd = "ps -elf | grep redis"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                return False
+
             # start the mtp diagmgr
             diagmgr_handle = self.mtp_session_create()
             if not diagmgr_handle:
@@ -1818,6 +1828,11 @@ class mtp_ctrl():
                 self.cli_log_err("Command {:s} failed".format(cmd), level=0)
                 return False
 
+            cmd = "ps -elf | grep redis"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                return False
+
             if self._mtp_type == MTP_TYPE.MATERA:
                 cmd = "redis-cli hkeys CARD_DICT"
                 if not self.mtp_mgmt_exec_cmd(cmd):
@@ -1825,7 +1840,6 @@ class mtp_ctrl():
                     return False
 
             cmd = MFG_DIAG_CMDS.MTP_DSP_START_FMT
-            if self._mtp_type == MTP_TYPE.MATERA: cmd = "python2.7 {:s}".format(cmd)
             sig_list = [MFG_DIAG_SIG.MTP_DSP_START_OK_SIG]
             if not self.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
                 self.cli_log_err("Failed to start dsp", level=0)
@@ -4644,7 +4658,7 @@ class mtp_ctrl():
             return False
 
         ts_record = libmfg_utils.timestamp_snapshot()
-        for slot in range(self._slots):
+        for slot in slot_list:
             if self._nic_ctrl_list[slot]:
                 self.log_nic_file(slot, "#####  Power on NIC #####")
 
@@ -4685,7 +4699,7 @@ class mtp_ctrl():
             return False
 
         ts_record = libmfg_utils.timestamp_snapshot()
-        for slot in range(self._slots):
+        for slot in slot_list:
             if self._nic_ctrl_list[slot]:
                 self.log_nic_file(slot, "##### Power off NIC #####")
 
@@ -5345,7 +5359,6 @@ class mtp_ctrl():
     # log the diag test history
     def mtp_mgmt_diag_history_disp(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_SHIST_FMT
-        if self._mtp_type == MTP_TYPE.MATERA: cmd = "python2.7 {:s}".format(cmd)
         if not self.mtp_mgmt_exec_cmd(cmd):
             return False
 
@@ -5355,7 +5368,6 @@ class mtp_ctrl():
 
     def mtp_mgmt_diag_history_clear(self):
         cmd = MFG_DIAG_CMDS.MTP_DIAG_CHIST_FMT
-        if self._mtp_type == MTP_TYPE.MATERA: cmd = "python2.7 {:s}".format(cmd)
         if not self.mtp_mgmt_exec_cmd(cmd):
             return False
 
@@ -6046,7 +6058,11 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
-        cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+        if self._mtp_type != MTP_TYPE.MATERA:
+            cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+        else:
+            cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
             # kill the process in case it's hung/timed out
