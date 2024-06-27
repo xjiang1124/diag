@@ -24,6 +24,8 @@ import (
     "device/powermodule/tps53830"
     "device/powermodule/tps25990"
     "device/powermodule/isl69247"
+    "device/powermodule/ina3221a"
+    "device/powermodule/ad7997"
     "device/psu/pet1600"
     "device/psu/dps800"
     "device/psu/dps2100"
@@ -176,6 +178,11 @@ var laconaDispStaList map[string]DispStaFunc
 var ginestraD4DispStaList map[string]DispStaFunc
 // Ginestra D5
 var ginestraD5DispStaList map[string]DispStaFunc
+
+//===============================
+// Malfa
+// Status display list
+var malfaDispStaList map[string]DispStaFunc
 
 //===============================
 // MTP
@@ -481,6 +488,27 @@ func init() {
     ginestraD5DispStaList["VDD_DDR"]  = tps549a20.DispStatus
     ginestraD5DispStaList["TSENSOR"]   = tmpadicom.DispStatus
 
+    //Malfa
+    malfaDispStaList = make(map[string]DispStaFunc)
+    malfaDispStaList["CORE"]         = tps53688.DispStatus
+    malfaDispStaList["ARM"]          = tps53688.DispStatus
+    malfaDispStaList["P12V"]         = ina3221a.DispStatus
+    malfaDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
+    malfaDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
+    malfaDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
+    malfaDispStaList["P3V3"]         = ina3221a.DispStatus
+    malfaDispStaList["P1V8"]         = ina3221a.DispStatus
+    malfaDispStaList["VDD_DDR"]      = ina3221a.DispStatus
+    malfaDispStaList["VDD_075_PCIE"] = ina3221a.DispStatus
+    malfaDispStaList["VDD_075_MX"]   = ina3221a.DispStatus
+    malfaDispStaList["VDD_12_PCIE"]  = ina3221a.DispStatus
+    malfaDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
+    malfaDispStaList["VDDQ"]         = ina3221a.DispStatus
+    malfaDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
+    malfaDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
+    malfaDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
+    malfaDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
+
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
 
@@ -670,6 +698,9 @@ func init() {
     dispMap["GINESTRA_D4"]   = ginestraD4DispStaList
     dispMap["GINESTRA_D5"]   = ginestraD5DispStaList
     //===============================
+    // Salina
+    dispMap["MALFA"]        = malfaDispStaList
+    //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
     dispMap["MTP_MATERA"]  = materaDispStaList
@@ -773,6 +804,8 @@ func init() {
     // Giglio
     i2cHubMap["GINESTRA_D4"]        = naples100I2cHubMap
     i2cHubMap["GINESTRA_D5"]        = naples100I2cHubMap
+    // Salina
+    i2cHubMap["MALFA"]          = materaI2cHubMap
 
     //===============================
     // Taormina

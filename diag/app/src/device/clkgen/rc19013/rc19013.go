@@ -13,6 +13,7 @@ import (
 /*
  * Applicable to Renesas RC19016/013/008/004
  * Matera with RC19013A100 (DevID = 0x8D)
+ * Malfa with RC19008 and RC19004 (DevID = 0x88/0x04), with less CLK outputs
  * Reg data in byte
  */
 
@@ -234,6 +235,7 @@ func SetOutEn(devName string, clk_idx uint, setting bool) (err int) {
 func DumpRegs(devName string, dumpRegList []uint) (err int) {
     err = errType.SUCCESS
 
+    cli.Println("i", devName)
     for _, idx := range dumpRegList {
         data, errSmbus := readByteSmbus(devName, idx)
         if errSmbus != errType.SUCCESS {

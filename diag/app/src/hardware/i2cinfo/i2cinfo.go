@@ -39,6 +39,7 @@ const (
     FLAG_8BIT_EEPROM = (1<<1)
     FLAG_16BIT_EEPROM = (2<<1)
     I2C_TEST_ENABLE = (3<<1)
+    EXTERNAL_VMARG = (4<<1)
 )
 
 var I2cTbl    []I2cInfo
@@ -227,6 +228,38 @@ var GinestraMtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var MalfaTbl = []I2cInfo {
+    //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P3V3",          "INA3221A",  0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_DDR",       "INA3221A",  0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"P1V8",          "INA3221A",  0x2,   0x41,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDDQ",          "INA3221A",  0x2,   0x41,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_MX",    "INA3221A",  0x2,   0x41,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_075_PCIE",  "INA3221A",  0x2,   0x42,    0x1,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_12_MX",     "INA3221A",  0x2,   0x42,    0x2,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_12_PCIE",   "INA3221A",  0x2,   0x42,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_AUX",      "TPS53688",  0x6,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_PLL",   "AD7997",    0x2,   0x23,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_1",      "INA3221A",  0x2,   0x43,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_2",      "INA3221A",  0x2,   0x42,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_3",      "INA3221A",  0x2,   0x41,    0x0,    "HUB_NONE", 0,    0},
+
+    I2cInfo {"VDD_12_PCIE_VMARG",  "DS4424",    0x2,   0x30,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_12_MX_VMARG",    "DS4424",    0x2,   0x30,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_PCIE_VMARG", "DS4424",    0x2,   0x30,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_MX_VMARG",   "DS4424",    0x2,   0x30,    0x3,    "HUB_NONE", 0,    0},
+
+    I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
+    I2cInfo {"MX_CLK_BUF",    "RC19004",   0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
+    I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
 }
 
 var OrtanoMtpTbl = []I2cInfo {
@@ -790,6 +823,8 @@ func init() {
         I2cTbl = GinestraD4Tbl
     } else if CardType == "GINESTRA_D5" {
         I2cTbl = GinestraD5Tbl
+    } else if CardType == "MALFA" {
+        I2cTbl = MalfaTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {

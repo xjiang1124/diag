@@ -20,6 +20,7 @@ import (
     "device/powermodule/sn1701022"
     "device/powermodule/tps53688"
     "device/powermodule/tps53830"
+    "device/powermodule/ina3221a"
     "device/rtc/pcf85263a"
     "device/tempsensor/adm1032"
     "device/tempsensor/tmp42123"
@@ -101,6 +102,29 @@ func testTps53830(devName string) (err int) {
 
     if (vendorID != tps53830.VENDOR_ID) {
         dcli.Println("F", devName, " Invalid Vendor ID: expected", tps53830.VENDOR_ID, "read", vendorID)
+        return errType.FAIL
+    }
+    return
+}
+
+func testIna3221a(devName string) (err int) {
+    vendorID, err := ina3221a.ReadMFRID(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read vendor ID failed!")
+        return
+    }
+    if (vendorID != ina3221a.MFR_ID_VALUE) {
+        dcli.Println("F", devName, " Invalid Vendor ID: expected", ina3221a.MFR_ID_VALUE, "read", vendorID)
+        return errType.FAIL
+    }
+
+    dieID, err := ina3221a.ReadDieID(devName)
+    if err != errType.SUCCESS {
+        dcli.Println("f", devName, " Read die ID failed!")
+        return
+    }
+    if (dieID != ina3221a.DIE_ID_VALUE) {
+        dcli.Println("F", devName, " Invalid die ID: expected", ina3221a.MFR_ID_VALUE, "read", dieID)
         return errType.FAIL
     }
     return
@@ -293,6 +317,11 @@ func I2cI2cHdl(argList []string) {
                 }
             case "TPS53830":
                 err = testTps53830(devName)
+                if err != errType.SUCCESS {
+                    ret = err
+                }
+            case "INA3221A":
+                err = testIna3221a(devName)
                 if err != errType.SUCCESS {
                     ret = err
                 }
