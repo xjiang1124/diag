@@ -165,16 +165,22 @@ type card struct {
 // Ortano Solo PCIe subsystem ID
 var soloOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0d}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ortano ADI CR PCIe subsystem ID
 var adicrOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0e}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ortano Solo R4T PCIe subsystem ID
 var sR4TOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0f}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ginestra_D4 PCIe subsystem ID
