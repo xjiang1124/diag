@@ -387,7 +387,7 @@ func CardInListTlv(dev string) (found bool, minPN string) {
     found = false
 
     //return true if card type is in the list of cards with tlv-format eeprom
-    var cardtyp string = os.Getenv("CARD_TYPE")
+    var cardtyp string = CardType
     for _, card := range(CardTypesTlv) {
         if (cardtyp == card.cardTyp) {
             found = true

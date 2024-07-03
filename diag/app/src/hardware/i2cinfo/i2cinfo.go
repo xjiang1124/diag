@@ -260,6 +260,8 @@ var MalfaTbl = []I2cInfo {
     I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
     I2cInfo {"MX_CLK_BUF",    "RC19004",   0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
     I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"PCIE_FRU",      "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
+    I2cInfo {"FRU",           "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
 }
 
 var OrtanoMtpTbl = []I2cInfo {
@@ -1002,6 +1004,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = TaorTbl
     } else if uutType == "LIPARI" {
         CurI2cTbl = LipariTbl
+    } else if uutType == "MALFA" {
+        CurI2cTbl = MalfaTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
