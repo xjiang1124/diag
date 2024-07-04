@@ -46,6 +46,9 @@ const I2C_NUMBER_CHANNELS    uint32 = 17
 const I2C_CLOCK_PRESCALE_100KHZ uint8 = (0x7C) //124 /* TODO: Verify with HW team */
 const I2C_TIMEOUT_US    uint32 = 350
 
+
+
+
 // Control register bits
 const OCI2C_CTRL_EN       uint32 = 0x80  // enable
 const OCI2C_CTRL_IEN      uint32 = 0x40  // enable interrupts
@@ -206,7 +209,7 @@ func i2cMuxSet(mux uint32) (err error) {
 
 func I2cResetController2(bus int) (err error) { 
     wrData := []byte{}
-    var retries int = 25
+    var retries int = 50
 
     if err = i2cLoadDataSet(uint32(bus), 0x00, 0x00, 0x00, wrData, 0x00); err != nil {  //Setup I2C Struct.  Return if this fails.. Catastrophic Failure
         dcli.Printf("e"," Error: I2C Load Data Set Failed\n")
@@ -216,7 +219,7 @@ func I2cResetController2(bus int) (err error) {
     for i:=0; i<retries;i++ {
         data32, _ := TaorReadU32(3, I2Creg.RST_REG)
         if (data32 == 0x00) {
-            oci2c_enable(I2C_CLOCK_PRESCALE_100KHZ, 0x00)   //Enable
+            oci2c_enable(I2C_CLOCK_PRESCALE_100KHZ, 0x00)   //Enable 
             break
         }
         time.Sleep(time.Duration(1) * time.Millisecond)
@@ -229,7 +232,7 @@ func I2cResetController2(bus int) (err error) {
 }
 
 func i2cResetController() (err error) { 
-    var retries int = 25
+    var retries int = 50
     TaorWriteU32(3, I2Creg.RST_REG, 0x0D)
     for i:=0; i<retries;i++ {
         data32, _ := TaorReadU32(3, I2Creg.CTRL_REG)
@@ -238,7 +241,7 @@ func i2cResetController() (err error) {
         }
         time.Sleep(time.Duration(1) * time.Millisecond)
         if i == (retries - 1) {
-            err = fmt.Errorf("ERROR I2C BUS %d RESET NOT CLEARING = %x\n", I2Creg.Bus) 
+            err = fmt.Errorf("ERROR I2C BUS %d RESET NOT CLEARING = %x\n", I2Creg.Bus, data32) 
             dcli.Printf("e"," %v\n", err)
         }
     }
@@ -284,13 +287,15 @@ func oci2c_enable(prelowVal uint8, prehiVal uint8) (err error) {
 
 func I2c_access(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrData []byte, rdSize uint32)(readData []byte, err error) {
 
-        //oci2c_disable()
-        //i2cResetController()
+
         if err = i2cLoadDataSet(bus, mux, i2cAddr, wrSize, wrData, rdSize); err != nil {  //Setup I2C Struct.  Return if this fails.. Catastrophic Failure
             dcli.Printf("e"," Error: I2C Load Data Set Failed\n")
             return
         }
-
+        oci2c_disable()
+        i2cResetController()
+        oci2c_disable()
+        time.Sleep(time.Duration(2) * time.Millisecond)  
         i2cMuxSet(I2Creg.Mux)   //Set the Mux Select
 
         isEna, _ := oci2c_is_enabled()
@@ -317,6 +322,10 @@ func oci2c_cmd(cmd uint32, data byte) (err error) {
     TaorWriteU32(3, I2Creg.DATA_REG, uint32(data)) 
     TaorWriteU32(3, I2Creg.CMD_REG, cmd) 
     s := fmt.Sprintf(" send command 0x%02X with data 0x%02X", cmd, data)
+    buffset(s)
+    data32, _ := TaorReadU32(3, I2Creg.DATA_REG) 
+    cmd32, _ := TaorReadU32(3, I2Creg.CMD_REG) 
+    s = fmt.Sprintf(" send command 0x%02X with data 0x%02X", cmd32, data32)
     buffset(s)
     return
 }
@@ -477,7 +486,8 @@ func oci2c_wait() (err error) {
         if data32 & OCI2C_STAT_TIP != OCI2C_STAT_TIP {
             break
         }
-        time.Sleep(time.Duration(1) * time.Microsecond)
+        data32, err = TaorReadU32(3, 0)
+        time.Sleep(time.Duration(5) * time.Microsecond)
     } 
 
     if i >= I2C_TIMEOUT_US   { 

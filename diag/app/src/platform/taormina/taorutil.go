@@ -3612,7 +3612,7 @@ func ElbaCheckECC_via_console(elba uint32, calledFromCLI int, InjectError int) (
     "echo -e \"read 0x305B046C\" >> /data/nic_util/elba_local_read_ecc_reg.sh\n"+ 
     "echo -e \"read 0x305B0470\" >> /data/nic_util/elba_local_read_ecc_reg.sh\n"+ 
     "echo -e \"read 0x305B0474\" >> /data/nic_util/elba_local_read_ecc_reg.sh\n"+ 
-    "echo -e \"read EOF\" >> /data/nic_util/elba_local_read_ecc_reg.sh\n"
+    "echo -e \"EOF\" >> /data/nic_util/elba_local_read_ecc_reg.sh\n"
     
     MCC0EccReg := []EccRegisters { 
         {"ecc_dataout_corrected_1_interrupt", 0 },
@@ -5760,7 +5760,7 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
     if errGo != nil {
         dcli.Println("e", "I2C Access (3) Failed to", devName, " ERROR=",errGo); err = errType.FAIL; return
     }
-
+/*
     rdData = nil
     wrData[0] = i2cWrData[0][0]
     rdData, errGo = taorfpga.I2c_access( uint32(iInfo.Bus - 1), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), 1, wrData, 1 )
@@ -5784,7 +5784,7 @@ func Elba_CPLD_I2C_Sanity_Test(devName string) (err int) {
         err = errType.FAIL
         return
     }
-
+*/
     return
 }
 

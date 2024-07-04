@@ -35,7 +35,13 @@ const (
     ID_ORTANO2AC       = 0x50
     ID_GINESTRA_D4     = 0x60
     ID_GINESTRA_D5     = 0x61
+    ID_MALFA           = 0x62
+    ID_DAUNTLESS       = 0x63
+    ID_LENI            = 0x64
+    ID_POLLARA         = 0x65
     ID_TAORMINA_ELBA   = 0x80
+    ID_LIPARI_ELBA     = 0x81
+    ID_MTFUJI_ELBA     = 0x82
 )
 
 const (
