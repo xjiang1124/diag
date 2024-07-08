@@ -986,8 +986,8 @@ def main():
                     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression MTP Parallel Test Start".format(nic_type), level=0)
 
                     # run each nic_type separately for now to avoid wrong settings. TODO: allow this to be parallel
-                    for nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
-                        snake_type_list = get_slots_of_type(nic_type)
+                    for cur_nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
+                        snake_type_list = get_slots_of_type(cur_nic_type)
                         if stage not in (FF_Stage.FF_2C_L, FF_Stage.FF_2C_H, FF_Stage.FF_4C_L, FF_Stage.FF_4C_H):
                             run_regression_test(snake_type_list, "ETH_PRBS", "ASIC")
                         run_regression_test(snake_type_list, "PCIE_PRBS", "ASIC")

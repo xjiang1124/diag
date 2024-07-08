@@ -3073,10 +3073,10 @@ class mtp_ctrl():
             return "90-0021-0001"
 
         elif naples_pn[0:7] == "68-0077":  # ORTANO2 SOLO
-            return "90-0021-0001"
+            return "90-0021-0002"
 
         elif naples_pn[0:7] == "68-0089":  # ORTANO2 SOLO Tall Heat Sink
-            return "90-0021-0001"
+            return "90-0021-0002"
 
         elif naples_pn[0:7] == "68-0090":  # ORTANO2 SOLO MICROSOFT
             return "90-0019-0002"
@@ -3085,7 +3085,7 @@ class mtp_ctrl():
             return "90-0022-0001"
 
         elif naples_pn[0:7] == "68-0049":  # ORTANO2 ADI CR
-            return "90-0021-0001"
+            return "90-0021-0002"
 
         elif naples_pn[0:7] == "68-0091":  # ORTANO2 ADI CR MICROSOFT
             return "90-0019-0002"
