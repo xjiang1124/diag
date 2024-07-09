@@ -1284,7 +1284,7 @@ class mtp_ctrl():
     def mtp_nic_stop_test(self, slot):
         cmd_buf = self._nic_ctrl_list[slot]._cmd_buf  # save failure buffer
         self.mtp_nic_send_ctrl_c(slot)
-        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
         self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  # restore failure buffer
 
     def mtp_mgmt_set_date(self, stage=None):
@@ -3973,14 +3973,13 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_killall_tclsh_picocom(self):
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
+    @parallelize.parallel_nic_using_console
+    def mtp_mgmt_killall_tclsh_picocom(self, slot):
+        self.mtp_nic_stop_tclsh(slot)
+
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
         return True
 
@@ -4698,7 +4697,7 @@ class mtp_ctrl():
                 self.cli_log_err("caught stop_on_err in {:s}".format(test), level=0)
                 break
 
-        self.mtp_mgmt_killall_tclsh_picocom()
+        self.mtp_mgmt_killall_tclsh_picocom(nic_list)
 
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
         return fail_nic_list
@@ -5984,7 +5983,7 @@ class mtp_ctrl():
             return False
 
         if vdd_avs_cmd:
-            self.mtp_mgmt_set_nic_avs_pre(slot)
+            self.mtp_nic_stop_tclsh(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(vdd_avs_cmd))
                 self.mtp_dump_nic_err_msg(slot)
@@ -5994,7 +5993,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "SET VDD AVS FAILED")
                 return False
         if arm_avs_cmd:
-            self.mtp_mgmt_set_nic_avs_pre(slot)
+            self.mtp_nic_stop_tclsh(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(arm_avs_cmd))
                 self.mtp_dump_nic_err_msg(slot)
@@ -6007,8 +6006,11 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_mgmt_set_nic_avs_pre(self, slot):
-        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
+    def mtp_nic_stop_tclsh(self, slot):
+        if self._mtp_type == MTP_TYPE.MATERA:
+            self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1))
+        else:
+            self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
         self.mtp_nic_send_ctrl_c(slot)  # kill any hung tclsh in this same session
@@ -6155,8 +6157,7 @@ class mtp_ctrl():
             # needs to be killed from separate session
             if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"):  # notify in log
                 pass
-            if not self.mtp_mgmt_exec_cmd("killall run_l1.sh"):  # use mtp session to kill it
-                pass
+            self.mtp_nic_stop_tclsh(slot)  # use mtp session to kill it
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
@@ -6342,7 +6343,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")
             self.mtp_dump_nic_err_msg(slot)
-            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            self.mtp_nic_stop_tclsh(slot)
             return False
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
@@ -6369,7 +6370,7 @@ class mtp_ctrl():
 
         self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
         self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
-        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
 
         # Use this dump to check ECC errors as well
         ecc_regs = re.findall(r"Reg 0x(.*); value: 0x(.*)", cmd_buf)
@@ -6398,10 +6399,10 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=skip_vrm_check):
             self.cli_log_slot_err(slot, "Unable to dump NIC sts")
             self.mtp_dump_nic_err_msg(slot)
-            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            self.mtp_nic_stop_tclsh(slot)
             return False
 
-        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
 
         return True
 
@@ -6812,7 +6813,7 @@ class mtp_ctrl():
     @parallelize.parallel_nic_using_console # should be j2c really but this test in parallel is not tested on turbo MTP
     def mtp_nic_l1_esecure_prog(self, slot):
         self.mtp_single_j2c_lock()
-        self.mtp_mgmt_exec_cmd_para(slot, "killall tclsh")
+        self.mtp_nic_stop_tclsh(slot)
 
         if not self._nic_ctrl_list[slot].nic_l1_esecure_prog():
             self.mtp_single_j2c_unlock()
