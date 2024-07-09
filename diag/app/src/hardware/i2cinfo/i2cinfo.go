@@ -1037,6 +1037,11 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = LipariTbl
     } else if uutType == "MALFA" {
         CurI2cTbl = MalfaMtpTbl
+    } else if uutType == "MALFA_S" {
+        // this is for validation only;
+        // rework a malfa to connect smbus to bus 0 or 2
+        // then set mtp environment variable UUT_X=MALFA_S
+        CurI2cTbl = MalfaTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM

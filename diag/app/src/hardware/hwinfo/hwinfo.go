@@ -701,6 +701,7 @@ func init() {
     //===============================
     // Salina
     dispMap["MALFA"]        = malfaDispStaList
+    dispMap["MALFA_S"]      = malfaDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
