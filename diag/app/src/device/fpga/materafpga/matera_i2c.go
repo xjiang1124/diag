@@ -144,7 +144,7 @@ func i2cLoadDataSet(bus uint32, mux uint32, i2cAddr uint32, wrSize uint32, wrDat
     switch bus {
         case 1:  base = FPGA_S1_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
         case 2:  base = FPGA_S2_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
-        case 3:  base = FPGA_S2_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
+        case 3:  base = FPGA_S3_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
         case 4:  base = FPGA_S4_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
         case 5:  base = FPGA_S5_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
         case 6:  base = FPGA_S6_I2C_PRSCL_LO_REG; I2Creg.FPGA_NUMBER = 0
@@ -209,7 +209,7 @@ func i2cMuxSet(mux uint32) (err error) {
     return
 }
 
-func I2cResetController2(bus int) (err error) { 
+func I2cResetController2(bus int, freq uint8) (err error) { 
     wrData := []byte{}
     var retries int = 25
 
@@ -221,7 +221,7 @@ func I2cResetController2(bus int) (err error) {
     for i:=0; i<retries;i++ {
         data32, _ := MateraReadU32(I2Creg.RST_REG)
         if (data32 == 0x00) {
-            oci2c_enable(I2C_CLOCK_PRESCALE_100KHZ, 0x00)   //Enable
+            oci2c_enable(freq, 0x00)   //Enable
             break
         }
         time.Sleep(time.Duration(1) * time.Millisecond)

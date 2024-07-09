@@ -8,6 +8,7 @@ import (
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
     "device/powermodule/ltc3888"
+    "device/powermodule/ltc3882"
     "device/powermodule/tps53681"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544c20"
@@ -68,6 +69,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
         err = tps53659a.SetVMargin(devName, pct)
     } else if i2cif.Comp == "LTC3888" {
         err = ltc3888.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "LTC3882" {
+        err = ltc3882.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS549A20" {
        err = tps549a20.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS544C20" {

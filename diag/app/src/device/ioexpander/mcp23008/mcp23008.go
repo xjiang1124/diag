@@ -41,9 +41,8 @@ var regName = [...]string {
     OLAT:    "OLAT",
 }
 
-func readByteSmbus(devName string, offset uint) (Data byte, err int) {
+func ReadByteSmbus(devName string, offset uint) (Data byte, err int) {
     err = errType.SUCCESS
-
     //Opens smbus connection
     i2cSmbus, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
@@ -67,7 +66,7 @@ func readByteSmbus(devName string, offset uint) (Data byte, err int) {
     return
 }
 
-func writeByteSmbus(devName string, offset uint, val byte) (err int) {
+func WriteByteSmbus(devName string, offset uint, val byte) (err int) {
     err = errType.SUCCESS
 
     //Opens smbus connection
@@ -86,7 +85,7 @@ func writeByteSmbus(devName string, offset uint, val byte) (err int) {
 
     err = smbusNew.WriteByte(devName, uint64(offset), val)
     if err != errType.SUCCESS {
-        cli.Println("e", "Failed to write FRU at offset", offset, "with value", val)
+        cli.Println("e", "Failed to write", devName, " at offset", offset, "with value", val)
     }
     return
 }
@@ -98,7 +97,7 @@ func DispStatus(devName string) (err int) {
     var errSmbus int
 
     for r := IODIR; r < OLAT; r++ {
-        data, errSmbus = readByteSmbus(devName, r)
+        data, errSmbus = ReadByteSmbus(devName, r)
         if errSmbus != errType.SUCCESS {
             cli.Println("e", fmt.Sprintf("MCP23008: Reg[%s (0x%02x)] reading failed!", regName[r], r))
             err = errSmbus

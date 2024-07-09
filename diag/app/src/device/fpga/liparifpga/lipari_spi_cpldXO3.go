@@ -204,7 +204,6 @@ func Spi_cpldXO3_read_feature_row(spiNumber uint32) (data []byte, err error) {
         return
     }
      
-
     data, err = lipari_spi_generic_transaction(spiNumber, CPLDXO3_RD_FEA_ROW_OP, CPLDXO3_RD_FEA_ROW_OP_RDLNG) 
     if err != nil {
         return

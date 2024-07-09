@@ -296,7 +296,7 @@ func SetVMargin(devName string, pct int) (err int) {
         //Calculate what to set Margin High or Low Reg to
         marginVal := uint64( (def_volt + (def_volt * (float64(pct) / 100))) / exponentF)
 
-        fmt.Printf(" voutcmd=%x  marginVal=%x float64(pct)=%f  def_volt=%f\n", voutcmd, (marginVal & 0xFFFF), float64(pct), def_volt)
+        //fmt.Printf(" voutcmd=%x  marginVal=%x float64(pct)=%f  def_volt=%f\n", voutcmd, (marginVal & 0xFFFF), float64(pct), def_volt)
 
         if pct != 0 {
             err = pmbus.WriteWord(devName, marginReg, uint16(marginVal))
