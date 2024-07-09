@@ -32,6 +32,14 @@ type I2cFpgaMap struct {
     OffsetLen   int
 }
 
+type I2cSensorCoeff struct {
+    Coeff float64
+}
+type I2cSensorInfo struct {
+    Name  string
+    Sense_Resistor I2cSensorCoeff
+}
+
 //I2cInfo Flag Defines
 
 const (
@@ -45,6 +53,8 @@ const (
 var I2cTbl    []I2cInfo
 //var UutI2cTbl []I2cInfo
 var CurI2cTbl []I2cInfo
+var SensorTbl []I2cSensorInfo
+var CurSensorTbl []I2cSensorInfo
 
 
 //=========================================
@@ -267,6 +277,21 @@ var MalfaTbl = []I2cInfo {
     I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"PCIE_FRU",      "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
     I2cInfo {"FRU",           "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
+}
+
+var MalfaSensorTbl = []I2cSensorInfo {
+    I2cSensorInfo {"P12V_ADC",      I2cSensorCoeff{ 0.06 }},
+    I2cSensorInfo {"P12V_AUX_ADC",  I2cSensorCoeff{ 0.06 }},
+    I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.002 }},
+    I2cSensorInfo {"P12V_AUX",      I2cSensorCoeff{ 0.002 }},
+    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.02 }},
+    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"P1V8",          I2cSensorCoeff{ 0.02 }},
+    I2cSensorInfo {"VDDQ",          I2cSensorCoeff{ 0.1 }},
+    I2cSensorInfo {"VDD_075_MX",    I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_075_PCIE",  I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_12_MX",     I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_12_PCIE",   I2cSensorCoeff{ 0.005 }},
 }
 
 var OrtanoMtpTbl = []I2cInfo {
@@ -855,6 +880,7 @@ func init() {
         return
     }
     CurI2cTbl = I2cTbl
+    CurSensorTbl = MalfaSensorTbl
 }
 
 /**
@@ -1015,6 +1041,7 @@ func SwitchI2cTbl(uutName string) (err int) {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
     }
+    CurSensorTbl = MalfaSensorTbl
     return
 }
 
@@ -1150,4 +1177,12 @@ func GetPage(devName string) (page byte, err int) {
     return
 }
 
-
+func GetSenseResistance(devName string) (senseResistance float64) {
+    senseResistance = 1
+    for _, sensorinfo := range(CurSensorTbl) {
+        if sensorinfo.Name == devName {
+            senseResistance = sensorinfo.Sense_Resistor.Coeff
+        }
+    }
+    return
+}

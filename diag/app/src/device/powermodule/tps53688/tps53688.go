@@ -435,18 +435,6 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     return
 }
 
-func ReadIinSense(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadVin(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    var senseResistance float64 = 0.002 // TODO: dont store board-specific values in this file
-    isense := ((float64)((integer * 1000) + dec) / 1000) / senseResistance
-    integer = uint64(isense)
-    dec = uint64(isense * 1000) % 1000
-    return
-}
-
 func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     var PIN uint16
     err = pmbus.Open(devName)
@@ -512,18 +500,6 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
 
     integer, dec, err =  pmbus.Linear11(POUT)
 
-    return
-}
-
-func ReadPinSense(devName string) (integer uint64, dec uint64, err int) {
-    integer, dec, err = ReadPin(devName)
-    if err != errType.SUCCESS {
-        return
-    }
-    var senseResistance float64 = 0.002 // TODO: dont store board-specific values in this file
-    psense := (float64)((integer * 1000) + dec) / 1000 / senseResistance
-    integer = uint64(psense)
-    dec = uint64(psense * 1000) % 1000
     return
 }
 
@@ -794,11 +770,11 @@ func DispStatusVsense(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadIinSense(devName)
+    dig, frac, _ = ReadIin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig, frac, _ = ReadPinSense(devName)
+    dig, frac, _ = ReadPin(devName)
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 

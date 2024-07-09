@@ -8,7 +8,6 @@ import (
     "common/misc"
     "protocol/smbus"
     "hardware/i2cinfo"
-    "hardware/vrminfo"
 )
 
 func ReadVout(devName string) (integer uint64, dec uint64, err int) {
@@ -50,7 +49,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     if vout_err != errType.SUCCESS {
         return
     }
-    senseResistance := vrminfo.GetSenseResistance(devName)
+    senseResistance := i2cinfo.GetSenseResistance(devName)
     vout := (float64)((vout_int * 1000) + vout_dec) / 1000
     iout := vout / senseResistance
     integer = uint64(iout)
