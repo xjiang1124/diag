@@ -8,7 +8,6 @@ import (
     "common/misc"
     "protocol/smbus"
     "hardware/i2cinfo"
-    "hardware/vrminfo"
 )
 
 func ReadVout(devName string) (integer uint64, dec uint64, err int) {
@@ -44,7 +43,7 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     var channel byte
     var data uint16
 
-    senseResistance := vrminfo.GetSenseResistance(devName)
+    senseResistance := i2cinfo.GetSenseResistance(devName)
 
     err = smbus.Open(devName)
     if err != errType.SUCCESS {

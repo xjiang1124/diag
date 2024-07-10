@@ -50,7 +50,7 @@ func margin(devName string, pct int, lockFlag bool) (err int){
 
         // for external margin controller, the devname is stored in i2ctable as *_VMARG
         if i2cif.Flag == 8 {
-            devName = devName + "_VMARG"
+            devName = devName + "_VM"
             i2cif, err = i2cinfo.GetI2cInfo(devName)
             if err != errType.SUCCESS {
                 return

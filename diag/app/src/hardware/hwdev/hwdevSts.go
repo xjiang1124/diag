@@ -123,17 +123,6 @@ func dispStatusDev(devName string, lockFlag bool) (err int){
     return
 }
 
-func dispStatusDevUut(devName string, uutName string) (err int){
-    lockName, err := hwinfo.PreUutSetup(uutName)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer hwinfo.PostUutClean(lockName)
-
-    err = dispStatusDev(devName, false)
-    return
-}
-
 func dispStatus(devName string) (err int){
     if devName == "ALL" {
         // golang range(map) sequence is random
@@ -156,13 +145,12 @@ func dispStatus(devName string) (err int){
 }
 
 func dispStatusUut(devName string, uutName string) (err int){
-    if devName == "ALL" {
-        cli.Println("e", "\"ALL\" does not support by UUT!")
-        err = errType.INVALID_PARAM
+    lockName, err := hwinfo.PreUutSetup(uutName)
+    if err != errType.SUCCESS {
         return
     }
+    defer hwinfo.PostUutClean(lockName)
 
-    err = dispStatusDevUut(devName, uutName)
-
+    err = dispStatus(devName)
     return
 }
