@@ -900,6 +900,10 @@ func FindUutTypeMtp(uutName string) (uutType string, err int) {
         return "UUT_NONE", errType.SUCCESS
     }
 
+    if uutName == "UUT_NONE" {
+        return "UUT_NONE", errType.SUCCESS
+    }
+ 
     uutType, found = os.LookupEnv(uutName)
     if found == false {
         cli.Println("e", "Cannot find uutType with uutName", uutName)
