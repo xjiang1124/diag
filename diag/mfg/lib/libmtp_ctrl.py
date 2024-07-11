@@ -875,6 +875,14 @@ class mtp_ctrl():
             self._mgmt_handle = None
 
     def mtp_session_create(self):
+
+        """
+        create a ssh session to MTP or MTP local bash session base on env vaiable CARD_TYPE
+        """
+
+        # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
+        running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
+
         # mgmt_cfg is a list with format [ip, userid, passwd]
         ip = self._mgmt_cfg[0]
         userid = self._mgmt_cfg[1]
@@ -893,6 +901,37 @@ class mtp_ctrl():
         if idx < 0:
             self.cli_log_err("Connect to mtp mgmt timeout", level=0)
             return None
+
+        # SSH session to MTP
+        if not running_on_mtp:
+            ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
+            handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore')
+            idx = libmfg_utils.mfg_expect(handle, ["assword:"])
+            if idx < 0:
+                self.cli_log_err("Can not connect to mtp, check the console.\n", level=0)
+                return None
+            else:
+                handle.sendline(passwd)
+
+            idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
+            if idx < 0:
+                self.cli_log_err("Connect to mtp mgmt timeout", level=0)
+                return None
+        # MTP local bash session
+        else:
+            mtp_local_cmd = 'bash'
+            handle = pexpect.spawn(mtp_local_cmd, encoding='utf-8', codec_errors='ignore')
+            idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
+            if idx < 0:
+                self.cli_log_err("spawn new bash session timeout", level=0)
+                return None
+
+            mtp_local_cmd = 'source /home/diag/.bash_profile'
+            handle.sendline(mtp_local_cmd)
+            idx = libmfg_utils.mfg_expect(handle, self._prompt_list, 10)
+            if idx < 0:
+                self.cli_log_err("source bash profile on new created bash session timeout", level=0)
+                return None
 
         sig_list = [userid]
 
@@ -918,7 +957,31 @@ class mtp_ctrl():
         if slot_list == []:
             slot_list = list(range(self._slots))
         userid = self._mgmt_cfg[1]
-        for slot in slot_list:
+        # number of CPUs the current process can use
+        current_process_cores = len(os.sched_getaffinity(0))
+        # Toggle comment or uncomment this snippet with above depends on the need of David's Matera UART new driver implement
+        # #####-->
+        # # using enviroment variable CARD_TYPE as a indicator to create a remote ssh session or a local bash session
+        # running_on_mtp = True if os.getenv('CARD_TYPE') and 'MTP' in os.getenv('CARD_TYPE') else False
+        # if running_on_mtp:
+        #     # assign task sshd to cpu core 0
+        #     pid_cmd = 'ppid=$(ps -o ppid= -p $$) && ps -elf | grep " $ppid " | grep sshd'
+        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
+        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+        #         return False
+        #     sshd_pid = self.mtp_get_cmd_buf().split('\n')[1].split()[3]
+        #     pid_cmd = 'taskset -pc 0 {:s}'.format(sshd_pid)
+        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
+        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+        #         return False
+        #     pid_cmd = 'ps -o pid,psr,comm -p {:s}'.format(sshd_pid)
+        #     if not self.mtp_mgmt_exec_cmd(pid_cmd):
+        #         self.cli_log_err("Executing command {:s} failed".format(pid_cmd))
+        #         return False
+        # <--#####
+
+        for index, slot in enumerate(slot_list):
+            cpu_core_index = index % (current_process_cores - 1) + 1
             handle = self.mtp_session_create()
             if handle:
                 if not self.mtp_prompt_cfg(handle, userid, mtp_prompt, slot):
@@ -932,6 +995,28 @@ class mtp_ctrl():
                 if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
                     self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
                     return False
+                # Toggle comment or uncomment this snippet with above depends on the need of David's Matera UART new driver implement
+                # #####-->
+                # if running_on_mtp:
+                #     # assign task bash to any cpu core except core 0
+                #     para_cmd = 'echo $$'
+                #     if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
+                #         self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
+                #         return False
+                #     bash_pid = re.findall(r'\d+', self.mtp_get_nic_cmd_buf(slot).split('\n')[1])[0]
+                #     para_cmd = 'taskset -pc {:d} {:s}'.format(cpu_core_index, bash_pid)
+                #     if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
+                #         self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
+                #         return False
+                #     para_cmd = 'ps -o pid,psr,comm -p {:s}'.format(bash_pid)
+                #     if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
+                #         self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
+                #         return False
+                #     para_cmd = 'echo $$'
+                #     if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
+                #         self.cli_log_slot_err(slot, "Failed to execute para command: {:s}".format(para_cmd))
+                #         return False
+                # <--#####
             else:
                 self.cli_log_err("Unable to create MTP session")
                 return False
