@@ -2091,17 +2091,14 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                 cur_fail_list[slot] = 0
                 cur_fail_list[slot+length] = 0
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-                if nic_type in ELBA_NIC_TYPE_LIST:
-                    read_data = [0]
-                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
-                    if not rc:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        continue
 
-                    ### QSFP/SFP PORT 1
-                    if read_data[0] & 0x01 == 0:
+                if nic_type in CAPRI_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
+                    port_list = ["0", "1"]
+                elif nic_type in ELBA_NIC_TYPE_LIST:
+                    port_list = ["1", "2"]
+
+                for port_num in port_list:
+                    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_detect_transceiver_presence(port_num):
                         # not present, retry 3x
                         if loopback_fail_list[slot] == max_retries_per_slot:
                             if slot not in fail_nic_list:
@@ -2113,7 +2110,7 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                             failure_detected = True
                     else:
                         # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
+                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, port_num):
                             mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
                             if loopback_fail_list[slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list:
@@ -2122,150 +2119,6 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                             else:
                                 cur_fail_list[slot] = 1
                                 loopback_fail_list[slot] += 1
-                                failure_detected = True
-
-                    ### QSFP/SFP PORT 2
-                    if read_data[0] & 0x02 == 0:
-                        # not present, retry 3x
-                        if loopback_fail_list[slot+length] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
-                        else:
-                            cur_fail_list[slot+length] = 1
-                            loopback_fail_list[slot+length] += 1
-                            failure_detected = True
-                    else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "2"):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                            if loopback_fail_list[slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list:
-                                    fail_nic_list.append(slot)
-                                continue
-                            else:
-                                cur_fail_list[slot+length] = 1
-                                loopback_fail_list[slot+length] += 1
-                                failure_detected = True
-
-                elif nic_type in GIGLIO_NIC_TYPE_LIST:
-                    read_data = [0]
-                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_read_cpld_via_smbus(reg_addr=0x40, read_data=read_data)
-                    if not rc:
-                        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read CPLD")
-                        if slot not in fail_nic_list:
-                            fail_nic_list.append(slot)
-                        continue
-
-                    ### QSFP/SFP PORT 1
-                    if read_data[0] & 0x01 == 0:
-                        # not present, retry 3x
-                        if loopback_fail_list[slot] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
-                        else:
-                            cur_fail_list[slot] = 1
-                            loopback_fail_list[slot] += 1
-                            failure_detected = True
-                    else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                            if loopback_fail_list[slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list:
-                                    fail_nic_list.append(slot)
-                                continue
-                            else:
-                                cur_fail_list[slot] = 1
-                                loopback_fail_list[slot] += 1
-                                failure_detected = True
-
-                    ### QSFP/SFP PORT 2
-                    if read_data[0] & 0x02 == 0:
-                        # not present, retry 3x
-                        if loopback_fail_list[slot+length] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
-                        else:
-                            cur_fail_list[slot+length] = 1
-                            loopback_fail_list[slot+length] += 1
-                            failure_detected = True
-                    else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                            if loopback_fail_list[slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list:
-                                    fail_nic_list.append(slot)
-                                continue
-                            else:
-                                cur_fail_list[slot+length] = 1
-                                loopback_fail_list[slot+length] += 1
-                                failure_detected = True
-
-                elif nic_type in CAPRI_NIC_TYPE_LIST:
-                    # QSFP/SFP port 1
-                    read_data = [0]
-                    expected_val = 0x3
-                    if nic_type in (NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL):
-                        expected_val = 0x11
-                    else:
-                        expected_val = 0x3
-
-                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(0, 0x50, 0, read_data)
-                    if not rc:
-                        read_data = [0]
-
-                    if read_data[0] & expected_val != expected_val:
-                        if loopback_fail_list[slot] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
-                        else:
-                            cur_fail_list[slot] = 1
-                            loopback_fail_list[slot] += 1
-                            failure_detected = True
-                    else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "0"):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                            if loopback_fail_list[slot] == max_retries_per_slot:
-                                if slot not in fail_nic_list:
-                                    fail_nic_list.append(slot)
-                                continue
-                            else:
-                                cur_fail_list[slot] = 1
-                                loopback_fail_list[slot] += 1
-                                failure_detected = True
-
-                    # QSFP/SFP port 2
-                    read_data = [0]
-                    rc = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_console_read_i2c(1, 0x50, 0, read_data)
-                    if not rc:
-                        read_data = [0]
-
-                    if read_data[0] & expected_val != expected_val:
-                        if loopback_fail_list[slot+length] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
-                        else:
-                            cur_fail_list[slot+length] = 1
-                            loopback_fail_list[slot+length] += 1
-                            failure_detected = True
-                    else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, "1"):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
-                            if loopback_fail_list[slot+length] == max_retries_per_slot:
-                                if slot not in fail_nic_list:
-                                    fail_nic_list.append(slot)
-                                continue
-                            else:
-                                cur_fail_list[slot+length] = 1
-                                loopback_fail_list[slot+length] += 1
                                 failure_detected = True
 
         display_failures(mtp_mgmt_ctrl, nic_list, cur_fail_list, fail_nic_list, length)
