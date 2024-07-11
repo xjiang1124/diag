@@ -1946,33 +1946,52 @@ class mtp_ctrl():
 
     def mtp_inlet_temp_test(self, stage=None, sanity=False):
         rc = True
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP get inlet temperature failed")
-            return False
+        inlet_1, inlet_2 = None, None
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} command failed".format(cmd))
+                return False
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
 
-        # Current Fan Speed display
-        ret = re.findall(r'NAME\s+FAN\d-Inlet\s+|FAN\d-Inlet\s+|FAN\d-Outlet\s', self.mtp_get_cmd_buf())
-        if not ret:
-            self.cli_log_err("MTP get fan name failed")
-            return False
-        if not sanity:
-            self.cli_log_inf("".join(ret).strip('\n'))
-        ret = re.search(r'FAN(\s+\d{3,}){6}(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
-        if not ret:
-            self.cli_log_err("MTP get fan speed failed")
-            return False
-        if not sanity:
-            self.cli_log_inf(ret.group(0))
+            # Current Fan Speed display
+            ret = re.findall(r'NAME\s+FAN\d-Inlet\s+|FAN\d-Inlet\s+|FAN\d-Outlet\s', self.mtp_get_cmd_buf())
+            if not ret:
+                self.cli_log_err("MTP get fan name failed")
+                return False
+            if not sanity:
+                self.cli_log_inf("".join(ret).strip('\n'))
+            ret = re.search(r'FAN(\s+\d{3,}){6}(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+            if not ret:
+                self.cli_log_err("MTP get fan speed failed")
+                return False
+            if not sanity:
+                self.cli_log_inf(ret.group(0))
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
-            # validate the readings
-            inlet_1 = float(match.group(3))
-            inlet_2 = float(match.group(4))
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+            if match:
+                # validate the readings
+                inlet_1 = float(match.group(3))
+                inlet_2 = float(match.group(4))
+        if inlet_1 and inlet_2:
             inlet_1_rs = True
             inlet_2_rs = True
             max_temp = 70
@@ -2305,18 +2324,40 @@ class mtp_ctrl():
         return True
 
     def mtp_inlet_sensor_test(self):
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
-            return False
+        inlet_1, inlet_2 = None, None
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
+                return False
+
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
             # validate the readings
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
+
+        if inlet_1 and inlet_2:
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
@@ -2333,19 +2374,40 @@ class mtp_ctrl():
             return False
 
     def mtp_get_inlet_temp(self, low_threshold, high_threshold):
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP get inlet temperature failed")
-            return 0.00
+        inlet_1, inlet_2 = None, None
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+            if match:
+                inlet_1 = float(match.group(3))
+                inlet_2 = float(match.group(4))
+
+        if inlet_1 and inlet_2:
             # validate the readings
-            inlet_1 = float(match.group(3))
-            inlet_2 = float(match.group(4))
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
