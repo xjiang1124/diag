@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 import argparse
 import os
@@ -766,7 +766,7 @@ PRIVEK <ek.sk>"""
             dr = 1
 
         os.chdir("/home/diag/diag/tools/pki")
-        cmd_fmt = "python ./client_diag.py -sn {} -pdn {} -pn \"{}\" -mac {} -mid {} -n 32 -hsm_rn"
+        cmd_fmt = "python2.7 ./client_diag.py -sn {} -pdn {} -pn \"{}\" -mac {} -mid {} -n 32 -hsm_rn"
         cmd = cmd_fmt.format(sn, card_type, pn, mac, mtp)
         cmd_list = shlex.split(cmd)
         output = subprocess.check_output(cmd_list)

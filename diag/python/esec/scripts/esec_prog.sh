@@ -50,7 +50,7 @@ hsm_sign_ek () {
     cp $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/pub_ek.tcl.txt .
 
 
-    echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
+    echo "python2.7 ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/"
 
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
@@ -66,7 +66,7 @@ hsm_sign_ek () {
     fi
     CARD_TYPE=$(echo $CARD_TYPE | sed "s/_//")
     echo "id: $id"
-    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id
+    python2.7 ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id
 
 
     cp signed_ek.pub.bin signed_ek.pub.org.bin
@@ -91,9 +91,9 @@ gen_otp () {
     cd $DIAG_HOME/diag/tools/barco/otp_files
     cp $DIAG_HOME/diag/tools/pki/signed_ek.pub.bin chipcert.der
 
-    python ../generate_otp.py --algo 'ecdsa_p384' --esecboot="secure" --frksize 32 --cm_input OTP_content_CM.txt --output OTP_cm
+    python2.7 ../generate_otp.py --algo 'ecdsa_p384' --esecboot="secure" --frksize 32 --cm_input OTP_content_CM.txt --output OTP_cm
 
-    python ../generate_otp.py --algo 'ecdsa_p384' --hostboot="secure" --frksize 32 --sm_input OTP_content_SM.txt --output OTP_sm
+    python2.7 ../generate_otp.py --algo 'ecdsa_p384' --hostboot="secure" --frksize 32 --sm_input OTP_content_SM.txt --output OTP_sm
 
     cp OTP_cm.mif OTP_cm.hex
     cp OTP_sm.mif OTP_sm.hex
@@ -210,7 +210,7 @@ img_prog () {
 efuse_prog () {
     cd $DIAG_HOME/diag/tools/pki
 
-    echo "python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -hsm_rn -n 256"
+    echo "python2.7 ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -hsm_rn -n 256"
 
     asic_type=$(get_asic_type $CARD_TYPE)
     echo "asic_type: $asic_type"
@@ -221,7 +221,7 @@ efuse_prog () {
     else
         id="v1"
     fi
-    python ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id -hsm_rn -n 256
+    python2.7 ./client_diag.py -k $CLIENT_KEY -c $CLIENT_CERT  -t $TRUST_ROOTS -b $BACKEND_URL -sn $SN -pn "$PN" -mac $MAC -pdn $CARD_TYPE -mid $MTP -s $DIAG_HOME/diag/tools/barco/otp_files/ -id $id -hsm_rn -n 256
 
     cd $DIAG_HOME/diag/scripts/asic/
     uut="UUT_$SLOT"
