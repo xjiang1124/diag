@@ -75,12 +75,15 @@ const SPI_STA_TOE               uint32 = 0x0010
 const SPI_STA_ROE               uint32 = 0x0008
 
 
-
-const SPI_TRGT_DEVICE_QSPI0       uint32 = 0  //salina qspi-0
-const SPI_TRGT_DEVICE_QSPI1       uint32 = 1  //salina qspi-1
-const SPI_TRGT_DEVICE_CPLD_FLASH  uint32 = 2  //cpld flash
-const SPI_TRGT_DEVICE_CPLD_REG    uint32 = 3  //cpld register spcace
-const SPI_TRGT_DEVICE_FPGA        uint32 = 4  //fpga flash
+const SPI_TRGT_DEVICE_CPLDI2C_RD  uint32 = 0  //I2C READ to cpld
+const SPI_TRGT_DEVICE_CPLDI2C_WR  uint32 = 1  //I2C WRITE to cpld
+const SPI_TRGT_DEVICE_SPROM_RD    uint32 = 2  //SPROM READ
+const SPI_TRGT_DEVICE_SPROM_WR    uint32 = 3  //SPROM WRITE
+const SPI_TRGT_DEVICE_CPLD_FLASH  uint32 = 4  //cpld flash
+const SPI_TRGT_DEVICE_QSPI0       uint32 = 5  //salina qspi-0
+const SPI_TRGT_DEVICE_QSPI1       uint32 = 6  //salina qspi-1
+const SPI_TRGT_DEVICE_SPI2I2C     uint32 = 7  //SPI to I2C FOR QSFP
+const SPI_TRGT_DEVICE_FPGA        uint32 = 8  //fpga flash
 
 //Global to keep track if we have enabled a spi at the cpld so we don't do constant i2c access to the cpld to enable it on every spi transcation
 var TARGET_SPI_ENABLED             uint32 = 999
@@ -145,65 +148,6 @@ func WriteByteSmbus(devName string, offset uint, val byte, slot uint32) (err int
     }
 
     smbusNew.Close()
-
-    return
-}
-
-
-/*********************************************************************
-* Set the SPI SELECT on the Netwrok Adapter CPLD
-* 
-* DEV = CPLD_SLOT0 - CPLD_SLOT9 
-*  
-* SPI_SLAVE_SEL[2:0] -- Bit 7,4,3: 
-* For MTP
-* 001:  SPI-to-I2C bridge,  used for I2C access to FP0 and FP1 transceiver 
-* 100:  CPLD Internal Flash (CFG0, CFG1, UFMn)
-* 101:  external QSPI0 Flash
-* 110:  external QSPI1 Flash
-*********************************************************************/
-func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
-    var data8 uint8
-    var err_i int
-    devName := fmt.Sprintf("CPLD")
-    //check if we enabled this spi target already at the cpld, and just return
-    if TARGET_SPI_ENABLED == targetSPI {
-        return
-    }
-
-    data8, err_i = ReadByteSmbus(devName, 0x24, spiNumber) 
-    if err_i != errType.SUCCESS {
-        err = fmt.Errorf("ERROR: CpldEnableSPI %s i2c access failed at offset 0x24\n", devName);
-        fmt.Printf("%w\n", err)
-        return
-    }
-
-    data8 = data8 & (^(uint8(1<<7) | uint8(1<<4) | uint8(1<<3))) //mask out spi select bits
-
-    switch(targetSPI){
-        case SPI_TRGT_DEVICE_CPLD_FLASH: 
-            data8 = data8 | 0x80
-        case SPI_TRGT_DEVICE_QSPI0:
-            data8 = data8 | 0x88
-        case SPI_TRGT_DEVICE_QSPI1:
-            data8 = data8 | 0x90
-        case SPI_TRGT_DEVICE_CPLD_REG:
-            data8 = data8 | 0x98
-        default: {
-            err = fmt.Errorf("ERROR: Invalid arg targetSPI passed.   You passed %d", targetSPI);
-            fmt.Printf("%w\n", err)
-            return
-        }
-    }
-
-    err_i = WriteByteSmbus(devName, uint(0x24), data8, spiNumber) 
-    if err_i != errType.SUCCESS {
-        err = fmt.Errorf("ERROR: CpldEnableSPI %s i2c write access to 0x24 failed\n", devName);
-        fmt.Printf("%w\n", err)
-        return
-    }
-
-    TARGET_SPI_ENABLED = targetSPI 
 
     return
 }
@@ -377,42 +321,6 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
 }
 
 
-
-//Enable the SPI Bus via the FPGA MSIC CONTROL REGISTER
-func SpiBusEnableAtFPGA(spiNumber uint32) (err error) {
-    var data32 uint32 = 0
-
-    //Only slots 0-9 and the DEBUG slot (10) need this.  The FPGA does not need this
-    if spiNumber > SPI_DBG {
-        return
-    }
-
-    //Mask in the enable bit
-    data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
-    data32 |= (FPGA_MISC_CTRL_SLOT0_SPI_EN << spiNumber) 
-    MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
-
-    return
-}
-
-//Disable the SPI Bus via the FPGA MSIC CONTROL REGISTER
-func SpiBusDisableAtFPGA(spiNumber uint32) (err error) {
-    var data32 uint32 = 0
-
-    //Only slots 0-9 and the DEBUG slot (10) need this.  The FPGA does not need this
-    if spiNumber > SPI_DBG {
-        return
-    }
-
-    //Mask out the enable bit
-    data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
-    data32 = data32 & (^(FPGA_MISC_CTRL_SLOT0_SPI_EN << spiNumber))
-    MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
-
-    return
-}
-
-
 //Check TX FIFO EMPTY
 func Spi_check_tx_fifo_empty(spiNumber uint32) (err error) {
     var data32 uint32 = 0
@@ -432,6 +340,7 @@ func Spi_check_tx_fifo_empty(spiNumber uint32) (err error) {
     }
     return
 }
+
 
 //Check Tx/Rx Transaction is done
 func Spi_check_tx_complete(spiNumber uint32) (err error) {
@@ -555,7 +464,7 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
         //Enable the spi bus mux on the fpga that muxes between spi and j2c.  
         //This is seperate from the spi mailbox mux that controls the mux between the fpga and elba.
         //Too many muxes.......
-        SpiBusEnableAtFPGA(spiNumber)
+        SetJTAGbusToSPI(spiNumber)
 
         //Enable spi bus on the iob card via the mcp23008 i/o expander
         err = SpiBusEnableIOexpander(spiNumber)
@@ -571,12 +480,16 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
             }
         }
 
-        //Enable Targeted SPI BUS on the network adapter CPLD
-        if (spiDevice != SPI_TRGT_DEVICE_FPGA) {
-            err = CpldEnableSPI(spiNumber, spiDevice)
-            if err != nil {
-                goto SPI_TRANSACTION_END2
-            }
+        if (spiDevice == SPI_TRGT_DEVICE_CPLD_FLASH) {
+            opCode = append([]byte{0x0C, 0x00, 0x00, 0x00} , opCode...)
+        }
+
+        if (spiDevice == SPI_TRGT_DEVICE_QSPI0) {
+            opCode = append([]byte{0x0D, 0x00, 0x00, 0x00} , opCode...)
+        }
+
+        if (spiDevice == SPI_TRGT_DEVICE_QSPI1) {
+            opCode = append([]byte{0x0E, 0x00, 0x00, 0x00} , opCode...)
         }
     }
 
@@ -681,7 +594,7 @@ SPI_TRANSACTION_END2:
     //For network adapter slots, need to set various enables / muxes to get spi working
     if spiNumber < SPI_FPGA {
         //Disable the spi bus mux that muxes between spi and j2c
-        //SpiBusDisableAtFPGA(spiNumber)
+        //SetJTAGbusToJTAG(spiNumber)
 
         //Enable spi bus on the iob card via the mcp23008 i/o expander
         //SpiBusDisableIOexpander(spiNumber)
