@@ -114,6 +114,10 @@ class mtp_ctrl():
         self._test_log_folder = None  # relative path to log folder
         self._open_file_handles = []
 
+    def _propogate_properties_to_nic(self, slot):
+        if self._nic_ctrl_list[slot]:
+            self._nic_ctrl_list[slot]._mtp_type = self._mtp_type
+
     def cli_log_inf(self, msg, level=0):
         if msg is None:
             msg = ""
@@ -990,6 +994,7 @@ class mtp_ctrl():
                 prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 if fpo:
                     self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
+                    self._propogate_properties_to_nic(slot)
                 self._nic_ctrl_list[slot].nic_handle_init(handle, prompt)
                 para_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
                 if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
@@ -6084,11 +6089,20 @@ class mtp_ctrl():
         # clear reg 0x50 after reading
         reg_addr = 0x50
         write_data = 0
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = ""
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = ""
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -6176,7 +6190,11 @@ class mtp_ctrl():
             Dump registers 0xa, 0x12, 0x24
         """
         for reg_addr in [0xa, 0x12, 0x24]:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+            if self._mtp_type == MTP_TYPE.MATERA:
+                cmd = ""
+            else:
+                cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+            cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 # try again one more time
                 time.sleep(1)
