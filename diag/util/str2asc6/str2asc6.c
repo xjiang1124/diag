@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     unsigned char packedOutput[STR_MAX_SIZE] = {0}; // 20 byte array initialized to 0
 
     // Check input length
-    if (strlen(input_string) > STR_MAX_SIZE) {
+    if (strlen(input_string) > STR_MAX_SIZE*8/6) {
         printf("Error: Input string exceeds maximum length of 20 bytes.\n");
         return 1;
     }
