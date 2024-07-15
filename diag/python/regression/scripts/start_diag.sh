@@ -26,6 +26,7 @@ FPGA_PRST="YES"
 if [[ $num_fpga -ne 0 ]]
 then
     echo "FPGA found"
+    setpci -s 1:0.0 command.l=0x100006
 else
     echo "Legacy MTP found"
     FPGA_PRST="NO"
