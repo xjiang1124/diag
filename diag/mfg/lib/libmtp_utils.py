@@ -12,6 +12,7 @@ import random
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_Const
 from libdefs import FF_Stage
+from libdefs import MTP_TYPE
 from threading import Thread
 
 def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
@@ -31,6 +32,8 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
         True if MTP NIC device check pass
         False if MTP NIC device check failed
     """
+    if mtp_mgmt_ctrl._mtp_type == MTP_TYPE.MATERA:
+        host_nic_device = "BCM5720"
 
     ret = True
     if host_nic_device.lower() == 'i210':
@@ -49,6 +52,9 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
                 mtp_mgmt_ctrl.cli_log_err("MTP Host NIC I210 Presence Check Fail.", level=0)
                 mtp_mgmt_ctrl.cli_log_err(rs)
                 ret = False
+    elif host_nic_device.lower() == "bcm5720":
+        # not implemented
+        ret = True
     else:
         mtp_mgmt_ctrl.cli_log_err("Check on MTP NIC device {:s} not support yet".format(host_nic_device), level=0)
         ret = False
