@@ -1,4 +1,4 @@
-package tps53830
+package pmic
 
 import (
     "testing"

@@ -202,9 +202,9 @@ var GinestraD5Tbl = []I2cInfo {
     I2cInfo {"RTC",             "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"GIG0_CORE",       "TPS53688",  0x2,   0x62,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"GIG0_ARM",        "TPS53688",  0x2,   0x62,    0x1,    "HUB_NONE",  0,    0},
-    I2cInfo {"DDR_VDD",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"DDR_VDDQ",        "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"DDR_VPP",         "TPS53830",  0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VDD",         "PMIC",      0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VDDQ",        "PMIC",      0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"DDR_VPP",         "PMIC",      0x2,   0x4F,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"VDD_DDR",         "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},
 
     I2cInfo {"QSFP_1",          "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE",  0,    0},
@@ -270,6 +270,12 @@ var MalfaTbl = []I2cInfo {
     I2cInfo {"VDD_12_MX_VM",  "DS4424",    0x2,   0x30,    0x1,    "HUB_NONE", 0,    0},
     I2cInfo {"VDD_075_PCIE_VM","DS4424",   0x2,   0x30,    0x2,    "HUB_NONE", 0,    0},
     I2cInfo {"VDD_075_MX_VM", "DS4424",    0x2,   0x30,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDD_0",     "PMIC",      0x0,   0x4E,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDDQ_0",    "PMIC",      0x0,   0x4E,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VPP_0",     "PMIC",      0x0,   0x4E,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDD_1",     "PMIC",      0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDDQ_1",    "PMIC",      0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VPP_1",     "PMIC",      0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
 
     I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
@@ -292,6 +298,12 @@ var MalfaSensorTbl = []I2cSensorInfo {
     I2cSensorInfo {"VDD_075_PCIE",  I2cSensorCoeff{ 0.005 }},
     I2cSensorInfo {"VDD_12_MX",     I2cSensorCoeff{ 0.005 }},
     I2cSensorInfo {"VDD_12_PCIE",   I2cSensorCoeff{ 0.005 }},
+}
+
+var LeniSensorTbl = []I2cSensorInfo {
+    I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.02 }},
+    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.002 }},
+    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.01 }},
 }
 
 var OrtanoMtpTbl = []I2cInfo {

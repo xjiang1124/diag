@@ -21,7 +21,7 @@ import (
     "device/powermodule/tps53681"
     "device/powermodule/sn1701022"
     "device/powermodule/tps53688"
-    "device/powermodule/tps53830"
+    "device/powermodule/pmic"
     "device/powermodule/tps25990"
     "device/powermodule/isl69247"
     "device/powermodule/ina3221a"
@@ -483,9 +483,9 @@ func init() {
     ginestraD5DispStaList = make(map[string]DispStaFunc)
     ginestraD5DispStaList["GIG0_CORE"] = tps53688.DispStatus
     ginestraD5DispStaList["GIG0_ARM"]  = tps53688.DispStatus
-    ginestraD5DispStaList["DDR_VDD"]  = tps53830.DispStatus
-    ginestraD5DispStaList["DDR_VDDQ"]  = tps53830.DispStatus
-    ginestraD5DispStaList["DDR_VPP"]  = tps53830.DispStatus
+    ginestraD5DispStaList["DDR_VDD"]  = pmic.DispStatus
+    ginestraD5DispStaList["DDR_VDDQ"]  = pmic.DispStatus
+    ginestraD5DispStaList["DDR_VPP"]  = pmic.DispStatus
     ginestraD5DispStaList["VDD_DDR"]  = tps549a20.DispStatus
     ginestraD5DispStaList["TSENSOR"]   = tmpadicom.DispStatus
 
@@ -509,6 +509,12 @@ func init() {
     malfaDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
     malfaDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
     malfaDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
+    malfaDispStaList["DDR_VDD_0"]    = pmic.DispStatus
+    malfaDispStaList["DDR_VDDQ_0"]   = pmic.DispStatus
+    malfaDispStaList["DDR_VPP_0"]    = pmic.DispStatus
+    malfaDispStaList["DDR_VDD_1"]    = pmic.DispStatus
+    malfaDispStaList["DDR_VDDQ_1"]   = pmic.DispStatus
+    malfaDispStaList["DDR_VPP_1"]    = pmic.DispStatus
 
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
