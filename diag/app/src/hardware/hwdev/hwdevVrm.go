@@ -2,13 +2,13 @@ package hwdev
 
 import (
     //"strconv"
-
     "common/cli"
     //"common/dmutex"
     "common/errType"
     "device/powermodule/tps53659"
     "device/powermodule/tps53659a"
     "device/powermodule/ltc3888"
+    "device/powermodule/ltc3882"
     "device/powermodule/tps53681"
     "device/powermodule/tps549a20"
     "device/powermodule/tps544c20"
@@ -16,7 +16,7 @@ import (
     "device/powermodule/sn1701022"
     "device/powermodule/tps53688"
     "device/powermodule/tps53830"
-
+    "device/powermodule/ds4424"
     "hardware/i2cinfo"
     "hardware/hwinfo"
 
@@ -47,6 +47,15 @@ func margin(devName string, pct int, lockFlag bool) (err int){
         if err != errType.SUCCESS {
             return
         }
+
+        // for external margin controller, the devname is stored in i2ctable as *_VMARG
+        if i2cif.Flag == 8 {
+            devName = devName + "_VM"
+            i2cif, err = i2cinfo.GetI2cInfo(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+        }
     }
 
     err = hwinfo.EnableHubChannelExclusive(devName)
@@ -60,6 +69,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
         err = tps53659a.SetVMargin(devName, pct)
     } else if i2cif.Comp == "LTC3888" {
         err = ltc3888.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "LTC3882" {
+        err = ltc3882.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS549A20" {
        err = tps549a20.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS544C20" {
@@ -74,6 +85,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
         err = tps53688.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS53830" {
         err = tps53830.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "DS4424" {
+        err = ds4424.SetVMargin(devName, pct)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM

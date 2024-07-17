@@ -452,7 +452,7 @@ class nic_ctrl():
                     continue
                 cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
                 self._nic_handle.sendline(cmd)
-                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=time_out)
+                idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=time_out)
                 console_login_screen += self._nic_handle.before
                 if idx >= 0:
                     break
@@ -642,7 +642,7 @@ class nic_ctrl():
 
         cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
         self._nic_handle.sendline(cmd)
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
@@ -699,7 +699,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=4)
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1))
-        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready"], timeout=2)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=2)
         if idx < 0:
             return False
         time.sleep(2)
@@ -1683,6 +1683,14 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             return False
 
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            local_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(mtp_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
         nic_cmd = "{} \" md5sum {:s} \"".format(ssh_pipe_cmd, directory+os.path.basename(img_name))
         self._nic_handle.sendline(nic_cmd)
@@ -1701,6 +1709,19 @@ class nic_ctrl():
         elif idx == 1:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        match = re.search(r"([0-9a-fA-F]+) +.*", str(self._nic_handle.before))
+        if match:
+            nic_md5sum = match.group(1)
+        else:
+            self.nic_set_err_msg("Execute command {:s} failed".format(nic_cmd))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if local_md5sum != nic_md5sum:
+            self.nic_set_err_msg("Checksums for {:s} don't match after copying to NIC".format(os.path.basename(img_name)))
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         return True
@@ -2727,7 +2748,7 @@ class nic_ctrl():
 
             time.sleep(5)
 
-    def nic_start_diag(self, aapl, dis_hal=False):
+    def nic_start_diag(self, aapl, dis_hal=False, mtp_type=None):
         # setup diag env on nic
         nic_cmd_list = list()
 

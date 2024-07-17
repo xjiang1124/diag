@@ -232,6 +232,12 @@ class MTP_Const:
     MFG_TEMP_SOAK_TIMEOUT = 180
     MFG_TEMP_CHECK_INTERVAL = 10
 
+    MFG_MATERA_ORT_HIGH_FAN_SPD = 80
+    MFG_MATERA_RDT_HIGH_FAN_SPD = 80
+    MFG_MATERA_EDVT_HIGH_FAN_SPD = 80
+    MFG_MATERA_EDVT_NORM_FAN_SPD = 50
+    MFG_MATERA_EDVT_LOW_FAN_SPD = 50
+
     # MTP temperature controls for chamber and outside
     HIGH_CHAMBER_UPPER_LIMIT = 60
     HIGH_CHAMBER_LOWER_LIMIT = 40
@@ -321,7 +327,10 @@ class MFG_DIAG_CMDS:
     MTP_FAN_PRSNT_FMT = "mtptest -present"
     MTP_PSU_TEST_FMT = "mtptest -psu"
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
+    MTP_I2C_PRESENT_DISP_FMT = "devmgr_v2 -status"
+    MTP_MATERA_FAN_SET_SPD_FMT = "devmgr_v2 fanctrl --pct {:d}"
 
+    MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
     MTP_MAC_FMT = "cat /sys/class/net/enp4s0/address"
@@ -418,6 +427,7 @@ class MFG_DIAG_CMDS:
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
+    NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}  -e /0"
 
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
@@ -527,6 +537,17 @@ class MFG_DIAG_CMDS:
     MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
     MTP_PARA_EDMA_ENV_INIT_FMT  = "nic_test_v2.py check_edma -slot_list {:s}"
 
+    #MATER MTP
+    MATERA_MTP_SINGLE_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s}"
+    MATERA_MTP_SINGLE_MGMT_FPO_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -fpo"
+    MATERA_MTP_SINGLE_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -asic_type {:s}"
+    MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
+    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s} -mode hod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode hod_1100 -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 500 -vmarg {:s} -mode nod_525 -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode nod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 700 -vmarg {:s} -mode=hod_1100 -int_lpbk True"
+
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
     MTP_DISP_ECC_FMT = "nic_test.py -disp_ecc -slot_list {:s}"
@@ -534,6 +555,7 @@ class MFG_DIAG_CMDS:
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
     MTP_NIC_PING_FMT = "ping -c 4 {:s}"
+    MATERA_MTP_NIC_MAC_DISP_FMT = "arp -n -i enp3s0f1"
 
     MTP_DIAG_INIT_FMT = "/home/diag/start_diag.sh"
     NIC_DIAG_INIT_FMT = "/home/diag/start_diag.arm64.sh {:d}"
@@ -592,6 +614,8 @@ class MFG_DIAG_CMDS:
     NIC_MVL_LINK_CAPRI_FMT = "{:s}mvl_link_capri.sh {:s}"
     NIC_EDMA_TEST_FMT = "{:s}run_edma.sh"
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
+    MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
+    MTP_STOP_REDIS_FMT = "systemctl stop redis-server"
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
@@ -618,6 +642,7 @@ class MFG_DIAG_SIG:
     NIC_AAPL_OK_SIG = "AAPL setup done"
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_PARA_SIG = "=== Setup env top"
+    MATERA_NIC_MGMT_PARA_SIG = "=== Setup env"
     NIC_PARA_EDMA_ENV_INIT_SIG = "EDMA Checking Done"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="

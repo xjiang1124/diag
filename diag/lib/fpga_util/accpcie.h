@@ -121,6 +121,7 @@ FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
 FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
 FT_STATUS sendJtagCommand(FT_HANDLE ftHandle, BYTE *sequence, const size_t length);
+FT_STATUS jtag_clear(DWORD portNum);
 void set_verbosity(int);
 void set_bar(ULONGLONG);
 void jtag_close();

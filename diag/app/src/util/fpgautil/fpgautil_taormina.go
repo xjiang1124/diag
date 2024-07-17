@@ -674,11 +674,17 @@ func taormina_fpga_cli() {
         }
 
         if os.Args[5] == "b" || os.Args[5] == "b" {
-            fmt.Printf(" Attempting to wipe secure key from the eeprom\n")
-            wrData = append(wrData, 0xFF)
-            for i:=0x100;i<0x1000;i++ {
+            fmt.Printf(" Attempting to wipe the eeprom\n")
+            for i:=0;i<0x1000;i+=16 {
+                wrData := []byte{}
+                wrData = append(wrData, (uint8((i >> 8) & 0xff)))
+                wrData = append(wrData, (uint8(i & 0xff)))
+                for j:=0; j<16 ;j++ {
+                    wrData = append(wrData, 0xFF)
+                }
                 fmt.Printf(".")
                 rdData, err = taorfpga.I2c_access( uint32(bus), uint32(mux), uint32(i2cAddr), uint32(len(wrData)), wrData, 0 )
+                time.Sleep(time.Duration(5) * time.Millisecond)
                 if err != nil {
                     os.Exit(-1)
                 }

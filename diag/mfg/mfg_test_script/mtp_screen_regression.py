@@ -17,6 +17,7 @@ from collections import OrderedDict
 sys.path.append(os.path.relpath("lib"))
 import libmfg_utils
 import test_utils
+import libmtp_utils
 import testlog
 import parallelize
 from libdefs import MTP_Const
@@ -28,10 +29,11 @@ from libdefs import Swm_Test_Mode
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import Voltage_Margin
+from libdefs import Factory
+from libdefs import MTP_DIAG_Logfile
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
-from libmfg_cfg import DRY_RUN
-from libmfg_cfg import MTP_HEALTH_MONITOR
+from libmfg_cfg import *
 from diag_screening_emmc import save_test_data2csv_file
 from diag_screening_ddr import get_test_arguments
 from diag_screening_ddr import args2optionstring
@@ -71,12 +73,15 @@ def check_fully_populated(mtp_mgmt_ctrl, nic_list):
         mtp_mgmt_ctrl.cli_log_inf("MTP detect 10 NIC passed", level=0)
     return missing_nic_list
 
-@parallelize.parallel_nic_using_ssh
-def check_nic_type(mtp_mgmt_ctrl, slot):
-    if mtp_mgmt_ctrl.mtp_get_nic_type(slot) != NIC_Type.ORTANO2:
-        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Incorrect NIC Type, should be Ortano2 TI")
-        return False
-    return True
+def check_nic_type(mtp_mgmt_ctrl, nic_list):
+    if len(nic_list) == 0: return False
+    first_slot = nic_list[0]
+    nic_fail_list = list()
+    for slot in nic_list:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(first_slot) != mtp_mgmt_ctrl.mtp_get_nic_type(slot):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Incorrect NIC Type mismatch with first slot {:s}".foramt(mtp_mgmt_ctrl.mtp_get_nic_type(first_slot)))
+            nic_fail_list.append(slot)
+    return nic_fail_list
 
 def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
     @parallelize.parallel_nic_using_j2c
@@ -113,7 +118,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            number_of_l1_tests = 9
+            number_of_l1_tests = 9 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA else 7
             err_msg_list = list()
             if pass_count != number_of_l1_tests:
                 err_msg_list = ["L1 Sub Test only passed: {:d}".format(pass_count)]
@@ -126,8 +131,8 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
 
     return fail_j2c_list
 
-def mtp_ssd_validation_test(mtp_mgmt_ctrl):
-    """MTP SSD validation test
+def mtp_nvme_ssd_validation_test(mtp_mgmt_ctrl):
+    """MTP NVME SSD validation test
 
     Args:
         mtp_mgmt_ctrl (_type_): _description_
@@ -139,14 +144,14 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
     """
 
     mtp_script_dir = testlog.get_mtp_test_log_folder(mtp_mgmt_ctrl)
-    mtp_mgmt_ctrl.cli_log_inf("MTP {:s} SSD Validation Test Start".format("M.2"), level=0)
+    mtp_mgmt_ctrl.cli_log_inf("MTP NVME SSD Validation Test Start")
 
-    mtp_mgmt_ctrl.cli_log_inf("GET SSD SMART info", level=0)
-    smart_info = read_mtp_ssd_para(mtp_mgmt_ctrl)
-    if not smart_info:
-        mtp_mgmt_ctrl.mtp_diag_fail_report("Failed To Get SSD SMART attribute info")
+    mtp_mgmt_ctrl.cli_log_inf("GET NVME SSD drive info")
+    drive_info = read_mtp_nvme_ssd_para(mtp_mgmt_ctrl)
+    if not drive_info:
+        mtp_mgmt_ctrl.mtp_diag_fail_report("Failed To Get NVME SSD drive info")
         return False
-    mtp_mgmt_ctrl.cli_log_inf(str(smart_info), level=0)
+    mtp_mgmt_ctrl.cli_log_inf(str(drive_info))
 
     # load test configuration
     parameter_cfg_yaml = "config/emmc_test_suite.yaml"
@@ -172,11 +177,11 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
 
     for idx in range(1, int(iterations)+1):
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
-        mtp_mgmt_ctrl.cli_log_inf("MTP SSD Validation Test Iteration {:d}".format(idx), level=0)
+        mtp_mgmt_ctrl.cli_log_inf("MTP {:s} NVME SSD Validation Test Iteration {:d}".format(drive_info["FormFactor"], idx), level=0)
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30, level=0)
         # Run Test
 
-        sn = smart_info["Serial Number"]
+        sn = drive_info["SerialNumber"]
         emmc_test_data = {}
 
         # run test steps under both vmargin high and vmargin low for all Normal temperature, Low temperature and High temperature
@@ -204,7 +209,7 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
             for test in test_steps:
                 cmds = ["cd "+dir_in_ssd_partition, "rm -rf Random*", "rm -rf Sequen*"]
                 tout = MTP_Const.NIC_CON_CMD_DELAY
-                argsdict = get_test_arguments(test_case_name=test, test2args=emmctest2args)
+                argsdict = get_test_arguments(test_case_name=test, part_number="MATERA_PN_NVME", test2args=emmctest2args)
                 if not argsdict:
                     mtp_mgmt_ctrl.cli_log_inf("{:s} -> Test Step {:s} Failed".format(sn, test), level=0)
                     return False
@@ -262,9 +267,9 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
         head_data = OrderedDict()
         #head_data["SlotID"] = "Slot1"
         head_data["Serial_Number"] = sn
-        head_data["Model Number"] = smart_info["Model Number"]
-        head_data["Capacity"] = smart_info["device size"]
-        head_data["Firmware Revision"] = smart_info["Firmware Revision"]
+        head_data["Model Number"] = drive_info["ModelNumber"]
+        head_data["Capacity"] = str(round(float(drive_info["PhysicalSize"]) / 1024 / 1024 / 1024, 2)) + 'GB'
+        head_data["Firmware Revision"] = drive_info["Firmware"]
         nic_test_data[1].append({"head": head_data, "data": emmc_test_data})
 
     savedfile = save_test_data2csv_file(mtp_mgmt_ctrl, nic_test_data, csvfilename="ssd_validation.csv.log")
@@ -277,65 +282,51 @@ def mtp_ssd_validation_test(mtp_mgmt_ctrl):
 
     return True
 
-def read_mtp_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/sda'):
-    """read SSD smart atttibute using standard liunx tool hdparm
+def get_mtp_nvme_ssd_formfactor(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
+    """so we don't have a command to get nvme ssd drive formfactor, so we just hardcode to M.2, if we found some utility in the future, we can rewrite the function
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        dev_name (str, optional): _description_. Defaults to '/dev/nvme0n1'.
+    """
+
+    return "M.2"
+
+def read_mtp_nvme_ssd_para(mtp_mgmt_ctrl, dev_name='/dev/nvme0n1'):
+    """read NVME SSD drive info using nvme cli tool
 
     Args:
         mtp_mgmt_ctrl (_type_): _description_
     """
 
-    ret = dict()
-    dev_size = None
-    dev_form_factor = None
+    json_file = "/tmp/nveme_info.json"
+    cmd = "nvme list -o json {:s} > {:s}".format(dev_name, json_file)
 
-    cmd = "hdparm -I "
-    cmd += dev_name
-
-    rs = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd)
-    if rs.startswith("[FAIL]:"):
-        mtp_mgmt_ctrl.cli_log_err("Read SSD parameter command failed.{:s}".format(cmd), level=0)
-        mtp_mgmt_ctrl.cli_log_err(rs)
-        return False
-    ssd_confirm_pattern = r'Nominal Media Rotation Rate: Solid State Device'
-    if ssd_confirm_pattern not in rs:
-        mtp_mgmt_ctrl.cli_log_err("Give Partition is NOT SSD", level=0)
+    if not  mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd):
+        mtp_mgmt_ctrl.cli_log_err("Read NVMD SSD parameter command failed. {:s}".format(cmd), level=0)
+        mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_cmd_buf())
         return False
 
-    sn_pattern = r'ATA device, with non-removable media(.*)Transport:\s+Serial,'
-    sn_match_obj = re.search(sn_pattern, rs, flags=re.DOTALL)
-    if not sn_match_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed to parse SSD drive Model Number, Serial Number")
+    try:
+        with open(json_file) as json_file_obj:
+            device_info_in_json = json.load(json_file_obj)
+    except Exception as Err:
+        mtp_mgmt_ctrl.mtp_dump_err_msg(mtp_mgmt_ctrl.mtp_get_cmd_buf())
+        mtp_mgmt_ctrl.cli_log_err(str(Err))
         return False
-    sn_misc_info = sn_match_obj.group(1).split("\n")
-    for m_info in sn_misc_info:
-        m_info = m_info.strip()
-        if m_info:
-            k = m_info.split(":")[0].strip()
-            v = m_info.split(":")[1].strip()
-            ret[k] = v
 
-    size_pattern = r'device size with M = 1024\*1024:\s+(\d+) MBytes'
-    size_matche_obj = re.finditer(size_pattern, rs)
-    if not size_matche_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD drive size", level=0)
+    try:
+        device_info = device_info_in_json["Devices"][0]
+    except Exception as Err:
+        mtp_mgmt_ctrl.cli_log_err(str(Err))
         return False
-    for match_obj in size_matche_obj:
-        dev_size = match_obj.group(1)
-        dev_size = str(int(dev_size)//1024) + "GB"
-        ret["device size"] = dev_size
-        break
 
-    form_factor_pattern = r'Form Factor: (.*)\n'
-    ff_matche_obj = re.finditer(form_factor_pattern, rs)
-    if not ff_matche_obj:
-        mtp_mgmt_ctrl.cli_log_err("Failed parse SSD form factor", level=0)
+    dev_form_factor = get_mtp_nvme_ssd_formfactor(mtp_mgmt_ctrl, dev_name)
+    if not dev_form_factor:
         return False
-    for match_obj in ff_matche_obj:
-        dev_form_factor = match_obj.group(1)
-        ret["Form Factor"] = dev_form_factor
-        break
+    device_info["FormFactor"] = dev_form_factor
 
-    return ret
+    return device_info
 
 def mtp_cpu_validation_test(mtp_mgmt_ctrl):
     """MTP CPU validation Test, AMD CPU only Since using AMD Validation Toolkits(AVT)
@@ -624,6 +615,210 @@ def mtp_mem_validation_test(mtp_mgmt_ctrl):
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
+def mtp_usb_validation_test(mtp_mgmt_ctrl):
+    """
+    Matera MTP USB validation test
+    assuming USB device will be /dev/sda, and partion is /dev/sda1
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+    """
+
+    mtp_mgmt_ctrl.cli_log_inf("MTP USB Validation Test Start")
+    usb_probe_result = libmtp_utils.mtp_usb_sanity_check(mtp_mgmt_ctrl)
+    if not usb_probe_result:
+        return False
+    tout = MTP_Const.NIC_CON_CMD_DELAY
+    cmd = "cd " + usb_probe_result["MOUNTPOINTS"]
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    cmd = "fsck -y /dev/sda1"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    stress_test_time = 60  # Set stress test running time in seconds
+    cmd = "/home/diag/diag/tools/stressapptest -M 400 -f file.1 -f file.2"
+    tout = stress_test_time * 1.2
+    cmd += " -s " + str(stress_test_time)
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if "Found 0 hardware incidents".lower() not in cmd_result.lower() or "Status: PASS - please verify no corrected errors".lower() not in cmd_result.lower():
+        mtp_mgmt_ctrl.cli_log_err("Hardware Error Found By stressapptest Tool:")
+        mtp_mgmt_ctrl.cli_log_err(cmd_result)
+        return False
+
+    pattern = r'Stats: File Copy: .* at (\d+\.+\d*MB\/s)'
+    match_obj = re.search(pattern, cmd_result)
+    file_cp_bw = ""
+    if match_obj:
+        file_cp_bw = match_obj.group(1)
+
+    if not file_cp_bw:
+        mtp_mgmt_ctrl.cli_log_inf("Did not get USB bandwidth data, Ignore")
+    mtp_mgmt_ctrl.cli_log_inf("{:s} USB Drive {:s} Validation Pass with bandwidth {:s}".format(usb_probe_result["SIZE"], usb_probe_result["MODEL"], file_cp_bw))
+    mtp_mgmt_ctrl.cli_log_inf("USB DriveValidation Test Finished")
+
+    # clean up
+    cmd = "rm -rf *"
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
+    cmd = "cd -; umount " + usb_probe_result["MOUNTPOINTS"]
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
+        mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
+
+    return True
+
+@parallelize.parallel_nic_using_ssh
+def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
+    ret = True
+    mtp_para_test_list = mtp_para_test_list[slot]
+    logfile_list = list()
+    path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if "SNAKE_HBM" in mtp_para_test_list:
+        logfile_list.append(path+"snake_hbm.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_PCIE" in mtp_para_test_list:
+        logfile_list.append(path+"snake_pcie.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "PRBS_ETH" in mtp_para_test_list:
+        logfile_list.append(path+"prbs_eth.log")
+        logfile_list.append("/data/nic_util/asicutil*log")
+    if "SNAKE_ELBA" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"snake_giglio.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"snake_elba.log")
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+            logfile_list.append("/data/nic_util/asicutil*log")
+    if "ETH_PRBS" in mtp_para_test_list:
+        if nic_type in CAPRI_NIC_TYPE_LIST:
+            # uses DSP log
+            pass
+        elif nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_MX.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_PRBS_MX.log")
+    if "ARM_L1" in mtp_para_test_list:
+        if nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_arm_l1_test.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_arm_l1_test.log")
+    if "PCIE_PRBS" in mtp_para_test_list:
+        if nic_type in CAPRI_NIC_TYPE_LIST:
+            # uses DSP log
+            pass
+        elif nic_type in GIGLIO_NIC_TYPE_LIST:
+            logfile_list.append(path+"giglio_PRBS_PCIE.log")
+        elif nic_type in ELBA_NIC_TYPE_LIST:
+            logfile_list.append(path+"elba_PRBS_PCIE.log")
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+            logfile_list.append("/data/nic_util/asicutil*log")
+    if "DDR_BIST" in mtp_para_test_list:
+        logfile_list.append(path+"arm_ddr_bist_0.log")
+        logfile_list.append(path+"arm_ddr_bist_1.log")
+
+    if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, logfile_list):
+        mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting MTP parallel test logfile failed")
+        return False
+
+    # for test in mtp_para_test_list:
+    #     err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_mtp_para_err(slot, test)
+    #     for err_msg in err_msg_list:
+    #         mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+    #         ret = False
+
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def single_nic_dsp_test(mtp_mgmt_ctrl, slot, test, dsp, vmarg, swmtestmode):
+    def get_diag_para_test_run_cmd(dsp, test, slot, opts, sn, mode):
+        card_name = "NIC{:d}".format(slot+1)
+        param = '"'
+        if "SN" in opts and opts["SN"]:
+            param += 'sn={:s} '.format(sn)
+        if "SLOT" in opts and opts["SLOT"]:
+            param += 'slot={:d}'.format(slot+1)
+        if "MODE" in opts and opts["MODE"]:
+            param += 'mode={:s}'.format(mode)
+        param += '"'
+        return libmfg_utils.diag_para_run_cmd(card_name, dsp, test, param)
+
+    def get_diag_para_test_errcode_cmd(dsp, slot, opts):
+        card_name = "NIC{:d}".format(slot+1)
+        return libmfg_utils.diag_para_errcode_cmd(card_name, dsp)
+
+    diag_test_timeout = MTP_Const.DIAG_MEM_DDR_STRESS_TEST_TIMEOUT if dsp == "MEM" and test == "DDR_STRESS" else MTP_Const.DIAG_PARA_TEST_TIMEOUT
+    opts = {"NIC_NAME": True, "SN": False, "SLOT": False}
+    mode = libmfg_utils.get_mode_param(mtp_mgmt_ctrl, slot, test)
+    diag_cmd = get_diag_para_test_run_cmd(dsp, test, slot, opts, None, mode)
+    rslt_cmd = get_diag_para_test_errcode_cmd(dsp, slot, opts)
+
+    card_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in (NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT):
+        # external loopback for P2C
+        if vmarg == Voltage_Margin.normal:
+            diag_cmd += " -p 'int_lpbk=0'"
+        # internal loopback for 2C/4C
+        else:
+            diag_cmd += " -p 'int_lpbk=1'"
+
+    ret, err_msg_list = mtp_mgmt_ctrl.mtp_run_diag_test_para(slot, diag_cmd, rslt_cmd, test, timeout=diag_test_timeout)
+
+    if test == "I2C":
+        mtp_mgmt_ctrl.mtp_nic_i2c_bus_scan(slot)
+
+    # Collect NIC onboard logfiles
+    asic_dir_logfile_list = []
+    path = MTP_DIAG_Logfile.NIC_ONBOARD_ASIC_LOG_DIR
+    if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_PRBS_PCIE.log")
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_PRBS_MX.log")
+    if dsp == "NIC_ASIC" and test == "L1" and card_type in ELBA_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"elba_arm_l1_test.log")
+
+    if dsp == "NIC_ASIC" and test == "PCIE_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_PRBS_PCIE.log")
+    if dsp == "NIC_ASIC" and test == "ETH_PRBS" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_PRBS_MX.log")
+    if dsp == "NIC_ASIC" and test == "L1" and card_type in GIGLIO_NIC_TYPE_LIST:
+        asic_dir_logfile_list.append(path+"giglio_arm_l1_test.log")
+    if dsp == "MEM" and test == "DDR_STRESS":
+        asic_dir_logfile_list.append("/data/nic_util/" + "stressapptest.log")
+
+    if asic_dir_logfile_list:
+        if not mtp_mgmt_ctrl.mtp_mgmt_save_nic_logfile(slot, asic_dir_logfile_list):
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Collecting NIC onboard asic logfile for ({:s}, {:s}) test failed".format(dsp, test))
+            ret = False
+
+    if dsp == "NIC_ASIC" and test == "L1":
+        pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_nic_retrieve_arm_l1_err(sn)
+        number_of_arm_l1_tests = 2
+        if pass_count != number_of_arm_l1_tests:
+            err_msg_list.append("ARM L1 Sub Test only passed: {:d}".format(pass_count))
+            ret = False
+        if log_err_msg_list:
+            err_msg_list += log_err_msg_list
+
+    # only display first 3 and last 3 error messages
+    if len(err_msg_list) < 6:
+        err_msg_disp_list = err_msg_list
+    else:
+        err_msg_disp_list = err_msg_list[:3] + err_msg_list[-3:]
+    for err_msg in err_msg_disp_list:
+        mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+
+    return ret
+
+
 def main():
     parser = argparse.ArgumentParser(description="Single MTP Screen Regression Test", formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--mtpid", help="MTP ID, like MTP-001, etc", required=True)
@@ -643,6 +838,7 @@ def main():
 
     mtp_id = "MTP-000"
     mtp_sn = ""
+    mtp_mac = ""
     stop_on_err = False
     verbosity = False
     swm_lp_boot_mode = False
@@ -731,6 +927,9 @@ def main():
             thread_health = threading.Thread(target=health_status, args=(mtp_mgmt_ctrl.get_mtp_health_monitor(),))
             thread_health.start()
 
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+            l1_sequence = True
+
         # Set Naples25SWM test mode
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
@@ -754,6 +953,12 @@ def main():
             if slot not in pass_nic_list:
                 pass_nic_list.append(slot)
 
+        nic_test_history = {slot: [] for slot in pass_nic_list}
+
+        @parallelize.parallel_nic_using_ssh
+        def update_nic_test_history(mtp_mgmt_ctrl, slot, test):
+            nic_test_history[slot].append(test)
+
         def get_slots_of_type(nic_type, except_type=[]):
             return mtp_mgmt_ctrl.get_slots_of_type(nic_type, pass_nic_list, except_type)
 
@@ -772,18 +977,36 @@ def main():
 
             if DRY_RUN:
                 ret = []
+            elif test == "MTP_CONNECT":
+                ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True)
+                fail_desc = "MTP connection fails"
             elif test == "MTP_FRU_PROG":
                 ret = program_mtp_fru(mtp_mgmt_ctrl)
                 fail_desc = "MTP program FRU fails"
             elif test == "SSD_BENCHMARK":
-                ret = mtp_ssd_validation_test(mtp_mgmt_ctrl)
-                fail_desc = "MTP M.2 SSD validation test failed"
+                ret = mtp_nvme_ssd_validation_test(mtp_mgmt_ctrl)
+                fail_desc = "MTP M.2 NVME SSD validation test failed"
             elif test == "CPU_BENCHMARK":
                 ret = mtp_cpu_validation_test(mtp_mgmt_ctrl)
                 fail_desc = "MTP CPU validation test failed"
             elif test == "MEM_BENCHMARK":
                 ret = mtp_mem_validation_test(mtp_mgmt_ctrl)
                 fail_desc = "MTP DDR Memory validation test failed"
+            elif test == "USB_BENCHMARK":
+                ret = mtp_usb_validation_test(mtp_mgmt_ctrl)
+                fail_desc = "MTP USB validation test failed"
+            elif test == "VDDIO_MEM_MARGIN_LOW":
+                ret = mtp_mgmt_ctrl.mtp_set_mem_vddio(nic_list, margin=-5)
+                fail_desc = "MTP set vddio mem margin low test failed"
+            elif test == "VDDIO_MEM_MARGIN_HIGH":
+                ret = mtp_mgmt_ctrl.mtp_set_mem_vddio(nic_list, margin=5)
+                fail_desc = "MTP set vddio mem margin high test failed"
+            elif test == "VDDIO_MEM_MARGIN_NORMAL":
+                ret = mtp_mgmt_ctrl.mtp_set_mem_vddio(nic_list, margin=0)
+                fail_desc = "MTP set vddio mem margin normal test failed"
+            elif test == "I2C_DEVICE":
+                ret = mtp_mgmt_ctrl.mtp_i2c_show(nic_list)
+                fail_desc = "MTP show i2c device test failed"
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 ret = False
@@ -836,6 +1059,8 @@ def main():
             elif test == "NIC_DIAG_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, vmargin=vmarg, **test_kwargs)
                 fail_desc = "Initialize NIC diag environment failed"
+            elif test == "UART":
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_console_access(nic_list)
             elif test == "NIC_JTAG":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
@@ -849,24 +1074,36 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_diag_boot(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_CPLD":
-                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld_console(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_verify_nic_cpld_console(nic_list, timestamp_check=False) # cant read timestamp from smb
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_TYPE":
                 rlist = mtp_mgmt_ctrl.mtp_nic_type_test(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "SNAKE_ELBA":
+                update_nic_test_history(mtp_mgmt_ctrl, nic_list, test)
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
             elif test == "PCIE_PRBS":
-                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, "PCIE_PRBS", vmarg)
+                update_nic_test_history(mtp_mgmt_ctrl, nic_list, test)
+                rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg)
                 fail_desc = "Fail to PCIE_PRBS check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "L1_SETUP":
+                rlist = mtp_mgmt_ctrl.mtp_l1_setup(nic_list)
+                fail_desc = "MTP L1 setup test failed"
             elif test == "L1":
                 rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, test_kwargs["l1_sequence"])
                 fail_desc = "Fail to L1 check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "I2C":
+                rlist = single_nic_dsp_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, swmtestmode)
+                fail_desc = "Fail to run I2C(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "SEC_KEY_PROG":
                 rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list)
                 fail_desc = "Fail to SEC_KEY_PROG(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
+            elif test == "ASIC_LOG_SAVE":
+                rlist = naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_test_history)
+                fail_desc = "Fail to Collect ASIC Log(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
                 rlist = nic_list
-
             # catch bad return value
             if not isinstance(rlist, list):
                 mtp_mgmt_ctrl.cli_log_err("Test {} failed with '{}', expected slot list".format(test, repr(rlist)))
@@ -891,24 +1128,31 @@ def main():
 
             return rlist
 
-        if mtp_mgmt_ctrl.mtp_get_mtp_type == MTP_TYPE.MATERA:
+        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+            run_mtp_test(pass_nic_list, "USB_BENCHMARK")
             run_mtp_test(pass_nic_list, "SSD_BENCHMARK")
             run_mtp_test(pass_nic_list, "CPU_BENCHMARK")
-            run_mtp_test(pass_nic_list, "DDR_BENCHMARK")
-            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN")
+            run_mtp_test(pass_nic_list, "MEM_BENCHMARK")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_LOW")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_HIGH")
+            run_mtp_test(pass_nic_list, "VDDIO_MEM_MARGIN_NORMAL")
+            run_mtp_test(pass_nic_list, "I2C_DEVICE")
             run_nic_test(pass_nic_list, "SLOTS_FULL_CHECK")
+            run_nic_test(pass_nic_list, "NIC_PWRCYC")
+            run_nic_test(pass_nic_list, "UART")
             run_nic_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
             run_nic_test(pass_nic_list, "NIC_TYPE")
             run_nic_test(pass_nic_list, "NIC_POWER")
             run_nic_test(pass_nic_list, "NIC_JTAG")
             run_nic_test(pass_nic_list, "NIC_DIAG_BOOT")
             run_nic_test(pass_nic_list, "NIC_CPLD")
-            run_nic_test(pass_nic_list, "UART")
-            run_nic_test(pass_nic_list, "I2C")
+            run_nic_test(pass_nic_list, "I2C", "I2C")
             run_nic_test(pass_nic_list, "PCIE_PRBS", "ASIC")
             run_nic_test(pass_nic_list, "SNAKE_ELBA", "ASIC")
-            run_nic_test(pass_nic_list, "L1", "ASIC")
-            run_nic_test(pass_nic_list, "NIC_PWRCYC")
+            run_nic_test(pass_nic_list, "NIC_DIAG_INIT")
+            run_nic_test(pass_nic_list, "ASIC_LOG_SAVE")
+            run_nic_test(pass_nic_list, "L1_SETUP")
+            run_nic_test(pass_nic_list, "L1", "ASIC", l1_sequence=l1_sequence)
 
         else:
             run_mtp_test(pass_nic_list, "MTP_FRU_PROG")
@@ -961,9 +1205,9 @@ def main():
 
         #if len(fail_nic_list) != 0 or len(pass_nic_list) != 10 or len(fail_desc) > 0:
         if fail_nic_list: # ignore full 10 slots check for CI/CD
-            mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FAIL --> {:s}".format(mtp_id, mtp_sn, fail_desc))
+            mtp_mgmt_ctrl.cli_log_err("[{:s}] {:s} FINAL_SRN_MTP_RESULT_FAIL --> {:s}".format(mtp_id, mtp_sn, fail_desc))
         else:
-            mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} PASS".format(mtp_id, mtp_sn))
+            mtp_mgmt_ctrl.cli_log_inf("[{:s}] {:s} FINAL_SRN_MTP_RESULT_PASS".format(mtp_id, mtp_sn))
 
         mtp_mgmt_ctrl.cli_log_inf("--------- {:s} Report End --------\n".format(mtp_id))
 

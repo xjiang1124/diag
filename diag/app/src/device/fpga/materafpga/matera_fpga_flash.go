@@ -76,12 +76,12 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
 
     defer f.Close()
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(start_addr)) 
     if err != nil {
         return
     }
@@ -93,7 +93,7 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
             fmt.Printf(".")
         }
         if (i % 0x1000000) <= read_size {
-            err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(i)) 
             if err != nil {
                 return
             }
@@ -153,12 +153,12 @@ func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) 
         return
     }
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(start_addr)) 
     if err != nil {
         return
     }
@@ -171,7 +171,7 @@ func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) 
             fmt.Printf("%.08x\n", uint32(i))
         } 
         if (i % 0x1000000) <= read_size {
-            err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(i)) 
             if err != nil {
                 return
             }
@@ -261,18 +261,18 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
     fmt.Printf("\n")
 
     /* ////// 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    Spi_flash_WriteEnable(spiNumber) 
-    err = Spi_flash_CheckWriteEnable(spiNumber)
+    Spi_flash_WriteEnable(spiNumber, 0) 
+    err = Spi_flash_CheckWriteEnable(spiNumber, 0)
     if err != nil {
         return
     }
     
-    err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(start_addr)) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(start_addr)) 
     if err != nil {
         return
     }     
@@ -283,7 +283,7 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
 
         /* //////
         if (i % 0x1000000) < 256 {
-            err =  Spi_flash_set_extended_addr_register(spiNumber, uint32(i)) 
+            err =  Spi_flash_set_extended_addr_register(spiNumber, 0, uint32(i)) 
             if err != nil {
                 return
             } 
@@ -341,21 +341,21 @@ func Spi_flash_erase_all_sectors(spiNumber uint32) (err error) {
 func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
     if err != nil {
         return
     }
    
-    err = Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_WriteEnable(spiNumber, 0) 
     if err != nil {
         return
     }
-    err = Spi_flash_CheckWriteEnable(spiNumber)
+    err = Spi_flash_CheckWriteEnable(spiNumber, 0)
     if err != nil {
         return
     }
@@ -365,14 +365,14 @@ func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     ERASE_SECTOR_OP[2] = byte(addr >> 8)
     ERASE_SECTOR_OP[3] = byte(addr)
 
-    _ , err = matera_spi_generic_transaction(spiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
+    _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
     if err != nil {
         err = fmt.Errorf("ERROR: Spi_flash_erase_sector Failed.  Erase Addr=%.08x\n", addr)
         cli.Printf("e", "%s", err)
         return
     }
 
-    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_SECTOR_ERASE_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, 0, ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_flash_erase_sector.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
@@ -380,7 +380,7 @@ func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
     return
 
 
-    err = Spi_flash_WriteDisable(spiNumber) 
+    err = Spi_flash_WriteDisable(spiNumber, 0) 
 
 
     return
@@ -402,21 +402,21 @@ func Spi_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (err er
     }
 
     
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
     if err != nil {
         return
     } 
 
-    err = Spi_flash_WriteEnable(spiNumber) 
+    err = Spi_flash_WriteEnable(spiNumber, 0) 
     if err != nil {
         return
     } 
-    err = Spi_flash_CheckWriteEnable(spiNumber)
+    err = Spi_flash_CheckWriteEnable(spiNumber, 0)
     if err != nil {
         return
     }
@@ -429,19 +429,19 @@ func Spi_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (err er
     wr_data = append(wr_data, PAGE_PROGRAM_OP...)
     wr_data = append(wr_data, data...)
 
-    data, err = matera_spi_generic_transaction(spiNumber, wr_data, PAGE_PROGRAM_RDLNG) 
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, wr_data, PAGE_PROGRAM_RDLNG) 
     if err != nil {
        fmt.Printf("ERROR: Spi_flash_Write_N_Bytes.  matera_spi_generic_transaction Failed\n")
     }
 
-    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber,  ELB_PAGE_WR_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, 0, ELB_PAGE_WR_DELAY)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_flash_Write_N_Bytes.  Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
        return
     }
 
-    //err = Spi_flash_WriteDisable(spiNumber) 
+    //err = Spi_flash_WriteDisable(spiNumber, 0) 
     //if err != nil {
     //   fmt.Printf("ERROR: Spi_flash_Write_N_Bytes.  Spi_flash_WriteDisable Failed\n")
     //}
@@ -451,18 +451,18 @@ func Spi_flash_Write_N_Bytes(spiNumber uint32, data []byte, addr uint32) (err er
 
 func Spi_flash_FourByteAddr_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
     /*
-    err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
     if err != nil {
         return
     }
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
     */
 
-    err = Spi_flash_enable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_enable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
@@ -470,19 +470,19 @@ func Spi_flash_FourByteAddr_Read_N_Bytes(spiNumber uint32, addr uint32, length u
     READ_OP[1] = byte(addr >> 16)
     READ_OP[2] = byte(addr >> 8)
     READ_OP[3] = byte(addr)
-    data, err = matera_spi_generic_transaction(spiNumber, READ_FOUR_BYTE_OP, length) 
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, READ_FOUR_BYTE_OP, length) 
     return
 }
 
 
 func Spi_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32, cli_call uint32) (data []byte, err error) {
     if (cli_call > 0) {
-        err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+        err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
         if err != nil {
             return
         }
 
-        err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+        err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
         if err != nil {
             return
         }
@@ -490,19 +490,19 @@ func Spi_flash_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32, cli_ca
     READ_OP[1] = byte(addr >> 16)
     READ_OP[2] = byte(addr >> 8)
     READ_OP[3] = byte(addr)
-    data, err = matera_spi_generic_transaction(spiNumber, READ_OP, length) 
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, READ_OP, length) 
     return
 }
 
 
 func Spi_flash_DualOp_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
     if err != nil {
         return
     }
@@ -510,19 +510,19 @@ func Spi_flash_DualOp_Read_N_Bytes(spiNumber uint32, addr uint32, length uint32)
     DUAL_READ_OP[1] = byte(addr >> 16)
     DUAL_READ_OP[2] = byte(addr >> 8)
     DUAL_READ_OP[3] = byte(addr)
-    data, err = matera_spi_generic_transaction(spiNumber, DUAL_READ_OP, length) 
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, DUAL_READ_OP, length) 
     return
 }
 
 
 func Spi_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber)
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register(spiNumber, 0, addr) 
     if err != nil {
         return
     }
@@ -530,7 +530,7 @@ func Spi_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, addr uint32, length uin
     DUAL_FAST_READ_OP[1] = byte(addr >> 16)
     DUAL_FAST_READ_OP[2] = byte(addr >> 8)
     DUAL_FAST_READ_OP[3] = byte(addr)
-    data, err = matera_spi_generic_transaction(spiNumber, DUAL_FAST_READ_OP, length) 
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_FPGA, DUAL_FAST_READ_OP, length) 
     return
 }
 

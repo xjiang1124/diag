@@ -346,11 +346,11 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2SOLO"] = "0x1"
     fail_cpld_dat["ORTANO2SOLO"] = "0x05"
     fea_cpld_img["ORTANO2SOLO"] = "naples200_ortano2S_fea_rev1_0_1_10252022.bin"
-    diagfw_img["ORTANO2SOLO"] = "elba_diagfw_1.15.9-C-145_2023.05.03.tar"
-    diagfw_dat["ORTANO2SOLO"] = "05-03-2023"
-    goldfw_img["ORTANO2SOLO"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
-    goldfw_dat["ORTANO2SOLO"] = "05-03-2023"
-    mainfw_img["ORTANO2SOLO"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    diagfw_img["ORTANO2SOLO"] = "elba_diagfw_1.15.9-C-154_2024.04.05.tar"
+    diagfw_dat["ORTANO2SOLO"] = "04-05-2024"
+    goldfw_img["ORTANO2SOLO"] = "elba_goldfw_1.15.9-C-154_2024.04.05.tar"
+    goldfw_dat["ORTANO2SOLO"] = "04-05-2024"
+    mainfw_img["ORTANO2SOLO"] = "dsc_fw_elba_1.15.9-C-154_2024.04.05.tar"
     mainfw_dat["ORTANO2SOLO"] = ""
 
     # Ortano2 SOLO Oracle Tall Heat Sink
@@ -364,11 +364,11 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2SOLOORCTHS"] = "0x1"
     fail_cpld_dat["ORTANO2SOLOORCTHS"] = "0x05"
     fea_cpld_img["ORTANO2SOLOORCTHS"] = "naples200_ortano2S_fea_rev1_0_1_10252022.bin"
-    diagfw_img["ORTANO2SOLOORCTHS"] = "elba_diagfw_1.15.9-C-145_2023.05.03.tar"
-    diagfw_dat["ORTANO2SOLOORCTHS"] = "05-03-2023"
-    goldfw_img["ORTANO2SOLOORCTHS"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
-    goldfw_dat["ORTANO2SOLOORCTHS"] = "05-03-2023"
-    mainfw_img["ORTANO2SOLOORCTHS"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    diagfw_img["ORTANO2SOLOORCTHS"] = "elba_diagfw_1.15.9-C-154_2024.04.05.tar"
+    diagfw_dat["ORTANO2SOLOORCTHS"] = "04-05-2024"
+    goldfw_img["ORTANO2SOLOORCTHS"] = "elba_goldfw_1.15.9-C-154_2024.04.05.tar"
+    goldfw_dat["ORTANO2SOLOORCTHS"] = "04-05-2024"
+    mainfw_img["ORTANO2SOLOORCTHS"] = "dsc_fw_elba_1.15.9-C-154_2024.04.05.tar"
     mainfw_dat["ORTANO2SOLOORCTHS"] = ""
 
     # Ortano2 SOLO Microsoft
@@ -417,11 +417,11 @@ class NIC_IMAGES:
     fail_cpld_ver["ORTANO2ADICR"] = "0x1"
     fail_cpld_dat["ORTANO2ADICR"] = "0x05"
     fea_cpld_img["ORTANO2ADICR"] = "ortano_adi_cr_rev1.2_fea_11162022.bin"
-    diagfw_img["ORTANO2ADICR"] = "elba_diagfw_1.15.9-C-145_2023.05.03.tar"
-    diagfw_dat["ORTANO2ADICR"] = "05-03-2023"
-    goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
-    goldfw_dat["ORTANO2ADICR"] = "05-03-2023"
-    uboot_img["ORTANO2ADICR"] = "boot0.1.15.9-C-134.img"
+    diagfw_img["ORTANO2ADICR"] = "elba_diagfw_1.15.9-C-154_2024.04.05.tar"
+    diagfw_dat["ORTANO2ADICR"] = "04-05-2024"
+    goldfw_img["ORTANO2ADICR"] = "elba_goldfw_1.15.9-C-154_2024.04.05.tar"
+    goldfw_dat["ORTANO2ADICR"] = "04-05-2024"
+    uboot_img["ORTANO2ADICR"] = "boot0.1.15.9-C-154.img"
     uboot_dat["ORTANO2ADICR"] = ""
     cpld_img["68-0049"] = "ortano_adi_cr_working_rev1.5_033123.bin"
     cpld_ver["68-0049"] = "0x1"
@@ -432,9 +432,9 @@ class NIC_IMAGES:
     fail_cpld_img["68-0049"] = "ortano_adi_cr_failsafe_rev1.5_033123.bin"
     fail_cpld_ver["68-0049"] = "0x1"
     fail_cpld_dat["68-0049"] = "0x05"
-    goldfw_img["68-0049"] = "elba_goldfw_1.15.9-C-145_2023.05.03.tar"
-    goldfw_dat["68-0049"] = "05-03-2023"
-    mainfw_img["68-0049"] = "dsc_fw_elba_1.15.9-C-145_2023.05.03.tar"
+    goldfw_img["68-0049"] = "elba_goldfw_1.15.9-C-154_2024.04.05.tar"
+    goldfw_dat["68-0049"] = "04-05-2024"
+    mainfw_img["68-0049"] = "dsc_fw_elba_1.15.9-C-154_2024.04.05.tar"
     mainfw_dat["68-0049"] = ""
 
     # ORTANO2ADI CR Mircosoft
@@ -529,9 +529,9 @@ class NIC_IMAGES:
     fail_cpld_dat["58-0001-01"] = "0x07"
     fail_cpld_md5["58-0001-01"] = "b1a45f86b7889a8d1bf4513c67c17492"
     fea_cpld_img["58-0001-01"] = "ginestra_impl1.bin"
-    diagfw_img["58-0001-01"] = "naples_diagfw_elba_1.68-G-9_2024.02.29.tar"
-    diagfw_dat["58-0001-01"] = "12-14-2023"
-    diagfw_md5["58-0001-01"] = "b7f21e82758d04b22096ad9801a2cb25"
+    diagfw_img["58-0001-01"] = "naples_diagfw_elba_1.68-G-17_2024.03.21.tar"
+    diagfw_dat["58-0001-01"] = "03-21-2024"
+    diagfw_md5["58-0001-01"] = "209134861198a13872b4e25129177746"
 
     cpld_img["58-0002-01"] = "ginestra_d5_rev2_7_working_12132023.bin"
     cpld_ver["58-0002-01"] = "0x2"
@@ -594,6 +594,22 @@ class NIC_IMAGES:
     goldfw_dat["DSC2A-2Q200-32S32F64P-S4C"] = "04-06-2024"
     goldfw_md5["DSC2A-2Q200-32S32F64P-S4C"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
+    cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    sec_cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_working_12132023.bin"
+    sec_cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    sec_cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    sec_cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "ee3f1166b1b675ae5bb4189a584b1259"
+    fail_cpld_img["DSC2A-2Q200-32S32F64P-S4"] = "ginestra_d5_rev2_7_failsafe_12132023.bin"
+    fail_cpld_ver["DSC2A-2Q200-32S32F64P-S4"] = "0x2"
+    fail_cpld_dat["DSC2A-2Q200-32S32F64P-S4"] = "0x07"
+    fail_cpld_md5["DSC2A-2Q200-32S32F64P-S4"] = "b1a45f86b7889a8d1bf4513c67c17492"
+    goldfw_img["DSC2A-2Q200-32S32F64P-S4"] = "naples_goldfw_elba_1.68-G-19_2024.04.06.tar"
+    goldfw_dat["DSC2A-2Q200-32S32F64P-S4"] = "04-06-2024"
+    goldfw_md5["DSC2A-2Q200-32S32F64P-S4"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
+
 class MTP_IMAGES:
     amd64_img = dict()
     arm64_img = dict()
@@ -601,6 +617,8 @@ class MTP_IMAGES:
     mtp_io_cpld_ver = dict()
     mtp_jtag_cpld_img = dict()
     mtp_jtag_cpld_ver = dict()
+    mtp_fpga_img = dict()
+    mtp_fpga_ver = dict()
 
     amd64_img["CAPRI"] = "image_amd64_capri.tar"
     arm64_img["CAPRI"] = "image_arm64_capri.tar"
@@ -629,6 +647,11 @@ class MTP_IMAGES:
     mtp_io_cpld_ver["TURBO_ELBA"] = "0x1"
     mtp_jtag_cpld_img["TURBO_ELBA"] = "nic_turbo_mtp_jtag_09102021.bin"
     mtp_jtag_cpld_ver["TURBO_ELBA"] = "0x1"
+
+    amd64_img["MATERA"] = "image_amd64_elba.tar"
+    arm64_img["MATERA"] = "image_arm64_elba.tar"
+    # mtp_fpga_img["MATERA"] = "to_be_define.bin"
+    mtp_fpga_ver["MATERA"] = "a007"
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"

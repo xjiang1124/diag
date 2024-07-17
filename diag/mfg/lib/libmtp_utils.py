@@ -56,6 +56,74 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
 
     return ret
 
+def check_mtp_usb_drive_presence(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
+    """probe if use drive existing, if the device is existing but not mount, it will try to mount it to /home/diag/usb
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        devicetype (str, optional): _description_. Defaults to 'usb'.
+    """
+
+    parse_result = {}
+    mount_point = ""
+    cmd = 'lsblk -o NAME,TRAN,SIZE,MODEL,MOUNTPOINTS'
+    mtp_mgmt_ctrl.cli_log_inf(cmd)
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    if devicetype.lower() not in cmd_result.lower() or 'sda1' not in cmd_result.lower():
+        mtp_mgmt_ctrl.cli_log_err("{:s} device not found".format(devicetype))
+        mtp_mgmt_ctrl.cli_log_err(cmd_result)
+        return False
+    for line in cmd_result.split("\n"):
+        if devicetype.lower() in line:
+            size = line.split()[2].strip()
+            model = " ".join(line.split()[3:]).strip()
+        if 'sda1' in line:
+            mount_point = "" if len(line.split()) == 2 else line.split()[-1]
+
+    if not mount_point:
+        # try to mount use to /home/diag/usb
+        cmd = 'mkdir /home/diag/usb'
+        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
+        if not cmd_result:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+            return False
+        cmd = 'mount /dev/sda1 /home/diag/usb'
+        cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=timeout)
+        if not cmd_result:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+            return False
+
+    parse_result["SIZE"] = size
+    parse_result["MODEL"] = model
+    parse_result["MOUNTPOINTS"] = mount_point
+    return parse_result
+
+def mtp_usb_sanity_check(mtp_mgmt_ctrl):
+    """run mtp usb sanity check. return False if Failed, return USB drive infomation if pass
+
+    Args:
+        mtp_mgmt_ctrl (_type_): _description_
+        devicetype (str, optional): _description_. Defaults to 'usb'.
+    """
+    usb_drive_detected = False
+    max_retries = 3
+
+    while not usb_drive_detected:
+        if max_retries == 0:
+            break
+        usb_drive_detected = check_mtp_usb_drive_presence(mtp_mgmt_ctrl)
+        if not usb_drive_detected:
+            input("Please re-insert the USB Drive then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+            mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...")
+            max_retries -= 1
+
+    return usb_drive_detected
+
+
 def verify_img_mtp_host_nic(mtp_mgmt_ctrl, host_nic_device="i210"):
     if host_nic_device.lower() == "i210":
         cmd = "./eeupdate64e /NIC=1 /D=Dev_Start_I210_SerdesBX_NOMNG_16Mb_A2.bin"

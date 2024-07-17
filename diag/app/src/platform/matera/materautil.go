@@ -236,35 +236,35 @@ func ShowFanInfo()  (err int)  {
     for i=0; i<materafpga.MAXPSU; i++ {
             var rpm, psuFault uint32
             var rc int
-            str := fmt.Sprintf("PSU_%d", i+1)
+            PSUdevStr := fmt.Sprintf("PSU_%d", i+1)
             psuPresentBool, _ := materafpga.PSU_present(i)
             if psuPresentBool {
-                psuFault, rc = dps2100.ReadFanWarnFault(str) 
+                psuFault, rc = dps2100.ReadFanWarnFault(PSUdevStr) 
                 if rc != errType.SUCCESS {
-                    fmt.Printf("%-20s RPM = ERROR READING RPM\n", "PSU_1")
+                    fmt.Printf("%-20s RPM = ERROR READING RPM\n", PSUdevStr)
                     err = -1
                 }
-                rpm, rc = dps2100.ReadFanSpeed("PSU_1")
+                rpm, rc = dps2100.ReadFanSpeed(PSUdevStr)
                 if rc != errType.SUCCESS {
-                    fmt.Printf("%-20s RPM = ERROR READING RPM\n", "PSU_1")
+                    fmt.Printf("%-20s RPM = ERROR READING RPM\n", PSUdevStr)
                     err = -1
                 } 
             }
-            fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", str, strconv.Itoa(int(b2i[psuPresentBool])), strconv.Itoa(int(psuFault))," ", " ",  strconv.Itoa(int(rpm)))
+            fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", PSUdevStr, strconv.Itoa(int(b2i[psuPresentBool])), strconv.Itoa(int(psuFault))," ", " ",  strconv.Itoa(int(rpm)))
     }
 
     for i=0; i<materafpga.MAXFAN; i++ {
+        FANdevStr := fmt.Sprintf("FAN-%d", i+1)
         inner, outer, rc := materafpga.FAN_Get_RPM(i)
         if rc != errType.SUCCESS {
-            fmt.Printf("%-20s RPM = ERROR READING RPM\n", "FAN_1")
+            fmt.Printf("%-20s RPM = ERROR READING RPM\n", FANdevStr)
             err = -1
         } 
         fanErr, _ := materafpga.FAN_Get_Fault(i) 
         fanPresent, _ := materafpga.FAN_Get_Module_present(i) 
         pwm, _ := materafpga.FAN_Get_PWM(i) 
 
-        fanStr := fmt.Sprintf("FAN-%d", i)
-        fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", fanStr, strconv.Itoa(int(b2i[fanPresent])), strconv.Itoa(int(fanErr)),strconv.Itoa(int(pwm)), strconv.Itoa(int(inner)),  strconv.Itoa(int(outer)))
+        fmt.Printf("%-20s%-10s%-10s%-10s%-10s%-10s\n", FANdevStr, strconv.Itoa(int(b2i[fanPresent])), strconv.Itoa(int(fanErr)),strconv.Itoa(int(pwm)), strconv.Itoa(int(inner)),  strconv.Itoa(int(outer)))
     }
     
 

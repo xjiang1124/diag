@@ -32,6 +32,14 @@ type I2cFpgaMap struct {
     OffsetLen   int
 }
 
+type I2cSensorCoeff struct {
+    Coeff float64
+}
+type I2cSensorInfo struct {
+    Name  string
+    Sense_Resistor I2cSensorCoeff
+}
+
 //I2cInfo Flag Defines
 
 const (
@@ -39,11 +47,14 @@ const (
     FLAG_8BIT_EEPROM = (1<<1)
     FLAG_16BIT_EEPROM = (2<<1)
     I2C_TEST_ENABLE = (3<<1)
+    EXTERNAL_VMARG = (4<<1)
 )
 
 var I2cTbl    []I2cInfo
 //var UutI2cTbl []I2cInfo
 var CurI2cTbl []I2cInfo
+var SensorTbl []I2cSensorInfo
+var CurSensorTbl []I2cSensorInfo
 
 
 //=========================================
@@ -227,6 +238,60 @@ var GinestraMtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var MalfaMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var MalfaTbl = []I2cInfo {
+    //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P3V3",          "INA3221A",  0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_DDR",       "INA3221A",  0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"P1V8",          "INA3221A",  0x2,   0x41,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDDQ",          "INA3221A",  0x2,   0x41,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_MX",    "INA3221A",  0x2,   0x41,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_075_PCIE",  "INA3221A",  0x2,   0x42,    0x1,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_12_MX",     "INA3221A",  0x2,   0x42,    0x2,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"VDD_12_PCIE",   "INA3221A",  0x2,   0x42,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
+    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_AUX",      "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_PLL",   "AD7997",    0x2,   0x23,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_1",      "INA3221A",  0x2,   0x43,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_2",      "INA3221A",  0x2,   0x42,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ISENSE_3",      "INA3221A",  0x2,   0x41,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_12_PCIE_VM","DS4424",    0x2,   0x30,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_12_MX_VM",  "DS4424",    0x2,   0x30,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_PCIE_VM","DS4424",   0x2,   0x30,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_075_MX_VM", "DS4424",    0x2,   0x30,    0x3,    "HUB_NONE", 0,    0},
+
+    I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
+    I2cInfo {"MX_CLK_BUF",    "RC19004",   0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
+    I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"PCIE_FRU",      "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
+    I2cInfo {"FRU",           "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM}, // 4K * 8 bit
+}
+
+var MalfaSensorTbl = []I2cSensorInfo {
+    I2cSensorInfo {"P12V_ADC",      I2cSensorCoeff{ 0.06 }},
+    I2cSensorInfo {"P12V_AUX_ADC",  I2cSensorCoeff{ 0.06 }},
+    I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.002 }},
+    I2cSensorInfo {"P12V_AUX",      I2cSensorCoeff{ 0.002 }},
+    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.02 }},
+    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"P1V8",          I2cSensorCoeff{ 0.02 }},
+    I2cSensorInfo {"VDDQ",          I2cSensorCoeff{ 0.1 }},
+    I2cSensorInfo {"VDD_075_MX",    I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_075_PCIE",  I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_12_MX",     I2cSensorCoeff{ 0.005 }},
+    I2cSensorInfo {"VDD_12_PCIE",   I2cSensorCoeff{ 0.005 }},
 }
 
 var OrtanoMtpTbl = []I2cInfo {
@@ -790,6 +855,8 @@ func init() {
         I2cTbl = GinestraD4Tbl
     } else if CardType == "GINESTRA_D5" {
         I2cTbl = GinestraD5Tbl
+    } else if CardType == "MALFA" {
+        I2cTbl = MalfaTbl
     } else if CardType == "NIC_POWER" {
         I2cTbl = NicPowerVrmTbl
     } else if CardType == "MTP" {
@@ -813,6 +880,7 @@ func init() {
         return
     }
     CurI2cTbl = I2cTbl
+    CurSensorTbl = MalfaSensorTbl
 }
 
 /**
@@ -832,6 +900,10 @@ func FindUutTypeMtp(uutName string) (uutType string, err int) {
         return "UUT_NONE", errType.SUCCESS
     }
 
+    if uutName == "UUT_NONE" {
+        return "UUT_NONE", errType.SUCCESS
+    }
+ 
     uutType, found = os.LookupEnv(uutName)
     if found == false {
         cli.Println("e", "Cannot find uutType with uutName", uutName)
@@ -967,10 +1039,18 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurI2cTbl = TaorTbl
     } else if uutType == "LIPARI" {
         CurI2cTbl = LipariTbl
+    } else if uutType == "MALFA" {
+        CurI2cTbl = MalfaMtpTbl
+    } else if uutType == "MALFA_S" {
+        // this is for validation only;
+        // rework a malfa to connect smbus to bus 0 or 2
+        // then set mtp environment variable UUT_X=MALFA_S
+        CurI2cTbl = MalfaTbl
     } else {
         cli.Println("e", "uutType not supported!", uutType)
         err = errType.INVALID_PARAM
     }
+    CurSensorTbl = MalfaSensorTbl
     return
 }
 
@@ -1106,4 +1186,12 @@ func GetPage(devName string) (page byte, err int) {
     return
 }
 
-
+func GetSenseResistance(devName string) (senseResistance float64) {
+    senseResistance = 1
+    for _, sensorinfo := range(CurSensorTbl) {
+        if sensorinfo.Name == devName {
+            senseResistance = sensorinfo.Sense_Resistor.Coeff
+        }
+    }
+    return
+}

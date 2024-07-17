@@ -411,3 +411,10 @@ func GenRandByteSlice(numBytes int) (data []byte) {
 	return
 }
 
+/**
+ * Swap bytes in a word
+ */
+func SwapUint16(a uint16) (b uint16) {
+    b = ( uint16(a >> 8) | uint16(a << 8) )
+    return
+}

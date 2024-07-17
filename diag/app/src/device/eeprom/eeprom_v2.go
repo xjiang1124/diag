@@ -74,6 +74,7 @@ const (
     PN_GIN_D5_ORACLE string = "68-0075"
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
+    PN_MALFA         string = "102-P10600-00"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -89,6 +90,7 @@ const (
     PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
+    PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -126,6 +128,7 @@ const (
     FRU_ID_GIN_D5        string = "01/24/23"
     FRU_ID_GIN_D5_MSFT   string = "01/19/24"
     FRU_ID_GIN_D5_SSDK   string = "02/26/24"
+    FRU_ID_MALFA         string = "07/02/24"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -165,16 +168,22 @@ type card struct {
 // Ortano Solo PCIe subsystem ID
 var soloOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0d}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ortano ADI CR PCIe subsystem ID
 var adicrOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0e}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ortano Solo R4T PCIe subsystem ID
 var sR4TOracleExt = []fieldInfo {
     fieldInfo { 94, []byte{0x0f}, },
+    fieldInfo { 104, []byte{0x00, 0x5F}, },
+    fieldInfo { 106, []byte{0x00, 0x64}, },
 }
 
 // Ginestra_D4 PCIe subsystem ID
@@ -733,6 +742,28 @@ var CardDataInfo = map[string]updateInfo {
         },
         nil,
     },
+
+    PN_MALFA: updateInfo {
+        MalfaTbl,
+        PROD_NAME_MALFA,
+        PN_MALFA,
+        FRU_ID_MALFA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -761,6 +792,7 @@ var CardTypes = []card{
     card{"ORTANO-GIN_D5_MSFT",      PN_GIN_D5_MSFT},
     //used in non SKU mode
     card{"ORTANO-GIN_D5_SSDK",      PN_GIN_D5_SSDK},
+    card{"MALFA",                   PN_MALFA},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},

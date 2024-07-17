@@ -248,6 +248,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
         elif stage == FF_Stage.FF_SRN:
             if not mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list, mtp_type):
                 return False
+            mtp_type = mtp_mgmt_ctrl.mtp_get_mtp_type()
         else:
             if kwargs['subcommand'] == 'cpld':
                 # Get New CPLD binary file list
@@ -404,11 +405,13 @@ def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=No
     return True
 
 def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[], mtp_type=MTP_TYPE.MATERA):
+    mtp_mgmt_ctrl._mtp_type = mtp_type
     if mtp_type == MTP_TYPE.TURBO_ELBA:
         test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
                      "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     else:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE"]
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "MTP_USB_SANITY_CHECK", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE",
+                     "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
 
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, mtp_type=mtp_type):
         return False
@@ -487,6 +490,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "MTP_SANITY_CHECK":
             ret = mtp_mgmt_ctrl.mtp_hw_init(stage)
+
+        elif test == "MTP_USB_SANITY_CHECK":
+            ret = libmtp_utils.mtp_usb_sanity_check(mtp_mgmt_ctrl)
 
         elif test == "I210_PRSNT_CHECK":
             ret = libmtp_utils.check_mtp_host_nic_presence(mtp_mgmt_ctrl)

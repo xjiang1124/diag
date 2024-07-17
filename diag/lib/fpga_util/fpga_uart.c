@@ -1,9 +1,15 @@
+#define _GNU_SOURCE
+
 #include "accpcie.h"
 #include <time.h>
-/* #include <ncurses.h> */
 #include <linux/input.h>
 #include <termios.h>
 #include <fcntl.h>
+#include <sys/prctl.h>
+#include <signal.h>
+#include <unistd.h>
+#include <pthread.h>
+
 
 struct termios orig_termios;
 
@@ -11,6 +17,15 @@ int verbosity = 0;
 ULONGLONG bar_addr = 0x10020300000;
 FT_HANDLE ftHandle = 0;
 int exit_all = 0;
+
+#define BUF_SIZE 100 * 1024 * 1024
+
+typedef struct _ring_buf
+{
+    char buffer[BUF_SIZE];
+    int rptr;
+    int wptr;
+} RING_BUFF;
 
 void reset_terminal_mode()
 {
@@ -247,14 +262,9 @@ void *send_tx_input(void *port)
                     end_thread = 0;
                 if ( verbosity )
                     printf("sending character %c\n", ch);
-                write_fpga_mem32(uart_addr, UART_0_TXDATA_REG, (DWORD)ch);
-                usleep(80);
-		/*
-                read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
-		printf("uart stat register value %x\n", data);
-                read_fpga_mem32(uart_addr, UART_0_TXDATA_REG, &data);
-		printf("uart tx data register value %x\n", data);
-		*/
+		if ( end_thread == 0 )
+                    write_fpga_mem32(uart_addr, UART_0_TXDATA_REG, (DWORD)ch);
+                usleep(40);
                 ch = getch_local();
             }
             if ( verbosity > 1 )
@@ -262,67 +272,182 @@ void *send_tx_input(void *port)
         }
         if ( end_thread == 2 )
             break;
+        usleep(40);
     }
     /* endwin(); */
     reset_terminal_mode();
     pthread_exit(NULL);
 }
 
-void get_rx_buffer(int port)
+void *get_rx_buffer(void *inst)
 {
     DWORD data;
+    int port = *(int *)inst;
+    int fd;
+    int shm_len = BUF_SIZE + 2 * sizeof(int);
+    int rptr;
+    pthread_spinlock_t lock;
     ULONGLONG uart_addr;
+    cpu_set_t cpuset;
+    pthread_t current_thread;
+    char uart_path[8];
+    RING_BUFF *ptr;
 
     uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
-    read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
-    while ( data & 0x1 ) {
-        if ( verbosity )  
-            printf(" uart status register = %x\n", data);
-        read_fpga_mem32(uart_addr, UART_0_RXDATA_REG, &data);
-        if ( verbosity )  
-            printf(" uart received data = %c\n", data);
-        printf("%c", (unsigned char)(data & 0xff));
-	fflush(stdout);
-        read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+    CPU_ZERO(&cpuset);
+    CPU_SET(port + 1, &cpuset);
+    current_thread = pthread_self();
+    pthread_setaffinity_np(current_thread, sizeof(cpuset), &cpuset);
+
+    sprintf(uart_path, "/uart%d", port);
+    fd = shm_open(uart_path, O_RDWR, 0644);
+    if ( fd == -1 ) {
+        printf("failed to open shared memory\n");
+        return 0;
     }
-    return;
+    if ( ftruncate(fd, shm_len) == -1 ) {
+        printf("failed to attach shm size\n");
+        shm_unlink(uart_path);
+        return 0;
+    }
+
+    ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_WRITE, MAP_SHARED, fd, 0);
+    if ( ptr == NULL ) {
+        printf("failed to map shared memory for write\n");
+	shm_unlink(uart_path);
+	return 0;
+    }
+
+    read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+    if ( data & 0xe0 ) {
+        if ( verbosity )
+            printf("UART ERROR1: uart status register = %x\n", data);
+    }
+    pthread_spin_init(&lock, PTHREAD_PROCESS_PRIVATE);
+    while ( pthread_spin_lock(&lock));
+    for ( ; ; ) {
+        if ( data & 0x1 ) {
+            if ( verbosity )  
+                printf(" uart status register = %x\n", data);
+            read_fpga_mem32(uart_addr, UART_0_RXDATA_REG, &data);
+            if ( verbosity )  
+                printf(" uart received data = %c\n", data);
+            /* printf("%c", (unsigned char)(data & 0xff)); */
+	    /* fflush(stdout); */ 
+	    rptr = ptr->rptr;
+	    if ( (ptr->wptr + 1) == rptr ) {
+                printf("ERROR: %s ring buffer overrun\n", uart_path);
+            } else {
+                ptr->buffer[ptr->wptr] = (char)(data & 0xff);
+		ptr->wptr = (ptr->wptr + 1) % BUF_SIZE;
+	    }
+        } else {
+	    usleep(40);
+	}
+        read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+        if ( data & 0xe0 )
+            printf("UART ERROR2: uart status register = %x\n", data);
+    }
+    /* endwin(); should never be here */
+    pthread_spin_unlock(&lock);
+    pthread_spin_destroy(&lock);
+    munmap(ptr, shm_len); 
+    shm_unlink(uart_path);
+    return 0;
+}
+
+int ring_buffer_init(RING_BUFF *ptr)
+{
+    memset(ptr, 0, sizeof(RING_BUFF));
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
     int port = atoi(argv[1]);
-    pthread_t id;
+    int r;
+    int fd;
+    int wptr;
+    int shm_len = BUF_SIZE + 2 * sizeof(int);
+    pid_t parent_id, child_id;
+    pthread_t id_rx, id_tx;
     ULONGLONG pcie_bar;
     DWORD data;
     ULONGLONG uart_addr;
+    char uart_path[8];
+    RING_BUFF *ptr;
 
     if ( argc < 2 ) { 
         printf("Invalid address, please provide a port number (0 - based)\n");
         return 0;
     }
+
     pcie_bar = get_bar_from_proc();
     if ( pcie_bar != 0 ) {
         bar_addr = pcie_bar;
     }
+
     printf("connecting to serial port %d at bar address 0x%llx\n", port, bar_addr);
     uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
     data = UART_RESET_TXFIFO | UART_RESET_RXFIFO;
     write_fpga_mem32(uart_addr, UART_0_CTRL_REG, data);
+    read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
     printf("tx/rx buffer cleared\n");
 
-    pthread_create(&id, NULL, send_tx_input, (void *)&port);
+    parent_id = getpid();
+    child_id = fork();
+
+    if ( child_id > 0 ) {
+        sprintf(uart_path, "/uart%d", port);
+        fd = shm_open(uart_path, O_CREAT | O_RDWR | S_IRUSR | S_IWUSR, 0644 );
+        if ( fd == -1 ) {
+            printf("failed to create shared memory\n");
+            return 0;
+        }
+        if ( ftruncate(fd, shm_len) == -1 ) {
+            printf("failed to set shm size\n");
+            shm_unlink(uart_path);
+	    return 0;
+        }
+        ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_WRITE, MAP_SHARED, fd, 0);
+        ring_buffer_init(ptr);
+
+        pthread_create(&id_tx, NULL, send_tx_input, (void *)&port);
+    } else { 
+        pthread_create(&id_rx, NULL, get_rx_buffer, (void *)&port);
+    }
+
     for ( ; ; ) { 
         /* printf("\ruart console %d>", (int)port); */
-	get_rx_buffer(port);
-	fflush(stdout);
+	/* get_rx_buffer(port); */
+	/* fflush(stdout); */
 	/* send_tx_input(port); */
         if ( exit_all ) {
             printf("\n");
             fflush(stdout);
-            return 0;
+	    break;
+        }
+	if ( child_id == 0 ) {
+            r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+            if ( r == -1 ) {
+                break;
+	    }
+            if ( getppid() != parent_id ) {
+                break;
+	    }
+        } else {
+            /* print from ring buffer one character per loop */
+	    wptr = ptr->wptr;
+            if ( ptr->rptr != wptr ) {
+                printf("%c", ptr->buffer[ptr->rptr]);
+                ptr->rptr = (ptr->rptr + 1) % BUF_SIZE;
+                fflush(stdout);
+            }
         }
         usleep(40);
     }
+    munmap(ptr, shm_len);
+    shm_unlink(uart_path);
     return 0;
 }
     

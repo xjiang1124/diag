@@ -45,6 +45,7 @@ const (
     FAN4 = 4
     MAXFAN = 5
     DUALFAN = 1
+    MAXSLOT = 10 //Matera MTP has 10 + 1 debug slot.  0 - 10 are valid slots
 )
 
 
@@ -499,6 +500,59 @@ func PSU_alert(PSUnumber uint32) (alert bool, err error) {
     }
     return
 }
+
+
+/*********************************************************************
+* The FPGA shares signals for JTAG and SPI. 
+* USER needs to select which bus type the pins should use 
+* i.e. JTAG or SPI 
+* 
+* Enable the SPI Bus via the FPGA MSIC CONTROL REGISTER and disable JTAG
+*  
+*********************************************************************/
+func SetJTAGbusToSPI(slot uint32) (err error) {
+    var data32 uint32 = 0
+
+    if slot > MAXSLOT {
+        err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Invalid slot number -> %d \n", slot);
+        fmt.Printf("%w\n", err)
+        return
+    }
+
+    //Mask in the enable bit
+    data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
+    data32 |= (FPGA_MISC_CTRL_SLOT0_SPI_EN << slot) 
+    MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
+
+    return
+}
+
+
+/*********************************************************************
+* The FPGA shares signals for JTAG and SPI. 
+* USER needs to select which bus type the pins should use 
+* i.e. JTAG or SPI 
+* 
+* Disable the SPI Bus via the FPGA MSIC CONTROL REGISTER and enable JTAG
+*  
+*********************************************************************/
+func SetJTAGbusToJTAG(slot uint32) (err error) {
+    var data32 uint32 = 0
+
+    if slot > MAXSLOT {
+        err = fmt.Errorf("ERROR: SetJTAGbusToJTAG: Invalid slot number -> %d \n", slot);
+        fmt.Printf("%w\n", err)
+        return
+    }
+
+    //Mask out the enable bit
+    data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
+    data32 = data32 & (^(FPGA_MISC_CTRL_SLOT0_SPI_EN << slot))
+    MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
+
+    return
+}
+
 
 
 func MdioRead(inst uint8, phy uint8, regAddr uint8) (value uint16, err error) {
