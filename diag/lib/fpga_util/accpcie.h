@@ -17,17 +17,19 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include "ftd2xx.h"
 
 typedef unsigned int            ULONG;
 typedef ULONG                   *PULONG;
 typedef unsigned long long int  ULONGLONG;
 
-typedef ULONGLONG   FT_HANDLE;
+/* typedef ULONGLONG   FT_HANDLE; */
 typedef ULONG       FT_STATUS;
 
 //
 // Device status
 //
+/*
 enum {
         FT_OK,
         FT_ERROR_OPEN_MEM,
@@ -41,7 +43,7 @@ enum {
         FT_ERROR_LOCKPORT,
         FT_ERROR_ID,
 };
-
+*/
 #define J2C_NOP_COMMAND    0x0
 #define J2C_RESET_COMMAND  0x1
 #define J2C_ENABLE_COMMAND 0x2
@@ -85,6 +87,9 @@ enum {
 #define UART_RESET_RXFIFO 0x0002
 #define UART_EN_INTERRUPT 0x0010
 
+#define TRUE 1
+#define FALSE 0
+
 #ifndef DWORD
 #define DWORD unsigned int 
 #endif
@@ -106,6 +111,7 @@ extern FT_HANDLE ftHandle;
 ULONGLONG xtoi(char *hexstring);
 ULONGLONG show_bar(void);
 FT_STATUS jtag_init(DWORD portNum);
+FT_STATUS fpga_j2c_init(DWORD portNum);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
 FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWORD num_bits);
@@ -114,17 +120,54 @@ FT_STATUS jtag_wg(ULONGLONG address, DWORD data);
 FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
 FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
+FT_STATUS sendJtagCommand(FT_HANDLE ftHandle, BYTE *sequence, const size_t length);
 void set_verbosity(int);
 void set_bar(ULONGLONG);
 void jtag_close();
-FT_STATUS spi_reg_init();
-FT_STATUS spi_wr(BYTE address, BYTE data);
-FT_STATUS spi_rd(BYTE address, BYTE* data);
+FT_STATUS spi_init(DWORD portNum);
+FT_STATUS spi_wr(ULONGLONG inst, DWORD address, DWORD data);
+FT_STATUS spi_rd(ULONGLONG inst, DWORD address, DWORD *data);
 void ftHandle_close();
+void queue_clear(void);
+void spi_csena();
+void spi_csdis();
 
 typedef struct _fpga_asic_target {
     char name[10];    /* asic name - no effect for code */
     int size;         /* j2c instance memory space */
     int addr_msb_pos; /* msb position for upper 32 bit address */
 } FPGA_ASIC_TARGET;
+
+extern const BYTE SPIDATALENGTH;//3 digit command + 8 digit address
+extern const BYTE READ;//110xxxxx
+extern const BYTE WRITE;//101xxxxx
+extern const BYTE WREN;//10011xxx
+extern const BYTE ERAL;//10010xxx
+//declare for BAD command
+extern const BYTE AA_ECHO_CMD_1;
+extern const BYTE AB_ECHO_CMD_2;
+extern const BYTE BAD_COMMAND_RESPONSE;
+//declare for MPSSE command
+extern const BYTE MSB_RISING_EDGE_CLOCK_BYTE_OUT;
+extern const BYTE MSB_FALLING_EDGE_CLOCK_BYTE_OUT;
+extern const BYTE MSB_RISING_EDGE_CLOCK_BIT_OUT;
+extern const BYTE MSB_FALLING_EDGE_CLOCK_BIT_OUT;
+extern const BYTE MSB_RISING_EDGE_CLOCK_BYTE_IN;
+extern const BYTE MSB_RISING_EDGE_CLOCK_BIT_IN;
+extern const BYTE MSB_FALLING_EDGE_CLOCK_BYTE_IN;
+extern const BYTE MSB_FALLING_EDGE_CLOCK_BIT_IN;
+
+extern FT_HANDLE ftHandle_a;
+extern FT_HANDLE ftHandle;
+
+extern BYTE     OutputBuffer[512];
+extern DWORD    dwNumBytesToSend;
+extern DWORD    dwNumBytesSent;
+extern DWORD    dwNumBytesRead;
+
+extern BYTE   setup_reg[3];
+extern BYTE   setup_spi[6];
+extern BYTE   ena_lpbk[1];
+extern BYTE   dis_lpbk[1];
+extern BYTE   setClock[3];
 

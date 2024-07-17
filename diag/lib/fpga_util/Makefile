@@ -1,6 +1,6 @@
-DEPENDENCIES := -lpthread -lrt
+DEPENDENCIES := -lpthread -lrt -lftd2xx
 #LINKER_OPTIONS := -Wl,-rpath /usr/local/lib -L/home/dwang/ws/110422/psdiag/diag/lib/temp
-LINKER_OPTIONS := -Wl,-rpath /usr/local/lib
+LINKER_OPTIONS := -Wl,-rpath /usr/local/lib -L./build
 CFLAGS = -Wall -Wextra $(DEPENDENCIES) $(LINKER_OPTIONS) -L/usr/local/lib
 
 .PHONY: all
@@ -22,17 +22,17 @@ libaccpcie_salina.a: accpcie_salina.c
 fpga_uart: fpga_uart.c
 	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
 	$(CC) fpga_uart.c -I.. -L. -o fpga_uart $(CFLAGS)
-	mv fpga_uart ${GOPATH}/pkg/linux_$(ARCH)/clib/fpga_uart
+	#mv fpga_uart ${GOPATH}/pkg/linux_$(ARCH)/clib/fpga_uart
 	
 jtag_accpcie: jtag_accpcie.c
 	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
 	$(CC) jtag_accpcie.c accpcie.c -I.. -L. -o jtag_accpcie $(CFLAGS)
-	mv jtag_accpcie ${GOPATH}/pkg/linux_$(ARCH)/clib/jtag_accpcie
+	#mv jtag_accpcie ${GOPATH}/pkg/linux_$(ARCH)/clib/jtag_accpcie
 
 jtag_accpcie_salina: jtag_accpcie.c
 	@mkdir -p ${GOPATH}/pkg/linux_$(ARCH)/clib/
 	$(CC) jtag_accpcie.c accpcie_salina.c  -I.. -L. -o jtag_accpcie_salina $(CFLAGS)
-	mv jtag_accpcie_salina ${GOPATH}/pkg/linux_$(ARCH)/clib/jtag_accpcie_salina
+	#mv jtag_accpcie_salina ${GOPATH}/pkg/linux_$(ARCH)/clib/jtag_accpcie_salina
 
 clean:
 	-rm -f *.o 

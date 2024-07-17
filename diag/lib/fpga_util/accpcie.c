@@ -505,23 +505,25 @@ FT_STATUS spi_reg_init(void)
     return FT_OK;
 }
 
-FT_STATUS spi_wr(BYTE address, BYTE data)
+FT_STATUS spi_wr(ULONGLONG inst, DWORD address, DWORD data)
 {
     BYTE dummy;
 
     dummy = address;
     dummy = data;
+    dummy = (BYTE)inst;
     data = dummy;
-
+   
     return FT_OK;
 }
 
-FT_STATUS spi_rd(BYTE address, BYTE* data)
+FT_STATUS spi_rd(ULONGLONG inst, DWORD address, DWORD* data)
 {
     BYTE dummy;
 
     dummy = address;
     dummy = *data;
+    dummy = (BYTE)inst;
     *data = dummy;
 
     return FT_OK;

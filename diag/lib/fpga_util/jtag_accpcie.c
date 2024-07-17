@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
     } else if ( !strcmp("rd", acc_mode) ) {
         port = (DWORD)xtoi(argv[2]);
         jtag_init(port);
-	printf("jtag read %d\n", port);
         address = (ULONGLONG)xtoi(argv[3]);
         jtag_rd(0, address, &data, 2);
         printf("DATA READ = %x\n", data);
@@ -48,12 +47,10 @@ int main(int argc, char *argv[])
         jtag_enable(port);
         jtag_close();
     } else if ( !strcmp("rg", acc_mode) ) {
-	printf("jtag read register %d\n", port);
         address = (ULONGLONG)xtoi(argv[2]);
         jtag_rg(address, &data);
         printf("DATA READ = %x\n", data);
     } else if ( !strcmp("wg", acc_mode) ) {
-	printf("jtag write register %d\n", port);
         address = (ULONGLONG)xtoi(argv[2]);
 	data = (DWORD)xtoi(argv[3]);	
         jtag_wg(address, data);
