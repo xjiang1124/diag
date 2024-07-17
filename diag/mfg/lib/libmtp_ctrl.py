@@ -4316,6 +4316,11 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
 
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+
         return fail_nic_list
 
     def mtp_i2c_show(self, nic_list):
