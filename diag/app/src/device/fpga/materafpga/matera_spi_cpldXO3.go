@@ -39,7 +39,10 @@ const MACHXO3_ERASE_FAE     uint32 = 0x30000
 const CONFIG0               uint32 = 0x1
 const CONFIG1               uint32 = 0x2
 const FEATUREROW            uint32 = 0x3
-const UFM2                  uint32 = 0x4
+const UFM0                  uint32 = 0x4
+const UFM1                  uint32 = 0x5
+const UFM2                  uint32 = 0x6
+const UFM3                  uint32 = 0x7
 
 const CPLD_STS_REG_BUSY_BIT         uint32 = 0x1000
 const CPLD_STS_REG_FAIL_BIT         uint32 = 0x2000
@@ -67,8 +70,19 @@ var CPLDXO3_NO_OP_RDLNG                uint32 = 0
 var CPLDXO3_RESET_CONFIG0_FLASH_OP     = []byte{0x46, 0x00, 0x01, 0x00}   //reset page pointer in flash
 var CPLDXO3_RESET_CONFIG1_FLASH_OP     = []byte{0x46, 0x00, 0x02, 0x00}   //reset page pointer in flash
 var CPLDXO3_RESET_FEATURE_ROW_OP       = []byte{0x46, 0x00, 0x04, 0x00}   //reset page pointer in flash
+var CPLDXO3_RESET_PUBKEY_OP            = []byte{0x46, 0x00, 0x08, 0x00}
+var CPLDXO3_RESET_AESKEY_OP            = []byte{0x46, 0x00, 0x10, 0x00}
+var CPLDXO3_RESET_CSEC_OP              = []byte{0x46, 0x00, 0x20, 0x00}
+var CPLDXO3_RESET_UFM0_OP              = []byte{0x46, 0x00, 0x40, 0x00}
+var CPLDXO3_RESET_UFM1_OP              = []byte{0x46, 0x00, 0x80, 0x00}
 var CPLDXO3_RESET_UFM2_OP              = []byte{0x46, 0x01, 0x00, 0x00}   //reset page pointer in flash
+var CPLDXO3_RESET_UFM3_OP              = []byte{0x46, 0x02, 0x00, 0x00}   //reset page pointer in flash
 var CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG uint32 = 0
+
+var CPLDXO3_RESET_UFM0_ADDR_OP         = []byte{0x47, 0x00, 0x04, 0x00}
+var CPLDXO3_RESET_UFM1_ADDR_OP         = []byte{0x47, 0x00, 0x08, 0x00}
+var CPLDXO3_RESET_UFM2_ADDR_OP         = []byte{0x47, 0x00, 0x10, 0x00}
+var CPLDXO3_RESET_UFM3_ADDR_OP         = []byte{0x47, 0x00, 0x20, 0x00}
 
 var CPLDXO3_RD_FEA_ROW_OP              = []byte{0xE7, 0x00, 0x00, 0x00}
 var CPLDXO3_RD_FEA_ROW_OP_RDLNG        uint32 = 16
@@ -87,12 +101,18 @@ var CPLDXO3_REFRESH_OP_RDLNG           uint32 = 0
 
 var CPLDXO3_ERASE_CONFIG0_FLASH_OP      = []byte{0x0E, 0x00, 0x01, 0x00}   //erase config0 flash
 var CPLDXO3_ERASE_CONFIG1_FLASH_OP      = []byte{0x0E, 0x00, 0x02, 0x00}   //erase config1 flash
-var CPLDXO3_ERASE_FEATURE_ROW_OP        = []byte{0x0E, 0x04, 0x00, 0x00}   //erase feature row
+var CPLDXO3_ERASE_UFM0_OP               = []byte{0x0E, 0x00, 0x04, 0x00}   //erase UFM0
+var CPLDXO3_ERASE_UFM1_OP               = []byte{0x0E, 0x00, 0x08, 0x00}   //erase UFM1
 var CPLDXO3_ERASE_UFM2_OP               = []byte{0x0E, 0x00, 0x10, 0x00}   //erase UFM2
+var CPLDXO3_ERASE_UFM3_OP               = []byte{0x0E, 0x00, 0x20, 0x00}   //erase UFM3                                                                           
+var CPLDXO3_ERASE_FEATURE_ROW_OP        = []byte{0x0E, 0x04, 0x00, 0x00}   //erase feature row
+
 var CPLDXO3_ERASE_CONFIG_FLASH_RDLNG   uint32 = 0
 
+//Program page Operations
 var CPLDXO3_FEATURE_ROW_PROGRAM_OP      = []byte{0xE4, 0x00, 0x00, 0x00}
-var CPLDXO3_FLASH_PROGRAM_PAGE_OP      = []byte{0x70, 0x00, 0x00, 0x01}
+var CPLDXO3_FLASH_PROGRAM_PAGE_OP       = []byte{0x70, 0x00, 0x00, 0x01}
+var CPLDXO3_FLASH_PROGRAM_UFM_PAGE_OP   = []byte{0xC9, 0x00, 0x00, 0x01}
 var CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG uint32 = 0
 
 var CPLDXO3_RD_FLASH_OP                = []byte{0x73, 0x00, 0x00, 0x01}
@@ -180,7 +200,6 @@ func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err er
 
 }
 
-
 func Spi_cpldXO3_read_feature_row(spiNumber uint32) (data []byte, err error) {
     
     err = Spi_cpldXO3_enable_config_interface(spiNumber)
@@ -248,12 +267,41 @@ func Spi_cpldX03_return_flash_space_from_cli_arg(image string) (config uint32, e
         config = CONFIG0
     } else if image == "cfg1" {
         config = CONFIG1
-    } else if image == "fea" {
-        config = FEATUREROW
+    } else if image == "ufm0" {
+        config = UFM0
+    } else if image == "ufm1" {
+        config = UFM1
     } else if image == "ufm2" {
         config = UFM2
+    } else if image == "ufm3" {
+        config = UFM3
     } else {
         err = fmt.Errorf("ERROR: FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%s'\n", image)
+        cli.Printf("e","%s", err)
+        return
+    }
+    return
+}
+
+
+
+func Spi_cpldX03_get_flash_size(config uint32) (size uint32, err error) {
+    if config == CONFIG0 {
+        size = MACHXO3_9400_CFG0_FLASH_SIZE
+    } else if config == CONFIG1 {
+        size = MACHXO3_9400_CFG1_FLASH_SIZE
+    } else if config == FEATUREROW {
+        size = FEATUREROW
+    } else if config == UFM0 {
+        size = MACHXO3_9400_UFM0_FLASH_SIZE
+    } else if config == UFM1 {
+        size = MACHXO3_9400_UFM1_FLASH_SIZE
+    } else if config == UFM2 {
+        size = MACHXO3_9400_UFM2_FLASH_SIZE
+    } else if config == UFM3 {
+        size = MACHXO3_9400_UFM3_FLASH_SIZE
+    } else {
+        err = fmt.Errorf("ERROR: Spi_cpldX03_return_flash_space_from_cli_arg FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%d'\n", config)
         cli.Printf("e","%s", err)
         return
     }
@@ -276,8 +324,17 @@ func Spi_cpldXO3_reset_config_flash(spiNumber uint32, image string) (err error) 
     if space == FEATUREROW {
         _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_FEATURE_ROW_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
+    if space == UFM0 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_UFM0_ADDR_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
+    if space == UFM1 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_UFM1_ADDR_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
     if space == UFM2 {
-        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_UFM2_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_UFM2_ADDR_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
+    if space == UFM3 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_UFM3_ADDR_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
     return
 }
@@ -312,8 +369,17 @@ func Spi_cpldXO3_erase_config_flash(spiNumber uint32, image string) (err error) 
     if space == FEATUREROW {
         _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_ERASE_FEATURE_ROW_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
+    if space == UFM0 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_ERASE_UFM0_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
+    if space == UFM1 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_ERASE_UFM1_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
     if space == UFM2 {
         _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_ERASE_UFM2_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
+    }
+    if space == UFM3 {
+        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_ERASE_UFM3_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
 
     if err != nil {
@@ -411,7 +477,7 @@ func Spi_cpldXO3_program_feature_row_cmd(spiNumber uint32, data []byte) (err err
 }
 
 
-func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, data []byte) (err error) {
+func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []byte) (err error) {
     var sleep, max_try int = 1, 100
     var data32 uint32
     
@@ -424,16 +490,34 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, data []byte) (err erro
             fmt.Printf(".")
         }
 
-        for i:=0; i<len(CPLDXO3_FLASH_PROGRAM_PAGE_OP); i++ {
-            spi_cmd = append(spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP[i]) 
-        }
-        for i:=0; i<int(MACHXO3_9400_PAGE_SIZE); i++ {
-            spi_cmd = append(spi_cmd, data[i + j]) 
-        }
+        if config == UFM0 || 
+           config == UFM1 ||
+           config == UFM2 ||
+           config == UFM3 {
+            for i:=0; i<len(CPLDXO3_FLASH_PROGRAM_UFM_PAGE_OP); i++ {
+                spi_cmd = append(spi_cmd, CPLDXO3_FLASH_PROGRAM_UFM_PAGE_OP[i]) 
+            }
+            for i:=0; i<int(MACHXO3_9400_PAGE_SIZE); i++ {
+                spi_cmd = append(spi_cmd, data[i + j]) 
+            }
 
-        _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG) 
-        if err != nil {
-            return
+            _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG) 
+            if err != nil {
+                return
+            }
+
+        } else {
+            for i:=0; i<len(CPLDXO3_FLASH_PROGRAM_PAGE_OP); i++ {
+                spi_cmd = append(spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP[i]) 
+            }
+            for i:=0; i<int(MACHXO3_9400_PAGE_SIZE); i++ {
+                spi_cmd = append(spi_cmd, data[i + j]) 
+            }
+
+            _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG) 
+            if err != nil {
+                return
+            }
         }
 
         for i:=0; i<max_try; i++ {
@@ -576,39 +660,10 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
 
     if config == FEATUREROW {
         flashData, _ = Spi_cpldXO3_read_feature_row(spiNumber) 
-    } else if config == UFM2 {
-        for j:=0; j<int(MACHXO3_9400_UFM2_FLASH_SIZE); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
-            data := []byte{}
-
-            data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
-            if err != nil {
-                return
-            }
-            if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
-                return
-            }
-            if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
-                return
-            }
-
-            if (j % 500) == 0 {
-                fmt.Printf(".")
-            }
-
-            data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG)
-            if err != nil {
-                return
-            }             
-            for i:=0; i<int(CPLDXO3_RD_FLASH_OP_RDLNG); i++ {
-                flashData = append(flashData, data[i])
-            }
-        }
     } else {
-        for j:=0; j<int(MACHXO3_9400_CFG0_FLASH_SIZE); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
+        size, _ := Spi_cpldX03_get_flash_size(config)
+
+        for j:=0; j<int(size); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
             data := []byte{}
 
             data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
@@ -748,39 +803,10 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
 
     if config == FEATUREROW {
         flashData, _ = Spi_cpldXO3_read_feature_row(spiNumber)
-    } else if config == UFM2 {
-        for j:=0; j<int(MACHXO3_9400_UFM2_FLASH_SIZE); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
-            data := []byte{}
-
-            data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
-            if err != nil {
-                return
-            }
-            if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
-                return
-            }
-            if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
-                return
-            }
-
-            if (j % 100) == 0 {
-                fmt.Printf(".")
-            }
-
-            data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG) 
-            if err != nil {
-                return
-            }
-            for i:=0; i<int(CPLDXO3_RD_FLASH_OP_RDLNG); i++ {
-                flashData = append(flashData, data[i])
-            }
-        }
     } else {
-        for j:=0; j<int(MACHXO3_9400_CFG0_FLASH_SIZE); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
+        size, _ := Spi_cpldX03_get_flash_size(config)
+
+        for j:=0; j<int(size); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
             data := []byte{}
 
             data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
@@ -1043,7 +1069,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
             return
         }
     } else {
-        err = Spi_cpldXO3_program_page_flash_cmd(spiNumber, fileData)
+        err = Spi_cpldXO3_program_page_flash_cmd(spiNumber, config, fileData)
         if err != nil {
             return
         }
