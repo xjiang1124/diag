@@ -199,7 +199,7 @@ func present() (err int) {
             case nicCpldCommon.ID_MALFA:
                 presentStr = "MALFA"
             case nicCpldCommon.ID_POLLARA:
-                presentStr = "POLLARAA"
+                presentStr = "POLLARA"
             case nicCpldCommon.ID_LENI:
                 presentStr = "LENI"
             case nicCpldCommon.ID_NAPLES_MTP:
@@ -451,7 +451,7 @@ func sysDetect() (err int) {
             case nicCpldCommon.ID_MALFA:
                 presentStr = "MALFA"
             case nicCpldCommon.ID_POLLARA:
-                presentStr = "POLLARAA"
+                presentStr = "POLLARA"
             case nicCpldCommon.ID_LENI:
                 presentStr = "LENI"
             default:
