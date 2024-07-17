@@ -5,6 +5,8 @@ import (
     "flag"
     "strings"
     "hardware/i2cinfo"
+    "hardware/hwinfo"
+    "common/errType"
     "util/utillib"
 )
 
@@ -46,7 +48,11 @@ func main() {
     uut := strings.ToUpper(*uutPtr)
 
     if uut != "UUT_NONE" {
-        i2cinfo.SwitchI2cTbl(uut)
+        lockName, err := hwinfo.PreUutSetup(uut)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.PostUutClean(lockName)
     }
 
     // 16-bit internal addressing I2C
