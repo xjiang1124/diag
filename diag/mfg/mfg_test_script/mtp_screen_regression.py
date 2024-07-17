@@ -927,9 +927,6 @@ def main():
             thread_health = threading.Thread(target=health_status, args=(mtp_mgmt_ctrl.get_mtp_health_monitor(),))
             thread_health.start()
 
-        if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
-            l1_sequence = True
-
         # Set Naples25SWM test mode
         mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
         nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
