@@ -542,10 +542,10 @@ class MFG_DIAG_CMDS:
     MATERA_MTP_SINGLE_MGMT_FPO_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -fpo"
     MATERA_MTP_SINGLE_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -asic_type {:s}"
     MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
-    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s} -mode hod -int_lpbk True"
-    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode hod_1100 -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 800 -vmarg {:s} -mode hod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 800 -vmarg {:s}  -mode hod_1100 -int_lpbk True"
     MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 500 -vmarg {:s} -mode nod_525 -int_lpbk True"
-    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 4 -dura 3 -timeout 700 -vmarg {:s}  -mode nod -int_lpbk True"
+    MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 800 -vmarg {:s}  -mode nod -int_lpbk True"
     MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 700 -vmarg {:s} -mode=hod_1100 -int_lpbk True"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
