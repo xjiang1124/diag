@@ -1,6 +1,9 @@
 #include "accpcie.h"
 #include <time.h>
 
+#define SCRATCH_REG1 0x30780000
+#define SCRATCH_REG2 0x6f240000
+
 int main(int argc, char *argv[])
 {
     DWORD data = 0xdeadbeef;
@@ -15,6 +18,7 @@ int main(int argc, char *argv[])
         printf("jtag_accpcie ena port(1 based)\n");
         printf("jtag_accpcie rd port(1 based) address\n");
         printf("jtag_accpcie wr port(1 based) address data\n");
+        printf("jtag_accpcie test port(1 based) loopcount\n");
         return -1;
     }
     strcpy(acc_mode, argv[1]);
@@ -35,7 +39,7 @@ int main(int argc, char *argv[])
         port = (DWORD)xtoi(argv[2]);
         jtag_init(port);
         address = (ULONGLONG)xtoi(argv[3]);
-        data = (DWORD)xtoi(argv[4]);    
+	    data = (DWORD)xtoi(argv[4]);	
         jtag_wr(0, address, data, 2);
         jtag_close();
     } else if ( !strcmp("rd", acc_mode) ) {
@@ -113,9 +117,67 @@ int main(int argc, char *argv[])
         port = (DWORD)xtoi(argv[2]);
         printf("Clear port %d\n", port);
         jtag_clear(port);
+    } else if ( !strcmp("test", acc_mode) ) {
+        if (argc < 4) {
+            printf("ERROR: Invalid command syntax for test\n");
+            printf("Usage: jtag_accpcie test <port(1 based)> <loopcount>\n");
+            return -1;
+        }
+        printf("jtag test register %d\n", port);
+   
+        port = (DWORD)xtoi(argv[2]);
+        ULONGLONG loopcount = (DWORD)xtoi(argv[3]);
+       
+        if (loopcount > 0xFFFFFFFF){
+            printf("ERROR: The register can take a 32-bit value (0x00000000 – 0xFFFFFFFF)\n");
+            return -1;
+        }
+        clock_t start, end;
+        double cpu_time_used;
+        start = clock();
+
+        jtag_init(port);
+        for (ULONGLONG i = 0; i < loopcount; i++) {
+            // Write to registers
+            jtag_wr(0, SCRATCH_REG1, i, 2);
+            jtag_wr(0, SCRATCH_REG2, loopcount-i, 2);
+
+            // manually inject a wrong value
+            // if (i == 20001){
+            //     jtag_wr(0, SCRATCH_REG2, 0, 2);
+            // }
+
+            // Read back from registers
+            jtag_rd(0, SCRATCH_REG1, &data, 2);
+            if (data != i) {
+                printf("Error at iteration %lld: Data mismatch at 0x30780000. Expected: %llX, Read: %X\n", i, i, data);
+                jtag_close();
+                return -1;
+            }
+
+            jtag_rd(0, SCRATCH_REG2, &data, 2);
+            if (data != loopcount - i) {
+                printf("Error at iteration %lld: Data mismatch at 0x6f240000. Expected: %llX, Read: %X\n", i, loopcount - i, data);
+                jtag_close();
+                return -1;
+            }
+
+            if (i%10000 == 0) {
+                printf("%.010lld\n", i);
+            }
+        }
+        jtag_close();
+
+        end = clock();
+        cpu_time_used = ((double) (end - start)) * 1000 / CLOCKS_PER_SEC;
+        printf("Total time used to run test for %lld cycles: %.4f ms\n", loopcount, cpu_time_used);
+
+        return 0;
     } else {
         printf("Unsupported access mode\n");
         return -1;
     }
     return 0;
 }
+
+
