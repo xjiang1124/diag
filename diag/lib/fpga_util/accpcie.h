@@ -50,6 +50,12 @@ enum {
 #define J2C_WRITE_COMMAND  0x3
 #define J2C_READ_COMMAND   0x4
 #define J2C_RESP_COMMAND   0x5
+#define J2C_WR_IR_COMMAND  0x6
+#define J2C_WR_DR_COMMAND  0x7
+#define J2C_WR_CONFIG_CMD  0x1000000
+#define J2C_RESET_CMD      0x2000000
+
+#define J2C_ASIC_TYPE_MASK   0x00000F00
 
 #define J2C_RESP_BIT         0x180000
 #define J2C_RLAST_ERR_BIT    0x40000
@@ -122,6 +128,8 @@ FT_STATUS jtag_reset(DWORD inst);
 FT_STATUS jtag_enable(DWORD inst);
 FT_STATUS sendJtagCommand(FT_HANDLE ftHandle, BYTE *sequence, const size_t length);
 FT_STATUS jtag_clear(DWORD portNum);
+void set_asic_target(char *asic_name);
+void show_asic_target(char *asic_name);
 void set_verbosity(int);
 void set_bar(ULONGLONG);
 void jtag_close();
@@ -137,6 +145,7 @@ typedef struct _fpga_asic_target {
     char name[10];    /* asic name - no effect for code */
     int size;         /* j2c instance memory space */
     int addr_msb_pos; /* msb position for upper 32 bit address */
+    int asic_enum;    /* code representing asic */
 } FPGA_ASIC_TARGET;
 
 extern const BYTE SPIDATALENGTH;//3 digit command + 8 digit address

@@ -181,20 +181,20 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         return -1;
     }
 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address lower 32 bit\n");
         return -1;
     }
     address = ((address >> 32) & 0x1F) | (size << 8) | ((flag & 0x1) << 10); 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_ADDR1_REG, address);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address higher 32 bit\n");
         return -1;
     }
-    rc = write_fpga_mem32(ftHandle, J2C_0_TXDATA_REG, data);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_TXDATA_REG, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring data\n");
@@ -202,14 +202,14 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     }
  
     cmd = J2C_WRITE_COMMAND;
-    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wrte write command\n");
         return -1;
     }
     for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
             if ( verbosity )
                 printf("failed to read response\n");
@@ -274,14 +274,14 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         return -1;
     }
 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address lower 32 bit\n");
         return -1;
     }
     address = ((address >> 32) & 0x1F) | (size << 8) | ((flag & 0x1) << 10); 
-    rc = write_fpga_mem32(ftHandle, J2C_0_ADDR1_REG, address);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_ADDR1_REG, address);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wring address higher 32 bit\n");
@@ -289,14 +289,14 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     }
 
     cmd = J2C_READ_COMMAND;
-    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
             printf("failed to wrte read command\n");
         return -1;
     }
     for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
             if ( verbosity )
                 printf("failed to read response\n");
@@ -312,14 +312,14 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     }
 
     cmd = J2C_RESP_COMMAND;
-    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
             printf("failed to write response command\n");
         return -1;
     }
     for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
             if ( verbosity )
                 printf("failed to read response\n");
@@ -344,7 +344,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
             printf("invalid ID %x\n", resp);
         /* return FT_ERROR_ID; */
     } 
-    rc = read_fpga_mem32(ftHandle, J2C_0_RXDATA_REG, data);
+    rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_RXDATA_REG, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to read data\n");
@@ -390,11 +390,11 @@ FT_STATUS jtag_init(DWORD portNum)
         printf("jtag for this instance has been opened already!\n");
         return (FT_STATUS)magic;
     }
-    ftHandle = (DWORD)j2c_mem_addr & 0xffffffff;
-    rc = write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, ftHandle);
+    ftHandle = (PVOID)(j2c_mem_addr & 0xffffffff);
+    rc = write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, (ULONG)(ULONGLONG)ftHandle);
     if ( rc ) {
         ftHandle = 0;
-        write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, ftHandle);
+        write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, (ULONG)(ULONGLONG)ftHandle);
         write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0);
     }
     if ( verbosity == 2 )
@@ -412,8 +412,8 @@ void jtag_close()
 {
     if ( verbosity )
         printf("closing jtag\n");
-    write_fpga_mem32(ftHandle, J2C_0_MAGIC_REG, 0);
-    write_fpga_mem32(ftHandle, J2C_0_SEM_REG, 0);
+    write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_MAGIC_REG, 0);
+    write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_SEM_REG, 0);
     ftHandle = 0;
     return;
 }
@@ -436,14 +436,14 @@ FT_STATUS jtag_reset(DWORD inst)
     }
 
     cmd = J2C_RESET_COMMAND;
-    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
             printf("failed to write reset command\n");
         return FT_WRITE_FAILURE;
     }
     for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
             if ( verbosity )
                 printf("failed to read response\n");
@@ -479,14 +479,14 @@ FT_STATUS jtag_enable(DWORD inst)
     }
 
     cmd = J2C_ENABLE_COMMAND;
-    rc = write_fpga_mem32(ftHandle, J2C_0_CMD_REG, cmd);
+    rc = write_fpga_mem32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
             printf("failed to write enable command\n");
         return FT_WRITE_FAILURE;
     }
     for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read_fpga_mem32(ftHandle, J2C_0_STAT_REG, &resp);
+        rc = read_fpga_mem32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
             if ( verbosity )
                 printf("failed to read response\n");
@@ -533,6 +533,16 @@ FT_STATUS spi_rd(ULONGLONG inst, DWORD address, DWORD* data)
     *data = dummy;
 
     return FT_OK;
+}
+
+void set_asic_target(char *asic_name)
+{
+    return;
+}
+
+void show_asic_target(char *asic_name)
+{
+    return;
 }
 
 void ftHandle_close()
