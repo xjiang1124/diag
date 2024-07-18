@@ -20,6 +20,7 @@ GlobalOptions.topdir = topdir
 # Initialize the logger
 import logger
 import parser
+import traceback
 
 
 Logger = logger.InitLogger()
@@ -38,7 +39,8 @@ class LaunchApp(object):
         try:
             self.__testsuite = parser.YmlParse(testsuite_file)
         except Exception as e:
-            Logger.error(f"Failed to load testsuite {testsuite_file} - Exception {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Failed to load testsuite {testsuite_file} - Exception {err_msg}")
             return defs.Result.INFRA_FAILURE
         return defs.Result.SUCCESS
 
@@ -47,7 +49,8 @@ class LaunchApp(object):
             with open(testbed_json, 'r') as fh:
                 testbed_spec = json.load(fh)
         except Exception as e:
-            Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Failed to load {testbed_json} - Exception: {err_msg}")
             return None
 
         ## get testbed_id
@@ -66,14 +69,15 @@ class LaunchApp(object):
         try:
             with open("/vol/hw/diag/cicd/mtp.db", "r") as mtp_db_fh:
                 for line in mtp_db_fh.readlines():
-                    mtp_id, mtp_status = line.split(" ")
+                    mtp_id, mtp_status = line.strip().split(" ")
                     if mtp_id == mtp_resource_name:
                         if mtp_status.lower().strip() == "online":
                             return True
                         else:
                             return False
         except Exception as e:
-            Logger.error(f"Caught exception: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Caught exception: {err_msg}")
             return defs.Result.INFRA_FAILURE
 
     def __parse_warmd(self, testbed_json):
@@ -82,7 +86,8 @@ class LaunchApp(object):
             with open(testbed_json, 'r') as fh:
                 testbed_spec = json.load(fh)
         except Exception as e:
-            Logger.error(f"Failed to load {testbed_json} - Exception: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Failed to load {testbed_json} - Exception: {err_msg}")
             return defs.Result.INFRA_FAILURE, None
 
         instances = testbed_spec.get('Instances', None)
@@ -127,7 +132,8 @@ class LaunchApp(object):
                   continue
                 barcode_scans[slot] = value
         except Exception as e:
-            Logger.error(f"Caught exception: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Caught exception: {err_msg}")
             return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS, barcode_scans
@@ -195,7 +201,9 @@ class LaunchApp(object):
             with open(mtp_cfg_yaml_file, 'w') as fh:
                 yaml.dump(mtp_yaml_data, fh)
         except Exception as e:
+            err_msg = traceback.format_exc()
             Logger.error(f"Error writing yaml-file {mtp_cfg_yaml_file} to generate MTP test-cfg yaml")
+            Logger.error(f"{err_msg}")
             return defs.Result.INFRA_FAILURE
 
         self.__settings['MTP_CFG_YML'] = mtp_cfg_yaml_file
@@ -227,11 +235,13 @@ class LaunchApp(object):
                                 fh.write(mtp_barcode_scans['SN'] + "\n")
                                 fh.write(mtp_barcode_scans['MAC'] + "\n")
                         except Exception as e:
-                            Logger.error(f"Failed to write {SRN_input}: {e}")
+                            err_msg = traceback.format_exc()
+                            Logger.error(f"Failed to write {SRN_input}: {err_msg}")
                             return defs.Result.INFRA_FAILURE
 
         except Exception as e:
-            Logger.error(f"Caught exception: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Caught exception: {err_msg}")
             return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS
@@ -267,7 +277,8 @@ class LaunchApp(object):
 
                 fh.write(f'STOP\n')
         except Exception as e:
-            Logger.error(f"Failed to write {scanDL_input}: {e}")
+            err_msg = traceback.format_exc()
+            Logger.error(f"Failed to write {scanDL_input}: {err_msg}")
             return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS
@@ -300,7 +311,9 @@ class LaunchApp(object):
                 for var, value in self.__settings.items():
                     fh.write(f'export {var}="{value}"\n')
         except Exception as e:
+            err_msg = traceback.format_exc()
             Logger.error("Failed write env.sh")
+            Logger.error(f"{err_msg}")
             return defs.Result.INFRA_FAILURE
 
         return defs.Result.SUCCESS

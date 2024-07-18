@@ -4,7 +4,9 @@ queue_name: asic
 
 targets:
   daily-diag-images:
-    commands: [ "sh", "-c", "ls /psdiag/build/images/ -la; rsync -aPtv /psdiag/build/images/*.tar /vol/hw/diag/diag_images/daily/; chmod +r /vol/hw/diag/diag_images/daily/*.tar" ]
+    commands: [ "sh", "-c", "ls /psdiag/build/images/ -la;\
+    rsync -aPtv /psdiag/build/images/*.tar /vol/hw/diag/diag_images/daily/ --exclude='.*';\
+    chmod +r /vol/hw/diag/diag_images/daily/*.tar" ]
     owners: ["email:xin@pensando.io"]
     build-dependencies:
     - build-amd64-capri

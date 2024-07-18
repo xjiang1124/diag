@@ -2,6 +2,8 @@ package main
 
 import (
     "strconv"
+    "common/errType"
+    "hardware/hwinfo"
     "hardware/i2cinfo"
     "github.com/spf13/cobra"
 )
@@ -14,8 +16,12 @@ var listCmd = &cobra.Command{
         slot, _ := cmd.Flags().GetInt("slot")
         if slot >= 1 && slot <= 10 {
             uut = "UUT_" + strconv.Itoa(slot)
+            lockName, err := hwinfo.PreUutSetup(uut)
+            if err != errType.SUCCESS {
+                return
+            }
+            defer hwinfo.PostUutClean(lockName)
         }
-        i2cinfo.SwitchI2cTbl(uut)
         i2cinfo.DispI2cInfoAll()
     },
 }
