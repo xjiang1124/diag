@@ -74,9 +74,9 @@ const (
     PN_GIN_D5_ORACLE string = "68-0075"
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
-    PN_MALFA         string = "102-P10600-00"
-    PN_POLLARA       string = "102-P10700-00"
-    PN_LENI          string = "102-P10800-00"
+    PN_MALFA         string = "DSC3-2Q400-128S64E256P"
+    PN_POLLARA       string = "AI-NIC400-1Q400-P"
+    PN_LENI          string = "DSC3-2Q400-64S64E64P"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -93,7 +93,7 @@ const (
     PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
-    PROD_NAME_POLLARA       string = "Salina 1x400G QSFP112"
+    PROD_NAME_POLLARA       string = "AI-NIC400 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
 
     // SKU 
@@ -132,9 +132,9 @@ const (
     FRU_ID_GIN_D5        string = "01/24/23"
     FRU_ID_GIN_D5_MSFT   string = "01/19/24"
     FRU_ID_GIN_D5_SSDK   string = "02/26/24"
-    FRU_ID_MALFA         string = "07/02/24"
-    FRU_ID_POLLARA       string = "07/16/24"
-    FRU_ID_LENI          string = "07/16/24"
+    FRU_ID_MALFA         string = "06/25/24"
+    FRU_ID_POLLARA       string = "07/18/24"
+    FRU_ID_LENI          string = "07/18/24"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
