@@ -15,7 +15,7 @@ import (
     "device/powermodule/tps544b25"
     "device/powermodule/sn1701022"
     "device/powermodule/tps53688"
-    "device/powermodule/tps53830"
+    "device/powermodule/pmic"
     "device/powermodule/ds4424"
     "hardware/i2cinfo"
     "hardware/hwinfo"
@@ -83,8 +83,8 @@ func margin(devName string, pct int, lockFlag bool) (err int){
        err = sn1701022.SetVMargin(devName, pct)
     } else if i2cif.Comp == "TPS53688" {
         err = tps53688.SetVMargin(devName, pct)
-    } else if i2cif.Comp == "TPS53830" {
-        err = tps53830.SetVMargin(devName, pct)
+    } else if i2cif.Comp == "PMIC" {
+        err = pmic.SetVMargin(devName, pct)
     } else if i2cif.Comp == "DS4424" {
         err = ds4424.SetVMargin(devName, pct)
     } else {
@@ -259,8 +259,8 @@ func marginByValue(devName string, tgtVoutMv uint64, lockFlag bool) (err int){
         err = ltc3888.SetVMarginByValue(devName, tgtVoutMv)
     } else if i2cif.Comp == "TPS544B25" {
         err = tps544b25.SetVMarginByValue(devName, tgtVoutMv)
-    } else if i2cif.Comp == "TPS53830" {
-        err = tps53830.SetVMarginByValue(devName, tgtVoutMv)
+    } else if i2cif.Comp == "PMIC" {
+        err = pmic.SetVMarginByValue(devName, tgtVoutMv)
     } else if i2cif.Comp == "TPS53688" {
         err = tps53688.SetVMarginByValue(devName, tgtVoutMv)
     } else {
@@ -422,8 +422,8 @@ func readVout(devName string, lockFlag bool) (voutMv uint64, err int){
         integer, dec, err = tps544b25.ReadVout(devName)
     } else if i2cif.Comp == "TPS53688" {
         integer, dec, err = tps53688.ReadVout(devName)
-    } else if i2cif.Comp == "TPS53830" {
-        integer, dec, err = tps53830.ReadVout(devName)
+    } else if i2cif.Comp == "PMIC" {
+        integer, dec, err = pmic.ReadVout(devName)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
@@ -483,8 +483,8 @@ func readIout(devName string, lockFlag bool) (ioutMa uint64, err int){
         integer, dec, err = ltc3888.ReadIout(devName)
     } else if i2cif.Comp == "TPS53688" {
         integer, dec, err = tps53688.ReadIout(devName)
-    } else if i2cif.Comp == "TPS53830" {
-        integer, dec, err = tps53830.ReadIout(devName)
+    } else if i2cif.Comp == "PMIC" {
+        integer, dec, err = pmic.ReadIout(devName)
     } else {
         cli.Println("e", "Unsupported device: ", i2cif.Comp)
         err = errType.INVALID_PARAM
