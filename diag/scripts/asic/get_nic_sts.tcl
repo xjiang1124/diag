@@ -69,7 +69,7 @@ puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; board_t
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
-if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
+if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE == "MTP_MATERA")} {
     puts $MTP_TYPE
     if {$ASIC_TYPE == "GIGLIO"} {
         source .tclrc.diag.gig
@@ -80,6 +80,8 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA")} {
     if { $MTP_TYPE == "MTP_TURBO_ELBA" } {
         set port [get_port_turbo $slot]
         set slot 1
+    } elseif { $MTP_TYPE == "MTP_MATERA" } {
+        set port $slot
     }
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
