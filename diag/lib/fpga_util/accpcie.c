@@ -100,10 +100,10 @@ int read_fpga_mem32(ULONGLONG inst_offset, DWORD reg, DWORD *data)
         return FT_ERROR_OPEN_MEM;
     }
 
-    unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    unsigned char *mem =  mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
     /* unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
     if ( mem == NULL ) {
-        printf("failed to  map pcie memory\n");
+        printf("failed to map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
