@@ -119,7 +119,7 @@ echo "PATH=\$PATH:$DIAG_DIR/tools" >> temp_profile
 if [[ $FPGA_PRST == "YES" ]]
 then
     mtp_id_str=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 0 0)
-    mtp_id_str1=$(echo $mtp_id_str | cut -b 15-20)
+    mtp_id_str1=$(echo "$mtp_id_str" | cut -b 15-20)
     mtp_id="${mtp_id_str1:0:6}"
     echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
     echo "setting fan PWM to 50%"
