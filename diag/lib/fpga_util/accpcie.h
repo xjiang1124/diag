@@ -58,11 +58,15 @@ enum {
 
 #define J2C_ASIC_TYPE_MASK   0x00000F00
 
-#define J2C_RESP_BIT         0x180000
-#define J2C_RLAST_ERR_BIT    0x40000
-#define J2C_VALID_BIT        0x10000
-#define J2C_ID_BIT           0x20000
-#define J2C_SEM_BIT          0x00001
+#define J2C_RESP_BIT         0x00180000
+#define J2C_RLAST_ERR_BIT    0x00040000
+#define J2C_ID_BIT           0x00020000
+#define J2C_VALID_BIT        0x00010000
+#define J2C_RXFIFO_EMPTY     0x00000010
+#define J2C_RXFIFO_HFULL     0x00000008
+#define J2C_TXFIFO_FULL      0x00000004
+#define J2C_TXFIFO_HEMPTY    0x00000002
+#define J2C_SEM_BIT          0x00000001
 
 #define J2C_0_OFFSET      0xA00
 #define J2C_0_CMD_REG     0x000
@@ -76,12 +80,13 @@ enum {
 #define J2C_0_TXFIFO_REG  0x020
 #define J2C_0_RXFIFO_REG  0x024
 #define J2C_0_SIZE_REG    0x028
-#define OW_0_INIT_REG     0x02C
-#define OW_0_CMD_REG      0x030
-#define OW_0_STAT_REG     0x034
-#define OW_0_DATA_REG     0x038
-#define OW_0_ADDR0_REG    0x040
-#define OW_0_ADDR1_REG    0x044
+#define OW_0_INIT_REG     0x040
+#define OW_0_CMD_REG      0x044
+#define OW_0_STAT_REG     0x048
+#define OW_0_DATA_REG     0x04C
+#define OW_0_ADDR0_REG    0x050
+#define OW_0_ADDR1_REG    0x054
+#define OW_0_EOM_W_REG    0x058
 
 #define UART_0_OFFSET     0x10000
 #define UART_INST_OFFSET  0x0100
@@ -121,8 +126,8 @@ FT_STATUS jtag_init(DWORD portNum);
 FT_STATUS fpga_j2c_init(DWORD portNum);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
-FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWORD num_bits);
-FT_STATUS jtag_rd_inc(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag, DWORD num_bits);
+FT_STATUS jtag_wr_dr(DWORD* tx_data, DWORD *rx_data, DWORD num_bits);
+FT_STATUS jtag_wr_ir(DWORD* tx_data, DWORD num_bits);
 FT_STATUS jtag_wg(ULONGLONG address, DWORD data);
 FT_STATUS jtag_rg(ULONGLONG address, DWORD* data);
 FT_STATUS jtag_reset(DWORD inst);
