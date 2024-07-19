@@ -96,7 +96,7 @@ void set_verbosity(int level)
 
 void set_asic_target(char *asic_name)
 {
-    DWORD reg_value;
+    int reg_value;
     int rc;
 
     asic_index = 0;
@@ -106,7 +106,7 @@ void set_asic_target(char *asic_name)
         }
         asic_index++;
     };
-    rc = read32((ULONGLONG)ftHandle, J2C_0_CMD_REG, &reg_value);
+    rc = read32((ULONGLONG)ftHandle, J2C_0_CMD_REG, (DWORD *)&reg_value);
     if ( rc ) {
         printf("failed to read j2c command register %x\n", reg_value);
         return;
@@ -132,6 +132,25 @@ void set_asic_target(char *asic_name)
 
 void show_asic_target(char *asic_name)
 {
+    int reg_value;
+    int rc;
+
+    rc = read32((ULONGLONG)ftHandle, J2C_0_CMD_REG, (DWORD *)&reg_value);
+    if ( rc ) {
+        printf("failed to read j2c command register %x\n", reg_value);
+        return;
+    }
+    reg_value = reg_value & J2C_ASIC_TYPE_MASK;
+    reg_value = reg_value >> 8;
+
+    if ( reg_value != asic_index )
+        printf("WARNING: asic type register value is different from driver setting\n");
+    strcpy(asic_name, fpga_asic_target[reg_value].name);
+    return;
+}
+
+void update_asic_target(void)
+{
     DWORD reg_value;
     int rc;
 
@@ -142,8 +161,8 @@ void show_asic_target(char *asic_name)
     }
     reg_value = reg_value & J2C_ASIC_TYPE_MASK;
     reg_value = reg_value >> 8;
+    asic_index = reg_value;
 
-    strcpy(asic_name, fpga_asic_target[reg_value].name);
     return;
 }
 
@@ -465,18 +484,13 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     return ftStatus;
 }
 
-FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWORD num_bits)
+FT_STATUS jtag_wr_dr(DWORD *tx_data, DWORD *rx_data, DWORD num_bits)
 {
     FT_STATUS ftStatus = FT_OK;
-    DWORD size = ((flag >> 1) & 0x1) ? 0x2 : 0x0;;
-    DWORD cmd;
-    DWORD resp;
-    DWORD dummy = inst, upper_mask, msb_addr_pos, bits_remain;
-    int wait_cnt = WAIT_CNT;
-    int i;
+    DWORD j2c_status, rxdata;
+    DWORD bits_remain;
+    DWORD *txptr, *rxptr;
     int rc = 0;
-
-    inst = dummy;
 
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
@@ -485,73 +499,175 @@ FT_STATUS jtag_wr_inc(DWORD inst, ULONGLONG address, DWORD data, DWORD flag, DWO
     }
 
     if ( asic_index == -1 ) {
-        printf("Invalid asic type. Please use set_target with a valid asic name\n");
+        printf("Invalid asic type. Please use set_asic_target with a valid asic name\n");
         return -1;
     }
 
-    msb_addr_pos = fpga_asic_target[asic_index].addr_msb_pos;
-    upper_mask = gen_mask(msb_addr_pos);
-
+    bits_remain = num_bits;
+    txptr = tx_data;
+    rxptr = rx_data;
     rc = write32((ULONGLONG)ftHandle, J2C_0_SIZE_REG, num_bits);
     if ( rc ) {
         if ( verbosity )
-            printf("failed to wring address lower 32 bit\n");
+            printf("failed to write size register\n");
         return -1;
     }
-    bits_remain = num_bits;
-    rc = write32((ULONGLONG)ftHandle, J2C_0_ADDR0_REG, address & 0xffffffff);
+    rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, J2C_WR_DR_COMMAND);
     if ( rc ) {
         if ( verbosity )
-            printf("failed to wring address lower 32 bit\n");
-        return -1;
-    }
-    address = ((address >> 32) & upper_mask) | (size << (msb_addr_pos + 3)) | ((flag & 0x1) << (msb_addr_pos + 5)); 
-
-    rc = write32((ULONGLONG)ftHandle, J2C_0_ADDR1_REG, address);
-    if ( rc ) {
-        if ( verbosity )
-            printf("failed to wring address higher 32 bit\n");
+            printf("failed to write command register\n");
         return -1;
     }
 
     while ( bits_remain != 0 ) {
-        rc = write32((ULONGLONG)ftHandle, J2C_0_TXFIFO_REG, data);
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
         if ( rc ) {
             if ( verbosity )
-                printf("failed to wring data\n");
+                printf("failed to read status register\n");
             return -1;
         }
-	if ( bits_remain >= 32 )
-            bits_remain = bits_remain -32;
-        else
-            bits_remain = 0;
-	data++;
+        if ( (j2c_status & J2C_TXFIFO_FULL) == 0 ) {
+            rc = write32((ULONGLONG)ftHandle, J2C_0_TXFIFO_REG, *txptr);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to write txfifo\n");
+                return -1;
+            }
+	    if ( bits_remain >= 32 )
+                bits_remain = bits_remain -32;
+            else
+                bits_remain = 0;
+            txptr++;
+        }
+    
+        if ( (j2c_status & J2C_RXFIFO_EMPTY) == 0 ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata); 
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to rx fifo\n");
+                return -1;
+            }
+            if ( rxptr != NULL )
+                *rxptr++ = rxdata;
+        }
     };
 
-    cmd = J2C_WRITE_COMMAND;
-    rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
+    rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
     if ( rc ) {
         if ( verbosity )
-            printf("failed to wrte write command\n");
+            printf("failed to read status register\n");
         return -1;
     }
-    for ( i = 0; i < wait_cnt; i++ ) {
-        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+    while ( (j2c_status & J2C_RXFIFO_EMPTY) == 0 ) {
+        rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata); 
         if ( rc ) {
             if ( verbosity )
-                printf("failed to read response\n");
+                printf("failed to rx fifo\n");
             return -1;
         }
-        if ( !(resp & 0x1) )
-            break;
+        if ( rxptr != NULL )
+            *rxptr++ = rxdata;
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read status register\n");
+            return -1;
+        }
     }
-    if ( resp & 0x1 ) {
-        if ( verbosity )
-            printf("write command time out\n");
-        return FT_RESP_TIMEOUT;
-    }
+
     if ( verbosity == 2 )
-        printf("FINISH WRITE\n");
+        printf("FINISH DR command\n");
+    return ftStatus;
+}
+
+FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
+{
+    FT_STATUS ftStatus = FT_OK;
+    DWORD j2c_status, rxdata;
+    DWORD bits_remain;
+    DWORD *txptr;
+    int rc = 0;
+
+    if ( ftHandle == 0 ) {
+        if ( verbosity != 0 )
+            printf("j2c port is not opened\n");
+        return -1;
+    }
+
+    if ( asic_index == -1 ) {
+        printf("Invalid asic type. Please use set_asic_target with a valid asic name\n");
+        return -1;
+    }
+
+    bits_remain = num_bits;
+    txptr = tx_data;
+    rc = write32((ULONGLONG)ftHandle, J2C_0_SIZE_REG, num_bits);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to write size register\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, J2C_WR_IR_COMMAND);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to write command register\n");
+        return -1;
+    }
+
+    while ( bits_remain != 0 ) {
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read status register\n");
+            return -1;
+        }
+        if ( (j2c_status & J2C_TXFIFO_FULL) == 0 ) {
+            rc = write32((ULONGLONG)ftHandle, J2C_0_TXFIFO_REG, *txptr);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to write txfifo\n");
+                return -1;
+            }
+            if ( bits_remain >= 32 )
+                bits_remain = bits_remain - 32;
+            else
+                bits_remain = 0;
+            txptr++;
+        }
+
+        if ( (j2c_status & J2C_RXFIFO_EMPTY) == 0 ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to rx fifo\n");
+                return -1;
+            }
+        }
+    };
+
+    rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status);
+    if ( rc ) {
+        if ( verbosity )
+            printf("failed to read status register\n");
+        return -1;
+    }
+    while ( (j2c_status & J2C_RXFIFO_EMPTY) == 0 ) {
+        rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to rx fifo\n");
+            return -1;
+        }
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read status register\n");
+            return -1;
+        }
+    }
+
+    if ( verbosity == 2 )
+        printf("FINISH DR command\n");
     return ftStatus;
 }
 
@@ -840,6 +956,7 @@ FT_STATUS jtag_init(DWORD portNum)
         write32 = write_fpga_mem32;
         rc = fpga_j2c_init(portNum);
     }
+    update_asic_target();
     return rc;
 }
 
