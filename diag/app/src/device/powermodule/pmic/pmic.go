@@ -1,4 +1,4 @@
-package tps53830
+package pmic
 
 import (
     "fmt"
@@ -43,9 +43,9 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     }
     defer smbus.Close()
 
-    if devName == "DDR_VDD" {
+    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
         adc_sel = SWA_OUTPUT_SEL
-    } else if devName == "DDR_VDDQ" {
+    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
         adc_sel = SWC_OUTPUT_SEL
     } else {
         adc_sel = SWD_OUTPUT_SEL
@@ -83,9 +83,9 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
         return
     }*/
 
-    if devName == "DDR_VDD" {
+    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
         output_reg = SWA_OUTPUT_REG
-    } else if devName == "DDR_VDDQ" {
+    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
         output_reg = SWC_OUTPUT_REG
     } else {
         output_reg = SWD_OUTPUT_REG
@@ -191,7 +191,7 @@ func ReadVoutBias(devName string) (integer uint64, dec uint64, err int) {
     return integer, dec, errType.SUCCESS
 }
 
-func ReadTemp(devName string) (integer int64, dec uint64, err int) {
+func ReadTempTI(devName string) (integer int64, dec uint64, err int) {
     var data byte
 
     err = smbus.Open(devName)
@@ -201,23 +201,55 @@ func ReadTemp(devName string) (integer int64, dec uint64, err int) {
     defer smbus.Close()
 
     data, err = ReadAdcOutput(devName, TEMP_SEL)
-
     integer = 2 * int64(data)
     dec = 0
 
     return integer, dec, errType.SUCCESS
 }
 
-func ReadVendorID(devName string) (devID byte, err int) {
-    var vendorId byte
+func ReadTemp(devName string) (temp string, err int) {
+    var value byte
     err = smbus.Open(devName)
     if err != errType.SUCCESS {
         return
     }
     defer smbus.Close()
 
-    vendorId, err = smbus.ReadByte(devName, VENDOR_ID_REG)
-    return vendorId, err
+    value, err = smbus.ReadByte(devName, TEMP_MEASUREMENT_REG)
+    value = (value >> 5) & 0x7
+    switch value {
+    case 0:
+        return "<=85C", errType.SUCCESS
+    case 1:
+        return "85C", errType.SUCCESS
+    case 2:
+        return "95C", errType.SUCCESS
+    case 3:
+        return "105C", errType.SUCCESS
+    case 4:
+        return "115C", errType.SUCCESS
+    case 5:
+        return "125C", errType.SUCCESS
+    case 6:
+        return "135C", errType.SUCCESS
+    default:
+        return ">=140C", errType.SUCCESS
+    }
+}
+
+func ReadVendorID(devName string) (vendorId uint16, err int) {
+    var vId_0, vId_1 byte
+    var vId uint16
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        return
+    }
+    defer smbus.Close()
+
+    vId_0, err = smbus.ReadByte(devName, VENDOR_ID_BYTE0_REG)
+    vId_1, err = smbus.ReadByte(devName, VENDOR_ID_BYTE1_REG)
+	vId = uint16(vId_1) << 8 | uint16(vId_0)
+    return vId, err
 }
 
 func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
@@ -228,21 +260,38 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var data byte
 
     if devName == "DDR_VDD" {
-        marginReg = SWA_VOL_SETTING_REG
+        marginReg = SWA_VOL_SETTING_REG_TI
+        vmin = VOUT_1P1_MIN
+        vmax = VOUT_1P1_MAX
+        vStart = 800
+	} else if devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
+        marginReg = SWA_VOL_SETTING_REG_MPS
         vmin = VOUT_1P1_MIN
         vmax = VOUT_1P1_MAX
         vStart = 800
     } else if devName == "DDR_VDDQ" {
-        marginReg = SWC_VOL_SETTING_REG
+        marginReg = SWC_VOL_SETTING_REG_TI
         vmin = VOUT_1P1_MIN
         vmax = VOUT_1P1_MAX
         vStart = 800
-    } else {
-        marginReg = SWD_VOL_SETTING_REG
+	} else if devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
+        marginReg = SWC_VOL_SETTING_REG_MPS
+        vmin = VOUT_1P1_MIN
+        vmax = VOUT_1P1_MAX
+        vStart = 800
+    } else if devName == "DDR_VPP" {
+        marginReg = SWD_VOL_SETTING_REG_TI
         vmin = VOUT_1P8_MIN
         vmax = VOUT_1P8_MAX
         vStart = 1500
-    }
+    } else if devName == "DDR_VPP_0" || devName == "DDR_VPP_1" {
+        marginReg = SWD_VOL_SETTING_REG_MPS
+        vmin = VOUT_1P8_MIN
+        vmax = VOUT_1P8_MAX
+        vStart = 1500
+    } else {
+	    return errType.INVALID_PARAM
+	}
     tgtVoutMv = uint64(math.Round(float64(tgtVoutMv) / 5)) * 5
     if (tgtVoutMv < vmin || tgtVoutMv > vmax) {
         return errType.INVALID_PARAM
@@ -257,28 +306,30 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     }
     defer smbus.Close()
 
-    // unlock vendor specific region
-    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x0)
-    if err != errType.SUCCESS {
-        return
-    }
-    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x95)
-    if err != errType.SUCCESS {
-        return
-    }
-    err = smbus.WriteByte(devName, REG_LOCK_REG, 0x64)
-    if err != errType.SUCCESS {
-        return
-    }
+    if marginReg >= SWA_VOL_SETTING_REG_TI && marginReg <= SWD_VOL_SETTING_REG_TI {
+        // unlock vendor specific region
+        err = smbus.WriteByte(devName, REG_LOCK_REG, 0x0)
+        if err != errType.SUCCESS {
+            return
+        }
+        err = smbus.WriteByte(devName, REG_LOCK_REG, 0x95)
+        if err != errType.SUCCESS {
+            return
+        }
+        err = smbus.WriteByte(devName, REG_LOCK_REG, 0x64)
+        if err != errType.SUCCESS {
+            return
+        }
 
-    // register R72[5] changes the dependency of the output voltage from relying on
-    // R31/23/25/27 to R45/47/49/4B
-    data, err = smbus.ReadByte(devName, 0x72)
-    data |= 0x20
-    err = smbus.WriteByte(devName, 0x72, data)
-    if err != errType.SUCCESS {
-        return
-    }
+        // register R72[5] changes the dependency of the output voltage from relying on
+        // R21/23/25/27 to R45/47/49/4B
+        data, err = smbus.ReadByte(devName, 0x72)
+        data |= 0x20
+        err = smbus.WriteByte(devName, 0x72, data)
+        if err != errType.SUCCESS {
+            return
+        }
+	}
 
     // unlock DIMM vendor region
     err = smbus.WriteByte(devName, 0x37, 0x73)
@@ -294,19 +345,21 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
         return
     }
 
-    // set R5D[0] to 1, R5D[4] to 1
-    data, err = smbus.ReadByte(devName, 0x5d)
-    data |= 0x11
-    err = smbus.WriteByte(devName, 0x5d, data)
-    if err != errType.SUCCESS {
-        return
-    }
-    // set R5E[0] to 1, R5E[4] to 1
-    data, err = smbus.ReadByte(devName, 0x5e)
-    data |= 0x11
-    err = smbus.WriteByte(devName, 0x5e, data)
-    if err != errType.SUCCESS {
-        return
+    if marginReg >= SWA_VOL_SETTING_REG_TI && marginReg <= SWD_VOL_SETTING_REG_TI {
+        // set R5D[0] to 1, R5D[4] to 1
+        data, err = smbus.ReadByte(devName, 0x5d)
+        data |= 0x11
+        err = smbus.WriteByte(devName, 0x5d, data)
+        if err != errType.SUCCESS {
+            return
+        }
+        // set R5E[0] to 1, R5E[4] to 1
+        data, err = smbus.ReadByte(devName, 0x5e)
+        data |= 0x11
+        err = smbus.WriteByte(devName, 0x5e, data)
+        if err != errType.SUCCESS {
+            return
+        }
     }
     // set voltage
     err = smbus.WriteByte(devName, marginReg, byte(voutSetting))
@@ -316,8 +369,8 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     } else {
         cli.Println("i", "New vmargin enabled")
     }
-    if (marginReg == SWA_VOL_SETTING_REG) {
-        err = smbus.WriteByte(devName, SWB_VOL_SETTING_REG, byte(voutSetting))
+    if marginReg == SWA_VOL_SETTING_REG_TI || marginReg == SWA_VOL_SETTING_REG_MPS {
+        err = smbus.WriteByte(devName, marginReg + 2, byte(voutSetting))
         if err != errType.SUCCESS {
             cli.Println("e", "VMargin failed!")
             return
@@ -430,9 +483,9 @@ func SetVMargin(devName string, pct int) (err int) {
     //    return errType.INVALID_PARAM
     //}
 
-    if devName == "DDR_VDD" {
+    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
         vBase = 1100
-    } else if devName == "DDR_VDDQ" {
+    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
         vBase = 1100
     } else {
         vBase = 1800
@@ -544,15 +597,21 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    dig_signed, _, _ := ReadTemp(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig_signed, 0)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    if devName == "DDR_VDD" || devName == "DDR_VDDQ" || devName == "DDR_VPP" {
+        dig_signed, _, _ := ReadTempTI(devName)
+        outStrTemp = fmt.Sprintf(fmtDigFrac, dig_signed, 0)
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    } else {
+        tempStr, _ := ReadTemp(devName)
+        outStr = outStr + fmt.Sprintf(fmtStr, tempStr)
+    }
 
     status, _ := ReadStatus(devName)
     outStrTemp = fmt.Sprintf("0x%X", status)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
 
     cli.Println("i", outStr)
-
+    vid, _ := ReadVendorID(devName)
+    cli.Printf("i", "vid: 0x%04x\n", vid)
     return
 }

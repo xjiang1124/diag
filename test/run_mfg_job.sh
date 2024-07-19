@@ -269,6 +269,9 @@ if [[ $ret != 0 ]]; then
     echo "**************************************************"
     echo " Performing failure analysis with parser"
     echo "**************************************************"
+    if [[ $JOB_TYPE == "4C" ]]; then
+        JOB_TYPE="4C-L"
+    fi
 
     cd /psdiag/diag/mfg/scripts/fail_anal/
     mkdir scripts
