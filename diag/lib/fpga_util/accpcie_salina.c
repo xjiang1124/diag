@@ -112,8 +112,10 @@ void set_asic_target(char *asic_name)
         return;
     }
     reg_value = reg_value & ~J2C_ASIC_TYPE_MASK;
+    reg_value = reg_value & ~J2C_PRESCALE_MASK;
     reg_value |= asic_index << 8;
     reg_value |= J2C_WR_CONFIG_CMD;
+    reg_value |= J2C_PRESCALE_CONF;
     rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, reg_value);
     if ( rc ) {
         printf("failed to set j2c connfig\n");
@@ -671,12 +673,133 @@ FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
     return ftStatus;
 }
 
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+    DWORD cmd, response;
+    int wait_cnt = 1000;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW lower address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR1_REG, (address >> 32) & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW higher address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_DATA_REG, data);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW date register\n");
+        return -1;
+    }
+
+    cmd = J2C_OW_WRITE_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW command register\n");
+        return -1;
+    }
+    while ( wait_cnt != 0 ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_STAT_REG, &response);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW response register\n");
+            return -1;
+        }
+        if ( !(response & J2C_OW_CMD_PENDING) )
+            break;
+        wait_cnt--;
+        usleep(10);
+    }
+    if ( wait_cnt == 0 ) {
+        if ( verbosity )
+            printf("ERROR: OW write timeout\n");
+        ftStatus = FT_RESP_TIMEOUT;
+        return ftStatus;
+    }
+    if ( response & J2C_OW_RESP_ERROR ) {
+        if ( verbosity )
+            printf("ERROR: OW write with errors %x\n", response);
+        ftStatus = FT_WRITE_FAILURE;
+    }
+    return ftStatus;
+}
+
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+    DWORD cmd, response;
+    int wait_cnt = 1000;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW lower address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR1_REG, (address >> 32) & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW higher address\n");
+        return -1;
+    }
+
+    cmd = J2C_OW_READ_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW command register\n");
+        return -1;
+    }
+    while ( wait_cnt != 0 ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_STAT_REG, &response);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW response register\n");
+            return -1;
+        }
+        if ( !(response & J2C_OW_CMD_PENDING) )
+            break;
+        wait_cnt--;
+        usleep(10);
+    }
+    if ( wait_cnt == 0 ) {
+        if ( verbosity )
+            printf("ERROR: OW read timeout\n");
+        ftStatus = FT_RESP_TIMEOUT;
+        return ftStatus;
+    }
+    if ( response & J2C_OW_RESP_ERROR ) {
+        if ( verbosity )
+            printf("ERROR: OW write with errors %x\n", response);
+        ftStatus = FT_READ_FAILURE;
+    }
+    if ( response & J2C_OW_VALID ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_DATA_REG, data);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW date register\n");
+            return -1;
+        }
+    } else
+        ftStatus = FT_INVALID_RESP;
+    return ftStatus;
+}
+
 FT_STATUS jtag_wg(ULONGLONG address, DWORD data)
 {
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
 
-    rc = write32((ULONGLONG)address, 0, data);
+    rc = write32(0, (ULONGLONG)address, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to write register\n");
@@ -690,7 +813,7 @@ FT_STATUS jtag_rg(ULONGLONG address, DWORD *data)
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
 
-    rc = read32((ULONGLONG)address, 0, data);
+    rc = read32(0, (ULONGLONG)address, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to read register\n");
@@ -957,6 +1080,15 @@ FT_STATUS jtag_init(DWORD portNum)
         rc = fpga_j2c_init(portNum);
     }
     update_asic_target();
+    if ( portNum & 0x80 )
+        rc |= jtag_ow_init();
+    return rc;
+}
+
+FT_STATUS jtag_ow_init(void) {
+    FT_STATUS rc;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_INIT_REG, J2C_OW_INIT);
     return rc;
 }
 
