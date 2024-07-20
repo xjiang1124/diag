@@ -677,7 +677,7 @@ func main() {
 
     var found bool
     if *skuModePtr == false {
-        found, _ = eeprom.CardInListNew(pn)
+        found, _ = eeprom.CardInListNew(pn, false)
         if !found {
             rc := eepromTlbInit(uut, pn, *updatePtr, devName)
             if rc != 0 {
@@ -783,7 +783,7 @@ func main() {
                     identifier = pn
                 }
                 //cli.Printf("i", "skuMode: %t, identifier: %s, dpn: %s\n", *skuModePtr, identifier, dpn)
-                found, _ = eeprom.CardInListNew(identifier)
+                found, _ = eeprom.CardInListNew(identifier, *skuModePtr)
                 if found == true {
                     hwdev.EepromUpdateNew(devName, iInfo.Bus, iInfo.DevAddr, sn, pn, sku, mac, date, dpn, *skuModePtr)
                     misc.SleepInUSec(500000)
