@@ -872,6 +872,7 @@ func init() {
     psuListMap = make(map[string][]string)
     psuListMap["MTP"]          = mtpPsuList
     psuListMap["MTPS"]         = mtpPsuList
+    psuListMap["MTP_MATERA"]   = mtpPsuList
     psuListMap["NAPLES100"]    = nicPsuList
     psuListMap["NAPLES100IBM"] = nicPsuList
     psuListMap["NAPLES100HPE"] = nicPsuList

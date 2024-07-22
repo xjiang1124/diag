@@ -78,6 +78,8 @@ class nic_ctrl():
         self._fpga_updated = False
         self._gold_fpga_updated = False 
 
+        self._mtp_type = ""
+
     def nic_handle_init(self, handle, prompt):
         self._nic_handle = handle
         self._nic_prompt = prompt
@@ -3779,12 +3781,16 @@ class nic_ctrl():
         Adding delay after (1) misses the output of cpldutil.
 
         """
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return None
 
         reg_addr = 0x26
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = ""
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return None
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
         match = re.findall(pll_sta_reg_exp % reg_addr, self.nic_get_cmd_buf())
@@ -4253,13 +4259,15 @@ class nic_ctrl():
         return True
 
     def nic_read_cpld_via_smbus(self, reg_addr, read_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
+        if self._mtp_type in (MTP_TYPE.CAPRI, MTP_TYPE.ELBA, MTP_TYPE.TURBO_ELBA):
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
 
         cmd = MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
+
         match = re.findall(r"data=(0x[0-9a-fA-F]+)", self.nic_get_cmd_buf())
         if not match:
             return False
@@ -4268,9 +4276,10 @@ class nic_ctrl():
         return True
 
     def nic_write_cpld_via_smbus(self, reg_addr, write_data):
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd):
-            return False
+        if self._mtp_type in (MTP_TYPE.CAPRI, MTP_TYPE.ELBA, MTP_TYPE.TURBO_ELBA):
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
 
         cmd = MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
@@ -5599,6 +5608,34 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.NIC_I2C_DETECT_DELAY):
             return False
 
+        return True
+
+    @nic_console_test_section
+    def nic_detect_transceiver_presence(self, port):
+        if port not in ("0","1","2"):
+            self.nic_set_err_msg("Script error: invalid port specified")
+            return False
+
+        nic_cmd_list = list()
+        nic_cmd_list.append("chmod +x {:s}/diag/scripts/eeprom_sn.sh".format("/data/"))
+        nic_cmd_list.append("{:s}/diag/scripts/eeprom_sn.sh -d -b {:s}".format("/data/", port))
+        for nic_cmd in nic_cmd_list:
+            self._nic_handle.sendline(nic_cmd)
+            idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.DIAG_PARA_TEST_TIMEOUT)
+            if idx < 0:
+                self.nic_set_cmd_buf(self._nic_handle.before)
+                self.nic_set_err_msg("Can't read detect transceiver")
+                return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            self.nic_set_err_msg("No output when reading loopback transceiver detect signal")
+            return False
+        self.nic_set_cmd_buf(cmd_buf)
+
+        if "no device found" in cmd_buf:
+            return False
         return True
 
     @nic_console_test_section

@@ -114,6 +114,10 @@ class mtp_ctrl():
         self._test_log_folder = None  # relative path to log folder
         self._open_file_handles = []
 
+    def _propogate_properties_to_nic(self, slot):
+        if self._nic_ctrl_list[slot]:
+            self._nic_ctrl_list[slot]._mtp_type = self._mtp_type
+
     def cli_log_inf(self, msg, level=0):
         if msg is None:
             msg = ""
@@ -990,6 +994,7 @@ class mtp_ctrl():
                 prompt = "{:s}@NIC-{:02d}:".format(userid, slot+1) + mtp_prompt
                 if fpo:
                     self._nic_ctrl_list[slot] = nic_ctrl(slot, self._diag_nic_filep_list[slot])
+                    self._propogate_properties_to_nic(slot)
                 self._nic_ctrl_list[slot].nic_handle_init(handle, prompt)
                 para_cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DSHELL_PATH)
                 if not self.mtp_mgmt_exec_cmd_para(slot, para_cmd):
@@ -1284,7 +1289,7 @@ class mtp_ctrl():
     def mtp_nic_stop_test(self, slot):
         cmd_buf = self._nic_ctrl_list[slot]._cmd_buf  # save failure buffer
         self.mtp_nic_send_ctrl_c(slot)
-        self.mtp_mgmt_exec_cmd_para(slot, MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
         self._nic_ctrl_list[slot]._cmd_buf = cmd_buf  # restore failure buffer
 
     def mtp_mgmt_set_date(self, stage=None):
@@ -1645,7 +1650,7 @@ class mtp_ctrl():
             psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
-                if not MFG_BYPASS_PSU_CHECK:
+                if not MFG_BYPASS_PSU_CHECK and self._mtp_type != MTP_TYPE.MATERA:
                     rc = False
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
@@ -1946,33 +1951,52 @@ class mtp_ctrl():
 
     def mtp_inlet_temp_test(self, stage=None, sanity=False):
         rc = True
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP get inlet temperature failed")
-            return False
+        inlet_1, inlet_2 = None, None
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("{:s} command failed".format(cmd))
+                return False
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
 
-        # Current Fan Speed display
-        ret = re.findall(r'NAME\s+FAN\d-Inlet\s+|FAN\d-Inlet\s+|FAN\d-Outlet\s', self.mtp_get_cmd_buf())
-        if not ret:
-            self.cli_log_err("MTP get fan name failed")
-            return False
-        if not sanity:
-            self.cli_log_inf("".join(ret).strip('\n'))
-        ret = re.search(r'FAN(\s+\d{3,}){6}(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
-        if not ret:
-            self.cli_log_err("MTP get fan speed failed")
-            return False
-        if not sanity:
-            self.cli_log_inf(ret.group(0))
+            # Current Fan Speed display
+            ret = re.findall(r'NAME\s+FAN\d-Inlet\s+|FAN\d-Inlet\s+|FAN\d-Outlet\s', self.mtp_get_cmd_buf())
+            if not ret:
+                self.cli_log_err("MTP get fan name failed")
+                return False
+            if not sanity:
+                self.cli_log_inf("".join(ret).strip('\n'))
+            ret = re.search(r'FAN(\s+\d{3,}){6}(\s+\d{2,}){2}', self.mtp_get_cmd_buf())
+            if not ret:
+                self.cli_log_err("MTP get fan speed failed")
+                return False
+            if not sanity:
+                self.cli_log_inf(ret.group(0))
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
-            # validate the readings
-            inlet_1 = float(match.group(3))
-            inlet_2 = float(match.group(4))
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+            if match:
+                # validate the readings
+                inlet_1 = float(match.group(3))
+                inlet_2 = float(match.group(4))
+        if inlet_1 and inlet_2:
             inlet_1_rs = True
             inlet_2_rs = True
             max_temp = 70
@@ -2305,18 +2329,40 @@ class mtp_ctrl():
         return True
 
     def mtp_inlet_sensor_test(self):
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
-            return False
+        inlet_1, inlet_2 = None, None
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return False
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP Inlet sensor test failed when execute command {:s}".format(cmd))
+                return False
+
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
             # validate the readings
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
+
+        if inlet_1 and inlet_2:
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
@@ -2333,19 +2379,40 @@ class mtp_ctrl():
             return False
 
     def mtp_get_inlet_temp(self, low_threshold, high_threshold):
-        cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
-            self.cli_log_err("MTP get inlet temperature failed")
-            return 0.00
+        inlet_1, inlet_2 = None, None
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "devmgr_v2 status -d TSENSOR_IOBL"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
+            cmd_buf_1 = self.mtp_get_cmd_buf()
+            cmd = "devmgr_v2 status -d TSENSOR_IOBR"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
+            cmd_buf_2 = self.mtp_get_cmd_buf()
+            match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            inlet_1 = float(match_1.group(1))
+            inlet_2 = float(match_2.group(1))
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_FAN_STATUS_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get inlet temperature failed")
+                return 0.00
 
-        # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
-        # FAN                 23.50          25.50          21.75          21.75
-        match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
-        if match:
+            # [Device name]      [Local]       [Outlet]       [Inlet 1]      [Inlet 2]
+            # FAN                 23.50          25.50          21.75          21.75
+            match = re.search(r"FAN +(-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+) + (-?\d+\.\d+)", self.mtp_get_cmd_buf())
+            if match:
+                inlet_1 = float(match.group(3))
+                inlet_2 = float(match.group(4))
+
+        if inlet_1 and inlet_2:
             # validate the readings
-            inlet_1 = float(match.group(3))
-            inlet_2 = float(match.group(4))
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
@@ -3973,14 +4040,13 @@ class mtp_ctrl():
             return False
         return True
 
-    def mtp_mgmt_killall_tclsh_picocom(self):
-        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
-            return False
+    @parallelize.parallel_nic_using_console
+    def mtp_mgmt_killall_tclsh_picocom(self, slot):
+        self.mtp_nic_stop_tclsh(slot)
+
         cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
-        if not self.mtp_mgmt_exec_cmd(cmd):
-            self.cli_log_err("Execute command {:s} failed".format(cmd))
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
             return False
         return True
 
@@ -4698,7 +4764,7 @@ class mtp_ctrl():
                 self.cli_log_err("caught stop_on_err in {:s}".format(test), level=0)
                 break
 
-        self.mtp_mgmt_killall_tclsh_picocom()
+        self.mtp_mgmt_killall_tclsh_picocom(nic_list)
 
         self.cli_log_inf("Init NIC Diag Environment complete\n", level = 0)
         return fail_nic_list
@@ -5984,7 +6050,7 @@ class mtp_ctrl():
             return False
 
         if vdd_avs_cmd:
-            self.mtp_mgmt_set_nic_avs_pre(slot)
+            self.mtp_nic_stop_tclsh(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(vdd_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(vdd_avs_cmd))
                 self.mtp_dump_nic_err_msg(slot)
@@ -5994,7 +6060,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "SET VDD AVS FAILED")
                 return False
         if arm_avs_cmd:
-            self.mtp_mgmt_set_nic_avs_pre(slot)
+            self.mtp_nic_stop_tclsh(slot)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(arm_avs_cmd, timeout=MTP_Const.NIC_AVS_SET_DELAY):
                 self.cli_log_slot_err(slot, "Timed out: Failed to execute command {:s}".format(arm_avs_cmd))
                 self.mtp_dump_nic_err_msg(slot)
@@ -6007,8 +6073,11 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_mgmt_set_nic_avs_pre(self, slot):
-        self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
+    def mtp_nic_stop_tclsh(self, slot):
+        if self._mtp_type == MTP_TYPE.MATERA:
+            self._nic_ctrl_list[slot].mtp_exec_cmd("{:s}diag/util/jtag_accpcie_salina clr {:d}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH, slot+1))
+        else:
+            self._nic_ctrl_list[slot].mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT, timeout=MTP_Const.OS_CMD_DELAY)
 
     def mtp_mgmt_set_nic_avs_post(self, slot):
         self.mtp_nic_send_ctrl_c(slot)  # kill any hung tclsh in this same session
@@ -6020,11 +6089,20 @@ class mtp_ctrl():
         # clear reg 0x50 after reading
         reg_addr = 0x50
         write_data = 0
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = ""
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
-        cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = ""
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+        cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -6112,7 +6190,11 @@ class mtp_ctrl():
             Dump registers 0xa, 0x12, 0x24
         """
         for reg_addr in [0xa, 0x12, 0x24]:
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;" + MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
+            if self._mtp_type == MTP_TYPE.MATERA:
+                cmd = ""
+            else:
+                cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+            cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, slot+1)
             if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
                 # try again one more time
                 time.sleep(1)
@@ -6155,8 +6237,7 @@ class mtp_ctrl():
             # needs to be killed from separate session
             if not self.mtp_mgmt_exec_cmd_para(slot, "## killall run_l1.sh"):  # notify in log
                 pass
-            if not self.mtp_mgmt_exec_cmd("killall run_l1.sh"):  # use mtp session to kill it
-                pass
+            self.mtp_nic_stop_tclsh(slot)  # use mtp session to kill it
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
@@ -6342,7 +6423,7 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")
             self.mtp_dump_nic_err_msg(slot)
-            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            self.mtp_nic_stop_tclsh(slot)
             return False
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
@@ -6369,7 +6450,7 @@ class mtp_ctrl():
 
         self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
         self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
-        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
 
         # Use this dump to check ECC errors as well
         ecc_regs = re.findall(r"Reg 0x(.*); value: 0x(.*)", cmd_buf)
@@ -6398,10 +6479,10 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=skip_vrm_check):
             self.cli_log_slot_err(slot, "Unable to dump NIC sts")
             self.mtp_dump_nic_err_msg(slot)
-            self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+            self.mtp_nic_stop_tclsh(slot)
             return False
 
-        self.mtp_mgmt_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
+        self.mtp_nic_stop_tclsh(slot)
 
         return True
 
@@ -6812,7 +6893,7 @@ class mtp_ctrl():
     @parallelize.parallel_nic_using_console # should be j2c really but this test in parallel is not tested on turbo MTP
     def mtp_nic_l1_esecure_prog(self, slot):
         self.mtp_single_j2c_lock()
-        self.mtp_mgmt_exec_cmd_para(slot, "killall tclsh")
+        self.mtp_nic_stop_tclsh(slot)
 
         if not self._nic_ctrl_list[slot].nic_l1_esecure_prog():
             self.mtp_single_j2c_unlock()

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 # The "cryptography" library must be installed:
 # sudo pip install cryptography

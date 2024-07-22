@@ -704,7 +704,7 @@ class nic_con:
         try:
             cmd = self.fmt_con_cmd.format(slot)
             session.sendline(cmd)
-            session.expect("Terminal ready")
+            session.expect(["Terminal ready", "buffer cleared"])
             session.sendline("\r")
             session.expect(expstr)
         except pexpect.TIMEOUT:
