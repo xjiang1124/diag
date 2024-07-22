@@ -7,6 +7,7 @@ int asic_index = 0;
 
 ULONGLONG bar_addr = 0x10020300000;
 FT_HANDLE ftHandle = 0;
+int SPI_INIT_RETRY_CNT = 3;
 
 FT_STATUS (*read32)(ULONGLONG inst_offset, DWORD reg, DWORD *data);
 FT_STATUS (*write32)(ULONGLONG inst_offset, DWORD reg, ULONG value);
@@ -314,7 +315,6 @@ FT_STATUS spi_rd(ULONGLONG inst_offset, DWORD address, DWORD * data)
     queue_clear();
     spi_csdis();
 
-    usleep(50000);
     //send WRITE command
     OutputBuffer[dwNumBytesToSend++] = MSB_FALLING_EDGE_CLOCK_BIT_OUT;
     OutputBuffer[dwNumBytesToSend++] = 7;
@@ -339,12 +339,11 @@ FT_STATUS spi_rd(ULONGLONG inst_offset, DWORD address, DWORD * data)
     spi_csena();
     ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
     dwNumBytesToSend = 0;
-    usleep(50000);
     ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
 
     if ( dwNumBytesSent != 4 ) {
         printf("SPI queue %d bytes, retry\n", dwNumBytesSent);
-        usleep(50000);
+        usleep(1500);
         ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
         if ( dwNumBytesSent != 4 ) {
             printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
@@ -1057,6 +1056,7 @@ FT_STATUS jtag_init(DWORD portNum)
     time_t rawtime;
     struct tm *timeinfo;
     FT_STATUS rc;
+    int i;
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
@@ -1072,7 +1072,11 @@ FT_STATUS jtag_init(DWORD portNum)
         printf("API is using dongle implementation to access asic j2c port\n");
         read32 = spi_rd;
         write32 = spi_wr;
-        rc = spi_init((portNum >> 8) & 0x1);
+        for ( i = 0; i < SPI_INIT_RETRY_CNT; i++ ) {
+            rc = spi_init((portNum >> 8) & 0x1);
+            if ( rc == TRUE )
+               break;
+        }
     } else {
         printf("API is using fpga implementation to access asic j2c port\n");
         read32 = read_fpga_mem32;
@@ -1532,6 +1536,11 @@ void spi_csdis()
 }
 
 /* Following routines are dummy function to be compatible with asic lib compilation */
+FT_STATUS spi_reg_init(void)
+{
+    return FT_OK;
+}
+
 void ftHandle_close()
 {
     return;
