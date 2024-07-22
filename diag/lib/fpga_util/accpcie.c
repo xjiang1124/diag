@@ -545,6 +545,31 @@ void show_asic_target(char *asic_name)
     return;
 }
 
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data)
+{
+    DWORD dummy;
+
+    dummy = (DWORD)address;
+    dummy = size;
+    dummy = mode;
+    *data = dummy;
+
+    return FT_OK;
+}
+
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
+{
+    DWORD dummy;
+
+    dummy = (DWORD)address;
+    dummy = size;
+    dummy = mode;
+    dummy = data;
+    mode = dummy;
+
+    return FT_OK;
+}
+
 void ftHandle_close()
 {
     return;

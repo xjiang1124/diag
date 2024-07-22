@@ -7,6 +7,7 @@ int asic_index = 0;
 
 ULONGLONG bar_addr = 0x10020300000;
 FT_HANDLE ftHandle = 0;
+int SPI_INIT_RETRY_CNT = 3;
 
 FT_STATUS (*read32)(ULONGLONG inst_offset, DWORD reg, DWORD *data);
 FT_STATUS (*write32)(ULONGLONG inst_offset, DWORD reg, ULONG value);
@@ -112,8 +113,10 @@ void set_asic_target(char *asic_name)
         return;
     }
     reg_value = reg_value & ~J2C_ASIC_TYPE_MASK;
+    reg_value = reg_value & ~J2C_PRESCALE_MASK;
     reg_value |= asic_index << 8;
     reg_value |= J2C_WR_CONFIG_CMD;
+    reg_value |= J2C_PRESCALE_CONF;
     rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, reg_value);
     if ( rc ) {
         printf("failed to set j2c connfig\n");
@@ -312,7 +315,6 @@ FT_STATUS spi_rd(ULONGLONG inst_offset, DWORD address, DWORD * data)
     queue_clear();
     spi_csdis();
 
-    usleep(50000);
     //send WRITE command
     OutputBuffer[dwNumBytesToSend++] = MSB_FALLING_EDGE_CLOCK_BIT_OUT;
     OutputBuffer[dwNumBytesToSend++] = 7;
@@ -337,12 +339,11 @@ FT_STATUS spi_rd(ULONGLONG inst_offset, DWORD address, DWORD * data)
     spi_csena();
     ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
     dwNumBytesToSend = 0;
-    usleep(50000);
     ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
 
     if ( dwNumBytesSent != 4 ) {
         printf("SPI queue %d bytes, retry\n", dwNumBytesSent);
-        usleep(50000);
+        usleep(1500);
         ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
         if ( dwNumBytesSent != 4 ) {
             printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
@@ -671,12 +672,133 @@ FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
     return ftStatus;
 }
 
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+    DWORD cmd, response;
+    int wait_cnt = 1000;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW lower address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR1_REG, (address >> 32) & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW higher address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_DATA_REG, data);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW date register\n");
+        return -1;
+    }
+
+    cmd = J2C_OW_WRITE_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW command register\n");
+        return -1;
+    }
+    while ( wait_cnt != 0 ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_STAT_REG, &response);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW response register\n");
+            return -1;
+        }
+        if ( !(response & J2C_OW_CMD_PENDING) )
+            break;
+        wait_cnt--;
+        usleep(10);
+    }
+    if ( wait_cnt == 0 ) {
+        if ( verbosity )
+            printf("ERROR: OW write timeout\n");
+        ftStatus = FT_RESP_TIMEOUT;
+        return ftStatus;
+    }
+    if ( response & J2C_OW_RESP_ERROR ) {
+        if ( verbosity )
+            printf("ERROR: OW write with errors %x\n", response);
+        ftStatus = FT_WRITE_FAILURE;
+    }
+    return ftStatus;
+}
+
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data)
+{
+    FT_STATUS ftStatus = FT_OK;
+    int rc = 0;
+    DWORD cmd, response;
+    int wait_cnt = 1000;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW lower address\n");
+        return -1;
+    }
+    rc = write32((ULONGLONG)ftHandle, OW_0_ADDR1_REG, (address >> 32) & 0xffffffff);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW higher address\n");
+        return -1;
+    }
+
+    cmd = J2C_OW_READ_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
+    if ( rc ) {
+        if ( verbosity )
+            printf("ERROR: writing OW command register\n");
+        return -1;
+    }
+    while ( wait_cnt != 0 ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_STAT_REG, &response);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW response register\n");
+            return -1;
+        }
+        if ( !(response & J2C_OW_CMD_PENDING) )
+            break;
+        wait_cnt--;
+        usleep(10);
+    }
+    if ( wait_cnt == 0 ) {
+        if ( verbosity )
+            printf("ERROR: OW read timeout\n");
+        ftStatus = FT_RESP_TIMEOUT;
+        return ftStatus;
+    }
+    if ( response & J2C_OW_RESP_ERROR ) {
+        if ( verbosity )
+            printf("ERROR: OW write with errors %x\n", response);
+        ftStatus = FT_READ_FAILURE;
+    }
+    if ( response & J2C_OW_VALID ) {
+        rc = read32((ULONGLONG)ftHandle, OW_0_DATA_REG, data);
+        if ( rc ) {
+            if ( verbosity )
+                printf("ERROR: reading OW date register\n");
+            return -1;
+        }
+    } else
+        ftStatus = FT_INVALID_RESP;
+    return ftStatus;
+}
+
 FT_STATUS jtag_wg(ULONGLONG address, DWORD data)
 {
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
 
-    rc = write32((ULONGLONG)address, 0, data);
+    rc = write32(0, (ULONGLONG)address, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to write register\n");
@@ -690,7 +812,7 @@ FT_STATUS jtag_rg(ULONGLONG address, DWORD *data)
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
 
-    rc = read32((ULONGLONG)address, 0, data);
+    rc = read32(0, (ULONGLONG)address, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to read register\n");
@@ -934,6 +1056,7 @@ FT_STATUS jtag_init(DWORD portNum)
     time_t rawtime;
     struct tm *timeinfo;
     FT_STATUS rc;
+    int i;
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
@@ -949,7 +1072,11 @@ FT_STATUS jtag_init(DWORD portNum)
         printf("API is using dongle implementation to access asic j2c port\n");
         read32 = spi_rd;
         write32 = spi_wr;
-        rc = spi_init((portNum >> 8) & 0x1);
+        for ( i = 0; i < SPI_INIT_RETRY_CNT; i++ ) {
+            rc = spi_init((portNum >> 8) & 0x1);
+            if ( rc == FT_OK )
+               break;
+        }
     } else {
         printf("API is using fpga implementation to access asic j2c port\n");
         read32 = read_fpga_mem32;
@@ -957,6 +1084,15 @@ FT_STATUS jtag_init(DWORD portNum)
         rc = fpga_j2c_init(portNum);
     }
     update_asic_target();
+    if ( portNum & 0x80 )
+        rc |= jtag_ow_init();
+    return rc;
+}
+
+FT_STATUS jtag_ow_init(void) {
+    FT_STATUS rc;
+
+    rc = write32((ULONGLONG)ftHandle, OW_0_INIT_REG, J2C_OW_INIT);
     return rc;
 }
 
@@ -1121,7 +1257,7 @@ FT_STATUS spi_init(DWORD portNum)
     if ( bCommandEchod == FALSE ) {
         printf("received %d char echoed for 0xAA command\n", dwNumBytesRead);
         printf("fail to synchronize MPSSE with command '0xAA' ");
-        return FALSE;
+        return FT_DEVICE_NOT_OPENED;
     }
 
     OutputBuffer[dwNumBytesToSend++] = 0xAB;
@@ -1153,7 +1289,7 @@ FT_STATUS spi_init(DWORD portNum)
     if ( bCommandEchod == FALSE ) {
         printf("received %d char echoed for 0xAB command\n", dwNumBytesRead);
         printf("fail to synchronize MPSSE with command '0xAB' \n");
-        return FALSE;
+        return FT_DEVICE_NOT_OPENED;
     }
 /*
     ftStatus = sendJtagCommand(ftHandle, dis_clock, sizeof(dis_clock));
@@ -1400,6 +1536,11 @@ void spi_csdis()
 }
 
 /* Following routines are dummy function to be compatible with asic lib compilation */
+FT_STATUS spi_reg_init(void)
+{
+    return FT_OK;
+}
+
 void ftHandle_close()
 {
     return;

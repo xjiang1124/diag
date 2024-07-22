@@ -57,6 +57,8 @@ enum {
 #define J2C_RESET_CMD      0x2000000
 
 #define J2C_ASIC_TYPE_MASK   0x00000F00
+#define J2C_PRESCALE_MASK    0x00FF0000
+#define J2C_PRESCALE_CONF    0x00030000
 
 #define J2C_RESP_BIT         0x00180000
 #define J2C_RLAST_ERR_BIT    0x00040000
@@ -67,6 +69,13 @@ enum {
 #define J2C_TXFIFO_FULL      0x00000004
 #define J2C_TXFIFO_HEMPTY    0x00000002
 #define J2C_SEM_BIT          0x00000001
+
+#define J2C_OW_READ_CMD      0x00000000
+#define J2C_OW_WRITE_CMD     0x00000010
+#define J2C_OW_CMD_PENDING   0x00000020
+#define J2C_OW_RESP_ERROR    0x00000007
+#define J2C_OW_VALID         0x00000080
+#define J2C_OW_INIT          0x00000100
 
 #define J2C_0_OFFSET      0xA00
 #define J2C_0_CMD_REG     0x000
@@ -123,6 +132,9 @@ extern FT_HANDLE ftHandle;
 ULONGLONG xtoi(char *hexstring);
 ULONGLONG show_bar(void);
 FT_STATUS jtag_init(DWORD portNum);
+FT_STATUS jtag_ow_init(void);
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data);
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data);
 FT_STATUS fpga_j2c_init(DWORD portNum);
 FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag);
 FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag);
