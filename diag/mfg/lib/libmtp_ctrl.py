@@ -4302,16 +4302,16 @@ class mtp_ctrl():
             # self.cli_log_err("No NICs passed")
             return fail_nic_list
 
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         # first slot will be the "main" slot to issue the commands on.
         slot_main = nic_list[0]
+        slot_main_num = slot_main + 1
 
         cmd = "export MTP_REV=REV_04"
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
 
-        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}".format(nic_list_param)
+        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}".format(slot_main_num)
         if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
             self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
             return nic_list[:]
