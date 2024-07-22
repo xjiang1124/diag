@@ -1074,7 +1074,7 @@ FT_STATUS jtag_init(DWORD portNum)
         write32 = spi_wr;
         for ( i = 0; i < SPI_INIT_RETRY_CNT; i++ ) {
             rc = spi_init((portNum >> 8) & 0x1);
-            if ( rc == TRUE )
+            if ( rc == FT_OK )
                break;
         }
     } else {
@@ -1257,7 +1257,7 @@ FT_STATUS spi_init(DWORD portNum)
     if ( bCommandEchod == FALSE ) {
         printf("received %d char echoed for 0xAA command\n", dwNumBytesRead);
         printf("fail to synchronize MPSSE with command '0xAA' ");
-        return FALSE;
+        return FT_DEVICE_NOT_OPENED;
     }
 
     OutputBuffer[dwNumBytesToSend++] = 0xAB;
@@ -1289,7 +1289,7 @@ FT_STATUS spi_init(DWORD portNum)
     if ( bCommandEchod == FALSE ) {
         printf("received %d char echoed for 0xAB command\n", dwNumBytesRead);
         printf("fail to synchronize MPSSE with command '0xAB' \n");
-        return FALSE;
+        return FT_DEVICE_NOT_OPENED;
     }
 /*
     ftStatus = sendJtagCommand(ftHandle, dis_clock, sizeof(dis_clock));
