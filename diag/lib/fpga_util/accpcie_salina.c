@@ -339,11 +339,12 @@ FT_STATUS spi_rd(ULONGLONG inst_offset, DWORD address, DWORD * data)
     spi_csena();
     ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
     dwNumBytesToSend = 0;
-    ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
 
+    usleep(1500);
+    ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
     if ( dwNumBytesSent != 4 ) {
         printf("SPI queue %d bytes, retry\n", dwNumBytesSent);
-        usleep(1500);
+        usleep(500);
         ftStatus = FT_GetQueueStatus(ftHandle, &dwNumBytesSent);
         if ( dwNumBytesSent != 4 ) {
             printf("SPI queue %d bytes, failed\n", dwNumBytesSent);
@@ -672,7 +673,7 @@ FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
     return ftStatus;
 }
 
-FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data, DWORD flag)
 {
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
@@ -698,7 +699,7 @@ FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
         return -1;
     }
 
-    cmd = J2C_OW_WRITE_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    cmd = J2C_OW_WRITE_CMD | ((mode & 0x1) << 3) | (size & 0x3) | ((flag & J2C_OW_SECURE_MASK) << J2C_OW_SECURE_SHIFT);
     rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
@@ -731,7 +732,7 @@ FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
     return ftStatus;
 }
 
-FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data)
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data, DWORD flag)
 {
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
@@ -751,7 +752,7 @@ FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data)
         return -1;
     }
 
-    cmd = J2C_OW_READ_CMD | ((mode & 0x1) << 3) | (size & 0x3);
+    cmd = J2C_OW_READ_CMD | ((mode & 0x1) << 3) | (size & 0x3) | ((flag & J2C_OW_SECURE_MASK) << J2C_OW_SECURE_SHIFT);
     rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
