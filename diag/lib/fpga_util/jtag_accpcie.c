@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
     DWORD data = 0xdeadbeef;
-    DWORD port = 0, mode, size;
+    DWORD port = 0, mode, size, flag;
     ULONGLONG address;
     char  acc_mode[20];
     char asic_name[20];
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         jtag_wg(address, data);
         jtag_close();
     } else if ( !strcmp("rdow", acc_mode) ) {
-        if ( argc < 6 ) {
+        if ( argc < 7 ) {
             printf("incorrect command syntax, missing parameters\n");
             return 0;
         }
@@ -103,11 +103,12 @@ int main(int argc, char *argv[])
         address = (ULONGLONG)xtoi(argv[3]);
         mode = (DWORD)xtoi(argv[4]);
         size = (DWORD)xtoi(argv[5]);
-        jtag_ow_read(mode, size, address, &data);
+        flag = (DWORD)xtoi(argv[6]);    
+        jtag_ow_read(mode, size, address, &data, flag);
         printf("DATA READ = %x\n", data);
         jtag_close();
     } else if ( !strcmp("wrow", acc_mode) ) {
-        if ( argc < 5 ) {
+        if ( argc < 8 ) {
             printf("incorrect command syntax, missing parameters\n");
             return 0;
         }
@@ -117,7 +118,8 @@ int main(int argc, char *argv[])
         mode = (DWORD)xtoi(argv[4]);
         size = (DWORD)xtoi(argv[5]);
         data = (DWORD)xtoi(argv[6]);    
-        jtag_ow_write(mode, size, address, data);
+        flag = (DWORD)xtoi(argv[7]);    
+        jtag_ow_write(mode, size, address, data, flag);
         jtag_close();
     } else if ( !strcmp("set_asic", acc_mode) ) {
         if ( argc < 4 ) {

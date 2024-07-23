@@ -545,7 +545,7 @@ void show_asic_target(char *asic_name)
     return;
 }
 
-FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data)
+FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data, DWORD flag)
 {
     DWORD dummy;
 
@@ -557,7 +557,7 @@ FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data)
     return FT_OK;
 }
 
-FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data)
+FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data, DWORD flag)
 {
     DWORD dummy;
 
