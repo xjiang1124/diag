@@ -1082,7 +1082,7 @@ FT_STATUS jtag_init(DWORD portNum)
         printf("API is using fpga implementation to access asic j2c port\n");
         read32 = read_fpga_mem32;
         write32 = write_fpga_mem32;
-        rc = fpga_j2c_init(portNum);
+        rc = fpga_j2c_init(portNum & 0x7F);
     }
     update_asic_target();
     if ( portNum & 0x80 )
