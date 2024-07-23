@@ -77,7 +77,7 @@ enum {
 #define J2C_OW_VALID         0x00000080
 #define J2C_OW_INIT          0x00000100
 
-#define J2C_OW_SECURE_MASK   0x00000004
+#define J2C_OW_SECURE_MASK   0x00000001
 #define J2C_OW_SECURE_SHIFT  2
 
 #define J2C_0_OFFSET      0xA00
