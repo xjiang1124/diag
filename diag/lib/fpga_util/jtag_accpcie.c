@@ -164,16 +164,14 @@ int main(int argc, char *argv[])
         double cpu_time_used;
         start = clock();
 
+        ULONGLONG ite;
+
         jtag_init(port);
         for (ULONGLONG i = 0; i < loopcount; i++) {
+            ite = i;
+
             // Write to registers
             jtag_wr(0, SCRATCH_REG1, i, 2);
-            jtag_wr(0, SCRATCH_REG2, loopcount-i, 2);
-
-            // manually inject a wrong value
-            // if (i == 20001){
-            //     jtag_wr(0, SCRATCH_REG2, 0, 2);
-            // }
 
             // Read back from registers
             jtag_rd(0, SCRATCH_REG1, &data, 2);
@@ -182,6 +180,16 @@ int main(int argc, char *argv[])
                 jtag_close();
                 return -1;
             }
+
+            if (i%10000 == 0) {
+                printf("%.010lld\n", i);
+            }
+        }
+        printf("REG: 0x%llx; ite: %lld\n", SCRATCH_REG1, ite);
+
+        for (ULONGLONG i = 0; i < loopcount; i++) {
+            // Write to registers
+            jtag_wr(0, SCRATCH_REG2, loopcount-i, 2);
 
             jtag_rd(0, SCRATCH_REG2, &data, 2);
             if (data != loopcount - i) {
@@ -194,6 +202,8 @@ int main(int argc, char *argv[])
                 printf("%.010lld\n", i);
             }
         }
+        printf("REG: 0x%llx; ite: %lld\n", SCRATCH_REG2, ite);
+
         jtag_close();
 
         end = clock();
