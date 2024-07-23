@@ -29,6 +29,8 @@ const (
 
     ENABLE = 1
     DISABLE = 0
+
+    STR_MAX_SIZE = 20 // 20 bytes
 )
 
 //========================================================
@@ -417,4 +419,109 @@ func GenRandByteSlice(numBytes int) (data []byte) {
 func SwapUint16(a uint16) (b uint16) {
     b = ( uint16(a >> 8) | uint16(a << 8) )
     return
+}
+
+/*
+    Converts a character to its 6-bit ASCII representation.
+ */
+func CharTo6BitAscii(c byte) (val int, err int) {
+	if c >= 0x20 && c <= 0x5F {
+		return int(c - 0x20), errType.SUCCESS
+	} else {
+        fmt.Printf("character '%c' is outside the printable ASCII range (0x20 to 0x5F) and does not have a valid 6-bit ASCII representation\n", c)
+		return -1, errType.INVALID_PARAM
+	}
+}
+
+/*
+    Packs a string into a 6-bit ASCII representation.
+ */
+ 
+func StrToAsc6(input string) (output []byte, err int) {
+	output = make([]byte, STR_MAX_SIZE)
+	j := 0
+	var bitCount uint32  = 0
+	var currentByte byte
+
+    if len(input) > STR_MAX_SIZE*8/6 {
+        fmt.Printf("Error: Input string exceeds maximum length of 20 bytes.\n")
+        return nil, errType.INVALID_PARAM
+    }
+
+
+	for i := 0; i < len(input); i++ {
+		asciiVal, err := CharTo6BitAscii(input[i])
+		if err != errType.SUCCESS {
+			return nil, errType.FAIL
+		}
+		currentByte |= byte(asciiVal << bitCount)
+		bitCount += 6
+
+		// Update current byte if it is full (8 bits)
+		if bitCount >= 8 {
+			output[j] = currentByte
+			j++
+			bitCount -= 8
+			currentByte = byte(asciiVal >> (6 - bitCount))
+		}
+	}
+
+	// Flush the last byte if there are remaining bits
+	if bitCount > 0 && j < STR_MAX_SIZE {
+		output[j] = currentByte
+	}
+
+	return output, errType.SUCCESS
+}
+
+
+/*
+    Converts a 6-bit ASCII value to its character representation
+ */
+func SixBitAsciiToChar(val int) (output int, err int) {
+	if val >= 0 && val <= 0x3F {
+		return val + 0x20, errType.SUCCESS
+	} else {
+        fmt.Printf("6-bit value %d is outside the valid range (0 to 0x3F)\n", val)
+		return -1, errType.INVALID_PARAM
+	}
+}
+
+/*
+    Unpacks a byte array from a 6-bit ASCII representation back into a string.
+ */
+func Asc6ToStr(input []byte) (str string, err int) {
+	output := make([]byte, 0, len(input)*8/6)
+	var bitCount uint32 = 0
+	var currentVal int
+
+    if len(input) > STR_MAX_SIZE {        
+        fmt.Printf("Error: Input byte array exceeds maximum length of 20 bytes.\n")
+        return "", errType.INVALID_PARAM
+    }
+
+	for i := 0; i < len(input); i++ {
+		currentVal |= int(input[i]) << bitCount
+		bitCount += 8
+
+		for bitCount >= 6 {
+			charVal := currentVal & 0x3F
+            
+			char, err := SixBitAsciiToChar(charVal)
+			if err != errType.SUCCESS {
+                fmt.Printf("Error at byte %d\n", i)
+				return "", errType.FAIL
+			}
+			output = append(output, byte(char))
+			bitCount -= 6
+			currentVal >>= 6
+		}
+	}
+    
+    if currentVal > 0 {
+        fmt.Printf("Error: Input byte array contains extra digits 0x%X\n", currentVal)
+        return "", errType.FAIL
+    }
+
+	return string(output), errType.SUCCESS
 }
