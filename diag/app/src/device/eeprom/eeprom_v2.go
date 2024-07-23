@@ -1676,21 +1676,13 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
                 outputString = fmt.Sprintf("%-45s0x%02X%02X", dataName, dataValue[1], dataValue[0])
             } else if dataName == "Manufacturer" {
                 outputString = fmt.Sprintf("%-45s", dataName)
-                outputString += convertSixBitsASCII(dataValue)
+                str, _ := misc.Asc6ToStr(dataValue)
+                outputString += str
             } else {
                 outputString = fmt.Sprintf(fmtHex, dataName, dataValue)
             }
         }
         cli.Println("i", outputString)
-    }
-    return
-}
-
-// to be replaced by Irene's commit
-func convertSixBitsASCII(data []byte) (output string) {
-    output += fmt.Sprintf("0x%02X", data[0])
-    for i:=1;i<len(data);i++ {
-        output += fmt.Sprintf("%02X", data[i])
     }
     return
 }
