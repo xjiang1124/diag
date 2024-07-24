@@ -20,6 +20,7 @@ const (
     MRA_HDR_LEN         int = 5
     CHDR_LEN            int = 8
     BRD_INFO_AREA_LEN   int = 6
+    PROD_INFO_AREA_LEN  int = 3
     OFFSET_NORM_FACTOR  int = 8
     ZERO_START          int = 0
     DELAYED_START       int = 256
@@ -902,7 +903,7 @@ func getOffsetsCHdr(start int) (boardInfoOff int, productInfoOff int, multiRecor
     return
 }
 
-func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen int, err int) {
+func findFieldOffset(start int, end int, fieldNum int, areaHdrLen int) (fieldOff int, fieldLen int, err int) {
     //WARNING: Function only works for board info area and product info area!
     //Multi Info Area does not have type/length field
     //Finds the offset annd length of a field based on the field offset
@@ -913,7 +914,7 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     }
     //Checks if fieldNum > number of fields
     var len, totalNumberFields int
-    for i:=start+BRD_INFO_AREA_LEN;i<end-1;i+=len+1 {
+    for i:=start+areaHdrLen;i<end-1;i+=len+1 {
         len = int(Data[i] & 0x3F)
         totalNumberFields++
     }
@@ -924,7 +925,7 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     }
     //Finds field at offset
     var totalFields int = 0
-    for i:=start+BRD_INFO_AREA_LEN;i<end-1;i+=fieldLen+1 {
+    for i:=start+areaHdrLen;i<end-1;i+=fieldLen+1 {
         if totalFields == fieldNum {
             break
         }
@@ -935,11 +936,11 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     return
 }
 
-func findPn(start int, end int, areaLen int) (pn string, err int) {
+func findPn(start int, end int, areaHdrLen int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
     // first look for FIELD_NUM_SKU_4 which is SKU
-    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_SKU_4)
+    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_SKU_4, areaHdrLen)
     if err != errType.SUCCESS {
         cli.Println("e", "ERROR: Failed to find part number offset.")
         return
@@ -951,7 +952,7 @@ func findPn(start int, end int, areaLen int) (pn string, err int) {
         return 
     }
     // if SKU is not found by CardInListNew, look for PN (Assembly Number)
-    partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10)
+    partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10, areaHdrLen)
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum = string(pnBytes)
     found, pn = CardInListNew(partNum, false)
@@ -1058,7 +1059,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
     var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff, dpnLen int
     var skuField string
     var identifier string
-    var areaOffset, areaLen int
+    var areaOffset, areaLen, areaHdrLen int
 
     //Checks PN validity and sets card type
     if skuMode == true {
@@ -1167,40 +1168,42 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
             if entry.areaCode == AREA_TYPE_BOARD_INFO {
                 areaOffset = boardInfoOffset
                 areaLen = boardInfoLen
+                areaHdrLen = BRD_INFO_AREA_LEN
             } else if entry.areaCode == AREA_TYPE_PRDT_INFO {
                 areaOffset = productInfoOffset
                 areaLen = productInfoLen
+                areaHdrLen = PROD_INFO_AREA_LEN
             } else {
                 cli.Println("e", "ERROR: Area code not supported yet.")
                 return
 			}
             if entry.sn != FIELD_NUM_NONE {
                 snInt := entry.sn
-                snOff, snLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, snInt)
+                snOff, snLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, snInt, areaHdrLen)
             }
             if entry.pn != FIELD_NUM_NONE {
                 pnInt := entry.pn
-                pnOff, pnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, pnInt)
+                pnOff, pnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, pnInt, areaHdrLen)
             }
             if entry.mac != FIELD_NUM_NONE {
                 macInt := entry.mac
-                macOff, macLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, macInt)
+                macOff, macLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, macInt, areaHdrLen)
             }
             if entry.prodName != FIELD_NUM_NONE {
                 prodNameInt := entry.prodName
-                prodNameOff, prodNameLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, prodNameInt)
+                prodNameOff, prodNameLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, prodNameInt, areaHdrLen)
             }
             if entry.sku != FIELD_NUM_NONE {
                 skuInt := entry.sku
-                skuOff, skuLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, skuInt)
+                skuOff, skuLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, skuInt, areaHdrLen)
             }
             if entry.fruId != FIELD_NUM_NONE {
                 fruIdInt := entry.fruId
-                fruIdOff, fruIdLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, fruIdInt)
+                fruIdOff, fruIdLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, fruIdInt, areaHdrLen)
             }
             if entry.dpn != FIELD_NUM_NONE {
                 dpnInt := entry.dpn
-                dpnOff, dpnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, dpnInt)
+                dpnOff, dpnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, dpnInt, areaHdrLen)
             }
         }
 
@@ -1321,12 +1324,14 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
         //Update Data slice (byte)
         var incrementVar int = 0
         for offset:=0;offset<len(Data);offset++ {
-            if offset == dateOff {
-                for i:=offset;i<offset+dateLen;i++ {
-                    Data[i]=dateByte[incrementVar]
-                    incrementVar++
+            if entry.areaCode == AREA_TYPE_BOARD_INFO {
+                if offset == dateOff {
+                    for i:=offset;i<offset+dateLen;i++ {
+                        Data[i]=dateByte[incrementVar]
+                        incrementVar++
+                    }
+                    incrementVar = 0
                 }
-                incrementVar = 0
             }
             if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+snLen;i++ {
@@ -1597,9 +1602,9 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
         productInfoLen := int(Data[start+productInfoOff+1]) * OFFSET_NORM_FACTOR
         //SKU takes priority over PN
         if productInfoOff != 0 {
-            cardPN, err = findPn(start+productInfoOff, start+productInfoOff+productInfoLen, productInfoLen)
+            cardPN, err = findPn(start+productInfoOff, start+productInfoOff+productInfoLen, PROD_INFO_AREA_LEN)
         } else {
-            cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, boardInfoLen)
+            cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, BRD_INFO_AREA_LEN)
         }
     }
     if (err == errType.SUCCESS) {
