@@ -28,8 +28,11 @@ then
 elif [[ $2 == "giglio" ]]
 then
     declare -a asic_list=("giglio")
+elif [[ $2 == "salina" ]]
+then
+    declare -a asic_list=("salina")
 else
-    declare -a asic_list=("giglio" "elba" "capri")
+    declare -a asic_list=("giglio" "elba" "capri" "salina")
 fi
 
 for asic in ${asic_list[@]}
@@ -53,6 +56,9 @@ then
 elif [[ $(echo ${asic_list[@]} | grep "elba") ]]
 then
     declare -a j2cd_list=("ftdi" "lipari" "fpga")
+elif [[ $(echo ${asic_list[@]} | grep "salina") ]]
+then
+    declare -a j2cd_list=("fpga")
 else
     declare -a j2cd_list=("ftdi")
 fi
@@ -125,6 +131,10 @@ do
         if [[ $asic == "elba" ]]
         then
             echo "export ASIC_TYPE=ELBA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "salina" ]]
+        then
+            echo "export ASIC_TYPE=SALINA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
         fi
         if [[ $asic == "capri" ]]
         then

@@ -160,7 +160,7 @@ elif [[ $mtp_id == "0x000b" ]]
 then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
-    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/salina
 else
     echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile
@@ -192,9 +192,12 @@ fi
 
 cp temp_profile ~/.bash_profile
 source ~/.bash_profile
-if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" || $mtp_id == "0x000b" ]]
+if [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
 then
     hack_asic_elba.sh
+elif [[ $mtp_id == "0x000b" ]]
+then
+    hack_asic_salina.sh
 else
     hack_asic.sh
 fi
