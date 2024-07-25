@@ -355,7 +355,7 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
             }
         }
         if (cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI") {
-            eeprom.EepromTbl = eeprom.MalfaTbl
+            eeprom.EepromTbl = eeprom.PenStandardV2Tbl
         }
     }
 

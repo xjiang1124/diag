@@ -118,7 +118,7 @@ const (
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
     SKU_POLLARA         string = "AI-NIC400-1Q400-P"
-    SKU_iLENI           string = "DSC3-2Q400-64S64E64P"
+    SKU_LENI            string = "DSC3-2Q400-64S64E64P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -753,7 +753,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_MALFA: updateInfo {
-        MalfaTbl,
+        PenStandardV2Tbl,
         PROD_NAME_MALFA,
         PN_MALFA,
         FRU_ID_MALFA,
@@ -774,7 +774,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_POLLARA: updateInfo {
-        MalfaTbl, // Malfa/Pollara/Leni share the same eeprom table
+        PenStandardV2Tbl,
         PROD_NAME_POLLARA,
         PN_POLLARA,
         FRU_ID_POLLARA,
@@ -795,7 +795,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI: updateInfo {
-        MalfaTbl, // Malfa/Pollara/Leni share the same eeprom table
+        PenStandardV2Tbl,
         PROD_NAME_LENI,
         PN_LENI,
         FRU_ID_LENI,
