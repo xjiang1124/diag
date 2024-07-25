@@ -366,35 +366,20 @@ var LeniMtpTbl = []I2cInfo {
 
 var LeniTbl = []I2cInfo {
     //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
-    I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P3V3",          "INA3221A",  0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_DDR",       "INA3221A",  0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
-    I2cInfo {"P1V8",          "INA3221A",  0x2,   0x41,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDDQ",          "INA3221A",  0x2,   0x41,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_MX",    "INA3221A",  0x2,   0x41,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_075_PCIE",  "INA3221A",  0x2,   0x42,    0x1,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_12_MX",     "INA3221A",  0x2,   0x42,    0x2,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_12_PCIE",   "INA3221A",  0x2,   0x42,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX",      "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_PLL",   "AD7997",    0x2,   0x23,    0x3,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_1",      "INA3221A",  0x2,   0x43,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_2",      "INA3221A",  0x2,   0x42,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_3",      "INA3221A",  0x2,   0x41,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_12_PCIE_VM","DS4424",    0x2,   0x30,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_12_MX_VM",  "DS4424",    0x2,   0x30,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_PCIE_VM","DS4424",   0x2,   0x30,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_MX_VM", "DS4424",    0x2,   0x30,    0x3,    "HUB_NONE", 0,    0},
-
-    I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
-    I2cInfo {"MX_CLK_BUF",    "RC19004",   0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
-    I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"FRU",           "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"DPU_FRU",       "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"CORE",         "TPS53688",   0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ARM",          "TPS53688",   0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V",         "INA3221A",   0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P3V3",         "INA3221A",   0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_DDR",      "INA3221A",   0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDD",      "PMIC",       0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VDDQ",     "PMIC",       0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DDR_VPP",      "PMIC",       0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"RTC",          "PCF85263A",  0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"PCIE_CLK_BUF", "RC19008",    0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
+    I2cInfo {"MX_CLK_BUF",   "RC19004",    0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
+    I2cInfo {"TSENSOR",      "TMP451",     0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"FRU",          "AT24C02C",   0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"DPU_FRU",      "AT24C02C",   0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
 }
 
 var LeniSensorTbl = []I2cSensorInfo {

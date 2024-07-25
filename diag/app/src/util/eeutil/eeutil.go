@@ -354,12 +354,8 @@ func eepromTlbInit(uut string, pn string, update bool, dev string) (err int) {
                 return errType.FAIL
             }
         }
-        if (cardType == "MALFA") {
+        if (cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI") {
             eeprom.EepromTbl = eeprom.MalfaTbl
-        } else if (cardType == "POLLARA") {
-            eeprom.EepromTbl = eeprom.PollaraTbl
-        } else if (cardType == "LENI") {
-            eeprom.EepromTbl = eeprom.LeniTbl
         }
     }
 
