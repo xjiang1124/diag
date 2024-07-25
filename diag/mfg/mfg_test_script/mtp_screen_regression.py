@@ -83,7 +83,7 @@ def check_nic_type(mtp_mgmt_ctrl, nic_list):
             nic_fail_list.append(slot)
     return nic_fail_list
 
-def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
+def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential):
     @parallelize.parallel_nic_using_j2c
     def run_j2c_test_normally(mtp_mgmt_ctrl, slot, test, vmarg):
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -94,7 +94,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage)
 
     @parallelize.sequential_nic_test
     def run_j2c_test_sequentially(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -106,7 +106,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage)
 
     if force_sequential:
         fail_j2c_list = run_j2c_test_sequentially(mtp_mgmt_ctrl, nic_list, test, vmarg)
@@ -118,7 +118,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            number_of_l1_tests = 9 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA else 7
+            number_of_l1_tests = 7
             err_msg_list = list()
             if pass_count != number_of_l1_tests:
                 err_msg_list = ["L1 Sub Test only passed: {:d}".format(pass_count)]
@@ -1087,7 +1087,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_l1_setup(nic_list)
                 fail_desc = "MTP L1 setup test failed"
             elif test == "L1":
-                rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, test_kwargs["l1_sequence"])
+                rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"])
                 fail_desc = "Fail to L1 check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "I2C":
                 rlist = single_nic_dsp_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, swmtestmode)
