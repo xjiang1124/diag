@@ -4360,29 +4360,26 @@ class mtp_ctrl():
 
         return True
 
-    @parallelize.parallel_nic_using_nic_test
-    def mtp_l1_setup(self, nic_list):
-        fail_nic_list = list()
-
-        if not nic_list:
-            # self.cli_log_err("No NICs passed")
-            return fail_nic_list
-
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        # first slot will be the "main" slot to issue the commands on.
-        slot_main = nic_list[0]
+    @parallelize.parallel_nic_using_ssh
+    def mtp_l1_setup(self, slot):
+        slot_num = slot + 1
 
         cmd = "export MTP_REV=REV_04"
-        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
-            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
-            return nic_list[:]
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
 
-        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}".format(nic_list_param)
-        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
-            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
-            return nic_list[:]
+        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:d}".format(slot_num)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
 
-        return fail_nic_list
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
+
+        return True
 
     def mtp_i2c_show(self, nic_list):
         self.cli_log_inf("Show I2C device in the MTP Chassis", level=0)

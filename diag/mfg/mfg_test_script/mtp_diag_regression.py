@@ -240,9 +240,9 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
         return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg)
 
     if force_sequential:
-        fail_j2c_list = run_j2c_test_normally(mtp_mgmt_ctrl, nic_list, test, vmarg)
-    else:
         fail_j2c_list = run_j2c_test_sequentially(mtp_mgmt_ctrl, nic_list, test, vmarg)
+    else:
+        fail_j2c_list = run_j2c_test_normally(mtp_mgmt_ctrl, nic_list, test, vmarg)
 
     # double check the L1 test even if it passed
     if dsp == "ASIC" and test == "L1":

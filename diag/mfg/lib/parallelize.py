@@ -162,8 +162,8 @@ def parallel_nic_using_j2c(func):
             # run odd slots together and even slots together
             top_nic_list = [x for x in nic_list if x in [0,2,4,6,8]] # odd slots
             bot_nic_list = [x for x in nic_list if x in [1,3,5,7,9]] # even slots
-            top_fail_list = split_into_threads(func, mtp_mgmt_ctrl, top_nic_list, *test_args, **test_kwargs)
-            bot_fail_list = split_into_threads(func, mtp_mgmt_ctrl, bot_nic_list, *test_args, **test_kwargs)
+            top_fail_list = split_into_threads(func, mtp_mgmt_ctrl, top_nic_list, False, *test_args, **test_kwargs)
+            bot_fail_list = split_into_threads(func, mtp_mgmt_ctrl, bot_nic_list, False, *test_args, **test_kwargs)
             fail_nic_list = top_fail_list + bot_fail_list
         else:
             # run sequential
