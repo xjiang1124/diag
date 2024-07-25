@@ -247,7 +247,7 @@ var MalfaMtpTbl = []I2cInfo {
     I2cInfo {"DPU_FRU",        "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
-var PenStandardV2Tbl  = []I2cInfo {
+var MalfaTbl  = []I2cInfo {
     //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
     I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
@@ -950,7 +950,7 @@ func init() {
     } else if CardType == "GINESTRA_D5" {
         I2cTbl = GinestraD5Tbl
     } else if CardType == "MALFA" {
-        I2cTbl = PenStandardV2Tbl
+        I2cTbl = MalfaTbl
         SensorTbl = MalfaSensorTbl
     } else if CardType == "POLLARA" {
         I2cTbl = PollaraTbl
@@ -1147,7 +1147,7 @@ func SwitchI2cTbl(uutName string) (err int) {
         // this is for validation only;
         // rework a malfa to connect smbus to bus 0 or 2
         // then set mtp environment variable UUT_X=MALFA_S
-        CurI2cTbl = PenStandardV2Tbl 
+        CurI2cTbl = MalfaTbl 
         CurSensorTbl = MalfaSensorTbl
     } else if uutType == "POLLARA" {
         CurI2cTbl = PollaraMtpTbl
