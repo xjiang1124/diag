@@ -27,7 +27,9 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil flash help  << Display debug commands in the CLI >>\n" +
         "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" +
         "\n" +
-        "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
+        // "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
+        "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
+        "fpgautil flash <slot#> <qspi#> generatefile <start_addr> <legnth> <filename>\n" +
         "\n" +
         "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/refresh \n" +
         "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>\n" +
@@ -326,10 +328,26 @@ func matera_fpga_cli() {
             t2 := time.Now()
             fmt.Println(" Function took ", t2.Sub(t1), " time")
             os.Exit(0)
+        } else if os.Args[3] == "fru" {
+            if argc < 5 {
+                fmt.Printf(" %s \n", errhelpMatera)
+                os.Exit(-1)
+            } else if os.Args[4] == "program" {
+                // TODO: fpgautil cpld <slot#> fru program <filename>
+                
+
+                // display data stored in fru
+                // add the data to flash
+                // verify the data
+
+
+            } else if os.Args[4] == "verify" {
+                // TODO: fpgautil cpld <slot#> fru verify <filename>
+            }
         } else {
             fmt.Printf(" Args[3] '%s' is incorrect.  See help for the correct arg\n", os.Args[3]); 
             os.Exit(-1) 
-        }
+        }   
     //
     //FPGA Local Flash commands 
     //
@@ -349,8 +367,9 @@ func matera_fpga_cli() {
         "fpgautil flash <slot#> <qspi#> w32/w64 <addr> <data>\n" +
         "fpgautil flash <slot#> <qspi#> sectorerase <addr>/all\n" +
         "fpgautil flash <slot#> <qspi#> test uboot0/golduboot/goldfw/allflash <filename>\n" +
-        "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n"
-
+        // "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
+        "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
+        "fpgautil flash <slot#> <qspi#> generatefile <start_addr> <length> <filename>\n"
         if argc < 3 {
             fmt.Printf(" %s \n", errhelpMatera)
             os.Exit(-1)
@@ -575,6 +594,36 @@ func matera_fpga_cli() {
                 data := (*[8]byte)(unsafe.Pointer(&data64))[:]
                 materafpga.Spi_salina_flash_Write_N_Bytes(flashID, qspiNumber, data, uint32(addr))
                 fmt.Printf(" [WR] Addr 0x%x = %.08x\n", uint32(addr), uint32(data64))
+            } else if os.Args[4] == "writefile" || os.Args[4] == "verifyfile" {
+                // TODO: fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>
+                if argc < 7 {
+                     fmt.Printf(" Need more args for this command\n");  return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                     fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                filename := os.Args[6]
+                if os.Args[4] == "writefile" {
+                    materafpga.Spi_salina_flash_WriteFile(flashID, qspiNumber, uint32(addr), filename) 
+                } else if os.Args[4] == "verifyfile" {
+                    materafpga.Spi_salina_flash_VerifyFile(flashID, qspiNumber, uint32(addr), filename) 
+                }
+            } else if os.Args[4] == "generatefile" {
+                // TODO: fpgautil flash <slot#> <qspi#> generate <start_addr> <length> <filename>
+                if argc < 8 {
+                    fmt.Printf(" Need more args for this command\n");  return
+                }
+                addr, err := strconv.ParseUint(os.Args[5], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                length, err := strconv.ParseUint(os.Args[6], 0, 32)
+                if err != nil {
+                    fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
+                }
+                filename := os.Args[7]
+                materafpga.Spi_salina_flash_GenerateFile(flashID, qspiNumber, uint32(addr), uint32(length), filename) 
             } else {
                 fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
                 fmt.Printf(" %s \n", errhelpMateraFlash)
