@@ -713,7 +713,7 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
     ERASE_SECTOR_OP[3] = byte(addr)
 
     _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
-    if err != nil {
+if err != nil {
         err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector Failed. Spi-%d Qspi-%d:  Erase Addr=%.08x\n", spiNumber, qspiNumber, addr)
         cli.Printf("e", "%s", err)
         return
@@ -873,3 +873,264 @@ func Spi_salina_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, qspiNumber uint3
     return
 }
 
+
+
+func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string)() {
+    var flash_size = uint32(elba_flash_info.region_size)
+    var i, count int = 0, 0
+    var j uint32 = 0
+    var write_page bool = false
+    var skipped_pages int = 0
+
+    data := []byte{}
+
+    // get file size
+    fileInfo, err := os.Stat(filename)
+    if err != nil {
+        fmt.Printf(" Unable to get file size\n", err); return
+    }
+    file_size := fileInfo.Size()
+
+    // check if flash has enough size
+    if (start_addr + uint32(file_size) > flash_size) {
+        fmt.Printf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", file_size, start_addr, flash_size)
+        cli.Printf("e", "%s", err)
+        return
+    }
+
+    // check if offset 64 kB aligned
+    if start_addr % FLASH_SECTOR_SIZE != 0 {
+		fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        return
+	}
+
+    // open file
+    f, err := os.Open(filename)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
+    defer f.Close()
+
+    fmt.Printf(" Writing file %s starting at addr=0x%X\n", filename, start_addr)
+    scanner := bufio.NewScanner(f)
+    scanner.Split(bufio.ScanBytes)
+
+    // write file content to data
+    for scanner.Scan() {
+		b := scanner.Bytes()
+		if len(b) > 0 { // check token is not empty
+			data = append(data, b[0])
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+    // append padding to data if needed
+    padding_size := FLASH_PAGE_WRITE_SIZE - (len(data) % FLASH_PAGE_WRITE_SIZE)
+    fmt.Printf(" Len=0x%X  pad length=0x%X\n", len(data), FLASH_PAGE_WRITE_SIZE%padding_size)
+    if padding_size != FLASH_PAGE_WRITE_SIZE {
+        for i=0; i < padding_size; i++ {
+            data = append(data, 0xFF)
+        }
+    }
+
+    // Remove from flash
+    fmt.Printf(" Start Addr=0x%X, Len Data File = 0x%X\n", start_addr, len(data));
+    fmt.Printf(" Erasing flash sectors\n");
+    for j=start_addr; j<start_addr + uint32(len(data)); j = j+elba_flash_info.sector_size {
+        fmt.Printf(".")
+        err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, j)
+        if err != nil {
+           fmt.Printf(" Erasing Flash Failed\n")
+           return
+        }
+    }
+    fmt.Printf("\n")
+
+    // write file to flash
+    fmt.Printf(" Programming flash sectors\n");
+    for j=start_addr; j<start_addr + uint32(len(data)); j = j+uint32(FLASH_PAGE_WRITE_SIZE) {
+       if (j%0x20000) == 0 {
+           fmt.Printf("%.08x\n", j)
+       }
+       wr_data := []byte{}
+       write_page = false
+       for x:=0; x < FLASH_PAGE_WRITE_SIZE; x++ {
+           wr_data = append(wr_data, data[x + count])
+           if wr_data[x] != 0xFF {
+               write_page = true
+           }
+       }
+       count = count + FLASH_PAGE_WRITE_SIZE 
+
+       if write_page == true {
+           err = Spi_salina_flash_Write_N_Bytes(spiNumber, qspiNumber, wr_data, j)
+           if err != nil {
+               fmt.Printf(" Writing Flash Failed\n")
+               return
+           }
+       } else {
+           skipped_pages++
+       }
+    }
+    fmt.Printf("Skipped Pages = %d.  Skipped bytes = 0x%X\n", skipped_pages, (skipped_pages * 256) )
+    
+    return
+}
+
+func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string) (err error) {
+    var flash_size = uint32(elba_flash_info.region_size)
+    var read_size = uint32(elba_flash_info.sector_size)
+    var i uint32 = 0
+
+    flash_data := []byte{}
+    file_data := []byte{}
+
+    if start_addr % FLASH_SECTOR_SIZE != 0 {
+		fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        return
+	}
+
+    f, err := os.Open(filename)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
+    defer f.Close()
+
+    // get file size
+    fileInfo, err := os.Stat(filename)
+    if err != nil {
+        fmt.Printf(" Unable to get file size\n", err); return
+    }
+    file_size := fileInfo.Size()
+
+    if (start_addr + uint32(file_size) > flash_size) {
+        fmt.Printf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
+        cli.Printf("e", "%s", err)
+        return
+    }
+
+    fmt.Printf(" Verifying Image %s starting at addr=0x%X\n", filename, start_addr)
+
+    scanner := bufio.NewScanner(f)
+    scanner.Split(bufio.ScanBytes)
+    // Use For-loop.
+    for scanner.Scan() {
+        b := scanner.Bytes()
+        file_data = append(file_data, b[0])
+    }
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, start_addr) 
+    if err != nil {
+        return
+    }
+
+    for i=start_addr; i< start_addr + uint32(len(file_data)); i = i+read_size {
+        rd_data := []byte{}
+        if (i%0x20000) == 0 {
+            fmt.Printf("%.08x\n", i)
+        }
+        if (i % 0x1000000) <= read_size {
+            err = Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, i) 
+            if err != nil {
+                return
+            }
+        }
+         
+        rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, i, read_size, 0)
+        if err != nil {
+            fmt.Printf(" ERROR: Flash Read Failed.  StartAddr=0x%X.  I=0x%X\n", start_addr, i)
+            return
+        }
+        flash_data = append(flash_data, rd_data...) 
+    }
+
+    for i=0; i < uint32(len(file_data)); i++ {
+        if (flash_data[i] != file_data[i]) {
+            err = fmt.Errorf(" Error: Flash Miscompare at flash address 0x%X:  Flash Read 0x%.02X   File Read 0x%.02X\n", i+start_addr, flash_data[i], file_data[i])
+            cli.Printf("e", "%s", err)
+            fmt.Printf("Verification failed\n")
+            return
+        }
+    }
+    fmt.Printf("\nVerification passed\n")
+    return
+}
+
+func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, length uint32, filename string) (err error) {
+    var flash_size = uint32(elba_flash_info.region_size)
+    var read_size = uint32(elba_flash_info.sector_size)
+    var i uint32 = 0
+    flash_data := []byte{}
+
+    // check if offset 64 kB aligned
+    if start_addr % FLASH_SECTOR_SIZE != 0 {
+        fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        return
+    }
+
+    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
+    defer f.Close()
+
+    // check if flash has enough size
+    if start_addr + length > flash_size {
+        err = fmt.Errorf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", length, start_addr, flash_size)
+        cli.Printf("e", "%s", err)
+        return
+    }
+
+    err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
+    if err != nil {
+        return
+    }
+
+    err =  Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, uint32(start_addr)) 
+    if err != nil {
+        return
+    }
+
+    for i=start_addr; i< start_addr + length; i = i+read_size {
+        rd_data := []byte{}
+        if (i%0x20000) == 0 {
+            fmt.Printf(".")
+        }
+        if (i % 0x1000000) <= read_size {
+            err =  Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, uint32(i)) 
+            if err != nil {
+                return
+            }
+        }
+        rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, uint32(i), uint32(read_size), 0)
+        if err != nil {
+            fmt.Printf(" ERROR: Flash Read Failed\n")
+            return
+        }
+        if (i + read_size - 1 > start_addr + length) {
+            flash_data = append(flash_data, rd_data[0 : start_addr + length - i]...)
+        } else {
+            flash_data = append(flash_data, rd_data...)
+        }
+        
+    }
+    fmt.Printf("\n")
+
+    f.WriteString(string(flash_data[:]))
+    return
+}
