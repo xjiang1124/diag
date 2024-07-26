@@ -875,6 +875,9 @@ func taormina_fpga_cli() {
             } else if os.Args[4] == "wrenable" {
                 taorfpga.Spi_elba_flash_WriteEnable(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" Wr Enable Set\n")
+            } else if os.Args[4] == "wrdisable" {
+                taorfpga.Spi_elba_flash_WriteDisable(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" Wr Enable Disabled\n")
             } else if os.Args[4] == "volconfig" {
                 config, _ := taorfpga.Spi_elba_flash_read_volatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  vol config=0x%.04x\n", config)
@@ -892,6 +895,13 @@ func taormina_fpga_cli() {
             } else if os.Args[4] == "config" {
                 config, _ := taorfpga.Spi_elba_flash_read_nonvolatile_config(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  DevID=0x%.04x\n", config)
+            } else if os.Args[4] == "readprotreg" {
+                prot, _ := taorfpga.Spi_flash_read_sector_protection_reg(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  sector protect reg=0x%.04x\n", prot)
+                lock, _ := taorfpga.Spi_flash_read_volatile_lock_reg(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  volatile lock reg=0x%.02x\n", lock)
+                freeze, _ := taorfpga.Spi_flash_read_global_freeze_reg(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                fmt.Printf(" FLASH  freeze reg=0x%.02x\n", freeze)
             } else if os.Args[4] == "4byte" {
                 if argc < 6 {
                     fmt.Printf(" %s \n", errhelp)
@@ -914,6 +924,14 @@ func taormina_fpga_cli() {
                 }
                 taorfpga.Spi_elba_flash_set_extended_addr_register(taorfpga.ELBA0_SPI_BUS + elbaNumber, uint32(addr))
                 fmt.Printf(" Wr Extended Addr0x%.08x\n", addr)
+            } else if os.Args[4] == "discovery" {
+                data, _ := taorfpga.Spi_flash_discover_read(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
+                for x:=0;x<len(data);x++ {
+                    if (x%16) == 0 {
+                        fmt.Printf("\n%.08x: ", uint32(x))
+                    }
+                    fmt.Printf("%.02x ", data[x] & 0xff)
+                }
             } else if os.Args[4] == "flagstatus" {
                 flag, _ := taorfpga.Spi_elba_flash_read_flag_status(taorfpga.ELBA0_SPI_BUS + elbaNumber) 
                 fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
