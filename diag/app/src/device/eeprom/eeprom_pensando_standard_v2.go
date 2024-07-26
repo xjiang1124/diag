@@ -1,6 +1,6 @@
 package eeprom
 
-var PollaraTbl = []entry {
+var PenStandardV2Tbl = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
     entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
     entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},

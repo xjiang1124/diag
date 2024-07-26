@@ -74,9 +74,9 @@ const (
     PN_GIN_D5_ORACLE string = "68-0075"
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
-    PN_MALFA         string = "DSC3-2Q400-128S64E256P"
-    PN_POLLARA       string = "AI-NIC400-1Q400-P"
-    PN_LENI          string = "DSC3-2Q400-64S64E64P"
+    PN_MALFA         string = "102-P10600-00"
+    PN_POLLARA       string = "102-P11100-00"
+    PN_LENI          string = "102-P10800-00"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -116,6 +116,9 @@ const (
     SKU_GIN_D5_SSDK_A   string = "DSC2A-2Q200-32S32F64P-S4A"
     SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
+    SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
+    SKU_POLLARA         string = "AI-NIC400-1Q400-P"
+    SKU_LENI            string = "DSC3-2Q400-64S64E64P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -750,7 +753,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_MALFA: updateInfo {
-        MalfaTbl,
+        PenStandardV2Tbl,
         PROD_NAME_MALFA,
         PN_MALFA,
         FRU_ID_MALFA,
@@ -771,7 +774,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_POLLARA: updateInfo {
-        PollaraTbl,
+        PenStandardV2Tbl,
         PROD_NAME_POLLARA,
         PN_POLLARA,
         FRU_ID_POLLARA,
@@ -792,7 +795,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI: updateInfo {
-        LeniTbl,
+        PenStandardV2Tbl,
         PROD_NAME_LENI,
         PN_LENI,
         FRU_ID_LENI,
