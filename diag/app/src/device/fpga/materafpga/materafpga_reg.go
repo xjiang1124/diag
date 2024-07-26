@@ -311,6 +311,13 @@ const FPGA_S0_J2C_MAGIC_REG        uint64 = 0xA1C
 const FPGA_S0_J2C_TXFIFO_REG       uint64 = 0xA20
 const FPGA_S0_J2C_RXFIFO_REG       uint64 = 0xA24
 const FPGA_S0_J2C_SIZE_REG         uint64 = 0xA28
+const FPGA_S0_OW_INIT_REG          uint64 = 0xA40
+const FPGA_S0_OW_CMD_REG           uint64 = 0xA44
+const FPGA_S0_OW_STATUS_REG        uint64 = 0xA48
+const FPGA_S0_OW_DATA_REG          uint64 = 0xA4C
+const FPGA_S0_OW_ADDR0_REG         uint64 = 0xA50
+const FPGA_S0_OW_ADDR1_REG         uint64 = 0xA54
+const FPGA_S0_OW_EOM_WIDTH_REG     uint64 = 0xA58
 const FPGA_S1_J2C_CMD_REG          uint64 = 0xB00
 const FPGA_S1_J2C_STAT_REG         uint64 = 0xB04
 const FPGA_S1_J2C_ADDR0_REG        uint64 = 0xB08
@@ -322,6 +329,13 @@ const FPGA_S1_J2C_MAGIC_REG        uint64 = 0xB1C
 const FPGA_S1_J2C_TXFIFO_REG       uint64 = 0xB20
 const FPGA_S1_J2C_RXFIFO_REG       uint64 = 0xB24
 const FPGA_S1_J2C_SIZE_REG         uint64 = 0xB28
+const FPGA_S1_OW_INIT_REG          uint64 = 0xB40
+const FPGA_S1_OW_CMD_REG           uint64 = 0xB44
+const FPGA_S1_OW_STATUS_REG        uint64 = 0xB48
+const FPGA_S1_OW_DATA_REG          uint64 = 0xB4C
+const FPGA_S1_OW_ADDR0_REG         uint64 = 0xB50
+const FPGA_S1_OW_ADDR1_REG         uint64 = 0xB54
+const FPGA_S1_OW_EOM_WIDTH_REG     uint64 = 0xB58
 const FPGA_S2_J2C_CMD_REG          uint64 = 0xC00
 const FPGA_S2_J2C_STAT_REG         uint64 = 0xC04
 const FPGA_S2_J2C_ADDR0_REG        uint64 = 0xC08
@@ -333,6 +347,13 @@ const FPGA_S2_J2C_MAGIC_REG        uint64 = 0xC1C
 const FPGA_S2_J2C_TXFIFO_REG       uint64 = 0xC20
 const FPGA_S2_J2C_RXFIFO_REG       uint64 = 0xC24
 const FPGA_S2_J2C_SIZE_REG         uint64 = 0xC28
+const FPGA_S2_OW_INIT_REG          uint64 = 0xC40
+const FPGA_S2_OW_CMD_REG           uint64 = 0xC44
+const FPGA_S2_OW_STATUS_REG        uint64 = 0xC48
+const FPGA_S2_OW_DATA_REG          uint64 = 0xC4C
+const FPGA_S2_OW_ADDR0_REG         uint64 = 0xC50
+const FPGA_S2_OW_ADDR1_REG         uint64 = 0xC54
+const FPGA_S2_OW_EOM_WIDTH_REG     uint64 = 0xC58
 const FPGA_S3_J2C_CMD_REG          uint64 = 0xD00
 const FPGA_S3_J2C_STAT_REG         uint64 = 0xD04
 const FPGA_S3_J2C_ADDR0_REG        uint64 = 0xD08
@@ -344,6 +365,13 @@ const FPGA_S3_J2C_MAGIC_REG        uint64 = 0xD1C
 const FPGA_S3_J2C_TXFIFO_REG       uint64 = 0xD20
 const FPGA_S3_J2C_RXFIFO_REG       uint64 = 0xD24
 const FPGA_S3_J2C_SIZE_REG         uint64 = 0xD28
+const FPGA_S3_OW_INIT_REG          uint64 = 0xD40
+const FPGA_S3_OW_CMD_REG           uint64 = 0xD44
+const FPGA_S3_OW_STATUS_REG        uint64 = 0xD48
+const FPGA_S3_OW_DATA_REG          uint64 = 0xD4C
+const FPGA_S3_OW_ADDR0_REG         uint64 = 0xD50
+const FPGA_S3_OW_ADDR1_REG         uint64 = 0xD54
+const FPGA_S3_OW_EOM_WIDTH_REG     uint64 = 0xD58
 const FPGA_S4_J2C_CMD_REG          uint64 = 0xE00
 const FPGA_S4_J2C_STAT_REG         uint64 = 0xE04
 const FPGA_S4_J2C_ADDR0_REG        uint64 = 0xE08
@@ -355,6 +383,13 @@ const FPGA_S4_J2C_MAGIC_REG        uint64 = 0xE1C
 const FPGA_S4_J2C_TXFIFO_REG       uint64 = 0xE20
 const FPGA_S4_J2C_RXFIFO_REG       uint64 = 0xE24
 const FPGA_S4_J2C_SIZE_REG         uint64 = 0xE28
+const FPGA_S4_OW_INIT_REG          uint64 = 0xE40
+const FPGA_S4_OW_CMD_REG           uint64 = 0xE44
+const FPGA_S4_OW_STATUS_REG        uint64 = 0xE48
+const FPGA_S4_OW_DATA_REG          uint64 = 0xE4C
+const FPGA_S4_OW_ADDR0_REG         uint64 = 0xE50
+const FPGA_S4_OW_ADDR1_REG         uint64 = 0xE54
+const FPGA_S4_OW_EOM_WIDTH_REG     uint64 = 0xE58
 const FPGA_S5_J2C_CMD_REG          uint64 = 0xF00
 const FPGA_S5_J2C_STAT_REG         uint64 = 0xF04
 const FPGA_S5_J2C_ADDR0_REG        uint64 = 0xF08
@@ -366,6 +401,13 @@ const FPGA_S5_J2C_MAGIC_REG        uint64 = 0xF1C
 const FPGA_S5_J2C_TXFIFO_REG       uint64 = 0xF20
 const FPGA_S5_J2C_RXFIFO_REG       uint64 = 0xF24
 const FPGA_S5_J2C_SIZE_REG         uint64 = 0xF28
+const FPGA_S5_OW_INIT_REG          uint64 = 0xF40
+const FPGA_S5_OW_CMD_REG           uint64 = 0xF44
+const FPGA_S5_OW_STATUS_REG        uint64 = 0xF48
+const FPGA_S5_OW_DATA_REG          uint64 = 0xF4C
+const FPGA_S5_OW_ADDR0_REG         uint64 = 0xF50
+const FPGA_S5_OW_ADDR1_REG         uint64 = 0xF54
+const FPGA_S5_OW_EOM_WIDTH_REG     uint64 = 0xF58
 const FPGA_S6_J2C_CMD_REG          uint64 = 0x1000
 const FPGA_S6_J2C_STAT_REG         uint64 = 0x1004
 const FPGA_S6_J2C_ADDR0_REG        uint64 = 0x1008
@@ -377,6 +419,13 @@ const FPGA_S6_J2C_MAGIC_REG        uint64 = 0x101C
 const FPGA_S6_J2C_TXFIFO_REG       uint64 = 0x1020
 const FPGA_S6_J2C_RXFIFO_REG       uint64 = 0x1024
 const FPGA_S6_J2C_SIZE_REG         uint64 = 0x1028
+const FPGA_S6_OW_INIT_REG          uint64 = 0x1040
+const FPGA_S6_OW_CMD_REG           uint64 = 0x1044
+const FPGA_S6_OW_STATUS_REG        uint64 = 0x1048
+const FPGA_S6_OW_DATA_REG          uint64 = 0x104C
+const FPGA_S6_OW_ADDR0_REG         uint64 = 0x1050
+const FPGA_S6_OW_ADDR1_REG         uint64 = 0x1054
+const FPGA_S6_OW_EOM_WIDTH_REG     uint64 = 0x1058
 const FPGA_S7_J2C_CMD_REG          uint64 = 0x1100
 const FPGA_S7_J2C_STAT_REG         uint64 = 0x1104
 const FPGA_S7_J2C_ADDR0_REG        uint64 = 0x1108
@@ -388,6 +437,13 @@ const FPGA_S7_J2C_MAGIC_REG        uint64 = 0x111C
 const FPGA_S7_J2C_TXFIFO_REG       uint64 = 0x1120
 const FPGA_S7_J2C_RXFIFO_REG       uint64 = 0x1124
 const FPGA_S7_J2C_SIZE_REG         uint64 = 0x1128
+const FPGA_S7_OW_INIT_REG          uint64 = 0x1140
+const FPGA_S7_OW_CMD_REG           uint64 = 0x1144
+const FPGA_S7_OW_STATUS_REG        uint64 = 0x1148
+const FPGA_S7_OW_DATA_REG          uint64 = 0x114C
+const FPGA_S7_OW_ADDR0_REG         uint64 = 0x1150
+const FPGA_S7_OW_ADDR1_REG         uint64 = 0x1154
+const FPGA_S7_OW_EOM_WIDTH_REG     uint64 = 0x1158
 const FPGA_S8_J2C_CMD_REG          uint64 = 0x1200
 const FPGA_S8_J2C_STAT_REG         uint64 = 0x1204
 const FPGA_S8_J2C_ADDR0_REG        uint64 = 0x1208
@@ -399,6 +455,13 @@ const FPGA_S8_J2C_MAGIC_REG        uint64 = 0x121C
 const FPGA_S8_J2C_TXFIFO_REG       uint64 = 0x1220
 const FPGA_S8_J2C_RXFIFO_REG       uint64 = 0x1224
 const FPGA_S8_J2C_SIZE_REG         uint64 = 0x1228
+const FPGA_S8_OW_INIT_REG          uint64 = 0x1240
+const FPGA_S8_OW_CMD_REG           uint64 = 0x1244
+const FPGA_S8_OW_STATUS_REG        uint64 = 0x1248
+const FPGA_S8_OW_DATA_REG          uint64 = 0x124C
+const FPGA_S8_OW_ADDR0_REG         uint64 = 0x1250
+const FPGA_S8_OW_ADDR1_REG         uint64 = 0x1254
+const FPGA_S8_OW_EOM_WIDTH_REG     uint64 = 0x1258
 const FPGA_S9_J2C_CMD_REG          uint64 = 0x1300
 const FPGA_S9_J2C_STAT_REG         uint64 = 0x1304
 const FPGA_S9_J2C_ADDR0_REG        uint64 = 0x1308
@@ -410,6 +473,13 @@ const FPGA_S9_J2C_MAGIC_REG        uint64 = 0x131C
 const FPGA_S9_J2C_TXFIFO_REG       uint64 = 0x1320
 const FPGA_S9_J2C_RXFIFO_REG       uint64 = 0x1324
 const FPGA_S9_J2C_SIZE_REG         uint64 = 0x1328
+const FPGA_S9_OW_INIT_REG          uint64 = 0x1340
+const FPGA_S9_OW_CMD_REG           uint64 = 0x1344
+const FPGA_S9_OW_STATUS_REG        uint64 = 0x1348
+const FPGA_S9_OW_DATA_REG          uint64 = 0x134C
+const FPGA_S9_OW_ADDR0_REG         uint64 = 0x1350
+const FPGA_S9_OW_ADDR1_REG         uint64 = 0x1354
+const FPGA_S9_OW_EOM_WIDTH_REG     uint64 = 0x1358
 const FPGA_DBG_J2C_CMD_REG         uint64 = 0x1400
 const FPGA_DBG_J2C_STAT_REG        uint64 = 0x1404
 const FPGA_DBG_J2C_ADDR0_REG       uint64 = 0x1408
@@ -421,6 +491,13 @@ const FPGA_DBG_J2C_MAGIC_REG       uint64 = 0x141C
 const FPGA_DBG_J2C_TXFIFO_REG      uint64 = 0x1420
 const FPGA_DBG_J2C_RXFIFO_REG      uint64 = 0x1424
 const FPGA_DBG_J2C_SIZE_REG        uint64 = 0x1428
+const FPGA_DBG_OW_INIT_REG          uint64 = 0x1440
+const FPGA_DBG_OW_CMD_REG           uint64 = 0x1444
+const FPGA_DBG_OW_STATUS_REG        uint64 = 0x1448
+const FPGA_DBG_OW_DATA_REG          uint64 = 0x144C
+const FPGA_DBG_OW_ADDR0_REG         uint64 = 0x1450
+const FPGA_DBG_OW_ADDR1_REG         uint64 = 0x1454
+const FPGA_DBG_OW_EOM_WIDTH_REG     uint64 = 0x1458
 const FPGA_S0_SPI_RXDATA_REG       uint64 = 0x2000
 const FPGA_S0_SPI_TXDATA4B_REG     uint64 = 0x2004
 const FPGA_S0_SPI_TXDATA2B_REG     uint64 = 0x2008
@@ -541,72 +618,6 @@ const FPGA_FPGA_SPI_SEM_REG        uint64 = 0x22D8
 const FPGA_FPGA_SPI_SLAVESEL_REG   uint64 = 0x22DC
 const FPGA_FPGA_SPI_EOP_VALUE_REG  uint64 = 0x22E0
 const FPGA_FPGA_SPI_MUXSEL_REG     uint64 = 0x22E4
-const FPGA_S0_OW_INIT_REG          uint64 = 0x3000
-const FPGA_S0_OW_CMD_REG           uint64 = 0x3004
-const FPGA_S0_OW_STATUS_REG        uint64 = 0x3008
-const FPGA_S0_OW_DATA_REG          uint64 = 0x300C
-const FPGA_S0_OW_ADDR0_REG         uint64 = 0x3010
-const FPGA_S0_OW_ADDR1_REG         uint64 = 0x3014
-const FPGA_S1_OW_INIT_REG          uint64 = 0x3100
-const FPGA_S1_OW_CMD_REG           uint64 = 0x3104
-const FPGA_S1_OW_STATUS_REG        uint64 = 0x3108
-const FPGA_S1_OW_DATA_REG          uint64 = 0x310C
-const FPGA_S1_OW_ADDR0_REG         uint64 = 0x3110
-const FPGA_S1_OW_ADDR1_REG         uint64 = 0x3114
-const FPGA_S2_OW_INIT_REG          uint64 = 0x3200
-const FPGA_S2_OW_CMD_REG           uint64 = 0x3204
-const FPGA_S2_OW_STATUS_REG        uint64 = 0x3208
-const FPGA_S2_OW_DATA_REG          uint64 = 0x320C
-const FPGA_S2_OW_ADDR0_REG         uint64 = 0x3210
-const FPGA_S2_OW_ADDR1_REG         uint64 = 0x3214
-const FPGA_S3_OW_INIT_REG          uint64 = 0x3300
-const FPGA_S3_OW_CMD_REG           uint64 = 0x3304
-const FPGA_S3_OW_STATUS_REG        uint64 = 0x3308
-const FPGA_S3_OW_DATA_REG          uint64 = 0x330C
-const FPGA_S3_OW_ADDR0_REG         uint64 = 0x3310
-const FPGA_S3_OW_ADDR1_REG         uint64 = 0x3314
-const FPGA_S4_OW_INIT_REG          uint64 = 0x3400
-const FPGA_S4_OW_CMD_REG           uint64 = 0x3404
-const FPGA_S4_OW_STATUS_REG        uint64 = 0x3408
-const FPGA_S4_OW_DATA_REG          uint64 = 0x340C
-const FPGA_S4_OW_ADDR0_REG         uint64 = 0x3410
-const FPGA_S4_OW_ADDR1_REG         uint64 = 0x3414
-const FPGA_S5_OW_INIT_REG          uint64 = 0x3500
-const FPGA_S5_OW_CMD_REG           uint64 = 0x3504
-const FPGA_S5_OW_STATUS_REG        uint64 = 0x3508
-const FPGA_S5_OW_DATA_REG          uint64 = 0x350C
-const FPGA_S5_OW_ADDR0_REG         uint64 = 0x3510
-const FPGA_S5_OW_ADDR1_REG         uint64 = 0x3514
-const FPGA_S6_OW_INIT_REG          uint64 = 0x3600
-const FPGA_S6_OW_CMD_REG           uint64 = 0x3604
-const FPGA_S6_OW_STATUS_REG        uint64 = 0x3608
-const FPGA_S6_OW_DATA_REG          uint64 = 0x360C
-const FPGA_S6_OW_ADDR0_REG         uint64 = 0x3610
-const FPGA_S6_OW_ADDR1_REG         uint64 = 0x3614
-const FPGA_S7_OW_INIT_REG          uint64 = 0x3700
-const FPGA_S7_OW_CMD_REG           uint64 = 0x3704
-const FPGA_S7_OW_STATUS_REG        uint64 = 0x3708
-const FPGA_S7_OW_DATA_REG          uint64 = 0x370C
-const FPGA_S7_OW_ADDR0_REG         uint64 = 0x3710
-const FPGA_S7_OW_ADDR1_REG         uint64 = 0x3714
-const FPGA_S8_OW_INIT_REG          uint64 = 0x3800
-const FPGA_S8_OW_CMD_REG           uint64 = 0x3804
-const FPGA_S8_OW_STATUS_REG        uint64 = 0x3808
-const FPGA_S8_OW_DATA_REG          uint64 = 0x380C
-const FPGA_S8_OW_ADDR0_REG         uint64 = 0x3810
-const FPGA_S8_OW_ADDR1_REG         uint64 = 0x3814
-const FPGA_S9_OW_INIT_REG          uint64 = 0x3900
-const FPGA_S9_OW_CMD_REG           uint64 = 0x3904
-const FPGA_S9_OW_STATUS_REG        uint64 = 0x3908
-const FPGA_S9_OW_DATA_REG          uint64 = 0x390C
-const FPGA_S9_OW_ADDR0_REG         uint64 = 0x3910
-const FPGA_S9_OW_ADDR1_REG         uint64 = 0x3914
-const FPGA_DBG_OW_INIT_REG         uint64 = 0x3A00
-const FPGA_DBG_OW_CMD_REG          uint64 = 0x3A04
-const FPGA_DBG_OW_STATUS_REG       uint64 = 0x3A08
-const FPGA_DBG_OW_DATA_REG         uint64 = 0x3A0C
-const FPGA_DBG_OW_ADDR0_REG        uint64 = 0x3A10
-const FPGA_DBG_OW_ADDR1_REG        uint64 = 0x3A14
 const FPGA_S0_UART_RXDATA_REG      uint64 = 0x10000
 const FPGA_S0_UART_TXDATA_REG      uint64 = 0x10004
 const FPGA_S0_UART_STAT_REG        uint64 = 0x10008
@@ -910,6 +921,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S0_J2C_TXFIFO_REG         ",             FPGA_S0_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S0_J2C_RXFIFO_REG         ",             FPGA_S0_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S0_J2C_SIZE_REG           ",             FPGA_S0_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_INIT_REG            ",             FPGA_S0_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_CMD_REG             ",             FPGA_S0_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_STATUS_REG          ",             FPGA_S0_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_DATA_REG            ",             FPGA_S0_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_ADDR0_REG           ",             FPGA_S0_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S0_OW_ADDR1_REG           ",             FPGA_S0_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S0_OW_EOM_WIDTH_REG       ",             FPGA_S0_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S1_J2C_CMD_REG            ",             FPGA_S1_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S1_J2C_STAT_REG           ",             FPGA_S1_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S1_J2C_ADDR0_REG          ",             FPGA_S1_J2C_ADDR0_REG},
@@ -921,6 +939,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S1_J2C_TXFIFO_REG         ",             FPGA_S1_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S1_J2C_RXFIFO_REG         ",             FPGA_S1_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S1_J2C_SIZE_REG           ",             FPGA_S1_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_INIT_REG            ",             FPGA_S1_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_CMD_REG             ",             FPGA_S1_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_STATUS_REG          ",             FPGA_S1_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_DATA_REG            ",             FPGA_S1_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_ADDR0_REG           ",             FPGA_S1_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S1_OW_ADDR1_REG           ",             FPGA_S1_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S1_OW_EOM_WIDTH_REG       ",             FPGA_S1_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S2_J2C_CMD_REG            ",             FPGA_S2_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S2_J2C_STAT_REG           ",             FPGA_S2_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S2_J2C_ADDR0_REG          ",             FPGA_S2_J2C_ADDR0_REG},
@@ -932,6 +957,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S2_J2C_TXFIFO_REG         ",             FPGA_S2_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S2_J2C_RXFIFO_REG         ",             FPGA_S2_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S2_J2C_SIZE_REG           ",             FPGA_S2_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_INIT_REG            ",             FPGA_S2_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_CMD_REG             ",             FPGA_S2_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_STATUS_REG          ",             FPGA_S2_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_DATA_REG            ",             FPGA_S2_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_ADDR0_REG           ",             FPGA_S2_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S2_OW_ADDR1_REG           ",             FPGA_S2_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S2_OW_EOM_WIDTH_REG       ",             FPGA_S2_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S3_J2C_CMD_REG            ",             FPGA_S3_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S3_J2C_STAT_REG           ",             FPGA_S3_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S3_J2C_ADDR0_REG          ",             FPGA_S3_J2C_ADDR0_REG},
@@ -943,6 +975,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S3_J2C_TXFIFO_REG         ",             FPGA_S3_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S3_J2C_RXFIFO_REG         ",             FPGA_S3_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S3_J2C_SIZE_REG           ",             FPGA_S3_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_INIT_REG            ",             FPGA_S3_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_CMD_REG             ",             FPGA_S3_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_STATUS_REG          ",             FPGA_S3_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_DATA_REG            ",             FPGA_S3_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_ADDR0_REG           ",             FPGA_S3_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S3_OW_ADDR1_REG           ",             FPGA_S3_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S3_OW_EOM_WIDTH_REG       ",             FPGA_S3_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S4_J2C_CMD_REG            ",             FPGA_S4_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S4_J2C_STAT_REG           ",             FPGA_S4_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S4_J2C_ADDR0_REG          ",             FPGA_S4_J2C_ADDR0_REG},
@@ -954,6 +993,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S4_J2C_TXFIFO_REG         ",             FPGA_S4_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S4_J2C_RXFIFO_REG         ",             FPGA_S4_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S4_J2C_SIZE_REG           ",             FPGA_S4_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_INIT_REG            ",             FPGA_S4_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_CMD_REG             ",             FPGA_S4_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_STATUS_REG          ",             FPGA_S4_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_DATA_REG            ",             FPGA_S4_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_ADDR0_REG           ",             FPGA_S4_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S4_OW_ADDR1_REG           ",             FPGA_S4_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S4_OW_EOM_WIDTH_REG       ",             FPGA_S4_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S5_J2C_CMD_REG            ",             FPGA_S5_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S5_J2C_STAT_REG           ",             FPGA_S5_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S5_J2C_ADDR0_REG          ",             FPGA_S5_J2C_ADDR0_REG},
@@ -965,6 +1011,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S5_J2C_TXFIFO_REG         ",             FPGA_S5_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S5_J2C_RXFIFO_REG         ",             FPGA_S5_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S5_J2C_SIZE_REG           ",             FPGA_S5_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_INIT_REG            ",             FPGA_S5_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_CMD_REG             ",             FPGA_S5_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_STATUS_REG          ",             FPGA_S5_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_DATA_REG            ",             FPGA_S5_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_ADDR0_REG           ",             FPGA_S5_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S5_OW_ADDR1_REG           ",             FPGA_S5_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S5_OW_EOM_WIDTH_REG       ",             FPGA_S5_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S6_J2C_CMD_REG            ",             FPGA_S6_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S6_J2C_STAT_REG           ",             FPGA_S6_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S6_J2C_ADDR0_REG          ",             FPGA_S6_J2C_ADDR0_REG},
@@ -976,6 +1029,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S6_J2C_TXFIFO_REG         ",             FPGA_S6_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S6_J2C_RXFIFO_REG         ",             FPGA_S6_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S6_J2C_SIZE_REG           ",             FPGA_S6_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_INIT_REG            ",             FPGA_S6_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_CMD_REG             ",             FPGA_S6_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_STATUS_REG          ",             FPGA_S6_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_DATA_REG            ",             FPGA_S6_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_ADDR0_REG           ",             FPGA_S6_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S6_OW_ADDR1_REG           ",             FPGA_S6_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S6_OW_EOM_WIDTH_REG       ",             FPGA_S6_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S7_J2C_CMD_REG            ",             FPGA_S7_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S7_J2C_STAT_REG           ",             FPGA_S7_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S7_J2C_ADDR0_REG          ",             FPGA_S7_J2C_ADDR0_REG},
@@ -987,6 +1047,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S7_J2C_TXFIFO_REG         ",             FPGA_S7_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S7_J2C_RXFIFO_REG         ",             FPGA_S7_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S7_J2C_SIZE_REG           ",             FPGA_S7_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_INIT_REG            ",             FPGA_S7_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_CMD_REG             ",             FPGA_S7_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_STATUS_REG          ",             FPGA_S7_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_DATA_REG            ",             FPGA_S7_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_ADDR0_REG           ",             FPGA_S7_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S7_OW_ADDR1_REG           ",             FPGA_S7_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S7_OW_EOM_WIDTH_REG       ",             FPGA_S7_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S8_J2C_CMD_REG            ",             FPGA_S8_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S8_J2C_STAT_REG           ",             FPGA_S8_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S8_J2C_ADDR0_REG          ",             FPGA_S8_J2C_ADDR0_REG},
@@ -998,6 +1065,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S8_J2C_TXFIFO_REG         ",             FPGA_S8_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S8_J2C_RXFIFO_REG         ",             FPGA_S8_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S8_J2C_SIZE_REG           ",             FPGA_S8_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_INIT_REG            ",             FPGA_S8_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_CMD_REG             ",             FPGA_S8_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_STATUS_REG          ",             FPGA_S8_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_DATA_REG            ",             FPGA_S8_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_ADDR0_REG           ",             FPGA_S8_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S8_OW_ADDR1_REG           ",             FPGA_S8_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S8_OW_EOM_WIDTH_REG       ",             FPGA_S8_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S9_J2C_CMD_REG            ",             FPGA_S9_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_S9_J2C_STAT_REG           ",             FPGA_S9_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_S9_J2C_ADDR0_REG          ",             FPGA_S9_J2C_ADDR0_REG},
@@ -1009,6 +1083,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_S9_J2C_TXFIFO_REG         ",             FPGA_S9_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S9_J2C_RXFIFO_REG         ",             FPGA_S9_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_S9_J2C_SIZE_REG           ",             FPGA_S9_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_INIT_REG            ",             FPGA_S9_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_CMD_REG             ",             FPGA_S9_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_STATUS_REG          ",             FPGA_S9_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_DATA_REG            ",             FPGA_S9_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_ADDR0_REG           ",             FPGA_S9_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_S9_OW_ADDR1_REG           ",             FPGA_S9_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_S9_OW_EOM_WIDTH_REG       ",             FPGA_S9_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_DBG_J2C_CMD_REG           ",             FPGA_DBG_J2C_CMD_REG},
     FPGA_REGISTERS{"FGPA_DBG_J2C_STAT_REG          ",             FPGA_DBG_J2C_STAT_REG},
     FPGA_REGISTERS{"FGPA_DBG_J2C_ADDR0_REG         ",             FPGA_DBG_J2C_ADDR0_REG},
@@ -1020,6 +1101,13 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_DBG_J2C_TXFIFO_REG        ",             FPGA_DBG_J2C_TXFIFO_REG},
     FPGA_REGISTERS{"FGPA_DBG_J2C_RXFIFO_REG        ",             FPGA_DBG_J2C_RXFIFO_REG},
     FPGA_REGISTERS{"FGPA_DBG_J2C_SIZE_REG          ",             FPGA_DBG_J2C_SIZE_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_INIT_REG           ",             FPGA_DBG_OW_INIT_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_CMD_REG            ",             FPGA_DBG_OW_CMD_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_STATUS_REG         ",             FPGA_DBG_OW_STATUS_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_DATA_REG           ",             FPGA_DBG_OW_DATA_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_ADDR0_REG          ",             FPGA_DBG_OW_ADDR0_REG},
+    FPGA_REGISTERS{"FGPA_DBG_OW_ADDR1_REG          ",             FPGA_DBG_OW_ADDR1_REG},
+    FPGA_REGISTERS{"FPGA_DBG_OW_EOM_WIDTH_REG      ",             FPGA_DBG_OW_EOM_WIDTH_REG},
     FPGA_REGISTERS{"FGPA_S0_SPI_RXDATA_REG         ",             FPGA_S0_SPI_RXDATA_REG},
     FPGA_REGISTERS{"FGPA_S0_SPI_TXDATA4B_REG       ",             FPGA_S0_SPI_TXDATA4B_REG},
     FPGA_REGISTERS{"FGPA_S0_SPI_TXDATA2B_REG       ",             FPGA_S0_SPI_TXDATA2B_REG},
@@ -1140,72 +1228,6 @@ var MATERA_FPGA_REGISTERS = []FPGA_REGISTERS {
     FPGA_REGISTERS{"FGPA_FPGA_SPI_SLAVESEL_REG     ",             FPGA_FPGA_SPI_SLAVESEL_REG},
     FPGA_REGISTERS{"FGPA_FPGA_SPI_EOP_VALUE_REG    ",             FPGA_FPGA_SPI_EOP_VALUE_REG},
     FPGA_REGISTERS{"FGPA_FPGA_SPI_MUXSEL_REG       ",             FPGA_FPGA_SPI_MUXSEL_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_INIT_REG            ",             FPGA_S0_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_CMD_REG             ",             FPGA_S0_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_STATUS_REG          ",             FPGA_S0_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_DATA_REG            ",             FPGA_S0_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_ADDR0_REG           ",             FPGA_S0_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S0_OW_ADDR1_REG           ",             FPGA_S0_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_INIT_REG            ",             FPGA_S1_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_CMD_REG             ",             FPGA_S1_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_STATUS_REG          ",             FPGA_S1_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_DATA_REG            ",             FPGA_S1_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_ADDR0_REG           ",             FPGA_S1_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S1_OW_ADDR1_REG           ",             FPGA_S1_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_INIT_REG            ",             FPGA_S2_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_CMD_REG             ",             FPGA_S2_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_STATUS_REG          ",             FPGA_S2_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_DATA_REG            ",             FPGA_S2_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_ADDR0_REG           ",             FPGA_S2_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S2_OW_ADDR1_REG           ",             FPGA_S2_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_INIT_REG            ",             FPGA_S3_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_CMD_REG             ",             FPGA_S3_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_STATUS_REG          ",             FPGA_S3_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_DATA_REG            ",             FPGA_S3_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_ADDR0_REG           ",             FPGA_S3_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S3_OW_ADDR1_REG           ",             FPGA_S3_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_INIT_REG            ",             FPGA_S4_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_CMD_REG             ",             FPGA_S4_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_STATUS_REG          ",             FPGA_S4_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_DATA_REG            ",             FPGA_S4_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_ADDR0_REG           ",             FPGA_S4_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S4_OW_ADDR1_REG           ",             FPGA_S4_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_INIT_REG            ",             FPGA_S5_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_CMD_REG             ",             FPGA_S5_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_STATUS_REG          ",             FPGA_S5_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_DATA_REG            ",             FPGA_S5_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_ADDR0_REG           ",             FPGA_S5_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S5_OW_ADDR1_REG           ",             FPGA_S5_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_INIT_REG            ",             FPGA_S6_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_CMD_REG             ",             FPGA_S6_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_STATUS_REG          ",             FPGA_S6_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_DATA_REG            ",             FPGA_S6_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_ADDR0_REG           ",             FPGA_S6_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S6_OW_ADDR1_REG           ",             FPGA_S6_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_INIT_REG            ",             FPGA_S7_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_CMD_REG             ",             FPGA_S7_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_STATUS_REG          ",             FPGA_S7_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_DATA_REG            ",             FPGA_S7_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_ADDR0_REG           ",             FPGA_S7_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S7_OW_ADDR1_REG           ",             FPGA_S7_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_INIT_REG            ",             FPGA_S8_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_CMD_REG             ",             FPGA_S8_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_STATUS_REG          ",             FPGA_S8_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_DATA_REG            ",             FPGA_S8_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_ADDR0_REG           ",             FPGA_S8_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S8_OW_ADDR1_REG           ",             FPGA_S8_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_INIT_REG            ",             FPGA_S9_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_CMD_REG             ",             FPGA_S9_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_STATUS_REG          ",             FPGA_S9_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_DATA_REG            ",             FPGA_S9_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_ADDR0_REG           ",             FPGA_S9_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_S9_OW_ADDR1_REG           ",             FPGA_S9_OW_ADDR1_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_INIT_REG           ",             FPGA_DBG_OW_INIT_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_CMD_REG            ",             FPGA_DBG_OW_CMD_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_STATUS_REG         ",             FPGA_DBG_OW_STATUS_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_DATA_REG           ",             FPGA_DBG_OW_DATA_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_ADDR0_REG          ",             FPGA_DBG_OW_ADDR0_REG},
-    FPGA_REGISTERS{"FGPA_DBG_OW_ADDR1_REG          ",             FPGA_DBG_OW_ADDR1_REG},
     FPGA_REGISTERS{"FGPA_S0_UART_RXDATA_REG        ",             FPGA_S0_UART_RXDATA_REG},
     FPGA_REGISTERS{"FGPA_S0_UART_TXDATA_REG        ",             FPGA_S0_UART_TXDATA_REG},
     FPGA_REGISTERS{"FGPA_S0_UART_STAT_REG          ",             FPGA_S0_UART_STAT_REG},
