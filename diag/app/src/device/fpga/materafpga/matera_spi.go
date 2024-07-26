@@ -574,7 +574,6 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
             }
         }
     }
-    
 
     data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
     if (data32 & SPI_STA_FIFO_SUPPORT) == SPI_STA_FIFO_SUPPORT {   //Newer SPI Method that supports FIFO
