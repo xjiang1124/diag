@@ -6200,7 +6200,7 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
@@ -6210,7 +6210,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
 
         # 0 = skip l1_ddr_bist; 1 = default
-        skip_ddr_bist = "1" if self._mtp_type != MTP_TYPE.MATERA else "0"
+        skip_ddr_bist = "1" if stage != FF_Stage.FF_SRN else "0"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
@@ -6226,6 +6226,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+            if stage == FF_Stage.FF_SRN: cmd += " -e /0"
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
