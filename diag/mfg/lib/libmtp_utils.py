@@ -8,6 +8,7 @@ import libmfg_utils
 import json
 import image_control
 import random
+import pexpect
 
 from libdefs import MTP_DIAG_Path
 from libdefs import MTP_Const
@@ -62,7 +63,89 @@ def check_mtp_host_nic_presence(mtp_mgmt_ctrl, host_nic_device="i210"):
 
     return ret
 
-def check_mtp_usb_drive_presence(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
+def mtp_usb_fdisk_format(mtp_mgmt_ctrl, timeout=300):
+    '''
+    unmount /dev/sda1
+    delete partion and re-create new partition with fdisk
+    then make ext4 file system, using ext4 because ntfs take almost an hour to format the partition
+    '''
+
+    cmd = 'umount -f /dev/sda1'
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd, timeout=timeout)
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+
+    # delete and create a new partition
+    cmd = 'echo -e "d\\nn\\np\\n1\\n\\n\\nw" | fdisk /dev/sda'
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd, timeout=timeout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    # Refresh the Partition Table
+    cmd = 'partprobe /dev/sda'
+    cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd_resp(cmd, timeout=timeout)
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+    cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+    # make file system
+    cmd = 'mkfs.ext4 /dev/sda1'
+    userid = mtp_mgmt_ctrl._mgmt_cfg[1]
+    passwd = mtp_mgmt_ctrl._mgmt_cfg[2]
+    mtp_mgmt_ctrl._mgmt_handle.sendline("sudo -k " + cmd)
+    cmd_result = ""
+    while True:
+        idx = mtp_mgmt_ctrl._mgmt_handle.expect_exact([
+            pexpect.TIMEOUT,
+            pexpect.EOF,
+            userid + ":",
+            mtp_mgmt_ctrl._mgmt_prompt,
+            "Proceed anyway",
+            "Creating journal",
+            "Writing superblocks and filesystem accounting information:"
+            ], timeout=timeout)
+        if idx == 0:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} timeout".format(cmd))
+            print(mtp_mgmt_ctrl._mgmt_handle.before)
+            mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl._mgmt_handle.before)
+            return False
+        elif idx == 1:
+            mtp_mgmt_ctrl.cli_log_err("Command {:s} run into EOF".format(cmd))
+            print(mtp_mgmt_ctrl._mgmt_handle.before)
+            mtp_mgmt_ctrl.cli_log_err(mtp_mgmt_ctrl._mgmt_handle.before)
+            return False
+        elif idx == 2:
+            print(passwd)
+            mtp_mgmt_ctrl._mgmt_handle.sendline(passwd)
+            cmd_result += mtp_mgmt_ctrl._mgmt_handle.before
+            continue
+        elif idx == 3:
+            print(3)
+            mtp_mgmt_ctrl.cli_log_inf("Command {:s} compelte")
+            cmd_result += mtp_mgmt_ctrl._mgmt_handle.before
+            break
+        elif idx == 4:
+            print( "Proceed anyway 4-Y")
+            mtp_mgmt_ctrl._mgmt_handle.sendline("y")
+            cmd_result += mtp_mgmt_ctrl._mgmt_handle.before
+            continue
+        elif idx == 5:
+            print("5 Creating journal")
+            mtp_mgmt_ctrl._mgmt_handle.sendline("")
+            cmd_result += mtp_mgmt_ctrl._mgmt_handle.before
+            continue
+        elif idx == 6:
+            print("6 Writing superblocks and filesystem accounting information:")
+            mtp_mgmt_ctrl._mgmt_handle.sendline("")
+            cmd_result += mtp_mgmt_ctrl._mgmt_handle.before
+            continue
+    if not cmd_result:
+        mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+        return False
+
+    return True
+
+def check_mtp_usb_drive_prepare(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
     """probe if use drive existing, if the device is existing but not mount, it will try to mount it to /home/diag/usb
 
     Args:
@@ -92,16 +175,36 @@ def check_mtp_usb_drive_presence(mtp_mgmt_ctrl, devicetype='usb', timeout=10):
 
     if not mount_point:
         # try to mount use to /home/diag/usb
-        cmd = 'mkdir /home/diag/usb'
+        my_mount_point = '/home/diag/usb'
+        cmd = 'ls {:s}'.format(my_mount_point)
         cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
         if not cmd_result:
             mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
             return False
-        cmd = 'mount /dev/sda1 /home/diag/usb'
+        cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if 'No such file or directory'.lower() in cmd_result.lower():
+            cmd = 'mkdir {:s}'.format(my_mount_point)
+            cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=timeout)
+            if not cmd_result:
+                mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+                return False
+        cmd = 'mount /dev/sda1 {:s}'.format(my_mount_point)
         cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=timeout)
         if not cmd_result:
             mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
             return False
+        cmd_result = mtp_mgmt_ctrl.mtp_get_cmd_buf()
+        if 'error' in cmd_result.lower() or 'wrong' in cmd_result.lower():
+            mtp_mgmt_ctrl.cli_log_inf('Mount USB Failed, retry after delete partition and re-create a new partition, then format the USB drive')
+            # start from partion and format the usb drive
+            if not mtp_usb_fdisk_format(mtp_mgmt_ctrl):
+                return False
+            cmd = 'mount /dev/sda1 {:s}'.format(my_mount_point)
+            cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_sudo_cmd(cmd, timeout=timeout)
+            if not cmd_result:
+                mtp_mgmt_ctrl.cli_log_err("Command {:s} Failed".format(cmd))
+                return False
+        mount_point = my_mount_point
 
     parse_result["SIZE"] = size
     parse_result["MODEL"] = model
@@ -121,9 +224,9 @@ def mtp_usb_sanity_check(mtp_mgmt_ctrl):
     while not usb_drive_detected:
         if max_retries == 0:
             break
-        usb_drive_detected = check_mtp_usb_drive_presence(mtp_mgmt_ctrl)
+        usb_drive_detected = check_mtp_usb_drive_prepare(mtp_mgmt_ctrl)
         if not usb_drive_detected:
-            input("Please re-insert the USB Drive then press any key to continue.\nWARNING: do not power off the MTP yet. ")
+            input("Please insert the USB Drive or replace new USB Drive then press any key to continue.\nWARNING: do not power off the MTP yet. ")
             mtp_mgmt_ctrl.cli_log_inf("Re-running sanity check...")
             max_retries -= 1
 

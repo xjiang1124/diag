@@ -91,6 +91,7 @@ class mtp_ctrl():
 
         self._io_cpld_ver = None
         self._jtag_cpld_ver = None
+        # self._fpga_ver = (version, datecode, timestamp) if assigned
         self._fpga_ver = None
         self._mtp_type = None
         self._mtp_rev = None
@@ -283,7 +284,7 @@ class mtp_ctrl():
             if not self._fpga_ver:
                 self.cli_log_err("Unable to retrieve MTP FPGA Version")
                 return False
-            self.cli_log_report_inf("MTP FPGA Version: {:s}".format(self._fpga_ver))
+            self.cli_log_report_inf("MTP FPGA Version: {:s}, datecode: {:s}, timestamp: {:s}".format(self._fpga_ver[0], self._fpga_ver[1], self._fpga_ver[2]))
         else:
             if not self._io_cpld_ver:
                 self.cli_log_err("Unable to retrieve MTP IO-CPLD Version")
@@ -1323,19 +1324,44 @@ class mtp_ctrl():
 
         if self._mtp_type == "MATERA":
             # MTP FPGA version
-            reg_addr = '0x0'
+            reg_addr = '0x00'
             cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("FPGA Command Failed to get MTP FPGA version info", level=0)
                 return False
             match = re.findall(r"RD \[0x0000\] = 0x(\w+)", self.mtp_get_cmd_buf())
             if match:
-                self._fpga_ver = match[0][-4:]
-                if not self._fpga_ver.upper().startswith("A"):
-                    self.cli_log_wrn("FPGA version {:s} of Matera MTP NOT support Salina NIC cards".format(self._fpga_ver))
+                version = match[0][-4:]
+                if not version.upper().startswith("A"):
+                    self.cli_log_wrn("FPGA version {:s} of Matera MTP NOT support Salina NIC cards".format(version))
             else:
                 self.cli_log_err("Failed to parse get MTP FPGA version info", level=0)
                 return False
+            # MTP FPGA datecode
+            reg_addr = '0x04'
+            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("FPGA Command Failed to get MTP FPGA datecode info", level=0)
+                return False
+            match = re.findall(r"RD \[0x0004\] = 0x(\w+)", self.mtp_get_cmd_buf())
+            if match:
+                datecode = match[0]
+            else:
+                self.cli_log_err("Failed to parse get MTP FPGA datecode info", level=0)
+                return False
+            # MTP FPGA timestamp
+            reg_addr = '0x08'
+            cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("FPGA Command Failed to get MTP FPGA timestamp info", level=0)
+                return False
+            match = re.findall(r"RD \[0x0008\] = 0x(\w+)", self.mtp_get_cmd_buf())
+            if match:
+                timestamp = match[0][-6:]
+            else:
+                self.cli_log_err("Failed to parse get MTP FPGA timestamp info", level=0)
+                return False
+            self._fpga_ver = (version, datecode, timestamp)
         else:
             # MTP IO cpld version
             reg_addr = 0x0
@@ -1642,7 +1668,7 @@ class mtp_ctrl():
         # store serial number
         for psu in range(self._psu_num):
             psu = str(psu+1)
-            cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu)
+            cmd = MFG_DIAG_CMDS.MTP_PSU_DISP_FMT.format(psu) if self._mtp_type != MTP_TYPE.MATERA else MFG_DIAG_CMDS.MTP_MATERA_PSU_DISP_FMT.format(psu)
             if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
                 rc = False
@@ -1655,58 +1681,144 @@ class mtp_ctrl():
                 continue
             self._psu_sn[psu] = psu_sn_match.group(1).strip()
 
-        # PSU test
-        cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
-        pass_sig_list = []
-
-        # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
-        if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
-            if int(self._mtp_rev) > 3:
-                apc1 = self._apc_cfg[0]
-                apc2 = self._apc_cfg[4]
-                if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
-                    self.cli_log_err("Failed to get MTP PSU info", level=0)
+        # PSU check
+        if self._mtp_type == MTP_TYPE.MATERA:
+            if not MFG_BYPASS_PSU_CHECK:
+                # get and parse psu status data
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("MTP command {:s} failed".format(cmd))
                     return False
+                devmgr_status_output = self.mtp_get_cmd_buf().splitlines()
+                psu1_data = []
+                psu2_data = []
+                for line_num, line in enumerate(devmgr_status_output):
+                    if 'PSU_1' in line:
+                        previous_line = devmgr_status_output[line_num-1]
+                        self.cli_log_inf(previous_line)
+                        self.cli_log_inf(line)
+                        psu_lines = [i for i in zip([item.strip() for item in previous_line[36:].split()], [j.strip() for j in line[36:].split()])]
+                        for i in psu_lines:
+                            if i not in psu1_data:
+                                psu1_data.append(i)
+                    if 'PSU_2' in line:
+                        previous_line = devmgr_status_output[line_num-1]
+                        self.cli_log_inf(previous_line)
+                        self.cli_log_inf(line)
+                        psu_lines = [i for i in zip([item.strip() for item in previous_line[36:].split()], [j.strip() for j in line[36:].split()])]
+                        for i in psu_lines:
+                            if i not in psu2_data:
+                                psu2_data.append(i)
+                psu_data = [i for i in [psu1_data, psu2_data] if i]
 
-                if apc1 != "":
-                    match = re.search(MFG_DIAG_SIG.MTP_PSU1_OK_SIG, self.mtp_get_cmd_buf())
-                    if match:
-                        match_psu = re.search(r"PSU_1\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
-                        if match_psu:
-                            pout = match_psu.group(1)
-                            pin = match_psu.group(4)
-                            if "-" in pin or "-" in pout:
-                                self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                # check PSU related items
+                if len(psu_data) != 2:
+                    self.cli_log_err("PSU count check failed")
+                    return False
+                for psu_d in psu_data:
+                    for i, v in psu_d[1:]:
+                        if i == 'VOUT' and abs(float(v) - 12) > 5:
+                            self.cli_log_err("{:s} {:s} check failed, exceed 5V difference".format(psu_d[0][1], i))
+                            return False
+                        if re.match(r'TEMP\d', i) and float(v) > 80:
+                            self.cli_log_err("{:s} {:s} check failed, over 80C".format(psu_d[0][1], i))
+                            return False
+                        if 'FAN-RPM' in i and float(v) < 8000:
+                            self.cli_log_err("{:s} {:s} check failed, below 8000".format(psu_d[0][1], i))
+                            return False
+                        if 'STS' in i and int(v, base=16) != 0:
+                            if i == 'STS_WORD' or i == 'STS_TEMP':
+                                self.cli_log_inf("{:s} {:s} check ignore, value {:s}".format(psu_d[0][1], i, v))
+                                continue
+                            self.cli_log_err("{:s} {:s} check failed, not zero".format(psu_d[0][1], i))
+                            return False
+        else:
+            cmd = MFG_DIAG_CMDS.MTP_PSU_TEST_FMT
+            pass_sig_list = []
+
+            # apc_cfg is a list with format [apc1, apc1_port, apc1_userid, apc1_passwd, apc2, apc2_port, apc2_userid, apc2_passwd]
+            if not MFG_BYPASS_PSU_CHECK and self._mtp_rev is not None and self._mtp_rev != "NONE" and len(self._mtp_rev) > 0:
+                if int(self._mtp_rev) > 3:
+                    apc1 = self._apc_cfg[0]
+                    apc2 = self._apc_cfg[4]
+                    if not self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY):
+                        self.cli_log_err("Failed to get MTP PSU info", level=0)
+                        return False
+
+                    if apc1 != "":
+                        match = re.search(MFG_DIAG_SIG.MTP_PSU1_OK_SIG, self.mtp_get_cmd_buf())
+                        if match:
+                            match_psu = re.search(r"PSU_1\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                            if match_psu:
+                                pout = match_psu.group(1)
+                                pin = match_psu.group(4)
+                                if "-" in pin or "-" in pout:
+                                    self.cli_log_err("PSU1 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                    rc = False
+                            else:
+                                self.cli_log_err("PSU1 test failed.")
                                 rc = False
                         else:
-                            self.cli_log_err("PSU1 test failed.")
+                            self.cli_log_err("PSU1 result test failed.")
                             rc = False
-                    else:
-                        self.cli_log_err("PSU1 result test failed.")
-                        rc = False
 
-                if apc2 != "":
-                    match = re.search(MFG_DIAG_SIG.MTP_PSU2_OK_SIG, self.mtp_get_cmd_buf())
-                    if match:
-                        match_psu = re.search(r"PSU_2\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
-                        if match_psu:
-                            pout = match_psu.group(1)
-                            pin = match_psu.group(4)
-                            if "-" in pin or "-" in pout:
-                                self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                    if apc2 != "":
+                        match = re.search(MFG_DIAG_SIG.MTP_PSU2_OK_SIG, self.mtp_get_cmd_buf())
+                        if match:
+                            match_psu = re.search(r"PSU_2\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+([\d|\.|\-]+)\s+", self.mtp_get_cmd_buf())
+                            if match_psu:
+                                pout = match_psu.group(1)
+                                pin = match_psu.group(4)
+                                if "-" in pin or "-" in pout:
+                                    self.cli_log_err("PSU2 test failed (pout:{:s}, pin:{:s})".format(pout, pin))
+                                    rc = False
+                            else:
+                                self.cli_log_err("PSU2 test failed")
                                 rc = False
                         else:
-                            self.cli_log_err("PSU2 test failed")
+                            self.cli_log_err("PSU2 result test failed.")
                             rc = False
-                    else:
-                        self.cli_log_err("PSU2 result test failed.")
-                        rc = False
-                if rc:
-                    self.cli_log_inf("PSU test passed")
+                    if rc:
+                        self.cli_log_inf("PSU test passed")
 
         return rc
 
     def mtp_fan_init(self, fan_pwm):
+
+        def parse_fpga_show_fan(data):
+            '''
+            parse matera mtp fpgautil show fan output data
+            return a dict
+            data example:
+            NAME                prsnt     error     pwm       inRPM     outRPM
+            ----                -----     -----     ---       -----     ------
+            PSU_1               1         0                             10908
+            PSU_2               1         0                             10932
+            FAN-1               1         0         128       5449      6279
+            FAN-2               1         0         128       5438      6293
+            FAN-3               1         0         128       5443      6279
+            FAN-4               1         0         128       5454      6257
+            FAN-5               1         0         128       5443      6264
+            '''
+            parsed_data = {}
+            lines = [line for line in data.splitlines() if 'NAME' in line or 'PSU' in line or 'FAN' in line]
+            feilds_name = lines[0].split()
+            for line in lines[1:]:
+                i = 1
+                fan_info = {}
+                fan_name = line[:20].strip()
+                fan_info[feilds_name[i]] = line[20:30].strip()
+                i += 1
+                fan_info[feilds_name[i]] = line[30:40].strip()
+                i += 1
+                fan_info[feilds_name[i]] = line[40:50].strip()
+                i += 1
+                fan_info[feilds_name[i]] = line[50:60].strip()
+                i += 1
+                fan_info[feilds_name[i]] = line[60:].strip()
+                parsed_data[fan_name] = fan_info
+            return parsed_data
+
         rc = True
         if self._mtp_type != MTP_TYPE.MATERA:
             # Fan present test
@@ -1805,15 +1917,108 @@ class mtp_ctrl():
                 else:
                     self.cli_log_inf("FAN{:d} Speed at PWM {:d} verify PASS".format(fan_idx+1, fan_pwm))
         else:
-            # Fan speed set
-            self.cli_log_inf("Set FAN PWM to {:d}%".format(fan_pwm))
+            # Fan present test
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP command {:s} failed".format(cmd))
+                return False
+            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            fan_count = 0
+            psu_count = 0
+            for k, v in fan_info.items():
+                if "PSU" in k:
+                    psu_count += 1
+                if "FAN" in k:
+                    fan_count += 1
+                if v['prsnt'] != '1':
+                    self.cli_log_err("MTP FAN: {:s} present check failed".format(k))
+                    return False
+                if v['error'] != '0':
+                    self.cli_log_err("MTP FAN: {:s} status check failed".format(k))
+                    return False
+            if psu_count != 2:
+                self.cli_log_err("MTP PSU count check failed, got {:d}, but expect 2".format(psu_count))
+                return False
+            if fan_count != 5:
+                self.cli_log_err("MTP FAN count check failed, got {:d}, but expect 5".format(fan_count))
+                return False
+            self.cli_log_inf("MTP FAN present and status check passed")
+            # Fan speed test
+            ## Set Fan PWM to 50%, check fan speed RPM
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(50)
+            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if not rc:
+                self.cli_log_err("Failed to set fan speed to {:d}%".format(50))
+                return rc
+            time.sleep(30)
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP command {:s} failed".format(cmd))
+                return False
+            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            for k, v in fan_info.items():
+                if "PSU" in k:
+                    if abs(int(v['outRPM']) - 10900) > 1000:
+                        self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
+                        return False
+                if "FAN" in k:
+                    if v['pwm'] != '128':
+                        self.cli_log_err("{:s} read back pwm {:s}, not match setting value 50%".format(k, v['pwm']))
+                        return False
+                    if abs(int(v['inRPM']) - 5440) > 1000:
+                        self.cli_log_err("{:s} Inlet RPM {:s} at PWM 50 out of range".format(k, v['inRPM']))
+                        return False
+                    if abs(int(v['outRPM']) - 6220) > 1000:
+                        self.cli_log_err("{:s} Outlet RPM {:s} at PWM 50 out of range".format(k, v['outRPM']))
+                        return False
+            ## Set Fan PWM to 100%, check fan speed RPM
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(100)
+            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            if not rc:
+                self.cli_log_err("Failed to set fan speed to {:d}%".format(100))
+                return rc
+            time.sleep(30)
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP command {:s} failed".format(cmd))
+                return False
+            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            for k, v in fan_info.items():
+                if "PSU" in k:
+                    if abs(int(v['outRPM']) - 10900) > 1000:
+                        self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
+                        return False
+                if "FAN" in k:
+                    if v['pwm'] != '255':
+                        self.cli_log_err("{:s} read back pwm {:s}, not match setting value 100%".format(k, v['pwm']))
+                        return False
+                    if abs(int(v['inRPM']) - 10400) > 1000:
+                        self.cli_log_err("{:s} Inlet RPM {:s} at PWM 100 out of range".format(k, v['inRPM']))
+                        return False
+                    if abs(int(v['outRPM']) - 12100) > 1000:
+                        self.cli_log_err("{:s} Outlet RPM {:s} at PWM 100 out of range".format(k, v['outRPM']))
+                        return False
+            self.cli_log_inf("MTP FAN speed test passed")
+            # Fan speed set target value
+            self.cli_log_inf("Set FAN PWM to target {:d}%".format(fan_pwm))
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(fan_pwm)
             rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
             if not rc:
                 self.cli_log_err("Failed to set fan speed to {:d}%".format(fan_pwm))
                 return rc
             self._fanspd = fan_pwm          # update class variable
-
+            # fan speed verify after set
+            time.sleep(20)
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP command {:s} failed".format(cmd))
+                return False
+            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            for k, v in fan_info.items():
+                if "FAN" in k:
+                    if abs(v['pwm'] - round(255 * fan_pwm /100)) > 1:
+                        self.cli_log_err("{:s} read back pwm {:s}, not match setting value {:s}".format(k, v['pwm'], str(fan_pwm)))
+                        return False
         return rc
 
     def mtp_get_nic_sn_start(self, slot=0):
@@ -2193,11 +2398,21 @@ class mtp_ctrl():
         fan_spd = libmfg_utils.pick_fan_speed(stage, self._mtp_type)
 
         self.cli_log_inf("Start MTP chassis sanity check", level=0)
-        # mtp cpld test
         if self._mtp_type == "MATERA":
-            rc &= self.mtp_fpga_ver_chk_test()
-            # fan spd set
+            # cpu expected cores and temperature check
+            rc &= self.matera_mtp_cpu_chk_test()
+            # ddr capacity and frequency check
+            rc &= self.matera_mtp_ddr_chk_test()
+            # board temperature check
+            rc &= self.matera_mtp_board_temp_chk_test()
+            # fan test and fan spd set
             rc &= self.mtp_fan_init(fan_spd)
+            # PSU fan temp and status check
+            rc &= self.mtp_psu_init()
+            # FPGA revsion, register RW and lspci( gen1 by 1, maybe) check
+            rc &= self.mtp_fpga_chk_test()
+            # MTP FRU check and display, Serial Number is valid
+            rc &= self.matera_mtp_fru_chk_test()
         else:
             rc &= self.mtp_cpld_test()
             # fan init
@@ -2318,14 +2533,255 @@ class mtp_ctrl():
             self.cli_log_inf("MTP CPLD test skipped for REV_{:s}".format(self._mtp_rev))
         return True
 
-    def mtp_fpga_ver_chk_test(self):
+    def matera_mtp_cpu_chk_test(self, exp_cpu_cores=6):
+        '''
+        This function only works on Matera MTP, call "inventory -cpu" command, parse the message and check cpu cores, temperature.
+        '''
 
-        fpga_running_ver = self._fpga_ver
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_INVENTORY_CPU_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("MTP command {:s} failed".format(cmd))
+            return False
+        cpu_info = self.mtp_get_cmd_buf()
+        # check cpu cores info from dmidecode
+        found_cpu_cores = re.findall(r'CPU Model:.*(\d+)\-Core Processor', cpu_info)
+        cpu_core = found_cpu_cores[0] if found_cpu_cores else None
+        if not cpu_core:
+            self.cli_log_err("Failed to parse number of CPU cores info")
+            self.cli_log_err(cpu_info)
+            return False
+        if int(cpu_core) != exp_cpu_cores:
+            self.cli_log_err("Expect {:s} CPU cores, but get {:s}".format(str(exp_cpu_cores), str(cpu_core)))
+            return False
+        self.cli_log_inf('Got CPU core number: {:s}, match expected: {:s}'.format(str(cpu_core), str(exp_cpu_cores)))
+
+        # check cpu temp, k10temp is AMD cpu kermel driver,
+        # Tctl: This is the control temperature. It is an abstract value used by the system's thermal management to control cooling.
+        # It might not correspond directly to a physical temperature but is used to trigger thermal throttling and cooling mechanisms.
+        # Tccd1: This is the temperature of a specific core complex die (CCD) on the CPU.
+        # Modern AMD CPUs, particularly those in the Ryzen and EPYC families, are composed of multiple core complexes.
+        # Tccd1 refers to the temperature of the first CCD.
+        found_tctl = re.findall(r'Tctl:\s+([\+\-]\d+\.\d+)°C', cpu_info)
+        tctl = found_tctl[0] if found_tctl else None
+        if not tctl:
+            self.cli_log_err('Failed to parse Tctl temp')
+            self.cli_log_err(cpu_info)
+            return False
+        if float(tctl) < 0 or float(tctl) > 100:
+            self.cli_log_err('Senor Tctl reading out of range 0<>100')
+            self.cli_log_err(cpu_info)
+            return False
+        self.cli_log_inf('Got CPU control temperature sensor Tctl {:s}°C'.format(tctl))
+        found_tccd1 = re.findall(r'Tccd1:\s+([\+\-]\d+\.\d+)°C', cpu_info)
+        tccd1 = found_tccd1[0] if found_tccd1 else None
+        if not tccd1:
+            self.cli_log_err('Failed to parse Tccd1 temp')
+            self.cli_log_err(cpu_info)
+            return False
+        if float(tccd1) < 0 or float(tccd1) > 100:
+            self.cli_log_err('Sensor Tccd1 reading out of range 0<>100')
+            self.cli_log_err(cpu_info)
+            return False
+        self.cli_log_inf('Got CPU specific core complex die temperature sensor Tccd1 {:s}°C'.format(tccd1))
+
+        return True
+
+    def matera_mtp_ddr_chk_test(self):
+        '''
+        This function only works on Matera MTP, call "inventory -ddr" command, parse the message and dispaly memory capacity and speed.
+        '''
+
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_INVENTORY_DDR_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("MTP command {:s} failed".format(cmd))
+            return False
+        memory_info = self.mtp_get_cmd_buf()
+        # check ddr info from dmidecode
+        found_size = re.findall(r'Size:\s+(\d+)\s+GB', memory_info)
+        if not found_size:
+            self.cli_log_err("Failed to parse DDR memory size")
+            self.cli_log_err(memory_info)
+            return False
+        total_mem_size = sum([int(i) for i in found_size])
+        found_type = re.findall(r'Type:\s+(DDR\d)', memory_info)
+        if not found_type:
+            self.cli_log_err("Failed to parse DDR memory type")
+            self.cli_log_err(memory_info)
+            return False
+        mem_type = found_type[0]
+        found_speed = re.findall(r'\s{2,10}Speed:\s+(\d+\s+.*)', memory_info)
+        if not found_speed:
+            self.cli_log_err("Failed to parse DDR memory speed")
+            self.cli_log_err(memory_info)
+            return False
+        mem_speed = found_speed[0]
+        self.cli_log_inf("Got {:s} memory in total {:d}GB with speed {:s}".format(mem_type, total_mem_size, mem_speed))
+        return True
+
+    def matera_mtp_board_temp_chk_test(self):
+        '''
+        This function only works for Matera MTP, call "devmgr_v2 status" command, parse the data and check board temperature in range.
+        '''
+
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("MTP command {:s} failed".format(cmd))
+            return False
+        devmgr_status_output = self.mtp_get_cmd_buf()
+        found_iobl = re.findall(r'TSENSOR_IOBL\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        if not found_iobl:
+            self.cli_log_err("Failed to parse TSENSOR_IOBL reading")
+            self.cli_log_err(devmgr_status_output)
+            return False
+        iobl_reading = found_iobl[0]
+        found_iobr = re.findall(r'TSENSOR_IOBR\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        if not found_iobr:
+            self.cli_log_err("Failed to parse TSENSOR_IOBR reading")
+            self.cli_log_err(devmgr_status_output)
+            return False
+        iobr_reading = found_iobr[0]
+        found_mb = re.findall(r'TSENSOR_MB\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        if not found_mb:
+            self.cli_log_err("Failed to parse TSENSOR_MB reading")
+            self.cli_log_err(devmgr_status_output)
+            return False
+        mb_reading = found_mb[0]
+        self.cli_log_inf("Got board temperature sensor TSENSOR_IOBL {:s}C, TSENSOR_IOBR {:s}C, TSENSOR_MB {:s}C".format(iobl_reading, iobr_reading, mb_reading))
+
+        # Chassis inlet temp check
+        # According Matera MTP design, we can use TSENSOR_IOBL and TSENSOR_IOBR as chassis inlet temperature for test
+        max_temp = 70
+        min_temp = -10
+        if float(iobl_reading) > max_temp or float(iobl_reading) < min_temp:
+            self.cli_log_err("Inlet temp sensor TSENSOR_IOBL reading out of range {:s}<>{:s}".format(str(min_temp), str(max_temp)))
+            return False
+        if float(iobr_reading) > max_temp or float(iobr_reading) < min_temp:
+            self.cli_log_err("Inlet temp sensor TSENSOR_IOBR reading out of range {:s}<>{:s}".format(str(min_temp), str(max_temp)))
+            return False
+        if abs(float(iobl_reading) - float(iobr_reading)) > 15:
+            self.cli_log_err("Difference between inlet temp sensor TSENSOR_IOBL and TSENSOR_IOBL exceed 15")
+            return False
+
+        return True
+
+
+    def matera_mtp_fru_chk_test(self):
+        '''
+        This function only works for Matera MTP, call "eeutil -info" command, parse the data and check fru presence and serial number is valid.
+        '''
+
+        frus_list = ['FRU', 'IOBL', 'IOBR', 'FPIC']
+        # Fru presence check
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_EEUTIL_INFO_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("MTP command {:s} failed".format(cmd))
+            return False
+        eeutil_info_output = self.mtp_get_cmd_buf()
+        for fru in frus_list:
+            if fru not in eeutil_info_output:
+                self.cli_log_err("Failed to find {:S}".format(fru))
+                self.cli_log_err(eeutil_info_output)
+                return False
+        self.cli_log_inf("FRU, IOBL, IOBR and FPIC founded in eeutil info")
+
+        # FRU serial number check
+        for fru in frus_list:
+            fru_sn = ""
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_DISP_DEV_FMT.format(fru)
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("MTP command {:s} failed".format(cmd))
+                return False
+            fru_info_output = self.mtp_get_cmd_buf()
+            if "Failed to display tlv-based eeprom".lower() in fru_info_output.lower():
+                self.cli_log_err("{:s} eeprom not program".format(fru))
+                return False
+            for line in fru_info_output.splitlines():
+                if 'Serial Number' in line:
+                    fru_sn = line.split('Serial Number')[-1].strip()
+            if not fru_sn:
+                self.cli_log_err("Failed to parse {:s} serial number".format(fru))
+                return False
+            # if eeprom is blank, we fake one for validation script logic with command: eeutil -update -dev=IOBR -pn="102-P10400-00" -sn="IOB_R000000" -mac="000000000000" -date="050324"
+            if not re.match(r'FPF\w{8}', fru_sn):
+                self.cli_log_err("{:s} serial number {:s} format check failed".format(fru, fru_sn))
+                return False
+            self.cli_log_inf('{:s} serial number {:s} check pass'.format(fru, fru_sn))
+
+        return True
+
+    def mtp_fpga_chk_test(self):
+
+        # version check
+        fpga_running_ver, fpga_running_date, fpga_running_timestamp = self._fpga_ver
         fpga_img_ver = MTP_IMAGES.mtp_fpga_ver[self._mtp_type]
+        fpga_img_date = MTP_IMAGES.mtp_fpga_date[self._mtp_type]
         if fpga_running_ver != fpga_img_ver:
             self.cli_log_err("MTP FPGA Runing Version: {:s}, expect: {:s}".format(fpga_running_ver, fpga_img_ver))
             self.cli_log_err("MTP FPGA Version Check Test failed")
             return False
+        if fpga_running_date != fpga_img_date:
+            self.cli_log_err("MTP FPGA Runing datecode: {:s}, expect: {:s}".format(fpga_running_date, fpga_img_date))
+            self.cli_log_err("MTP FPGA datecode Check Test failed")
+            return False
+        self.cli_log_inf("MTP FPGA Version Check pass. version: {:s}, datecode: {:s}, timestamp: {:s}".format(fpga_running_ver, fpga_running_date, fpga_running_timestamp))
+
+        # Register read write check, Write scratch register then read back and compare
+        reg_addr = '0x10' # SCRATCH_0_REG
+        test_value = '0xffffffff'
+        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_WRITE32_FMT.format(reg_addr, test_value)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("FPGA Command Failed to write scratch register 0", level=0)
+            return False
+        match = re.findall(r"WR \[0x0010\] = (0x\w+)", self.mtp_get_cmd_buf())
+        if match:
+            if test_value.lower() != match[0].lower():
+                self.cli_log_err("FPGA Command Failed, echo back not match the write value of scratch register 0", level=0)
+        else:
+            self.cli_log_err("Failed to parse echo back message of write scratch register 0", level=0)
+            return False
+
+        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_READ32_FMT.format(reg_addr)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("FPGA Command Failed to read scratch register 0", level=0)
+            return False
+        match = re.findall(r"RD \[0x0010\] = (0x\w+)", self.mtp_get_cmd_buf())
+        if match:
+            if test_value.lower() != match[0].lower():
+                self.cli_log_err("FPGA Command Failed, read back value not match the write value of scratch register 0", level=0)
+        else:
+            self.cli_log_err("Failed to parse read scratch register 0", level=0)
+            return False
+        self.cli_log_inf("MTP FPGA scratch register read/write check pass")
+        # dump all registers for information
+        cmd = MFG_DIAG_CMDS.MTP_FPGA_UTIL_REGDUMP_FMT
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("FPGA DUMP Registers Command Failed", level=0)
+            return False
+
+        # lspci check speed and width
+        cmd = "lspci -vvv -d 1dd8:000b"
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("MTP command {:s} failed".format(cmd))
+            return False
+        lspci_output = self.mtp_get_cmd_buf()
+        for line in lspci_output.splitlines():
+            if 'LnkCap:' in line:
+                speed = re.findall(r'Speed\s+(\d.*)GT\/s\,', line)
+                if not speed:
+                    self.cli_log_err("Failed to parse FPGA device pcie bus speed")
+                    return False
+                speed = speed[0]
+                width = re.findall(r'Width\s+x(\d+)\,', line)
+                if not width:
+                    self.cli_log_err("Failed to parse FPGA device pcie bus width")
+                    return False
+                width = width[0]
+                break
+        if float(speed) < 2.5 or int(width) < 1:
+            self.cli_log_err("FPGA PCI connection speed and width check failed")
+            return False
+
+        self.cli_log_inf("FPGA running {:s}GB/s at by x{:s} pcie bus".format(speed, width))
         return True
 
     def mtp_inlet_sensor_test(self):
@@ -4383,7 +4839,7 @@ class mtp_ctrl():
 
     def mtp_i2c_show(self, nic_list):
         self.cli_log_inf("Show I2C device in the MTP Chassis", level=0)
-        cmd = MFG_DIAG_CMDS.MTP_I2C_PRESENT_DISP_FMT
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_DEVMGR_STATUS_FMT
         if not self.mtp_mgmt_exec_cmd(cmd):
             self.cli_log_err("Failed to show I2C device in the MTP Chassis", level=0)
             self.mtp_dump_err_msg(self._mgmt_handle.before)

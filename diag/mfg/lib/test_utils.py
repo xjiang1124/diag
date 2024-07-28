@@ -365,7 +365,7 @@ def single_mtp_test_iteration(stage, mtp_mgmt_ctrl, mtp_test_summary, skip_test_
 
         # RUN script command
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Start".format(stage), level=0)
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(script_cmd + test_cmd_args, timeout=test_timeout)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(script_cmd + test_cmd_args, ["MFG MTP MTP Test"], timeout=test_timeout)
         mtp_mgmt_ctrl.cli_log_inf("MFG {:s} Test Complete".format(stage), level=0)
         mtp_mgmt_ctrl.set_mtp_diag_logfile(None)
         testlog.replace_logfile_path(mtp_mgmt_ctrl, mtp_script_dir)

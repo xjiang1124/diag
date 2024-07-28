@@ -641,7 +641,7 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
 
     stress_test_time = 60  # Set stress test running time in seconds
     cmd = "/home/diag/diag/tools/stressapptest -M 400 -f file.1 -f file.2"
-    tout = stress_test_time * 1.2
+    tout = stress_test_time * 2.5
     cmd += " -s " + str(stress_test_time)
     mtp_mgmt_ctrl.cli_log_inf(cmd)
     cmd_result = mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout)
@@ -669,7 +669,7 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
     cmd = "rm -rf *"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
         mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
-    cmd = "cd -; umount " + usb_probe_result["MOUNTPOINTS"]
+    cmd = "cd -; umount -f " + usb_probe_result["MOUNTPOINTS"]
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
         mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
 
