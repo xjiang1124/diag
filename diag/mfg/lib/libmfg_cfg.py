@@ -61,7 +61,7 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25SWM"] = "08-30-2022"
     goldfw_img["NAPLES25SWM"] = "capri_goldfw_1.3.1-E-65_2022.10.04.tar"
     goldfw_dat["NAPLES25SWM"] = "08-31-2022"
-    mainfw_img["NAPLES25SWM"] = "capri_fw_iris_1.28.3-E-4_C+_patch_2022.10.06.tar"
+    mainfw_img["NAPLES25SWM"] = "naples_fw_iris_1.64.0-E-58_2023_02_14.tar"
     mainfw_dat["NAPLES25SWM"] = ""
 
     cpld_img["NAPLES25SWMDELL"] = "naples25_swmdell_rev3_01062021.bin"
@@ -88,7 +88,7 @@ class NIC_IMAGES:
     diagfw_dat["NAPLES25OCP"] = "03-03-2021"
     goldfw_img["NAPLES25OCP"] = "capri_goldfw_1.3.1-E-59_2022.07.14.tar"
     goldfw_dat["NAPLES25OCP"] = "04-25-2022"
-    mainfw_img["NAPLES25OCP"] = "naples_fw_iris_1.28.2-E-93_2022_05_03.tar"
+    mainfw_img["NAPLES25OCP"] = "naples_fw_iris_1.64.0-E-58_2023_02_14.tar"
     mainfw_dat["NAPLES25OCP"] = ""
 
     cpld_img["NAPLES100"] = "naples100_cpld_rev9_05312019.bin"
