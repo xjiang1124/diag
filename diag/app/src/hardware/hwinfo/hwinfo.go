@@ -92,7 +92,9 @@ var CpldInfo interface{}
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
-var MalfaEepList  = []string {"FRU", "PCIE_FRU"}
+var MalfaEepList  = []string {"FRU", "DPU_FRU"}
+var PollaraEepList  = []string {"FRU", "DPU_FRU"}
+var LeniEepList   = []string {"FRU", "DPU_FRU"}
 var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
 var materaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 
@@ -181,9 +183,11 @@ var ginestraD4DispStaList map[string]DispStaFunc
 var ginestraD5DispStaList map[string]DispStaFunc
 
 //===============================
-// Malfa
+// Salina cards
 // Status display list
 var malfaDispStaList map[string]DispStaFunc
+var pollaraDispStaList map[string]DispStaFunc
+var leniDispStaList map[string]DispStaFunc
 
 //===============================
 // MTP
@@ -516,6 +520,50 @@ func init() {
     malfaDispStaList["DDR_VDDQ_1"]   = pmic.DispStatus
     malfaDispStaList["DDR_VPP_1"]    = pmic.DispStatus
 
+    //Pollara
+    //TODO: check HW Spec and remove unnecessary entries
+    pollaraDispStaList = make(map[string]DispStaFunc)
+    pollaraDispStaList["CORE"]         = tps53688.DispStatus
+    pollaraDispStaList["ARM"]          = tps53688.DispStatus
+    pollaraDispStaList["P12V"]         = ina3221a.DispStatus
+    pollaraDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
+    pollaraDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
+    pollaraDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
+    pollaraDispStaList["P3V3"]         = ina3221a.DispStatus
+    pollaraDispStaList["P1V8"]         = ina3221a.DispStatus
+    pollaraDispStaList["VDD_DDR"]      = ina3221a.DispStatus
+    pollaraDispStaList["VDD_075_PCIE"] = ina3221a.DispStatus
+    pollaraDispStaList["VDD_075_MX"]   = ina3221a.DispStatus
+    pollaraDispStaList["VDD_12_PCIE"]  = ina3221a.DispStatus
+    pollaraDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
+    pollaraDispStaList["VDDQ"]         = ina3221a.DispStatus
+    pollaraDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
+    pollaraDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
+    pollaraDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
+    pollaraDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
+
+    //Leni
+    //TODO: check HW Spec and remove unnecessary entries
+    leniDispStaList = make(map[string]DispStaFunc)
+    leniDispStaList["CORE"]         = tps53688.DispStatus
+    leniDispStaList["ARM"]          = tps53688.DispStatus
+    leniDispStaList["P12V"]         = ina3221a.DispStatus
+    leniDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
+    leniDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
+    leniDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
+    leniDispStaList["P3V3"]         = ina3221a.DispStatus
+    leniDispStaList["P1V8"]         = ina3221a.DispStatus
+    leniDispStaList["VDD_DDR"]      = ina3221a.DispStatus
+    leniDispStaList["VDD_075_PCIE"] = ina3221a.DispStatus
+    leniDispStaList["VDD_075_MX"]   = ina3221a.DispStatus
+    leniDispStaList["VDD_12_PCIE"]  = ina3221a.DispStatus
+    leniDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
+    leniDispStaList["VDDQ"]         = ina3221a.DispStatus
+    leniDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
+    leniDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
+    leniDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
+    leniDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
+
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
 
@@ -708,6 +756,8 @@ func init() {
     // Salina
     dispMap["MALFA"]        = malfaDispStaList
     dispMap["MALFA_S"]      = malfaDispStaList
+    dispMap["POLLARA"]      = pollaraDispStaList
+    dispMap["LENI"]         = leniDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
@@ -772,6 +822,8 @@ func init() {
     eepromMap["LIPARI"]            = lipariEepList
     // Salina
     eepromMap["MALFA"]             = MalfaEepList
+    eepromMap["POLLARA"]           = PollaraEepList
+    eepromMap["LENI"]              = LeniEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -816,6 +868,8 @@ func init() {
     i2cHubMap["GINESTRA_D5"]        = naples100I2cHubMap
     // Salina
     i2cHubMap["MALFA"]          = materaI2cHubMap
+    i2cHubMap["POLLARA"]        = materaI2cHubMap
+    i2cHubMap["LENI"]           = materaI2cHubMap
 
     //===============================
     // Taormina

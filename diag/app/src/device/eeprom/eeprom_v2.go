@@ -80,6 +80,8 @@ const (
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
     PN_MALFA         string = "102-P10600-00"
+    PN_POLLARA       string = "102-P11100-00"
+    PN_LENI          string = "102-P10800-00"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -97,6 +99,8 @@ const (
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
     PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 Base SW+3yr SUP C"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
+    PROD_NAME_POLLARA       string = "AI-NIC400 1x400G QSFP112"
+    PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -119,6 +123,9 @@ const (
     SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
     SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C-B3"
+    SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
+    SKU_POLLARA         string = "AI-NIC400-1Q400-P"
+    SKU_LENI            string = "DSC3-2Q400-64S64E64P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -135,8 +142,10 @@ const (
     FRU_ID_GIN_D5        string = "01/24/23"
     FRU_ID_GIN_D5_MSFT   string = "01/19/24"
     FRU_ID_GIN_D5_SSDK   string = "02/26/24"
-    FRU_ID_MALFA         string = "07/02/24"
     FRU_ID_GIN_D5_SSDK_CISCO   string = "07/11/24"
+    FRU_ID_MALFA         string = "06/25/24"
+    FRU_ID_POLLARA       string = "07/18/24"
+    FRU_ID_LENI          string = "07/18/24"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -784,10 +793,52 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_MALFA: updateInfo {
-        MalfaTbl,
+        PenStandardV2Tbl,
         PROD_NAME_MALFA,
         PN_MALFA,
         FRU_ID_MALFA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    PN_POLLARA: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_POLLARA,
+        PN_POLLARA,
+        FRU_ID_POLLARA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    PN_LENI: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_LENI,
+        PN_LENI,
+        FRU_ID_LENI,
         []progInfo {
             progInfo {
                 FIELD_TYPE_NUM,
@@ -833,6 +884,8 @@ var CardTypes = []card{
     //used in non SKU mode
     card{"ORTANO-GIN_D5_SSDK",      PN_GIN_D5_SSDK},
     card{"MALFA",                   PN_MALFA},
+    card{"POLLARA",                 PN_POLLARA},
+    card{"LENI",                    PN_LENI},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},

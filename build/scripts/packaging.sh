@@ -19,17 +19,22 @@ else
     fi
 fi
 
-if [[ $2 == "elba" ]]
+## parse asic types
+IFS=',' read -r -a asicArr <<< "$2"
+declare -a asic_list
+for item in ${asicArr[@]}
+do
+    if [[ $item == "elba" ]] || \
+       [[ $item == "capri" ]] || \
+       [[ $item == "giglio" ]] || \
+       [[ $item == "salina" ]]
+    then
+        asic_list+=($item)
+    fi
+done
+if [[ ${#asic_list[@]} == 0 ]]
 then
-    declare -a asic_list=("elba")
-elif [[ $2 == "capri" ]]
-then
-    declare -a asic_list=("capri")
-elif [[ $2 == "giglio" ]]
-then
-    declare -a asic_list=("giglio")
-else
-    declare -a asic_list=("giglio" "elba" "capri")
+    asic_list=("giglio" "elba" "capri" "salina")
 fi
 
 for asic in ${asic_list[@]}
@@ -46,17 +51,6 @@ then
 fi
 
 
-## initialize defaults for j2cdriver
-if [[ $(echo ${asic_list[@]} | grep "giglio") ]]
-then
-    declare -a j2cd_list=("ftdi" "fpga")
-elif [[ $(echo ${asic_list[@]} | grep "elba") ]]
-then
-    declare -a j2cd_list=("ftdi" "lipari" "fpga")
-else
-    declare -a j2cd_list=("ftdi")
-fi
-
 echo "============================================"
 echo "Start packaging Diag environment for $arch"
 
@@ -65,6 +59,20 @@ TOP_DIR=$(dirname $BUILD_DIR)
 
 for asic in ${asic_list[@]}
 do
+
+    ## initialize defaults for j2cdriver
+    if [[ $asic == "giglio" ]]
+    then
+        declare -a j2cd_list=("ftdi" "fpga")
+    elif [[ $asic == "elba" ]]
+    then
+        declare -a j2cd_list=("ftdi" "lipari" "fpga")
+    elif [[ $asic == "salina" ]]
+    then
+        declare -a j2cd_list=("fpga")
+    else
+        declare -a j2cd_list=("ftdi")
+    fi
 
     TEMP_DIR_TOP=$BUILD_DIR/temp_$asic/$arch/
     TEMP_DIR=$TEMP_DIR_TOP/diag/
@@ -125,6 +133,10 @@ do
         if [[ $asic == "elba" ]]
         then
             echo "export ASIC_TYPE=ELBA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
+        fi
+        if [[ $asic == "salina" ]]
+        then
+            echo "export ASIC_TYPE=SALINA" >> $TEMP_DIR/python/regression/scripts/dft_profile_mtp
         fi
         if [[ $asic == "capri" ]]
         then

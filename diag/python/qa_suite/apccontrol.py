@@ -13,6 +13,12 @@ class apcControl:
         filename="config/apcinfo.yaml"
         self.tsconfig = common.load_yaml(filename)
 
+    def list(self):
+        for name, value in self.tsconfig.items():
+            print('----------------')
+            print(name)
+            print(value['IP'])
+
     def turn_off(self, apcName, *ports):
         try:
             tsinfo = self.tsconfig[apcName]
@@ -250,23 +256,32 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.RawTextHelpFormatter)
     group = parser.add_mutually_exclusive_group()
+    parser.add_argument("-apc", "--apc", type=str, help="APC Name", default="")
+    parser.add_argument("-p",  "--port", type=str, help="APC port number", default="99")
     group.add_argument("-on",  "--on", action="store_true", help="Turn on APC port")
     group.add_argument("-off", "--off", action="store_true", help="Turn off APC port")
-    parser.add_argument("-p",  "--port", type=str, help="APC port number", default="99")
-    parser.add_argument("-apc", "--apc", type=str, help="APC Name", default="")
+    parser.add_argument("-l", "--list", help="list all APCs", action="store_true")
     args = parser.parse_args()
+
+    apcCtrl = apcControl()
+    if args.list == True:
+        apcCtrl.list()
+        sys.exit()
 
     if args.apc == "":
         print "Please give APC name!"
         sys.exit()
 
-    apcCtrl = apcControl()
     if args.on == True:
         apcCtrl.turn_on(args.apc, args.port)
         sys.exit()
 
     if args.off == True:
         apcCtrl.turn_off(args.apc, args.port)
+        sys.exit()
+
+    if args.off == True:
+        apcCtrl.list()
         sys.exit()
 
     print "Invalid parameter"

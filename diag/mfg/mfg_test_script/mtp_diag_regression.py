@@ -214,7 +214,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
 
     return ret
 
-def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
+def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential):
     @parallelize.parallel_nic_using_j2c
     def run_j2c_test_normally(mtp_mgmt_ctrl, slot, test, vmarg):
         sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -225,7 +225,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage)
 
     @parallelize.sequential_nic_test
     def run_j2c_test_sequentially(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -237,12 +237,12 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, force_sequential):
             n_vmarg += libmfg_utils.pick_voltage_margin_percentage(pn)
             mtp_mgmt_ctrl.cli_log_inf("Vmargin is: {:s} After Apply Percentage using Part Number: {:s} For before run_l1.sh".format(n_vmarg, pn), level=0)
 
-        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg)
+        return mtp_mgmt_ctrl.mtp_run_asic_l1_bash(slot, sn, mode, n_vmarg, stage)
 
     if force_sequential:
-        fail_j2c_list = run_j2c_test_normally(mtp_mgmt_ctrl, nic_list, test, vmarg)
-    else:
         fail_j2c_list = run_j2c_test_sequentially(mtp_mgmt_ctrl, nic_list, test, vmarg)
+    else:
+        fail_j2c_list = run_j2c_test_normally(mtp_mgmt_ctrl, nic_list, test, vmarg)
 
     # double check the L1 test even if it passed
     if dsp == "ASIC" and test == "L1":
@@ -634,7 +634,7 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg, edvt_loop_idx=loop_idx)
 
                 elif test == "L1":
-                    rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, test_kwargs["l1_sequence"])
+                    rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"])
 
                 elif test == "ASIC_LOG_SAVE":
                     rlist = naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_test_history)

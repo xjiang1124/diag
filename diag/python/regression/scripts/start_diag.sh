@@ -160,7 +160,7 @@ elif [[ $mtp_id == "0x000b" ]]
 then
     echo "Matera  MTP"
     echo "export MTP_TYPE=MTP_MATERA" >> temp_profile
-    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/elba
+    ASIC_DIR_SUB_TOP=$ASIC_DIR_TOP/${asic_type,,}
 else
     echo "Default MTP to Capri"
     echo "export MTP_TYPE=MTP_CAPRI" >> temp_profile

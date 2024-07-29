@@ -4360,29 +4360,26 @@ class mtp_ctrl():
 
         return True
 
-    @parallelize.parallel_nic_using_nic_test
-    def mtp_l1_setup(self, nic_list):
-        fail_nic_list = list()
-
-        if not nic_list:
-            # self.cli_log_err("No NICs passed")
-            return fail_nic_list
-
-        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
-        # first slot will be the "main" slot to issue the commands on.
-        slot_main = nic_list[0]
+    @parallelize.parallel_nic_using_ssh
+    def mtp_l1_setup(self, slot):
+        slot_num = slot + 1
 
         cmd = "export MTP_REV=REV_04"
-        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
-            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
-            return nic_list[:]
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
 
-        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}".format(nic_list_param)
-        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
-            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
-            return nic_list[:]
+        cmd = "/home/diag/diag/util/jtag_accpcie_salina clr {:d}".format(slot_num)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
 
-        return fail_nic_list
+        cmd = MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+            return False
+
+        return True
 
     def mtp_i2c_show(self, nic_list):
         self.cli_log_inf("Show I2C device in the MTP Chassis", level=0)
@@ -6203,7 +6200,7 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
@@ -6213,7 +6210,7 @@ class mtp_ctrl():
         nic_type = self.mtp_get_nic_type(slot)
 
         # 0 = skip l1_ddr_bist; 1 = default
-        skip_ddr_bist = "1" if self._mtp_type != MTP_TYPE.MATERA else "0"
+        skip_ddr_bist = "1" if stage != FF_Stage.FF_SRN else "0"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
@@ -6229,6 +6226,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
+            if stage == FF_Stage.FF_SRN: cmd += " -e /0"
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
