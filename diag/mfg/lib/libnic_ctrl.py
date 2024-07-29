@@ -3789,7 +3789,7 @@ class nic_ctrl():
             cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd):
                 return None
-            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(self._slot+1) + " ;"
         cmd += MFG_DIAG_CMDS.MTP_SMB_RD_CPLD_FMT.format(reg_addr, self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return None
