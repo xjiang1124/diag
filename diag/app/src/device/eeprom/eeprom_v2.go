@@ -42,6 +42,10 @@ const (
     FIELD_NUM_SKU_4         int = 4
     FIELD_NUM_FRU_ID_5      int = 5
     FIELD_NUM_DPN_11        int = 11
+    FIELD_NUM_PN_8          int = 8
+    FIELD_NUM_SKU_3         int = 3
+    FIELD_NUM_FRU_ID_7      int = 7
+    FIELD_NUM_DPN_9         int = 9
 
 
     //Field types; Area field number vs absolute byte offset
@@ -758,22 +762,22 @@ var CardDataInfo = map[string]updateInfo {
                 AREA_TYPE_BOARD_INFO,
                 FIELD_NUM_SN_3,
                 FIELD_NUM_NONE,//Cisco PN to be added here, fixed for now
-                FIELD_NUM_NONE,
+                FIELD_NUM_MAC_9,
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_NONE,
-                FIELD_NUM_NONE,
+                FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_NONE,
                 },
             progInfo {//product info
                 FIELD_TYPE_NUM,
                 AREA_TYPE_PRDT_INFO,
-                FIELD_NUM_SN_3,
-                FIELD_NUM_PN_10,//Pensando PN
-                FIELD_NUM_MAC_9,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
                 FIELD_NUM_PROD_NAME_2,
-                FIELD_NUM_SKU_4,
-                FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_DPN_11,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_DPN_9,
                 },
         },
         nil,
@@ -936,11 +940,11 @@ func findFieldOffset(start int, end int, fieldNum int, areaHdrLen int) (fieldOff
     return
 }
 
-func findPn(start int, end int, areaHdrLen int) (pn string, err int) {
+func findPn(start int, end int, areaHdrLen int, sku_num int, pn_num int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
     // first look for FIELD_NUM_SKU_4 which is SKU
-    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_SKU_4, areaHdrLen)
+    partNumOff, partNumLen, err := findFieldOffset(start, end, sku_num, areaHdrLen)
     if err != errType.SUCCESS {
         cli.Println("e", "ERROR: Failed to find part number offset.")
         return
@@ -952,7 +956,7 @@ func findPn(start int, end int, areaHdrLen int) (pn string, err int) {
         return 
     }
     // if SKU is not found by CardInListNew, look for PN (Assembly Number)
-    partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10, areaHdrLen)
+    partNumOff, partNumLen, err = findFieldOffset(start, end, pn_num, areaHdrLen)
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum = string(pnBytes)
     found, pn = CardInListNew(partNum, false)
@@ -1244,7 +1248,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
             (entry.prodName != FIELD_NUM_NONE && len(prodNameByte) > prodNameLen)   ||
             (entry.sku != FIELD_NUM_NONE && len(skuByte) > skuLen) ||
             (entry.dpn != FIELD_NUM_NONE && len(dpnByte) > dpnLen) ||
-            (entry.fruId != FIELD_NUM_NONE && len(fruIdByte) > fruIdLen) ) {
+            (entry.fruId != FIELD_NUM_NONE && fruIdLen != 0 && len(fruIdByte) > fruIdLen) ) {
             err = errType.INVALID_PARAM
             var errorOutput string
             var maxLen, realLen int
@@ -1273,7 +1277,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 errorOutput = "SKU"
                 maxLen = skuLen
                 realLen = len(skuByte)
-            } else if entry.fruId != FIELD_NUM_NONE && len(fruIdByte) > fruIdLen {
+            } else if entry.fruId != FIELD_NUM_NONE && fruIdLen != 0 && len(fruIdByte) > fruIdLen {
                 errorOutput = "FRU ID"
                 maxLen = fruIdLen
                 realLen = len(fruIdByte)
@@ -1602,9 +1606,9 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
         productInfoLen := int(Data[start+productInfoOff+1]) * OFFSET_NORM_FACTOR
         //SKU takes priority over PN
         if productInfoOff != 0 {
-            cardPN, err = findPn(start+productInfoOff, start+productInfoOff+productInfoLen, PROD_INFO_AREA_LEN)
+            cardPN, err = findPn(start+productInfoOff, start+productInfoOff+productInfoLen, PROD_INFO_AREA_LEN, FIELD_NUM_SKU_3, FIELD_NUM_PN_8)
         } else {
-            cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, BRD_INFO_AREA_LEN)
+            cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, BRD_INFO_AREA_LEN, FIELD_NUM_SKU_4, FIELD_NUM_PN_10)
         }
     }
     if (err == errType.SUCCESS) {
