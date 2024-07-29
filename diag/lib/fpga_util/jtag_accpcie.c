@@ -4,6 +4,103 @@
 #define SCRATCH_REG1 0x30780000
 #define SCRATCH_REG2 0x6f240000
 
+uint64_t rdtsc() {
+    unsigned int lo, hi;
+    __asm__ __volatile__ (
+        "rdtsc"
+        : "=a"(lo), "=d"(hi)
+    );
+    return ((uint64_t)hi << 32) | lo;
+}
+
+double get_cpu_frequency() {
+    struct timespec start, end;
+    uint64_t start_cycles, end_cycles;
+    double elapsed_time;
+
+    // Measure starting time and cycles
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    start_cycles = rdtsc();
+
+    // Sleep for 1 second
+    sleep(1);
+
+    // Measure ending time and cycles
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    end_cycles = rdtsc();
+
+    elapsed_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    return (end_cycles - start_cycles) / elapsed_time;
+}
+
+int reg_perf_test(uint64_t reg_addr, unsigned int loopcount, char* mode) {
+    unsigned int ite;
+    int ret = -1;
+    //clock_t start, end;
+    uint64_t start, end;
+    double cpu_freq;
+    double cpu_time_used;
+    double cpu_time_per_ite;
+    unsigned int data;
+
+    printf("=================\n");
+    printf("REG %s at 0x%lx\n", mode, reg_addr);
+
+	cpu_freq = (double)get_cpu_frequency();
+    printf("CPU Frequency: %.2f Hz\n", cpu_freq);
+
+    //start = clock();
+    start = rdtsc();
+    for ( ite = 0; ite < loopcount; ite++) {
+        if ( !strcmp("rd", mode) ) {
+            jtag_rd(0, SCRATCH_REG1, &data, 2);
+        } else if ( !strcmp("wr", mode) ) { 
+            jtag_wr(0, SCRATCH_REG1, ite, 2);
+        } else if ( !strcmp("comp", mode) ) {
+            jtag_wr(0, reg_addr, ite, 2);
+
+            // Read back from registers
+            jtag_rd(0, reg_addr, &data, 2);
+            if (data != ite) {
+                printf("Error at iteration %d: Data mismatch at 0x30780000. Expected: %X, Read: %X\n", ite, ite, data);
+                return -1;
+            }
+
+            if (ite%10000 == 0) {
+                printf("%d\n", ite);
+            }
+        } else if ( !strcmp("rev_comp", mode) ) {
+            // Write to registers
+            jtag_wr(0, reg_addr, loopcount-ite, 2);
+
+            jtag_rd(0, reg_addr, &data, 2);
+            if (data != loopcount - ite) {
+                printf("Error at iteration %d: Data mismatch at 0x6f240000. Expected: %X, Read: %X\n", ite, loopcount - ite, data);
+                return -1;
+            }
+
+            if (ite%10000 == 0) {
+                printf("%d\n", ite);
+            }
+        } else {
+            printf("Wrong mode! %s\n", mode);
+            printf("Support mode: rd/wr/comp/rev_comp\n");
+            return -1;
+        }
+    }
+    printf("REG: 0x%lx; ite: %d\n", reg_addr, ite);
+    //end = clock();
+    end = rdtsc();
+    cpu_time_used = ((double) (end - start)) * 1000.0 / cpu_freq;
+    cpu_time_per_ite = cpu_time_used / loopcount;
+    printf("Total time used to run test for cycles: %.4f ms\n", cpu_time_used);
+    printf("OP Time per iteration: %.4f ms\n", cpu_time_per_ite);
+    
+    ret = 0;
+    return ret;
+}
+
+
 int main(int argc, char *argv[])
 {
     DWORD data = 0xdeadbeef;
@@ -14,11 +111,11 @@ int main(int argc, char *argv[])
 
     if ( argc < 2 ) {
         printf("Invalid command syntax\n");
-        printf("jtag_accpcie rst port(1 based)\n");
-        printf("jtag_accpcie ena port(1 based)\n");
-        printf("jtag_accpcie rd port(1 based) address\n");
-        printf("jtag_accpcie wr port(1 based) address data\n");
-        printf("jtag_accpcie test port(1 based) loopcount\n");
+        printf("jtag_accpcie rst <port(1 based)>\n");
+        printf("jtag_accpcie ena <port(1 based)>\n");
+        printf("jtag_accpcie rd <port(1 based)> <address>\n");
+        printf("jtag_accpcie wr <port(1 based)> <address> <data>\n");
+        printf("jtag_accpcie test <mode: rd/wr/comp/rev_comp> <port(1 based)> <address> <loopcount>\n");
         return -1;
     }
     strcpy(acc_mode, argv[1]);
@@ -146,59 +243,37 @@ int main(int argc, char *argv[])
         printf("Clear port %d\n", port);
         jtag_clear(port);
     } else if ( !strcmp("test", acc_mode) ) {
-        if (argc < 4) {
+        if (argc < 5) {
             printf("ERROR: Invalid command syntax for test\n");
-            printf("Usage: jtag_accpcie test <port(1 based)> <loopcount>\n");
+            printf("Usage: jtag_accpcie test <mode> <port(1 based)> <reg_addr> <loopcount>\n");
             return -1;
         }
+
+        char* mode = argv[2];
+
         printf("jtag test register %d\n", port);
    
-        port = (DWORD)xtoi(argv[2]);
-        ULONGLONG loopcount = (DWORD)xtoi(argv[3]);
-       
+        port = (DWORD)xtoi(argv[3]);
+        uint64_t reg_addr = (uint64_t)xtoi(argv[4]);
+
+        char *endptr;
+        unsigned int loopcount = (DWORD)strtol(argv[5], &endptr, 10);
+        printf("loopcount: %d\n", loopcount);
         if (loopcount > 0xFFFFFFFF){
             printf("ERROR: The register can take a 32-bit value (0x00000000 – 0xFFFFFFFF)\n");
             return -1;
         }
-        clock_t start, end;
-        double cpu_time_used;
-        start = clock();
+
+        int ret;
 
         jtag_init(port);
-        for (ULONGLONG i = 0; i < loopcount; i++) {
-            // Write to registers
-            jtag_wr(0, SCRATCH_REG1, i, 2);
-            jtag_wr(0, SCRATCH_REG2, loopcount-i, 2);
 
-            // manually inject a wrong value
-            // if (i == 20001){
-            //     jtag_wr(0, SCRATCH_REG2, 0, 2);
-            // }
-
-            // Read back from registers
-            jtag_rd(0, SCRATCH_REG1, &data, 2);
-            if (data != i) {
-                printf("Error at iteration %lld: Data mismatch at 0x30780000. Expected: %llX, Read: %X\n", i, i, data);
-                jtag_close();
-                return -1;
-            }
-
-            jtag_rd(0, SCRATCH_REG2, &data, 2);
-            if (data != loopcount - i) {
-                printf("Error at iteration %lld: Data mismatch at 0x6f240000. Expected: %llX, Read: %X\n", i, loopcount - i, data);
-                jtag_close();
-                return -1;
-            }
-
-            if (i%10000 == 0) {
-                printf("%.010lld\n", i);
-            }
+        ret = reg_perf_test(reg_addr, loopcount, mode);
+        if (ret != 0) {
+            return -1;
         }
-        jtag_close();
 
-        end = clock();
-        cpu_time_used = ((double) (end - start)) * 1000 / CLOCKS_PER_SEC;
-        printf("Total time used to run test for %lld cycles: %.4f ms\n", loopcount, cpu_time_used);
+        jtag_close();
 
         return 0;
     } else {
@@ -207,5 +282,3 @@ int main(int argc, char *argv[])
     }
     return 0;
 }
-
-
