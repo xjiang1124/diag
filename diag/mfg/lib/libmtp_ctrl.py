@@ -2016,7 +2016,7 @@ class mtp_ctrl():
             fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
             for k, v in fan_info.items():
                 if "FAN" in k:
-                    if abs(v['pwm'] - round(255 * fan_pwm /100)) > 1:
+                    if abs(int(v['pwm']) - round(255 * fan_pwm /100)) > 1:
                         self.cli_log_err("{:s} read back pwm {:s}, not match setting value {:s}".format(k, v['pwm'], str(fan_pwm)))
                         return False
         return rc
