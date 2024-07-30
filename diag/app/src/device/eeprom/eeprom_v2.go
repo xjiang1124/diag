@@ -20,6 +20,7 @@ const (
     MRA_HDR_LEN         int = 5
     CHDR_LEN            int = 8
     BRD_INFO_AREA_LEN   int = 6
+    PROD_INFO_AREA_LEN  int = 3
     OFFSET_NORM_FACTOR  int = 8
     ZERO_START          int = 0
     DELAYED_START       int = 256
@@ -41,6 +42,10 @@ const (
     FIELD_NUM_SKU_4         int = 4
     FIELD_NUM_FRU_ID_5      int = 5
     FIELD_NUM_DPN_11        int = 11
+    FIELD_NUM_PN_8          int = 8
+    FIELD_NUM_SKU_3         int = 3
+    FIELD_NUM_FRU_ID_7      int = 7
+    FIELD_NUM_DPN_9         int = 9
 
 
     //Field types; Area field number vs absolute byte offset
@@ -92,6 +97,7 @@ const (
     PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
+    PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 Base SW+3yr SUP C"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
     PROD_NAME_POLLARA       string = "AI-NIC400 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
@@ -116,6 +122,7 @@ const (
     SKU_GIN_D5_SSDK_A   string = "DSC2A-2Q200-32S32F64P-S4A"
     SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
+    SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C-B3"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
     SKU_POLLARA         string = "AI-NIC400-1Q400-P"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
@@ -135,6 +142,7 @@ const (
     FRU_ID_GIN_D5        string = "01/24/23"
     FRU_ID_GIN_D5_MSFT   string = "01/19/24"
     FRU_ID_GIN_D5_SSDK   string = "02/26/24"
+    FRU_ID_GIN_D5_SSDK_CISCO   string = "07/11/24"
     FRU_ID_MALFA         string = "06/25/24"
     FRU_ID_POLLARA       string = "07/18/24"
     FRU_ID_LENI          string = "07/18/24"
@@ -752,6 +760,38 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_GIN_D5_SSDK_CISCO: updateInfo {
+        GinestraCiscoTbl,
+        PROD_NAME_GIG_SSDK_CISCO,
+        PN_GIN_D5_SSDK,
+        FRU_ID_GIN_D5_SSDK_CISCO,
+        []progInfo {
+            progInfo {//board info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_NONE,//Cisco PN to be added here, fixed for now
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_NONE,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_NONE,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_DPN_9,
+                },
+        },
+        nil,
+    },
+
     PN_MALFA: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_MALFA,
@@ -856,6 +896,7 @@ var CardTypes = []card{
     card{"GIN_D5_SSDK_A",           SKU_GIN_D5_SSDK_A},
     card{"GIN_D5_SSDK_B",           SKU_GIN_D5_SSDK_B},
     card{"GIN_D5_SSDK_C",           SKU_GIN_D5_SSDK_C},
+    card{"GIN_D5_SSDK_CISCO",       SKU_GIN_D5_SSDK_CISCO},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
@@ -874,10 +915,10 @@ var Info    []entryinfo
 //                     G E N E R I C     F U N C T I O N S
 //==============================================================================
 
-func convertToByteTbl(pn string) (err int){
+func convertToByteTbl(pn string, skuMode bool) (err int){
     //Writes all entries of EepromTbl into new slices
     //Checks and sets EepromTbl based on the input part number
-    found, partNum := CardInListNew(pn)
+    found, partNum := CardInListNew(pn, skuMode)
     if found == true {
         EepromTbl = CardDataInfo[partNum].tbl
     } else {
@@ -919,7 +960,7 @@ func getOffsetsCHdr(start int) (boardInfoOff int, productInfoOff int, multiRecor
     return
 }
 
-func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen int, err int) {
+func findFieldOffset(start int, end int, fieldNum int, areaHdrLen int) (fieldOff int, fieldLen int, err int) {
     //WARNING: Function only works for board info area and product info area!
     //Multi Info Area does not have type/length field
     //Finds the offset annd length of a field based on the field offset
@@ -930,7 +971,7 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     }
     //Checks if fieldNum > number of fields
     var len, totalNumberFields int
-    for i:=start+BRD_INFO_AREA_LEN;i<end-1;i+=len+1 {
+    for i:=start+areaHdrLen;i<end-1;i+=len+1 {
         len = int(Data[i] & 0x3F)
         totalNumberFields++
     }
@@ -941,7 +982,7 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     }
     //Finds field at offset
     var totalFields int = 0
-    for i:=start+BRD_INFO_AREA_LEN;i<end-1;i+=fieldLen+1 {
+    for i:=start+areaHdrLen;i<end-1;i+=fieldLen+1 {
         if totalFields == fieldNum {
             break
         }
@@ -952,26 +993,26 @@ func findFieldOffset(start int, end int, fieldNum int) (fieldOff int, fieldLen i
     return
 }
 
-func findPn(start int, end int) (pn string, err int) {
+func findPn(start int, end int, areaHdrLen int, sku_num int, pn_num int) (pn string, err int) {
     //Returns part number or assembly number and converts byte data to string
     var pnBytes []byte
     // first look for FIELD_NUM_SKU_4 which is SKU
-    partNumOff, partNumLen, err := findFieldOffset(start, end, FIELD_NUM_SKU_4)
+    partNumOff, partNumLen, err := findFieldOffset(start, end, sku_num, areaHdrLen)
     if err != errType.SUCCESS {
         cli.Println("e", "ERROR: Failed to find part number offset.")
         return
     }
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum := string(pnBytes) //in this case SKU is actually stored in partNum
-    found, pn := CardInListNew(partNum)
+    found, pn := CardInListNew(partNum, true)
     if (found == true) && (err == errType.SUCCESS) {
         return 
     }
     // if SKU is not found by CardInListNew, look for PN (Assembly Number)
-    partNumOff, partNumLen, err = findFieldOffset(start, end, FIELD_NUM_PN_10)
+    partNumOff, partNumLen, err = findFieldOffset(start, end, pn_num, areaHdrLen)
     pnBytes = Data[partNumOff:partNumOff+partNumLen]
     partNum = string(pnBytes)
-    found, pn = CardInListNew(partNum)
+    found, pn = CardInListNew(partNum, false)
     if (found == true) && (err == errType.SUCCESS) {
         return 
     } else {
@@ -1075,6 +1116,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
     var prodNameOff, prodNameLen, skuOff, skuLen, fruIdOff, fruIdLen, dpnOff, dpnLen int
     var skuField string
     var identifier string
+    var areaOffset, areaLen, areaHdrLen int
 
     //Checks PN validity and sets card type
     if skuMode == true {
@@ -1082,7 +1124,7 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
     } else {
         identifier = pn
     }
-    found, minPN := CardInListNew(identifier)
+    found, minPN := CardInListNew(identifier, skuMode)
     if found != true {
         if skuMode == true {
             cli.Printf("e", "ERROR: Card SKU not supported")
@@ -1142,12 +1184,13 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 
     //Find offset/Len of SN/PN/MAC/Date of each progInfo entry
     start := checkCHdrStart()
-    boardInfoOffset, _, _, err := getOffsetsCHdr(start)
+    boardInfoOffset, productInfoOffset, _, err := getOffsetsCHdr(start)
     if err != errType.SUCCESS {
         return
     }
 
     boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
+    productInfoLen := int(Data[start+productInfoOffset+1]) * OFFSET_NORM_FACTOR
     //Loops through card.info slice and updates each field
     for _, entry := range(card.info) {
         //SN, PN, MAC, and DATE offsets and locations
@@ -1179,38 +1222,50 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 fruIdLen = len(card.fruId)
             }
         } else {
+            if entry.areaCode == AREA_TYPE_BOARD_INFO {
+                areaOffset = boardInfoOffset
+                areaLen = boardInfoLen
+                areaHdrLen = BRD_INFO_AREA_LEN
+            } else if entry.areaCode == AREA_TYPE_PRDT_INFO {
+                areaOffset = productInfoOffset
+                areaLen = productInfoLen
+                areaHdrLen = PROD_INFO_AREA_LEN
+            } else {
+                cli.Println("e", "ERROR: Area code not supported yet.")
+                return
+			}
             if entry.sn != FIELD_NUM_NONE {
                 snInt := entry.sn
-                snOff, snLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, snInt)
+                snOff, snLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, snInt, areaHdrLen)
             }
             if entry.pn != FIELD_NUM_NONE {
                 pnInt := entry.pn
-                pnOff, pnLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, pnInt)
+                pnOff, pnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, pnInt, areaHdrLen)
             }
             if entry.mac != FIELD_NUM_NONE {
                 macInt := entry.mac
-                macOff, macLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, macInt)
+                macOff, macLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, macInt, areaHdrLen)
             }
             if entry.prodName != FIELD_NUM_NONE {
                 prodNameInt := entry.prodName
-                prodNameOff, prodNameLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, prodNameInt)
+                prodNameOff, prodNameLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, prodNameInt, areaHdrLen)
             }
             if entry.sku != FIELD_NUM_NONE {
                 skuInt := entry.sku
-                skuOff, skuLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, skuInt)
+                skuOff, skuLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, skuInt, areaHdrLen)
             }
             if entry.fruId != FIELD_NUM_NONE {
                 fruIdInt := entry.fruId
-                fruIdOff, fruIdLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, fruIdInt)
+                fruIdOff, fruIdLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, fruIdInt, areaHdrLen)
             }
             if entry.dpn != FIELD_NUM_NONE {
                 dpnInt := entry.dpn
-                dpnOff, dpnLen, err = findFieldOffset(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, dpnInt)
+                dpnOff, dpnLen, err = findFieldOffset(start+areaOffset, start+areaOffset+areaLen, dpnInt, areaHdrLen)
             }
         }
 
         //Sets date offset and length
-        dateOff, dateLen = start+boardInfoOffset+MFG_DATE_LEN, MFG_DATE_LEN
+        dateOff, dateLen = start+areaOffset+MFG_DATE_LEN, MFG_DATE_LEN
 
         //Returns error if previous step for finding offset and lengths fail
         if err != errType.SUCCESS {
@@ -1225,12 +1280,12 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
             err = errType.FAIL
             cli.Printf("e", "ERROR: Specified update field empty; check card info slice/field: %s", errField)
             return
-        } else if pnOff == 0 {
+        } else if entry.fieldType == FIELD_TYPE_NUM && entry.areaCode != AREA_TYPE_BOARD_INFO && pnOff == 0 {
             errField = "Part Number"
             err = errType.FAIL
             cli.Printf("e", "ERROR: Specified update field empty; check card info slice/field: %s", errField)
             return
-        } else if macOff == 0 {
+        } else if entry.fieldType == FIELD_TYPE_NUM && entry.areaCode != AREA_TYPE_BOARD_INFO && macOff == 0 {
             errField = "MAC Address"
             err= errType.FAIL
             cli.Printf("e", "ERROR: Specified update field empty; check card info slice/field: %s", errField)
@@ -1239,14 +1294,14 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 
         //Returns error if string longer than specified value
         if (
-            (len(sn) > snLen)                   ||
-            (len(pn) > pnLen)                   ||
-            (len(mac) != MAC_LEN)               ||
+            (entry.sn != FIELD_NUM_NONE && len(sn) > snLen)                   ||
+            (entry.pn != FIELD_NUM_NONE && len(pn) > pnLen)                   ||
+            (entry.mac != FIELD_NUM_NONE && len(mac) != MAC_LEN)               ||
             (len(date) != (MFG_DATE_LEN*2))     ||
-            (len(prodNameByte) > prodNameLen)   ||
-            (len(skuByte) > skuLen && (entry.sku != FIELD_NUM_NONE)) ||
-            (len(dpnByte) > dpnLen && (entry.dpn != FIELD_NUM_NONE)) ||
-            (len(fruIdByte) > fruIdLen) ) {
+            (entry.prodName != FIELD_NUM_NONE && len(prodNameByte) > prodNameLen)   ||
+            (entry.sku != FIELD_NUM_NONE && len(skuByte) > skuLen) ||
+            (entry.dpn != FIELD_NUM_NONE && len(dpnByte) > dpnLen) ||
+            (entry.fruId != FIELD_NUM_NONE && fruIdLen != 0 && len(fruIdByte) > fruIdLen) ) {
             err = errType.INVALID_PARAM
             var errorOutput string
             var maxLen, realLen int
@@ -1255,31 +1310,31 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
                 errorOutput = "Date"
                 maxLen = 2*MFG_DATE_LEN
                 realLen = len(date)
-            } else if len(sn) > snLen {
+            } else if entry.sn != FIELD_NUM_NONE && len(sn) > snLen {
                 errorOutput = "Serial Number"
                 maxLen = snLen
                 realLen = len(sn)
-            } else if len(pn) > pnLen {
+            } else if entry.pn != FIELD_NUM_NONE && len(pn) > pnLen {
                 errorOutput = "Assembly Number"
                 maxLen = pnLen
                 realLen = len(pn)
-            } else if len(mac) != MAC_LEN {
+            } else if entry.mac != FIELD_NUM_NONE && len(mac) != MAC_LEN {
                 errorOutput = "MAC Address"
                 maxLen = MAC_LEN
                 realLen = len(mac)
-            } else if len(prodNameByte) > prodNameLen {
+            } else if entry.prodName != FIELD_NUM_NONE && len(prodNameByte) > prodNameLen {
                 errorOutput = " Product Name"
                 maxLen = prodNameLen
                 realLen = len(prodNameByte)
-            } else if len(skuByte) > skuLen {
+            } else if entry.sku != FIELD_NUM_NONE && len(skuByte) > skuLen {
                 errorOutput = "SKU"
                 maxLen = skuLen
                 realLen = len(skuByte)
-            } else if len(fruIdByte) > fruIdLen {
+            } else if entry.fruId != FIELD_NUM_NONE && fruIdLen != 0 && len(fruIdByte) > fruIdLen {
                 errorOutput = "FRU ID"
                 maxLen = fruIdLen
                 realLen = len(fruIdByte)
-            } else if len(dpnByte) > dpnLen {
+            } else if entry.dpn != FIELD_NUM_NONE && len(dpnByte) > dpnLen {
                 errorOutput = "Diagnostic Product Name"
                 maxLen = dpnLen
                 realLen = len(dpnByte)
@@ -1326,12 +1381,14 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
         //Update Data slice (byte)
         var incrementVar int = 0
         for offset:=0;offset<len(Data);offset++ {
-            if offset == dateOff {
-                for i:=offset;i<offset+dateLen;i++ {
-                    Data[i]=dateByte[incrementVar]
-                    incrementVar++
+            if entry.areaCode == AREA_TYPE_BOARD_INFO {
+                if offset == dateOff {
+                    for i:=offset;i<offset+dateLen;i++ {
+                        Data[i]=dateByte[incrementVar]
+                        incrementVar++
+                    }
+                    incrementVar = 0
                 }
-                incrementVar = 0
             }
             if (offset == snOff) && (entry.sn != FIELD_NUM_NONE) {
                 for i:=offset;i<offset+snLen;i++ {
@@ -1520,12 +1577,14 @@ func readOffset(devName string, offset int) (data byte, err int) {
 //                      P U B L I C     F U N C T I O N S
 //==============================================================================
 
-func CardInListNew(partNum string) (found bool, minPN string) {
+func CardInListNew(partNum string, skuMode bool) (found bool, minPN string) {
     found = false
     //Looks through supported card slice and returns true if card number is present
     for _, card := range(CardTypes) {
-        if strings.Contains(partNum, card.pn) {
-        //if card.pn == partNum[:len(card.pn)] {
+        // In the case of fru display, partNum is the whole string read from EEPROM containing trailing spaces
+        partNum = strings.TrimSpace(partNum)
+        if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
+           (skuMode == false && strings.Contains(partNum, card.pn)) {
             found = true
             minPN = card.pn //for SKU card types, SKU is actually returned in minPN
             return
@@ -1591,14 +1650,19 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
 
         //Finds PN on card and sets EepromTbl
         start := checkCHdrStart()
-        boardInfoOffset, _, _, err1 := getOffsetsCHdr(start)
+        boardInfoOffset, productInfoOff, _, err1 := getOffsetsCHdr(start)
         if err1 != errType.SUCCESS {
             err = err1
             return
         }
         boardInfoLen := int(Data[start+boardInfoOffset+1]) * OFFSET_NORM_FACTOR
+        productInfoLen := int(Data[start+productInfoOff+1]) * OFFSET_NORM_FACTOR
         //SKU takes priority over PN
-        cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen)
+        if productInfoOff != 0 {
+            cardPN, err = findPn(start+productInfoOff, start+productInfoOff+productInfoLen, PROD_INFO_AREA_LEN, FIELD_NUM_SKU_3, FIELD_NUM_PN_8)
+        } else {
+            cardPN, err = findPn(start+boardInfoOffset, start+boardInfoOffset+boardInfoLen, BRD_INFO_AREA_LEN, FIELD_NUM_SKU_4, FIELD_NUM_PN_10)
+        }
     }
     if (err == errType.SUCCESS) {
         EepromTbl=CardDataInfo[cardPN].tbl
@@ -1672,6 +1736,10 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
                 dataValue[1], dataValue[0])
             } else if dataName == "Cap List Pointer" {
                 outputString = fmt.Sprintf("%-45s0x%02X%02X", dataName, dataValue[1], dataValue[0])
+            } else if dataName == "Manufacturer" {
+                outputString = fmt.Sprintf("%-45s", dataName)
+                str, _ := misc.Asc6ToStr(dataValue)
+                outputString += str
             } else {
                 outputString = fmt.Sprintf(fmtHex, dataName, dataValue)
             }
@@ -1696,7 +1764,7 @@ func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sk
     } else {
         identifier = pn
     }
-    err = convertToByteTbl(identifier)
+    err = convertToByteTbl(identifier, skuMode)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Card not supported.")
         err = errType.FAIL
