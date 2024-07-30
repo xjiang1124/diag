@@ -537,11 +537,19 @@ FT_STATUS spi_rd(ULONGLONG inst, DWORD address, DWORD* data)
 
 void set_asic_target(char *asic_name)
 {
+    char temp[10];
+  
+    strcpy(temp, asic_name);
+    strcpy(asic_name, temp);
     return;
 }
 
 void show_asic_target(char *asic_name)
 {
+    char temp[10];
+  
+    strcpy(temp, asic_name);
+    strcpy(asic_name, temp);
     return;
 }
 
@@ -552,6 +560,7 @@ FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD* data, D
     dummy = (DWORD)address;
     dummy = size;
     dummy = mode;
+    dummy = flag;
     *data = dummy;
 
     return FT_OK;
@@ -565,7 +574,31 @@ FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data, D
     dummy = size;
     dummy = mode;
     dummy = data;
+    dummy = flag;
     mode = dummy;
+
+    return FT_OK;
+}
+
+FT_STATUS jtag_wr_dr(DWORD *txptr, DWORD *rxptr, DWORD bits)
+{
+    DWORD dummy;
+
+    dummy = bits;
+    dummy = *txptr;
+    dummy = *rxptr;
+    bits = dummy;
+
+    return FT_OK;
+}
+
+FT_STATUS jtag_wr_ir(DWORD *txptr, DWORD bits)
+{
+    DWORD dummy;
+
+    dummy = bits;
+    dummy = *txptr;
+    bits = dummy;
 
     return FT_OK;
 }

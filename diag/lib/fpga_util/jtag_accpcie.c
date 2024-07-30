@@ -33,34 +33,54 @@ double get_cpu_frequency() {
     return (end_cycles - start_cycles) / elapsed_time;
 }
 
-int reg_perf_test(uint64_t reg_addr, unsigned int loopcount, char* mode) {
+int reg_perf_test(ULONGLONG reg_addr, ULONGLONG loopcount, char* mode, DWORD stop_on_error) {
     unsigned int ite;
-    int ret = -1;
+    int rc;
     //clock_t start, end;
     uint64_t start, end;
     double cpu_freq;
     double cpu_time_used;
     double cpu_time_per_ite;
-    unsigned int data;
+    DWORD data;
 
     printf("=================\n");
-    printf("REG %s at 0x%lx\n", mode, reg_addr);
+    printf("REG %s at 0x%llx\n", mode, reg_addr);
 
-	cpu_freq = (double)get_cpu_frequency();
+    cpu_freq = (double)get_cpu_frequency();
     printf("CPU Frequency: %.2f Hz\n", cpu_freq);
 
     //start = clock();
     start = rdtsc();
     for ( ite = 0; ite < loopcount; ite++) {
         if ( !strcmp("rd", mode) ) {
-            jtag_rd(0, SCRATCH_REG1, &data, 2);
+            rc = jtag_rd(0, SCRATCH_REG1, &data, 2);
+            if ( rc ) {
+                printf("read register 0x%x with error code %d\n", SCRATCH_REG1, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
         } else if ( !strcmp("wr", mode) ) { 
-            jtag_wr(0, SCRATCH_REG1, ite, 2);
+            rc = jtag_wr(0, SCRATCH_REG1, ite, 2);
+            if ( rc ) {
+                printf("write register 0x%x with error code %d\n", SCRATCH_REG1, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
         } else if ( !strcmp("comp", mode) ) {
-            jtag_wr(0, reg_addr, ite, 2);
+            rc = jtag_wr(0, reg_addr, ite, 2);
+            if ( rc ) {
+                printf("write register 0x%llx with error code %d\n", reg_addr, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
 
             // Read back from registers
-            jtag_rd(0, reg_addr, &data, 2);
+            rc = jtag_rd(0, reg_addr, &data, 2);
+            if ( rc ) {
+                printf("read register 0x%llx with error code %d\n", reg_addr, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
             if (data != ite) {
                 printf("Error at iteration %d: Data mismatch at 0x30780000. Expected: %X, Read: %X\n", ite, ite, data);
                 return -1;
@@ -71,11 +91,21 @@ int reg_perf_test(uint64_t reg_addr, unsigned int loopcount, char* mode) {
             }
         } else if ( !strcmp("rev_comp", mode) ) {
             // Write to registers
-            jtag_wr(0, reg_addr, loopcount-ite, 2);
+            rc = jtag_wr(0, reg_addr, loopcount-ite, 2);
+            if ( rc ) {
+                printf("write register 0x%llx with error code %d\n", reg_addr, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
 
-            jtag_rd(0, reg_addr, &data, 2);
+            rc = jtag_rd(0, reg_addr, &data, 2);
+            if ( rc ) {
+                printf("read register 0x%llx with error code %d\n", reg_addr, rc);
+                if ( stop_on_error )
+                    return rc;
+            }
             if (data != loopcount - ite) {
-                printf("Error at iteration %d: Data mismatch at 0x6f240000. Expected: %X, Read: %X\n", ite, loopcount - ite, data);
+                printf("Error at iteration %d: Data mismatch at 0x6f240000. Expected: %llX, Read: %X\n", ite, loopcount - ite, data);
                 return -1;
             }
 
@@ -88,7 +118,7 @@ int reg_perf_test(uint64_t reg_addr, unsigned int loopcount, char* mode) {
             return -1;
         }
     }
-    printf("REG: 0x%lx; ite: %d\n", reg_addr, ite);
+    printf("REG: 0x%llx; ite: %d\n", reg_addr, ite);
     //end = clock();
     end = rdtsc();
     cpu_time_used = ((double) (end - start)) * 1000.0 / cpu_freq;
@@ -96,8 +126,7 @@ int reg_perf_test(uint64_t reg_addr, unsigned int loopcount, char* mode) {
     printf("Total time used to run test for cycles: %.4f ms\n", cpu_time_used);
     printf("OP Time per iteration: %.4f ms\n", cpu_time_per_ite);
     
-    ret = 0;
-    return ret;
+    return 0;
 }
 
 
@@ -108,6 +137,7 @@ int main(int argc, char *argv[])
     ULONGLONG address;
     char  acc_mode[20];
     char asic_name[20];
+    int rc;
 
     if ( argc < 2 ) {
         printf("Invalid command syntax\n");
@@ -115,7 +145,7 @@ int main(int argc, char *argv[])
         printf("jtag_accpcie ena <port(1 based)>\n");
         printf("jtag_accpcie rd <port(1 based)> <address>\n");
         printf("jtag_accpcie wr <port(1 based)> <address> <data>\n");
-        printf("jtag_accpcie test <mode: rd/wr/comp/rev_comp> <port(1 based)> <address> <loopcount>\n");
+        printf("jtag_accpcie test <mode: rd/wr/comp/rev_comp> <port(1 based)> <address> <loopcount> <stop_on_error>\n");
         return -1;
     }
     strcpy(acc_mode, argv[1]);
@@ -134,10 +164,18 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         address = (ULONGLONG)xtoi(argv[3]);
-	    data = (DWORD)xtoi(argv[4]);	
-        jtag_wr(0, address, data, 2);
+	data = (DWORD)xtoi(argv[4]);	
+        rc = jtag_wr(0, address, data, 2);
+        if ( rc ) {
+            printf("ERROR: jtag write failed with error %x\n", rc);
+            goto error_exit;
+        }
         jtag_close();
     } else if ( !strcmp("rd", acc_mode) ) {
         if ( argc < 4 ) {
@@ -145,10 +183,57 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         address = (ULONGLONG)xtoi(argv[3]);
-        jtag_rd(0, address, &data, 2);
+        rc = jtag_rd(0, address, &data, 2);
+        if ( rc ) {
+            printf("ERROR: jtag read failed with error %x\n", rc);
+            goto error_exit;
+        }
         printf("DATA READ = %x\n", data);
+        jtag_close();
+    } else if ( !strcmp("wrdr", acc_mode) ) {
+        DWORD tx_data[64] = {0x00, 0x00, 0x00};
+        DWORD rx_data[64] = {0x00, 0x00, 0x00};
+        int bits = 24;
+        if ( argc < 3 ) {
+            printf("incorrect command syntax, missing parameters\n");
+            return 0;
+        }
+        port = (DWORD)xtoi(argv[2]);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
+        rc = jtag_wr_dr(tx_data, rx_data, bits);
+        if ( rc ) {
+            printf("ERROR: jtag read failed with error %x\n", rc);
+            goto error_exit;
+        }
+        jtag_close();
+    } else if ( !strcmp("wrir", acc_mode) ) {
+        DWORD tx_data[64] = {0x00, 0x00, 0x00};
+        int bits = 24;
+        if ( argc < 3 ) {
+            printf("incorrect command syntax, missing parameters\n");
+            return 0;
+        }
+        port = (DWORD)xtoi(argv[2]);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
+        rc = jtag_wr_ir(tx_data, bits);
+        if ( rc ) {
+            printf("ERROR: jtag read failed with error %x\n", rc);
+            goto error_exit;
+        }
         jtag_close();
     } else if ( !strcmp("rst", acc_mode) ) {
         if ( argc < 3 ) {
@@ -156,8 +241,16 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
-        jtag_reset(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
+        rc = jtag_reset(port);
+        if ( rc ) {
+            printf("ERROR: jtag reset failed with error %x\n", rc);
+            goto error_exit;
+        }
         jtag_close();
     } else if ( !strcmp("ena", acc_mode) ) {
         if ( argc < 3 ) {
@@ -165,8 +258,16 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
-        jtag_enable(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
+        rc = jtag_enable(port);
+        if ( rc ) {
+            printf("ERROR: jtag enable failed with error %x\n", rc);
+            goto error_exit;
+        }
         jtag_close();
     } else if ( !strcmp("rg", acc_mode) ) {
         if ( argc < 4 ) {
@@ -178,7 +279,7 @@ int main(int argc, char *argv[])
         address = (ULONGLONG)xtoi(argv[3]);
         jtag_rg(address, &data);
         printf("DATA READ = %x\n", data);
-        jtag_close();
+        jtag_clear(port);
     } else if ( !strcmp("wg", acc_mode) ) {
         if ( argc < 5 ) {
             printf("incorrect command syntax, missing parameters\n");
@@ -189,19 +290,27 @@ int main(int argc, char *argv[])
         address = (ULONGLONG)xtoi(argv[3]);
         data = (DWORD)xtoi(argv[4]);    
         jtag_wg(address, data);
-        jtag_close();
+        jtag_clear(port);
     } else if ( !strcmp("rdow", acc_mode) ) {
         if ( argc < 7 ) {
             printf("incorrect command syntax, missing parameters\n");
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         address = (ULONGLONG)xtoi(argv[3]);
         mode = (DWORD)xtoi(argv[4]);
         size = (DWORD)xtoi(argv[5]);
         flag = (DWORD)xtoi(argv[6]);    
-        jtag_ow_read(mode, size, address, &data, flag);
+        rc = jtag_ow_read(mode, size, address, &data, flag);
+        if ( rc ) {
+            printf("ERROR: jtag read one wire failed with error %x\n", rc);
+            goto error_exit;
+        }
         printf("DATA READ = %x\n", data);
         jtag_close();
     } else if ( !strcmp("wrow", acc_mode) ) {
@@ -210,13 +319,21 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         address = (ULONGLONG)xtoi(argv[3]);
         mode = (DWORD)xtoi(argv[4]);
         size = (DWORD)xtoi(argv[5]);
         data = (DWORD)xtoi(argv[6]);    
         flag = (DWORD)xtoi(argv[7]);    
-        jtag_ow_write(mode, size, address, data, flag);
+        rc = jtag_ow_write(mode, size, address, data, flag);
+        if ( rc ) {
+            printf("ERROR: jtag write one wire failed with error %x\n", rc);
+            goto error_exit;
+        }
         jtag_close();
     } else if ( !strcmp("set_asic", acc_mode) ) {
         if ( argc < 4 ) {
@@ -224,9 +341,15 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         strcpy(asic_name, argv[3]);
         set_asic_target(asic_name);
+        show_asic_target(asic_name);
+        printf("asic are target is set for %s\n", asic_name);
         jtag_close();
     } else if ( !strcmp("show_asic", acc_mode) ) {
         if ( argc < 3 ) {
@@ -234,45 +357,52 @@ int main(int argc, char *argv[])
             return 0;
         }
         port = (DWORD)xtoi(argv[2]);
-        jtag_init(port);
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag_init failed with error %x\n", rc);
+            goto error_exit;
+        }
         show_asic_target(asic_name);
         printf("asic are target is set for %s\n", asic_name);
         jtag_close();
     } else if ( !strcmp("clr", acc_mode) ) {
+        if ( argc < 3 ) {
+            printf("incorrect command syntax, missing parameters\n");
+            return 0;
+        }
         port = (DWORD)xtoi(argv[2]);
         printf("Clear port %d\n", port);
         jtag_clear(port);
     } else if ( !strcmp("test", acc_mode) ) {
-        if (argc < 5) {
+        if (argc < 7) {
             printf("ERROR: Invalid command syntax for test\n");
             printf("Usage: jtag_accpcie test <mode> <port(1 based)> <reg_addr> <loopcount>\n");
             return -1;
         }
 
         char* mode = argv[2];
+        port = (DWORD)xtoi(argv[3]);
+        ULONGLONG reg_addr = (ULONGLONG)xtoi(argv[4]);
+        ULONGLONG loopcount = (DWORD)xtoi(argv[5]);
+        DWORD stop_on_error = (DWORD)xtoi(argv[6]);
 
         printf("jtag test register %d\n", port);
-   
-        port = (DWORD)xtoi(argv[3]);
-        uint64_t reg_addr = (uint64_t)xtoi(argv[4]);
-
-        char *endptr;
-        unsigned int loopcount = (DWORD)strtol(argv[5], &endptr, 10);
-        printf("loopcount: %d\n", loopcount);
+        printf("loopcount: %llx\n", loopcount);
+       
         if (loopcount > 0xFFFFFFFF){
             printf("ERROR: The register can take a 32-bit value (0x00000000 – 0xFFFFFFFF)\n");
             return -1;
         }
 
-        int ret;
-
-        jtag_init(port);
-
-        ret = reg_perf_test(reg_addr, loopcount, mode);
-        if (ret != 0) {
-            return -1;
+        rc = jtag_init(port);
+        if ( rc ) {
+            printf("ERROR: jtag port %x init failed with error code %d\n", port, rc);
+            goto error_exit;
         }
 
+        rc = reg_perf_test(reg_addr, loopcount, mode, stop_on_error);
+        if ( rc )
+            printf("ERROR: perf test failed\n");
         jtag_close();
 
         return 0;
@@ -280,5 +410,10 @@ int main(int argc, char *argv[])
         printf("Unsupported access mode\n");
         return -1;
     }
+
     return 0;
+
+error_exit: 
+    jtag_clear(port);
+    return -1;
 }
