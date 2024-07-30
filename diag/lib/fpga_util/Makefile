@@ -39,4 +39,4 @@ jtag_accpcie_salina: jtag_accpcie.c
 	mv jtag_accpcie_salina ${GOPATH}/bin/linux_$(ARCH)/cbin/jtag_accpcie_salina
 
 clean:
-	-rm -f *.o *.a
+	-rm -f *.o *.a fpga_uart jtag_accpcie jtag_accpcie_salina
