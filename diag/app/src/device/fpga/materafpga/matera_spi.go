@@ -263,6 +263,49 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
 }
 
 
+
+/*********************************************************************
+* Set the SPI SELECT on the Netwrok Adapter CPLD
+* 
+* DEV = CPLD_SLOT0 - CPLD_SLOT9 
+*  
+*********************************************************************/
+func CpldEnableSPI_NewCPLD(spiNumber uint32, targetSPI uint32) (err error) {
+    var data8 uint8
+    var err_i int
+    devName := fmt.Sprintf("CPLD")
+    //check if we enabled this spi target already at the cpld, and just return
+    if TARGET_SPI_ENABLED == targetSPI {
+        return
+    }
+
+    switch(targetSPI){
+        case SPI_TRGT_DEVICE_CPLD_FLASH: 
+            data8 = 0x01
+        case SPI_TRGT_DEVICE_QSPI0:
+            data8 = 0x04
+        case SPI_TRGT_DEVICE_QSPI1:
+            data8 = 0x05
+        default: {
+            err = fmt.Errorf("ERROR: Invalid arg targetSPI passed.   You passed %d", targetSPI);
+            fmt.Printf("%w\n", err)
+            return
+        }
+    }
+
+    err_i = WriteByteSmbus(devName, uint(0x05), data8, spiNumber) 
+    if err_i != errType.SUCCESS {
+        err = fmt.Errorf("ERROR: CpldEnableSPI %s i2c write access to 0x24 failed\n", devName);
+        fmt.Printf("%w\n", err)
+        return
+    }
+
+    TARGET_SPI_ENABLED = targetSPI 
+
+    return
+}
+
+
 /*********************************************************************
 * Enable the SPI Bus on the MATERA IOB MPC23008 I/O EXPANDER
 * "IOBL" = SLOT 0-4
@@ -396,7 +439,7 @@ func Spi_check_tx_fifo_empty(spiNumber uint32) (err error) {
         }
     }
     if x == timeout {
-        err = fmt.Errorf("ERROR Spi_check_tx_complete. Spi-%d, not seeing transmit complete.  Status Reg = 0x%x\n", spiNumber, data32)
+        err = fmt.Errorf("ERROR Spi_check_tx_fifo_empty. Spi-%d, not seeing fifo empty.  Status Reg = 0x%x\n", spiNumber, data32)
         cli.Printf("e", "%w", err)
         return
     }
@@ -547,7 +590,7 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
             if err_i != errType.SUCCESS {
                 err = fmt.Errorf("ERROR: CpldEnableSPI CPLD i2c access failed at offset 0x24\n");
                 fmt.Printf("%w\n", err)
-                return
+                goto SPI_TRANSACTION_END2
             }
             CPLD_OLD_OR_NEW = 0x40000000 | uint32(data8)
         }
@@ -557,27 +600,43 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
                 goto SPI_TRANSACTION_END2
             }
         } else {
-            if (spiDevice == SPI_TRGT_DEVICE_CPLD_FLASH) {
+            err = CpldEnableSPI_NewCPLD(spiNumber, spiDevice)
+            if err != nil {
+                goto SPI_TRANSACTION_END2
+            }
+            /*
+             if (spiDevice == SPI_TRGT_DEVICE_CPLD_FLASH) {
                 opCode = append([]byte{0x0C, 0x00, 0x00, 0x00} , opCode...)
-            }
-
-            if (spiDevice == SPI_TRGT_DEVICE_QSPI0) {
+            } else if (spiDevice == SPI_TRGT_DEVICE_QSPI0) {
                 opCode = append([]byte{0x0D, 0x00, 0x00, 0x00} , opCode...)
-            }
-
-            if (spiDevice == SPI_TRGT_DEVICE_QSPI1) {
+            } else if (spiDevice == SPI_TRGT_DEVICE_QSPI1) {
                 opCode = append([]byte{0x0E, 0x00, 0x00, 0x00} , opCode...)
-            }
-
-            if (spiDevice == SPI_TRGT_DEVICE_SPI2I2C) {
+            } else if (spiDevice == SPI_TRGT_DEVICE_SPI2I2C) {
                 opCode = append([]byte{0x0F, 0x00, 0x00, 0x00} , opCode...)
+            } else if (spiDevice == SPI_TRGT_DEVICE_CPLDI2C_RD) {
+                opCode = append([]byte{0x0B } , opCode...)
+                for i:=0;i<len(opCode); i++ {
+                    fmt.Printf("%.02x ", opCode[i])
+                }
+                fmt.Printf("\n")
+            } else if (spiDevice == SPI_TRGT_DEVICE_CPLDI2C_WR) {
+                opCode = append([]byte{0x02 } , opCode...)
+                for i:=0;i<len(opCode); i++ {
+                    fmt.Printf("%.02x ", opCode[i])
+                }
+                fmt.Printf("\n")
+            } else {
+                err = fmt.Errorf("ERROR: Arg spiDevice is not valid.  Arg Passed=%d\n", spiDevice);
+                fmt.Printf("%w\n", err)
+                goto SPI_TRANSACTION_END2
             }
+            */
         }
     }
 
     data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
     if (data32 & SPI_STA_FIFO_SUPPORT) == SPI_STA_FIFO_SUPPORT {   //Newer SPI Method that supports FIFO
-        var FIFORDLENGTH uint32 = (32 * 256)  //8K
+        var FIFORDLENGTH uint32 = (3 * 256)  //768 bytes
         var wr_length int = len(opCode)
         //fmt.Printf("DEBUG: NEWER FIFO..RD LENGTH=%d\n", rdLength);
         MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00)   //turn off spi to reset fifo's in case it's on     
@@ -595,6 +654,7 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
         for i:=0; i<wr_length; i++ {
             MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_TXDATA1B_OFFSET, uint32(opCode[i]))    //clear status
             //time.Sleep(time.Duration(2) * time.Microsecond)
+            //time.Sleep(time.Duration(1) * time.Millisecond)
             if (i!=0) && ((i%1024) == 0) {
                 ChkTxDrain = 1
             }
