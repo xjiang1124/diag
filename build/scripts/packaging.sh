@@ -229,15 +229,6 @@ do
     #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic/$asic/$arch
     #ASIC_REPO_PATH=/vol/hw/diag/diag_repo/asic.2021.11.17/$asic/$arch
     
-    if [[ $asiclib == "latest" ]]
-    then
-        #latest=$(ls -t /vol/builds/hourly-asic/ | head -n1)
-        rm -rf $BUILD_DIR/latest/
-        mkdir -p $BUILD_DIR/latest/
-        #cp /vol/builds/hourly-asic/${latest}/releases.tar.gz $BUILD_DIR/latest/
-        cp /vol/hw/diag/diag_images/asicimg_latest/nic_${arch}_${asic}.tar.gz $BUILD_DIR/latest/
-    fi
-
     if [[ $arch == "amd64" ]]
     then
         DIAG_ASIC_IMG_PATH=$TEMP_DIR/asic_all/$asic/
@@ -267,7 +258,7 @@ do
             echo "Copying latest ASIC libs for $asic"
             for j2cd in ${j2cd_list[@]}
             do
-                ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}_${j2cd}.tar.gz"
+                ASIC_IMG="/vol/hw/diag/diag_images/asicimg_latest/nic_${arch}_${asic}_${j2cd}.tar.gz"
                 cp $ASIC_IMG $TEMP_DIR_TOP/
             done
         fi
@@ -295,7 +286,7 @@ do
         if [[ $asiclib == "latest" ]]
         then
             echo "Copying latest ASIC lib for $asic"
-            ASIC_IMG="$BUILD_DIR/latest/nic_${arch}_${asic}.tar.gz"
+            ASIC_IMG="/vol/hw/diag/diag_images/asicimg_latest/nic_${arch}_${asic}.tar.gz"
             cp $ASIC_IMG $TEMP_DIR_TOP/nic.tar.gz
         fi
         #echo "Copy snake CFG to $arch image"
@@ -350,6 +341,5 @@ do
     echo "--------------------"
     echo "Cleaning up"
     rm -rf $BUILD_DIR/temp_$asic/$arch
-    rm -rf $BUILD_DIR/latest/
     echo "Clean up -- Done"
 done
