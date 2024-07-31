@@ -27,6 +27,14 @@ targets:
     - build-arm64-giglio
     - package-giglio-mfg-script
 
+  release-salina-mfg-script:
+    commands: [ "sh", "-c", "cd /psdiag/asset-build; ASIC=salina ./push_build.sh" ]
+    owners: ["email:nabeel@pensando.io"]
+    build-dependencies:
+    - build-amd64-salina
+    - build-arm64-salina
+    - package-salina-mfg-script
+
   release-fw-assets:
     commands: [ "sh", "-c", "cd /psdiag/asset-build; ./push_fw_assets.sh" ]
     owners: ["email:nabeel@pensando.io"]
