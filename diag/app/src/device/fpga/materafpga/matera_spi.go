@@ -653,8 +653,6 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
         }
         for i:=0; i<wr_length; i++ {
             MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_TXDATA1B_OFFSET, uint32(opCode[i]))    //clear status
-            //time.Sleep(time.Duration(2) * time.Microsecond)
-            //time.Sleep(time.Duration(1) * time.Millisecond)
             if (i!=0) && ((i%1024) == 0) {
                 ChkTxDrain = 1
             }
