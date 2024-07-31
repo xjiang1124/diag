@@ -348,8 +348,8 @@ var LeniTbl = []I2cInfo {
 
 var LeniSensorTbl = []I2cSensorInfo {
     I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.02 }},
-    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.002 }},
-    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.01 }},
+    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.001 }},
+    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.001 }},
 }
 
 var OrtanoMtpTbl = []I2cInfo {
