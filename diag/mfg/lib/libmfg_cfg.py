@@ -619,6 +619,7 @@ class MTP_IMAGES:
     mtp_jtag_cpld_ver = dict()
     mtp_fpga_img = dict()
     mtp_fpga_ver = dict()
+    mtp_fpga_date = dict()
 
     amd64_img["CAPRI"] = "image_amd64_capri.tar"
     arm64_img["CAPRI"] = "image_arm64_capri.tar"
@@ -651,7 +652,8 @@ class MTP_IMAGES:
     amd64_img["MATERA"] = "image_amd64_elba.tar"
     arm64_img["MATERA"] = "image_arm64_elba.tar"
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
-    mtp_fpga_ver["MATERA"] = "a00c"
+    mtp_fpga_ver["MATERA"] = "a00d"
+    mtp_fpga_date["MATERA"] = "07222024"    #mmddyyyy
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
