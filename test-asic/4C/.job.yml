@@ -343,8 +343,8 @@ e2e-targets:
       vars:
         BmOs: linux
 
-  monterey:
-    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type monterey --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+  lacona-hpe:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type lacona-hpe --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
     owners: ["email:nabeel@pensando.io"]
     area:
     sub-area:
@@ -365,7 +365,67 @@ e2e-targets:
          props:
          - name: mtp-nic-processor
            value: elba
-         - name: monterey
+         - name: laconahpe
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  lacona-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type lacona-dell --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 24h
+    build-dependencies:
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: laconadell
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  pomonte-dell:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type pomonte-dell --testbed /warmd.json --test-type precheckin --asic elba --testsuite /psdiag/test/spec/testsuites/4C.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    max-duration: 24h
+    build-dependencies:
+     - build-amd64-elba-tot
+     - build-arm64-elba-tot
+     - package-elba-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: elba
+         - name: pomonte
            value: yes
     provision:
       username: diag
@@ -394,7 +454,7 @@ e2e-targets:
          count: 1
          props:
          - name: mtp-nic-processor
-           value: giglio
+           value: elba
          - name: ginestra
            value: yes
     provision:
