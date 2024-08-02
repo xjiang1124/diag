@@ -807,7 +807,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_NONE,
+                FIELD_NUM_DPN_11,
                 },
         },
         nil,
@@ -828,7 +828,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_NONE,
+                FIELD_NUM_DPN_11,
                 },
         },
         nil,
@@ -849,7 +849,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_NONE,
+                FIELD_NUM_DPN_11,
                 },
         },
         nil,
@@ -1698,6 +1698,10 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
                 }
             } else if field == "DATE" {
                 if dataName != "Manufacturing Date/Time" {
+                    continue
+                }
+            } else if field == "DPN" {
+                if dataName != "DPN (Diagnostic Part Number)" {
                     continue
                 }
             }
