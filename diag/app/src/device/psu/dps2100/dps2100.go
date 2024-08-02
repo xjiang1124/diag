@@ -367,156 +367,59 @@ func StrIsAscii(s string ) bool {
 
 
 func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
-    /*
-    var psuNumber uint32 = 0
-    var i byte = 0
-    wrData := []byte{}
-    mfgId := []byte{}
-    mfgRev := []byte{}
-    mfgModel := []byte{}
-    mfgSerial := []byte{}
-    mfgFWrev := []byte{}
-    usercode00 := []byte{}
-    usercode01 := []byte{}
-
-    if devName == "PSU_1" {
-        psuNumber = 0
-    } else {
-        psuNumber = 1
-    }
-
-    present, errGo := liparifpga.PSU_present(psuNumber)
-    if errGo != nil {
-        err = errType.FAIL
-        return
-    }
-
-    if present != true {
-        cli.Printf("e", "%s: is not present", devName)
-        err = errType.FAIL
-        return
-    }
-
-
-    iInfo, err := i2cinfo.GetI2cInfo(devName)
+    mfgId := make([]byte, 32)
+    mfgRev := make([]byte, 32)
+    mfgModel := make([]byte, 32)
+    mfgSerial := make([]byte, 32)
+    err = pmbus.Open(devName)
     if err != errType.SUCCESS {
-        cli.Println("e", "Failed to obtain I2C info of", devName)
         return
     }
-    wrData = append(wrData, MFR_ID)
-    mfgId, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_ID_BLK_SIZE + 1 )
-    if errGo != nil {
-        err = errType.FAIL
-        return
-    }
-    if len(mfgId) != MFG_ID_BLK_SIZE + 1 {
-        err = errType.FAIL
-        cli.Printf("e", "%s Length of MfgID is wrong.   Len=%d.  Expect=%d", devName, len(mfgId), MFG_ID_BLK_SIZE + 1)
-    }
+    defer pmbus.Close()
 
-    wrData[0] = MFR_MODEL
-    mfgModel, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_MODEL_BLK_SIZE + 1 )
-    if errGo != nil {
-        err = errType.FAIL
+    _, err = pmbus.Readi2cBlock(devName, MFR_ID, mfgId)
+    if err != errType.SUCCESS {
         return
     }
-    if len(mfgModel) != MFG_MODEL_BLK_SIZE + 1 {
+    if mfgId[0] != MFG_ID_BLK_SIZE {
         err = errType.FAIL
-        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgModel), MFG_MODEL_BLK_SIZE + 1)
-    }
-
-    wrData[0] = MFR_REVISION
-    mfgRev, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFG_REVISION_BLK_SIZE + 1 )
-    if errGo != nil {
-        err = errType.FAIL
-        return
-    }
-    if len(mfgRev) != MFG_REVISION_BLK_SIZE + 1 {
-        err = errType.FAIL
-        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, len(mfgRev), MFG_REVISION_BLK_SIZE + 1)
-    }
-
-    wrData[0] = MFR_SERIAL
-    mfgSerial, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFR_SERIAL_BLK_SIZE + 1 )
-    if errGo != nil {
-        err = errType.FAIL
-        return
-    }
-    i = mfgSerial[0]
-    if i < (MFR_SERIAL_BLK_SIZE-6) || i > MFR_SERIAL_BLK_SIZE {
-        err = errType.FAIL
-        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect %d - Expect=%d for the length", devName, i, (MFR_SERIAL_BLK_SIZE-6), MFR_SERIAL_BLK_SIZE + 1)
-    }
-    //s/n might be less than total block size.. truncate it if it is 
-    if i != MFR_SERIAL_BLK_SIZE {
-        i=i+1
-        mfgSerial = mfgSerial[:i]
-    }
-
-    wrData[0] = MFR_FW_REVISION
-    mfgFWrev, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, MFR_FW_BLK_SIZE + 1 )
-    if errGo != nil {
-        err = errType.FAIL
+        cli.Printf("e", "%s Length of MfgID is wrong.   Len=%d.  Expect=%d", devName, mfgId[0], MFG_ID_BLK_SIZE)
         return
     }
 
 
-    //PSU_1: DELTA DPS-800AB-40    Rev: 00F   S/N: JBMD2047000089   F/W REV: S00.S01
-    //SSD MODEL: W6EN064G1TA-S91AA3-2D2.A5   S/N: 62901-0152 Capacity: 64.0 GB    Smart Health PASSED 
-    wrData[0] = USER_CODE_00
-    usercode00, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
-    if errGo != nil {
-        err = errType.FAIL
+    _, err = pmbus.Readi2cBlock(devName, MFR_MODEL, mfgModel)
+    if err != errType.SUCCESS {
         return
     }
-    if uint32(usercode00[0]) == 0xFF {  //Not programmed at all
-        //err = errType.FAIL
-    } else if uint32(usercode00[0]) > 32 {
+    if mfgModel[0] != MFG_MODEL_BLK_SIZE {
         err = errType.FAIL
-        cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode00[0]))
-    } else {
-        wrData[0] = USER_CODE_00
-        usercode00, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(usercode00[0]) + 1)
-        if errGo != nil {
-            err = errType.FAIL
-            return
-        }
-    }
-
-    wrData[0] = USER_CODE_01
-    usercode01, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, 1 )
-    if errGo != nil {
-        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, mfgModel[0], MFG_MODEL_BLK_SIZE)
         return
     }
-    if uint32(usercode01[0]) == 0xFF {  //Not programmed at all
-        //err = errType.FAIL
-    } else if uint32(usercode01[0]) > 32 {
+
+    _, err = pmbus.Readi2cBlock(devName, MFR_REVISION, mfgRev)
+    if err != errType.SUCCESS {
+        return
+    }
+    if mfgRev[0] != MFG_REVISION_BLK_SIZE {
         err = errType.FAIL
-        cli.Printf("e", "%s Length of USER_CODE_00 seem to high > 32.  Read %d", devName, uint32(usercode01[0]))
-    } else {
-        wrData[0] = USER_CODE_01
-        usercode01, errGo = liparifpga.I2c_access( uint32(iInfo.Bus), uint32(iInfo.HubPort), uint32(iInfo.DevAddr), uint32(len(wrData)), wrData, uint32(usercode01[0]) + 1 )
-        if errGo != nil {
-            err = errType.FAIL
-            return
-        }
+        cli.Printf("e", "%s Length of MFG_MODEL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, mfgRev[0], MFG_REVISION_BLK_SIZE)
+        return
+    }
+
+    _, err = pmbus.Readi2cBlock(devName, MFR_SERIAL, mfgSerial)
+    if err != errType.SUCCESS {
+        return
+    }
+    if mfgSerial[0] != MFR_SERIAL_BLK_SIZE {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_SERIAL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, mfgSerial[0], MFR_SERIAL_BLK_SIZE)
+        return
     }
 
 
-    if useCLI > 0 {
-        cli.Printf("i", "%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) )
-    } else { fmt.Printf("%s: %s %s  H/W Rev: %s    S/N: %s  F/W REV: %s\n", devName, string(mfgId[1:]), string(mfgModel[1:]), string(mfgRev[1:]), string(mfgSerial[1:]), string(mfgFWrev[1:]) ) }
-
-    if StrIsAscii(string(usercode00[1:])) == true {
-        if useCLI > 0 { cli.Printf("i", "%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) )
-        } else {             fmt.Printf("%s: %s %s  \n", devName, string(usercode00[1:]), string(usercode01[1:]) ) }
-    } else {
-        if useCLI > 0 { cli.Printf("i", "%s: ...... ........................\n", devName)
-        } else {             fmt.Printf("%s: ...... ........................\n", devName) }
-        
-    }
-    */
+    fmt.Printf("%s: %s %s    H/W Rev: %s    S/N: %s\n", devName, string(mfgId[1:(MFG_ID_BLK_SIZE+1)]), string(mfgModel[1:(MFG_MODEL_BLK_SIZE+1)]), string(mfgRev[1:(MFG_REVISION_BLK_SIZE+1)]), string(mfgSerial[1:(MFR_SERIAL_BLK_SIZE+1)]) )
     return
 }
 

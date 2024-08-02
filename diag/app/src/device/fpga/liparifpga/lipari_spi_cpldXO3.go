@@ -887,8 +887,12 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
     if strings.Contains(filename, "fea")==true {
         if config == FEATUREROW {
             err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
+            if err != nil {
+                fmt.Printf("ERRPR: Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+                return
+            }
         } else {
-            err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
+            err = fmt.Errorf("ERROR:  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
             cli.Printf("e", "%s", err)
             return
         }
@@ -898,7 +902,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         fmt.Printf(" Jed file detected..Converting to a BIN file\n")
         err = Spi_cpldXO3_convert_jed_file(filename)
         if err != nil {
-            fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+            fmt.Printf("ERRPR: Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
             return
         }
         filename = strings.Replace(filename, "jed", "bin", 1)
@@ -1118,7 +1122,7 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
 
     inF, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     filename = strings.Replace(filename, "fea", "bin", 1)
@@ -1126,7 +1130,7 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
 
     outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer func() { 
@@ -1146,7 +1150,7 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
         }
 
         if err != nil {
-            fmt.Printf("[ERROR] READING FEATURE ROW FILE  ERR=%s\n", err)
+            fmt.Printf("ERROR: READING FEATURE ROW FILE  ERR=%s\n", err)
             return 
             break              
         }

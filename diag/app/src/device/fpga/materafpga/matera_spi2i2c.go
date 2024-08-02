@@ -171,7 +171,7 @@ func BridgeI2Cwrite(spiNumber uint32, i2cChnl uint8, i2cAddr uint8, NumbBytes ui
 
     if len(data8) < int(NumbBytes) {
         err = fmt.Errorf("ERROR: BridgeI2Cwrite: Arg error.  Number of bytes to write - %d is larger than number of bytes passed -%d\n", NumbBytes, len(data8));
-        fmt.Printf("%w\n", err)
+        fmt.Printf("%v", err)
         return
     }
 
@@ -219,7 +219,7 @@ func BridgeI2Cread(spiNumber uint32, i2cChnl uint8, i2cAddr uint8, NumbBytes uin
 
     if NumbBytes > I2C_MAX_BYTES {
         err = fmt.Errorf("ERROR: BridgeI2Cread: Arg error.  Number of bytes to read - %d is larger than max number of bytes possible -%d\n", NumbBytes, I2C_MAX_BYTES);
-        fmt.Printf("%w\n", err)
+        fmt.Printf("%v", err)
         return
     }
 

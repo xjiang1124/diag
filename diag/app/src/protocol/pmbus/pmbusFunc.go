@@ -402,6 +402,18 @@ func ReadBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err
     return
 }
 
+func Readi2cBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
+    if config.SmbusMode == config.DISABLE {
+    } else {
+        byteCnt, err = smbus.Readi2cBlock(devName, regAddr, dataBuf)
+    }
+    if err != errType.SUCCESS {
+        cli.Printf("e", "PMBus ReadBlock failed! cmd=0x%x\n", regAddr)
+    }
+
+    return
+}
+
 func WriteBlock(devName string, regAddr uint64, dataBuf []byte) (byteCnt int, err int) {
     if config.SmbusMode == config.DISABLE {
     } else {

@@ -58,7 +58,7 @@ func AddrDecipher(partition string) (addr uint32, maxSize uint32, err error) {
 func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filename string) (err error) {
     var flash_size uint32 = 0 
     var start_addr uint32 = 0
-    var read_size uint32 = flash_region_info.sector_size
+    var read_size uint32 = 16//flash_region_info.sector_size
     var i uint32 = 0
     flashData := []byte{}
 
@@ -114,7 +114,7 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
 func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) (err error) {
     var flash_size uint32 = 0 
     var start_addr uint32 = 0
-    var read_size uint32 = uint32(flash_region_info.sector_size)
+    var read_size uint32 = 16//uint32(flash_region_info.sector_size)
     var i uint32 = 0
     flashData := []byte{}
     data := []byte{}
@@ -127,7 +127,7 @@ func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) 
 
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer f.Close()
@@ -215,7 +215,7 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
 
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer f.Close()

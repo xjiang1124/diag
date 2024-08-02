@@ -122,7 +122,30 @@ var CPLDXO3_RD_FEA_BITS_OP             = []byte{0xFB, 0x00, 0x00}
 var CPLDXO3_RD_FEA_BITS_OP_RDLNG       uint32 = 2
 
 
+func Spi_cpldXO3_spi_read_reg(spiNumber uint32, reg uint8) (rd_data uint8, err error) {
+    data := []byte{}
+    rddata := []byte{}
+    rddata = append(rddata, reg)
+    data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLDI2C_RD, rddata, 1) 
+    if err != nil {
+        return
+    }
+    rd_data = data[0]
 
+    return
+}
+
+func Spi_cpldXO3_spi_write_reg(spiNumber uint32, reg uint8, data uint8) (err error) {
+    wrdata := []byte{}
+    wrdata = append(wrdata, reg)
+    wrdata = append(wrdata, data)
+    fmt.Println(wrdata)
+    _, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLDI2C_WR, wrdata, 0) 
+    if err != nil {
+        return
+    }
+    return
+}
 func Spi_cpldXO3_read_usercode(spiNumber uint32) (ucode uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
@@ -275,9 +298,11 @@ func Spi_cpldX03_return_flash_space_from_cli_arg(image string) (config uint32, e
         config = UFM2
     } else if image == "ufm3" {
         config = UFM3
+    } else if image == "fea" {
+        config = FEATUREROW
     } else {
         err = fmt.Errorf("ERROR: FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%s'\n", image)
-        cli.Printf("e","%s", err)
+        cli.Printf("e","%v", err)
         return
     }
     return
@@ -302,7 +327,7 @@ func Spi_cpldX03_get_flash_size(config uint32) (size uint32, err error) {
         size = MACHXO3_9400_UFM3_FLASH_SIZE
     } else {
         err = fmt.Errorf("ERROR: Spi_cpldX03_return_flash_space_from_cli_arg FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%d'\n", config)
-        cli.Printf("e","%s", err)
+        cli.Printf("e","%v", err)
         return
     }
     return
@@ -399,8 +424,8 @@ func Spi_cpldXO3_erase_config_flash(spiNumber uint32, image string) (err error) 
         time.Sleep(time.Duration(sleep) * time.Millisecond)
 
         if i == (max_try -1) {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: FLASH ERASE STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: FLASH ERASE STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
         }
     }
@@ -411,13 +436,13 @@ func Spi_cpldXO3_erase_config_flash(spiNumber uint32, image string) (err error) 
         return
     }
     if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e","%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e","%v", err)
         return
     }
     if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e","%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e","%v", err)
         return
     }
     
@@ -451,8 +476,8 @@ func Spi_cpldXO3_program_feature_row_cmd(spiNumber uint32, data []byte) (err err
         time.Sleep(time.Duration(sleep) * time.Millisecond)
 
         if i == (max_try -1) {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: FLASH PROGRAM PAGE STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: FLASH PROGRAM PAGE STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
         }
 
@@ -462,13 +487,13 @@ func Spi_cpldXO3_program_feature_row_cmd(spiNumber uint32, data []byte) (err err
             return
         }
         if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
         }
         if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
         }
     }
@@ -488,6 +513,7 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []
 
         if (j % 1600) == 0 {
             fmt.Printf(".")
+            //fmt.Printf("j=%d  len(data)=%d\n", j, len(data));
         }
 
         if config == UFM0 || 
@@ -518,11 +544,13 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []
             if err != nil {
                 return
             }
+            time.Sleep(time.Duration(2) * time.Millisecond)
         }
 
         for i:=0; i<max_try; i++ {
             data32, err = Spi_cpldXO3_read_busy_flag(spiNumber)
             if err != nil {
+                fmt.Printf("ERROR: Slot-%d CPLD Read Busy Flag Failed\n", spiNumber+1);
                 return
             }
             //Wait for flash to not be busy erasing
@@ -533,26 +561,30 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []
             time.Sleep(time.Duration(sleep) * time.Millisecond)
 
             if i == (max_try -1) {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: FLASH PROGRAM PAGE STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e","%s", err)
+                err = fmt.Errorf("ERROR: Slot-%d: FLASH PROGRAM PAGE STUCK WAITING FOR BUSY FLAG TO CLEAR.  Read Busy Flag Op returned=0x%x\n", spiNumber+1, data32)
+                cli.Printf("e","%v", err)
                 return
             }
         }
 
 
+        for i:=0; i<10; i++ {
         data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
         if err != nil {
-            return
+            fmt.Printf(" Read Status Reg Failed\n");
+            fmt.Printf("ERROR: Slot-%d CPLD Read Status Register Failed\n", spiNumber+1);
+            continue
         }
         if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
         }
         if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-            err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-            cli.Printf("e","%s", err)
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
             return
+        }
         }
     }
     
@@ -572,9 +604,9 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
     fileData := []byte{}
 
 
-    if spiNumber >= SPI_NUMB_BUSES {
-        err = fmt.Errorf("ERROR spi_cpldXO3_verify_flash_contents. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
-        cli.Printf("e","%s", err)
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR spi_cpldXO3_verify_flash_contents. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e","%v", err)
         return
     }
 
@@ -587,9 +619,13 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
     if strings.Contains(filename, "fea")==true {
         if config == FEATUREROW {
             err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
+            if err != nil {
+                fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
+                return
+            }
         } else {
             err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
-            cli.Printf("e","%s", err)
+            cli.Printf("e","%v", err)
             return
         }
         filename = strings.Replace(filename, "fea", "bin", 1)
@@ -598,7 +634,7 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         fmt.Printf(" Jed file detected..Converting to a BIN file\n")
         err = Spi_cpldXO3_convert_jed_file(filename)
         if err != nil {
-            fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+            fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
             return
         }
         filename = strings.Replace(filename, "jed", "bin", 1)
@@ -632,8 +668,8 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         return
     }
     if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e","%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e","%v", err)
         return
     }
 
@@ -642,13 +678,13 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         return
     }
     if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e","%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e","%v", err)
         return
     }
     if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e","%s", err)
+        err = fmt.Errorf("ERROR1 Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e","%v", err)
         return
     }
 
@@ -671,13 +707,13 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
                 return
             }
             if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
+                err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+                cli.Printf("e", "%v", err)
                 return
             }
             if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
+                err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+                cli.Printf("e", "%v", err)
                 return
             }
 
@@ -705,24 +741,22 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         return
     }
 
-
-    //f.WriteString(string(flashData[:]))
     if len(flashData) != len(fileData) {
         err = fmt.Errorf(" ERROR: File and Flash data size do not match.   Flash Data Size = %d.   File Data Size = %d\n", len(flashData), len(fileData) ) 
-        cli.Printf("e", "%s", err)
+        cli.Printf("e", "%v", err)
         return;
     } 
     for i:=0; i<len(flashData); i++ {
         if flashData[i] != fileData[i] {
             err = fmt.Errorf(" ERROR: Data Mismatch at address 0x%x. Flash=%.02x   Expect=0x%02x\n", i, flashData[i], fileData[i] ) 
-            cli.Printf("e", "%s", err)
+            cli.Printf("e", "%v", err)
             break
         }
     }
     if err == nil {
-        fmt.Printf("Verification passed\n")
+        fmt.Printf("Slot-%d CPLD Verification passed\n", spiNumber+1)
     } else {
-        fmt.Printf("Verification failed\n")
+        fmt.Printf("Slot-%d CPLD Verification failed\n", spiNumber+1)
     }
     
     return 
@@ -739,17 +773,12 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
     flashData := []byte{}
     var config uint32 = 0
 
-
-    if spiNumber >= SPI_NUMB_BUSES {
-        err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
-        cli.Printf("e", "%s", err)
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e", "%v", err)
         return
     }
-    //if spiNumber!=1 && spiNumber!=2 {
-    //    err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Only supprots CPLD on spi 1 and 2.  You entered %d\n", spiNumber)
-    //    cli.Printf("e", "%s", err)
-    //    return
-    //}
+
     config, err = Spi_cpldX03_return_flash_space_from_cli_arg(image) 
     if err != nil {
         fmt.Printf("[ERROR] INVALID IMAGE TYPE  ERR=%s\n", err)
@@ -775,8 +804,8 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
         return
     }
     if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -785,13 +814,13 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
         return
     }
     if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
     if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -814,13 +843,13 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
                 return
             }
             if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
+                err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+                cli.Printf("e", "%v", err)
                 return
             }
             if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-                err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-                cli.Printf("e", "%s", err)
+                err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+                cli.Printf("e", "%v", err)
                 return
             }
 
@@ -865,9 +894,9 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
     var data32 uint32 = 0
 
 
-    if spiNumber >= SPI_NUMB_BUSES {
-        err = fmt.Errorf("ERROR Spi_cpldXO3_erase_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
-        cli.Printf("e", "%s", err)
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR:Spi_cpldXO3_erase_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -882,8 +911,8 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
         return
     }
     if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -892,13 +921,13 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
         return
     }
     if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
     if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -930,9 +959,9 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
 
 
     if err == nil {
-        fmt.Printf("Erasing passed\n")
+        fmt.Printf("Erasing PASSED\n")
     } else {
-        fmt.Printf("Erasing failed\n")
+        fmt.Printf("Erasing FAILED\n")
     }
 
     return
@@ -956,9 +985,9 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
     fileData := []byte{}
 
 
-    if spiNumber >= SPI_NUMB_BUSES {
-        err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, (SPI_NUMB_BUSES - 1))
-        cli.Printf("e", "%s", err)
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR:  Spi_cpldXO3_program_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -971,9 +1000,13 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
     if strings.Contains(filename, "fea")==true {
         if config == FEATUREROW {
             err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
+            if err != nil {
+                fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
+                return
+            }
         } else {
-            err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
-            cli.Printf("e", "%s", err)
+            err = fmt.Errorf("ERROR: Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
+            cli.Printf("e", "%v", err)
             return
         }
         filename = strings.Replace(filename, "fea", "bin", 1)
@@ -982,7 +1015,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         fmt.Printf(" Jed file detected..Converting to a BIN file\n")
         err = Spi_cpldXO3_convert_jed_file(filename)
         if err != nil {
-            fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+            fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
             return
         }
         filename = strings.Replace(filename, "jed", "bin", 1)
@@ -1011,7 +1044,8 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
 
     if config == UFM2 {
         if len(fileData) > int(MACHXO3_9400_UFM2_FLASH_SIZE) {
-            fmt.Printf("ERROR:  Filesize for UFM2 is to big.   Max size=%d   Filesize=%d\n", MACHXO3_9400_UFM2_FLASH_SIZE, len(fileData))
+            err = fmt.Errorf("ERROR:  Filesize for UFM2 is to big.   Max size=%d   Filesize=%d\n", MACHXO3_9400_UFM2_FLASH_SIZE, len(fileData))
+            fmt.Printf("%v", err)
             return
         }
     }
@@ -1026,8 +1060,8 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         return
     }
     if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -1036,13 +1070,13 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         return
     }
     if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
     if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
-        err = fmt.Errorf("ERROR1 SPIBUS-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber, data32)
-        cli.Printf("e", "%s", err)
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -1093,9 +1127,9 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
 
 
     if err == nil {
-        fmt.Printf("Programming passed\n")
+        fmt.Printf("Programming PASSED\n")
     } else {
-        fmt.Printf("Programming failed\n")
+        fmt.Printf("Programming FAILED\n")
     }
 
     return
@@ -1113,20 +1147,20 @@ func Spi_cpldXO3_convert_jed_file(filename string) (err error) {
         fmt.Printf(" Jed file detected\n")
     } else {
         err = fmt.Errorf("ERROR: Input file is not a jed file type!!\n")
-        cli.Printf("e", "%s", err)
+        cli.Printf("e", "%v", err)
         return
     }
 
     inF, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     filename = strings.Replace(filename, "jed", "bin", 1)
     fmt.Printf(" BIN FILENAME = %s\n", filename)
     outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer func() { 
@@ -1200,12 +1234,13 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
     WRdata := []byte{}
     bytes := []uint8{}
     var u64 uint64 = 0
+    var start, j int
 
     if strings.Contains(filename, "fea")==true {
         fmt.Printf(" fea file detected\n")
     } else {
         err = fmt.Errorf("ERROR: Input file is not a fea file type!!\n")
-        cli.Printf("e", "%s", err)
+        cli.Printf("e", "%v", err)
         return
     }
 
@@ -1219,7 +1254,7 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
 
     outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer func() { 
@@ -1245,13 +1280,36 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
         }
     }
 
-    for i:=0x97; i<len(bytes); {
+    for i:=0x00; i<len(bytes)-5; i++ {
+        if bytes[i] == 'T' && bytes[i+1] == 'A' && bytes[i+2] == ':' {
+            fmt.Printf("Prefix Match %.02x %.02x\n", bytes[i+3],bytes[i+4]);
+            if bytes[i+4] == 0x0A {
+                start = i+5
+                fmt.Printf("Prefix Match2 start =%x %x\n", start, len(bytes));
+                break
+            } else {
+                start = i+4
+                fmt.Printf("Prefix Match1 start =%x %x\n", start, len(bytes));
+                break
+            }
+        }
+    }
+
+
+
+
+    for i:=start; i<len(bytes); {
+        fmt.Printf("I=%x\n", i);
         u64, _ = strconv.ParseUint(string(bytes[i:(i+8)]), 2, 8)
         WRdata = append(WRdata, uint8(u64))
-        if i==0xF7 {
-            i = i+2
-        }
+        //if i==0xF7 {
+        //    i = i+2
+        //}
         i = i + 8
+        j++
+        if j == 16 {
+            break
+        }
     }
     outF.WriteString(string(WRdata[:]))
 

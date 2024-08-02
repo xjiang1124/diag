@@ -66,13 +66,13 @@ var flashDumpCmd = &cobra.Command{
         var flashPartition, filename string
         flashPartition, err = cmd.Flags().GetString("partition")
         if err != nil {
-            fmt.Printf(" Error reading partition arg. error=%w\n", err)
+            fmt.Printf(" Error reading partition arg. error=%v\n", err)
             os.Exit(-1)
         }
         fmt.Printf(" partition ='%s'\n", flashPartition)
         filename, err = cmd.Flags().GetString("filename")
         if err != nil {
-            fmt.Printf(" Error reading partition arg,  error=%w\n", err)
+            fmt.Printf(" Error reading partition arg,  error=%v\n", err)
             os.Exit(-1)
         }
         fmt.Printf(" filename ='%s'\n", filename)
