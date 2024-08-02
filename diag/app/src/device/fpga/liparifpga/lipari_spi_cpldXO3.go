@@ -888,7 +888,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         if config == FEATUREROW {
             err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
             if err != nil {
-                fmt.Printf("ERRPR: Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+                fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
                 return
             }
         } else {

@@ -647,7 +647,7 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
 
         data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
         if (data32 & SPI_STA_TMT_RDY) != SPI_STA_TMT_RDY {
-            err = fmt.Errorf("ERROR matera_spi_generic_transaction. FPGA SPI BUS-%d, TX FIFO IS NOT EMPTY AT START OF TRANSACTION (STA_TMT_RDR IS NOT ZERO).  BIT=%x  Status Reg = 0x%x\n", spiNumber, SPI_STA_TMT_RDY, data32)
+            err = fmt.Errorf("ERROR matera_spi_generic_transaction. FPGA SPI BUS-%d, TRANSMIT READY NOT SET.  BIT=%x  Status Reg = 0x%x\n", spiNumber, SPI_STA_TMT_RDY, data32)
             cli.Printf("e", "%v", err)
             goto SPI_TRANSACTION_END
         }

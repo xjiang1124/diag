@@ -114,7 +114,7 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
 func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) (err error) {
     var flash_size uint32 = 0 
     var start_addr uint32 = 0
-    var read_size uint32 = 16//uint32(flash_region_info.sector_size)
+    var read_size uint32 = uint32(flash_region_info.sector_size)
     var i uint32 = 0
     flashData := []byte{}
     data := []byte{}
