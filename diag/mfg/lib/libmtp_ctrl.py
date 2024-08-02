@@ -6682,7 +6682,7 @@ class mtp_ctrl():
             cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
             cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
-            if stage == FF_Stage.FF_SRN: cmd += " -e /0"
+        if stage == FF_Stage.FF_SRN: cmd += " -e /0"
 
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
             rs = False
