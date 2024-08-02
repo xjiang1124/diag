@@ -1087,7 +1087,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_l1_setup(nic_list)
                 fail_desc = "MTP L1 setup test failed"
             elif test == "L1":
-                rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"])
+                rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, test_kwargs["l1_sequence"])
                 fail_desc = "Fail to L1 check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "I2C":
                 rlist = single_nic_dsp_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, swmtestmode)
