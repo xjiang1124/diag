@@ -325,6 +325,11 @@ func matera_fpga_cli() {
             fmt.Printf(" Need more args for this command\n");  
             return 
         }
+
+        fmt.Printf("**************************************************************************\n")
+        fmt.Printf("************** NOTE: SLOT IS NOW 1 BASED (FROM 0 BASE) *******************\n")
+        fmt.Printf("**************************************************************************\n")
+
         slotTmp, errG1 := strconv.ParseUint(os.Args[2], 0, 32)
         if errG1 != nil {
             fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
@@ -447,6 +452,10 @@ func matera_fpga_cli() {
             fmt.Printf(" %s \n", errhelpMatera)
             os.Exit(-1)
         }
+
+        fmt.Printf("**************************************************************************\n")
+        fmt.Printf("************** NOTE: SLOT IS NOW 1 BASED (FROM 0 BASE) *******************\n")
+        fmt.Printf("**************************************************************************\n")
 
         //FOR FLASHING AN ELBA OR SALINA ASIC IN A SLOT, ARG2 should be a slot number. CHECK FOR A NUMBER HERE AND PROCEED
         //OTHERWISE IT DEFAULTS TO LOCAL FPGA FLASH
