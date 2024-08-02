@@ -9,6 +9,8 @@ import (
     "common/errType"
     "platform/lipari"
     "platform/matera"
+    "device/fpga/liparifpga"
+    "device/psu/dps2100"
 )
 
 
@@ -77,7 +79,21 @@ func lipari_switch_cli() {
             fmt.Printf(" %s \n", errhelp)
             return
         }
-        if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {    //power
+        if os.Args[2] == "psu" {    //power
+            var present bool
+            present, _ = liparifpga.PSU_present(0)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_1", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_1 is not present")
+            }
+            present, _ = liparifpga.PSU_present(1)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_2", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_2 is not present")
+            }
+        } else if os.Args[2][0] == 'p' || os.Args[2][0] == 'P' {    //power
             rc = lipari.ShowPower()
         } else if os.Args[2][0] == 't' || os.Args[2][0] == 'T' {    //temperature
             rc = lipari.ShowTemperature()

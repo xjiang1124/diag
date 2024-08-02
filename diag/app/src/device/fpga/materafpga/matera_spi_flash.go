@@ -417,7 +417,7 @@ func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error)
     for i:=0; i< 5000; i++ {
         sr_reg, errGo = Spi_flash_read_status_register(spiNumber, qspiNumber)  
         if errGo != nil {
-            fmt.Printf("ERROR: Spi-%d Qspi-%d: Spi_flash_CheckWriteEnable-> Read Status Failed\n", spiNumber, qspiNumber)
+            fmt.Printf("ERROR: Slot-%d Qspi-%d: Spi_flash_CheckWriteEnable-> Read Status Failed\n", spiNumber+1, qspiNumber)
             return
         }
         if sr_reg & STS_REG_WE == STS_REG_WE {
@@ -425,7 +425,7 @@ func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error)
         }
         time.Sleep(time.Duration(1) * time.Microsecond)  //Sleep ums
     }
-    err = fmt.Errorf("ERROR: Spi-%d Qspi-%d: FlashCheckWriteEnable.  Write Enable is not set: Status Reg=%.02x\n", spiNumber, qspiNumber, sr_reg)
+    err = fmt.Errorf("ERROR: Slot-%d Qspi-%d: FlashCheckWriteEnable.  Write Enable is not set: Status Reg=%.02x\n", spiNumber+1, qspiNumber, sr_reg)
     cli.Printf("e", "%s", err)
     return 
 }
@@ -434,7 +434,7 @@ func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error)
 func Spi_flash_WriteEnable(spiNumber uint32, qspiNumber uint32) (err error) {
     _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_ENABLE_OP, WRITE_ENABLE_RDLNG)
     if err != nil {
-        err = fmt.Errorf("ERROR: Spi-%d Qspi-%d: Spi_flash_WriteEnable Failed\n", spiNumber, qspiNumber)
+        err = fmt.Errorf("ERROR: Slot-%d Qspi-%d: Spi_flash_WriteEnable Failed\n", spiNumber+1, qspiNumber)
         cli.Printf("e", "%s", err)
     }
     return
@@ -445,7 +445,7 @@ func Spi_flash_WriteEnableReadSR(spiNumber uint32, qspiNumber uint32) (flag uint
     data := []byte{}
     _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_ENABLE_OP, WRITE_ENABLE_RDLNG)
     if err != nil {
-        err = fmt.Errorf("ERROR: Spi-%d Qspi-%d: Spi_flash_WriteEnable Failed\n", spiNumber, qspiNumber)
+        err = fmt.Errorf("ERROR: Slot-%d Qspi-%d: Spi_flash_WriteEnable Failed\n", spiNumber+1, qspiNumber)
         cli.Printf("e", "%s", err)
     }
     
@@ -453,7 +453,8 @@ func Spi_flash_WriteEnableReadSR(spiNumber uint32, qspiNumber uint32) (flag uint
     if err == nil {
         flag = uint32(data[0])
     } else {
-        fmt.Printf("ERROR: Spi-%d Qspi-%d:Spi_flash_read_status_register Failed\n", spiNumber, qspiNumber)
+        err = fmt.Errorf("ERROR: Slot-%d Qspi-%d:Spi_flash_read_status_register Failed\n", spiNumber+1, qspiNumber)
+        cli.Printf("e", "%s", err)
     }
     return
 }
@@ -462,7 +463,7 @@ func Spi_flash_WriteEnableReadSR(spiNumber uint32, qspiNumber uint32) (flag uint
 func Spi_flash_WriteDisable(spiNumber uint32, qspiNumber uint32) (err error) {
     _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_DISABLE_OP, WRITE_DISABLE_RDLNG) 
     if err != nil {
-        err = fmt.Errorf("ERROR: Spi-%d Qspi-%d:  Spi_flash_WriteDisable Failed\n", spiNumber, qspiNumber)
+        err = fmt.Errorf("ERROR: Slot-%d Qspi-%d:  Spi_flash_WriteDisable Failed\n", spiNumber+1, qspiNumber)
         cli.Printf("e", "%s", err)
     }
     return
@@ -514,13 +515,13 @@ func Spi_salina_flash_GenerateImageFromFlash(spiNumber uint32, qspiNumber uint32
 
     flash_size, start_addr, err = Spi_salina_flash_get_partition_info(spiNumber, partition) 
     if err != nil {
-        fmt.Printf(" ERROR: Spi-%d Qspi-%d: Spi_salina_flash_get_partition_info failed\n", spiNumber, qspiNumber)
+        fmt.Printf(" ERROR: Slot-%d Qspi-%d: Spi_salina_flash_get_partition_info failed\n", spiNumber+1, qspiNumber)
         return
     }
 
     f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
 
@@ -550,7 +551,7 @@ func Spi_salina_flash_GenerateImageFromFlash(spiNumber uint32, qspiNumber uint32
         }
         rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, uint32(i), uint32(read_size), 0)
         if err != nil {
-            fmt.Printf(" ERROR: Flash Read Failed\n")
+            fmt.Printf("ERROR: Slot-%d Qspi-%d: Flash Read Failed\n", spiNumber+1, qspiNumber)
             return
         }
         flashData = append(flashData, rd_data...)
@@ -572,14 +573,14 @@ func Spi_salina_flash_VerifyImage(spiNumber uint32, qspiNumber uint32, partition
 
     flash_size, start_addr, err = Spi_salina_flash_get_partition_info(spiNumber, partition) 
     if err != nil {
-        fmt.Printf(" ERROR: Spi-%d Qspi-%d:  Spi_salina_flash_get_partition_info failed\n", spiNumber, qspiNumber)
+        fmt.Printf(" ERROR: Slot-%d Qspi-%d:  Spi_salina_flash_get_partition_info failed\n", spiNumber+1, qspiNumber)
         return
     }
 
 
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer f.Close()
@@ -629,7 +630,7 @@ func Spi_salina_flash_VerifyImage(spiNumber uint32, qspiNumber uint32, partition
          
         rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, uint32(i), uint32(read_size), 0)
         if err != nil {
-            fmt.Printf(" ERROR: Spi-%d Qspi-%d: Flash Read Failed.  StartAddr=%x.  I=%x\n", spiNumber, qspiNumber, start_addr, i)
+            fmt.Printf(" ERROR: Slot-%d Qspi-%d: Flash Read Failed.  StartAddr=%x.  I=%x\n", spiNumber+1, qspiNumber, start_addr, i)
             return
         }
         flashData = append(flashData, rd_data...) 
@@ -637,7 +638,7 @@ func Spi_salina_flash_VerifyImage(spiNumber uint32, qspiNumber uint32, partition
 
     for i=0; i<len(data); i++ {
         if flashData[i] != data[i] {
-            err = fmt.Errorf(" Error:  Spi-%d Qspi-%d:  Flash Miscompare at flash address 0x%x:  Flash Read %.02x   File Read %.02x\n", spiNumber, qspiNumber, i+start_addr, flashData[i], data[i])
+            err = fmt.Errorf(" Error:  Slot-%d Qspi-%d:  Flash Miscompare at flash address 0x%x:  Flash Read %.02x   File Read %.02x\n", spiNumber+1, qspiNumber, i+start_addr, flashData[i], data[i])
             cli.Printf("e", "%s", err)
             fmt.Printf("Verification failed\n")
             return
@@ -658,13 +659,13 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
 
     flash_size, start_addr, err = Spi_salina_flash_get_partition_info(spiNumber, partition) 
     if err != nil {
-        fmt.Printf(" ERROR: Spi-%d Qspi-%d:  Spi_salina_flash_get_partition_info failed\n", spiNumber, qspiNumber)
+        fmt.Printf(" ERROR: Slot-%d Qspi-%d:  Spi_salina_flash_get_partition_info failed\n", spiNumber+1, qspiNumber)
         return
     }
 
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
     defer f.Close()
@@ -703,7 +704,7 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
         fmt.Printf(".")
         err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, uint32(i))
         if err != nil {
-            fmt.Printf("ERROR: Erasing Flash Failed\n")
+            fmt.Printf("ERROR: Slot-%d Qspi-%d: Erasing Flash Failed\n", spiNumber+1, qspiNumber)
             return
         }
     }
@@ -728,7 +729,7 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
         if write_page == true {
             err = Spi_salina_flash_Write_N_Bytes(spiNumber, qspiNumber, wr_data, uint32(i))
             if err != nil {
-                fmt.Printf("ERROR:  Writing Flash Failed\n")
+                fmt.Printf("ERROR:  Slot-%d Qspi-%d:  Writing Flash Failed\n", spiNumber+1, qspiNumber)
                 return
             }
         } else {
@@ -755,7 +756,7 @@ func Spi_salina_flash_erase_all_sectors(spiNumber uint32, qspiNumber uint32) (er
         fmt.Printf(".")
         err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, i) 
         if err != nil {
-            fmt.Printf("\nERROR: Erase All Sectors Failed.  Spi-%d Qspi-%d:\n", spiNumber, qspiNumber)
+            fmt.Printf("\nERROR: Erase All Sectors Failed.  Slot-%d Qspi-%d:\n", spiNumber+1, qspiNumber)
             return
         }
     }
@@ -790,23 +791,17 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
     ERASE_SECTOR_OP[3] = byte(addr)
 
     _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
-if err != nil {
-        err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector Failed. Spi-%d Qspi-%d:  Erase Addr=%.08x\n", spiNumber, qspiNumber, addr)
+    if err != nil {
+        err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector Failed. Slot-%d Qspi-%d:  Erase Addr=%.08x\n", spiNumber+1, qspiNumber, addr)
         cli.Printf("e", "%s", err)
         return
     }
 
     sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, qspiNumber, ELB_SECTOR_ERASE_DELAY)
     if rc != 0 {
-       err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector.  Spi-%d Qspi-%d: Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber, qspiNumber, addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
+       err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector.  Slot-%d Qspi-%d: Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber+1, qspiNumber, addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
     }
-    return
-
-
-    err = Spi_flash_WriteDisable(spiNumber, qspiNumber) 
-
-
     return
 }
 
@@ -815,12 +810,12 @@ func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []
     wr_data := []byte{}
 
     if addr > elba_flash_info.region_size {
-        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes. Spi-%d Qspi-%d  Address passed (0x%x) is greather than flash size - %x\n", spiNumber, qspiNumber,  addr, elba_flash_info.region_size)
+        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes. Slot-%d Qspi-%d  Address passed (0x%x) is greather than flash size - %x\n", spiNumber+1, qspiNumber,  addr, elba_flash_info.region_size)
         cli.Printf("e", "%s", err)
         return
     }
     if len(data) > FLASH_PAGE_WRITE_SIZE {
-        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes. Spi-%d Qspi-%d  Number of bytes passed is to many to program with one page write.  Max=%d.  You passed %d bytes\n", spiNumber, qspiNumber, FLASH_PAGE_WRITE_SIZE, len(data))
+        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes. Slot-%d Qspi-%d  Number of bytes passed is to many to program with one page write.  Max=%d.  You passed %d bytes\n", spiNumber+1, qspiNumber, FLASH_PAGE_WRITE_SIZE, len(data))
         cli.Printf("e", "%s", err)
         return
     }
@@ -851,13 +846,13 @@ func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []
 
     data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, wr_data, PAGE_PROGRAM_RDLNG) 
     if err != nil {
-       err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Spi-%d Qspi-%d: matera_spi_generic_transaction Failed\n", spiNumber, qspiNumber,)
+       err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Slot-%d Qspi-%d: matera_spi_generic_transaction Failed\n", spiNumber+1, qspiNumber,)
        cli.Printf("e", "%s", err)
     }
 
     sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, qspiNumber, ELB_PAGE_WR_DELAY)
     if rc != 0 {
-       err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Spi-%d Qspi-%d: Timeout Waiting for Write To Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber, qspiNumber, addr, ELB_PAGE_WR_DELAY, sr_reg)
+       err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Slot-%d Qspi-%d: Timeout Waiting for Write To Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber+1, qspiNumber, addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
        return
     }
@@ -912,7 +907,7 @@ func Spi_salina_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, qspiNumber uint3
 
 
 
-func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string)() {
+func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string)(err error) {
     var flash_size = uint32(elba_flash_info.region_size)
     var i, count int = 0, 0
     var j uint32 = 0
@@ -924,27 +919,29 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     // get file size
     fileInfo, err := os.Stat(filename)
     if err != nil {
-        fmt.Printf(" Unable to get file size\n", err); return
+        fmt.Printf("ERROR: Unable to get file size.  os.Stat Err msg=%s\n", err); 
+        return
     }
     file_size := fileInfo.Size()
 
     // check if flash has enough size
     if (start_addr + uint32(file_size) > flash_size) {
-        fmt.Printf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", file_size, start_addr, flash_size)
-        cli.Printf("e", "%s", err)
+        fmt.Errorf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", file_size, start_addr, flash_size)
+        fmt.Printf("%s", err)
         return
     }
 
     // check if offset 64 kB aligned
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-		fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        fmt.Printf("%s", err)
         return
-	}
+    }
 
     // open file
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.  os.Open err=%s\n", filename, err)
         return
     }
     defer f.Close()
@@ -955,15 +952,15 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
 
     // write file content to data
     for scanner.Scan() {
-		b := scanner.Bytes()
-		if len(b) > 0 { // check token is not empty
-			data = append(data, b[0])
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println(err)
-		return
-	}
+        b := scanner.Bytes()
+        if len(b) > 0 { // check token is not empty
+            data = append(data, b[0])
+        }
+    }
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        return
+    }
 
     // append padding to data if needed
     padding_size := FLASH_PAGE_WRITE_SIZE - (len(data) % FLASH_PAGE_WRITE_SIZE)
@@ -981,7 +978,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
         fmt.Printf(".")
         err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, j)
         if err != nil {
-           fmt.Printf(" Erasing Flash Failed\n")
+           fmt.Printf(" ERROR: Erasing Flash Failed\n")
            return
         }
     }
@@ -1006,7 +1003,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
        if write_page == true {
            err = Spi_salina_flash_Write_N_Bytes(spiNumber, qspiNumber, wr_data, j)
            if err != nil {
-               fmt.Printf(" Writing Flash Failed\n")
+               fmt.Printf(" ERROR: Writing Flash Failed\n")
                return
            }
        } else {
@@ -1014,6 +1011,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
        }
     }
     fmt.Printf("Skipped Pages = %d.  Skipped bytes = 0x%X\n", skipped_pages, (skipped_pages * 256) )
+    fmt.Printf("Programming PASSED\n")
     
     return
 }
@@ -1027,13 +1025,14 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     file_data := []byte{}
 
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-		fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        fmt.Errorf(" ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        fmt.Printf("%s", err)
         return
-	}
+    }
 
     f, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        fmt.Printf(" ERROR: Failed to open filename=%s.  os.Open err=%s\n", filename, err)
         return
     }
     defer f.Close()
@@ -1041,13 +1040,14 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     // get file size
     fileInfo, err := os.Stat(filename)
     if err != nil {
-        fmt.Printf(" Unable to get file size\n", err); return
+        fmt.Printf(" ERROR: Unable to get file size.  os.Stat err=%s\n", err); 
+        return
     }
     file_size := fileInfo.Size()
 
     if (start_addr + uint32(file_size) > flash_size) {
-        fmt.Printf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
-        cli.Printf("e", "%s", err)
+        fmt.Errorf(" ERROR: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
+        fmt.Printf("%s", err)
         return
     }
 
@@ -1097,8 +1097,8 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
 
     for i=0; i < uint32(len(file_data)); i++ {
         if (flash_data[i] != file_data[i]) {
-            err = fmt.Errorf(" Error: Flash Miscompare at flash address 0x%X:  Flash Read 0x%.02X   File Read 0x%.02X\n", i+start_addr, flash_data[i], file_data[i])
-            cli.Printf("e", "%s", err)
+            err = fmt.Errorf(" ERROR: Flash Miscompare at flash address 0x%X:  Flash Read 0x%.02X   File Read 0x%.02X\n", i+start_addr, flash_data[i], file_data[i])
+            fmt.Printf("e", "%s", err)
             fmt.Printf("Verification failed\n")
             return
         }
@@ -1115,7 +1115,8 @@ func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_ad
 
     // check if offset 64 kB aligned
     if start_addr % FLASH_SECTOR_SIZE != 0 {
-        fmt.Printf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        fmt.Errorf("ERROR: Offset 0x%X is not 64 KB aligned\n", start_addr)
+        cli.Printf("e", "%s", err)
         return
     }
 

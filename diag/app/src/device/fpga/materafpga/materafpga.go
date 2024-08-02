@@ -515,7 +515,7 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
 
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Invalid slot number -> %d \n", slot);
-        fmt.Printf("%w\n", err)
+        fmt.Printf("%v", err)
         return
     }
 
@@ -541,7 +541,7 @@ func SetJTAGbusToJTAG(slot uint32) (err error) {
 
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToJTAG: Invalid slot number -> %d \n", slot);
-        fmt.Printf("%w\n", err)
+        fmt.Printf("%v", err)
         return
     }
 

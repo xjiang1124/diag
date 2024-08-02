@@ -10,10 +10,12 @@ import (
     "unsafe"
     "common/cli"
     "device/fpga/materafpga"
+    "device/psu/dps2100"
     "platform/matera"
+    
 )
 
-const errhelpMatera = "\nfpgautil:\n" +
+const errhelpMatera = "\nfpgautil: (+08/02/24 one base slot numbering)\n" +
         "fpgautil regdump\n" + 
         "fpgautil r32 <addr>\n" +
         "fpgautil w32 <addr> <data>\n" +
@@ -66,6 +68,23 @@ func matera_fpga_cli() {
         if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {
             matera.ShowFanInfo()
         }
+        if os.Args[2] == "psu" {
+            var present bool
+            present, _ = materafpga.PSU_present(0)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_1", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_1 is not present")
+            }
+            present, _ = materafpga.PSU_present(1)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_2", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_2 is not present")
+            }
+        }
+
+        
     } else if os.Args[1] == "r32" || os.Args[1] == "w32" {
         if (os.Args[1] == "r32") && argc < 3  {
             if argc < 4 {
@@ -110,7 +129,7 @@ func matera_fpga_cli() {
         
         slotTmp, errG1 := strconv.ParseUint(os.Args[2], 0, 32)
         if errG1 != nil {
-            fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %w", errG1)
+            fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
             os.Exit(-1)
         }
         slot = uint32(slotTmp)
@@ -189,20 +208,12 @@ func matera_fpga_cli() {
             }
             materafpga.ExecutingScanChain = 1
             for i:=3; i<0x78; i++ {
-
-                //if ((i >= 0x30 && i <= 0x37) || (i >= 0x50 && i <= 0x5F)) {
-                    //fmt.Printf("RD(%x) \n", i)
-                    rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 1 )
-                //} else {
-                    //fmt.Printf("WR(%x) \n", i)
-                //    rdData, err = I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 0x00 )
-                //}
+                rdData, err = materafpga.I2c_access( uint32(bus), uint32(mux), uint32(i), 0x00, wrData, 1 )
                 if err == nil {
                     matrix[i] = byte(i)
                 } else {
                     matrix[i] = 0x99
                 }
-                //time.Sleep(time.Duration(10) * time.Millisecond)  //Sleep 2ms
             }
             materafpga.ExecutingScanChain = 0
             fmt.Printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f")
@@ -314,24 +325,38 @@ func matera_fpga_cli() {
             fmt.Printf(" Need more args for this command\n");  
             return 
         }
+
+        fmt.Printf("**************************************************************************\n")
+        fmt.Printf("************** NOTE: SLOT IS NOW 1 BASED (FROM 0 BASE) *******************\n")
+        fmt.Printf("**************************************************************************\n")
+
         slotTmp, errG1 := strconv.ParseUint(os.Args[2], 0, 32)
         if errG1 != nil {
-            fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %w", errG1)
+            fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
             os.Exit(-1)
         }
         slot := uint32(slotTmp)
+        //Check slots are 1-10 or 11 for the Debug Slot
+        if ( (slot < (materafpga.SPI_SLOT0+1)) || (slot > (materafpga.SPI_DBG_SLOT+1)) ) {
+            fmt.Printf("ERROR: Valid slot numbers are %d - %d\n", materafpga.SPI_SLOT0+1, materafpga.SPI_DBG_SLOT+1)
+            os.Exit(-1)
+        }
+        //Switch to zero based slot for underlying code
+        slot = slot - 1
+        
+
         if os.Args[3] == "uc" {   //run op usercode
             ucode, _ := materafpga.Spi_cpldXO3_read_usercode(slot) 
-            fmt.Printf(" Slot-%d CPLD  UCODE=0x%.08x\n", slot, ucode)
+            fmt.Printf(" Slot-%d CPLD  UCODE=0x%.08x\n", slot+1, ucode)
         } else if os.Args[3] == "devid" {   
             ucode, _ := materafpga.Spi_cpldXO3_read_device_id(slot) 
-            fmt.Printf(" Slot-%d CPLD  Device ID =0x%.08x\n", slot, ucode)
+            fmt.Printf(" Slot-%d CPLD  Device ID =0x%.08x\n", slot+1, ucode)
         } else if os.Args[3] == "refresh" {   
             materafpga.Spi_cpldXO3_refresh(slot) 
-            fmt.Printf(" Slot-%d Elba CPLD  Refresh performed\n", slot)
+            fmt.Printf(" Slot-%d Elba CPLD  Refresh performed\n", slot+1)
         } else if os.Args[3] == "featurebits" {   
             featurebits, _ := materafpga.Spi_cpldXO3_read_feature_bits(slot) 
-            fmt.Printf(" Slot-%d Elba CPLD  Feature BITS =0x%.04x\n", slot, featurebits)
+            fmt.Printf(" Slot-%d Elba CPLD  Feature BITS =0x%.04x\n", slot+1, featurebits)
         } else if os.Args[3] == "featurerow" { 
             data := []byte{}  
             data, _ = materafpga.Spi_cpldXO3_read_feature_row(slot) 
@@ -342,7 +367,7 @@ func matera_fpga_cli() {
             fmt.Printf("\n")
         } else if os.Args[3] == "statusreg" {   
             statusreg, _ := materafpga.Spi_cpldXO3_read_status_reg(slot) 
-            fmt.Printf(" Slot-%d Elba CPLD  statusreg =0x%.04x\n", slot, statusreg)
+            fmt.Printf(" Slot-%d Elba CPLD  statusreg =0x%.04x\n", slot+1, statusreg)
         } else if os.Args[3] == "erase" {   
             if argc < 5 {
                 fmt.Printf(" %s \n", errhelpMatera)
@@ -362,7 +387,7 @@ func matera_fpga_cli() {
                     os.Exit(-1)
                 }
             } else if os.Args[3] == "verify" {   
-                materafpga.Spi_cpldXO3_verify_flash_contents(slot, os.Args[4], os.Args[5])
+                err = materafpga.Spi_cpldXO3_verify_flash_contents(slot, os.Args[4], os.Args[5])
                 if err != nil {
                     os.Exit(-1)
                 }
@@ -371,7 +396,7 @@ func matera_fpga_cli() {
                 if err != nil {
                     os.Exit(-1)
                 }
-                materafpga.Spi_cpldXO3_verify_flash_contents(slot, os.Args[4], os.Args[5])
+                err = materafpga.Spi_cpldXO3_verify_flash_contents(slot, os.Args[4], os.Args[5])
                 if err != nil {
                     os.Exit(-1)
                 }
@@ -403,30 +428,36 @@ func matera_fpga_cli() {
     //FPGA Local Flash commands 
     //
     } else if os.Args[1] == "flash" {
-        var flashID uint32 = materafpga.SPI_FPGA
-        const errhelpMateraFlash = "\nfpgautil flash:\n" +
-        " LOCAL FPGA FLASH PROGRAMMING\n" +
-        "fpgautil flash devid/readsr/writesr <data>\n" +
-        "fpgautil flash read <addr> <length>\n" +
-        "fpgautil flash w32 <addr> <data>\n" +
-        "fpgautil flash flash sectorerase <addr>/all\n" +
-        "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" + 
-        "\n" +
-        " NETWORK ADAPTER PROGRAMMING: SLOTS 0-9, DBG SLOT IS 10\n" +
-        "\nfpgautil flash <slot#> <qspi#> devid/flagstatus/readsr/writesr <data>\n" +
-        "fpgautil flash <slot#> <qspi#> read <addr> <length>\n" +
-        "fpgautil flash <slot#> <qspi#> w32/w64 <addr> <data>\n" +
-        "fpgautil flash <slot#> <qspi#> sectorerase <addr>/all\n" +
-        "fpgautil flash <slot#> <qspi#> test uboot0/golduboot/goldfw/allflash <filename>\n" +
-        // "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
-        "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
-        "fpgautil flash <slot#> <qspi#> generatefile <start_addr> <length> <filename>\n"
+        var flashID uint32 = materafpga.SPI_FPGA            
+        const errhelpMateraFlash = "\n"+
+            "fpgautil flash:\n" +
+            " LOCAL FPGA FLASH PROGRAMMING\n" +
+            "fpgautil flash devid/readsr/writesr <data>\n" +
+            "fpgautil flash read <addr> <length>\n" +
+            "fpgautil flash w32 <addr> <data>\n" +
+            "fpgautil flash flash sectorerase <addr>/all\n" +
+            "fpgautil flash program/verify/generate <primary/secondary/allflash> <filename>\n" + 
+            "\n" +
+            " NETWORK ADAPTER PROGRAMMING: SLOTS 0-9, DBG SLOT IS 10\n" +
+            "\nfpgautil flash <slot#> <qspi#> devid/flagstatus/readsr/writesr <data>\n" +
+            "fpgautil flash <slot#> <qspi#> read <addr> <length>\n" +
+            "fpgautil flash <slot#> <qspi#> w32/w64 <addr> <data>\n" +
+            "fpgautil flash <slot#> <qspi#> sectorerase <addr>/all\n" +
+            "fpgautil flash <slot#> <qspi#> test uboot0/golduboot/goldfw/allflash <filename>\n" +
+            // "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
+            "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
+            "fpgautil flash <slot#> <qspi#> generatefile <start_addr> <length> <filename>\n"
+
         if argc < 3 {
             fmt.Printf(" %s \n", errhelpMatera)
             os.Exit(-1)
         }
 
-        //FOR FLASHING AN ELBA OR SALINE ASIC IN A SLOT, ARG2 should be a slot number. CHECK FOR A NUMBER HERE AND PROCEED
+        fmt.Printf("**************************************************************************\n")
+        fmt.Printf("************** NOTE: SLOT IS NOW 1 BASED (FROM 0 BASE) *******************\n")
+        fmt.Printf("**************************************************************************\n")
+
+        //FOR FLASHING AN ELBA OR SALINA ASIC IN A SLOT, ARG2 should be a slot number. CHECK FOR A NUMBER HERE AND PROCEED
         //OTHERWISE IT DEFAULTS TO LOCAL FPGA FLASH
         //BEGIN SLOT FLASH CLI FOR ASIC
         if unicode.IsNumber(rune(os.Args[2][0])) == true {
@@ -439,16 +470,24 @@ func matera_fpga_cli() {
             //get the slot number and qspi number, check that args are numbers using ParseUint returned error
             slotTmp, errG1 := strconv.ParseUint(os.Args[2], 0, 32)
             if errG1 != nil {
-                fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %w", errG1)
+                fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
                 os.Exit(-1)
             }
             qspiTmp, errG2 := strconv.ParseUint(os.Args[3], 0, 32)
             if errG2 != nil {
-                fmt.Printf("ERROR: Pasring Qspi number failed. Go Erro ->  %w", errG2)
+                fmt.Printf("ERROR: Pasring Qspi number failed. Go Erro ->  %v", errG2)
                 os.Exit(-1)
             }
             slot = uint32(slotTmp)
             qspiNumber = uint32(qspiTmp)
+
+            //Check slots are 1-10 or 11 for the Debug Slot
+            if ( (slot < (materafpga.SPI_SLOT0+1)) || (slot > (materafpga.SPI_DBG_SLOT+1)) ) {
+                fmt.Printf("ERROR: Valid slot numbers are %d - %d\n", materafpga.SPI_SLOT0+1, materafpga.SPI_DBG_SLOT+1)
+                os.Exit(-1)
+            }
+            //Switch to zero based slot for underlying code
+            slot = slot - 1
             
             switch slot {
                 case 0:  flashID = materafpga.SPI_SLOT0
@@ -461,9 +500,8 @@ func matera_fpga_cli() {
                 case 7:  flashID = materafpga.SPI_SLOT7
                 case 8:  flashID = materafpga.SPI_SLOT8
                 case 9:  flashID = materafpga.SPI_SLOT9
-                case 10: flashID = materafpga.SPI_DBG
-                case 11: flashID = materafpga.SPI_FPGA
-                default: fmt.Printf(" ERROR: slot number must be 0 - 9 for normal slots, and 10 for the Debug slot.  You entered %d\n", slot);  
+                case 10: flashID = materafpga.SPI_DBG_SLOT
+                default: fmt.Printf(" ERROR: ZERO based slot number must be 0 - 9 for normal slots, and 10 for the Debug slot.  You entered %d\n", slot);  
                          os.Exit(-1)
             }
 
@@ -473,7 +511,7 @@ func matera_fpga_cli() {
             }
 
 
-            fmt.Printf(" Slot-%d Qpsi-%d FlashID=%d\n", slot, qspiNumber, flashID)
+            fmt.Printf(" Slot-%d Qpsi-%d Zero Based FlashID=%d\n", slot+1, qspiNumber, flashID)
 
             if os.Args[4] == "devid" {
                 devid, _ := materafpga.Spi_flash_read_id(flashID, qspiNumber) 
@@ -567,7 +605,7 @@ func matera_fpga_cli() {
                     }
                     t2 := time.Now()
                     fmt.Println(" Flasing the image took ", t2.Sub(t1), " time")
-                    err = materafpga.Spi_salina_flash_WriteImage(flashID, qspiNumber, os.Args[5], os.Args[6])
+                    err = materafpga.Spi_salina_flash_VerifyImage(flashID, qspiNumber, os.Args[5], os.Args[6])
                     if err != nil {
                         os.Exit(-1)
                     }
@@ -605,7 +643,10 @@ func matera_fpga_cli() {
                 }
                 if os.Args[4] == "generate" {
                     t1 := time.Now()
-                    materafpga.Spi_salina_flash_GenerateImageFromFlash(flashID, qspiNumber, os.Args[5], os.Args[6]) 
+                    err = materafpga.Spi_salina_flash_GenerateImageFromFlash(flashID, qspiNumber, os.Args[5], os.Args[6]) 
+                    if err != nil {
+                        os.Exit(-1)
+                    }
                     t2 := time.Now()
                     fmt.Println(" Generating the image ", t2.Sub(t1), " time")
                     fmt.Printf(" File %s generated\n", os.Args[5])
@@ -618,7 +659,7 @@ func matera_fpga_cli() {
                 }
                 if os.Args[5] == "all" {
                     fmt.Printf(" Erasing the entire flash\n")
-                    materafpga.Spi_salina_flash_erase_all_sectors(flashID, qspiNumber) 
+                    err = materafpga.Spi_salina_flash_erase_all_sectors(flashID, qspiNumber) 
                 } else {
                     addr, err := strconv.ParseUint(os.Args[5], 0, 32)
                     if err != nil {
@@ -626,7 +667,10 @@ func matera_fpga_cli() {
                         os.Exit(-1)
                     }
                     fmt.Printf(" Erasing Sector associated with addr-%x\n", uint32(addr))
-                    materafpga.Spi_salina_flash_erase_sector(flashID, qspiNumber, uint32(addr)) 
+                    err = materafpga.Spi_salina_flash_erase_sector(flashID, qspiNumber, uint32(addr)) 
+                }
+                if err != nil {
+                    os.Exit(-1)
                 }
             } else if os.Args[4] == "read" || os.Args[4] == "Read" {
                 if argc < 7 {
@@ -645,7 +689,6 @@ func matera_fpga_cli() {
                     fmt.Printf("%.02x ", rd_data[x] & 0xff)
                 }
                 fmt.Printf("\n")
-                fmt.Printf(" READ COMMAND\n");
             } else if os.Args[4] == "w32" {
                 var data32 uint32
                 if argc < 6 {
@@ -677,9 +720,15 @@ func matera_fpga_cli() {
                 }
                 filename := os.Args[6]
                 if os.Args[4] == "writefile" {
-                    materafpga.Spi_salina_flash_WriteFile(flashID, qspiNumber, uint32(addr), filename) 
+                    err = materafpga.Spi_salina_flash_WriteFile(flashID, qspiNumber, uint32(addr), filename) 
+                    if err != nil {
+                        os.Exit(-1)
+                    }
                 } else if os.Args[4] == "verifyfile" {
-                    materafpga.Spi_salina_flash_VerifyFile(flashID, qspiNumber, uint32(addr), filename) 
+                    err = materafpga.Spi_salina_flash_VerifyFile(flashID, qspiNumber, uint32(addr), filename) 
+                    if err != nil {
+                        os.Exit(-1)
+                    }
                 }
             } else if os.Args[4] == "generatefile" {
                 // TODO: fpgautil flash <slot#> <qspi#> generate <start_addr> <length> <filename>
@@ -695,14 +744,17 @@ func matera_fpga_cli() {
                     fmt.Printf(" Args[6] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }
                 filename := os.Args[7]
-                materafpga.Spi_salina_flash_GenerateFile(flashID, qspiNumber, uint32(addr), uint32(length), filename) 
+                err = materafpga.Spi_salina_flash_GenerateFile(flashID, qspiNumber, uint32(addr), uint32(length), filename) 
+                if err != nil {
+                    os.Exit(-1)
+                }
             } else {
                 fmt.Printf("\n Incorrect Arg used.  See the help Below!!\n")
                 fmt.Printf(" %s \n", errhelpMateraFlash)
                 os.Exit(-1)
             }
             os.Exit(0)
-        }
+        } 
         //END SLOT FLASH CLI FOR ASIC
 
         // BEGIN LOCAL FPGA FLASH CLI
