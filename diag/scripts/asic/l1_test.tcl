@@ -33,6 +33,7 @@ set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
 
 set MTP_TYPE $::env(MTP_TYPE)
+set ASIC_TYPE $::env(ASIC_TYPE)
 
 catch {
     set ELBA0_ID $::env(ELBA0_J2C_ID)
@@ -88,7 +89,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
         } elseif { ($card_type == "MALFA")   ||
                    ($card_type == "POLLARA") ||
                    ($card_type == "LENI") } {
-            set l1_cmd "sal_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq 5600 $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test $pct $pct $pct"
+            set l1_cmd "sal_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 0 1 $arm_freq 6400 $int_lpbk $vmarg $offload $esecEn $logEn"
             source .tclrc.diag.sal
         } else {
             set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
@@ -143,12 +144,40 @@ set err_cnt_init [ plog_get_err_count ]
 set ::CAP_GPIO3_PWR_OFF_DUR 5000
 
 if {$use_zmq == 0} {
-    puts "Regular L1"
-    diag_open_j2c_if $port $slot
-    set err_cn [eval $l1_cmd]
-    set err_cnt 0
+    if {$ASIC_TYPE == "SALINA"} {
+        puts "Salina L1"
+        set slot $slot
+        set port $port
+        
+        diag_close_j2c_if $port $slot
+        diag_open_j2c_if $port $slot
+        diag_close_j2c_if $port $slot
+        
+        after 1000
+        diag_close_ow_if $port $slot
+        after 1000
+        diag_open_ow_if $port $slot
+        after 1000
+        sal_ow_axi
+        
+        csr_write sal0.ms.ms.cfg_ow 3
+        after 500
+        rd sal0.ms.ms.cfg_ow
+        
+        _msrd
 
-    diag_close_j2c_if $port $slot
+        set err_cn [eval $l1_cmd]
+        set err_cnt 0
+
+        diag_close_j2c_if $port $slot
+    } else {
+        puts "Regular L1"
+        diag_open_j2c_if $port $slot
+        set err_cn [eval $l1_cmd]
+        set err_cnt 0
+
+        diag_close_j2c_if $port $slot
+    }
 } else {
     puts "ZMQ L1"
     diag_open_zmq_if $zmq_conn $slot
