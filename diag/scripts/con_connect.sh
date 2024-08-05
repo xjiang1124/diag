@@ -18,8 +18,22 @@ then
 elif [[ $CARD_TYPE == "MTP_MATERA" ]]
 then
     slot=$1
+    uart_id=0
+    if [ $# -eq 2 ]
+    then
+        uart_id=$(($2 & 0x7))
+        echo "uart_id=$uart_id"
+    fi
     echo "UART connected to slot $1"
-    fpga_uart $((slot - 1))
+    board_type=$(i2cget -y $(($slot + 2)) 0x4a 0x80)
+    if [[ "$board_type" -ge 0x62 ]]
+    then
+        data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
+        data=$(( $data & 0xF8 ))
+        data=$(( $data | $uart_id ))
+        i2cset -y $(($slot + 2)) 0x4a 0x21 $data
+    fi
+    fpga_uart $(($slot - 1))
 else
 cpldutil -cpld-wr -addr=0x18 -data=0
 cpldutil -cpld-wr -addr=0x18 -data=$1

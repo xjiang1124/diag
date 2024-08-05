@@ -39,6 +39,7 @@ elba_enable_jtag() {
 # Enable NIC MTP Rev3 mode
 enable_nic_mtp_r3() {
     slot=$1
+    echo "uart_id is $uart_id"
 
     reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x21)
     #echo $reg1
@@ -48,9 +49,18 @@ enable_nic_mtp_r3() {
         return
     fi
 
-    reg1=$(( $reg1 | 0x25 ))
-    reg1=$(( $reg1 & 0xBF ))
-    i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
+    board_type=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
+    if [[ "$board_type" -ge 0x62 ]]
+    then
+        data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
+        data=$(( $data & 0xF8 ))
+        data=$(( $data | $uart_id ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
+    else
+        reg1=$(( $reg1 | 0x25 ))
+        reg1=$(( $reg1 & 0xBF ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
+    fi
 }
 
 control_slot_matera() {
@@ -78,7 +88,12 @@ control_slot_matera() {
         sleep 0.2
     else
         fpgautil w32 $matera_P3V3_addr $(( $v3v3 | $wValue ))
-        sleep 0.2
+        sleep 1
+        for slot in $slot_list
+        do
+            enable_nic_mtp_r3 $slot
+            elba_enable_jtag $slot
+        done
         fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
         fpgautil w32 $matera_perst_addr  $(( $perst | $wValue ))
     fi
@@ -93,17 +108,18 @@ control_all() {
     then
         echo "Turning on all slots"
         fpgautil w32 $matera_P3V3_addr 0x3ff
-        sleep 0.2
-        fpgautil w32 $matera_P12V_addr 0x3ff
-        sleep 0.2
-        fpgautil w32 $matera_perst_addr 0x3ff
-        sleep 0.2
-
+        sleep 1
         for i in {1..10}
         do
             enable_nic_mtp_r3 $i
             elba_enable_jtag $i
         done
+        fpgautil w32 $matera_P12V_addr 0x3ff
+        sleep 0.2
+        fpgautil w32 $matera_perst_addr 0x3ff
+        sleep 0.2
+
+
 
         echo "All slots turned on"
     
@@ -125,7 +141,7 @@ usage() {
     echo "Turn_on_slot.sh Usage"
     echo "========================="
     echo "Turn on specific slot"
-    echo "turn_on_slot.sh on <slot_id>"
+    echo "turn_on_slot.sh on <slot_id> <uart_id>"
 
     echo "-------------------------"
     echo "Turn off_specific slot"
@@ -133,7 +149,7 @@ usage() {
 
     echo "-------------------------"
     echo "Turn on all slots"
-    echo "turn_on_slot.sh on all"
+    echo "turn_on_slot.sh on all <uart_id>"
 
     echo "-------------------------"
     echo "Turn off all slots"
@@ -165,6 +181,11 @@ then
     exit
 fi
 
+uart_id=0
+if [ $# -eq 3 ]
+then
+    uart_id=$(($3 & 0x7))
+fi
 
 if [[ $2 == "all" ]]
 then
@@ -222,17 +243,6 @@ else
     then
         exit 0
     fi
-
-    for slot in $slot_list
-    do
-        if [[ $MTP_TYPE != "MTP_MATERA" ]]
-        then
-            turn_on_hub.sh $slot
-        fi
-        enable_nic_mtp_r3 $slot
-        elba_enable_jtag $slot
-    done
-
     
     #control_slot $1 $2
 fi
