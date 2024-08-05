@@ -2528,7 +2528,10 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
     return
 }
 
-func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int) {
+func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, toFile bool) (output []byte, err int) { 
+    var f *os.File
+    var err_ error
+    rdData := []byte{}
 
     err = smbusNew.Open(devName, bus, devAddr)
     if err != errType.SUCCESS {
@@ -2537,11 +2540,6 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int
     defer smbusNew.Close()
     var data []byte
 
-    f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
-    if error != nil {
-        cli.Println("e", "file create failed")
-    }
-    cli.Println("i", "dump FRU to file eeprom")
     for i := 0; i < numBytes; i++ {
         data, err = readField(devName, i, 1)
         //cli.Printf("d", "Offset=0x%x, data=0x%x\n", i, data)
@@ -2549,11 +2547,22 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int) (err int
             cli.Println("f", "Failed to read field at offset", i)
             return
         }
-        f.WriteString(string(data[:]))
+        rdData = append(rdData, data...)
     }
 
-    f.Close()
-    return
+    if toFile == true {
+        f, err_ = os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
+        if err_ != nil {
+            cli.Println("e", "file create failed")
+            return nil, -1
+        }
+        cli.Println("i", "dump FRU to file eeprom")
+        f.WriteString(string(rdData[:]))
+        f.Close()
+        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
+    }
+    return rdData, err
+
 }
 
 

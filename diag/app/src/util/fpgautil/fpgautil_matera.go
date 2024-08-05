@@ -31,7 +31,7 @@ const errhelpMatera = "\nfpgautil: (+08/02/24 one base slot numbering)\n" +
         "\n" +
         // "fpgautil flash <slot#> <qspi#> generate/verify/program uboot0/golduboot/goldfw/allflash <filename>\n" +
         "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
-        "fpgautil flash <slot#> <qspi#> generatefile <start_addr> <legnth> <filename>\n" +
+        "fpgautil flash <slot#> <qspi#> generatefile <addr> <length> <filename>\n" +
         "\n" +
         "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/refresh \n" +
         "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>\n" +
@@ -392,7 +392,7 @@ func matera_fpga_cli() {
                     os.Exit(-1)
                 }
             } else if os.Args[3] == "program" {   
-                err = materafpga.Spi_cpldXO3_program_flash(slot, os.Args[4], os.Args[5])
+                err = materafpga.Spi_cpldXO3_program_flash(slot, os.Args[4], true, os.Args[5], nil)
                 if err != nil {
                     os.Exit(-1)
                 }
@@ -404,22 +404,6 @@ func matera_fpga_cli() {
             t2 := time.Now()
             fmt.Println(" Function took ", t2.Sub(t1), " time")
             os.Exit(0)
-        } else if os.Args[3] == "fru" {
-            if argc < 5 {
-                fmt.Printf(" %s \n", errhelpMatera)
-                os.Exit(-1)
-            } else if os.Args[4] == "program" {
-                // TODO: fpgautil cpld <slot#> fru program <filename>
-                
-
-                // display data stored in fru
-                // add the data to flash
-                // verify the data
-
-
-            } else if os.Args[4] == "verify" {
-                // TODO: fpgautil cpld <slot#> fru verify <filename>
-            }
         } else {
             fmt.Printf(" Args[3] '%s' is incorrect.  See help for the correct arg\n", os.Args[3]); 
             os.Exit(-1) 

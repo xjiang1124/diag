@@ -600,6 +600,7 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []
 func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename string) (err error) {
     var data32 uint32 = 0
     var config uint32 = 0
+    var size uint32 = 0
     flashData := []byte{}
     fileData := []byte{}
 
@@ -697,8 +698,12 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
     if config == FEATUREROW {
         flashData, _ = Spi_cpldXO3_read_feature_row(spiNumber) 
     } else {
-        size, _ := Spi_cpldX03_get_flash_size(config)
-
+        if (config == UFM0 || config == UFM1 || config == UFM2 || config == UFM3) {
+            size = uint32(len(fileData))
+        } else {
+            size, _ = Spi_cpldX03_get_flash_size(config)
+        }
+        fmt.Printf("size: %d\n", size)
         for j:=0; j<int(size); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
             data := []byte{}
 
@@ -741,12 +746,15 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         return
     }
 
-    if len(flashData) != len(fileData) {
+    //f.WriteString(string(flashData[:]))
+    if (config == CONFIG0 || config == CONFIG1) && (len(flashData) != len(fileData)) {
         err = fmt.Errorf(" ERROR: File and Flash data size do not match.   Flash Data Size = %d.   File Data Size = %d\n", len(flashData), len(fileData) ) 
         cli.Printf("e", "%v", err)
         return;
     } 
-    for i:=0; i<len(flashData); i++ {
+    fmt.Printf("flash data size: %d\n", len(flashData))
+    fmt.Printf("file data size: %d\n", len(fileData))
+    for i:=0; i<len(fileData); i++ {
         if flashData[i] != fileData[i] {
             err = fmt.Errorf(" ERROR: Data Mismatch at address 0x%x. Flash=%.02x   Expect=0x%02x\n", i, flashData[i], fileData[i] ) 
             cli.Printf("e", "%v", err)
@@ -978,11 +986,14 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
 // PROGRAM A FILE INTO CFG FLASH
 //  
 //////////////////////////////////////////////////////
-func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) (err error) {
+
+func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, filename string, dataSlice []byte) (err error) {
+
     var data32 uint32 = 0
     var config uint32 = 0
     //flashData := []byte{}
     fileData := []byte{}
+    var f *os.File
 
 
     if spiNumber > SPI_DBG_SLOT {
@@ -997,47 +1008,47 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         return
     }
 
-    if strings.Contains(filename, "fea")==true {
-        if config == FEATUREROW {
-            err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
-            if err != nil {
-                fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
+    if tofile == true {
+        if strings.Contains(filename, "fea")==true {
+            if config == FEATUREROW {
+                err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
+            } else {
+                err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
+                cli.Printf("e","%s", err)
                 return
             }
-        } else {
-            err = fmt.Errorf("ERROR: Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
-            cli.Printf("e", "%v", err)
-            return
+            filename = strings.Replace(filename, "fea", "bin", 1)
         }
-        filename = strings.Replace(filename, "fea", "bin", 1)
-    }
-    if strings.Contains(filename, "jed")==true {
-        fmt.Printf(" Jed file detected..Converting to a BIN file\n")
-        err = Spi_cpldXO3_convert_jed_file(filename)
+        if strings.Contains(filename, "jed")==true {
+            fmt.Printf(" Jed file detected..Converting to a BIN file\n")
+            err = Spi_cpldXO3_convert_jed_file(filename)
+            if err != nil {
+                fmt.Printf(" Failed to convert filename=%s.  Exiting Programming CPLD  ERR=%s\n", filename, err)
+                return
+            }
+            filename = strings.Replace(filename, "jed", "bin", 1)
+        }
+    
+        f, err = os.Open(filename)
         if err != nil {
-            fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
+            fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
             return
         }
-        filename = strings.Replace(filename, "jed", "bin", 1)
-    }
-
-     
-    f, err := os.Open(filename)
-    if err != nil {
-        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-    defer f.Close()
-
-    fmt.Printf(" Programming Image %s to CPLD flash\n", filename)
-
-    scanner := bufio.NewScanner(f)
-    scanner.Split(bufio.ScanBytes)
-
-    // Use For-loop.
-    for scanner.Scan() {
-        b := scanner.Bytes()
-        fileData = append(fileData, b[0])
+        defer f.Close()
+    
+        fmt.Printf(" Verifying Image %s against CPLD flash\n", filename)
+    
+        scanner := bufio.NewScanner(f)
+        scanner.Split(bufio.ScanBytes)
+    
+        // Use For-loop.
+        for scanner.Scan() {
+            b := scanner.Bytes()
+            fileData = append(fileData, b[0])
+        }    
+    } else {
+        fileData = make([]byte, len(dataSlice))
+        copy(fileData, dataSlice)
     }
     fmt.Printf(" Length File Data = %d\n", len(fileData)) 
 
@@ -1049,8 +1060,6 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
             return
         }
     }
-
-
     err = Spi_cpldXO3_enable_config_interface(spiNumber)
     if err != nil {
         return
@@ -1085,7 +1094,6 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
         return
     }
 
-
     err =  Spi_cpldXO3_erase_config_flash(spiNumber, image) 
     if err != nil {
         return
@@ -1096,7 +1104,6 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
     if err != nil {
         return
     }
-
     if config == FEATUREROW {
         err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, fileData)
         if err != nil {
@@ -1108,8 +1115,6 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, filename string) 
             return
         }
     }
-
-    
 
     err = Spi_cpldXO3_set_programming_done(spiNumber)
     if err != nil {
