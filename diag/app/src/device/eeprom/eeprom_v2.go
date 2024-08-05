@@ -79,6 +79,7 @@ const (
     PN_GIN_D5_ORACLE string = "68-0075"
     PN_GIN_D5_MSFT   string = "68-0087"
     PN_GIN_D5_SSDK   string = "68-0076"
+    PN_GIN_D5_CISCO  string = "68-0094"
     PN_MALFA         string = "102-P10600-00"
     PN_POLLARA       string = "102-P11100-00"
     PN_LENI          string = "102-P10800-00"
@@ -760,10 +761,10 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
-    SKU_GIN_D5_SSDK_CISCO: updateInfo {
+    PN_GIN_D5_CISCO: updateInfo {
         GinestraCiscoTbl,
         PROD_NAME_GIG_SSDK_CISCO,
-        PN_GIN_D5_SSDK,
+        SKU_GIN_D5_SSDK_CISCO,
         FRU_ID_GIN_D5_SSDK_CISCO,
         []progInfo {
             progInfo {//board info
@@ -896,7 +897,7 @@ var CardTypes = []card{
     card{"GIN_D5_SSDK_A",           SKU_GIN_D5_SSDK_A},
     card{"GIN_D5_SSDK_B",           SKU_GIN_D5_SSDK_B},
     card{"GIN_D5_SSDK_C",           SKU_GIN_D5_SSDK_C},
-    card{"GIN_D5_SSDK_CISCO",       SKU_GIN_D5_SSDK_CISCO},
+    card{"GIN_D5_SSDK_CISCO",       PN_GIN_D5_CISCO},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
