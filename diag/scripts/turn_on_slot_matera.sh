@@ -63,6 +63,17 @@ enable_nic_mtp_r3() {
     fi
 }
 
+# Set bit between proto mode or production mode
+set_prod_mode() {
+    slot=$1
+    if [[ $prod_mode == "0" ]]
+    then
+        # mode = prototype
+        reg20=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x20)
+        reg20=$(( $reg20 & 0xFE )) # set bit0 = 0
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x20 $reg20
+        echo "Proto mode set"
+    fi
 }
 
 control_slot_matera() {
@@ -94,6 +105,7 @@ control_slot_matera() {
         for slot in $slot_list
         do
             enable_nic_mtp_r3 $slot
+            set_prod_mode $slot $prod_mode
         done
         fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
         fpgautil w32 $matera_perst_addr  $(( $perst | $wValue ))
@@ -113,6 +125,7 @@ control_all() {
         for i in {1..10}
         do
             enable_nic_mtp_r3 $i
+            set_prod_mode $slot $prod_mode
             elba_enable_jtag $i
         done
         fpgautil w32 $matera_P12V_addr 0x3ff
@@ -142,7 +155,7 @@ usage() {
     echo "Turn_on_slot.sh Usage"
     echo "========================="
     echo "Turn on specific slot"
-    echo "turn_on_slot.sh on <slot_id> <uart_id>"
+    echo "turn_on_slot.sh on <slot_id> <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off_specific slot"
@@ -150,7 +163,7 @@ usage() {
 
     echo "-------------------------"
     echo "Turn on all slots"
-    echo "turn_on_slot.sh on all <uart_id>"
+    echo "turn_on_slot.sh on all <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off all slots"
@@ -176,7 +189,7 @@ then
     exit
 fi
 
-if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
+if [[ $# -lt 2 ]]
 then
     usage
     exit
@@ -186,6 +199,10 @@ uart_id=0
 if [ $# -ge 3 ]
 then
     uart_id=$(($3 & 0x7))
+fi
+if [ $# -ge 4 ]
+then
+    prod_mode=$4
 fi
 
 if [[ $2 == "all" ]]
