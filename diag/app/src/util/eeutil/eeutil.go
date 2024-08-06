@@ -16,6 +16,7 @@ import (
     "hardware/i2cinfo"
     "device/eeprom"
     "device/cpld/cpldSmb"
+    "device/fpga/materafpga"
 )
 
 
@@ -572,7 +573,7 @@ func main() {
     updatePtr  := flag.Bool  ("update", false,      "Update eeprom")
     verifyPtr  := flag.Bool  ("verify", false,      "Verify eeprom checksums")
     erasePtr   := flag.Bool  ("erase",  false,      "Erase all fields")
-    dumpPtr    := flag.Bool  ("dump",    false,      "Dump FRU")
+    dumpPtr    := flag.Bool  ("dump",    false,     "Dump FRU")
     macPtr     := flag.String("mac",    "",         "MAC address")
     snPtr      := flag.String("sn",     "",         "Serial number")
     sn2Ptr     := flag.String("pcbsn",  "",         "Serial number in product info area")
@@ -594,6 +595,8 @@ func main() {
     skuPtr     := flag.String("sku",    "",         "SKU")
     skuModePtr := flag.Bool  ("skuMode",false,      "SKU mode")
     dpnPtr     := flag.String("dpn",    "",         "Diagnostic Part number")
+    cpldPtr    := flag.Bool  ("cpld",   false,      "Program the eeutil data into UFM2 instead of the eeprom")
+    spiPtr     := flag.Int   ("spi",    0,          "Matera spi number")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -612,6 +615,7 @@ func main() {
     custType := strings.ToUpper(*custTypePtr)
     sku := strings.ToUpper(*skuPtr)
     dpn := strings.ToUpper(*dpnPtr)
+    spi := uint32(*spiPtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -853,11 +857,11 @@ func main() {
         }
         isTlv, _ := eeprom.CardInListTlv(devName)
         if isTlv == true {
-            eeprom.DumpEepromTlvs(devName, numBytes)
+            eeprom.DumpEepromTlvs(devName, numBytes, true)
             misc.SleepInUSec(500000)
             return
         } else {
-            hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
+            hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes, true)
         }
 
         return
@@ -871,6 +875,22 @@ func main() {
             os.Exit(0)
         }
 
+    }
+    if *cpldPtr == true {
+        var dataSlice []byte
+
+        isTlv, _ := eeprom.CardInListTlv(devName)
+        if isTlv == true {
+            dataSlice, _ = eeprom.DumpEepromTlvs(devName, 512, false)
+            misc.SleepInUSec(500000)
+        } else {
+            dataSlice = hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, 512, false)
+        }
+        misc.SleepInUSec(500000)
+        
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        materafpga.Spi_cpldXO3_program_flash(spi-1, "ufm2", false, "", dataSlice)
+        return
     }
 
     flag.Usage()

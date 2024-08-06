@@ -129,6 +129,14 @@ int reg_perf_test(ULONGLONG reg_addr, ULONGLONG loopcount, char* mode, DWORD sto
     return 0;
 }
 
+int string_to_integer(const char *s) {
+    // Check if the string starts with "0x" or "0X"
+    if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+        return (int)strtol(s, NULL, 16); // Convert hexadecimal to integer
+    } else {
+        return (int)strtol(s, NULL, 10); // Convert decimal to integer
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -370,7 +378,10 @@ int main(int argc, char *argv[])
             printf("incorrect command syntax, missing parameters\n");
             return 0;
         }
-        port = (DWORD)xtoi(argv[2]);
+
+        //port = (DWORD)xtoi(argv[2]);
+        port = string_to_integer(argv[2]);
+
         printf("Clear port %d\n", port);
         jtag_clear(port);
     } else if ( !strcmp("test", acc_mode) ) {
