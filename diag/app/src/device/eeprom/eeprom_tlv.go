@@ -385,7 +385,6 @@ var FpgaOffsetWidth = []fpgaOffsetW{
 
 func CardInListTlv(dev string) (found bool, minPN string) {
     found = false
-
     //return true if card type is in the list of cards with tlv-format eeprom
     var cardtyp string = CardType
     for _, card := range(CardTypesTlv) {
@@ -838,13 +837,9 @@ func DisplayTlvFpga(devName string, field string, fpo bool) (err int){
     return
 }
 
-func DumpEepromTlvs(devName string, numBytes int) (err int) {
-
-    f, error := os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
-    if error != nil {
-        cli.Println("e", "file create failed")
-        return
-    }
+func DumpEepromTlvs(devName string, numBytes int, toFile bool) (output []byte, err int) { 
+    var f *os.File
+    var err_ error
 
     rdData := []byte{}
     found, _ := CardInListAccessViaFpga(devName)
@@ -871,12 +866,12 @@ func DumpEepromTlvs(devName string, numBytes int) (err int) {
         for i:=0; i<i2cOffsetlen; i++ {
             wrData = append(wrData, byte(0x00))
         }
-        rdData, error = liparifpga.I2c_access(bus, mux, i2cAddr, uint32(len(wrData)), wrData,
+        rdData, err_ = liparifpga.I2c_access(bus, mux, i2cAddr, uint32(len(wrData)), wrData,
                                               uint32(numBytes))
-        if error != nil {
+        if err_ != nil {
             cli.Println("e", "DumpEepromTlvFpga() - Failed to read I2C FPGA: dev bus mux i2cAddr offset",
                         devName, bus, mux, i2cAddr, i2cOffsetlen)
-            return
+            return nil, -1
         }
     } else { // access eeprom via smbus
         var tmpData byte
@@ -886,11 +881,18 @@ func DumpEepromTlvs(devName string, numBytes int) (err int) {
         }
     }
 
-    f.WriteString(string(rdData[:]))
-    f.Close()
-    cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
+    if toFile == true {
+        f, err_ = os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
+        if err_ != nil {
+            cli.Println("e", "file create failed")
+            return nil, -1
+        }
+        f.WriteString(string(rdData[:]))
+        f.Close()
+        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
+    }
 
-    return
+    return rdData, err
 }
 
 func EraseEepromTlv(devName string, numBytes int) (err int) {
