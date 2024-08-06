@@ -127,6 +127,10 @@ echo $fn
 for (( idx=0; idx<$ITE; idx++ ))
 do
     echo "L1 Iteration $idx"
+    echo "jtag_accpcie_salina clr $SLOT"
+    jtag_accpcie_salina clr $SLOT
+
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT\""
     script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT"
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 SCREENING FAILED" | wc | awk -F " " '{print $1}')

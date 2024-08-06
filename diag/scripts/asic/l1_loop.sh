@@ -35,15 +35,12 @@ do
     date
     echo "  turn off slot $slot..."
     turn_on_slot.sh off $slot
-    echo "  wait 1 seconds..."
-    sleep 1 
-    echo "  turn on slot $slot..."
-    turn_on_slot.sh on $slot
     echo "  wait 3 seconds..."
     sleep 3
-    echo "  turn on slot $slot one more time..."
+    echo "  turn on slot $slot..."
     turn_on_slot.sh on $slot
-    sleep 3
+    echo "  wait 5 seconds..."
+    sleep 5
 
     reset_code=$(i2cget -y $(($slot+2)) 0x4a 0x30)
     sleep 1
@@ -73,11 +70,6 @@ do
     echo ""
     echo "#### RUN L1 TESTS (iteration $i) ... ####"
     date
-
-    echo "jtag_accpcie_salina clr $slot"
-    jtag_accpcie_salina clr $slot
-    sleep 1
-
     cd /home/diag/diag/scripts/asic
     run_l1.sh -sn "slot$slot" -slot $slot -o 0 -e 0 -ite 1
     echo "#### END of L1 TESTS (iteration $i) ####"
