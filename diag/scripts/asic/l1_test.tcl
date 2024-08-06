@@ -27,7 +27,8 @@ if {$logEn == ""} {
 puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct"
 set err_cnt 0
 
-set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
+#set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
+set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
@@ -164,8 +165,11 @@ if {$use_zmq == 0} {
         after 500
         rd sal0.ms.ms.cfg_ow
         
-        _msrd
+        puts "_msrd"
+        set rtn [eval _msrd]
+        puts $rtn
 
+        #sal_print_volt_temp_from_j2c
         set err_cn [eval $l1_cmd]
         set err_cnt 0
 
