@@ -25,14 +25,10 @@ then
 	echo "uart_id=$uart_id"
     fi
     echo "UART connected to slot $1"
-    data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
-    data=$(( $data & 0xF8 ))
-    data=$(( $data | $uart_id ))
-    i2cset -y $(($slot + 2)) 0x4a 0x21 $data
-    taskset -c $slot fpga_uart $(($slot - 1))
+    taskset -c $slot fpga_uart $((slot - 1))
 else
-cpldutil -cpld-wr -addr=0x18 -data=0
-cpldutil -cpld-wr -addr=0x18 -data=$1
-
-picocom -b 115200 -f h /dev/ttyS1
+    cpldutil -cpld-wr -addr=0x18 -data=0
+    cpldutil -cpld-wr -addr=0x18 -data=$1
+    
+    picocom -b 115200 -f h /dev/ttyS1
 fi
