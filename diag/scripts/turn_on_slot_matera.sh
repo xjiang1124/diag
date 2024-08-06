@@ -39,6 +39,7 @@ elba_enable_jtag() {
 # Enable NIC MTP Rev3 mode
 enable_nic_mtp_r3() {
     slot=$1
+    echo "uart_id is $uart_id"
 
     reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x21)
     #echo $reg1
@@ -48,9 +49,31 @@ enable_nic_mtp_r3() {
         return
     fi
 
-    reg1=$(( $reg1 | 0x25 ))
-    reg1=$(( $reg1 & 0xBF ))
-    i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
+    reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
+    if [[ "$reg1" -ge 0x62 ]]
+    then
+        data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
+        data=$(( $data & 0xF8 ))
+        data=$(( $data | $uart_id ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
+    else
+        data=$(( $reg1 | 0x25 ))
+        data=$(( $reg1 & 0xBF ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
+    fi
+}
+
+# Set bit between proto mode or production mode
+set_prod_mode() {
+    slot=$1
+    if [[ $prod_mode == "0" ]]
+    then
+        # mode = prototype
+        reg20=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x20)
+        reg20=$(( $reg20 & 0xFE )) # set bit0 = 0
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x20 $reg20
+        echo "Proto mode set"
+    fi
 }
 
 control_slot_matera() {
@@ -78,7 +101,12 @@ control_slot_matera() {
         sleep 0.2
     else
         fpgautil w32 $matera_P3V3_addr $(( $v3v3 | $wValue ))
-        sleep 0.2
+        sleep 1
+        for slot in $slot_list
+        do
+            enable_nic_mtp_r3 $slot
+            set_prod_mode $slot $prod_mode
+        done
         fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
         fpgautil w32 $matera_perst_addr  $(( $perst | $wValue ))
     fi
@@ -93,17 +121,19 @@ control_all() {
     then
         echo "Turning on all slots"
         fpgautil w32 $matera_P3V3_addr 0x3ff
-        sleep 0.2
+        sleep 1
+        for i in {1..10}
+        do
+            enable_nic_mtp_r3 $i
+            set_prod_mode $slot $prod_mode
+            elba_enable_jtag $i
+        done
         fpgautil w32 $matera_P12V_addr 0x3ff
         sleep 0.2
         fpgautil w32 $matera_perst_addr 0x3ff
         sleep 0.2
 
-        for i in {1..10}
-        do
-            enable_nic_mtp_r3 $i
-            elba_enable_jtag $i
-        done
+
 
         echo "All slots turned on"
     
@@ -125,7 +155,7 @@ usage() {
     echo "Turn_on_slot.sh Usage"
     echo "========================="
     echo "Turn on specific slot"
-    echo "turn_on_slot.sh on <slot_id>"
+    echo "turn_on_slot.sh on <slot_id> <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off_specific slot"
@@ -133,7 +163,7 @@ usage() {
 
     echo "-------------------------"
     echo "Turn on all slots"
-    echo "turn_on_slot.sh on all"
+    echo "turn_on_slot.sh on all <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off all slots"
@@ -159,12 +189,21 @@ then
     exit
 fi
 
-if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
+if [[ $# -lt 2 ]]
 then
     usage
     exit
 fi
 
+uart_id=0
+if [ $# -ge 3 ]
+then
+    uart_id=$(($3 & 0x7))
+fi
+if [ $# -ge 4 ]
+then
+    prod_mode=$4
+fi
 
 if [[ $2 == "all" ]]
 then
