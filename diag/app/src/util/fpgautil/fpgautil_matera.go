@@ -39,7 +39,8 @@ const errhelpMatera = "\nfpgautil: (+08/02/24 one base slot numbering)\n" +
         "fpgautil mdiord <inst#> <phy> <addr>\n" +
         "fpgautil mdiowr <inst#> <phy> <addr> <data>\n" +
         "fpgautil mvldump <inst#> <port#>, use port#=-1 to dump all ports\n" +
-        "fpgautil mvlclear <inst#>\n"
+        "fpgautil mvlclear <inst#>\n" +
+        "fpgautil spimode <slot#> on/off\n"
         
 
                                
@@ -953,6 +954,41 @@ func matera_fpga_cli() {
             os.Exit(-1)
         }
         materafpga.MvlClear(uint8(inst))
+    } else if os.Args[1] == "spimode" {
+        if argc < 4 {
+            fmt.Printf(" %s \n", errhelpMatera)
+            os.Exit(-1)
+        }
+        fmt.Printf("**************************************************************************\n")
+        fmt.Printf("************** NOTE: SLOT IS NOW 1 BASED (FROM 0 BASE) *******************\n")
+        fmt.Printf("**************************************************************************\n")
+
+        slotTmp, errG1 := strconv.ParseUint(os.Args[2], 0, 32)
+        if errG1 != nil {
+            fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
+            os.Exit(-1)
+        }
+        slot := uint32(slotTmp)
+        //Check slots are 1-10 or 11 for the Debug Slot
+        if ( (slot < (materafpga.SPI_SLOT0+1)) || (slot > (materafpga.SPI_DBG_SLOT+1)) ) {
+            fmt.Printf("ERROR: Valid slot numbers are %d - %d\n", materafpga.SPI_SLOT0+1, materafpga.SPI_DBG_SLOT+1)
+            os.Exit(-1)
+        }
+        //Switch to zero based slot for underlying code
+        slot = slot - 1
+        if os.Args[3] == "on" {
+            fmt.Printf("setting SPI Mode to ON\n")
+            materafpga.SetJTAGbusToSPI(slot)
+            materafpga.SpiBusEnableIOexpander(slot)
+        } else if os.Args[3] == "off" {
+            fmt.Printf("setting SPI Mode to OFF\n")
+            materafpga.SetJTAGbusToJTAG(slot)
+            materafpga.SpiBusDisableIOexpander(slot)
+        } else {
+            fmt.Printf(" ERROR: Invalid SPI Mode Command\n")
+            fmt.Printf(" %s \n", errhelpMatera)
+            os.Exit(-1)
+        }
     } else {
         fmt.Printf("\n Incorrect Arg or Command used.  See the help Below!!\n")
         fmt.Printf(" %s \n", errhelpMatera)
