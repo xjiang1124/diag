@@ -49,17 +49,17 @@ enable_nic_mtp_r3() {
         return
     fi
 
-    reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
-    if [[ "$reg1" -ge 0x62 ]]
+    board_type=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
+    if [[ "$board_type" -ge 0x62 ]]
     then
         data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
         data=$(( $data & 0xF8 ))
         data=$(( $data | $uart_id ))
         i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
     else
-        data=$(( $reg1 | 0x25 ))
-        data=$(( $reg1 & 0xBF ))
-        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
+        reg1=$(( $reg1 | 0x25 ))
+        reg1=$(( $reg1 & 0xBF ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
     fi
 }
 
@@ -105,6 +105,7 @@ control_slot_matera() {
         for slot in $slot_list
         do
             enable_nic_mtp_r3 $slot
+            elba_enable_jtag $slot
             set_prod_mode $slot $prod_mode
         done
         fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
@@ -261,17 +262,6 @@ else
     then
         exit 0
     fi
-
-    for slot in $slot_list
-    do
-        if [[ $MTP_TYPE != "MTP_MATERA" ]]
-        then
-            turn_on_hub.sh $slot
-        fi
-        enable_nic_mtp_r3 $slot
-        elba_enable_jtag $slot
-    done
-
     
     #control_slot $1 $2
 fi
