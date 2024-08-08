@@ -801,6 +801,9 @@ class nic_con:
         elif card_type == "GINESTRA_D4"  or \
              card_type == "GINESTRA_D5":
             asic_type = "GIGLIO_CPLD"
+        elif card_type == "LENI"  or \
+             card_type == "LENI48G":
+            asic_type = "SALINA_CPLD"
         else:
             asic_type = "CAPRI"
         print(("asic_type:", asic_type))

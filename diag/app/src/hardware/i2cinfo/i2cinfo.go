@@ -955,7 +955,7 @@ func init() {
     } else if CardType == "POLLARA" {
         I2cTbl = PollaraTbl
         SensorTbl = PollaraSensorTbl
-    } else if CardType == "LENI" {
+    } else if CardType == "LENI" || CardType == "LENI48G"{
         I2cTbl = LeniTbl
         SensorTbl = LeniSensorTbl
     } else if CardType == "NIC_POWER" {
@@ -1152,7 +1152,7 @@ func SwitchI2cTbl(uutName string) (err int) {
     } else if uutType == "POLLARA" {
         CurI2cTbl = PollaraMtpTbl
         CurSensorTbl = PollaraSensorTbl
-    } else if uutType == "LENI" {
+    } else if uutType == "LENI" || uutType == "LENI48G" {
         CurI2cTbl = LeniMtpTbl
         CurSensorTbl = LeniSensorTbl
     } else {

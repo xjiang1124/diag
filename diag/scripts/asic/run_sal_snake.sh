@@ -2,7 +2,7 @@
 
 TEST_DIR=/home/diag/snake_test/
 SLOT=$1
-ITE=$2
+#ITE=$2
 echo $SLOT
 cd $TEST_DIR/nic
 export ASIC_LIB_BUNDLE=`pwd`
@@ -27,15 +27,16 @@ cd /home/diag/diag/scripts/asic
 #fn="sal_snake_${time_stamp}.log"
 #echo $fn
 
-for idx in $(seq 1 1 $ITE)
-do
-    echo "Snake Iteration $idx"
+#for idx in $(seq 1 1 $ITE)
+#do
+#    echo "Snake Iteration $idx"
     turn_on_slot.sh off $SLOT
     turn_on_slot.sh on $SLOT
     sleep 10
     turn_on_slot.sh on $SLOT
     sleep 1
     jtag_accpcie_salina clr $SLOT
+    sleep 3
     stdbuf -i0 -o0 -e0 tclsh sal_snake.tcl $SLOT
     #script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh sal_snake.tcl $SLOT"
     #sync
@@ -45,4 +46,6 @@ do
     #    echo "Snake Iteration $idx failed"
         #exit 0
     #fi
-done
+
+#done
+

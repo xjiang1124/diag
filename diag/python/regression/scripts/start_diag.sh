@@ -97,6 +97,15 @@ then
     /home/diag/diag/util/inventory -env
     cat $DIAG_DIR/log/board_env.txt >> temp_profile
     echo "export DIAG_HOME=/home/diag/" >> temp_profile
+    for i in $(seq 1 10);
+    do
+        UUT_TYPE=$(cat $DIAG_DIR/log/board_env.txt | grep "UUT_$i=" | cut -d "\"" -f 2)
+        if [[ $UUT_TYPE == "UUT_NONE" ]]
+        then
+            echo "Turning off empty slot $i"
+            turn_on_slot.sh off $i
+        fi
+    done
 else
     cat $DIAG_DIR/python/regression/scripts/dft_profile_nic > temp_profile
 fi
