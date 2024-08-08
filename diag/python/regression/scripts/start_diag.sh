@@ -103,7 +103,7 @@ then
         if [[ $UUT_TYPE == "UUT_NONE" ]]
         then
             echo "Turning off empty slot $i"
-            turn_on_slot.sh off $i
+            /home/diag/diag/scripts/turn_on_slot.sh off $i
         fi
     done
 else
