@@ -169,7 +169,7 @@ if {$use_zmq == 0} {
         set rtn [eval _msrd]
         puts $rtn
 
-        #sal_print_volt_temp_from_j2c
+        sal_print_voltage_temp_from_j2c
         set err_cn [eval $l1_cmd]
         set err_cnt 0
 

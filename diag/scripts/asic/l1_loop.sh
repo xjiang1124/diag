@@ -35,12 +35,12 @@ do
     date
     echo "  turn off slot $slot..."
     turn_on_slot.sh off $slot
-    echo "  wait 3 seconds..."
-    sleep 3
+    echo "  wait 10 seconds..."
+    sleep 10
     echo "  turn on slot $slot..."
     turn_on_slot.sh on $slot
-    echo "  wait 5 seconds..."
-    sleep 5
+    echo "  wait 10 seconds..."
+    sleep 10
 
     reset_code=$(i2cget -y $(($slot+2)) 0x4a 0x30)
     sleep 1
