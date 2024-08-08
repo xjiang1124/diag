@@ -1,8 +1,8 @@
 #include "accpcie.h"
 #include <time.h>
 
-#define WAIT_CNT 1000
-int verbosity = 0;
+#define WAIT_CNT 5000
+int verbosity = 1;
 int asic_index = 0;
 
 ULONGLONG bar_addr = 0x10020300000;
@@ -162,7 +162,6 @@ void update_asic_target(void)
         printf("failed to read j2c command register %x\n", reg_value);
         return;
     }
-/*  leave option we can default to any asic type if needed
     reg_value = reg_value & ~J2C_ASIC_TYPE_MASK;
     reg_value = reg_value | J2C_ASIC_TYPE_SALINA | J2C_WR_CONFIG_CMD;
     rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, reg_value);
@@ -170,7 +169,6 @@ void update_asic_target(void)
         printf("failed to write j2c command register %x\n", reg_value);
         return;
     }
-*/
     reg_value = reg_value & J2C_ASIC_TYPE_MASK;
     reg_value = reg_value >> 8;
     asic_index = reg_value;
@@ -429,7 +427,7 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     DWORD resp;
     DWORD dummy = inst, upper_mask, msb_addr_pos;
     int wait_cnt = WAIT_CNT;
-    int i;
+    int i, j;
     int rc = 0;
 
     inst = dummy;
@@ -468,6 +466,21 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         return -1;
     }
  
+    for ( i = 0; i < wait_cnt; i++ ) {
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( !(resp & 0x1) )
+            break;
+    }
+    if ( resp & 0x1 ) {
+        if ( verbosity )
+            printf("write command time out\n");
+        return FT_CMD_NOT_READY;
+    }
     cmd = J2C_WRITE_COMMAND;
     rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
@@ -488,7 +501,71 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     if ( resp & 0x1 ) {
         if ( verbosity )
             printf("write command time out\n");
-        return FT_RESP_TIMEOUT;
+        return FT_CMD_NOT_READY;
+    }
+    if ( verbosity > 3 )
+        printf("finishing write command\n");
+    usleep(2); 
+    for ( j = 0; j < 2000; j++ ) {
+        for ( i = 0; i < wait_cnt; i++ ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to read response\n");
+                return -1;
+            }
+	    if ( verbosity > 3 )
+	        printf("status register value before send response %x\n", resp);
+            if ( !(resp & 0x1) )
+                break;
+        }
+        if ( resp & 0x1 ) {
+	    if ( verbosity > 3 )
+                printf("response command time out\n");
+            return FT_RESP_TIMEOUT;
+        }
+        cmd = J2C_RESP_COMMAND;
+        if ( verbosity > 3 )
+	    printf("sending resp command\n");
+        rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to write response command\n");
+            return -1;
+        }
+        usleep(2);
+        for ( i = 0; i < wait_cnt; i++ ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to read response\n");
+                return -1;
+            }
+            if ( !(resp & 0x1) )
+                break;
+        }
+        if ( resp & 0x1 ) {
+            if ( verbosity )
+                printf("response command time out\n");
+            return FT_CMD_NOT_READY;
+        }
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( resp & J2C_VALID_BIT ) {
+            if ( verbosity > 3 )
+                printf("valid bit is set %x\n", resp);
+            break;
+        }
+    }
+
+    if ( j == 2000 ) {
+        if ( verbosity > 3 )
+            printf("retry response for write exceed 2000 times\n");
+        ftStatus = FT_INVALID_RESP;
     }
     if ( verbosity == 2 )
         printf("FINISH WRITE\n");
@@ -543,7 +620,7 @@ FT_STATUS jtag_wr_dr(DWORD *tx_data, DWORD *rx_data, DWORD num_bits)
                 return -1;
             }
 	    if ( bits_remain >= 32 )
-                bits_remain = bits_remain -32;
+                bits_remain = bits_remain - 32;
             else
                 bits_remain = 0;
             txptr++;
@@ -579,8 +656,29 @@ FT_STATUS jtag_wr_dr(DWORD *tx_data, DWORD *rx_data, DWORD num_bits)
         return FT_RESP_TIMEOUT;
     }
 
-    if ( rxptr == NULL )
+    if ( rxptr == NULL ) {
+       i = 0;
+       while ( !(j2c_status & J2C_RXFIFO_EMPTY) ) {
+           rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata); 
+           if ( rc ) {
+               if ( verbosity )
+                   printf("failed to rx fifo\n");
+               return -1;
+           }
+           i++;
+           if ( i > 4096 ) {
+               printf("clear rxfifo exceed 4096 read\n");
+               break;
+           }
+           rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
+           if ( rc ) {
+               if ( verbosity )
+                   printf("failed to read status register\n");
+               return -1;
+           }
+       }
        return FT_OK;
+    }
 
     bits_remain = num_bits;
     while ( bits_remain != 0 ) {
@@ -590,11 +688,13 @@ FT_STATUS jtag_wr_dr(DWORD *tx_data, DWORD *rx_data, DWORD num_bits)
                 printf("failed to rx fifo\n");
             return -1;
         }
-	if ( bits_remain >= 32 )
+	if ( bits_remain >= 32 ) {
+            *rxptr++ = rxdata;
             bits_remain = bits_remain - 32;
-        else
+        } else {
+            *rxptr++ = rxdata >> (32 - bits_remain);
             bits_remain = 0;
-        *rxptr++ = rxdata;
+        }
     };
 
     if ( verbosity > 2 )
@@ -608,6 +708,7 @@ FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
     DWORD j2c_status;
     DWORD bits_remain;
     DWORD *txptr;
+    DWORD rxdata;
     int rc = 0, i;
     int wait_cnt = WAIT_CNT;
 
@@ -684,6 +785,26 @@ FT_STATUS jtag_wr_ir(DWORD *tx_data, DWORD num_bits)
             printf("write command time out\n");
         return FT_RESP_TIMEOUT;
     }
+    i = 0;
+    while ( !(j2c_status & J2C_RXFIFO_EMPTY) ) {
+       rc = read32((ULONGLONG)ftHandle, J2C_0_RXFIFO_REG, &rxdata); 
+       if ( rc ) {
+           if ( verbosity )
+               printf("failed to rx fifo\n");
+           return -1;
+       }
+       i++;
+       if ( i > 4096 ) {
+           printf("clear rxfifo exceed 4096 read\n");
+           break;
+       }
+       rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
+       if ( rc ) {
+           if ( verbosity )
+               printf("failed to read status register\n");
+           return -1;
+       }
+    }
     if ( verbosity > 2 )
         printf("FINISH DR command\n");
     return ftStatus;
@@ -694,7 +815,7 @@ FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data, D
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
     DWORD cmd, response;
-    int wait_cnt = 1000;
+    int wait_cnt = WAIT_CNT;
 
     rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
@@ -734,7 +855,7 @@ FT_STATUS jtag_ow_write(DWORD mode, DWORD size, ULONGLONG address, DWORD data, D
         ftStatus = FT_CMD_NOT_READY;
         return ftStatus;
     }
-    wait_cnt = 1000;
+    wait_cnt = WAIT_CNT;
     rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
@@ -772,7 +893,7 @@ FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data, D
     FT_STATUS ftStatus = FT_OK;
     int rc = 0;
     DWORD cmd, response;
-    int wait_cnt = 1000;
+    int wait_cnt = WAIT_CNT;
 
     rc = write32((ULONGLONG)ftHandle, OW_0_ADDR0_REG, address & 0xffffffff);
     if ( rc ) {
@@ -806,7 +927,7 @@ FT_STATUS jtag_ow_read(DWORD mode, DWORD size, ULONGLONG address, DWORD *data, D
         ftStatus = FT_CMD_NOT_READY;
         return ftStatus;
     }
-    wait_cnt = 1000;
+    wait_cnt = WAIT_CNT;
     rc = write32((ULONGLONG)ftHandle, OW_0_CMD_REG, cmd);
     if ( rc ) {
         if ( verbosity )
@@ -913,6 +1034,21 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         return -1;
     }
 
+    for ( i = 0; i < wait_cnt; i++ ) {
+        rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to read response\n");
+            return -1;
+        }
+        if ( !(resp & 0x1) )
+            break;
+    }
+    if ( resp & 0x1 ) {
+        if ( verbosity )
+            printf("read command time out\n");
+        return FT_CMD_NOT_READY;
+    }
     cmd = J2C_READ_COMMAND;
     rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
     if ( rc ) {
@@ -933,18 +1069,9 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     if ( resp & 0x1 ) {
         if ( verbosity )
             printf("read command time out\n");
-        return FT_RESP_TIMEOUT;
+        /* return FT_RESP_TIMEOUT; */
     }
-
-    for ( j = 0; j < 2000; j++ ) {
-    cmd = J2C_RESP_COMMAND;
-    printf("send resp command %d time\n", j);
-    rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
-    if ( rc ) {
-        if ( verbosity )
-            printf("failed to write response command\n");
-        return -1;
-    }
+    usleep(2);
     for ( i = 0; i < wait_cnt; i++ ) {
         rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
         if ( rc ) {
@@ -957,45 +1084,85 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
     }
     if ( resp & 0x1 ) {
         if ( verbosity )
-            printf("response command time out\n");
-        return FT_RESP_TIMEOUT; 
+            printf("read command time out\n");
+        return FT_CMD_NOT_READY;
     }
-    rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
-    if ( rc ) {
-        if ( verbosity )
-            printf("failed to read response\n");
-        return -1;
-    }
-    if ( resp & J2C_VALID_BIT ) {
-        printf("valid bit is set %x\n", resp);
+    for ( j = 0; j < 2000; j++ ) {
+        cmd = J2C_RESP_COMMAND;
+	if ( verbosity > 3 )
+            printf("send resp command %d time\n", j + 1);
+        rc = write32((ULONGLONG)ftHandle, J2C_0_CMD_REG, cmd);
+        if ( rc ) {
+            if ( verbosity )
+                printf("failed to write response command\n");
+            return -1;
+        }
+        for ( i = 0; i < wait_cnt; i++ ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to read response\n");
+                return -1;
+            }
+            if ( !(resp & 0x1) )
+                break;
+        }
+        if ( resp & 0x1 ) {
+            if ( verbosity )
+                printf("read command time out\n");
+            /* return FT_RESP_TIMEOUT; */
+        }
+        usleep(2); 
+        for ( i = 0; i < wait_cnt; i++ ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to read response\n");
+                return -1;
+            }
+            if ( !(resp & 0x1) )
+                break;
+        }
+        if ( resp & 0x1 ) {
+            if ( verbosity )
+                printf("response command time out\n");
+            return FT_CMD_NOT_READY; 
+        }
+        for ( i = 0; i < wait_cnt; i++ ) {
+            rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
+            if ( rc ) {
+                if ( verbosity )
+                    printf("failed to read response\n");
+                return -1;
+            }
+            if ( resp & J2C_VALID_BIT )
+                break;
+        }
+        if ( (resp & J2C_VALID_BIT) == 0 ) {
+            if ( verbosity ) {
+                printf("response value = %x\n", resp);
+                printf("invalid response\n");
+            }
+            continue;
+        }
         break;
     }
+
+    if ( j == 2000 ) {
+        if ( verbosity )
+            printf("ERROR: J2C doesn't repy valid bit with 2000 retries\n");
+        return FT_INVALID_RESP;
     }
     if ( resp & J2C_ID_BIT ) {
         if ( verbosity )
             printf("invalid ID %x\n", resp);
-        /* return FT_ERROR_ID; */
+        return FT_ERROR_ID; 
     } 
-/*
-    if ( (resp & J2C_VALID_BIT) == 0 ) {
-        if ( verbosity ) {
-            printf("response value = %x\n", resp);
-            printf("invalid response\n");
-        }
-        return FT_INVALID_RESP;
-    } else if ( resp & J2C_ID_BIT ) {
-        if ( verbosity )
-           printf("invalid ID %x\n", resp);
-*/
-        /* return FT_ERROR_ID; */
-/*
-    } 
-*/
     rc = read32((ULONGLONG)ftHandle, J2C_0_RXDATA_REG, data);
     if ( rc ) {
         if ( verbosity )
             printf("failed to read data\n");
-        *data = 0xabcdabcd;
+        *data = 0xbeefdead;
         return -1;
     }
     if ( verbosity == 2 )
@@ -1134,7 +1301,7 @@ FT_STATUS jtag_init(DWORD portNum)
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    printf("07-25-2024 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    printf("08-05-2024 -- port number = 0x%x timeinfo %d:%d:%d\n", portNum, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
 
     if ( portNum & 0x100 ) {
         printf("API is using dongle implementation to access asic j2c port\n");
@@ -1164,7 +1331,7 @@ FT_STATUS jtag_init(DWORD portNum)
 
 FT_STATUS jtag_ow_init(void) {
     FT_STATUS rc;
-    int wait_cnt = 1000;
+    int wait_cnt = WAIT_CNT;
     DWORD response;
 
     rc = write32((ULONGLONG)ftHandle, OW_0_INIT_REG, J2C_OW_INIT);
@@ -1462,26 +1629,44 @@ FT_STATUS jtag_clear(DWORD portNum)
     DWORD magic;
     int rc;
 
-    pcie_bar = get_bar_from_proc();
-    if ( pcie_bar != 0 ) {
-        bar_addr = pcie_bar;
+    if ( portNum & 0x100 ) {
+        printf("Clear Dongle port settings\n");
+        rc = spi_init((portNum >> 8) & 0x1);
+        printf("spi_init returns %d\n", rc);
+        rc = spi_rd(0, J2C_0_MAGIC_REG, &magic);
+        printf("magic number %x with error code %d\n", magic, rc);
+
+        spi_wr(0, J2C_0_MAGIC_REG, 0);
+        printf("write magic number to 0 with error code %d\n", rc);
+        spi_wr(0, J2C_0_SEM_REG, 0);
+        printf("write semaphor number to 0 with error code %d\n", rc);
+
+        rc = spi_rd(0, J2C_0_MAGIC_REG, &magic);
+        printf("magic number is %x after clear with error code %d\n", magic, rc);
+    } else if ( portNum > 0 && portNum < 12 ) {
+        printf("Clear FPGA port settings for port %d\n", portNum);
+        pcie_bar = get_bar_from_proc();
+        if ( pcie_bar != 0 ) {
+            bar_addr = pcie_bar;
+        }
+    
+        if ( asic_index == -1 ) {
+            printf("Invalid asic type. Please use set_target with a valid asic name\n");
+	    return -1;
+        }
+
+        j2c_mem_addr = (ULONGLONG)(J2C_0_OFFSET + ((portNum & 0x7f) - 1) * fpga_asic_target[asic_index].size);
+        rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
+        printf("magic number %x with error code %d\n", magic, rc);
+
+        rc = write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, 0);
+        printf("write magic number to 0 with error code %d\n", rc);
+        rc = write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0);
+        printf("write semaphor number to 0 with error code %d\n", rc);
+
+        rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
+        printf("magic number is %x after clear with error code %d\n", magic, rc);
     }
-
-    if ( asic_index == -1 ) {
-        printf("Invalid asic type. Please use set_target with a valid asic name\n");
-	return -1;
-    }
-
-    j2c_mem_addr = (ULONGLONG)(J2C_0_OFFSET + (portNum - 1) * fpga_asic_target[asic_index].size);
-    rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
-    printf("magic number %x\n", magic);
-
-    write_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, 0);
-    write_fpga_mem32(j2c_mem_addr, J2C_0_SEM_REG, 0);
-
-    rc = read_fpga_mem32(j2c_mem_addr, J2C_0_MAGIC_REG, &magic);
-    printf("Done magic number %x\n", magic);
-
     return rc;
 }
 
@@ -1506,7 +1691,6 @@ FT_STATUS jtag_reset(DWORD inst)
 
     inst = dummy;
 
-    printf("FINISH RESET 0\n");
     if ( ftHandle == 0 ) {
         if ( verbosity != 0 )
             printf("j2c port is not opened\n");
@@ -1535,7 +1719,6 @@ FT_STATUS jtag_reset(DWORD inst)
             printf("reset command time out\n");
         return FT_RESP_TIMEOUT;
     }
-    printf("FINISH RESET\n");
     if ( verbosity == 2 )
         printf("FINISH RESET\n");
     return FT_OK;
