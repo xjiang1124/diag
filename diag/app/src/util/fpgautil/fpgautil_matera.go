@@ -709,6 +709,10 @@ func matera_fpga_cli() {
                     if err != nil {
                         os.Exit(-1)
                     }
+                    err = materafpga.Spi_salina_flash_VerifyFile(flashID, qspiNumber, uint32(addr), filename) 
+                    if err != nil {
+                        os.Exit(-1)
+                    }
                 } else if os.Args[4] == "verifyfile" {
                     err = materafpga.Spi_salina_flash_VerifyFile(flashID, qspiNumber, uint32(addr), filename) 
                     if err != nil {
