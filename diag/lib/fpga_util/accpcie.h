@@ -80,7 +80,7 @@ enum {
 #define J2C_OW_INIT_DONE     0x00000040
 #define J2C_OW_DRDY          0x00000020
 #define J2C_OW_RESP_ERROR    0x00000013
-#define J2C_OW_INIT          0x00000300
+#define J2C_OW_INIT          0x00000200
 
 #define J2C_OW_SECURE_MASK   0x00000001
 #define J2C_OW_SECURE_SHIFT  2
@@ -166,6 +166,8 @@ void ftHandle_close();
 void queue_clear(void);
 void spi_csena();
 void spi_csdis();
+FT_STATUS spi_reg_init(void);
+void ftHandle_close(void);
 
 typedef struct _fpga_asic_target {
     char name[10];    /* asic name - no effect for code */
