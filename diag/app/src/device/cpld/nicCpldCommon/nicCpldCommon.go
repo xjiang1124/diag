@@ -39,6 +39,7 @@ const (
     ID_DAUNTLESS       = 0x63
     ID_LENI            = 0x64
     ID_POLLARA         = 0x65
+    ID_LENI48G         = 0x66
     ID_TAORMINA_ELBA   = 0x80
     ID_LIPARI_ELBA     = 0x81
     ID_MTFUJI_ELBA     = 0x82

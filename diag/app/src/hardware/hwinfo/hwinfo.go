@@ -758,6 +758,7 @@ func init() {
     dispMap["MALFA_S"]      = malfaDispStaList
     dispMap["POLLARA"]      = pollaraDispStaList
     dispMap["LENI"]         = leniDispStaList
+    dispMap["LENI48G"]      = leniDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
@@ -824,6 +825,7 @@ func init() {
     eepromMap["MALFA"]             = MalfaEepList
     eepromMap["POLLARA"]           = PollaraEepList
     eepromMap["LENI"]              = LeniEepList
+    eepromMap["LENI48G"]           = LeniEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -870,6 +872,7 @@ func init() {
     i2cHubMap["MALFA"]          = materaI2cHubMap
     i2cHubMap["POLLARA"]        = materaI2cHubMap
     i2cHubMap["LENI"]           = materaI2cHubMap
+    i2cHubMap["LENI48G"]        = materaI2cHubMap
 
     //===============================
     // Taormina

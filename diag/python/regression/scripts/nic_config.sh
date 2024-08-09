@@ -164,6 +164,22 @@ elif [[ $cpld_id == "0x61" ]]
 then
     type="GINESTRA_D5"
     asic_type="GIGLIO"
+elif [[ $cpld_id == "0x62" ]]
+then
+    type="MALFA"
+    asic_type="SALINA"
+elif [[ $cpld_id == "0x64" ]]
+then
+    type="LENI"
+    asic_type="SALINA"
+elif [[ $cpld_id == "0x65" ]]
+then
+    type="POLLARA"
+    asic_type="SALINA"
+elif [[ $cpld_id == "0x66" ]]
+then
+    type="LENI48G"
+    asic_type="SALINA"
 elif [[ $cpld_id == "0x81" ]]
 then
     type="LIPARI"
