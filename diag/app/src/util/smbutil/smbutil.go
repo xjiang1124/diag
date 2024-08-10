@@ -9,10 +9,7 @@ import (
     "common/errType"
     "util/utillib"
     "common/cli"
-    "common/misc"
-    "protocol/smbusNew"
     "unicode"
-    "os"
 )
 
 func init() {
@@ -42,7 +39,6 @@ func main() {
     phyPtr      := flag.Uint64("phy", 0,    "Phy addr")
     smiPtr      := flag.Bool(  "smi", false, "Switch smi access")
     i2c16Ptr    := flag.Bool(  "i2c16", false, "16-bit addressing I2C mode")
-    smbusPtr    := flag.String("smbus", "",    "Swap smbus to NIC or MTP on MALFA card")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -52,7 +48,6 @@ func main() {
     numByte := *numBytePtr
     phyAddr := *phyPtr
     uut := strings.ToUpper(*uutPtr)
-    swapName := strings.ToUpper(*smbusPtr)
 
     if len(uut) < 5 ||
        (unicode.IsDigit(rune(uut[4])) == false &&  uut != "UUT_NONE") {
@@ -139,51 +134,6 @@ func main() {
 
     if *infoPtr == true {
         i2cinfo.DispI2cInfoAll()
-        return
-    }
-
-    if swapName != "" {
-        // Only applicable to MALFA
-        if uut == "UUT_NONE" || os.Getenv(uut) != "MALFA" {
-            cli.Println("e", "Swap smbus to mtp/nic: only applicable to MALFA.",
-                             "Entered UUT:", uut)
-            return
-        }
-
-        if swapName == "NIC" {
-            //Open smbus connection
-            i2cSmbus, errSmbus := i2cinfo.GetI2cInfo("CPLD")
-            if errSmbus != errType.SUCCESS {
-                cli.Println("e", "Failed to obtain smbus info for CPLD")
-                return
-            }
-            errSmbus = smbusNew.Open("CPLD", i2cSmbus.Bus, i2cSmbus.DevAddr)
-            if errSmbus != errType.SUCCESS {
-                cli.Println("e", "Failed to open smbus to CPLD:",
-                            "Bus", i2cSmbus.Bus, "DevAddr", i2cSmbus.DevAddr)
-                return
-            }
-            curVal, smbusRdErr := smbusNew.ReadByte("CPLD", uint64(0x1F))
-            if smbusRdErr != errType.SUCCESS {
-                cli.Println("e", "Failed to read smbus:",
-                            "Bus", i2cSmbus.Bus, "DevAddr", i2cSmbus.DevAddr)
-                return
-            }
-            // swap the smbus from mtp to nic: set cpld reg 0x1F bit#3
-            curVal |= 0x4
-            misc.SleepInUSec(10000) // delay for writing
-            cli.DisableVerbose()
-            _ = smbusNew.WriteByte("CPLD", uint64(0x1F), curVal)
-            // don't check smbus error here because it's gone.
-            cli.EnableVerbose()
-            cli.Println("i", "smbus has been swapped to NIC")
-        } else if swapName == "MTP" {
-            // swap smbus from nic to mtp: power cycle the slot
-            cli.Println("i", "Swap smbus from nic to mtp need to power cycle the slot.",
-                             "Please carefully check and manually proceed.")
-        } else {
-            cli.Println("e", "Swap smbus=[NIC|MTP]. Entered smbus =", swapName)
-        }
         return
     }
 
