@@ -45,7 +45,7 @@ class nic_con:
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print("ite: ", ite)
@@ -87,7 +87,7 @@ class nic_con:
     def uart_session_start(self, session, slot, numRetry=10):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
         for ite in range(numRetry):
             print("ite: ", ite)
@@ -241,7 +241,7 @@ class nic_con:
     # 
     #================================================== 
     def uart_session_wait_for_login(self, session, timeout=15):
-        expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
 
         for ite in range(3):
             print("ite: ", ite)
