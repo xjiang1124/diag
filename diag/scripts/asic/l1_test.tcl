@@ -17,14 +17,15 @@ set simplified [lindex $argv 8]
 set ddr_hc_training [lindex $argv 9]
 set run_ddr_test    [lindex $argv 10]
 set logEn    [lindex $argv 11]
-set pct    [lindex $argv 12]
+set pct      [lindex $argv 12]
+set joo      [lindex $argv 13]
 set port 10
 
 if {$logEn == ""} {
     set logEn 1
 }
 
-puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct"
+puts "sn: $sn; slot: $slot; int_lpbk: $int_lpbk; vmarg: $vmarg; use_zmq: $use_zmq; offload: $offload; esecEn: $esecEn; simplified: $simplified; logEn: $logEn; ddr_hc_training: $ddr_hc_training; run_ddr_test: $run_ddr_test; pct: $pct; joo: $joo"
 set err_cnt 0
 
 #set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -169,6 +170,12 @@ if {$use_zmq == 0} {
         puts "_msrd"
         set rtn [eval _msrd]
         puts $rtn
+
+        if {$joo == 0} {
+            sal_ow
+        } else {
+            sal_j2c
+        }
 
         sal_print_voltage_temp_from_j2c
         set err_cn [eval $l1_cmd]
