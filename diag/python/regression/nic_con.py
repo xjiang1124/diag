@@ -20,9 +20,16 @@ class nic_con:
         self.fmt_con_cmd = "con_connect.sh {}"
         self.fmt_change_rate = "stty speed {}"
 
+    def get_connect_cmd(self, slot, *args, **kwargs):
+        cmd = self.fmt_con_cmd.format(slot)
+        if self.get_asic_type(slot) == "SALINA":
+            uart_id = str(kwargs.get("uart_id", "1")) # override from function call, or default to N1
+            cmd += " " + str(uart_id)
+        return cmd
+
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
-        cmd = self.fmt_con_cmd.format(slot)
+        cmd = self.get_connect_cmd(slot)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
@@ -64,7 +71,7 @@ class nic_con:
 
     def uart_session_start(self, session, slot, numRetry=10):
         ret = 0
-        cmd = self.fmt_con_cmd.format(slot)
+        cmd = self.get_connect_cmd(slot)
         expstr = ["capri login:", "capri-gold login", "elba-gold login:", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
         session.sendline(cmd)
         for ite in range(numRetry):
@@ -110,7 +117,7 @@ class nic_con:
         #cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         #common.session_cmd(session, cmd) 
 
-        cmd = self.fmt_con_cmd.format(slot)
+        cmd = self.get_connect_cmd(slot)
         expstr = ["capri login:", "\#"]
         try:
             session.sendline(cmd)
@@ -291,9 +298,9 @@ class nic_con:
 
         return ret
 
-    def uart_session_connect(self, session, slot, timeout=15):
+    def uart_session_connect(self, session, slot, timeout=15, uart_id="1"):
         ret = 0
-        cmd = self.fmt_con_cmd.format(slot)
+        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
         expstr = "tx/rx buffer cleared"
         try:
             session.sendline(cmd)
@@ -395,7 +402,7 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def enter_uboot(self, session, slot=0, timeout=30):
+    def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -418,11 +425,11 @@ class nic_con:
             common.session_cmd(session, cmd)
 
             #time.sleep(2)
-            cmd = self.fmt_con_cmd.format(slot)
+            cmd = self.get_connect_cmd(slot, uart_id=uart_id)
             session.sendline(cmd)
             #session.expect("Terminal ready")
 
-            for i in range(60):
+            for i in range(uboot_delay):
                 session.timeout = 0.5
                 try:
                     print("C+C", i)
@@ -702,7 +709,7 @@ class nic_con:
         session.timeout = 15
         ret = 0
         try:
-            cmd = self.fmt_con_cmd.format(slot)
+            cmd = self.get_connect_cmd(slot)
             session.sendline(cmd)
             session.expect(["Terminal ready", "buffer cleared"])
             session.sendline("\r")
@@ -801,9 +808,11 @@ class nic_con:
         elif card_type == "GINESTRA_D4"  or \
              card_type == "GINESTRA_D5":
             asic_type = "GIGLIO_CPLD"
-        elif card_type == "LENI"  or \
-             card_type == "LENI48G":
-            asic_type = "SALINA_CPLD"
+        elif card_type == "MALFA" or \
+             card_type == "LENI" or \
+             card_type == "LENI48G" or \
+             card_type == "POLLARA":
+            asic_type = "SALINA"
         else:
             asic_type = "CAPRI"
         print(("asic_type:", asic_type))

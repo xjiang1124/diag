@@ -41,11 +41,11 @@ class nic_test_v2:
             for slot in slot_list:
                 self.nic_con.switch_console(slot)
                 uart_session = common.session_start()
-                cmd = self.fmt_con_cmd.format(slot)
+                cmd = self.nic_con.get_connect_cmd(slot)
                 uart_session.sendline(cmd)
 
                 #uart_session = common.session_start()
-                #cmd = self.fmt_con_cmd.format(slot)
+                #cmd = self.nic_con.get_connect_cmd(slot)
                 #uart_session.sendline(cmd)
 
                 print("=== Slot:", slot, "===")
@@ -65,7 +65,7 @@ class nic_test_v2:
                 #uart_session = common.session_start()
                 ##ret = self.nic_con.uart_session_start(uart_session)
                 #try:
-                #    cmd = self.fmt_con_cmd.format(slot)
+                #    cmd = self.nic_con.get_connect_cmd(slot)
                 #    uart_session.sendline(cmd)
                 #    cmd = 'fwupdate -p /data/naples_gold_elba.tar -i all; sleep 10; echo "DIAGFW PROG DONE"'
                 #    cmd = 'date;sleep 10; date; echo "DIAGFW PROG DONE"'
@@ -133,7 +133,7 @@ class nic_test_v2:
 
                 self.nic_con.switch_console(slot)
                 session = common.session_start()
-                cmd = self.fmt_con_cmd.format(slot)
+                cmd = self.nic_con.get_connect_cmd(slot)
                 session.sendline(cmd)
 
                 #session = common.session_start()
@@ -306,7 +306,7 @@ class nic_test_v2:
 
             self.nic_con.switch_console(slot)
             session = common.session_start()
-            #cmd = self.fmt_con_cmd.format(slot)
+            #cmd = self.nic_con.get_connect_cmd(slot)
             #session.sendline(cmd)
 
             # Copy image file to NIC
@@ -695,7 +695,7 @@ class nic_test_v2:
 
                 #self.nic_con.switch_console(slot)
                 #session = common.session_start()
-                #cmd = self.fmt_con_cmd.format(slot)
+                #cmd = self.nic_con.get_connect_cmd(slot)
                 #session.sendline(cmd)
 
                 session = common.session_start()
