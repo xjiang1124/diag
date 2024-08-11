@@ -9,12 +9,14 @@ SIMPLIFY=0
 HC=0
 DDR=1
 ITE=1
+JOO=0
 
 usage () {
     echo "=========================="
     echo "./run_l1.sh -sn <> -slot <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
+    echo "joo:  J2C or OW; J2C; 1: OW: 0; default: 0"
     echo "m:    Mode hod/hod_1100/nod/nod_525"
     echo "i:    0: external loopback; 1 internal loopback; default: 0"
     echo "v:    Voltage margin: normal/low/high; default: normal"
@@ -42,6 +44,12 @@ case $key in
     #-------------
     -slot|--slot)
     SLOT=${2^^}
+    shift # past argument
+    shift # past value
+    ;;
+    #-------------
+    -joo|--joo)
+    JOO=${2^^}
     shift # past argument
     shift # past value
     ;;
@@ -113,10 +121,15 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-echo "sn: $SN; slot: $SLOT; MODE: $MODE; INT_LPBK: $INT_LPBK; VMARG: $VMARG; OFFLOAD: $OFFLOAD; ESEC_EN: $ESEC_EN; SIMPLIfY: $SIMPLIFY; HC: $HC; DDR: $DDR"
+echo "sn: $SN; slot: $SLOT; MODE: $MODE; INT_LPBK: $INT_LPBK; VMARG: $VMARG; OFFLOAD: $OFFLOAD; ESEC_EN: $ESEC_EN; SIMPLIfY: $SIMPLIFY; HC: $HC; DDR: $DDR; JOO: $JOO"
 VMARG_PCT=$VMARG
-VMARG=$(echo $VMARG_PCT | cut -d "_" -f 1)
-PCT=$(echo $VMARG_PCT | cut -s -d "_" -f 2)
+if [[ $VMARG == "normal" ]] 
+then
+    PCT=0
+else
+    VMARG=$(echo $VMARG_PCT | cut -d "_" -f 1)
+    PCT=$(echo $VMARG_PCT | cut -s -d "_" -f 2)
+fi
 echo "vmarg: $VMARG; pct: $PCT"
 
 time_stamp=$(date "+%m%d%y_%H%M%S")
@@ -130,8 +143,8 @@ do
     echo "jtag_accpcie_salina clr $SLOT"
     jtag_accpcie_salina clr $SLOT
 
-    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT\""
-    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT"
+    echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT $JOO \""
+    script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT $JOO"
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 SCREENING FAILED" | wc | awk -F " " '{print $1}')
     if [[ $num_fail -ne 0 ]]
