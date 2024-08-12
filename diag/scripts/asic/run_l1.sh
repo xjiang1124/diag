@@ -10,10 +10,11 @@ HC=0
 DDR=1
 ITE=1
 JOO=0
+MODE="hod"
 
 usage () {
     echo "=========================="
-    echo "./run_l1.sh -sn <> -slot <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>"
+    echo "./run_l1.sh -sn <> -slot <> -joo <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
     echo "joo:  J2C or OW; J2C; 1: OW: 0; default: 0"
