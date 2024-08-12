@@ -78,13 +78,17 @@ select_uart() {
         cur_sel=$(( $cur_sel & 0x7 ))
         if (( $cur_sel == $UART0_SEL )); then
             i2cset -yr ${slotI2Cmap[$slot]} 0x4a 0x21 ${UART1_SEL}
+            if [[ $? == 0 ]]; then echo "Console set to N1 uart"; fi
         elif (( $cur_sel == $UART1_SEL )); then
             i2cset -yr ${slotI2Cmap[$slot]} 0x4a 0x21 ${UART0_SEL}
+            if [[ $? == 0 ]]; then echo "Console set to A35 uart"; fi
         fi
     elif [[ $2 == "A35" ]]; then
         i2cset -yr ${slotI2Cmap[$slot]} 0x4a 0x21 ${UART0_SEL}
+        if [[ $? == 0 ]]; then echo "Console set to A35 uart"; fi
     elif [[ $2 == "N1" ]]; then
         i2cset -yr ${slotI2Cmap[$slot]} 0x4a 0x21 ${UART1_SEL}
+        if [[ $? == 0 ]]; then echo "Console set to N1 uart"; fi
     fi
 }
 
