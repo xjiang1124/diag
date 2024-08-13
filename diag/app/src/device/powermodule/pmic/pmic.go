@@ -3,6 +3,7 @@ package pmic
 import (
     "fmt"
     "math"
+    "strings"
     "common/cli"
     "common/errType"
     "common/misc"
@@ -43,10 +44,10 @@ func ReadVout(devName string) (integer uint64, dec uint64, err int) {
     }
     defer smbus.Close()
 
-    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
-        adc_sel = SWA_OUTPUT_SEL
-    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
+    if strings.Contains(devName,"DDR_VDDQ") {
         adc_sel = SWC_OUTPUT_SEL
+    } else if strings.Contains(devName,"DDR_VDD") {
+        adc_sel = SWA_OUTPUT_SEL
     } else {
         adc_sel = SWD_OUTPUT_SEL
     }
@@ -83,10 +84,10 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
         return
     }*/
 
-    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
-        output_reg = SWA_OUTPUT_REG
-    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
+    if strings.Contains(devName,"DDR_VDDQ") {
         output_reg = SWC_OUTPUT_REG
+    } else if strings.Contains(devName,"DDR_VDD") {
+        output_reg = SWA_OUTPUT_REG
     } else {
         output_reg = SWD_OUTPUT_REG
     }
@@ -259,39 +260,38 @@ func SetVMarginByValue(devName string, tgtVoutMv uint64) (err int) {
     var vStart uint64
     var data byte
 
-    if devName == "DDR_VDD" {
-        marginReg = SWA_VOL_SETTING_REG_TI
+    vendorId, _ := ReadVendorID(devName)
+    if strings.Contains(devName,"DDR_VDDQ") {
+        if vendorId == VENDOR_ID_TI {
+            marginReg = SWC_VOL_SETTING_REG_TI
+        } else {
+            marginReg = SWC_VOL_SETTING_REG_MPS
+        }
         vmin = VOUT_1P1_MIN
         vmax = VOUT_1P1_MAX
         vStart = 800
-	} else if devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
-        marginReg = SWA_VOL_SETTING_REG_MPS
+    } else if strings.Contains(devName,"DDR_VDD") {
+        if vendorId == VENDOR_ID_TI {
+            marginReg = SWA_VOL_SETTING_REG_TI
+        } else {
+            marginReg = SWA_VOL_SETTING_REG_MPS
+        }
         vmin = VOUT_1P1_MIN
         vmax = VOUT_1P1_MAX
         vStart = 800
-    } else if devName == "DDR_VDDQ" {
-        marginReg = SWC_VOL_SETTING_REG_TI
-        vmin = VOUT_1P1_MIN
-        vmax = VOUT_1P1_MAX
-        vStart = 800
-	} else if devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
-        marginReg = SWC_VOL_SETTING_REG_MPS
-        vmin = VOUT_1P1_MIN
-        vmax = VOUT_1P1_MAX
-        vStart = 800
-    } else if devName == "DDR_VPP" {
-        marginReg = SWD_VOL_SETTING_REG_TI
-        vmin = VOUT_1P8_MIN
-        vmax = VOUT_1P8_MAX
-        vStart = 1500
-    } else if devName == "DDR_VPP_0" || devName == "DDR_VPP_1" {
-        marginReg = SWD_VOL_SETTING_REG_MPS
+    } else if strings.Contains(devName,"DDR_VPP") {
+        if vendorId == VENDOR_ID_TI {
+            marginReg = SWD_VOL_SETTING_REG_TI
+        } else {
+            marginReg = SWD_VOL_SETTING_REG_MPS
+        }
         vmin = VOUT_1P8_MIN
         vmax = VOUT_1P8_MAX
         vStart = 1500
     } else {
-	    return errType.INVALID_PARAM
-	}
+        return errType.INVALID_PARAM
+    }
+
     tgtVoutMv = uint64(math.Round(float64(tgtVoutMv) / 5)) * 5
     if (tgtVoutMv < vmin || tgtVoutMv > vmax) {
         return errType.INVALID_PARAM
@@ -483,9 +483,7 @@ func SetVMargin(devName string, pct int) (err int) {
     //    return errType.INVALID_PARAM
     //}
 
-    if devName == "DDR_VDD" || devName == "DDR_VDD_0" || devName == "DDR_VDD_1" {
-        vBase = 1100
-    } else if devName == "DDR_VDDQ" || devName == "DDR_VDDQ_0" || devName == "DDR_VDDQ_1" {
+    if strings.Contains(devName,"DDR_VDDQ") || strings.Contains(devName,"DDR_VDD") {
         vBase = 1100
     } else {
         vBase = 1800
@@ -563,6 +561,8 @@ func DispStatus(devName string) (err int) {
 
     var outStr string
     var outStrTemp string
+    vid, _ := ReadVendorID(devName)
+
     outStr = fmt.Sprintf(fmtNameStr, "NAME")
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
@@ -597,7 +597,7 @@ func DispStatus(devName string) (err int) {
     outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
-    if devName == "DDR_VDD" || devName == "DDR_VDDQ" || devName == "DDR_VPP" {
+    if vid == VENDOR_ID_TI {
         dig_signed, _, _ := ReadTempTI(devName)
         outStrTemp = fmt.Sprintf(fmtDigFrac, dig_signed, 0)
         outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
@@ -611,7 +611,5 @@ func DispStatus(devName string) (err int) {
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp) + "\n"
 
     cli.Println("i", outStr)
-    vid, _ := ReadVendorID(devName)
-    cli.Printf("i", "vid: 0x%04x\n", vid)
     return
 }
