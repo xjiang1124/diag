@@ -150,7 +150,10 @@ if {$use_zmq == 0} {
     if {$ASIC_TYPE == "SALINA"} {
         puts "Salina L1"
         set slot $slot
-        set port $port
+        set slot $slot
+
+        set ::slot $slot
+        set ::port $port
         
         diag_close_j2c_if $port $slot
         diag_open_j2c_if $port $slot
