@@ -402,20 +402,18 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1):
+    def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, num_retry=3, uart_id=1):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
             print("Invalid slot number:", slot)
             sys.exit(0)
 
-        numRetry = 3
-
         session.timeout = timeout
         cmd = "cpldutil -cpld-wr -addr=0x18 -data={}".format(slot)
         common.session_cmd(session, cmd) 
         time.sleep(1)
-        for retry in range(3):
+        for retry in range(num_retry):
             print("Trying enter uboot {}".format(retry))
             cmd = "turn_on_slot.sh off {}".format(slot)
             common.session_cmd(session, cmd) 
