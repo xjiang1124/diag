@@ -27,6 +27,21 @@ class nic_con:
             cmd += " " + str(uart_id)
         return cmd
 
+    def set_cpld_uart_bits(self, session, slot, *args, **kwargs):
+        """
+            Elba/Capri:
+                0x35 = uart to MTP
+            Salina:
+                0x00 = a35 uart
+                0x01 = n1 uart
+        """
+        if self.get_asic_type(slot) == "SALINA":
+            uart_id = str(kwargs.get("uart_id", "0x01")) # override from function call, or default to N1
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data={}".format(slot, uart_id)
+        else:
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
+        common.session_cmd(session, cmd)
+
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
         cmd = self.get_connect_cmd(slot)
@@ -419,8 +434,7 @@ class nic_con:
             common.session_cmd(session, cmd) 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
-            common.session_cmd(session, cmd)
+            self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
 
             #time.sleep(2)
             cmd = self.get_connect_cmd(slot, uart_id=uart_id)
@@ -521,8 +535,7 @@ class nic_con:
             common.session_cmd(session, cmd) 
             cmd = "turn_on_slot.sh on {}".format(slot)
             common.session_cmd(session, cmd) 
-            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
-            common.session_cmd(session, cmd)
+            self.set_cpld_uart_bits(session, slot)
             print("turn on slot, wait for 30 seconds\n")
             sys.stdout.flush()
             time.sleep(30)
@@ -610,8 +623,7 @@ class nic_con:
                 common.session_cmd(session, cmd)
                 cmd = "turn_on_slot_3v3.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
-                cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
-                common.session_cmd(session, cmd)
+                self.set_cpld_uart_bits(session, slot)
                 cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
                 common.session_cmd(session, cmd)
 
