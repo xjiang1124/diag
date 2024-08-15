@@ -7,18 +7,36 @@ set slot [lindex $argv 0]
 # esam_pktgen_ddr_no_mac_sor : ddr + no mac
 # esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
 set test_type [lindex $argv 1]
-set fn [lindex $argv 2]
+set dura [lindex $argv 2]
 
-set ASIC_LIB_BUNDLE "/home/diag/snake_test/nic"
-set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
-set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
+proc mtp_sts_pull { {duration 60} {intv 30} } {
+    set time_left $duration
+    set time_passed 0
 
-#catch {exec turn_on_slot.sh off $slot }
-#catch {exec turn_on_slot.sh on $slot}
-#after 10000
-#catch {exec turn_on_slot.sh on $slot}
-#after 1000
-#exec jtag_accpcie_salina clr $slot
+    plog_msg "\n-----------------------------------------------------------------"
+    plog_msg "Running snake for $time_left seconds"
+    while {$time_left > 0} {
+        if {$time_left < $intv} {
+           set intv $time_left
+        }
+        set ss [ expr $intv*1000 ]
+        plog_msg "sal_snake_test_mtp_sts_pull:: Sleeping $intv Seconds"
+        after $ss
+        set time_left [expr $time_left - $intv]
+        set time_passed [expr $time_passed + $intv]
+        plog_msg "\n-----------------------------------------------------------------"
+        plog_msg "$time_passed second passed; $time_left remains"
+
+        plog_msg " BW_voltage_temp report "
+        sal_top_get_cntr 0
+        find_avg_rate 5 4000
+        sal_print_voltage_temp_from_j2c
+        plog_msg "Done Pulling"
+    }
+}
+
+set ASIC_SRC $::env(ASIC_SRC)
+
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
@@ -50,6 +68,8 @@ if { $cnt  >= 10 } {
     plog_err "\n\n==== J2C / OW is not working.... Ping HW team\n\n"
     return
 }
+sal_j2c
+#sal_ow
 
 set val [_msrd]
 if { $val != 0x1 } {
@@ -57,9 +77,12 @@ if { $val != 0x1 } {
     exit 0
 }
 
-csr_write sal0.txs.txs\[0].base 0xaabbcc
-rds sal0.txs.txs\[0].base
+
+#csr_write sal0.txs.txs\[0].base 0xaabbcc
+#rds sal0.txs.txs\[0].base
 #set err_cnt_init [ plog_get_err_count ]
+set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+set fn "snake_slot${slot}_${cur_time}.log"
 plog_start $fn
 # start test snake test
 cd ../$test_type
@@ -85,14 +108,8 @@ sal_top_stream_start_snake_traffic 0 20
 
 # check if pkt is running
 sal_top_get_cntr 0
-sleep 30
-plog_msg "read PMIC"
-smbus_read_byte_data 0 0x4f 0xc
-smbus_read_byte_data 0 0x4f 0xd
-smbus_read_byte_data 0 0x4f 0xe
-smbus_read_byte_data 0 0x4f 0xf
-sal_top_get_cntr 0
-find_avg_rate 5 4000
+# sleep $dura
+mtp_sts_pull $dura
 
 sal_top_stream_stop_snake_traffic 0
 plog_msg "Counters after stop snake"
