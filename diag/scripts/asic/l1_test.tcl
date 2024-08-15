@@ -180,7 +180,9 @@ if {$use_zmq == 0} {
             sal_j2c
         }
 
+        sal_arm_reset
         sal_print_voltage_temp_from_j2c
+
         set err_cn [eval $l1_cmd]
         set err_cnt 0
 
