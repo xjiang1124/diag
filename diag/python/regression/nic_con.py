@@ -439,7 +439,8 @@ class nic_con:
             #time.sleep(2)
             cmd = self.get_connect_cmd(slot, uart_id=uart_id)
             session.sendline(cmd)
-            #session.expect("Terminal ready")
+            session.expect(["Terminal ready", "buffer cleared"])
+            session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
 
             for i in range(uboot_delay):
                 session.timeout = 0.5
