@@ -8,6 +8,7 @@ import sys
 import time
 import yaml
 from collections import OrderedDict
+import threading
 
 
 PY3 = (sys.version_info[0] >= 3)
@@ -412,3 +413,45 @@ def find_first_dir(path):
         print("Can not find file!", path)
 
     return result
+
+#====================
+def split_into_threads(func):
+    def single_thread_func(func, slot, thread_rslt_list, *test_args, **test_kwargs):
+        try:
+            ret = func(slot, *test_args, **test_kwargs)
+            if ret != 0:
+                thread_rslt_list[int(slot) - 1] = False
+        except Exception:
+            thread_rslt_list[int(slot) - 1] = False
+
+    def wrapper(nic_list, *test_args, **test_kwargs):
+        nic_thread_list = list()
+        fail_nic_list = list()
+        thread_rslt_list = [True] * 10
+        for slot in nic_list:
+            thread_args = tuple([func, slot, thread_rslt_list]) + test_args
+            nic_thread = threading.Thread(
+                target = single_thread_func,
+                args = thread_args,
+                kwargs = test_kwargs
+            )
+            nic_thread.daemon = True
+            nic_thread.start()
+            nic_thread_list.append(nic_thread)
+            time.sleep(1)
+
+        # monitor all the thread
+        while True:
+            if len(nic_thread_list) == 0:
+                break
+            for nic_thread in nic_thread_list[:]:
+                if not nic_thread.is_alive():
+                    nic_thread.join()
+                    nic_thread_list.remove(nic_thread)
+            time.sleep(1)
+        for idx, slot_rslt in enumerate(thread_rslt_list):
+            if not slot_rslt:
+                fail_nic_list.append(idx + 1)
+        return fail_nic_list
+
+    return wrapper
