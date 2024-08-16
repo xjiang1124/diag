@@ -71,31 +71,55 @@ if {$err_cnt != 0} {
     return 0
 } 
 
+set cpld_id [ssi_cpld_read 0x80]
+plog_msg "cpld_id: $cpld_id"
+
 if {$vmarg == "normal"} {
     plog_msg "Vmarg: $vmarg"
 } elseif {$vmarg == "high"} {
     plog_msg "Vmarg: $vmarg"
-    sal_set_margin_by_value vdd 880
+    sal_set_margin_by_value vdd 840
     sal_set_margin_by_value arm 1100
-    sal_set_margin_by_pct DDR_VDD 2
-    sal_set_margin_by_pct DDR_VDDQ 2
-    sal_set_margin_by_pct DDR_VPP 2
+
+    if {$cpld_id == 0x62} {
+        sal_set_margin_by_value DDR_VDD_0 1167
+        sal_set_margin_by_value DDR_VDDQ_0 1167
+        sal_set_margin_by_value DDR_VDD_1 1167
+        sal_set_margin_by_value DDR_VDDQ_1 1167
+    } else {
+        sal_set_margin_by_value DDR_VDD 1167
+        sal_set_margin_by_value DDR_VDDQ 1167
+    }
+    #sal_set_margin_by_pct DDR_VDD 2
+    #sal_set_margin_by_pct DDR_VDDQ 2
+    #sal_set_margin_by_pct DDR_VPP 2
 } else {
     plog_msg "Vmarg: $vmarg"
-    sal_set_margin_by_value vdd 720
-    sal_set_margin_by_value arm 900
-    sal_set_margin_by_pct DDR_VDD -2
-    sal_set_margin_by_pct DDR_VDDQ -2
-    sal_set_margin_by_pct DDR_VPP -2
+    sal_set_margin_by_value vdd 760
+    sal_set_margin_by_value arm 975
+
+    if {$cpld_id == 0x62} {
+        sal_set_margin_by_value DDR_VDD_0 1067
+        sal_set_margin_by_value DDR_VDDQ_0 1067
+        sal_set_margin_by_value DDR_VDD_1 1067
+        sal_set_margin_by_value DDR_VDDQ_1 1067
+    } else {
+        sal_set_margin_by_value DDR_VDD 1067
+        sal_set_margin_by_value DDR_VDDQ 1067
+    }
+
+    #sal_set_margin_by_pct DDR_VDD -2
+    #sal_set_margin_by_pct DDR_VDDQ -2
+    #sal_set_margin_by_pct DDR_VPP -2
 } 
 
-set vdd_vout [sal_get_vout vdd]
-set arm_vout [sal_get_vout arm]
-set ddr_vdd_vout [sal_get_vout DDR_VDD]
-set ddr_vddq_vout [sal_get_vout DDR_VDDQ]
-set ddr_vpp_vout [sal_get_vout DDR_VPP]
-
-plog_msg "vdd_vout: $vdd_vout; arm_vout: $arm_vout; ddr_vdd_vout: $ddr_vdd_vout; ddr_vddq_vout: $ddr_vddq_vout; ddr_vpp_vout: $ddr_vpp_vout"
+#set vdd_vout [sal_get_vout vdd]
+#set arm_vout [sal_get_vout arm]
+#set ddr_vdd_vout [sal_get_vout DDR_VDD]
+#set ddr_vddq_vout [sal_get_vout DDR_VDDQ]
+#set ddr_vpp_vout [sal_get_vout DDR_VPP]
+#
+#plog_msg "vdd_vout: $vdd_vout; arm_vout: $arm_vout; ddr_vdd_vout: $ddr_vdd_vout; ddr_vddq_vout: $ddr_vddq_vout; ddr_vpp_vout: $ddr_vpp_vout"
 
 
 set err_cnt_fnl [ plog_get_err_count ]
