@@ -6,8 +6,11 @@ set slot [lindex $argv 0]
 # esam_pktgen_llc_sor        :  no ddr + mac
 # esam_pktgen_ddr_no_mac_sor : ddr + no mac
 # esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
+# esam_pktgen_ddr_burst_400G : ddr burst
 set test_type [lindex $argv 1]
 set dura [lindex $argv 2]
+set card_type [lindex $argv 3]
+set vmarg [lindex $argv 4]
 
 proc mtp_sts_pull { {duration 60} {intv 30} } {
     set time_left $duration
@@ -29,8 +32,10 @@ proc mtp_sts_pull { {duration 60} {intv 30} } {
 
         plog_msg " BW_voltage_temp report "
         sal_top_get_cntr 0
-        find_avg_rate 5 4000
+        #find_avg_rate 5 4000
+        find_avg_rate 5 3840
         sal_print_voltage_temp_from_j2c
+        check_ecc_intr
         plog_msg "Done Pulling"
     }
 }
@@ -84,11 +89,80 @@ if { $val != 0x1 } {
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "snake_slot${slot}_${cur_time}.log"
 plog_start $fn
+
+
+# start pcie
+# put arm in reset
+#sal_arm_reset
 # start test snake test
 cd ../$test_type
-if {$test_type == "esam_pktgen_ddr_no_mac_sor" || $test_type == "esam_pktgen_ddr_sor"} {
-    cdn_ddr5_init 3200
+if {$test_type == "esam_pktgen_ddr_no_mac_sor" || $test_type == "esam_pktgen_ddr_sor" || $test_type == "esam_pktgen_ddr_burst_400G"} {
+    if { $card_type == "MALFA" } {
+        cdn_ddr5_init 3200
+    } elseif { $card_type == "LENI" } {
+        cdn_ddr5_init 6400 0x64 0
+    } elseif { $card_type == "LENI48G" } {
+        cdn_ddr5_init 6400 0x66 0
+    }
+    check_ecc_intr
 }
+# do vmarg
+if {$vmarg == "normal"} {
+    plog_msg "Vmarg: $vmarg"
+} elseif {$vmarg == "high"} {
+    plog_msg "Vmarg: $vmarg"
+    sal_set_margin_by_value vdd 840
+    sal_set_margin_by_value arm 1070
+    if { $card_type == "MALFA" } {
+        sal_set_margin_by_pct DDR_VDD_0 2
+        sal_set_margin_by_pct DDR_VDDQ_0 2
+        sal_set_margin_by_pct DDR_VPP_0 2
+        sal_set_margin_by_pct DDR_VDD_1 2
+        sal_set_margin_by_pct DDR_VDDQ_1 2
+        sal_set_margin_by_pct DDR_VPP_1 2
+    } else {
+        sal_set_margin_by_pct DDR_VDD 2
+        sal_set_margin_by_pct DDR_VDDQ 2
+        sal_set_margin_by_pct DDR_VPP 2
+    }
+} else {
+    plog_msg "Vmarg: $vmarg"
+    sal_set_margin_by_value vdd 760
+    sal_set_margin_by_value arm 975
+    if { $card_type == "MALFA" } {
+        sal_set_margin_by_pct DDR_VDD_0 -2
+        sal_set_margin_by_pct DDR_VDDQ_0 -2
+        sal_set_margin_by_pct DDR_VPP_0 -2
+        sal_set_margin_by_pct DDR_VDD_1 -2
+        sal_set_margin_by_pct DDR_VDDQ_1 -2
+        sal_set_margin_by_pct DDR_VPP_1 -2
+    } else {
+        sal_set_margin_by_pct DDR_VDD -2
+        sal_set_margin_by_pct DDR_VDDQ -2
+        sal_set_margin_by_pct DDR_VPP -2
+    }
+}
+
+set vdd_vout [sal_get_vout vdd]
+set arm_vout [sal_get_vout arm]
+if { $card_type == "MALFA" } {
+    set ddr_vdd_0_vout [sal_get_vout DDR_VDD_0]
+    set ddr_vddq_0_vout [sal_get_vout DDR_VDDQ_0]
+    set ddr_vpp_0_vout [sal_get_vout DDR_VPP_0]
+    set ddr_vdd_1_vout [sal_get_vout DDR_VDD_1]
+    set ddr_vddq_1_vout [sal_get_vout DDR_VDDQ_1]
+    set ddr_vpp_1_vout [sal_get_vout DDR_VPP_1]
+} else {
+    set ddr_vdd_vout [sal_get_vout DDR_VDD]
+    set ddr_vddq_vout [sal_get_vout DDR_VDDQ]
+    set ddr_vpp_vout [sal_get_vout DDR_VPP]
+}
+if { $card_type == "MALFA" } {
+    plog_msg "vdd_vout: $vdd_vout; arm_vout: $arm_vout; ddr_vdd_0_vout: $ddr_vdd_0_vout; ddr_vddq_0_vout: $ddr_vddq_0_vout; ddr_vpp_0_vout: $ddr_vpp_0_vout; ddr_vdd_1_vout: $ddr_vdd_1_vout; ddr_vddq_1_vout: $ddr_vddq_1_vout; ddr_vpp_1_vout: $ddr_vpp_1_vout"
+} else {
+    plog_msg "vdd_vout: $vdd_vout; arm_vout: $arm_vout; ddr_vdd_vout: $ddr_vdd_vout; ddr_vddq_vout: $ddr_vddq_vout; ddr_vpp_vout: $ddr_vpp_vout"
+}
+
 if {$test_type == "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_sor"} {
     sal_aw_srds_powerup_init
     sal_front_panel_port_up
@@ -102,23 +176,28 @@ sal_mx_pcs_lpbk_get 0 1 0
 sal_asic_init 2
 sal_top_stream_load_snake_traffic 0 10
 sal_top_stream_start_snake_traffic 0 10
-sal_top_stream_load_snake_traffic 0 20
-sal_top_stream_start_snake_traffic 0 20
+#sal_top_stream_load_snake_traffic 0 11
+#sal_top_stream_start_snake_traffic 0 11
+#sal_top_stream_load_snake_traffic 0 20
+#sal_top_stream_start_snake_traffic 0 20
 
 
 # check if pkt is running
 sal_top_get_cntr 0
 # sleep $dura
 mtp_sts_pull $dura
+sal_noc_nis_bwmon_setup 0 0
+sal_noc_nis_bwmon_dump  0 0
 
 sal_top_stream_stop_snake_traffic 0
 plog_msg "Counters after stop snake"
 sal_top_get_cntr 0
 sal_pf_cntrs
+check_ecc_intr
 sal_top_eos 0
 plog_stop
 exit 0
 
 #set err_cnt_fnl [ plog_get_err_count ]
 #diag_close_ow_if $port $slot
-#puts "SNAKE TEST DONE"
+puts "SNAKE TEST DONE"

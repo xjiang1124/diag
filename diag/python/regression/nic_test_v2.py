@@ -443,7 +443,7 @@ class nic_test_v2:
             #     return -1
 
             # TCL command
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {}".format(args.slot, args.snake_type, args.dura)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
             #cmd = "tclsh ~/diag/scripts/asic/sal_pcie.tcl {} {} {}".format(args.slot)
             common.session_cmd(session, cmd, args.timeout)
             common.session_stop(session)
@@ -1134,6 +1134,8 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
     parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
+    parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
+    parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 

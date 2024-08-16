@@ -5,6 +5,9 @@ SLOT=$1
 SNAKE_TYPE=$2
 DURA=$3
 ITE=$4
+CARD_TYPE=$5
+VMARG=$6
+
 echo $SLOT
 cd $TEST_DIR/nic
 export ASIC_LIB_BUNDLE=`pwd`
@@ -28,7 +31,7 @@ cd /home/diag/diag/scripts/asic
 
 #fn="sal_snake_${time_stamp}.log"
 #echo $fn
-
+fpgautil spimode $SLOT off
 for idx in $(seq 1 1 $ITE)
 do
     echo "Snake Iteration $idx"
@@ -39,7 +42,7 @@ do
     sleep 1
     jtag_accpcie_salina clr $SLOT
     sleep 3
-    stdbuf -i0 -o0 -e0 tclsh sal_snake.tcl $SLOT $SNAKE_TYPE $DURA
+    stdbuf -i0 -o0 -e0 tclsh sal_snake.tcl $SLOT $SNAKE_TYPE $DURA $CARD_TYPE $VMARG
     #script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh sal_snake.tcl $SLOT"
     #sync
     #num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "SNAKE TEST FAILED" | wc | awk -F " " '{print $1}')
