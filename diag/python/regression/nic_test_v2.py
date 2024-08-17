@@ -381,6 +381,52 @@ class nic_test_v2:
                 self.nic_con.uart_session_stop(session)
                 common.session_stop(session)
 
+    def nic_snake_mtp(self, args):
+        for idx in range(args.ite):
+            print("=== Ite", idx, "===")
+            session = common.session_start()
+            # set spimode to be off
+            cmd = "fpgautil spimode {} off".format(args.slot)
+            common.session_cmd(session, cmd)
+            print("=== TCL ENV setup ===")
+            tcl_path = "/home/diag/snake_test/nic"
+            common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+            common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+            common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+            common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+            common.session_cmd(session, "source source_env_path")
+            common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "rm -f *")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+
+            # power cycle
+            cmd = "turn_on_slot.sh off {}".format(args.slot)
+            common.session_cmd(session, cmd)
+            time.sleep(1)
+            cmd = "turn_on_slot.sh on {}".format(args.slot)
+            common.session_cmd(session, cmd)
+            time.sleep(10)
+            common.session_cmd(session, cmd)
+            time.sleep(1)
+            cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+            common.session_cmd(session, cmd)
+            time.sleep(3)
+
+            # TCL command
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+            common.session_cmd(session, cmd, args.timeout)
+            common.session_stop(session)
+
+            # Print result
+        return 0
+
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
         for idx in range(ite):
             print("=== Ite", idx, "===")
@@ -1048,6 +1094,18 @@ if __name__ == "__main__":
     parser_setup_single.add_argument("-en_dis", "--en_dis", help="Enable/Disable", type=str, default="enable")
 
     parser_setup_single.set_defaults(func=test.en_dis_esec_wp_single)
+
+    # NIC snake test from mtp
+    parser_nic_snake_mtp = subparsers.add_parser('nic_snake_mtp', help='NIC snake test from mtp', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_snake_mtp.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Number of iteration", type=int, default=1)
+    parser_nic_snake_mtp.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
+    parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
+    parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
+    parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
+    parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     try:
         args = parser.parse_args()
