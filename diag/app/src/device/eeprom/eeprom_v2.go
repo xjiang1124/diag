@@ -796,7 +796,7 @@ var CardDataInfo = map[string]updateInfo {
     PN_MALFA: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_MALFA,
-        PN_MALFA,
+        SKU_MALFA,
         FRU_ID_MALFA,
         []progInfo {
             progInfo {
@@ -817,7 +817,7 @@ var CardDataInfo = map[string]updateInfo {
     PN_POLLARA: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_POLLARA,
-        PN_POLLARA,
+        SKU_POLLARA,
         FRU_ID_POLLARA,
         []progInfo {
             progInfo {
@@ -838,7 +838,7 @@ var CardDataInfo = map[string]updateInfo {
     PN_LENI: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_LENI,
-        PN_LENI,
+        SKU_LENI,
         FRU_ID_LENI,
         []progInfo {
             progInfo {
