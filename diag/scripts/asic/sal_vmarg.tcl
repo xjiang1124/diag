@@ -44,6 +44,7 @@ set ::slot $slot
 set ::port $port
 
 exec jtag_accpcie_salina clr $slot
+exec fpgautil spimode $slot off
 
 diag_close_j2c_if $port $slot
 diag_open_j2c_if $port $slot
@@ -66,8 +67,8 @@ sal_j2c_stress
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
-    plog_msg "SET AVS FAILED"
-    plog_msg "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
     return 0
 } 
 
@@ -132,7 +133,7 @@ if {$err_cnt == 0} {
     plog_msg "SET AVS PASSED"
     plog_msg "SET AVS PASSED"
 } else {
-    plog_msg "SET AVS FAILED"
-    plog_msg "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
 }
 
