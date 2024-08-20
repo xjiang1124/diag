@@ -452,6 +452,7 @@ class nic_con:
                 print("Powercycling...")
                 cmd = "turn_on_slot.sh off {}".format(slot)
                 common.session_cmd(session, cmd)
+                time.sleep(3)
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
