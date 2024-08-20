@@ -26,13 +26,13 @@ def boot_to_step(slot, parsed_args):
     boot_to = parsed_args.boot_to[0]
     session = common.session_start()
     if boot_to == stage.stage1:
-        ret = enter_a35_uboot(slot, session)
+        ret = enter_a35_uboot(slot, session, warm_reset=parsed_args.warm_reset)
     elif boot_to == stage.stage2:
-        ret = enter_a35_zephyr(slot, session)
+        ret = enter_a35_zephyr(slot, session, warm_reset=parsed_args.warm_reset)
     elif boot_to == stage.stage3:
-        ret = enter_n1_uboot(slot, session)
+        ret = enter_n1_uboot(slot, session, warm_reset=parsed_args.warm_reset)
     elif boot_to == stage.stage4:
-        ret = enter_n1_linux(slot, session)
+        ret = enter_n1_linux(slot, session, warm_reset=parsed_args.warm_reset)
     else:
         print("Unknown stage: {}".format(parsed_args.boot_to))
         ret = -1
@@ -54,11 +54,11 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
         return True
 
 
-def enter_a35_uboot(slot, session):
+def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline(f"con_cleanup.sh {slot}")
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0) != 0:
+    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -66,8 +66,8 @@ def enter_a35_uboot(slot, session):
     return 0
 
 
-def enter_a35_zephyr(slot, session):
-    if 0 != enter_a35_uboot(slot, session):
+def enter_a35_zephyr(slot, session, *args, **kwargs):
+    if 0 != enter_a35_uboot(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -89,8 +89,8 @@ def enter_a35_zephyr(slot, session):
     return 0
 
 
-def enter_n1_uboot(slot, session):
-    if 0 != enter_a35_zephyr(slot, session):
+def enter_n1_uboot(slot, session, *args, **kwargs):
+    if 0 != enter_a35_zephyr(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -120,8 +120,8 @@ def enter_n1_uboot(slot, session):
     return 0
 
 
-def enter_n1_linux(slot, session):
-    if 0 != enter_n1_uboot(slot, session):
+def enter_n1_linux(slot, session, *args, **kwargs):
+    if 0 != enter_n1_uboot(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -152,6 +152,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("boot_to", type=stage, choices=list(stage), nargs=1)
     parser.add_argument("--slot_list", "-slot_list", help="NIC slot list", type=str, required=True, default="")
+    parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
 
     try:
         parsed_args = parser.parse_args()

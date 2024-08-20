@@ -420,7 +420,20 @@ class nic_con:
         common.session_stop(session)
         return ret
 
-    def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, num_retry=3, uart_id=1):
+    def nic_warm_reset(self, session, slot):
+        print("Asserting warm reset...")
+        if self.get_asic_type(slot) == "SALINA":
+            cmd = "i2cset -yr {} 0x4a 0x10 0x3a".format(slot+2)
+            common.session_cmd(session, cmd)
+            cmd = "i2cset -yr {} 0x4a 0x10 0xba".format(slot+2)
+            common.session_cmd(session, cmd)
+        else:
+            cmd = "i2cset -yr {} 0x4a 0x10 0xbe".format(slot+2)
+            common.session_cmd(session, cmd)
+            cmd = "i2cset -yr {} 0x4a 0x10 0x3e".format(slot+2)
+            common.session_cmd(session, cmd)
+
+    def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, num_retry=3, uart_id=1, warm_reset=False):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
         if slot == 0 or slot > 10:
@@ -432,11 +445,16 @@ class nic_con:
         common.session_cmd(session, cmd) 
         time.sleep(1)
         for retry in range(num_retry):
-            print("Trying enter uboot {}".format(retry))
-            cmd = "turn_on_slot.sh off {}".format(slot)
-            common.session_cmd(session, cmd) 
-            cmd = "turn_on_slot.sh on {}".format(slot)
-            common.session_cmd(session, cmd) 
+            print("Attempt {} of {} to enter uboot".format(retry, num_retry))
+            if warm_reset:
+                self.nic_warm_reset(session, slot)
+            else:
+                print("Powercycling...")
+                cmd = "turn_on_slot.sh off {}".format(slot)
+                common.session_cmd(session, cmd)
+                cmd = "turn_on_slot.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
+
             self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
 
             #time.sleep(2)
