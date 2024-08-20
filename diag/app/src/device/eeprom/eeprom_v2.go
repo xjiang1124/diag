@@ -98,7 +98,7 @@ const (
     PROD_NAME_GIG_ORACLE    string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_MSFT      string = "Pensando DSC2A-200 50/100/200G 2p QSFP56 Card"
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
-    PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 Base SW+3yr SUP C"
+    PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 SUP C"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
     PROD_NAME_POLLARA       string = "AI-NIC400 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
@@ -123,7 +123,7 @@ const (
     SKU_GIN_D5_SSDK_A   string = "DSC2A-2Q200-32S32F64P-S4A"
     SKU_GIN_D5_SSDK_B   string = "DSC2A-2Q200-32S32F64P-S4B"
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
-    SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C-B3"
+    SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
     SKU_POLLARA         string = "AI-NIC400-1Q400-P"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
@@ -787,7 +787,7 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_PROD_NAME_2,
                 FIELD_NUM_SKU_3,
                 FIELD_NUM_FRU_ID_7,
-                FIELD_NUM_DPN_9,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
