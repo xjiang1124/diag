@@ -17,15 +17,18 @@ int verbosity = 0;
 ULONGLONG bar_addr = 0x10020300000;
 FT_HANDLE ftHandle = 0;
 int exit_all = 0;
+int ctrlC_hit = 0;
+unsigned char *uart_addr_tx;
+unsigned char *uart_addr_rx;
 
 #define BUF_SIZE 100 * 1024 * 1024
 
-typedef struct _ring_buf
+typedef struct __attribute__((packed)) _ring_buff
 {
     char buffer[BUF_SIZE];
     int rptr;
     int wptr;
-} RING_BUFF;
+}RING_BUFF;
 
 void reset_terminal_mode()
 {
@@ -150,8 +153,43 @@ ULONGLONG show_bar(void)
     return bar_addr;
 }
 
-int read_fpga_mem32(ULONGLONG inst_offset, DWORD reg, DWORD *data)
+unsigned char *map_fpga_mem32(ULONGLONG inst_offset)
 {
+    unsigned char *addr = NULL;
+
+    off_t offset = bar_addr + inst_offset;
+    size_t pagesize = sysconf(_SC_PAGE_SIZE);
+    off_t page_base = (offset / pagesize) * pagesize;
+    off_t page_offset = offset - page_base;
+
+    if ( verbosity > 1 ) {
+        printf("read_fpag_mem32 with inst_offset %llx\n", inst_offset);
+        printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
+    }
+    int fd = open("/dev/mem", O_RDWR | O_SYNC);
+    if ( fd < 0 ) {
+        printf("Can't open /dev/mem\n");
+        return addr;
+    }
+
+    unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    close(fd);
+    if ( mem == NULL ) {
+        printf("failed to  map pcie memory\n");
+        return addr;
+    }
+
+    addr = mem + page_offset;
+    if ( verbosity > 1 ) {
+        printf("allocated mem %llx; addr %llx\n", (ULONGLONG)mem, (ULONGLONG)addr);
+    }
+
+    return addr;
+}
+
+int read_fpga_mem32(unsigned char *inst_offset, DWORD reg, DWORD *data)
+{
+    /*
     volatile unsigned char *addr;
 
     off_t offset = bar_addr + inst_offset + reg;
@@ -164,36 +202,44 @@ int read_fpga_mem32(ULONGLONG inst_offset, DWORD reg, DWORD *data)
         printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
     }
     int fd = open("/dev/mem", O_RDWR | O_SYNC);
+    */
     /* int fd = open("/sys/bus/pci/devices/0000:02:00.0/resource0", O_RDWR | O_SYNC); */
+    /*
     if ( fd < 0 ) {
         printf("Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
 
     unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    */
     /* unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
+    /*
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
-
+    */
     /* addr = mem + inst_offset + reg; */
+    /*
     addr = mem + page_offset;
     if ( verbosity > 1 ) {
         printf("allocated mem %llx; addr %llx\n", (ULONGLONG)mem, (ULONGLONG)addr);
     }
-
+    */
     /* addr = (DWORD *)(mem | (unsigned char *)ftHandle | (unsigned char *)reg); */
-    *data = *((DWORD *)addr);
+    *data = *((DWORD *)(inst_offset + reg));
 
+    /*
     munmap((void *)mem, 4096);
     close(fd);
+    */
     return FT_OK;
 }
 
-int write_fpga_mem32(ULONGLONG inst_offset, DWORD reg, ULONG value)
+int write_fpga_mem32(unsigned char *inst_offset, DWORD reg, ULONG value)
 {
+    /*
     unsigned char *addr;
 
     off_t offset = bar_addr + inst_offset + reg;
@@ -205,45 +251,56 @@ int write_fpga_mem32(ULONGLONG inst_offset, DWORD reg, ULONG value)
         printf("write_fpag_mem32 with inst_offset %llx\n", inst_offset);
         printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
     }
-    int fd = open("/dev/mem", O_RDWR | O_SYNC);
+    int fd = open("/dev/mem", O_RDWR | O_SYNC); 
+    */
     /* int fd = open("/sys/bus/pci/devices/0000:02:00.0/resource0", O_RDWR | O_SYNC); */
+    /*
     if ( fd < 0 ) {
         printf("Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
 
     unsigned char *mem = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    */
     /* unsigned char *mem = mmap((void *)bar_addr, 1024*1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); */
+    /*
     if ( mem == NULL ) {
         printf("failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
-
+    */
     /* addr = mem + inst_offset + (ULONGLONG)reg; */
-    addr = mem + page_offset;
+    /* addr = mem + page_offset; */
+    /* 
     if ( verbosity > 1 ) {
         printf("allocated mem %llx; addr %llx\n", (ULONGLONG)mem, (ULONGLONG)addr);
     }
-    *((DWORD *)addr) = (DWORD)value;
+    */
+    *((DWORD *)(inst_offset + reg)) = (DWORD)value;
 
+    /*
     munmap((void *)mem, 4096);
     close(fd); 
+    */
     return FT_OK;
 }
 
 void *send_tx_input(void *port)
 {
     int ch;
-    int inst = *(int *)port;
+    int inst = *(int *)port, dummy;
     int end_thread = 0;
     /* DWORD data; */
-    ULONGLONG uart_addr;
+    /* ULONGLONG uart_addr; */
+
+    dummy = inst;
+    inst = dummy;
 
     set_conio_terminal_mode();
  
     /* initscr(); */
-    uart_addr = UART_0_OFFSET + inst * UART_INST_OFFSET;
+    /* uart_addr = UART_0_OFFSET + inst * UART_INST_OFFSET; */
     for ( ; ; ) {
         if ( !kbhit() ) {
             ch = getch_local();
@@ -262,8 +319,9 @@ void *send_tx_input(void *port)
                     end_thread = 0;
                 if ( verbosity )
                     printf("sending character %c\n", ch);
-		if ( end_thread == 0 )
-                    write_fpga_mem32(uart_addr, UART_0_TXDATA_REG, (DWORD)ch);
+		if ( end_thread == 0 ) {
+                    write_fpga_mem32(uart_addr_tx, UART_0_TXDATA_REG, (DWORD)ch);
+                }
                 usleep(40);
                 ch = getch_local();
             }
@@ -285,15 +343,16 @@ void *get_rx_buffer(void *inst)
     int port = *(int *)inst;
     int fd;
     int shm_len = BUF_SIZE + 2 * sizeof(int);
+    int buf_size = BUF_SIZE;
     int rptr;
     pthread_spinlock_t lock;
-    ULONGLONG uart_addr;
+    /* ULONGLONG uart_addr; */
     cpu_set_t cpuset;
     pthread_t current_thread;
     char uart_path[8];
-    RING_BUFF *ptr;
+    RING_BUFF *pptr;
 
-    uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
+    /* uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET; */
     CPU_ZERO(&cpuset);
     CPU_SET(port + 1, &cpuset);
     current_thread = pthread_self();
@@ -305,20 +364,22 @@ void *get_rx_buffer(void *inst)
         printf("failed to open shared memory\n");
         return 0;
     }
+/*
     if ( ftruncate(fd, shm_len) == -1 ) {
         printf("failed to attach shm size\n");
         shm_unlink(uart_path);
         return 0;
     }
-
-    ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_WRITE, MAP_SHARED, fd, 0);
-    if ( ptr == NULL ) {
+*/
+    pptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+    if ( pptr == NULL ) {
         printf("failed to map shared memory for write\n");
 	shm_unlink(uart_path);
 	return 0;
     }
+    close(fd);
 
-    read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+    read_fpga_mem32(uart_addr_rx, UART_0_STAT_REG, &data);
     if ( data & 0xe0 ) {
         if ( verbosity )
             printf("UART ERROR1: uart status register = %x\n", data);
@@ -329,29 +390,27 @@ void *get_rx_buffer(void *inst)
         if ( data & 0x1 ) {
             if ( verbosity )  
                 printf(" uart status register = %x\n", data);
-            read_fpga_mem32(uart_addr, UART_0_RXDATA_REG, &data);
+            read_fpga_mem32(uart_addr_rx, UART_0_RXDATA_REG, &data);
             if ( verbosity )  
                 printf(" uart received data = %c\n", data);
             /* printf("%c", (unsigned char)(data & 0xff)); */
-	    /* fflush(stdout); */ 
-	    rptr = ptr->rptr;
-	    if ( (ptr->wptr + 1) == rptr ) {
+	    /* fflush(stdout); */
+	    rptr = pptr->rptr;
+	    if ( (pptr->wptr + 1) == rptr ) {
                 printf("ERROR: %s ring buffer overrun\n", uart_path);
             } else {
-                ptr->buffer[ptr->wptr] = (char)(data & 0xff);
-		ptr->wptr = (ptr->wptr + 1) % BUF_SIZE;
+                pptr->buffer[pptr->wptr] = (char)(data & 0xff);
+		pptr->wptr = (pptr->wptr + 1) % buf_size;
 	    }
-        } else {
-	    usleep(40);
 	}
-        read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+        read_fpga_mem32(uart_addr_rx, UART_0_STAT_REG, &data);
         if ( data & 0xe0 )
             printf("UART ERROR2: uart status register = %x\n", data);
     }
     /* endwin(); should never be here */
     pthread_spin_unlock(&lock);
     pthread_spin_destroy(&lock);
-    munmap(ptr, shm_len); 
+    munmap(pptr, shm_len); 
     shm_unlink(uart_path);
     return 0;
 }
@@ -362,23 +421,86 @@ int ring_buffer_init(RING_BUFF *ptr)
     return 0;
 }
 
+void save_uart_to_file(char *uart_file, int append)
+{
+    FILE *dst_fd;
+    int fd;
+    int i, shm_len = sizeof(RING_BUFF);
+    char filename[32];
+    RING_BUFF *ptr;
+
+    strcpy(filename, "/home/diag/diag");
+    strcat(filename, uart_file);
+    fd = shm_open(uart_file, O_RDWR, 0644);
+    if ( fd == -1 ) {
+        printf("failed to open shared memory\n");
+        return;
+    }
+/*
+    if ( ftruncate(fd, shm_len) == -1 ) {
+        printf("failed to attach shm size\n");
+        shm_unlink(uart_file);
+        return;
+    }
+*/
+    ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if ( ptr == NULL ) {
+        printf("failed to map shared memory for write\n");
+	shm_unlink(uart_file);
+	return;
+    }
+
+    if ( append == 1 )
+        dst_fd = fopen(filename, "a");
+    else
+        dst_fd = fopen(filename, "w");
+    if ( dst_fd == NULL ) {
+        printf("failed to open uart log file\n");
+        return;
+    }
+
+    for ( i = 0; i < BUF_SIZE; i++ ) {
+        if ( ptr->wptr == i ) {
+            printf("\n reached the end of ring buffer %x  %x\n", i, ptr->wptr);
+            break;
+        }
+        /* printf("%c", ptr->buffer[i]); */
+        fprintf(dst_fd, "%c", ptr->buffer[i]);
+    }
+    fprintf(dst_fd, "saved %d characters to file", i);
+    printf("saved %d characters to file %s\n", i, filename);
+    fclose(dst_fd);
+    munmap(ptr, shm_len);
+    shm_unlink(uart_file);
+    return;
+}
+
+void sig_handler(int signo)
+{
+    if ( signo == SIGINT ) {
+        printf("Ctrl-C key is hit, treat as with Ctrl-A Ctrl-X\n");
+        ctrlC_hit = 1;
+    }
+    return;
+}
+
 int main(int argc, char **argv)
 {
     int port = atoi(argv[1]);
-    int r;
     int fd;
     int wptr;
     int shm_len = BUF_SIZE + 2 * sizeof(int);
+    int buf_size = BUF_SIZE;
     pid_t parent_id, child_id;
     pthread_t id_rx, id_tx;
     ULONGLONG pcie_bar;
     DWORD data;
-    ULONGLONG uart_addr;
+    /* ULONGLONG uart_addr; */
     char uart_path[8];
     RING_BUFF *ptr;
 
     if ( argc < 2 ) { 
-        printf("Invalid address, please provide a port number (0 - based)\n");
+        printf("Invalid command syntax, please provide a port number (0 - based)\n");
         return 0;
     }
 
@@ -386,20 +508,24 @@ int main(int argc, char **argv)
     if ( pcie_bar != 0 ) {
         bar_addr = pcie_bar;
     }
-
     printf("connecting to serial port %d at bar address 0x%llx\n", port, bar_addr);
-    uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET;
+    /* uart_addr = UART_0_OFFSET + port * UART_INST_OFFSET; */
+    uart_addr_tx = map_fpga_mem32(UART_0_OFFSET + port * UART_INST_OFFSET);
+    uart_addr_rx = map_fpga_mem32(UART_0_OFFSET + port * UART_INST_OFFSET);
     data = UART_RESET_TXFIFO | UART_RESET_RXFIFO;
-    write_fpga_mem32(uart_addr, UART_0_CTRL_REG, data);
-    read_fpga_mem32(uart_addr, UART_0_STAT_REG, &data);
+    write_fpga_mem32(uart_addr_tx, UART_0_CTRL_REG, data);
+    read_fpga_mem32(uart_addr_tx, UART_0_STAT_REG, &data);
     printf("tx/rx buffer cleared\n");
 
     parent_id = getpid();
     child_id = fork();
 
     if ( child_id > 0 ) {
+        if ( signal(SIGINT, sig_handler) == SIG_ERR )
+            printf("can't catch SIGINT, please use ctrl-A, ctrl-X to exit\n");
+
         sprintf(uart_path, "/uart%d", port);
-        fd = shm_open(uart_path, O_CREAT | O_RDWR | S_IRUSR | S_IWUSR, 0644 );
+        fd = shm_open(uart_path, O_CREAT | O_RDWR, 0644 );
         if ( fd == -1 ) {
             printf("failed to create shared memory\n");
             return 0;
@@ -409,9 +535,10 @@ int main(int argc, char **argv)
             shm_unlink(uart_path);
 	    return 0;
         }
-        ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_WRITE, MAP_SHARED, fd, 0);
-        ring_buffer_init(ptr);
+        ptr = (RING_BUFF *)mmap(NULL, shm_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        close(fd);
 
+        ring_buffer_init(ptr);
         pthread_create(&id_tx, NULL, send_tx_input, (void *)&port);
     } else { 
         pthread_create(&id_rx, NULL, get_rx_buffer, (void *)&port);
@@ -422,30 +549,29 @@ int main(int argc, char **argv)
 	/* get_rx_buffer(port); */
 	/* fflush(stdout); */
 	/* send_tx_input(port); */
-        if ( exit_all ) {
-            printf("\n");
-            fflush(stdout);
-	    break;
-        }
-	if ( child_id == 0 ) {
-            r = prctl(PR_SET_PDEATHSIG, SIGTERM);
-            if ( r == -1 ) {
-                break;
-	    }
-            if ( getppid() != parent_id ) {
-                break;
-	    }
-        } else {
-            /* print from ring buffer one character per loop */
-	    wptr = ptr->wptr;
-            if ( ptr->rptr != wptr ) {
-                printf("%c", ptr->buffer[ptr->rptr]);
-                ptr->rptr = (ptr->rptr + 1) % BUF_SIZE;
+	if ( child_id > 0 ) {
+            if ( exit_all ) {
+                printf("\n");
                 fflush(stdout);
+                kill(child_id, SIGKILL);
+                if ( argc == 3 )
+                    save_uart_to_file(uart_path, 1);
+                else
+                    save_uart_to_file(uart_path, 0);
+	        break;
+            } else {
+                /* print from ring buffer one character per loop */
+                wptr = ptr->wptr;
+                if ( wptr != ptr->rptr ) {
+                    printf("%c", ptr->buffer[ptr->rptr]);
+                    ptr->rptr = (ptr->rptr + 1) % buf_size;
+                    fflush(stdout);
+                }
             }
         }
-        usleep(40);
     }
+    munmap((void *)uart_addr_tx, 4096);
+    munmap((void *)uart_addr_rx, 4096);
     munmap(ptr, shm_len);
     shm_unlink(uart_path);
     return 0;

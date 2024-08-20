@@ -54,8 +54,9 @@ func ReadU32(addr uint64) (value uint32, err error) {
         return
     }
 
-    defer file.Close()
+    /* defer file.Close() */
     mmap, err := syscall.Mmap(int(file.Fd()), int64(pageAddr), pageSize, syscall.PROT_READ, syscall.MAP_SHARED)
+    file.Close()
     if err != nil {
         fmt.Printf("ERROR: syscall.Mmap /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
         return

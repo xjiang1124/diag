@@ -242,8 +242,8 @@ func ReadU32(addr uint64) (value uint32, err error) {
         cli.Printf("e", "os.Open /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
         return
     }
-    defer file.Close()
     mmap, err := syscall.Mmap(int(file.Fd()), int64(pageAddr), pageSize, syscall.PROT_READ, syscall.MAP_SHARED)
+    file.Close()
     if err != nil {
         cli.Printf("e", "syscall.Mmap /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
         return
@@ -302,8 +302,8 @@ func WriteU32(addr uint64, data uint32) (err error) {
         return
     }
 
-    defer file.Close()
     mmap, err := syscall.Mmap(int(file.Fd()), int64(pageAddr), pageSize, syscall.PROT_WRITE, syscall.MAP_SHARED)
+    file.Close()
     if err != nil {
         cli.Printf("e", "syscall.Mmap /dev/mem failed.  Err !=nil:   ERR = '%s'\n", err)
         return
@@ -370,6 +370,7 @@ func MMAP_Device(addr int64, size int) (mmap []byte, fd *os.File, err error) {
     }
 
     mmap, err = syscall.Mmap(int(fd.Fd()), addr, size, syscall.PROT_READ | syscall.PROT_WRITE, syscall.MAP_SHARED)
+    fd.Close()
     if err != nil {
         cli.Printf("e", "syscall.Mmap failed.  Err !=nil:   ERR = '%s'\n", err)  
         fd.Close()
@@ -388,6 +389,7 @@ func MMAP_Device_Read(addr int64, size int) (mmap []byte, fd *os.File, err error
     }
 
     mmap, err = syscall.Mmap(int(fd.Fd()), addr, size, syscall.PROT_READ, syscall.MAP_SHARED)
+    fd.Close()
     if err != nil {
         cli.Printf("e", "syscall.Mmap failed.  Err !=nil:   ERR = '%s'\n", err)  
         fd.Close()
@@ -405,6 +407,7 @@ func MMAP_Device_Write(addr int64, size int) (mmap []byte, fd *os.File, err erro
     }
 
     mmap, err = syscall.Mmap(int(fd.Fd()), addr, size, syscall.PROT_READ | syscall.PROT_WRITE, syscall.MAP_SHARED)
+    fd.Close()
     if err != nil {
         cli.Printf("e", "syscall.Mmap failed.  Err !=nil:   ERR = '%s'\n", err)  
         fd.Close()
