@@ -28,6 +28,7 @@ cpu_mmap(uint64_t *membase, int *fd, uint64_t address, uint32_t size)
     }
 
     membase = (uint64_t * ) mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, *fd,  address);
+    close(fd); 
     if (membase == MAP_FAILED) {
         printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
         close(*fd);
@@ -88,6 +89,7 @@ cpu_mem_read(uint64_t address, uint64_t * rd_data, uint32_t access_type)
     offset = phymem & (~pagemask);
 
     membase = (uint64_t * ) mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,  offset);
+    close(fd);
     if (membase == MAP_FAILED) {
         printf("ERROR %s: MMAP failed.  Errno=%d  ", __FUNCTION__, errno); 
         close(fd);
@@ -146,6 +148,7 @@ int cpu_mem_write(uint64_t address, uint64_t data, uint32_t access_type)
     offset = phymem & (~pagemask);
 
     membase = (uint64_t * ) mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd,  offset);
+    close(fd);
     if (membase == MAP_FAILED) {
         printf("ERROR %s: mmap failed.  Errno=%d : %s  ", __FUNCTION__, errno, strerror(errno)); 
         close(fd);

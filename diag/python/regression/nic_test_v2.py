@@ -654,10 +654,10 @@ class nic_test_v2:
                     session_bash = common.session_start()
                     session_bash.timeout = 30
                     cmd = "turn_on_slot.sh off {}".format(slot)
-                    common.session_cmd(session_bash, cmd)
+                    common.session_cmd(session_bash, cmd, 60)
                     time.sleep(1)
                     cmd = "turn_on_slot.sh on {}".format(slot)
-                    common.session_cmd(session_bash, cmd)
+                    common.session_cmd(session_bash, cmd, 60)
 
                 ret = self.nic_con.uart_session_wait_for_login(session_uart)
                 if ret != 0:
@@ -826,10 +826,10 @@ class nic_test_v2:
 
             # Power cycle NIC
             cmd = "turn_on_slot.sh off {}".format(slot)
-            common.session_cmd(session_bash, cmd)
+            common.session_cmd(session_bash, cmd, 60)
             time.sleep(1)
             cmd = "turn_on_slot.sh on {}".format(slot)
-            common.session_cmd(session_bash, cmd)
+            common.session_cmd(session_bash, cmd, 60)
             common.session_stop(session_bash)
 
             ret = self.nic_con.uart_session_wait_for_login(session_uart)
