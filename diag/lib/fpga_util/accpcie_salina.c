@@ -506,7 +506,7 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
     if ( verbosity > 3 )
         printf("finishing write command\n");
     usleep(2); 
-    for ( j = 0; j < 200; j++ ) {
+    for ( j = 0; j < 30; j++ ) {
         for ( i = 0; i < wait_cnt; i++ ) {
             rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &resp);
             if ( rc ) {
@@ -562,9 +562,9 @@ FT_STATUS jtag_wr(DWORD inst, ULONGLONG address, DWORD data, DWORD flag)
         }
     }
 
-    if ( j == 200 ) {
+    if ( j == 30 ) {
         if ( verbosity > 3 )
-            printf("retry response for write exceed 200 times\n");
+            printf("retry response for write exceed 30 times\n");
         ftStatus = FT_INVALID_RESP;
     }
     if ( verbosity == 2 )
@@ -1108,7 +1108,7 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
             printf("read command time out\n");
         return FT_CMD_NOT_READY;
     }
-    for ( j = 0; j < 200; j++ ) {
+    for ( j = 0; j < 30; j++ ) {
         cmd = J2C_RESP_COMMAND;
 	if ( verbosity > 3 )
             printf("send resp command %d time\n", j + 1);
@@ -1169,9 +1169,9 @@ FT_STATUS jtag_rd(DWORD inst, ULONGLONG address, DWORD* data, DWORD flag)
         break;
     }
 
-    if ( j == 200 ) {
+    if ( j == 30 ) {
         if ( verbosity )
-            printf("ERROR: J2C doesn't repy valid bit with 200 retries\n");
+            printf("ERROR: J2C doesn't repy valid bit with 30 retries\n");
         return FT_INVALID_RESP;
     }
     if ( resp & J2C_ID_BIT ) {
