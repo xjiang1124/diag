@@ -5,26 +5,39 @@ import pexpect
 import os
 import sys
 import time
+from enum import Enum
 
 sys.path.append("../lib")
 import common
 from nic_con import nic_con
 
+class stage(Enum):
+    stage1 = a35_uboot = "a35_uboot"
+    stage3 = n1_uboot = "n1_uboot"
+    stage2 = a35_zephyr = "zephyr"
+    stage4 = n1_linux = "linux"
+
+    def __str__(self):
+        return self.value
 
 @common.split_into_threads
-def boot_to_step(slot, args):
-    ### Namespace(args) = {'stage1': True, 'stage2': False, 'stage3': False, 'stage4': False, ...}
-    ret = True
+def boot_to_step(slot, parsed_args):
+    ret = 0
+    boot_to = parsed_args.boot_to[0]
     session = common.session_start()
-    if args.stage1:
-        ret = enter_a35_uboot(slot, session)
-    elif args.stage2:
-        ret = enter_a35_zephyr(slot, session)
-    elif args.stage3:
-        ret = enter_n1_uboot(slot, session)
-    elif args.stage4:
-        ret = enter_n1_linux(slot, session)
+    if boot_to == stage.stage1:
+        ret = enter_a35_uboot(slot, session, warm_reset=parsed_args.warm_reset)
+    elif boot_to == stage.stage2:
+        ret = enter_a35_zephyr(slot, session, warm_reset=parsed_args.warm_reset)
+    elif boot_to == stage.stage3:
+        ret = enter_n1_uboot(slot, session, warm_reset=parsed_args.warm_reset)
+    elif boot_to == stage.stage4:
+        ret = enter_n1_linux(slot, session, warm_reset=parsed_args.warm_reset)
+    else:
+        print("Unknown stage: {}".format(parsed_args.boot_to))
+        ret = -1
     common.session_stop(session)
+
     return ret
 
 
@@ -41,11 +54,11 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
         return True
 
 
-def enter_a35_uboot(slot, session):
+def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline(f"con_cleanup.sh {slot}")
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0) != 0:
+    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -53,8 +66,8 @@ def enter_a35_uboot(slot, session):
     return 0
 
 
-def enter_a35_zephyr(slot, session):
-    if 0 != enter_a35_uboot(slot, session):
+def enter_a35_zephyr(slot, session, *args, **kwargs):
+    if 0 != enter_a35_uboot(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -76,8 +89,8 @@ def enter_a35_zephyr(slot, session):
     return 0
 
 
-def enter_n1_uboot(slot, session):
-    if 0 != enter_a35_zephyr(slot, session):
+def enter_n1_uboot(slot, session, *args, **kwargs):
+    if 0 != enter_a35_zephyr(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -107,8 +120,8 @@ def enter_n1_uboot(slot, session):
     return 0
 
 
-def enter_n1_linux(slot, session):
-    if 0 != enter_n1_uboot(slot, session):
+def enter_n1_linux(slot, session, *args, **kwargs):
+    if 0 != enter_n1_uboot(slot, session, args, kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -137,21 +150,18 @@ def enter_n1_linux(slot, session):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    boot_to = parser.add_mutually_exclusive_group(required=True)
-    boot_to.add_argument("--stage1", "--a35_uboot", action="store_true", help="Boot and stop at stage 1 i.e. a35 uboot")
-    boot_to.add_argument("--stage2", "--a35_zephyr", action="store_true", help="Boot and stop at stage 2 i.e. zephyr")
-    boot_to.add_argument("--stage3", "--n1_uboot", action="store_true", help="Boot and stop at stage 3 i.e. n1 uboot")
-    boot_to.add_argument("--stage4", "--n1_linux", action="store_true", help="Boot all the way to stage 4 i.e. linux")
+    parser.add_argument("boot_to", type=stage, choices=list(stage), nargs=1)
     parser.add_argument("--slot_list", "-slot_list", help="NIC slot list", type=str, required=True, default="")
+    parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
 
     try:
-        args = parser.parse_args()
+        parsed_args = parser.parse_args()
     except Exception:
         parser.print_help()
         sys.exit(1)
 
-    slot_list = list(map(int, args.slot_list.split(",")))
-    fail_nic_list = boot_to_step(slot_list, args)
+    slot_list = list(map(int, parsed_args.slot_list.split(",")))
+    fail_nic_list = boot_to_step(slot_list, parsed_args)
 
     for slot in slot_list:
         if slot not in fail_nic_list:
