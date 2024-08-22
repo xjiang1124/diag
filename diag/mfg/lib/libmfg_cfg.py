@@ -46,6 +46,12 @@ class NIC_IMAGES:
     test_fpga_img = dict()
     test_fpga_ver = dict()
     test_fpga_dat = dict()
+    arm_a_zephyr_img = dict()
+    arm_a_boot0_img = dict()
+    arm_a_uboota_img = dict()
+    arm_n_boot0_img = dict()
+    arm_n_uboota_img = dict()
+    arm_n_kernel_img = dict()
 
     # write it down here so release script copies this file
     uboot_img["INSTALLER"] = "install_file"
@@ -610,6 +616,69 @@ class NIC_IMAGES:
     goldfw_dat["DSC2A-2Q200-32S32F64P-S4"] = "04-06-2024"
     goldfw_md5["DSC2A-2Q200-32S32F64P-S4"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
+    cpld_img["LENI"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    cpld_ver["LENI"] = "0x0"
+    cpld_dat["LENI"] = "08-21-24" #mm-dd-YY
+    sec_cpld_img["LENI"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    sec_cpld_ver["LENI"] = "0x0"
+    sec_cpld_dat["LENI"] = "08-21-24" #mm-dd-YY
+    fail_cpld_img["LENI"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    fail_cpld_ver["LENI"] = "0x0"
+    fail_cpld_dat["LENI"] = "08-21-24" #mm-dd-YY
+    fea_cpld_img["LENI"] = ""
+    goldfw_img["LENI"] = "naples_goldfw_elba_1.46.0-E-4_2022.02.28.tar"
+    goldfw_dat["LENI"] = "12-13-2023"
+    mainfw_img["LENI"] = ""
+    mainfw_dat["LENI"] = ""
+    arm_a_boot0_img["LENI"] = "a35_boot0.img"
+    arm_a_uboota_img["LENI"] = "a35_uboota_cho.img"
+    arm_a_zephyr_img["LENI"] = "zephyr.bin"
+    arm_n_boot0_img["LENI"] = "n1_boot0.img"
+    arm_n_uboota_img["LENI"] = "n1_uboota_cho.img"
+    arm_n_kernel_img["LENI"] = "kernel_capmem_removed.img"
+
+    cpld_img["LENI48G"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    cpld_ver["LENI48G"] = "0x0"
+    cpld_dat["LENI48G"] = "08-21-24" #mm-dd-YY
+    sec_cpld_img["LENI48G"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    sec_cpld_ver["LENI48G"] = "0x0"
+    sec_cpld_dat["LENI48G"] = "08-21-24" #mm-dd-YY
+    fail_cpld_img["LENI48G"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    fail_cpld_ver["LENI48G"] = "0x0"
+    fail_cpld_dat["LENI48G"] = "08-21-24" #mm-dd-YY
+    fea_cpld_img["LENI48G"] = ""
+    goldfw_img["LENI48G"] = "naples_goldfw_elba_1.46.0-E-4_2022.02.28.tar"
+    goldfw_dat["LENI48G"] = "12-13-2023"
+    mainfw_img["LENI48G"] = ""
+    mainfw_dat["LENI48G"] = ""
+    arm_a_boot0_img["LENI48G"] = "a35_boot0.img"
+    arm_a_uboota_img["LENI48G"] = "a35_uboota_cho.img"
+    arm_a_zephyr_img["LENI48G"] = "zephyr.bin"
+    arm_n_boot0_img["LENI48G"] = "n1_boot0.img"
+    arm_n_uboota_img["LENI48G"] = "n1_uboota_cho.img"
+    arm_n_kernel_img["LENI48G"] = "kernel_capmem_removed.img"
+
+    cpld_img["MALFA"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    cpld_ver["MALFA"] = "0x0"
+    cpld_dat["MALFA"] = "08-21-24" #mm-dd-YY
+    sec_cpld_img["MALFA"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    sec_cpld_ver["MALFA"] = "0x0"
+    sec_cpld_dat["MALFA"] = "08-21-24" #mm-dd-YY
+    fail_cpld_img["MALFA"] = "malfa-rev0.2_0821-1138_iicfix.jed"
+    fail_cpld_ver["MALFA"] = "0x0"
+    fail_cpld_dat["MALFA"] = "08-21-24" #mm-dd-YY
+    fea_cpld_img["MALFA"] = ""
+    goldfw_img["MALFA"] = "naples_goldfw_elba_1.46.0-E-4_2022.02.28.tar"
+    goldfw_dat["MALFA"] = "12-13-2023"
+    mainfw_img["MALFA"] = ""
+    mainfw_dat["MALFA"] = ""
+    arm_a_boot0_img["MALFA"] = "a35_boot0.img"
+    arm_a_uboota_img["MALFA"] = "a35_uboota_cho.img"
+    arm_a_zephyr_img["MALFA"] = "zephyr.bin"
+    arm_n_boot0_img["MALFA"] = "n1_boot0.img"
+    arm_n_uboota_img["MALFA"] = "n1_uboota_cho.img"
+    arm_n_kernel_img["MALFA"] = "kernel_capmem_removed.img"
+
 class MTP_IMAGES:
     amd64_img = dict()
     arm64_img = dict()
@@ -652,8 +721,8 @@ class MTP_IMAGES:
     amd64_img["MATERA"] = "image_amd64_elba.tar"
     arm64_img["MATERA"] = "image_arm64_elba.tar"
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
-    mtp_fpga_ver["MATERA"] = "a00d"
-    mtp_fpga_date["MATERA"] = "07222024"    #mmddyyyy
+    mtp_fpga_ver["MATERA"] = "a00e"
+    mtp_fpga_date["MATERA"] = "08112024"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
@@ -917,7 +986,8 @@ MFG_VALID_FW_LIST = ["diagfw", "mainfwa", "mainfwb", "goldfw", "extdiag"]
 MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
-    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
+    NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4,
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
     ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -933,6 +1003,10 @@ MTP_REV04_CAPABLE_NIC_TYPE_LIST = [
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
     ]
 
+MTP_MATERA_CAPABLE_NIC_TYPE_LIST = [
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
+    ]
+
 CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
 ELBA_NIC_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP, NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS,
@@ -940,6 +1014,10 @@ ELBA_NIC_TYPE_LIST = [
     ]
 GIGLIO_NIC_TYPE_LIST = [
     NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
+    ]
+
+SALINA_NIC_TYPE_LIST = [
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
     ]
 
 PSLC_MODE_TYPE_LIST = [
@@ -951,7 +1029,7 @@ FAILSAFE_CPLD_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
-    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4
+    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
     ]
 ADI_VRM_TYPE_LIST = [
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4

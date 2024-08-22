@@ -413,7 +413,12 @@ class nic_ctrl():
         cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
             return False
-
+        # For Matera + Malfa, if Such error happend, workaround is sleep 10 seconds then re-send the turn on command again
+        if "Error: Read failed".lower() in self.nic_get_cmd_buf().lower() and "Empty slot".lower() in self.nic_get_cmd_buf().lower():
+            libmfg_utils.count_down(10)
+            cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd):
+                return False
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
         return True
 
@@ -1834,30 +1839,46 @@ class nic_ctrl():
         """
           Program CPLD or Secure CPLD
         """
-        if not self.nic_copy_image(cpld_img):
-            return False
-        img_name = os.path.basename(cpld_img)
-        # failsafe_name = os.path.basename(failsafe_img)
 
-        nic_cmd_list = list()
-        # Elba-based:
-        if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
-            timeout = MTP_Const.OS_CMD_DELAY
-        elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
-            timeout = MTP_Const.NIC_FPGA_PROG_DELAY
-        # Capri-based:
-        else:
-            nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
-            timeout = MTP_Const.OS_CMD_DELAY
-
-        if self._nic_type == NIC_Type.NAPLES25OCP:
-            if not self.nic_exec_rst_cmd(nic_cmd_list[0], timeout=MTP_Const.OS_CMD_DELAY):
+        if self._mtp_type == "MATERA":
+            # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>
+            # program
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
+            if not self.mtp_exec_cmd(cmd):
+                return False
+            if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
+                return False
+            # verify
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_img)
+            if not self.mtp_exec_cmd(cmd):
+                return False
+            if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
                 return False
         else:
-            if not self.nic_exec_cmds(nic_cmd_list, timeout=timeout):
+            if not self.nic_copy_image(cpld_img):
                 return False
+            img_name = os.path.basename(cpld_img)
+            # failsafe_name = os.path.basename(failsafe_img)
+
+            nic_cmd_list = list()
+            # Elba-based:
+            if self._nic_type in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) and self._nic_type not in FPGA_TYPE_LIST:
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_ELBA_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name, partition))
+                timeout = MTP_Const.OS_CMD_DELAY
+            elif self._nic_type in ELBA_NIC_TYPE_LIST and self._nic_type in FPGA_TYPE_LIST:
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FPGA_PROG_FMT.format("", img_name, partition))
+                timeout = MTP_Const.NIC_FPGA_PROG_DELAY
+            # Capri-based:
+            else:
+                nic_cmd_list.append(MFG_DIAG_CMDS.NIC_CPLD_PROG_FMT.format(MTP_DIAG_Path.ONBOARD_NIC_UTIL_PATH, img_name))
+                timeout = MTP_Const.OS_CMD_DELAY
+
+            if self._nic_type == NIC_Type.NAPLES25OCP:
+                if not self.nic_exec_rst_cmd(nic_cmd_list[0], timeout=MTP_Const.OS_CMD_DELAY):
+                    return False
+            else:
+                if not self.nic_exec_cmds(nic_cmd_list, timeout=timeout):
+                    return False
 
         return True
 
@@ -2243,6 +2264,75 @@ class nic_ctrl():
 
         return True
 
+    def salina_nic_program_qspi(self, qspi_imgs):
+        '''
+        This funtion is for Matera capability NIC cards to program NIC QSPI Flash
+        passed all qspi images in a list, qspi)imgs list format
+        ['a35_boot0.img', 'a35_uboota.img', a35_zephyr_img', 'n1_boot0.img', 'n1_uboota.img', n1_kernel_img']
+        '''
+
+        # fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>
+        #### PROGRAM SLOT 1, QSPI 1, uboot0 ###
+        # fpgautil flash 1 1 writefile  0x00100000 uboot0.img
+        # ### PROGRAM SLOT 1, QSPI 1, uboot-a ###
+        # fpgautil flash 1 1 writefile  0x06800000 uboota.img
+        # ### PROGRAM SLOT 1, QSPI 1, zephyr llc image ###
+        # fpgautil flash 1 1 writefile  0x04A00000 zerphy_llc.img
+
+        arm_a35_boot0_img = qspi_imgs[0]
+        arm_a35_uboota_img = qspi_imgs[1]
+        arm_a35_zephyr_img = qspi_imgs[2]
+        arm_n1_boot0_img = qspi_imgs[3]
+        arm_n1_uboota_img = qspi_imgs[4]
+        arm_n1_kernel_img = qspi_imgs[5]
+
+        # program arm_a35 boot0
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x00100000", arm_a35_boot0_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_a35 uboota
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x06800000", arm_a35_uboota_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_a35 uboota
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x6500000", arm_a35_zephyr_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_n1 boot0
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x06350000", arm_n1_boot0_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_n1 uboota
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x01f50000", arm_n1_uboota_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_n1 kernel
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x02350000", arm_n1_kernel_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+        # program arm_n1 uboota
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x0cc70000", arm_n1_uboota_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed' not in self.nic_get_cmd_buf():
+            return False
+
+        self.nic_boot_info_reset()
+
+        return True
+
     def nic_program_qspi(self, qspi_img):
         if not self.nic_copy_image(qspi_img):
             return False
@@ -2252,7 +2342,6 @@ class nic_ctrl():
         nic_cmd = MFG_DIAG_CMDS.NIC_QSPI_PROG_FMT.format(img_name)
         qspi_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         nic_cmd_list.append(nic_cmd)
-  
         if not self.nic_exec_cmds(nic_cmd_list, fail_sig=qspi_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
@@ -3281,7 +3370,16 @@ class nic_ctrl():
                 ],
             NIC_Type.LACONA32: [
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32_PN_FMT)                      #P47930-001       LACONA32 HPE
-                ]
+                ],
+            NIC_Type.LENI: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI_PN_FMT)                          #102-P10600-0 XX    MALFA
+                ],
+            NIC_Type.LENI48G: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI48G_PN_FMT)                         #102-P10600-0 XX    MALFA
+                ],
+            NIC_Type.MALFA: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.MALFA_PN_FMT)                         #102-P10600-0 XX    MALFA
+                ],
 
         }
         if self._nic_type not in list(pn_table.keys()):
@@ -3500,7 +3598,7 @@ class nic_ctrl():
             return self._pn
 
     def nic_read_fru(self, fpo=False, smb_fru=False, alom=False, ocp_adap=False):
-        cmd = "eeutil -disp -dev=fru"
+        cmd = "eeutil -disp"
         if fpo:
             cmd += " -fpo"
 
@@ -3517,10 +3615,30 @@ class nic_ctrl():
             cmd += " -hpe"
 
         if smb_fru:
+            cmd += " -dev=fru"
             cmd += " -uut=UUT_{:d}".format(self._slot+1)
             fru_buf = self.mtp_get_info(cmd)
         else:
-            fru_buf = self.nic_get_info(cmd)
+            if self._nic_type in SALINA_NIC_TYPE_LIST:
+                # To D DPU FRU, we need swap SMbus to NIC first
+                smbus_cmd = "swap_smbus.sh {:d}".format(self._slot+1)
+                if not self.mtp_exec_cmd(smbus_cmd):
+                    self.nic_set_err_msg("Failed Command: {:s}".format(smbus_cmd))
+                    return False
+                if 'smbus has been swapped to NIC'.lower() not in self.nic_get_cmd_buf().lower():
+                    self.nic_set_err_msg("SMBUS Failed to swapped to NIC")
+                    return False
+                # Display DPU FRU
+                cmd += " -uut=UUT_{:d}".format(self._slot+1)
+                cmd += " -dev=DPU_FRU"
+                fru_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+                # when display command done, we need swap SMbus to MTP, only way to do this is power cycle NIC card
+                # Marco suggest swap smbus to MTP no matter display command pass or fail, since EEProm failed scene will be keep even over power cycle
+                if not self.nic_power_cycle():
+                    self.nic_set_err_msg("Power Cylce NIC failed when try to swap smbus to MTP")
+                    return False
+            else:
+                fru_buf = self.nic_get_info(cmd)
 
         return fru_buf
 
@@ -3559,6 +3677,8 @@ class nic_ctrl():
                 self.nic_set_err_msg("FRU not initialized correctly")
                 return False
             cmd = eeutil_cmd_lookup[self._pn_format]
+        elif nic_type == NIC_Type.MALFA:
+            cmd = "eeutil -update"
         else:
             cmd = "eeutil -dev=fru -update -erase -numBytes=512"
         
@@ -3571,9 +3691,31 @@ class nic_ctrl():
 
         if smb_fru:
             cmd += " -uut=UUT_{:d}".format(self._slot+1)
+            if nic_type == NIC_Type.MALFA:
+                cmd += " -dev=FRU"
             cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
         else:
-            cmd_buf = self.nic_get_info(cmd)
+            if nic_type in SALINA_NIC_TYPE_LIST:
+                # To Program DPU FRU, we need swap SMbus to NIC first
+                smbus_cmd = "swap_smbus.sh {:d}".format(self._slot+1)
+                # smbus_cmd = "smbutil -smbus=nic -uut=UUT_{:d}".format(self._slot+1)
+                if not self.mtp_exec_cmd(smbus_cmd):
+                    self.nic_set_err_msg("Failed Command: {:s}".format(smbus_cmd))
+                    return False
+                if 'smbus has been swapped to NIC'.lower() not in self.nic_get_cmd_buf().lower():
+                    self.nic_set_err_msg("SMBUS Failed to swapped to NIC")
+                    return False
+                # program DPU FRU
+                cmd += " -uut=UUT_{:d}".format(self._slot+1)
+                cmd += " -dev=DPU_FRU"
+                cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
+                # when program done, we need swap SMbus to MTP, only way to do this is power cycle NIC card
+                # Marco suggest swap smbus to MTP no matter program pass or fail, since EEProm failed scene will be keep even over power cycle
+                if not self.nic_power_cycle():
+                    self.nic_set_err_msg("Power Cylce NIC failed when try to swap smbus to MTP")
+                    return False
+            else:
+                cmd_buf = self.nic_get_info(cmd)
 
         if not cmd_buf:
             if smb_fru:

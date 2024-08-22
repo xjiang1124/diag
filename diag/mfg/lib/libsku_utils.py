@@ -91,6 +91,10 @@ class PART_NUMBERS_MATCH:
     GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
     GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
     GINESTRA_S4_PN_FMT = r"68-0076-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0076-01 01    GINESTRA_S4
+    LENI_PN_FMT = r"102-P10800-0[0-9]{1}"                                                           #102-P10800-00 01    LENNI 102-P10800-00
+    LENI48G_PN_FMT = r"102-P10900-0[0-9]{1}"                                                          #102-P10600-00 01    MALFA 102-P10600-00
+    # MALFA_PN_FMT = r"102-P10600-0[1-9]{1} [A-Z0-9]{2}"                                              #102-P10600-00 01    MALFA
+    MALFA_PN_FMT = r"102-P10600-0[0-9]{1}"                                                          #102-P10600-00 01    MALFA 102-P10600-00
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
@@ -130,6 +134,9 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT:       "FPG" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
     },
     Factory.FSP: {
@@ -279,6 +286,15 @@ PN_FORMAT_TABLE = {
         ],
     NIC_Type.GINESTRA_S4: [
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT                   #68-0076-01 01    GINESTRA_S4
+        ],
+    NIC_Type.LENI: [
+        PART_NUMBERS_MATCH.LENI_PN_FMT                         #102-P10600-0 01    MALFA
+        ],
+    NIC_Type.LENI48G: [
+        PART_NUMBERS_MATCH.LENI48G_PN_FMT                         #102-P10600-0 01    MALFA
+        ],
+    NIC_Type.MALFA: [
+        PART_NUMBERS_MATCH.MALFA_PN_FMT                         #102-P10600-0 01    MALFA
         ]
 }
 

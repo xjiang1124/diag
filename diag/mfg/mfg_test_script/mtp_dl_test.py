@@ -27,6 +27,7 @@ from libmfg_cfg import MFG_VALID_NIC_TYPE_LIST
 from libsku_cfg import PART_NUMBERS_MATCH
 from libmfg_cfg import MTP_HEALTH_MONITOR
 from libmfg_cfg import DRY_RUN
+from libmfg_cfg import SALINA_NIC_TYPE_LIST
 from libdefs import FF_Stage
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -124,6 +125,24 @@ def dl_diagfw_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     qspi_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_diagfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
     return mtp_mgmt_ctrl.mtp_program_nic_qspi(slot, qspi_img_file)
+
+@parallelize.parallel_nic_using_ssh
+def dl_salina_qspi_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_DL
+    qspi_img_files = []
+    arm_a_boot0_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_a_boot0_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_a_boot0_file)
+    arm_a_uboota_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_a_uboota_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_a_uboota_file)
+    arm_a_zephyr_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_a_zephyr_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_a_zephyr_file)
+    arm_n_boot0_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_n_boot0_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_n_boot0_file)
+    arm_n_uboota_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_n_uboota_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_n_uboota_file)
+    arm_n1_kernel_img = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_arm_n_kernel_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    qspi_img_files.append(arm_n1_kernel_img)
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, qspi_img_files)
 
 @parallelize.parallel_nic_using_ssh
 def dl_goldfw_program(mtp_mgmt_ctrl, slot):
@@ -380,7 +399,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(nic_list)
             elif test == "EMMC_BKOPS_EN":
                 rlist = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(nic_list)
-
+            elif test == "SALINA_QSPI_PROG":
+                rlist = dl_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
             elif test == "QSPI_PROG":
                 rlist = dl_diagfw_program(mtp_mgmt_ctrl, nic_list)
             elif test == "QSPI_GOLD_PROG":
