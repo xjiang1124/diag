@@ -116,6 +116,7 @@ enum {
         FT_PORT_TAKEN,
         FT_ERROR_LOCKPORT,
         FT_ERROR_ID,
+        FT_SHORT_RESPONSE,
 };
 
 
