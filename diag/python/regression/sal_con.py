@@ -67,7 +67,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
 
 
 def enter_a35_zephyr(slot, session, *args, **kwargs):
-    if 0 != enter_a35_uboot(slot, session, args, kwargs):
+    if 0 != enter_a35_uboot(slot, session, *args, **kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -90,7 +90,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
 
 
 def enter_n1_uboot(slot, session, *args, **kwargs):
-    if 0 != enter_a35_zephyr(slot, session, args, kwargs):
+    if 0 != enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     con_ctrl = nic_con()
@@ -121,7 +121,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
 
 
 def enter_n1_linux(slot, session, *args, **kwargs):
-    if 0 != enter_n1_uboot(slot, session, args, kwargs):
+    if 0 != enter_n1_uboot(slot, session, *args, **kwargs):
         return -1
 
     con_ctrl = nic_con()
