@@ -58,9 +58,9 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
     result = ""
     for port in serial_ports:
         if not s4_family:
-            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+            cmd = "mfg_test_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
         else:
-            cmd = "mtp_fst_script/rotctrl -b 115200 -d elba-gold -c ortano -p {:s}".format(port)
+            cmd = "mfg_test_script/rotctrl -b 115200 -d elba-gold -c ortano -p {:s}".format(port)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
         cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
@@ -86,10 +86,10 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
 
     # Save the logs
     for sn in pass_match_rot + fail_match_rot:
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mtp_fst_script/rot_{:s}.log".format(sn, sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mfg_test_script/rot_{:s}.log".format(sn, sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
     for port in serial_ports:
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mtp_fst_script/rot_{:s}.log".format(port, port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mfg_test_script/rot_{:s}.log".format(port, port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
 
     return pass_list, fail_list

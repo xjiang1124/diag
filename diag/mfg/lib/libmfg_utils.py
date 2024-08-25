@@ -2281,7 +2281,7 @@ def flx_web_srv_two_way_comm_precheck_uut(mtp_mgmt_ctrl, slot, stage, sn=None, r
     return True
 
 def get_fst_nic_ssh_cmd(ip, username, passwd):
-    ssh_cmd_fmt = "/home/diag/mtp_fst_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"
+    ssh_cmd_fmt = "/home/diag/mfg_test_script/sshpass -p {} ssh -o ServerAliveInterval=2 -o ServerAliveCountMax=15 -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' -o 'ConnectTimeout=30' -o 'LogLevel=ERROR' {}@{}"
     ssh_cmd = ssh_cmd_fmt.format(passwd, username, ip)
     return ssh_cmd
 
