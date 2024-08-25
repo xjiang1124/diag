@@ -590,7 +590,7 @@ def mtp_mem_validation_test(mtp_mgmt_ctrl):
 
     stress_test_time = 60  # Set stress test running time in seconds
     cmd = "/home/diag/diag/tools/stressapptest"
-    tout = stress_test_time * 1.2
+    tout = stress_test_time * 2.5
     cmd += " -s " + str(stress_test_time)
     mtp_mgmt_ctrl.cli_log_inf("MTP DDR Memory Validation Test Start")
     mtp_mgmt_ctrl.cli_log_inf(cmd)

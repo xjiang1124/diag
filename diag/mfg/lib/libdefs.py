@@ -32,6 +32,9 @@ class NIC_Type:
     GINESTRA_D4 = "GINESTRA_D4"
     GINESTRA_D5 = "GINESTRA_D5"
     GINESTRA_S4 = "GINESTRA_S4"
+    LENI = "LENI"
+    LENI48G = "LENI48G"
+    MALFA = "MALFA"
     UNKNOWN = "Unknown"
 
 class PRODUCT_SKU(Enum):
@@ -334,15 +337,18 @@ class MFG_DIAG_CMDS:
     NIC_CARD_TYPE_SET_FMT = "export CARD_TYPE={:s}"
     MTP_MATERA_DEVMGR_STATUS_FMT = "devmgr_v2 status"
     MTP_MATERA_FAN_SET_SPD_FMT = "devmgr_v2 fanctrl --pct {:d}"
-    MTP_MATERA_FPGA_SHOW_FAN_FMT = "fpgautil show fan"
     MTP_MATERA_INVENTORY_CPU_FMT = "inventory -cpu"
     MTP_MATERA_INVENTORY_DDR_FMT = "inventory -ddr"
     MTP_MATERA_EEUTIL_INFO_FMT = "eeutil -info"
     MTP_MATERA_DISP_DEV_FMT = "eeutil -disp -dev {:s}"
 
+    MTP_MATERA_FPGA_SHOW_FAN_FMT = "fpgautil show fan"
     MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_FPGA_UTIL_WRITE32_FMT = "fpgautil w32 {:s} {:s}"
     MTP_FPGA_UTIL_REGDUMP_FMT = "fpgautil regdump"
+    # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>
+    MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT = "fpgautil cpld {:s} {:s} {:s} {:s}"
+    MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT = "fpgautil flash {:s} {:s} {:s} {:s} {:s}"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
     MTP_MAC_FMT = "cat /sys/class/net/enp4s0/address"
@@ -720,3 +726,6 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_ORTANO2ADICR = r"\bUUT_(\d+) +ORTANO2AC\b"
     MFG_NIC_TYPE_GINESTRA_D4 = r"\bUUT_(\d+) +GINESTRA_D4\b"
     MFG_NIC_TYPE_GINESTRA_D5 = r"\bUUT_(\d+) +GINESTRA_D5\b"
+    MFG_NIC_TYPE_MALFA = r"\bUUT_(\d+) +MALFA\b"
+    MFG_NIC_TYPE_LENI = r"\bUUT_(\d+) +LENI\b"
+    MFG_NIC_TYPE_LENI48G = r"\bUUT_(\d+) +LENI48G\b"

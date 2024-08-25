@@ -16,6 +16,12 @@ uboot = "uboot"
 uboota = "uboota"
 ubootb = "ubootb"
 cert = "certificate"
+arm_a_boot0 = "arm_a_boot0"
+arm_a_uboota = "arm_a_uboota"
+arm_a_zephyr = "arm_a_zephyr"
+arm_n_boot0 = "arm_n_boot0"
+arm_n_uboota = "arm_n_uboota"
+arm_n_kernel = "arm_n_kernel"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
     try:
@@ -121,6 +127,42 @@ def get_cert(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.cert_img, nic_type)
     }
 
+def get_arm_a_boot0_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_boot0)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_boot0_img, nic_type)
+    }
+
+def get_arm_a_uboota_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_uboota)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_uboota_img, nic_type)
+    }
+
+def get_arm_a_zephyr_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_zephyr)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_img, nic_type)
+    }
+
+def get_arm_n_boot0_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_boot0)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_boot0_img, nic_type)
+    }
+
+def get_arm_n_uboota_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_uboota)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_uboota_img, nic_type)
+    }
+
+def get_arm_n_kernel_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_kernel)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_kernel_img, nic_type)
+    }
+
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
     nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
     # map image display names to the right get method
@@ -138,14 +180,29 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         uboot: get_uboot,
         uboota: get_uboota,
         ubootb: get_ubootb,
-        cert: get_cert
+        cert: get_cert,
+        arm_a_boot0: get_arm_a_boot0_img,
+        arm_a_uboota: get_arm_a_uboota_img,
+        arm_a_zephyr: get_arm_a_zephyr_img,
+        arm_n_boot0: get_arm_n_boot0_img,
+        arm_n_uboota: get_arm_n_uboota_img,
+        arm_n_kernel: get_arm_n_kernel_img
         }
 
     images_needed = list()
 
     if stage == FF_Stage.FF_DL:
         images_needed.append(cpld)
-        images_needed.append(diagfw)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            images_needed.append(diagfw)
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            images_needed.append(arm_a_boot0)
+            images_needed.append(arm_a_uboota)
+            images_needed.append(arm_a_zephyr)
+            images_needed.append(arm_n_boot0)
+            images_needed.append(arm_n_uboota)
+            images_needed.append(arm_n_kernel)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -156,7 +213,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(fail_cpld)
             images_needed.append(fea_cpld)
 
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA):
             images_needed.append(goldfw)
 
         if nic_type in NEED_UBOOT_IMG_CARD_TYPE_LIST:

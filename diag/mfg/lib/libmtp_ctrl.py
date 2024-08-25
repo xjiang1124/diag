@@ -1053,7 +1053,7 @@ class mtp_ctrl():
         passwd = self._mgmt_cfg[2]
 
         ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
-        self._mgmt_handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore')
+        self._mgmt_handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore', logfile=self._diag_filep)
         while True:
             idx = libmfg_utils.mfg_expect(self._mgmt_handle, ["assword:"])
             if idx < 0:
@@ -1066,7 +1066,7 @@ class mtp_ctrl():
                         self.cli_log_inf("Connect to mtp timeout, wait {:d}s and retry...".format(delay), level=0)
                         time.sleep(delay)
                     retries -= 1
-                    self._mgmt_handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore')
+                    self._mgmt_handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore', logfile=self._diag_filep)
                     continue
                 else:
                     self.cli_log_err("Connect to mtp failed\n", level=0)
@@ -1723,8 +1723,8 @@ class mtp_ctrl():
                         if re.match(r'TEMP\d', i) and float(v) > 80:
                             self.cli_log_err("{:s} {:s} check failed, over 80C".format(psu_d[0][1], i))
                             return False
-                        if 'FAN-RPM' in i and float(v) < 8000:
-                            self.cli_log_err("{:s} {:s} check failed, below 8000".format(psu_d[0][1], i))
+                        if 'FAN-RPM' in i and float(v) < 6000:
+                            self.cli_log_err("{:s} {:s} check failed, below 6000".format(psu_d[0][1], i))
                             return False
                         if 'STS' in i and int(v, base=16) != 0:
                             if i == 'STS_WORD' or i == 'STS_TEMP':
@@ -1958,7 +1958,7 @@ class mtp_ctrl():
             fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
             for k, v in fan_info.items():
                 if "PSU" in k:
-                    if abs(int(v['outRPM']) - 10900) > 1000:
+                    if int(v['outRPM']) < 6000:
                         self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
                         return False
                 if "FAN" in k:
@@ -1985,7 +1985,7 @@ class mtp_ctrl():
             fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
             for k, v in fan_info.items():
                 if "PSU" in k:
-                    if abs(int(v['outRPM']) - 10900) > 1000:
+                    if int(v['outRPM']) < 6000:
                         self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
                         return False
                 if "FAN" in k:
@@ -2049,7 +2049,7 @@ class mtp_ctrl():
 
         cmd = MFG_DIAG_CMDS.MTP_STOP_REDIS_FMT
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
-            self.cli_log_slot_err(slot, "Command sudo {:s} failed".format(cmd))
+            self.cli_log_slot_err("Command sudo {:s} failed".format(cmd))
             return False
 
         cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
@@ -3868,7 +3868,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_failsafe_cpld(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST and nic_type not in SALINA_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no failsafe CPLD for {:s}".format(nic_type))
             return False
         if nic_type in FPGA_TYPE_LIST:
@@ -4206,6 +4206,20 @@ class mtp_ctrl():
                 self.cli_log_slot_inf_lock(slot, "NIC QSPI is up-to-date")
                 return True
         if not self._nic_ctrl_list[slot].nic_program_qspi(qspi_img):
+            self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def matera_mtp_program_nic_qspi(self, slot, qspi_imgs, force_update=True):
+        if not force_update:
+            # check for the desired qspi version
+            if not self.mtp_verify_nic_qspi(slot):
+                pass
+            else:
+                self.cli_log_slot_inf_lock(slot, "NIC QSPI is up-to-date")
+                return True
+        if not self._nic_ctrl_list[slot].salina_nic_program_qspi(qspi_imgs):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
@@ -4914,7 +4928,13 @@ class mtp_ctrl():
 
         nic_list_param = ",".join(str(slot+1) for slot in nic_list)
         nic_type_list = [self.mtp_get_nic_type(slot) for slot in nic_list]
-        asic_type = "elba" if False not in [nic_type in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST for nic_type in nic_type_list] else "capri"
+        if  False not in [nic_type in ELBA_NIC_TYPE_LIST+GIGLIO_NIC_TYPE_LIST for nic_type in nic_type_list]:
+            asic_type = "elba"
+        elif False not in [nic_type in SALINA_NIC_TYPE_LIST for nic_type in nic_type_list]:
+            asic_type = "salina"
+        else:
+            asic_type = "capri"
+
         if asic_type == "capri" and self._mtp_type == MTP_TYPE.MATERA:
             self.cli_log_slot_err(slot_main, "Unable to run capri in matera mtp")
             return [slot_main]
@@ -5356,7 +5376,10 @@ class mtp_ctrl():
             NIC_Type.ORTANO2SOLO:     MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2SOLO,
             NIC_Type.ORTANO2ADICR:    MFG_DIAG_RE.MFG_NIC_TYPE_ORTANO2ADICR,
             NIC_Type.GINESTRA_D4:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D4,
-            NIC_Type.GINESTRA_D5:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D5
+            NIC_Type.GINESTRA_D5:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D5,
+            NIC_Type.LENI:            MFG_DIAG_RE.MFG_NIC_TYPE_LENI,
+            NIC_Type.LENI48G:           MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
+            NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
         }
 
         for nic_type in list(regex_dict.keys()):
