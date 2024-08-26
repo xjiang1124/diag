@@ -406,6 +406,13 @@ class nic_test_v2:
             common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
             common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
+            # open a uart session
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_connect(uart_session, args.slot)
+            if ret != 0:
+                return ret
+
+            # common.session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
             # power cycle
             cmd = "turn_on_slot.sh off {}".format(args.slot)
             common.session_cmd(session, cmd)
@@ -415,15 +422,36 @@ class nic_test_v2:
             time.sleep(10)
             common.session_cmd(session, cmd)
             time.sleep(1)
+            # set PERST
+            common.session_cmd(session, "fpgautil w32 0x17c 0x00")
             cmd = "jtag_accpcie_salina clr {}".format(args.slot)
             common.session_cmd(session, cmd)
             time.sleep(3)
 
+            try:
+                uart_session.expect("uart:~\$", 30)
+            except pexpect.TIMEOUT:
+                print ("failed to boot Zephyr")
+                return -1
+
             # TCL command
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
-            common.session_cmd(session, cmd, args.timeout)
-            common.session_stop(session)
+            common.session_cmd(session, cmd, 360, False, "pcie done")
+            #common.session_stop(session)
 
+            # get output on uart session
+            try:
+                uart_session.expect("TT > 1000")
+                print ("=== console output start ===")
+                print (uart_session.before + uart_session.after)
+                print ("=== console output end ===")
+            except pexpect.TIMEOUT:
+                print ("failed to get pcie output")
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            session.expect("SNAKE TEST DONE", args.timeout)
+            common.session_stop(session)
             # Print result
         return 0
 
