@@ -891,13 +891,13 @@ var CardTypes = []card{
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
     //card{"GIN_D5_MSFT",             SKU_GIN_D5_MSFT},
+    card{"GIN_D5_SSDK_CISCO",       PN_GIN_D5_CISCO},
     card{"GIN_D5_SSDK",             SKU_GIN_D5_SSDK},
     card{"GIN_D5_SSDK_B3",          SKU_GIN_D5_SSDK_B3},
     card{"GIN_D5_SSDK_P3",          SKU_GIN_D5_SSDK_P3},
     card{"GIN_D5_SSDK_A",           SKU_GIN_D5_SSDK_A},
     card{"GIN_D5_SSDK_B",           SKU_GIN_D5_SSDK_B},
     card{"GIN_D5_SSDK_C",           SKU_GIN_D5_SSDK_C},
-    card{"GIN_D5_SSDK_CISCO",       PN_GIN_D5_CISCO},
                       }
 
 var CardTypesAccessViaFpga = []cardDevPn{
