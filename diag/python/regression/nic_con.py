@@ -820,6 +820,13 @@ class nic_con:
         self.uart_session_stop(session)
         common.session_stop(session)
 
+    def get_card_type(self, slot):
+        uut = "UUT_"+str(slot)
+        card_type = os.environ[uut]
+        if not card_type:
+            return "UNKNOWN"
+        return card_type
+
     def get_asic_type(self, slot):
         # Get AISC type
         uut = "UUT_"+str(slot)
