@@ -18,6 +18,7 @@ type spiDevMap struct{
     devname string
 }
 
+const SPIDEBUGENABLE       int    = 0
 
 const SPI_SLOT0            uint32 = 0
 const SPI_SLOT1            uint32 = 1
@@ -97,18 +98,19 @@ func ReadByteSmbus(devName string, offset uint, slot uint32) (Data byte, err int
 
     uut := fmt.Sprintf("UUT_%d", slot+1)
     lock, _ := hwinfo.PreUutSetup(uut)
-    defer hwinfo.PostUutClean(lock)
 
     //Opens smbus connection
     i2cSmbus, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain smbus info for dev", devName)
+        hwinfo.PostUutClean(lock)
         return
     }
     err = smbusNew.Open(devName, i2cSmbus.Bus, i2cSmbus.DevAddr)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open smbus: dev", devName,
                     "Bus", i2cSmbus.Bus, "DevAddr", i2cSmbus.DevAddr)
+        hwinfo.PostUutClean(lock)
         return
     }
 
@@ -116,7 +118,7 @@ func ReadByteSmbus(devName string, offset uint, slot uint32) (Data byte, err int
     if err != errType.SUCCESS {
         cli.Println("e", fmt.Sprintf("Failed to read from %s at offset 0x%02x", devName, offset))
     }
-
+    hwinfo.PostUutClean(lock)
     smbusNew.Close()
 
     return
@@ -128,18 +130,19 @@ func WriteByteSmbus(devName string, offset uint, val byte, slot uint32) (err int
 
     uut := fmt.Sprintf("UUT_%d", slot+1)
     lock, _ := hwinfo.PreUutSetup(uut)
-    defer hwinfo.PostUutClean(lock)
 
     //Opens smbus connection
     i2cSmbus, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to obtain smbus info for dev", devName)
+        hwinfo.PostUutClean(lock)
         return
     }
     err = smbusNew.Open(devName, i2cSmbus.Bus, i2cSmbus.DevAddr)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open smbus: dev", devName,
                     "Bus", i2cSmbus.Bus, "DevAddr", i2cSmbus.DevAddr)
+        hwinfo.PostUutClean(lock)
         return
     }
 
@@ -147,7 +150,7 @@ func WriteByteSmbus(devName string, offset uint, val byte, slot uint32) (err int
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to write", devName, " at offset", offset, "with value", val)
     }
-
+    hwinfo.PostUutClean(lock)
     smbusNew.Close()
 
     return
@@ -281,6 +284,8 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
     switch(targetSPI){
         case SPI_TRGT_DEVICE_CPLD_FLASH: 
             data8 = 0x01
+        case SPI_TRGT_DEVICE_SPI2I2C: 
+            data8 = 0x02
         case SPI_TRGT_DEVICE_QSPI0:
             data8 = 0x04
         case SPI_TRGT_DEVICE_QSPI1:
@@ -632,6 +637,16 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
                 goto SPI_TRANSACTION_END2
             }
         }
+        
+        if SPIDEBUGENABLE > 0 {
+            fmt.Printf("\nSPI -->")
+            for i:=0; i<len(opCode); i++ {
+                fmt.Printf("%.02x ", opCode[i])
+            }
+            fmt.Printf("    ") 
+        }
+        
+         
     }
 
     data32, err = MateraReadU32(SpiTable[spiNumber].spiMBaddr + SPI_STATUS_OFFSET)
@@ -743,6 +758,15 @@ SPI_TRANSACTION_END:
     }
 SPI_TRANSACTION_END2:
 
+    if SPIDEBUGENABLE > 0 {
+        if (len(rdData) > 0) {
+            fmt.Printf("\nSPI <--")
+            for i:=0; i<len(rdData); i++ {
+                fmt.Printf("%.02x ", rdData[i])
+            }
+            fmt.Printf("\n")
+        }
+    }
     //For network adapter slots, need to set various enables / muxes to get spi working
     if spiNumber < SPI_FPGA {
         //Disable the spi bus mux that muxes between spi and j2c

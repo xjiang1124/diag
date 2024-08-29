@@ -507,6 +507,18 @@ func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []
     var data32 uint32
     
 
+    //For UFM any size file can be used.  i.e. file may not divide by flash page size of 16-bytes.
+    //Pad out the file so it is 16-byte aligned since we program a 16-byte page at a time
+    if config == UFM0 || 
+       config == UFM1 ||
+       config == UFM2 ||
+       config == UFM3 {
+           fmt.Printf(" Padding UFM file to be 16-byte aligned\n")
+           for i:=0;i<(len(data)%int(MACHXO3_9400_PAGE_SIZE));i++ {
+               data = append(data, 0x00)
+           }
+    }
+    
 
     for j:=0; j < len(data); j=(j + int(MACHXO3_9400_PAGE_SIZE)) {
         spi_cmd := []byte{}
@@ -646,7 +658,6 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     fmt.Printf(" Verifying Image %s against CPLD flash\n", filename)
 
@@ -658,6 +669,7 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         b := scanner.Bytes()
         fileData = append(fileData, b[0])
     }
+    f.Close()
 
     err = Spi_cpldXO3_enable_config_interface(spiNumber)
     if err != nil {
@@ -703,7 +715,6 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         } else {
             size, _ = Spi_cpldX03_get_flash_size(config)
         }
-        fmt.Printf("size: %d\n", size)
         for j:=0; j<int(size); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
             data := []byte{}
 
@@ -752,8 +763,6 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         cli.Printf("e", "%v", err)
         return;
     } 
-    fmt.Printf("flash data size: %d\n", len(flashData))
-    fmt.Printf("file data size: %d\n", len(fileData))
     for i:=0; i<len(fileData); i++ {
         if flashData[i] != fileData[i] {
             err = fmt.Errorf(" ERROR: Data Mismatch at address 0x%x. Flash=%.02x   Expect=0x%02x\n", i, flashData[i], fileData[i] ) 
@@ -793,14 +802,6 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
         return
     }
 
-
-    err = os.Remove(filename)
-    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
-    }
-
-    defer f.Close()
 
     err = Spi_cpldXO3_enable_config_interface(spiNumber)
     if err != nil {
@@ -875,8 +876,13 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
         }
     }
 
-
+    os.Remove(filename)
+    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+    }
     f.WriteString(string(flashData[:]))
+    f.Close()
 
     err = Spi_cpldXO3_disable_config_interface(spiNumber)
     if err != nil {
@@ -886,6 +892,121 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
     if err != nil {
         return
     }
+
+    return 
+}
+
+
+
+// 
+//////////////////////////////////////////////////////
+//  
+// READ DATA INTO SLICE AND RETURN IT
+// ONLY VALID FOR CFG AND UFM SPACES 
+//////////////////////////////////////////////////////
+func Spi_cpldX03_read_flash(spiNumber uint32, image string, offset uint32, length uint32) (data []uint8, err error) {
+    var data32 uint32 = 0
+    flashData := []uint8{}
+    var config uint32 = 0
+
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR Spi_cpldX03_generate_image_from_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    config, err = Spi_cpldX03_return_flash_space_from_cli_arg(image) 
+    if err != nil {
+        fmt.Printf("[ERROR] INVALID IMAGE TYPE  ERR=%s\n", err)
+        return
+    }
+
+    err = Spi_cpldXO3_enable_config_interface(spiNumber)
+    if err != nil {
+        return
+    }
+
+    data32, err = Spi_cpldXO3_read_busy_flag(spiNumber)
+    if err != nil {
+        return
+    }
+    if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
+    if err != nil {
+        return
+    }
+    if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+    if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    err = Spi_cpldXO3_reset_config_flash(spiNumber, image)
+    if err != nil {
+        return
+    }
+
+
+    size, _ := Spi_cpldX03_get_flash_size(config)
+
+    if ((offset + length) > size) {
+        fmt.Errorf("ERROR: Spi_cpldX03_read_flash: offset-%d + length-%d > flash read size-%d\n", offset, length, size);
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    for j:=0; j<int((offset + length)); j=(j + int(CPLDXO3_RD_FLASH_OP_RDLNG)) {
+        rddata := []byte{}
+
+        data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
+        if err != nil {
+            return
+        }
+        if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e", "%v", err)
+            return
+        }
+        if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e", "%v", err)
+            return
+        }
+
+        if (j != 0) && ((j % 512) == 0) {
+            fmt.Printf(".")
+        }
+
+        rddata, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RD_FLASH_OP, CPLDXO3_RD_FLASH_OP_RDLNG) 
+        if err != nil {
+            return
+        }
+        for i:=0; i<int(CPLDXO3_RD_FLASH_OP_RDLNG); i++ {
+            flashData = append(flashData, rddata[i])
+        }
+    }
+
+
+    err = Spi_cpldXO3_disable_config_interface(spiNumber)
+    if err != nil {
+        return
+    }
+    err = Spi_cpldXO3_no_op_cmd(spiNumber)
+    if err != nil {
+        return
+    }
+
+    data = append(flashData[offset:(offset+length)])
 
     return 
 }
@@ -1034,25 +1155,21 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
             fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
             return
         }
-        defer f.Close()
-    
-        fmt.Printf(" Verifying Image %s against CPLD flash\n", filename)
+
+        fmt.Printf(" Programming Image %s to CPLD %s flash\n", filename, image  )
     
         scanner := bufio.NewScanner(f)
         scanner.Split(bufio.ScanBytes)
-    
-        // Use For-loop.
         for scanner.Scan() {
             b := scanner.Bytes()
             fileData = append(fileData, b[0])
         }    
+        f.Close()
     } else {
         fileData = make([]byte, len(dataSlice))
         copy(fileData, dataSlice)
     }
-    fmt.Printf(" Length File Data = %d\n", len(fileData)) 
-
-
+    
     if config == UFM2 {
         if len(fileData) > int(MACHXO3_9400_UFM2_FLASH_SIZE) {
             err = fmt.Errorf("ERROR:  Filesize for UFM2 is to big.   Max size=%d   Filesize=%d\n", MACHXO3_9400_UFM2_FLASH_SIZE, len(fileData))
@@ -1166,14 +1283,10 @@ func Spi_cpldXO3_convert_jed_file(filename string) (err error) {
     outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if err != nil {
         fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
+        inF.Close()
         return
     }
-    defer func() { 
-        inF.Close()
-        outF.Close()
-    } ()
 
-    
     scanner := bufio.NewScanner(inF)
     for scanner.Scan() {
         if(lines_converted == max_row) {
@@ -1226,10 +1339,15 @@ func Spi_cpldXO3_convert_jed_file(filename string) (err error) {
     
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        inF.Close() 
+        outF.Close()
         return
     }
 
     outF.WriteString(string(WRdata[:]))
+
+    inF.Close()
+    outF.Close()
 
     return
 }
@@ -1257,16 +1375,6 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
     filename = strings.Replace(filename, "fea", "bin", 1)
     fmt.Printf(" BIN FILENAME = %s\n", filename)
 
-    outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-    if err != nil {
-        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-    defer func() { 
-        inF.Close()
-        outF.Close()
-    } ()
-
     rd := bufio.NewReader(inF)
     for {
         tbyte := []byte{}
@@ -1275,15 +1383,16 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
         bytes = append(bytes, tbyte...)
 
         if err == io.EOF {
-                break
+            break
         }
 
         if err != nil {
             fmt.Printf("[ERROR] READING FEATURE ROW FILE  ERR=%s\n", err)
+            inF.Close()
             return 
-            break              
         }
     }
+    inF.Close()
 
     for i:=0x00; i<len(bytes)-5; i++ {
         if bytes[i] == 'T' && bytes[i+1] == 'A' && bytes[i+2] == ':' {
@@ -1316,7 +1425,15 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
             break
         }
     }
+
+    //Write converted JED file to BIN file
+    outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
     outF.WriteString(string(WRdata[:]))
+    outF.Close()
 
     return
 }

@@ -79,6 +79,7 @@ const (
     MFR_FWUPLOAD              = 0xD7
     MFR_FWUPLOAD_STATUS       = 0xD8
     MFR_FW_REVISION           = 0xD9
+        MFR_FW_REVISION_BLK_SIZE = 0x03
     MFR_BLACKBOX              = 0xDC
     MFR_REAL_TIME_BLACK_BOX   = 0xDD
     MFR_SYSTEM_BLACK_BOX      = 0xDE

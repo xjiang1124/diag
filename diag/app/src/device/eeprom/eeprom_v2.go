@@ -11,6 +11,8 @@ import (
     "common/errType"
     "common/misc"
     "protocol/smbusNew"
+    "device/fpga/materafpga"
+    "hardware/i2cinfo"
 )
 
 //New card PNs can be added here
@@ -1458,44 +1460,75 @@ func updateFields(sn string, pn string, sku string, mac string, date string, dpn
 //                  F R U    A C T I O N    F U N C T I O N S
 //==============================================================================
 
-func writeToFRU(devName string) (err int) {
+func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
+    //var wrtoCPLD bool
     //Writes values in Data directly to FRU
+    
     //Checks Data length vs Max number of bytes
     if len(Data) > MAX_BYTES {
         err = errType.FAIL
         cli.Printf("e", "ERROR: Data larger than Maximum Bytes by %d offsets", MAX_BYTES-len(Data))
         return
     }
-    //Writes to FRU
-    for i:=0;i<len(Data);i++ {
-        misc.SleepInUSec(5000) //delay for writing
-        if I2cAddr16 == true {
-            err = smbusNew.I2C16WriteByte(devName, uint16(i), Data[i])
-        } else {
-            err = smbusNew.WriteByte(devName, uint64(i), Data[i])
-        }
-        if err != errType.SUCCESS {
-            cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
-            return err
-        }
-    }
-    return
-}
 
-func readFromFruBlind(devName string) (err int) {
-    var fruData byte
-
-    for i:=0;i<MAX_BYTES;i++ {
-        fruData, err =readOffset(devName, i)
-        DataRaw = append(DataRaw, fruData)
+    if devName == "CPLD_FRU" {
+        //Writes FRU data to CPLD UFM2 FLASH
+        fmt.Printf("DEBUG: WRITE TO UFM2\n");
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        errGo := materafpga.Spi_cpldXO3_program_flash(uint32(bus-3), "ufm2", false, "", Data)
+        if errGo != nil {
+            return errType.FAIL 
+        }
+    } else {
+        //Writes FRU data to EEPROM
+        fmt.Printf("DEBUG: WRITE TO EEPROM\n");
+        err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
             return
         }
+        for i:=0;i<len(Data);i++ {
+            misc.SleepInUSec(5000) //delay for writing
+            if I2cAddr16 == true {
+                err = smbusNew.I2C16WriteByte(devName, uint16(i), Data[i])
+            } else {
+                err = smbusNew.WriteByte(devName, uint64(i), Data[i])
+            }
+            if err != errType.SUCCESS {
+                cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
+                smbusNew.Close()
+                return err
+            }
+        }
+        smbusNew.Close()
     }
     return
 }
 
-func readFromFru(devName string) (err int) {
+func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
+    var fruData byte
+
+    if devName == "CPLD_FRU" {
+        //Read FRU data from CPLD UFM2 FLASH
+        var errGo error
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        DataRaw, errGo = materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", 0x00, uint32(MAX_BYTES))
+        if errGo != nil {
+            return errType.FAIL 
+        }
+    } else {
+        //Read FRU data from EEPROM
+        for i:=0;i<MAX_BYTES;i++ {
+            fruData, err =readOffset(devName, bus, devAddr, i)
+            DataRaw = append(DataRaw, fruData)
+            if err != errType.SUCCESS {
+                return
+            }
+        }
+    }
+    return
+}
+
+func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     //Reads values from FRU and uploads into Data slice
     var sliceLen int
     var fruData byte
@@ -1505,15 +1538,28 @@ func readFromFru(devName string) (err int) {
         Data = append(Data, 0xFF)
     }
 
+    //Read FRU data from CPLD UFM2 FLASH and return out
+    if devName == "CPLD_FRU" {
+        
+        var errGo error
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        Data, errGo = materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", 0x00, uint32(MAX_BYTES))
+        if errGo != nil {
+            return errType.FAIL 
+        }
+        return
+    } 
+
+    //Read FRU data from EEPROM
     // Calculate FRU table size based on IPMI headers
     //Checks header for variables
     for i:=0;i<6;i++ {
-        fruData, err = readOffset(devName, i)
+        fruData, err = readOffset(devName, bus, devAddr, i)
         Data[i] = fruData
     }
     start := checkCHdrStart()
     for i:=start;i<start+6;i++ {
-        fruData, err =readOffset(devName, i)
+        fruData, err =readOffset(devName, bus, devAddr, i)
         Data[i] = fruData
     }
     boardInfoOff, productInfoOff, mraInfoOff, err := getOffsetsCHdr(start)
@@ -1521,18 +1567,18 @@ func readFromFru(devName string) (err int) {
         return
     }
 
-    boardInfoByte, _ := readOffset(devName, start+boardInfoOff + 1)
+    boardInfoByte, _ := readOffset(devName, bus, devAddr, start+boardInfoOff + 1)
     boardInfoLen := int(boardInfoByte) * OFFSET_NORM_FACTOR
 
-    productInfoByte, _ := readOffset(devName, start+productInfoOff + 1)
+    productInfoByte, _ := readOffset(devName, bus, devAddr, start+productInfoOff + 1)
     productInfoLen := int(productInfoByte) * OFFSET_NORM_FACTOR
 
     //Checks and sets the slice length
     if mraInfoOff != 0 {
         sliceLen += start+mraInfoOff
         for i:=start+mraInfoOff;i<MAX_BYTES;i++ {
-            endOfList, _ := readOffset(devName, start+mraInfoOff + 1)
-            recordLen, _ := readOffset(devName, start+mraInfoOff + 2)
+            endOfList, _ := readOffset(devName, bus, devAddr, start+mraInfoOff + 1)
+            recordLen, _ := readOffset(devName, bus, devAddr, start+mraInfoOff + 2)
             sliceLen += MRA_HDR_LEN + int(recordLen)
             mraInfoOff += MRA_HDR_LEN + int(recordLen)
             if endOfList == 0x82 {
@@ -1550,7 +1596,7 @@ func readFromFru(devName string) (err int) {
 
     //Reads data from FRU and fills the Data slice
     for i:=0;i<sliceLen;i++ {
-        fruData, err = readOffset(devName, i)
+        fruData, err = readOffset(devName, bus, devAddr, i)
         Data = append(Data, fruData)
         if err != errType.SUCCESS {
             cli.Printf("e", "ERROR: Failed to read from FRU at offset %s", i)
@@ -1560,8 +1606,13 @@ func readFromFru(devName string) (err int) {
     return
 }
 
-func readOffset(devName string, offset int) (data byte, err int) {
+func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte, err int) {
     //Generic FRU reading function
+    err = smbusNew.Open(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        return
+    }
+
     if I2cAddr16 == true {
         data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
     } else {
@@ -1569,8 +1620,8 @@ func readOffset(devName string, offset int) (data byte, err int) {
     }
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to read from FRU at offset %d\n", offset)
-        return
     }
+    smbusNew.Close()
     return
 }
 
@@ -1624,16 +1675,9 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
     fmtMac  := "%-45s%02X-%02X-%02X-%02X-%02X-%02X"
     fmtHex  := "%-45s0x%-20X"
 
-    //Opens connection
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer smbusNew.Close()
-
     //Reads data from FRU and puts into Data slice
     if fpo == true {
-        err = readFromFruBlind(devName)
+        err = readFromFruBlind(devName, bus, devAddr)
         if err != errType.SUCCESS {
             return
         }
@@ -1644,7 +1688,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
         }
 
     } else {
-        err = readFromFru(devName)
+        err = readFromFru(devName, bus, devAddr)
         if err != errType.SUCCESS {
             return
         }
@@ -1757,11 +1801,7 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
 func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sku string, mac string, date string, dpn string, skuMode bool) (err int){
     //Creates data slice of EEPROM table, updates data and checksums, and writes to FRU
     //Opens connections
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer smbusNew.Close()
+
     //Initiates the entries
     var identifier string
     if skuMode == true {
@@ -1785,7 +1825,7 @@ func ProgData(devName string, bus uint32, devAddr byte, sn string, pn string, sk
     //Updates check sums
     updateChkSum()
     //Writes data table to FRU
-    err = writeToFRU(devName)
+    err = writeToFRU(devName, bus, devAddr)
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to program to FRU. Write failed.")
         err = errType.FAIL

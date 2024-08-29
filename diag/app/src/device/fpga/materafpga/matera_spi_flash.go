@@ -67,6 +67,9 @@ var WRITE_ENABLE_RDLNG                  uint32 = 0
 var READ_FLASH_DISCOVERY_OP             = []byte{0x5A, 0x00, 0x00, 0x00, 0x00}
 var READ_FLASH_DISCOVERY_RDLNG          uint32 = 2048
 
+var READ_FLASH_GENERAL_PURP_OP          = []byte{0x96, 0x00}
+var READ_FLASH_GENERAL_PURP_RDLNG       uint32 = 64
+
 var READ_FLAG_STATUS_REG_OP             = []byte{0x70}
 var READ_FLAG_STATUS_REG_RDLNG          uint32 = 1
 
@@ -85,6 +88,8 @@ var WRITE_ENH_VOLATILE_CONFIG_RDLNG     uint32 = 0
 
 var READ_NON_VOLATILE_CONFIG            = []byte{0xB5}
 var READ_NON_VOLATILE_CONFIG_RDLNG      uint32 = 2
+var WRITE_NON_VOLATILE_CONFIG           = []byte{0xB1, 0x00, 0x00}
+var WRITE_NON_VOLATILE_CONFIG_RDLNG     uint32 = 0
 
 var WRITE_ENABLE_4BYTE_ADDR_OP          = []byte{0xB7}
 var WRITE_ENABLE_4BYTE_ADDR_RDLNG       uint32 = 0
@@ -337,6 +342,21 @@ func Spi_flash_read_nonvolatile_config(spiNumber uint32, qspiNumber uint32) (con
 }
 
 
+func Spi_flash_write_nonvolatile_config(spiNumber uint32, qspiNumber uint32, data16 uint16) (err error) {
+    err = Spi_flash_WriteEnable(spiNumber, qspiNumber) 
+    if err != nil {
+        return
+    }
+    err = Spi_flash_CheckWriteEnable(spiNumber, qspiNumber)
+    if err != nil {
+        return
+    } 
+    WRITE_NON_VOLATILE_CONFIG[1] = uint8(data16 >> 8)
+    WRITE_NON_VOLATILE_CONFIG[2] = uint8(data16 & 0xFF)
+    _, err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_NON_VOLATILE_CONFIG, WRITE_NON_VOLATILE_CONFIG_RDLNG) 
+    return
+}
+
 
 func Spi_flash_read_status_register(spiNumber uint32, qspiNumber uint32) (flag uint32, err error) {
     data := []byte{}
@@ -352,8 +372,7 @@ func Spi_flash_read_status_register(spiNumber uint32, qspiNumber uint32) (flag u
 
 
 func Spi_flash_write_status_register(spiNumber uint32, qspiNumber uint32, data uint32) (err error) {
-     
-      err = Spi_flash_WriteEnable(spiNumber, qspiNumber) 
+    err = Spi_flash_WriteEnable(spiNumber, qspiNumber) 
     if err != nil {
         return
     }
@@ -378,6 +397,12 @@ func Spi_flash_write_status_register(spiNumber uint32, qspiNumber uint32, data u
 
 func Spi_flash_discover_read(spiNumber uint32, qspiNumber uint32) (data []byte, err error) {
     data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, READ_FLASH_DISCOVERY_OP, READ_FLASH_DISCOVERY_RDLNG) 
+    return
+}
+
+
+func Spi_flash_read_general_purpose(spiNumber uint32, qspiNumber uint32) (data []byte, err error) {
+    data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, READ_FLASH_GENERAL_PURP_OP, READ_FLASH_GENERAL_PURP_RDLNG) 
     return
 }
 
@@ -519,14 +544,6 @@ func Spi_salina_flash_GenerateImageFromFlash(spiNumber uint32, qspiNumber uint32
         return
     }
 
-    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-
-    defer f.Close()
-
     err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
     if err != nil {
         return
@@ -558,7 +575,14 @@ func Spi_salina_flash_GenerateImageFromFlash(spiNumber uint32, qspiNumber uint32
     }
     fmt.Printf("\n")
 
+    //Write image to a file
+    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
     f.WriteString(string(flashData[:]))
+    f.Close()
     return
 }
 
@@ -583,22 +607,21 @@ func Spi_salina_flash_VerifyImage(spiNumber uint32, qspiNumber uint32, partition
         fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     fmt.Printf(" Verifying Image %s starting at addr=0x%x\n", filename, start_addr)
 
     scanner := bufio.NewScanner(f)
     scanner.Split(bufio.ScanBytes)
-
-    // Use For-loop.
     for scanner.Scan() {
         b := scanner.Bytes()
         data = append(data, b[0])
     }
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        f.Close()
         return
     }
+    f.Close()
 
     if len(data) > flash_size {
         err = fmt.Errorf(" Error: Filesize is bigger than flash partition size. %d vs %d\n", len(data), flash_size)
@@ -668,27 +691,27 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
         fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     if len(data) > flash_size {
         err = fmt.Errorf(" Error: Filesize is bigger than flash partition size. %d vs %d\n", len(data), flash_size)
         cli.Printf("e", "%s", err)
+        f.Close()
         return
     }
     fmt.Printf(" Writing Image %s starting at addr=0x%x\n", filename, start_addr)
 
     scanner := bufio.NewScanner(f)
     scanner.Split(bufio.ScanBytes)
-
-    // Use For-loop.
     for scanner.Scan() {
         b := scanner.Bytes()
         data = append(data, b[0])
     }
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        f.Close()
         return
     }
+    f.Close()
 
     tmp := FLASH_PAGE_WRITE_SIZE - (len(data) % FLASH_PAGE_WRITE_SIZE)
     fmt.Printf(" Len=%d  pad length=%d\n", len(data), tmp)
@@ -944,13 +967,10 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
         fmt.Printf(" ERROR: Failed to open filename=%s.  os.Open err=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     fmt.Printf(" Writing file %s starting at addr=0x%X\n", filename, start_addr)
     scanner := bufio.NewScanner(f)
     scanner.Split(bufio.ScanBytes)
-
-    // write file content to data
     for scanner.Scan() {
         b := scanner.Bytes()
         if len(b) > 0 { // check token is not empty
@@ -959,8 +979,10 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     }
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        f.Close()
         return
     }
+    f.Close()
 
     // append padding to data if needed
     padding_size := FLASH_PAGE_WRITE_SIZE - (len(data) % FLASH_PAGE_WRITE_SIZE)
@@ -1035,12 +1057,12 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
         fmt.Printf(" ERROR: Failed to open filename=%s.  os.Open err=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     // get file size
     fileInfo, err := os.Stat(filename)
     if err != nil {
         fmt.Printf(" ERROR: Unable to get file size.  os.Stat err=%s\n", err); 
+        f.Close()
         return
     }
     file_size := fileInfo.Size()
@@ -1048,6 +1070,7 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     if (start_addr + uint32(file_size) > flash_size) {
         fmt.Errorf(" ERROR: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", len(file_data), start_addr, flash_size)
         fmt.Printf("%s", err)
+        f.Close()
         return
     }
 
@@ -1055,15 +1078,16 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
 
     scanner := bufio.NewScanner(f)
     scanner.Split(bufio.ScanBytes)
-    // Use For-loop.
     for scanner.Scan() {
         b := scanner.Bytes()
         file_data = append(file_data, b[0])
     }
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
+        f.Close()
         return
     }
+    f.Close()
 
     err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
     if err != nil {
@@ -1120,13 +1144,6 @@ func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_ad
         return
     }
 
-    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-    if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-    defer f.Close()
-
     // check if flash has enough size
     if start_addr + length > flash_size {
         err = fmt.Errorf(" Error: input length is bigger than flash size. 0x%X starting from offset 0x%X is larger than 0x%X\n", length, start_addr, flash_size)
@@ -1169,6 +1186,13 @@ func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_ad
     }
     fmt.Printf("\n")
 
+    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
     f.WriteString(string(flash_data[:]))
+    f.Close()
+
     return
 }

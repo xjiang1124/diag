@@ -16,7 +16,6 @@ import (
     "hardware/i2cinfo"
     "device/eeprom"
     "device/cpld/cpldSmb"
-    "device/fpga/materafpga"
 )
 
 
@@ -595,8 +594,6 @@ func main() {
     skuPtr     := flag.String("sku",    "",         "SKU")
     skuModePtr := flag.Bool  ("skuMode",false,      "SKU mode")
     dpnPtr     := flag.String("dpn",    "",         "Diagnostic Part number")
-    cpldPtr    := flag.Bool  ("cpld",   false,      "Program the eeutil data into UFM2 instead of the eeprom")
-    spiPtr     := flag.Int   ("spi",    0,          "Matera spi number")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -615,7 +612,6 @@ func main() {
     custType := strings.ToUpper(*custTypePtr)
     sku := strings.ToUpper(*skuPtr)
     dpn := strings.ToUpper(*dpnPtr)
-    spi := uint32(*spiPtr)
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -757,7 +753,7 @@ func main() {
             CpldWrite(0x1, 0x2)
         }
 
-        if eeprom.Erase == true {
+        if eeprom.Erase == true && (devName != "CPLD_FRU") {
             cli.Printf("i", "Erasing %s Addr 0 -  0x%x\n", devName, numBytes)
             hwdev.EepromErase(devName, iInfo.Bus, iInfo.DevAddr, numBytes)
         } 
@@ -875,22 +871,6 @@ func main() {
             os.Exit(0)
         }
 
-    }
-    if *cpldPtr == true {
-        var dataSlice []byte
-
-        isTlv, _ := eeprom.CardInListTlv(devName)
-        if isTlv == true {
-            dataSlice, _ = eeprom.DumpEepromTlvs(devName, 512, false)
-            misc.SleepInUSec(500000)
-        } else {
-            dataSlice = hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, 512, false)
-        }
-        misc.SleepInUSec(500000)
-        
-        i2cinfo.SwitchI2cTbl("UUT_NONE")
-        materafpga.Spi_cpldXO3_program_flash(spi-1, "ufm2", false, "", dataSlice)
-        return
     }
 
     flag.Usage()

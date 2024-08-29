@@ -58,7 +58,7 @@ func AddrDecipher(partition string) (addr uint32, maxSize uint32, err error) {
 func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filename string) (err error) {
     var flash_size uint32 = 0 
     var start_addr uint32 = 0
-    var read_size uint32 = 16//flash_region_info.sector_size
+    var read_size uint32 = flash_region_info.sector_size
     var i uint32 = 0
     flashData := []byte{}
 
@@ -67,14 +67,6 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
         fmt.Printf(" ERROR: AddrDecipher failed\n")
         return
     }
-
-    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-
-    defer f.Close()
 
     err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
@@ -107,7 +99,15 @@ func Spi_flash_GenerateImageFromFlash(spiNumber uint32, partition string, filena
     }
     fmt.Printf("\n")
 
+    //file ops
+    f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
+        return
+    }
     f.WriteString(string(flashData[:]))
+    f.Close()
+
     return
 }
 
@@ -130,7 +130,6 @@ func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) 
         fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     fmt.Printf(" Verifying Image %s starting at addr=0x%x\n", filename, start_addr)
 
@@ -142,6 +141,7 @@ func Spi_flash_VerifyImage(spiNumber uint32, partition string, filename string) 
         b := scanner.Bytes()
         data = append(data, b[0])
     }
+    f.Close()
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
         return
@@ -218,11 +218,11 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
         fmt.Printf(" ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
-    defer f.Close()
 
     if uint32(len(data)) > flash_size {
         err = fmt.Errorf(" Error: Filesize is bigger than flash partition size. %d vs %d\n", uint32(len(data)), flash_size)
         cli.Printf("e", "%s", err)
+        f.Close()
         return
     }
     fmt.Printf(" Writing Image %s starting at addr=0x%x\n", filename, start_addr)
@@ -235,6 +235,7 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
         b := scanner.Bytes()
         data = append(data, b[0])
     }
+    f.Close()
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
         return

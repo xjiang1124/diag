@@ -371,6 +371,7 @@ func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
     mfgRev := make([]byte, 32)
     mfgModel := make([]byte, 32)
     mfgSerial := make([]byte, 32)
+    fwrevision := make([]byte, 32)
     err = pmbus.Open(devName)
     if err != errType.SUCCESS {
         return
@@ -418,8 +419,19 @@ func DisplayManufacturingInfo(devName string, useCLI int) (err int) {
         return
     }
 
+    _, err = pmbus.Readi2cBlock(devName, MFR_FW_REVISION, fwrevision)
+    if err != errType.SUCCESS {
+        return
+    }
+    if fwrevision[0] != MFR_FW_REVISION_BLK_SIZE {
+        err = errType.FAIL
+        cli.Printf("e", "%s Length of MFG_SERIAL_BLK_SIZE is wrong.   Len=%d.  Expect=%d", devName, fwrevision[0], MFR_FW_REVISION_BLK_SIZE)
+        return
+    }
+
 
     fmt.Printf("%s: %s %s    H/W Rev: %s    S/N: %s\n", devName, string(mfgId[1:(MFG_ID_BLK_SIZE+1)]), string(mfgModel[1:(MFG_MODEL_BLK_SIZE+1)]), string(mfgRev[1:(MFG_REVISION_BLK_SIZE+1)]), string(mfgSerial[1:(MFR_SERIAL_BLK_SIZE+1)]) )
+    fmt.Printf("%s: FW Rev:  Primary:%.02x  Secondary:%.02x  Major:%.02x  Downgrade:%.02x \n", devName, fwrevision[2], fwrevision[1], (fwrevision[3]&0x7f),  (fwrevision[3]&0x80))
     return
 }
 
