@@ -20,9 +20,9 @@ class stage(Enum):
     def __str__(self):
         return self.value
 
-@common.split_into_threads
-def boot_to_step(slot, parsed_args):
+def boot_to_step(parsed_args):
     ret = 0
+    slot = parsed_args.slot
     boot_to = parsed_args.boot_to[0]
     session = common.session_start()
     if boot_to == stage.stage1:
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("boot_to", type=stage, choices=list(stage), nargs=1)
-    parser.add_argument("--slot_list", "-slot_list", help="NIC slot list", type=str, required=True, default="")
+    parser.add_argument("--slot", "-slot", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
 
     try:
@@ -165,11 +165,7 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    slot_list = list(map(int, parsed_args.slot_list.split(",")))
-    fail_nic_list = boot_to_step(slot_list, parsed_args)
-
-    for slot in slot_list:
-        if slot not in fail_nic_list:
-            print(f"Slot {slot} PASSED")
-    if fail_nic_list:
-        print(f"Failed slots: {fail_nic_list}")
+    if boot_to_step(parsed_args) != 0:
+        print(f"Slot {slot} FAILED")
+    else:
+        print(f"Slot {slot} PASSED")
