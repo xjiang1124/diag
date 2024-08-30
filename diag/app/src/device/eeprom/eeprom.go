@@ -10,6 +10,8 @@ import (
     "common/errType"
     "common/misc"
     "protocol/smbusNew"
+    "device/fpga/materafpga"
+    "hardware/i2cinfo"
 )
 
 const(
@@ -2531,23 +2533,32 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
 func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, toFile bool) (output []byte, err int) { 
     var f *os.File
     var err_ error
+    var data []byte
     rdData := []byte{}
 
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
-    defer smbusNew.Close()
-    var data []byte
-
-    for i := 0; i < numBytes; i++ {
-        data, err = readField(devName, i, 1)
-        //cli.Printf("d", "Offset=0x%x, data=0x%x\n", i, data)
+    if devName == "CPLD_FRU" {
+        var errGo error
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        rdData, errGo = materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", 0x00, uint32(MAX_BYTES))
+        if errGo != nil {
+            err = errType.FAIL 
+            return 
+        }
+    } else {
+        err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
-            cli.Println("f", "Failed to read field at offset", i)
             return
         }
-        rdData = append(rdData, data...)
+        for i := 0; i < numBytes; i++ {
+            data, err = readField(devName, i, 1)
+            if err != errType.SUCCESS {
+                cli.Println("f", "Failed to read field at offset", i)
+                smbusNew.Close()
+                return
+            }
+            rdData = append(rdData, data...)
+        }
+        smbusNew.Close()
     }
 
     if toFile == true {
@@ -2561,7 +2572,8 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, toFile b
         f.Close()
         cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
     }
-    return rdData, err
+        
+    return
 
 }
 
@@ -2655,11 +2667,28 @@ func GetFruPartnumber(devName string, bus uint32, devAddr byte, pn []uint8) (err
 
 
 //Take care of 8 bit vs 16 bit eeprom reads
-func eeRead(devName string, offset uint16) (data byte, err int) {
-    if I2cAddr16 == true {
-        data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
+func eeRead(devName string, bus uint32, devAddr byte, offset uint16) (data byte, err int) {
+    if devName == "CPLD_FRU" {
+        i2cinfo.SwitchI2cTbl("UUT_NONE")
+        rdData, errGo := materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", uint32(offset), 1)
+        if errGo != nil {
+            err = errType.FAIL 
+            return 
+        }
+        data = rdData[0]
     } else {
-        data, err = smbusNew.ReadByte(devName, uint64(offset))
+        err = smbusNew.Open(devName, bus, devAddr)
+        if err != errType.SUCCESS {
+            return
+        }
+
+        if I2cAddr16 == true {
+            data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
+        } else {
+            data, err = smbusNew.ReadByte(devName, uint64(offset))
+        }
+
+        smbusNew.Close()
     }
     return
 }
@@ -2719,15 +2748,11 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     var data8, hdr_csum, bia_csum, pia_csum, mr_csum, mr_header_csum  uint8  = 0, 0, 0, 0, 0, 0
     var offset, offset_add uint16 = 0, 0
 
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
+
     defer func() {
         if err != errType.SUCCESS {
             fruDumpData(rawFru)
         }
-        smbusNew.Close()
     } ()
 
     //Oracle cards start their Fru information at offset 256
@@ -2739,7 +2764,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     }
 
     for offset = 0; offset < uint16(CMN_HDR_LENGTH); offset++ {
-        data8, err = eeRead(devName, offset + offset_add)
+        data8, err = eeRead(devName, bus, devAddr, offset + offset_add)
         header = append(header, data8)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to read device", devName, "field at offset", offset + offset_add) 
@@ -2762,7 +2787,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
         //read the length
         offset = uint16(header[CMN_HDR_BIA_OFFSET] * 8) + 1 + offset_add
 
-        data8, err = eeRead(devName, offset)
+        data8, err = eeRead(devName, bus, devAddr, offset)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to read device", devName, "field at offset", offset)
             return errType.FAIL
@@ -2773,7 +2798,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             return errType.FAIL
         }
         for i, offset = 0, uint16(header[CMN_HDR_BIA_OFFSET] * 8) + offset_add; i < bia_length; offset, i = offset+1, i+1 {
-            data8, err = eeRead(devName, offset)
+            data8, err = eeRead(devName, bus, devAddr, offset)
             board_info_area = append(board_info_area, data8)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device ", devName, " field at offset", offset)
@@ -2795,7 +2820,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
     if header[CMN_HDR_PIA_OFFSET] > 0 {
         //read the length
         offset = uint16(header[CMN_HDR_PIA_OFFSET] * 8) + 1
-        data8, err = eeRead(devName, offset)
+        data8, err = eeRead(devName, bus, devAddr, offset)
         if err != errType.SUCCESS {
             cli.Println("e", "Failed to read device", devName, "field at offset", offset)
             return errType.FAIL
@@ -2806,7 +2831,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             return errType.FAIL
         }
         for i, offset = 0, uint16(header[CMN_HDR_PIA_OFFSET] * 8) + offset_add; i < pia_length; offset, i = offset+1, i+1 {
-            data8, err = eeRead(devName, offset)
+            data8, err = eeRead(devName, bus, devAddr, offset)
             product_info_area = append(product_info_area, data8)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device", devName, "field at offset", offset)
@@ -2835,7 +2860,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
             multi_record_area := make([]byte, 0)
 
             //read the length
-            data8, err = eeRead(devName, mr_offset + uint16(MR_HDR_LENGTH_OFFSET) + offset_add)
+            data8, err = eeRead(devName, bus, devAddr, mr_offset + uint16(MR_HDR_LENGTH_OFFSET) + offset_add)
             if err != errType.SUCCESS {
                 cli.Println("e", "Failed to read device", devName, "field at offset", offset)
                 return errType.FAIL
@@ -2846,7 +2871,7 @@ func VerifyFruCSUM(devName string, bus uint32, devAddr byte, OutputEnabled bool)
                 return errType.FAIL
             }
             for i, offset = 0, mr_offset + offset_add; i < mr_length; offset, i = offset+1, i+1 {
-                data8, err = eeRead(devName, offset)
+                data8, err = eeRead(devName, bus, devAddr, offset)
                 multi_record_area = append(multi_record_area, data8)
                 if err != errType.SUCCESS {
                     cli.Println("e", "Failed to read device", devName, "field at offset", offset)

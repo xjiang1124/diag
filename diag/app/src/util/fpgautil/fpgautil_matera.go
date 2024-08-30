@@ -15,7 +15,7 @@ import (
     
 )
 
-const errhelpMatera = "\nfpgautil: (+08/02/24 one base slot numbering)\n" +
+const errhelpMatera = "\nfpgautil: (+08/16/24 one base slot numbering)\n" +
         "fpgautil regdump\n" + 
         "fpgautil r32 <addr>\n" +
         "fpgautil w32 <addr> <data>\n" +
@@ -65,6 +65,9 @@ func matera_fpga_cli() {
     if os.Args[1] == "regdump" {
         materafpga.FpgaDumpRegionRegisters()
         os.Exit(0)
+    } else if os.Args[1] == "psuupgrade" {
+        psuNumber, _ := strconv.ParseUint(os.Args[2], 0, 32)
+        dps2100.WriteFirmware(os.Args[3], int(psuNumber))
     } else if os.Args[1] == "show" {
         if os.Args[2][0] == 'f' || os.Args[2][0] == 'F' {
             matera.ShowFanInfo()
@@ -133,7 +136,7 @@ func matera_fpga_cli() {
             fmt.Printf("ERROR: Pasring Slot number failed. Go Erro ->  %v", errG1)
             os.Exit(-1)
         }
-        slot = uint32(slotTmp)
+        slot = uint32(slotTmp) - 1
 
         if (os.Args[3] == "d") {
             materafpga.BridgeDumpReg(slot)
@@ -166,6 +169,70 @@ func matera_fpga_cli() {
             }
             materafpga.BridgeI2Cwrite(slot, uint8(chnl), uint8(i2caddr), uint8(nBytes), data) 
             fmt.Printf("Bridge I2CWR chnl-%d addr-%x lenght-%d\n", uint8(chnl), uint8(i2caddr), uint8(nBytes))
+        } else if (os.Args[3] == "fifor") {
+            data := []uint8{}
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            nBytes, _ := strconv.ParseUint(os.Args[5], 0, 32)
+            data, _ = materafpga.BridgeReadFIFO(slot, uint8(chnl), uint8(nBytes)) 
+            fmt.Printf("Bridge FIFO READ lenght-%d\n", uint8(nBytes))
+            for i:=0;i<len(data);i++ {
+                fmt.Printf("%.02x ", data[i])
+            }
+            fmt.Printf("\n")
+        } else if (os.Args[3] == "i2creset") {
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            materafpga.BridgeResetI2C(slot, uint8(chnl))
+        } else if (os.Args[3] == "i2ctransw") {
+            data := []uint8{}
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            i2caddr, _ := strconv.ParseUint(os.Args[5], 0, 32)
+            for i=6; i<argc; i++ {
+                dataArg, _ := strconv.ParseUint(os.Args[i], 0, 32)
+                data = append(data, uint8(dataArg))
+            }
+            err = materafpga.BridgeI2CtransactionWrite(slot, uint8(chnl), uint8(i2caddr), data) 
+            if err != nil {
+                os.Exit(-1)
+            }
+            //fmt.Printf("Bridge I2CWR chnl-%d addr-%x lenght-%d\n", uint8(chnl), uint8(i2caddr), uint8(nBytes))
+        } else if (os.Args[3] == "i2ctransr") {
+            data := []uint8{}
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            i2caddr, _ := strconv.ParseUint(os.Args[5], 0, 32)
+            nBytes, _ := strconv.ParseUint(os.Args[6], 0, 32)
+            data, err = materafpga.BridgeI2CtransactionRead(slot, uint8(chnl), uint8(i2caddr), uint8(nBytes))
+            if err != nil {
+                os.Exit(-1)
+            }
+            fmt.Printf("I2C READ lenght = %d bytes\n", uint8(nBytes))
+            for i:=0;i<len(data);i++ {
+                fmt.Printf("%.02x ", data[i])
+            }
+            fmt.Printf("\n")          
+        } else if (os.Args[3] == "qsfpcsum") {
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            err := materafpga.QSFPAmphenolVerifyCheckSums(slot, uint8(chnl), 0x50)
+            if err != nil {
+                os.Exit(-1)
+            }
+        } else if (os.Args[3] == "qsfpdump") {
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            err := materafpga.QSFPdump(slot, uint8(chnl), 0x50)
+            if err != nil {
+                os.Exit(-1)
+            }
+        } else if (os.Args[3] == "irqt") {
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            err := materafpga.BridgeClearIRQtest(slot, uint8(chnl), 0x50)
+            if err != nil {
+                os.Exit(-1)
+            }
+        } else if (os.Args[3] == "resettest") {
+            chnl, _ := strconv.ParseUint(os.Args[4], 0, 32)
+            err := materafpga.BridgeClearResetTest(slot, uint8(chnl), 0x50)
+            if err != nil {
+                os.Exit(-1)
+            }
         }
 
         os.Exit(0)
@@ -405,6 +472,23 @@ func matera_fpga_cli() {
             t2 := time.Now()
             fmt.Println(" Function took ", t2.Sub(t1), " time")
             os.Exit(0)
+        } else if os.Args[3] == "read" || os.Args[3] == "Read" {
+            if argc < 7 {
+                fmt.Printf(" %s \n", errhelpMatera)
+                os.Exit(-1)
+            }
+            addr, _ := strconv.ParseUint(os.Args[5], 0, 32)
+            rdLength, _ := strconv.ParseUint(os.Args[6], 0, 32)
+            fmt.Printf(" READ COMMAND Addr=%d   rdLenght=%d\n", addr,rdLength );
+            fmt.Printf("\n")
+            rd_data, _ := materafpga.Spi_cpldX03_read_flash(slot, os.Args[4], uint32(addr), uint32(rdLength)) 
+            for x:=0;x<int(rdLength);x++ {
+                if (x%16) == 0 {
+                    fmt.Printf("\n%.08x: ", uint32(addr) + uint32(x))
+                }
+                fmt.Printf("%.02x ", rd_data[x] & 0xff)
+            }
+            fmt.Printf("\n")
         } else {
             fmt.Printf(" Args[3] '%s' is incorrect.  See help for the correct arg\n", os.Args[3]); 
             os.Exit(-1) 
@@ -524,9 +608,13 @@ func matera_fpga_cli() {
             } else if os.Args[4] == "enhvolconfig" {
                 config, _ := materafpga.Spi_flash_read_enhvolatile_config(flashID, qspiNumber) 
                 fmt.Printf(" FLASH  enhanced vol config=0x%.04x\n", config)
-            } else if os.Args[4] == "config" {
+            } else if os.Args[4] == "nonvolconfig" {
                 config, _ := materafpga.Spi_flash_read_nonvolatile_config(flashID, qspiNumber) 
                 fmt.Printf(" FLASH  non volatile config=0x%.04x\n", config)
+            } else if os.Args[4] == "wrnonvolconfig" {   
+                wr32, _ := strconv.ParseUint(os.Args[5], 0, 32)
+                materafpga.Spi_flash_write_nonvolatile_config(flashID, qspiNumber, uint16(wr32)) 
+                fmt.Printf(" FLASH  wr non volatile config=0x%.04x\n", uint16(wr32))
             } else if os.Args[4] == "readprotreg" {
                 prot, _ := materafpga.Spi_flash_read_sector_protection_reg(flashID, qspiNumber) 
                 fmt.Printf(" FLASH  sector protect reg=0x%.04x\n", prot)
@@ -564,6 +652,16 @@ func matera_fpga_cli() {
                     }
                     fmt.Printf("%.02x ", data[x] & 0xff)
                 }
+                fmt.Printf("\n")
+            } else if os.Args[4] == "generalpurpose" {
+                data, _ := materafpga.Spi_flash_read_general_purpose(flashID, qspiNumber) 
+                for x:=0;x<len(data);x++ {
+                    if (x%16) == 0 {
+                        fmt.Printf("\n%.08x: ", uint32(x))
+                    }
+                    fmt.Printf("%.02x ", data[x] & 0xff)
+                }
+                fmt.Printf("\n")
             } else if os.Args[4] == "flagstatus" {
                 flag, _ := materafpga.Spi_flash_read_flag_status(flashID, qspiNumber) 
                 fmt.Printf(" FLASH  Flag Status Reg=0x%.02x\n", flag)
