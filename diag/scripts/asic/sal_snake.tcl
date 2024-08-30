@@ -243,38 +243,70 @@ plog_stop
 after 1000
 cd ../tclsh
 # check counters
-if {[catch {exec grep {ptd\[1\]_CNT:ud0} $fn | tail -n1 | awk {{ print $6,$7 }}} result]} {
-    puts "No matches found for 'ptd\[1\]_CNT:ud0'"
-} else {
-    set ptd_sop_cnt [lindex [split $result] 0]
-    set ptd_eop_cnt [lindex [split $result] 1]
-    set ptd_sop_cnt [format 0x%x [scan $ptd_sop_cnt %x]]
-    set ptd_eop_cnt [format 0x%x [scan $ptd_eop_cnt %x]]
-    puts $ptd_sop_cnt
-    puts $ptd_eop_cnt
-}
-exec grep {prd\[1\]_CNT:ud1} $fn | tail -n1
 if {[catch {exec grep {prd\[0\]_CNT:ud0} $fn | tail -n1 | awk {{ print $6,$7 }}} result]} {
     puts "No matches found for 'prd\[0\]_CNT:ud0'"
 } else {
-    set prd_sop_cnt [lindex [split $result] 0]
-    set prd_eop_cnt [lindex [split $result] 1]
-    set prd_sop_cnt [format 0x%x [scan $prd_sop_cnt %x]]
-    set prd_eop_cnt [format 0x%x [scan $prd_eop_cnt %x]]
-    puts $prd_sop_cnt
-    puts $prd_eop_cnt
+    set prd0_sop_cnt [lindex [split $result] 0]
+    set prd0_eop_cnt [lindex [split $result] 1]
+    set prd0_sop_cnt [format 0x%x [scan $prd0_sop_cnt %x]]
+    set prd0_eop_cnt [format 0x%x [scan $prd0_eop_cnt %x]]
+    set prd0_sop_cnt [expr $prd0_sop_cnt & 0xFFFFFFFF]
+    puts $prd0_sop_cnt
+    puts $prd0_eop_cnt
 }
-set queue0_drop 0
-if {[catch {exec grep {sal0\.pf\.pf\[0\]\.cnt_ibuf_port0\.queue0_drop} $fn | tail -n1 | awk {{ print $6 }}} result]} {
-    puts "No matches found for 'sal0\.pf\.pf\[0\]\.cnt_ibuf_port0\.queue0_drop'"
+if {[catch {exec grep {ptd\[1\]_CNT:ud0} $fn | tail -n1 | awk {{ print $6,$7 }}} result]} {
+    puts "No matches found for 'ptd\[1\]_CNT:ud0'"
 } else {
-    set queue0_drop $result
-    puts $queue0_drop
+    set ptd1_sop_cnt [lindex [split $result] 0]
+    set ptd1_eop_cnt [lindex [split $result] 1]
+    set ptd1_sop_cnt [format 0x%x [scan $ptd1_sop_cnt %x]]
+    set ptd1_eop_cnt [format 0x%x [scan $ptd1_eop_cnt %x]]
+    set ptd1_sop_cnt [expr $ptd1_sop_cnt & 0xFFFFFFFF]
+    puts $ptd1_sop_cnt
+    puts $ptd1_eop_cnt
 }
-if {$ptd_sop_cnt != [expr $prd_sop_cnt + $queue0_drop] || $ptd_eop_cnt != [expr $prd_eop_cnt + $queue0_drop]} {
-    puts "SNAKE TEST FAILED"
+if {[catch {exec grep {prd\[1\]_CNT:ud1} $fn | tail -n1 | awk {{ print $6,$7 }}} result]} {
+    puts "No matches found for 'prd\[1\]_CNT:ud1'"
+} else {
+    set prd1_sop_cnt [lindex [split $result] 0]
+    set prd1_eop_cnt [lindex [split $result] 1]
+    set prd1_sop_cnt [format 0x%x [scan $prd1_sop_cnt %x]]
+    set prd1_eop_cnt [format 0x%x [scan $prd1_eop_cnt %x]]
+    set prd1_sop_cnt [expr $prd1_sop_cnt & 0xFFFFFFFF]
+    puts $prd1_sop_cnt
+    puts $prd1_eop_cnt
 }
-
+if {[catch {exec grep {ptd\[2\]_CNT:ud1} $fn | tail -n1 | awk {{ print $6,$7 }}} result]} {
+    puts "No matches found for 'ptd\[2\]_CNT:ud1'"
+} else {
+    set ptd2_sop_cnt [lindex [split $result] 0]
+    set ptd2_eop_cnt [lindex [split $result] 1]
+    set ptd2_sop_cnt [format 0x%x [scan $ptd2_sop_cnt %x]]
+    set ptd2_eop_cnt [format 0x%x [scan $ptd2_eop_cnt %x]]
+    set ptd2_sop_cnt [expr $ptd2_sop_cnt & 0xFFFFFFFF]
+    puts $ptd2_sop_cnt
+    puts $ptd2_eop_cnt
+}
+#set queue0_drop 0
+#if {[catch {exec grep {sal0\.pf\.pf\[0\]\.cnt_ibuf_port0\.queue0_drop} $fn | tail -n1 | awk {{ print $6 }}} result]} {
+#    puts "No matches found for 'sal0\.pf\.pf\[0\]\.cnt_ibuf_port0\.queue0_drop'"
+#} else {
+#    set queue0_drop $result
+#    puts $queue0_drop
+#}
+#if {$ptd_sop_cnt != [expr $prd_sop_cnt + $queue0_drop] || $ptd_eop_cnt != [expr $prd_eop_cnt + $queue0_drop]} {
+#    puts "SNAKE TEST FAILED"
+#}
+if {$prd0_sop_cnt == $prd0_eop_cnt &&
+    $prd0_sop_cnt == $ptd1_sop_cnt &&
+    $ptd1_sop_cnt == $ptd1_eop_cnt &&
+    $prd1_sop_cnt == $prd1_eop_cnt &&
+    $prd1_sop_cnt == $ptd2_sop_cnt &&
+    $ptd2_sop_cnt == $ptd2_eop_cnt} {
+    puts "Counters check passed"
+} else {
+    puts "Counters check failed"
+}
 set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
 puts "SNAKE TEST DONE"
