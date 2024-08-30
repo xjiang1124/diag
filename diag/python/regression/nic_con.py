@@ -90,7 +90,7 @@ class nic_con:
     def uart_session_start(self, session, slot, numRetry=10):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
         session.sendline(cmd)
         for ite in range(numRetry):
             print("ite: ", ite)
@@ -360,14 +360,14 @@ class nic_con:
         return ret
 
 
-    def power_cycle_multi(self, slot_list="", wtime=30, swm_lp=False):
+    def power_cycle_multi(self, slot_list="", wtime=30, swm_lp=False, uart_id=0, proto_mode_dis=1):
         ret = 0
         session = common.session_start()
 
         cmd = "turn_on_slot.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
-        time.sleep(1)
-        cmd = "turn_on_slot.sh on {}".format(slot_list)
+        time.sleep(3)
+        cmd = "turn_on_slot.sh on {} {} {}".format(slot_list, uart_id, proto_mode_dis)
         if swm_lp == True:
             cmd = "".join((cmd, " 1"))
         common.session_cmd(session, cmd)

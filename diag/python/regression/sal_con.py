@@ -40,6 +40,24 @@ def boot_to_step(parsed_args):
 
     return ret
 
+def boot_to_step_v2(slot, boot_to, warm_reset=False):
+    ret = 0
+    session = common.session_start()
+    if boot_to == "a35_uboot":
+        ret = enter_a35_uboot(slot, session, warm_reset)
+    elif boot_to == "zephyr":
+        ret = enter_a35_zephyr(slot, session, warm_reset)
+    elif boot_to == "n1_uboot":
+        ret = enter_n1_uboot(slot, session, warm_reset)
+    elif boot_to == "inux":
+        ret = enter_n1_linux(slot, session, warm_reset)
+    else:
+        print("Unknown stage: {}".format(boot_to))
+        ret = -1
+    common.session_stop(session)
+
+    return ret
+
 
 def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
     session.sendline(cmd)
