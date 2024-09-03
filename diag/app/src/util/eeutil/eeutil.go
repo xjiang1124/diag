@@ -594,6 +594,7 @@ func main() {
     skuPtr     := flag.String("sku",    "",         "SKU")
     skuModePtr := flag.Bool  ("skuMode",false,      "SKU mode")
     dpnPtr     := flag.String("dpn",    "",         "Diagnostic Part number")
+    fnamePtr   := flag.String("fn",     "eeprom",   "file name for eeprom dump")
     flag.Parse()
 
     devName := strings.ToUpper(*devNamePtr)
@@ -612,6 +613,7 @@ func main() {
     custType := strings.ToUpper(*custTypePtr)
     sku := strings.ToUpper(*skuPtr)
     dpn := strings.ToUpper(*dpnPtr)
+    fname := *fnamePtr
 
     lock, _ := hwinfo.PreUutSetup(uut)
     defer hwinfo.PostUutClean(lock)
@@ -853,11 +855,11 @@ func main() {
         }
         isTlv, _ := eeprom.CardInListTlv(devName)
         if isTlv == true {
-            eeprom.DumpEepromTlvs(devName, numBytes, true)
+            eeprom.DumpEepromTlvs(devName, numBytes, fname, true)
             misc.SleepInUSec(500000)
             return
         } else {
-            hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes, true)
+            hwdev.EepromDump(devName, iInfo.Bus, iInfo.DevAddr, numBytes, fname, true)
         }
 
         return
