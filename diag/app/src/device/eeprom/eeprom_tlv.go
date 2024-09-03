@@ -846,7 +846,7 @@ func DisplayTlvFpga(devName string, field string, fpo bool) (err int){
     return
 }
 
-func DumpEepromTlvs(devName string, numBytes int, toFile bool) (output []byte, err int) { 
+func DumpEepromTlvs(devName string, numBytes int, fname string, toFile bool) (output []byte, err int) { 
     var f *os.File
     var err_ error
 
@@ -891,14 +891,14 @@ func DumpEepromTlvs(devName string, numBytes int, toFile bool) (output []byte, e
     }
 
     if toFile == true {
-        f, err_ = os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
+        f, err_ = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
         if err_ != nil {
-            cli.Println("e", "file create failed")
+            cli.Println("e", "file create failed. Filename:", fname)
             return nil, -1
         }
         f.WriteString(string(rdData[:]))
         f.Close()
-        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
+        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file", fname)
     }
 
     return rdData, err

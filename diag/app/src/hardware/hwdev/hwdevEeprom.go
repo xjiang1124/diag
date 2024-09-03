@@ -254,9 +254,9 @@ func EepromDisp(devName string, bus uint32, devAddr byte, field string) (err int
     return
 }
 
-func EepromDump(devName string, bus uint32, devAddr byte, numBytes int, toFile bool) (output []byte) {
+func EepromDump(devName string, bus uint32, devAddr byte, numBytes int, fname string, toFile bool) (output []byte) {
     hwinfo.EnableHubChannelExclusive(devName)
-    output, _ = eeprom.DumpEeprom(devName, bus, devAddr, numBytes, toFile)
+    output, _ = eeprom.DumpEeprom(devName, bus, devAddr, numBytes, fname, toFile)
     return output
 }
 
