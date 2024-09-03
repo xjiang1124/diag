@@ -12,10 +12,10 @@ import common
 from nic_con import nic_con
 
 class stage(Enum):
-    stage1 = a35_uboot = "a35_uboot"
-    stage3 = n1_uboot = "n1_uboot"
+    stage1 = a35_uboot  = "a35_uboot"
     stage2 = a35_zephyr = "zephyr"
-    stage4 = n1_linux = "linux"
+    stage3 = n1_uboot   = "n1_uboot"
+    stage4 = n1_linux   = "linux"
 
     def __str__(self):
         return self.value
@@ -76,7 +76,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline(f"con_cleanup.sh {slot}")
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -134,11 +134,11 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     if con_ctrl.uart_session_stop(session) != 0:
         return -1
 
-    if con_ctrl.enter_uboot(session, slot, uboot_delay=120, num_retry=1, uart_id=1) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=1, pc=0) != 0:
         print("==== FAILED: slot {} couldn't reach n1 uboot".format(slot))
         return -1
 
-    session.sendline("")
+    #session.sendline("")
     print("\n=================== STAGE 3 BOOT (N1 UBOOT) DONE ===================")
     return 0
 
@@ -182,6 +182,8 @@ if __name__ == "__main__":
     except Exception:
         parser.print_help()
         sys.exit(1)
+
+    slot = parsed_args.slot
 
     if boot_to_step(parsed_args) != 0:
         print(f"Slot {slot} FAILED")

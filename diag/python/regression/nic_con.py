@@ -485,6 +485,56 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uart_id=1, warm_reset=False, pc=True):
+        expstr = ["DSC# "]
+        ret = 0
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            sys.exit(0)
+
+        session.timeout = timeout
+ 
+        uart_session = common.session_start()
+        # Start console first
+        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
+        uart_session.sendline(cmd)
+        uart_session.expect(["Terminal ready", "buffer cleared"])
+
+        if pc:
+            if warm_reset:
+                self.nic_warm_reset(session, slot)
+            else:
+                print("Powercycling...")
+                cmd = "turn_on_slot.sh off {}".format(slot)
+                common.session_cmd(session, cmd)
+                time.sleep(3)
+                cmd = "turn_on_slot.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
+
+        self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
+        #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart
+        #session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
+
+        uart_session.expect("Autoboot in 5 seconds")
+        #session_cmd(uart_session, cmd, ending="Autoboot in 5 seconds")
+
+        try:
+            print("C+C")
+            uart_session.send(chr(3))
+            uart_session.expect(expstr)
+            #time.sleep(1)
+            ret = 0
+        except pexpect.TIMEOUT:
+            print("timeout:", i)
+            ret = -1
+
+        self.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        if ret == -1:
+            print("=== Failed to enter uboot ===")
+        return ret
+
     def enter_uboot_by_sysreset_after_pwr_cycle(self, session, slot=0, timeout=30):
         expstr = ["Capri# ", "DSC# "]
         ret = -1
