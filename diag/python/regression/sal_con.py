@@ -49,7 +49,7 @@ def boot_to_step_v2(slot, boot_to, warm_reset=False):
         ret = enter_a35_zephyr(slot, session, warm_reset)
     elif boot_to == "n1_uboot":
         ret = enter_n1_uboot(slot, session, warm_reset)
-    elif boot_to == "inux":
+    elif boot_to == "linux":
         ret = enter_n1_linux(slot, session, warm_reset)
     else:
         print("Unknown stage: {}".format(boot_to))

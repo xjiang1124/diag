@@ -102,7 +102,7 @@ class nic_con:
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i != len(expstr)-1:
+                if i != len(expstr)-1 and i != len(expstr)-2:
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)
