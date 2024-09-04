@@ -1010,7 +1010,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     fmt.Printf(" Programming flash sectors\n");
     for j=start_addr; j<start_addr + uint32(len(data)); j = j+uint32(FLASH_PAGE_WRITE_SIZE) {
        if (j%0x20000) == 0 {
-           fmt.Printf("%.08x\n", j)
+           fmt.Printf("\r%.08x", j)
        }
        wr_data := []byte{}
        write_page = false
@@ -1025,13 +1025,14 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
        if write_page == true {
            err = Spi_salina_flash_Write_N_Bytes(spiNumber, qspiNumber, wr_data, j)
            if err != nil {
-               fmt.Printf(" ERROR: Writing Flash Failed\n")
+               fmt.Printf("\n ERROR: Writing Flash Failed\n")
                return
            }
        } else {
            skipped_pages++
        }
     }
+    fmt.Printf("\n")
     fmt.Printf("Skipped Pages = %d.  Skipped bytes = 0x%X\n", skipped_pages, (skipped_pages * 256) )
     fmt.Printf("Programming PASSED\n")
     
@@ -1102,7 +1103,7 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     for i=start_addr; i< start_addr + uint32(len(file_data)); i = i+read_size {
         rd_data := []byte{}
         if (i%0x20000) == 0 {
-            fmt.Printf("%.08x\n", i)
+            fmt.Printf("\r%.08x", i)
         }
         if (i % 0x1000000) <= read_size {
             err = Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, i) 
@@ -1113,11 +1114,12 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
          
         rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, i, read_size, 0)
         if err != nil {
-            fmt.Printf(" ERROR: Flash Read Failed.  StartAddr=0x%X.  I=0x%X\n", start_addr, i)
+            fmt.Printf("\n ERROR: Flash Read Failed.  StartAddr=0x%X.  I=0x%X\n", start_addr, i)
             return
         }
         flash_data = append(flash_data, rd_data...) 
     }
+    fmt.Printf("\n")
 
     for i=0; i < uint32(len(file_data)); i++ {
         if (flash_data[i] != file_data[i]) {

@@ -190,7 +190,7 @@ then
     exit
 fi
 
-if [[ $# -lt 2 ]]
+if [[ $# -lt 2 ]] && [[ $# -lt 3 ]] && [[ $# -lt 4 ]]
 then
     usage
     exit

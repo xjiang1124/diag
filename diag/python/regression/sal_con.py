@@ -5,36 +5,25 @@ import pexpect
 import os
 import sys
 import time
-from enum import Enum
+#from enum import Enum
 
 sys.path.append("../lib")
 import common
 from nic_con import nic_con
 
-class stage(Enum):
-    stage1 = a35_uboot = "a35_uboot"
-    stage3 = n1_uboot = "n1_uboot"
-    stage2 = a35_zephyr = "zephyr"
-    stage4 = n1_linux = "linux"
-
-    def __str__(self):
-        return self.value
-
-def boot_to_step(parsed_args):
+def boot_to_step_v2(slot, boot_to, warm_reset=False):
     ret = 0
-    slot = parsed_args.slot
-    boot_to = parsed_args.boot_to[0]
     session = common.session_start()
-    if boot_to == stage.stage1:
-        ret = enter_a35_uboot(slot, session, warm_reset=parsed_args.warm_reset)
-    elif boot_to == stage.stage2:
-        ret = enter_a35_zephyr(slot, session, warm_reset=parsed_args.warm_reset)
-    elif boot_to == stage.stage3:
-        ret = enter_n1_uboot(slot, session, warm_reset=parsed_args.warm_reset)
-    elif boot_to == stage.stage4:
-        ret = enter_n1_linux(slot, session, warm_reset=parsed_args.warm_reset)
+    if boot_to == "a35_uboot":
+        ret = enter_a35_uboot(slot, session, warm_reset)
+    elif boot_to == "zephyr":
+        ret = enter_a35_zephyr(slot, session, warm_reset)
+    elif boot_to == "n1_uboot":
+        ret = enter_n1_uboot(slot, session, warm_reset)
+    elif boot_to == "linux":
+        ret = enter_n1_linux(slot, session, warm_reset)
     else:
-        print("Unknown stage: {}".format(parsed_args.boot_to))
+        print("Unknown stage: {}".format(boot_to))
         ret = -1
     common.session_stop(session)
 
@@ -55,10 +44,10 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
 
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
-    session.sendline(f"con_cleanup.sh {slot}")
+    session.sendline("con_cleanup.sh {}".format(slot))
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot(session, slot, num_retry=1, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -118,11 +107,11 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     if con_ctrl.uart_session_stop(session) != 0:
         return -1
 
-    if con_ctrl.enter_uboot(session, slot, uboot_delay=120, num_retry=1, uart_id=1) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=1, pc=0) != 0:
         print("==== FAILED: slot {} couldn't reach n1 uboot".format(slot))
         return -1
 
-    session.sendline("")
+    #session.sendline("")
     print("\n=================== STAGE 3 BOOT (N1 UBOOT) DONE ===================")
     return 0
 
@@ -157,7 +146,7 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("boot_to", type=stage, choices=list(stage), nargs=1)
+    parser.add_argument("--boot_to", type=str, default="linux", help="Boot stage: a35_uboot/zephyr/n1_uboot/linux")
     parser.add_argument("--slot", "-slot", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
 
@@ -167,7 +156,9 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    if boot_to_step(parsed_args) != 0:
-        print(f"Slot {slot} FAILED")
+    slot = parsed_args.slot
+
+    if boot_to_step_v2(parsed_args.slot, parsed_args.boot_to, parsed_args.warm_reset) != 0:
+        print("Slot {} FAILED".format(slot))
     else:
-        print(f"Slot {slot} PASSED")
+        print("Slot {} PASSED".format(slot))

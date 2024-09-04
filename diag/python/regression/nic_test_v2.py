@@ -17,6 +17,7 @@ import datetime
 
 sys.path.append("../lib")
 import common
+import sal_con
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -799,6 +800,100 @@ class nic_test_v2:
                 common.session_stop(session)
                 print("=== Slot:", slot, "Passed ===")
 
+    def prog_dpu_fru(self, args):
+        print(args)
+        ret = 0
+        slot=args.slot
+    
+        if args.slot == "":
+            print ("Invalide input slot_list:", slot)
+
+        self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
+
+        bash_session = common.session_start()
+
+        # Program a usable ainic image to have prompt
+        common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3_shell")
+        common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
+        common.session_cmd(bash_session, "cd /home/diag/diag/python/regression")
+
+        # Now boot to zehpyr
+        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            ret = -1
+            return ret
+
+        uart_session = common.session_start()
+        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
+
+        #session_cmd(mtp_session, "rm *eeprom*")
+        cmd = "eeutil -uut=uut_{} -dump -numBytes 256".format(slot)
+        common.session_cmd(bash_session, cmd)
+        fn="eeprom_{}".format(slot)
+        common.session_cmd(bash_session, "mv eeprom " + fn)
+
+        # Write DPU FRU from Zephuy cli
+        # Write one byte each time
+        numBytes = 256
+        for offset in range(numBytes):
+            cmd = "od -An -tx1 -j {} -N 1 {}".format(offset, fn)
+            common.session_cmd(bash_session, cmd)
+            #print ("\n===\n"+bash_session.before+"\n===\n")
+
+            cmd = "i2c write i2c@30000 0x52 {}{}".format(str(hex(offset)[2:]).zfill(4), bash_session.before.splitlines()[-2])
+            print(cmd)
+            self.nic_con.uart_session_cmd(uart_session, cmd, ending="uart:~\$")
+
+        self.nic_con.uart_session_cmd(uart_session, "i2c read i2c@30000 0x52 0000", ending="uart:~\$")
+
+        self.nic_con.uart_session_stop(uart_session)
+
+        #--------------------------------------------------------
+        # Now boot to zehpyr
+        if sal_con.boot_to_step_v2(int(args.slot), 'a35_uboot', warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            ret = -1
+            return ret
+
+        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
+        self.nic_con.uart_session_cmd(uart_session, "i2c md 0x52 0.2 128", ending="DSC#")
+        self.nic_con.uart_session_stop(uart_session)
+
+        common.session_stop(uart_session)
+
+        print("===== Original FRU Content =====")
+        common.session_cmd(bash_session, "hexdump -C " + fn)
+
+        #--------------------------------------------------------
+        # Program a pruction ainic image to have prompt
+        self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
+
+        common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3")
+        common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
+
+        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+
+        # Final check console
+        # Can not do it because of pcie prints
+        uart_session = common.session_start()
+        if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
+            print("Final Zephyr UART checking has failed!!!")
+        #else:
+        #    print("Final Zephyr UART checking has passed")
+
+        if not self.nic_con.uart_session_cmd(uart_session, "help", ending="uart:~\$", timeout=1):
+            print("Final Zephyr UART checking has failed!!!")
+        else:
+            print("================\nFinal Zephyr UART checking has passed\n================")
+
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        common.session_stop(bash_session)
+
+        return ret
+   
     def multi_nic_cmds(self, args):
         print(args)
     
@@ -1134,6 +1229,13 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
+
+    # Enable/Disable WP single
+    parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+
+    parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
 
     try:
         args = parser.parse_args()

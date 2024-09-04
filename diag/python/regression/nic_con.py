@@ -90,7 +90,7 @@ class nic_con:
     def uart_session_start(self, session, slot, numRetry=10):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#"]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
         session.sendline(cmd)
         for ite in range(numRetry):
             print("ite: ", ite)
@@ -102,7 +102,7 @@ class nic_con:
                 session.send("\r")
 
                 i = session.expect(expstr, timeout)
-                if i != len(expstr)-1:
+                if i != len(expstr)-1 and i != len(expstr)-2:
                     session.sendline(self.usr)
                     session.expect("assword:")
                     session.sendline(self.pwd)
@@ -360,14 +360,14 @@ class nic_con:
         return ret
 
 
-    def power_cycle_multi(self, slot_list="", wtime=30, swm_lp=False):
+    def power_cycle_multi(self, slot_list="", wtime=30, swm_lp=False, uart_id=0, proto_mode_dis=1):
         ret = 0
         session = common.session_start()
 
         cmd = "turn_on_slot.sh off {}".format(slot_list)
         common.session_cmd(session, cmd)
-        time.sleep(1)
-        cmd = "turn_on_slot.sh on {}".format(slot_list)
+        time.sleep(3)
+        cmd = "turn_on_slot.sh on {} {} {}".format(slot_list, uart_id, proto_mode_dis)
         if swm_lp == True:
             cmd = "".join((cmd, " 1"))
         common.session_cmd(session, cmd)
@@ -480,6 +480,56 @@ class nic_con:
             self.uart_session_stop(session)
             if ret == 0:
                 break
+
+        if ret == -1:
+            print("=== Failed to enter uboot ===")
+        return ret
+
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uart_id=1, warm_reset=False, pc=True):
+        expstr = ["DSC# "]
+        ret = 0
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            sys.exit(0)
+
+        session.timeout = timeout
+ 
+        uart_session = common.session_start()
+        # Start console first
+        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
+        uart_session.sendline(cmd)
+        uart_session.expect(["Terminal ready", "buffer cleared"])
+
+        if pc:
+            if warm_reset:
+                self.nic_warm_reset(session, slot)
+            else:
+                print("Powercycling...")
+                cmd = "turn_on_slot.sh off {}".format(slot)
+                common.session_cmd(session, cmd)
+                time.sleep(3)
+                cmd = "turn_on_slot.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
+
+        self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
+        #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart
+        #session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
+
+        uart_session.expect("Autoboot in 5 seconds")
+        #session_cmd(uart_session, cmd, ending="Autoboot in 5 seconds")
+
+        try:
+            print("C+C")
+            uart_session.send(chr(3))
+            uart_session.expect(expstr)
+            #time.sleep(1)
+            ret = 0
+        except pexpect.TIMEOUT:
+            print("timeout:", i)
+            ret = -1
+
+        self.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
 
         if ret == -1:
             print("=== Failed to enter uboot ===")

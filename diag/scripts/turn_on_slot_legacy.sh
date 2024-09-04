@@ -270,7 +270,7 @@ then
     exit
 fi
 
-if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
+if [[ $# -ne 2 ]] && [[ $# -ne 3 ]] && [[ $# -ne 4 ]]
 then
     usage
     exit
