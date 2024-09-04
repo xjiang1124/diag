@@ -812,10 +812,11 @@ class nic_test_v2:
 
         bash_session = common.session_start()
 
-        # Program a usable ainic image to have prompt
-        common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3_shell")
-        common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
-        common.session_cmd(bash_session, "cd /home/diag/diag/python/regression")
+        if self.nic_con.get_card_type(slot) == "POLLARA":
+            # Program a usable ainic image to have prompt
+            common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3_shell")
+            common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
+            common.session_cmd(bash_session, "cd /home/diag/diag/python/regression")
 
         # Now boot to zehpyr
         if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
@@ -825,12 +826,12 @@ class nic_test_v2:
 
         uart_session = common.session_start()
         self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
+        self.nic_con.uart_session_cmd(uart_session, "", ending="uart:~\$")
 
         #session_cmd(mtp_session, "rm *eeprom*")
-        cmd = "eeutil -uut=uut_{} -dump -numBytes 256".format(slot)
+        fn = "eeprom_{}".format(slot)
+        cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
         common.session_cmd(bash_session, cmd)
-        fn="eeprom_{}".format(slot)
-        common.session_cmd(bash_session, "mv eeprom " + fn)
 
         # Write DPU FRU from Zephuy cli
         # Write one byte each time
@@ -864,31 +865,32 @@ class nic_test_v2:
         print("===== Original FRU Content =====")
         common.session_cmd(bash_session, "hexdump -C " + fn)
 
-        #--------------------------------------------------------
-        # Program a pruction ainic image to have prompt
-        self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
+        if self.nic_con.get_card_type(slot) == "POLLARA":
+            #--------------------------------------------------------
+            # Program a pruction ainic image to have prompt
+            self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
 
-        common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3")
-        common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
+            common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3")
+            common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
 
-        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
 
-        # Final check console
-        # Can not do it because of pcie prints
-        uart_session = common.session_start()
-        if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
-            print("Final Zephyr UART checking has failed!!!")
-        #else:
-        #    print("Final Zephyr UART checking has passed")
+            # Final check console
+            # Can not do it because of pcie prints
+            uart_session = common.session_start()
+            if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
+                print("Final Zephyr UART checking has failed!!!")
+            #else:
+            #    print("Final Zephyr UART checking has passed")
 
-        if not self.nic_con.uart_session_cmd(uart_session, "help", ending="uart:~\$", timeout=1):
-            print("Final Zephyr UART checking has failed!!!")
-        else:
-            print("================\nFinal Zephyr UART checking has passed\n================")
+            if not self.nic_con.uart_session_cmd(uart_session, "help", ending="uart:~\$", timeout=1):
+                print("Final Zephyr UART checking has failed!!!")
+            else:
+                print("================\nFinal Zephyr UART checking has passed\n================")
 
-        self.nic_con.uart_session_stop(uart_session)
-        common.session_stop(uart_session)
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
 
         common.session_stop(bash_session)
 
