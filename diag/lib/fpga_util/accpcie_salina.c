@@ -689,7 +689,7 @@ FT_STATUS jtag_wr_dr(DWORD *tx_data, DWORD *rx_data, DWORD num_bits)
             return -1;
         }
         i = 0;
-        while ( !(j2c_status & J2C_RXFIFO_EMPTY) ) {
+        while ( (j2c_status & J2C_RXFIFO_EMPTY) ) {
             rc = read32((ULONGLONG)ftHandle, J2C_0_STAT_REG, &j2c_status); 
             if ( rc ) {
                 if ( verbosity )

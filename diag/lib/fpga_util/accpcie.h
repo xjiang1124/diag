@@ -56,6 +56,10 @@ enum {
 #define J2C_WR_CONFIG_CMD  0x10000000
 #define J2C_RESET_CMD      0x20000000
 
+#define J2C_FIFO_DEPTH       1024
+#define J2C_FIFO_WIDTH       32
+#define J2C_FIFO_SIZE        J2C_FIFO_DEPTH * J2C_FIFO_WIDTH 
+
 #define J2C_ASIC_TYPE_MASK   0x00000F00
 #define J2C_ASIC_TYPE_SALINA 0x00000200
 #define J2C_PRESCALE_MASK    0x0FFF0000
@@ -71,7 +75,6 @@ enum {
 #define J2C_TXFIFO_HEMPTY    0x00000002
 #define J2C_BUSY             0x00000001
 #define J2C_SEM_BIT          0x00000001
-
 #define J2C_OW_READ_CMD      0x00000000
 #define J2C_OW_WRITE_CMD     0x00000010
 
