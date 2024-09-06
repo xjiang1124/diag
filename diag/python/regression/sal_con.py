@@ -67,10 +67,9 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     if con_ctrl.get_card_type(slot) in ["POLLARA"]:
-        cmd = "bootm 0x78580000"
-    #elif con_ctrl.get_card_type(slot) in ["MALFA", "LENI"]:
+        cmd = "bootm 0x78140000"
     else:
-        cmd = "go 0x7E500000"
+        cmd = "boot" #"bootm goldfw"
 
     if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=10):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
