@@ -92,7 +92,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
                    ($card_type == "POLLARA") ||
                    ($card_type == "LENI") ||
                    ($card_type == "LENI48G") } {
-            set l1_cmd "sal_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 0 1 $arm_freq 6400 $int_lpbk $vmarg $offload $esecEn $logEn"
+            set l1_cmd "sal_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 0 1 $arm_freq 6400 $int_lpbk $vmarg $offload $esecEn $logEn $run_ddr_test"
             source .tclrc.diag.sal
         } else {
             set l1_cmd "elb_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 1 1 $arm_freq $ddr_freq $int_lpbk $vmarg $offload $esecEn $logEn $simplified $ddr_hc_training $run_ddr_test"
