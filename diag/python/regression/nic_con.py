@@ -485,7 +485,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_salina(self, session, slot=0, timeout=30, uart_id=1, warm_reset=False, pc=True):
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, warm_reset=False, pc=True):
         expstr = ["DSC# "]
         ret = 0
         if slot == 0 or slot > 10:
@@ -515,18 +515,22 @@ class nic_con:
         #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart
         #session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
 
-        uart_session.expect("Autoboot in 5 seconds")
+        uart_session.expect("Autoboot ")
         #session_cmd(uart_session, cmd, ending="Autoboot in 5 seconds")
 
-        try:
-            print("C+C")
-            uart_session.send(chr(3))
-            uart_session.expect(expstr)
-            #time.sleep(1)
-            ret = 0
-        except pexpect.TIMEOUT:
-            print("timeout:", i)
-            ret = -1
+        for i in range(uboot_delay):
+            uart_session.timeout = 0.5
+            try:
+                print("C+C")
+                uart_session.send(chr(3))
+                idx = uart_session.expect(expstr)
+                #time.sleep(1)
+                ret = 0
+                if idx == 0:
+                    break
+            except pexpect.TIMEOUT:
+                print("timeout:", i)
+                ret = -1
 
         self.uart_session_stop(uart_session)
         common.session_stop(uart_session)
