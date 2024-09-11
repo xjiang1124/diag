@@ -14,7 +14,7 @@ set dura [lindex $argv 2]
 set card_type [lindex $argv 3]
 set vmarg [lindex $argv 4]
 
-proc mtp_sts_pull { {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"}} {
+proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"}} {
     set time_left $duration
     set time_passed 0
 
@@ -43,16 +43,19 @@ proc mtp_sts_pull { {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"}} 
             find_avg_rate 5 4000
         }
 
-	if {[string first "FF" $vmarg] == 0} {
-	    set fn "/home/diag/xin/Leni_FF_FPK24330008_thermal_calibration.csv"
-	} elseif {[string first "TT" $vmarg] == 0} {
-	    set fn "/home/diag/xin/Leni_TT_FPK24330002_thermal_calibration.csv"
-	} else {
-	    set fn "/home/diag/xin/Leni_SS_FPK2433000D_thermal_calibration.csv"
-	}
-	plog_msg "AW Cal file: $fn"
-	set cali_ret [sal_aw_adc_temp_read 0 50 100 0 3 100 $fn]
-	plog_msg "sal_aw_adc_temp_read: $cali_ret"
+        if {[string first "FF" $vmarg] == 0} {
+            set fn "$asic_src/ip/cosim/salina/sal_FF_thermal_calibration.csv"
+        } elseif {[string first "TT" $vmarg] == 0} {
+            set fn "$asic_src/ip/cosim/salina/sal_TT_thermal_calibration.csv"
+        } else {
+            set fn "$asic_src/ip/cosim/salina/sal_SS_thermal_calibration.csv"
+        }
+        plog_msg "AW Cal file: $fn"
+        set cali_ret [sal_aw_adc_temp_read 0 50 100 0 3 100 $fn]
+        plog_msg "sal_aw_adc_temp_read: $cali_ret"
+
+        #set ret [sal_port_sync]
+        #plog_msg "sal_port_sync: $ret"
 
         sal_print_voltage_temp_from_j2c
         sal_mc_irq_show -1 -1 1
@@ -447,7 +450,7 @@ if {[catch {exec grep {prd\[0\]_CNT:ud0} ../tclsh/$fn | tail -n1 | awk {{ print 
         exit 0
     }
 }
-mtp_sts_pull $cpld_id $test_type $dura 30 $vmarg
+mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
 #sal_noc_nis_bwmon_setup 0 0
 #sal_noc_nis_bwmon_dump  0 0
 
@@ -477,6 +480,8 @@ if {$err_cnt != 0} {
     puts $cur_time
     exec tar cf ${slot}_dump_${cur_time}.tar ${slot}_dump/
 }
+sal_mx_dump_mibs 0 0
+sal_mx_dump_mibs 0 1
 sal_top_eos 0
 plog_stop
 after 1000
