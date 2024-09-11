@@ -495,12 +495,12 @@ func init() {
 
     //Malfa
     malfaDispStaList = make(map[string]DispStaFunc)
-    malfaDispStaList["CORE"]         = tps53688.DispStatus
-    malfaDispStaList["ARM"]          = tps53688.DispStatus
-    malfaDispStaList["P12V"]         = ina3221a.DispStatus
-    malfaDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
     malfaDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
     malfaDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
+    malfaDispStaList["P12V"]         = ina3221a.DispStatus
+    malfaDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
+    malfaDispStaList["CORE"]         = tps53688.DispStatusSalina
+    malfaDispStaList["ARM"]          = tps53688.DispStatusSalina
     malfaDispStaList["P3V3"]         = ina3221a.DispStatus
     malfaDispStaList["P1V8"]         = ina3221a.DispStatus
     malfaDispStaList["VDD_DDR"]      = ina3221a.DispStatus
@@ -521,36 +521,17 @@ func init() {
     malfaDispStaList["DDR_VPP_1"]    = pmic.DispStatus
 
     //Pollara
-    //TODO: check HW Spec and remove unnecessary entries
     pollaraDispStaList = make(map[string]DispStaFunc)
-    pollaraDispStaList["CORE"]         = tps53688.DispStatus
-    pollaraDispStaList["ARM"]          = tps53688.DispStatus
-    pollaraDispStaList["P12V"]         = ina3221a.DispStatus
-    pollaraDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
-    pollaraDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
-    pollaraDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
-    pollaraDispStaList["P3V3"]         = ina3221a.DispStatus
-    pollaraDispStaList["P1V8"]         = ina3221a.DispStatus
-    pollaraDispStaList["VDD_DDR"]      = ina3221a.DispStatus
-    pollaraDispStaList["VDD_075_PCIE"] = ina3221a.DispStatus
-    pollaraDispStaList["VDD_075_MX"]   = ina3221a.DispStatus
-    pollaraDispStaList["VDD_12_PCIE"]  = ina3221a.DispStatus
-    pollaraDispStaList["VDD_12_MX"]    = ina3221a.DispStatus
-    pollaraDispStaList["VDDQ"]         = ina3221a.DispStatus
-    pollaraDispStaList["VDD_075_PLL"]  = ad7997.DispStatusVout
-    pollaraDispStaList["PCIE_CLK_BUF"] = rc19013.DispStatus
-    pollaraDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
+    pollaraDispStaList["P12V"]         = tps53688.DispStatusVsense
+    pollaraDispStaList["CORE"]         = tps53688.DispStatusSalina
     pollaraDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
 
     //Leni
-    //TODO: check HW Spec and remove unnecessary entries
     leniDispStaList = make(map[string]DispStaFunc)
-    leniDispStaList["CORE"]         = tps53688.DispStatus
-    leniDispStaList["ARM"]          = tps53688.DispStatus
+    leniDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense // TODO: hide this display when aux cable is not present
     leniDispStaList["P12V"]         = ina3221a.DispStatus
-    leniDispStaList["P12V_ADC"]     = ad7997.DispStatusIout    // redundant reading for comparison
-    leniDispStaList["P12V_AUX"]     = tps53688.DispStatusVsense
-    leniDispStaList["P12V_AUX_ADC"] = ad7997.DispStatusIout    // redundant reading for comparison
+    leniDispStaList["CORE"]         = tps53688.DispStatusSalina
+    leniDispStaList["ARM"]          = tps53688.DispStatusSalina
     leniDispStaList["P3V3"]         = ina3221a.DispStatus
     leniDispStaList["P1V8"]         = ina3221a.DispStatus
     leniDispStaList["VDD_DDR"]      = ina3221a.DispStatus

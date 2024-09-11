@@ -250,9 +250,12 @@ var MalfaMtpTbl = []I2cInfo {
 
 var MalfaTbl  = []I2cInfo {
     //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"P12V_AUX",      "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
     I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
     I2cInfo {"P3V3",          "INA3221A",  0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
     I2cInfo {"VDD_DDR",       "INA3221A",  0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
     I2cInfo {"P1V8",          "INA3221A",  0x2,   0x41,    0x1,    "HUB_NONE", 0,    0},
@@ -261,9 +264,6 @@ var MalfaTbl  = []I2cInfo {
     I2cInfo {"VDD_075_PCIE",  "INA3221A",  0x2,   0x42,    0x1,    "HUB_NONE", 0,    EXTERNAL_VMARG},
     I2cInfo {"VDD_12_MX",     "INA3221A",  0x2,   0x42,    0x2,    "HUB_NONE", 0,    EXTERNAL_VMARG},
     I2cInfo {"VDD_12_PCIE",   "INA3221A",  0x2,   0x42,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX",      "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
     I2cInfo {"VDD_075_PLL",   "AD7997",    0x2,   0x23,    0x3,    "HUB_NONE", 0,    0},
     I2cInfo {"ISENSE_1",      "INA3221A",  0x2,   0x43,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"ISENSE_2",      "INA3221A",  0x2,   0x42,    0x0,    "HUB_NONE", 0,    0},
@@ -311,28 +311,8 @@ var PollaraMtpTbl = []I2cInfo {
 
 var PollaraTbl = []I2cInfo {
     //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"P12V",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V",          "INA3221A",  0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P3V3",          "INA3221A",  0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_DDR",       "INA3221A",  0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
-    I2cInfo {"P1V8",          "INA3221A",  0x2,   0x41,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDDQ",          "INA3221A",  0x2,   0x41,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_MX",    "INA3221A",  0x2,   0x41,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_075_PCIE",  "INA3221A",  0x2,   0x42,    0x1,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_12_MX",     "INA3221A",  0x2,   0x42,    0x2,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"VDD_12_PCIE",   "INA3221A",  0x2,   0x42,    0x3,    "HUB_NONE", 0,    EXTERNAL_VMARG},
-    I2cInfo {"P12V_ADC",      "AD7997",    0x2,   0x23,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX",      "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V_AUX_ADC",  "AD7997",    0x2,   0x23,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_PLL",   "AD7997",    0x2,   0x23,    0x3,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_1",      "INA3221A",  0x2,   0x43,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_2",      "INA3221A",  0x2,   0x42,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"ISENSE_3",      "INA3221A",  0x2,   0x41,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_12_PCIE_VM","DS4424",    0x2,   0x30,    0x0,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_12_MX_VM",  "DS4424",    0x2,   0x30,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_PCIE_VM","DS4424",   0x2,   0x30,    0x2,    "HUB_NONE", 0,    0},
-    I2cInfo {"VDD_075_MX_VM", "DS4424",    0x2,   0x30,    0x3,    "HUB_NONE", 0,    0},
 
     I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
@@ -340,22 +320,6 @@ var PollaraTbl = []I2cInfo {
     I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"FRU",           "AT24C02C",  0x3,   0x53,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
     I2cInfo {"DPU_FRU",       "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
-}
-
-//TODO: check HW Spec and remove/modify entries
-var PollaraSensorTbl = []I2cSensorInfo {
-    I2cSensorInfo {"P12V_ADC",      I2cSensorCoeff{ 0.06 }},
-    I2cSensorInfo {"P12V_AUX_ADC",  I2cSensorCoeff{ 0.06 }},
-    I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.002 }},
-    I2cSensorInfo {"P12V_AUX",      I2cSensorCoeff{ 0.002 }},
-    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.02 }},
-    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.005 }},
-    I2cSensorInfo {"P1V8",          I2cSensorCoeff{ 0.02 }},
-    I2cSensorInfo {"VDDQ",          I2cSensorCoeff{ 0.1 }},
-    I2cSensorInfo {"VDD_075_MX",    I2cSensorCoeff{ 0.005 }},
-    I2cSensorInfo {"VDD_075_PCIE",  I2cSensorCoeff{ 0.005 }},
-    I2cSensorInfo {"VDD_12_MX",     I2cSensorCoeff{ 0.005 }},
-    I2cSensorInfo {"VDD_12_PCIE",   I2cSensorCoeff{ 0.005 }},
 }
 
 var LeniMtpTbl = []I2cInfo {
@@ -368,9 +332,10 @@ var LeniMtpTbl = []I2cInfo {
 
 var LeniTbl = []I2cInfo {
     //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"P12V_AUX",     "TPS53688",   0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"P12V",         "INA3221A",   0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
     I2cInfo {"CORE",         "TPS53688",   0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
     I2cInfo {"ARM",          "TPS53688",   0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
-    I2cInfo {"P12V",         "INA3221A",   0x2,   0x43,    0x1,    "HUB_NONE", 0,    0},
     I2cInfo {"P3V3",         "INA3221A",   0x2,   0x43,    0x2,    "HUB_NONE", 0,    0},
     I2cInfo {"VDD_DDR",      "INA3221A",   0x2,   0x43,    0x3,    "HUB_NONE", 0,    0},
     I2cInfo {"DDR_VDD",      "PMIC",       0x0,   0x4F,    0x0,    "HUB_NONE", 0,    0},
@@ -386,8 +351,8 @@ var LeniTbl = []I2cInfo {
 
 var LeniSensorTbl = []I2cSensorInfo {
     I2cSensorInfo {"P12V",          I2cSensorCoeff{ 0.02 }},
-    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.002 }},
-    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.01 }},
+    I2cSensorInfo {"P3V3",          I2cSensorCoeff{ 0.001 }},
+    I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.001 }},
 }
 
 var OrtanoMtpTbl = []I2cInfo {
@@ -956,7 +921,6 @@ func init() {
         SensorTbl = MalfaSensorTbl
     } else if CardType == "POLLARA" {
         I2cTbl = PollaraTbl
-        SensorTbl = PollaraSensorTbl
     } else if CardType == "LENI" || CardType == "LENI48G"{
         I2cTbl = LeniTbl
         SensorTbl = LeniSensorTbl
@@ -1153,7 +1117,6 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurSensorTbl = MalfaSensorTbl
     } else if uutType == "POLLARA" {
         CurI2cTbl = PollaraMtpTbl
-        CurSensorTbl = PollaraSensorTbl
     } else if uutType == "LENI" || uutType == "LENI48G" {
         CurI2cTbl = LeniMtpTbl
         CurSensorTbl = LeniSensorTbl

@@ -2530,7 +2530,7 @@ func DispEeprom(devName string, bus uint32, devAddr byte, field string) (err int
     return
 }
 
-func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, toFile bool) (output []byte, err int) { 
+func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, fname string, toFile bool) (output []byte, err int) {
     var f *os.File
     var err_ error
     var data []byte
@@ -2562,17 +2562,17 @@ func DumpEeprom(devName string, bus uint32, devAddr byte, numBytes int, toFile b
     }
 
     if toFile == true {
-        f, err_ = os.OpenFile("eeprom", os.O_CREATE|os.O_WRONLY, 0600)
+        f, err_ = os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
         if err_ != nil {
-            cli.Println("e", "file create failed")
+            cli.Println("e", "file create failed. Filename:", fname)
             return nil, -1
         }
-        cli.Println("i", "dump FRU to file eeprom")
+        cli.Println("i", "dump FRU to file", fname)
         f.WriteString(string(rdData[:]))
         f.Close()
-        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file \"./eeprom\"")
+        cli.Println("i", "EEPROM: dumped", numBytes, "bytes to file", fname)
     }
-        
+
     return
 
 }

@@ -748,8 +748,9 @@ func DispStatus(devName string) (err int) {
     return
 }
 
-func DispStatusVsense(devName string) (err int) {
-    vrmTitle := []string {"VOUT", "IOUT", "POUT", "TEMP"}
+func DispStatusSalina(devName string) (err int) {
+    // Salina boards doesnt use Vboot, and the VIN/IIN/PIN measured here is invalid when no aux cable present
+    vrmTitle := []string {"VOUT", "IOUT", "POUT", "TEMP", "STATUS"}
     var fmtDigFrac string = "%d.%03d"
     fmtStr := "%-10s"
     fmtNameStr := "%-20s"
@@ -760,27 +761,80 @@ func DispStatusVsense(devName string) (err int) {
     for _, title := range(vrmTitle) {
         outStr = outStr + fmt.Sprintf(fmtStr, title)
     }
-    //cli.Println("i", "0.00.00.00.00.00.0--")
     cli.Println("i", "=================================")
     cli.Println("i", outStr)
 
     outStr = fmt.Sprintf(fmtNameStr, devName)
+    var dig uint64
+    var frac uint64
+    for _, title := range(vrmTitle) {
+        switch title {
+        case "VOUT":
+            dig, frac, _ = ReadVout(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "IOUT":
+            dig, frac, _ = ReadIout(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "POUT":
+            dig, frac, _ = ReadPout(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "TEMP":
+            dig, frac, _ = ReadTemp(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "STATUS":
+            status, _ := ReadStatus(devName)
+            outStrTemp = fmt.Sprintf("0x%X", status)
+        default:
+            outStrTemp = "N/A"
+        }
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    }
+    cli.Println("i", outStr)
 
-    dig, frac, _ := ReadVin(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    return
+}
 
-    dig, frac, _ = ReadIin(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+func DispStatusVsense(devName string) (err int) {
+    /* Read from a sense resistor at input line. */
+    vrmTitle := []string {"VOUT", "IOUT", "POUT", "TEMP", "STATUS"}
+    var fmtDigFrac string = "%d.%03d"
+    fmtStr := "%-10s"
+    fmtNameStr := "%-20s"
 
-    dig, frac, _ = ReadPin(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    var outStr string
+    var outStrTemp string
+    outStr = fmt.Sprintf(fmtNameStr, "NAME")
+    for _, title := range(vrmTitle) {
+        outStr = outStr + fmt.Sprintf(fmtStr, title)
+    }
+    cli.Println("i", "=================================")
+    cli.Println("i", outStr)
 
-    dig, frac, _ = ReadTemp(devName)
-    outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
-    outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    outStr = fmt.Sprintf(fmtNameStr, devName)
+    var dig uint64
+    var frac uint64
+    for _, title := range(vrmTitle) {
+        switch title {
+        case "VOUT":
+            dig, frac, _ = ReadVin(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "IOUT":
+            dig, frac, _ = ReadIin(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "POUT":
+            dig, frac, _ = ReadPin(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "TEMP":
+            dig, frac, _ = ReadTemp(devName)
+            outStrTemp = fmt.Sprintf(fmtDigFrac, dig, frac)
+        case "STATUS":
+            status, _ := ReadStatus(devName)
+            outStrTemp = fmt.Sprintf("0x%X", status)
+        default:
+            outStrTemp = "N/A"
+        }
+        outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
+    }
 
     cli.Println("i", outStr)
 
