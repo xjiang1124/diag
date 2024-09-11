@@ -390,7 +390,8 @@ class nic_test_v2:
             cmd = "fpgautil spimode {} off".format(args.slot)
             common.session_cmd(session, cmd)
             print("=== TCL ENV setup ===")
-            tcl_path = "/home/diag/snake_test/nic"
+            #tcl_path = "/home/diag/vijesh/nic"
+            tcl_path = "/home/diag/yanmin/nic"
             common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
             common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
             common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
@@ -407,51 +408,37 @@ class nic_test_v2:
             common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
             common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
-            # open a uart session
-            uart_session = common.session_start()
-            ret = self.nic_con.uart_session_connect(uart_session, args.slot)
-            if ret != 0:
+
+
+            time.sleep(3)
+            if sal_con.boot_to_step_v2(int(args.slot), 'linux', warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
                 return ret
 
-            # common.session_cmd(session, "cd $ASIC_SRC/ip/cosim/tclsh")
-            # power cycle
-            cmd = "turn_on_slot.sh off {}".format(args.slot)
-            common.session_cmd(session, cmd)
-            time.sleep(1)
-            cmd = "turn_on_slot.sh on {}".format(args.slot)
-            common.session_cmd(session, cmd)
-            time.sleep(10)
-            common.session_cmd(session, cmd)
-            time.sleep(1)
-            # set PERST
-            common.session_cmd(session, "fpgautil w32 0x17c 0x00")
             cmd = "jtag_accpcie_salina clr {}".format(args.slot)
             common.session_cmd(session, cmd)
-            time.sleep(3)
 
+            # Start CPU Burn on N1
+            print("Start CPU BURN on N1")
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot)
+            if ret != 0:
+                return ret
             try:
-                uart_session.expect("uart:~\$", 30)
+                self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
             except pexpect.TIMEOUT:
-                print ("failed to boot Zephyr")
-                return -1
-
-            # TCL command
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
-            common.session_cmd(session, cmd, 360, False, "pcie done")
-            #common.session_stop(session)
-
-            # get output on uart session
-            try:
-                uart_session.expect("TT > 1000")
-                print ("=== console output start ===")
-                print (uart_session.before + uart_session.after)
-                print ("=== console output end ===")
-            except pexpect.TIMEOUT:
-                print ("failed to get pcie output")
+                print ("failed to run cpuburn")
                 return -1
             self.nic_con.uart_session_stop(uart_session)
             common.session_stop(uart_session)
+
+            print("Done with Zephyr boot up, now start tcl")
+            # TCL command
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+            common.session_cmd(session, cmd, 360, False, "pcie done")
             session.expect("SNAKE TEST DONE", args.timeout)
+
             common.session_stop(session)
             # Print result
         return 0
