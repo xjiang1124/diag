@@ -71,8 +71,6 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     #elif con_ctrl.get_card_type(slot) in ["MALFA", "LENI"]:
     else:
         cmd = "go 0x7E500000"
-    else:
-        cmd = ""
 
     if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=10):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
