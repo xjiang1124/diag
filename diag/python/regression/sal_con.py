@@ -68,12 +68,15 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
 
     if con_ctrl.get_card_type(slot) in ["POLLARA"]:
         cmd = "bootm 0x78580000"
-    elif con_ctrl.get_card_type(slot) in ["MALFA", "LENI"]:
-        cmd = "go 0x7E500000"
+    #elif con_ctrl.get_card_type(slot) in ["MALFA", "LENI"]:
     else:
-        cmd = ""
+        cmd = "go 0x7E500000"
 
-    if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=5):
+    if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=10):
+        print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+        return -1
+
+    if not exp_cmd(session, "", pass_sig_list=["uart:~\$"], timeout=5):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
 
@@ -92,7 +95,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
     
-    if not exp_cmd(session, "", pass_sig_list=["uart:~\$"], timeout=1):
+    if not exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1):
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
@@ -100,7 +103,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} fwsel command failed".format(slot))
         return -1
 
-    if not exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=30):
+    if not exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=45):
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
 
