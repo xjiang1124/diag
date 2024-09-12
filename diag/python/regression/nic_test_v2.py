@@ -805,12 +805,12 @@ class nic_test_v2:
 
     def qspi_test_pollara(self, slot):
         ret = 0
-        
-        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
+
+        uart_session = common.session_start()
+        if sal_con.enter_a35_zephyr(slot, uart_session):
             print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
             ret = -1
 
-        uart_session = common.session_start()
         if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
             print("===== FAILED: couldn't open uart")
             ret = -1
@@ -828,8 +828,9 @@ class nic_test_v2:
         ret = 0
         slot=args.slot
     
-        if args.slot == "":
-            print ("Invalide input slot_list:", slot)
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            return -1
 
         self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
 
@@ -843,16 +844,15 @@ class nic_test_v2:
                 return ret
 
         # Now boot to zehpyr
-        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
+        uart_session = common.session_start()
+        if sal_con.enter_a35_zephyr(slot, uart_session, warm_reset=False):
             print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
             ret = -1
             return ret
 
-        uart_session = common.session_start()
         self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
         self.nic_con.uart_session_cmd(uart_session, "", ending="uart:~\$")
 
-        #session_cmd(mtp_session, "rm *eeprom*")
         fn = "eeprom_{}".format(slot)
         cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
         common.session_cmd(bash_session, cmd)
@@ -874,8 +874,8 @@ class nic_test_v2:
         self.nic_con.uart_session_stop(uart_session)
 
         #--------------------------------------------------------
-        # Now boot to zehpyr
-        if sal_con.boot_to_step_v2(int(args.slot), 'a35_uboot', warm_reset=False):
+        # Now check from uboot
+        if sal_con.enter_a35_uboot(slot, uart_session, warm_reset=False):
             print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
             ret = -1
             return ret
@@ -1251,7 +1251,7 @@ if __name__ == "__main__":
     # Enable/Disable WP single
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_prog_dpu_fru.add_argument("--qspi_image_path", help="Path to folder with qspi_prog.sh", type=str, default="/home/diag/ainic_v4_32mb")
 
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
