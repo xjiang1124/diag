@@ -18,6 +18,7 @@ import datetime
 sys.path.append("../lib")
 import common
 import sal_con
+import fru
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -834,8 +835,6 @@ class nic_test_v2:
 
         self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
 
-        bash_session = common.session_start()
-
         if self.nic_con.get_card_type(slot) == "POLLARA":
             # Program a usable ainic image to have prompt
             if self.qspi_prog_salina(slot, "/home/diag/ainic_v4_32mb_shell"):
@@ -843,52 +842,13 @@ class nic_test_v2:
                 ret = -1
                 return ret
 
-        # Now boot to zehpyr
-        uart_session = common.session_start()
-        if sal_con.enter_a35_zephyr(slot, uart_session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+        # Now boot zephyr and program dpu fru
+        if fru.program_dpu_fru(slot):
             ret = -1
-            return ret
 
-        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
-        self.nic_con.uart_session_cmd(uart_session, "", ending="uart:~\$")
-
-        fn = "eeprom_{}".format(slot)
-        cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
-        common.session_cmd(bash_session, cmd)
-
-        # Write DPU FRU from Zephuy cli
-        # Write one byte each time
-        numBytes = 256
-        for offset in range(numBytes):
-            cmd = "od -An -tx1 -j {} -N 1 {}".format(offset, fn)
-            common.session_cmd(bash_session, cmd)
-            #print ("\n===\n"+bash_session.before+"\n===\n")
-
-            cmd = "i2c write i2c@30000 0x52 {}{}".format(str(hex(offset)[2:]).zfill(4), bash_session.before.splitlines()[-2])
-            print(cmd)
-            self.nic_con.uart_session_cmd(uart_session, cmd, ending="uart:~\$")
-
-        self.nic_con.uart_session_cmd(uart_session, "i2c read i2c@30000 0x52 0000", ending="uart:~\$")
-
-        self.nic_con.uart_session_stop(uart_session)
-
-        #--------------------------------------------------------
         # Now check from uboot
-        if sal_con.enter_a35_uboot(slot, uart_session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+        if fru.verify_dpu_fru(slot):
             ret = -1
-            return ret
-
-        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
-        self.nic_con.uart_session_cmd(uart_session, "i2c md 0x52 0.2 128", ending="DSC#")
-        self.nic_con.uart_session_stop(uart_session)
-
-        common.session_stop(uart_session)
-
-        print("===== Original FRU Content =====")
-        common.session_cmd(bash_session, "hexdump -C " + fn)
-
 
         if self.nic_con.get_card_type(slot) == "POLLARA":
             #--------------------------------------------------------
@@ -902,8 +862,6 @@ class nic_test_v2:
             if self.qspi_test_pollara(slot):
                 print("Final Zephyr UART checking has failed!!!")
                 ret = -1
-
-        common.session_stop(bash_session)
 
         if ret == 0:
             print("DPU_FRU updated successfully")
