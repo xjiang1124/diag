@@ -843,12 +843,23 @@ class nic_test_v2:
                 return ret
 
         # Now boot zephyr and program dpu fru
+        print("====== PROGRAMMING DPU FRU")
         if fru.program_dpu_fru(slot):
             ret = -1
 
         # Now check from uboot
+        print("====== DUMPING PROGRAMMED DPU FRU")
         if fru.verify_dpu_fru(slot):
             ret = -1
+
+        # Program 2nd PCIE fru as well
+        if self.nic_con.get_card_type(slot) != "MALFA":
+            print("====== PROGRAMMING 2nd PCIE FRU")
+            if fru.program_2nd_pcie_fru(slot):
+                ret = -1
+            print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
+            if fru.verify_2nd_pcie_fru(slot):
+                ret = -1
 
         if self.nic_con.get_card_type(slot) == "POLLARA":
             #--------------------------------------------------------
