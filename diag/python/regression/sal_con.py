@@ -82,6 +82,8 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
 
     if con_ctrl.get_card_type(slot) in ["POLLARA"]:
         cmd = "bootm 0x78140000"
+    elif kwargs.get("raw_zephyr_binary", False):
+        cmd = "bootm 0x7E500000"
     else:
         cmd = "boot" #"bootm goldfw"
 
@@ -165,6 +167,7 @@ if __name__ == "__main__":
     parser.add_argument("--boot_to", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
     parser.add_argument("--slot", "-slot", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--raw_zephyr_binary", "-b", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
 
     try:
         parsed_args = parser.parse_args()
