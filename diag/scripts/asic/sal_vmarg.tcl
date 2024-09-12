@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # !/usr/bin/tclsh
 #
 #package require cmdline
