@@ -2201,7 +2201,7 @@ class mtp_ctrl():
                 # validate the readings
                 inlet_1 = float(match.group(3))
                 inlet_2 = float(match.group(4))
-        if inlet_1 and inlet_2:
+        if inlet_1 is not None and inlet_2 is not None:
             inlet_1_rs = True
             inlet_2_rs = True
             max_temp = 70
