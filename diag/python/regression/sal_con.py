@@ -11,17 +11,31 @@ sys.path.append("../lib")
 import common
 from nic_con import nic_con
 
-def boot_to_step_v2(slot, boot_to, warm_reset=False):
+stage = (
+    "a35_uboot",
+    "zephyr",
+    "n1_uboot",
+    "linux",
+)
+
+def _boot_to_step(parsed_args):
+    """
+        Input: parsed_args: Namespace object from argparse.
+        This function will call downstream (public) functions.
+        To prevent 'slot' from being passed twice, it's better to delete it from the Namespace.
+    """
     ret = 0
+    slot = parsed_args.__dict__.pop('slot')
+    boot_to = parsed_args.__dict__.pop('boot_to')[0].lower()
     session = common.session_start()
-    if boot_to == "a35_uboot":
-        ret = enter_a35_uboot(slot, session, warm_reset)
-    elif boot_to == "zephyr":
-        ret = enter_a35_zephyr(slot, session, warm_reset)
-    elif boot_to == "n1_uboot":
-        ret = enter_n1_uboot(slot, session, warm_reset)
-    elif boot_to == "linux":
-        ret = enter_n1_linux(slot, session, warm_reset)
+    if boot_to == stage[0]:
+        ret = enter_a35_uboot(slot, session, **vars(parsed_args))
+    elif boot_to == stage[1]:
+        ret = enter_a35_zephyr(slot, session, **vars(parsed_args))
+    elif boot_to == stage[2]:
+        ret = enter_n1_uboot(slot, session, **vars(parsed_args))
+    elif boot_to == stage[3]:
+        ret = enter_n1_linux(slot, session, **vars(parsed_args))
     else:
         print("Unknown stage: {}".format(boot_to))
         ret = -1
@@ -67,10 +81,11 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     if con_ctrl.get_card_type(slot) in ["POLLARA"]:
-        cmd = "bootm 0x78580000"
-    #elif con_ctrl.get_card_type(slot) in ["MALFA", "LENI"]:
+        cmd = "bootm 0x78140000"
+    elif kwargs.get("raw_zephyr_binary", False):
+        cmd = "bootm 0x7E500000"
     else:
-        cmd = "go 0x7E500000"
+        cmd = "boot" #"bootm goldfw"
 
     if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=10):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
@@ -149,9 +164,10 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--boot_to", type=str, default="linux", help="Boot stage: a35_uboot/zephyr/n1_uboot/linux")
+    parser.add_argument("--boot_to", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
     parser.add_argument("--slot", "-slot", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--raw_zephyr_binary", "-b", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
 
     try:
         parsed_args = parser.parse_args()
@@ -161,7 +177,7 @@ if __name__ == "__main__":
 
     slot = parsed_args.slot
 
-    if boot_to_step_v2(parsed_args.slot, parsed_args.boot_to, parsed_args.warm_reset) != 0:
+    if _boot_to_step(parsed_args) != 0:
         print("Slot {} FAILED".format(slot))
     else:
         print("Slot {} PASSED".format(slot))

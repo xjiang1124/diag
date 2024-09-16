@@ -18,6 +18,7 @@ import datetime
 sys.path.append("../lib")
 import common
 import sal_con
+import fru
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -787,99 +788,96 @@ class nic_test_v2:
                 common.session_stop(session)
                 print("=== Slot:", slot, "Passed ===")
 
+    def qspi_prog_salina(self, slot, qspi_image_path):
+        session = common.session_start()
+        if not qspi_image_path:
+            print("===== FAILED: Please provide a qspi image path")
+            return -1
+        if not os.path.exists(os.path.join(qspi_image_path, "qspi_prog.sh")):
+            print("===== FAILED: Unable to locate qspi_prog.sh in {} directory".format(qspi_image_path))
+            return -1
+        self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
+        cur_dir = os.getcwd()
+        common.session_cmd(session, "cd {}".format(qspi_image_path))
+        common.session_cmd(session, "./qspi_prog.sh {}".format(slot))
+        common.session_cmd(session, "cd {}".format(cur_dir))
+        common.session_stop(session)
+        return 0
+
+    def qspi_test_pollara(self, slot):
+        ret = 0
+
+        uart_session = common.session_start()
+        if sal_con.enter_a35_zephyr(slot, uart_session):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            ret = -1
+
+        if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
+            print("===== FAILED: couldn't open uart")
+            ret = -1
+        if self.nic_con.uart_session_cmd(uart_session, "", ending="- T R", timeout=1):
+            print("===== FAILED: no pcie messages - wrong image")
+            ret = -1
+        else:
+            print("================\nFinal Zephyr UART checking has passed\n================")
+
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        return ret
+
     def prog_dpu_fru(self, args):
-        print(args)
         ret = 0
         slot=args.slot
     
-        if args.slot == "":
-            print ("Invalide input slot_list:", slot)
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            return -1
 
         self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
 
-        bash_session = common.session_start()
-
         if self.nic_con.get_card_type(slot) == "POLLARA":
             # Program a usable ainic image to have prompt
-            common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3_shell")
-            common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
-            common.session_cmd(bash_session, "cd /home/diag/diag/python/regression")
+            if self.qspi_prog_salina(slot, "/home/diag/ainic_v4_32mb_shell"):
+                print("===== FAILED: couldn't program testing qspi image")
+                ret = -1
+                return ret
 
-        # Now boot to zehpyr
-        if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+        # Now boot zephyr and program dpu fru
+        print("====== PROGRAMMING DPU FRU")
+        if fru.program_dpu_fru(slot):
             ret = -1
-            return ret
 
-        uart_session = common.session_start()
-        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
-        self.nic_con.uart_session_cmd(uart_session, "", ending="uart:~\$")
-
-        #session_cmd(mtp_session, "rm *eeprom*")
-        fn = "eeprom_{}".format(slot)
-        cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
-        common.session_cmd(bash_session, cmd)
-
-        # Write DPU FRU from Zephuy cli
-        # Write one byte each time
-        numBytes = 256
-        for offset in range(numBytes):
-            cmd = "od -An -tx1 -j {} -N 1 {}".format(offset, fn)
-            common.session_cmd(bash_session, cmd)
-            #print ("\n===\n"+bash_session.before+"\n===\n")
-
-            cmd = "i2c write i2c@30000 0x52 {}{}".format(str(hex(offset)[2:]).zfill(4), bash_session.before.splitlines()[-2])
-            print(cmd)
-            self.nic_con.uart_session_cmd(uart_session, cmd, ending="uart:~\$")
-
-        self.nic_con.uart_session_cmd(uart_session, "i2c read i2c@30000 0x52 0000", ending="uart:~\$")
-
-        self.nic_con.uart_session_stop(uart_session)
-
-        #--------------------------------------------------------
-        # Now boot to zehpyr
-        if sal_con.boot_to_step_v2(int(args.slot), 'a35_uboot', warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+        # Now check from uboot
+        print("====== DUMPING PROGRAMMED DPU FRU")
+        if fru.verify_dpu_fru(slot):
             ret = -1
-            return ret
 
-        self.nic_con.uart_session_connect(uart_session, slot, uart_id=0)
-        self.nic_con.uart_session_cmd(uart_session, "i2c md 0x52 0.2 128", ending="DSC#")
-        self.nic_con.uart_session_stop(uart_session)
-
-        common.session_stop(uart_session)
-
-        print("===== Original FRU Content =====")
-        common.session_cmd(bash_session, "hexdump -C " + fn)
+        # Program 2nd PCIE fru as well
+        if self.nic_con.get_card_type(slot) != "MALFA":
+            print("====== PROGRAMMING 2nd PCIE FRU")
+            if fru.program_2nd_pcie_fru(slot):
+                ret = -1
+            print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
+            if fru.verify_2nd_pcie_fru(slot):
+                ret = -1
 
         if self.nic_con.get_card_type(slot) == "POLLARA":
             #--------------------------------------------------------
             # Program a pruction ainic image to have prompt
-            self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
-
-            common.session_cmd(bash_session, "cd /home/diag/xin/ainic_v3")
-            common.session_cmd(bash_session, "./qspi_prog.sh {}".format(slot))
-
-            if sal_con.boot_to_step_v2(int(args.slot), 'zephyr', warm_reset=False):
-                print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            if self.qspi_prog_salina(slot, args.qspi_image_path):
+                print("===== FAILED: couldn't program final qspi image on slot {}".format(slot))
+                ret = -1
 
             # Final check console
             # Can not do it because of pcie prints
-            uart_session = common.session_start()
-            if self.nic_con.uart_session_connect(uart_session, slot, uart_id=0):
+            if self.qspi_test_pollara(slot):
                 print("Final Zephyr UART checking has failed!!!")
-            #else:
-            #    print("Final Zephyr UART checking has passed")
+                ret = -1
 
-            if not self.nic_con.uart_session_cmd(uart_session, "help", ending="uart:~\$", timeout=1):
-                print("Final Zephyr UART checking has failed!!!")
-            else:
-                print("================\nFinal Zephyr UART checking has passed\n================")
-
-            self.nic_con.uart_session_stop(uart_session)
-            common.session_stop(uart_session)
-
-        common.session_stop(bash_session)
+        if ret == 0:
+            print("DPU_FRU updated successfully")
+        else:
+            print("DPU_FRU update unsuccessful")
 
         return ret
    
@@ -1222,7 +1220,8 @@ if __name__ == "__main__":
     # Enable/Disable WP single
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_prog_dpu_fru.add_argument("--qspi_image_path", help="Path to folder with qspi_prog.sh", type=str, default="/home/diag/ainic_v4_32mb")
 
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
 
