@@ -325,6 +325,7 @@ class nic_con:
         expstr = "tx/rx buffer cleared"
         try:
             session.sendline(cmd)
+            sleep(1) # needs delay otherwise fpga_uart will throw UART_ERROR2, and drop some characters from the next command
             session.expect(expstr, timeout)
         except pexpect.TIMEOUT:
             print("=== TIMEOUT: Failed to connect console")
