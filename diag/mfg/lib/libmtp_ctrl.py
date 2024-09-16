@@ -2201,7 +2201,7 @@ class mtp_ctrl():
                 # validate the readings
                 inlet_1 = float(match.group(3))
                 inlet_2 = float(match.group(4))
-        if inlet_1 and inlet_2:
+        if inlet_1 is not None and inlet_2 is not None:
             inlet_1_rs = True
             inlet_2_rs = True
             max_temp = 70
@@ -4968,7 +4968,7 @@ class mtp_ctrl():
             return nic_list[:]
         # self.nic_semi_parallel_log(nic_list, self.mtp_get_cmd_buf_before_sig())
         if "failed" in self.mtp_get_nic_cmd_buf(slot_main):
-            match = re.search("failed! *([0-9,]+)", self.mtp_get_nic_cmd_buf(slot_main))
+            match = re.search("failed slot:.*([0-9,]+)", self.mtp_get_nic_cmd_buf(slot_main))
             if match:
                 for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
                     slot = slot-1
