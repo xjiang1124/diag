@@ -87,14 +87,35 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     else:
         cmd = "boot" #"bootm 0x8000000"
 
-
-    if not exp_cmd(session, cmd, pass_sig_list=["uart:~\$", "any key to stop"], timeout=10):
+    # For ainic, the "uart:~$" prompt may be truncated
+    if not exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
 
-    if not exp_cmd(session, "", pass_sig_list=["uart:~\$"], timeout=5):
-        print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
-        return -1
+    # For non-ainic, keep pressing any key to stop N1 autoboot
+    for i in range(kwargs.get('n1_autoboot_delay', 10)): #10 = 2 keypresses per sec
+        if con_ctrl.get_card_type(slot) in ["POLLARA"]:
+            break
+        session.timeout = 0.5
+        try:
+            print("C+C")
+            session.send(chr(3))
+            idx = session.expect(["Releasing CPU reset", "Asserting CPU reset", "any key to stop", "Stopping autoboot"])
+            #time.sleep(1)
+            if idx == 0 or idx == 1:
+                print("Missed the chance to stop N1 autoboot")
+                ret = -1
+                break
+            elif idx == 2 or idx == 3:
+                ret = 0
+                # two enters to see clean prompt instead of in between bootup messages
+                session.send("")
+                session.send("")
+                session.expect(["uart:~\$"])
+                break
+        except pexpect.TIMEOUT:
+            print("timeout:", i)
+            ret = -1
 
     if con_ctrl.uart_session_stop(session) != 0:
         print("==== FAILED: couldn't exit uart cleanly")
@@ -181,5 +202,6 @@ if __name__ == "__main__":
 
     if _boot_to_step(parsed_args) != 0:
         print("Slot {} FAILED".format(slot))
+        sys.exit(1)
     else:
         print("Slot {} PASSED".format(slot))
