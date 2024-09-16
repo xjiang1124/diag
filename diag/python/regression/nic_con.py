@@ -45,7 +45,7 @@ class nic_con:
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["Login incorrect", "\#", "capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print("ite: ", ite)
