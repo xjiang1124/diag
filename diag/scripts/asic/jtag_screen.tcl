@@ -18,7 +18,7 @@ proc define_test_list {{override_test_list ""}} {
         switch $test_name {
             # #TEST NAME ############# RST PRE     COMMAND              POST
             ID      { set cmd_list [list 0 ""      sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist       ""  ] }
+            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   ""  ] }
             FREQ    { set cmd_list [list 0 ""      sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             default { set cmd_list [list 0 "" "" ""] }
         }
