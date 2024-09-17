@@ -835,13 +835,6 @@ class nic_test_v2:
 
         self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
 
-        if self.nic_con.get_card_type(slot) == "POLLARA":
-            # Program a usable ainic image to have prompt
-            if self.qspi_prog_salina(slot, "/home/diag/ainic_v4_32mb_shell"):
-                print("===== FAILED: couldn't program testing qspi image")
-                ret = -1
-                return ret
-
         # Now boot zephyr and program dpu fru
         print("====== PROGRAMMING DPU FRU")
         if fru.program_dpu_fru(slot):
@@ -863,19 +856,6 @@ class nic_test_v2:
             print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
             if fru.verify_2nd_pcie_fru(slot):
                 print("====== ERRORS encountered dumping 2nd PCIE FRU")
-                ret = -1
-
-        if self.nic_con.get_card_type(slot) == "POLLARA":
-            #--------------------------------------------------------
-            # Program a pruction ainic image to have prompt
-            if self.qspi_prog_salina(slot, args.qspi_image_path):
-                print("===== FAILED: couldn't program final qspi image on slot {}".format(slot))
-                ret = -1
-
-            # Final check console
-            # Can not do it because of pcie prints
-            if self.qspi_test_pollara(slot):
-                print("Final Zephyr UART checking has failed!!!")
                 ret = -1
 
         if ret == 0:
@@ -1223,10 +1203,7 @@ if __name__ == "__main__":
 
     # Enable/Disable WP single
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
     parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
-    parser_prog_dpu_fru.add_argument("--qspi_image_path", help="Path to folder with qspi_prog.sh", type=str, default="/home/diag/ainic_v4_32mb")
-
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
 
     try:
