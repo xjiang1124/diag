@@ -13,12 +13,12 @@ def _swap_smbus(slot):
     common.session_cmd(session, "swap_smbus.sh {}".format(slot))
     common.session_stop(session)
 
-def _program(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False):
+def _program(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=False):
     ret = 0
     nc = nic_con()
     bash_session = common.session_start()
     uart_session = common.session_start()
-    if sal_con.enter_a35_uboot(slot, uart_session):
+    if sal_con.enter_a35_uboot(slot, uart_session, warm_reset=warm_reset):
         print("===== FAILED: slot {} couldn't boot a35 uboot".format(slot))
         return -1
 
@@ -62,12 +62,12 @@ def _program(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False):
     common.session_stop(bash_session)
     return ret
 
-def _verify(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False):
+def _verify(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=False):
     ret = 0
     nc = nic_con()
     uart_session = common.session_start()
-    if sal_con.enter_a35_uboot(slot, uart_session, warm_reset=False):
-        print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+    if sal_con.enter_a35_uboot(slot, uart_session, warm_reset=warm_reset):
+        print("===== FAILED: slot {} couldn't boot".format(slot))
         return -1
     if needs_smbus_swap:
         _swap_smbus(slot)
