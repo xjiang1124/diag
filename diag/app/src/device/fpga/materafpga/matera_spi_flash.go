@@ -13,6 +13,7 @@ import (
     "os"
     "bufio"
     "time"
+    "hardware/i2cinfo"
 )
 
 /*
@@ -140,6 +141,16 @@ func init () {
     elba_flash_info.sector_size = FLASH_SECTOR_SIZE
     elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
     elba_flash_info.offset = 0
+}
+
+
+func UpdateFlashSize(slot uint32) () {
+    uut := fmt.Sprintf("UUT_%d", slot+1)
+    uutType, _ := i2cinfo.FindUutTypeMtp(uut) 
+    if uutType == "POLLARA" {
+        elba_flash_info.region_size = uint32(0x2000000)  //32MB 
+        elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
+    }
 }
 
 
@@ -514,6 +525,8 @@ func Spi_salina_flash_get_partition_info(spiNumber uint32, partition string) (fl
         flash_size = 0x3C00000
         start_addr = 0x00400000 
     } else if partition == "allflash" {
+        //Check if the card is Pollara which has a 32MB flash
+        UpdateFlashSize(spiNumber)
         flash_size = int(elba_flash_info.region_size )
         start_addr = 0
     } else {
@@ -768,10 +781,8 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
 func Spi_salina_flash_erase_all_sectors(spiNumber uint32, qspiNumber uint32) (err error) {
     var i uint32 = 0
 
-    elba_flash_info.region_size = uint32(0x10000000)  // 2Gb / 256megabyte
-    elba_flash_info.sector_size = FLASH_SECTOR_SIZE
-    elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
-    elba_flash_info.offset = 0
+    //Check if the card is Pollara which has a 32MB flash
+    UpdateFlashSize(spiNumber)
 
     fmt.Printf("SPI BUS=%d QSPI=%d\n", spiNumber, qspiNumber)
     fmt.Printf("Erasing Sector at addr:")
@@ -832,6 +843,9 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
 func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []byte, addr uint32) (err error) {
     wr_data := []byte{}
 
+    //Check if the card is Pollara which has a 32MB flash
+    UpdateFlashSize(spiNumber)
+    
     if addr > elba_flash_info.region_size {
         err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes. Slot-%d Qspi-%d  Address passed (0x%x) is greather than flash size - %x\n", spiNumber+1, qspiNumber,  addr, elba_flash_info.region_size)
         cli.Printf("e", "%s", err)
@@ -931,11 +945,15 @@ func Spi_salina_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, qspiNumber uint3
 
 
 func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string)(err error) {
-    var flash_size = uint32(elba_flash_info.region_size)
+    var flash_size uint32
     var i, count int = 0, 0
     var j uint32 = 0
     var write_page bool = false
     var skipped_pages int = 0
+
+    //Check if the card is Pollara which has a 32MB flash
+    UpdateFlashSize(spiNumber)
+    flash_size = uint32(elba_flash_info.region_size)
 
     data := []byte{}
 
@@ -1040,9 +1058,13 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
 }
 
 func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string) (err error) {
-    var flash_size = uint32(elba_flash_info.region_size)
+    var flash_size uint32
     var read_size = uint32(elba_flash_info.sector_size)
     var i uint32 = 0
+
+    //Check if the card is Pollara which has a 32MB flash
+    UpdateFlashSize(spiNumber)
+    flash_size = uint32(elba_flash_info.region_size)
 
     flash_data := []byte{}
     file_data := []byte{}
@@ -1134,10 +1156,14 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
 }
 
 func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, length uint32, filename string) (err error) {
-    var flash_size = uint32(elba_flash_info.region_size)
+    var flash_size uint32
     var read_size = uint32(elba_flash_info.sector_size)
     var i uint32 = 0
     flash_data := []byte{}
+
+    //Check if the card is Pollara which has a 32MB flash
+    UpdateFlashSize(spiNumber)
+    flash_size = uint32(elba_flash_info.region_size)
 
     // check if offset 64 kB aligned
     if start_addr % FLASH_SECTOR_SIZE != 0 {
