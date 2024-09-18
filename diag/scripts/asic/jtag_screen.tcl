@@ -18,7 +18,7 @@ proc define_test_list {{override_test_list ""}} {
         switch $test_name {
             # #TEST NAME ############# RST PRE     COMMAND              POST
             ID      { set cmd_list [list 0 ""      sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist       ""  ] }
+            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   ""  ] }
             FREQ    { set cmd_list [list 0 ""      sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             default { set cmd_list [list 0 "" "" ""] }
         }
@@ -93,8 +93,10 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
-plog_msg "performing arm_reset"
-sal_arm_reset
+plog_msg "sal_pcc"
+sal_pcc
+plog_msg "Disabling WDT"
+ssi_cpld_write 0x1 0x0
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
