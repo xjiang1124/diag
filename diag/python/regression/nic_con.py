@@ -45,7 +45,7 @@ class nic_con:
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["Login incorrect", "\#", "capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print("ite: ", ite)
@@ -325,6 +325,7 @@ class nic_con:
         expstr = "tx/rx buffer cleared"
         try:
             session.sendline(cmd)
+            sleep(1) # needs delay otherwise fpga_uart will throw UART_ERROR2, and drop some characters from the next command
             session.expect(expstr, timeout)
         except pexpect.TIMEOUT:
             print("=== TIMEOUT: Failed to connect console")

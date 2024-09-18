@@ -21,10 +21,10 @@ if [[ -z $cTyp ]];
 then
     echo "Env var $uut not defined"
 fi
-if [[ $cTyp != "MALFA" && $cTyp != "LENI" && $cTyp != "LENI48G" ]];
+if [[ $cTyp != "MALFA" && $cTyp != "LENI" && $cTyp != "LENI48G" && $cTyp != "POLLARA" ]];
 then
     echo "$uut=$cTyp"
-    echo "${0##*/} is only applicable to MALFA/LENI."
+    echo "${0##*/} is only applicable to Salina cards."
     echo $usage
     exit
 fi
