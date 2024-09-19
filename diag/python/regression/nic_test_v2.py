@@ -430,7 +430,7 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.boot_to_step_v2(int(args.slot), 'linux', warm_reset=False):
+        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             ret = -1
             return ret
