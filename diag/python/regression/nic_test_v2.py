@@ -430,32 +430,37 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
+        if args.card_type != "POLLARA":
+            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
+                return ret
 
         cmd = "jtag_accpcie_salina clr {}".format(args.slot)
         common.session_cmd(session, cmd)
 
         # Start CPU Burn on N1
-        print("Start CPU BURN on N1")
-        uart_session = common.session_start()
-        ret = self.nic_con.uart_session_start(uart_session, args.slot)
-        if ret != 0:
-            return ret
-        try:
-            self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
-        except pexpect.TIMEOUT:
-            print ("failed to run cpuburn")
-            return -1
-        self.nic_con.uart_session_stop(uart_session)
-        common.session_stop(uart_session)
+        if args.card_type != "POLLARA":
+            print("Start CPU BURN on N1")
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot)
+            if ret != 0:
+                return ret
+            try:
+                self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
+            except pexpect.TIMEOUT:
+                print ("failed to run cpuburn")
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            print("Done with Zephyr boot up.")
 
-        print("Done with Zephyr boot up, now start tcl")
+        print("Start tcl")
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+        elif args.card_type == "POLLARA":
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
