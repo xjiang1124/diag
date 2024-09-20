@@ -131,8 +131,8 @@ then
     mtp_id_str1=$(echo "$mtp_id_str" | cut -b 15-20)
     mtp_id="${mtp_id_str1:0:6}"
     echo "mtp_id_str: $mtp_id_str; mtp_id_str1: $mtp_id_str1; mtp_id: $mtp_id"
-    echo "setting fan PWM to 50%"
-    /home/diag/diag/util/fanutil 0 pwm 50 all
+    echo "setting fan PWM to 40%"
+    /home/diag/diag/util/fanutil 0 pwm 40 all
     
 else
     mtp_id_str=$(/home/diag/diag/util/cpldutil -cpld-rd -addr=0x80)
