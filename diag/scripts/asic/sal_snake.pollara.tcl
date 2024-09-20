@@ -140,9 +140,9 @@ proc get_vmarg_by_index_vdd {corner_idx} {
     dict set volt_VDD_Dict UU_4   780
     dict set volt_VDD_Dict UU_5   830
     dict set volt_VDD_Dict UU_6   880
-    dict set volt_VDD_Dict UU_4   930
-    dict set volt_VDD_Dict UU_5   980
-    dict set volt_VDD_Dict UU_6   1030
+    dict set volt_VDD_Dict UU_7   930
+    dict set volt_VDD_Dict UU_8   980
+    dict set volt_VDD_Dict UU_9   1030
 
     if {[dict exists $volt_VDD_Dict $corner_idx]} {
         return [dict get $volt_VDD_Dict $corner_idx]
