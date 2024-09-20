@@ -246,8 +246,8 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
     
     set_vmarg $new_vmarg $card_type
 
-plog_msg "Change fan speed to $::FAN_SPD"
-exec $::DEVMGR fanctrl --pct=$::FAN_SPD
+#plog_msg "Change fan speed to $::FAN_SPD"
+#exec $::DEVMGR fanctrl --pct=$::FAN_SPD
 
 #return
 
