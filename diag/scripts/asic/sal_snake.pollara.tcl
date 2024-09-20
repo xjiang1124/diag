@@ -50,6 +50,24 @@ proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     }
 }
 
+proc parse_number_string {input_string} {
+    set result_list {}
+    foreach element [split $input_string ","] {
+        if {[string match "*-*" $element]} {
+            # It's a range, so split it and generate the sequence
+            set range [split $element "-"]
+            set start [lindex $range 0]
+            set end [lindex $range 1]
+            for {set i $start} {$i <= $end} {incr i} {
+                lappend result_list $i
+            }
+        } else {
+            # It's a single number, just append to list
+            lappend result_list $element
+        }
+    }
+    return $result_list
+}
 
 proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"}} {
     set time_left $duration
@@ -228,15 +246,18 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
     
     set_vmarg $new_vmarg $card_type
 
-#plog_msg "Change fan speed to $::FAN_SPD"
-#exec $::DEVMGR fanctrl --pct=$::FAN_SPD
+plog_msg "Change fan speed to $::FAN_SPD"
+exec $::DEVMGR fanctrl --pct=$::FAN_SPD
 
 #return
 
 # put arm in reset
 #sal_pcc
 # start test snake test
+plog_msg "snake test_type: $test_type"
 cd ../$test_type
+plog_msg "cd ../$test_type"
+plog_msg "pwd: [ pwd ]"
 #set cpld_id 0x62
 
 #===========================
@@ -261,7 +282,8 @@ cd ../$test_type
 puts "pcie done"
 #after 10000
 
-if {$test_type == "esam_pktgen_pollara_sor"} {
+if {$test_type == "esam_pktgen_pollara_sor" ||
+    $test_type == "esam_pktgen_max_power_ainic" } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
     sal_front_panel_port_up 0 "Fiber" 1
@@ -302,17 +324,25 @@ if {$ret != 0} {
 sal_mx_get_mac_chsts 0 0 0 1
 #sal_mx_get_mac_chsts 0 1 0 1
 # start test
+plog_msg "sal_asic_init 2 ..."
 sal_asic_init 2
+plog_msg "Done: sal_asic_init 2"
 # before snake starts
 sal_top_eos 0
 
 if {$test_type == "esam_pktgen_pollara_sor"} {
-    sal_top_stream_load_snake_traffic  0 10
-    sal_top_stream_load_snake_traffic  0 20
-    sal_top_stream_start_snake_traffic 0 10
-    sal_top_stream_start_snake_traffic 0 20
+    set stream_list_all "10,20"
+} elseif {$test_type == "esam_pktgen_max_power_ainic"} {
+    set stream_list_all "30-33,40-43"
+} else {
+    set stream_list_all "10"
 }
 
+set stream_list [parse_number_string $stream_list_all]
+plog_msg "stream_list: ${stream_list}"
+
+foreach stream $stream_list { sal_top_stream_load_snake_traffic 0 $stream }
+foreach stream $stream_list { sal_top_stream_start_snake_traffic 0 $stream }
 
 # check if pkt is running
 sal_top_get_cntr 0
