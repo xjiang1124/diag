@@ -18,7 +18,7 @@ import datetime
 sys.path.append("../lib")
 import common
 import sal_con
-import fru
+#import fru
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -407,6 +407,16 @@ class nic_test_v2:
     def nic_snake_mtp(self, args):
         print("tcl_path:", args.tcl_path)
 
+        session_bash = common.session_start()
+        session_bash.timeout = 30
+        cmd = "turn_on_slot.sh off {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        time.sleep(5)
+        cmd = "turn_on_slot.sh on {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        common.session_stop(session_bash)
+        time.sleep(30)
+
         session = common.session_start()
         # set spimode to be off
         cmd = "fpgautil spimode {} off".format(args.slot)
@@ -466,8 +476,13 @@ class nic_test_v2:
             common.session_stop(session)
             return 0
 
-        common.session_cmd(session, cmd, 360, False, "pcie done")
-        session.expect("SNAKE TEST DONE", args.timeout)
+        try:
+            common.session_cmd(session, cmd, 360, False, "pcie done")
+            session.expect("SNAKE TEST DONE", args.timeout)
+        except pexpect.TIMEOUT:
+            session.send(chr(3))
+            cmd = "inventory -sts -slot={}".format(args.slot)
+            common.session_cmd(session, cmd)
 
         common.session_stop(session)
         # Print result
