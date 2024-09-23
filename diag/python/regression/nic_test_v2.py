@@ -479,14 +479,17 @@ class nic_test_v2:
         common.session_cmd(session, cmd, 360, False, "pcie done")
         exp_list = [pexpect.TIMEOUT] + ["j2c : read req error"] + ["SNAKE TEST DONE"]
         idx = session.expect(exp_list, args.timeout)
-        if idx < 1:
-            print("\n==== TIMEOUT after command {}".format(cmd))
-            return -1
-        elif idx == 1:
-            print("\n==== j2c : read req error")
+        if idx <= 1:
+            if idx < 1:
+                print("\n==== TIMEOUT after command {}".format(cmd))
+            elif idx == 1:
+                print("\n==== J2C access failure")
             session.send(chr(3))
+            session.expect("\$")
             cmd = "inventory -sts -slot={}".format(args.slot)
-            common.session_cmd(session, cmd)
+            common.session_cmd(session, cmd, 30, False, "\$")
+            session.expect("\$")
+            common.session_stop(session)
             return -1
         common.session_stop(session)
         # Print result
