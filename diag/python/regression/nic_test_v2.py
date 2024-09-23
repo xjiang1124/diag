@@ -18,7 +18,7 @@ import datetime
 sys.path.append("../lib")
 import common
 import sal_con
-#import fru
+import fru
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -476,14 +476,18 @@ class nic_test_v2:
             common.session_stop(session)
             return 0
 
-        try:
-            common.session_cmd(session, cmd, 360, False, "pcie done")
-            session.expect("SNAKE TEST DONE", args.timeout)
-        except pexpect.TIMEOUT:
+        common.session_cmd(session, cmd, 360, False, "pcie done")
+        exp_list = [pexpect.TIMEOUT] + ["j2c : read req error"] + ["SNAKE TEST DONE"]
+        idx = session.expect(exp_list, args.timeout)
+        if idx < 1:
+            print("\n==== TIMEOUT after command {}".format(cmd))
+            return -1
+        elif idx == 1:
+            print("\n==== j2c : read req error")
             session.send(chr(3))
             cmd = "inventory -sts -slot={}".format(args.slot)
             common.session_cmd(session, cmd)
-
+            return -1
         common.session_stop(session)
         # Print result
         return 0
