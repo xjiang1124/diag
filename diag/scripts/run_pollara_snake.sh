@@ -43,6 +43,6 @@ fi
 # Iterate over the array
 for vmarg in "${vmarg_list[@]}"; do
     time_stamp=$(date "+%m%d%y_%H%M%S")
-    ./nic_test_v2.py nic_snake_mtp -slot $slot -tcl_path $tcl_path -timeout 3600 -dura $dura -snake_type $snake_name -card_type POLLARA -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
+    ~/diag/python/regression/nic_test_v2.py nic_snake_mtp -slot $slot -tcl_path $tcl_path -timeout 3600 -dura $dura -snake_type $snake_name -card_type POLLARA -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
 done
 
