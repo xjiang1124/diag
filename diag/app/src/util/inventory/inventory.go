@@ -15,6 +15,7 @@ import (
     "device/cpld/naples100Cpld"
     "device/cpld/nicCpldCommon"
     "device/cpld/ortanoCpld"
+    "device/cpld/salinaCpld"
     "hardware/hwdev"
 )
 
@@ -32,6 +33,11 @@ var FpgaPowerFail3   = []string{"fpga_mgtavcc_pg", "fpga_mgtavtt_pg"}
 var GinestraPowerFail0 = []string{"p12v", "p5v0_nic", "vdd_core", "vdd_arm", "pmic_pwr/ddr_vddq", "vdd_ddr", "p3v3_nic", "p1v8_nic"}
 var GinestraPowerFail1 = []string{"avdd", "avddh", "rtvdd", "tvddh", "gilo_efuse"}
 var GinestraPowerFail2 = []string{"qsfp1_pwr", "qsfp2_pwr", "p12v_hotswap", "gilo_vrd_hot", "gilo_ddr_pmic_gsi", "clock_buf_los"}
+var SalinaPowerFail = []string{"vrd_hot", "vrd_fault", "dram0_pwr_fail", "dram1_pwr_fail"}
+var SalinaPowerFailCode = []string{"PWR OK", "P12V Fail", "P5V Fail", "P3v3_NIC Fail", "P1V8_NIC Fail", "VDD_12 Fail", 
+                                   "VDD_075 Fail", "VDD_CORE Fail", "VDDQ Fail", "VDD_DDR Fail", "VDD_ARM Fail", "GPIO8", 
+                                   "CORE_PLL lock Fail", "CPU_PLL lock Fail", "FLASH_PLL lock Fail", "QSPI_RST _L timeout", "DPU warm boot", "ROT warm boot", 
+                                   "MTP warm boot", "GPIO3 PC", "ROT PC", "MTP PC", "WDT timeout", "CSR PW Not OK"}
 
 func init() {
 }
@@ -506,6 +512,14 @@ func dispPowerStatus(pwrStatName[] string, reg_value byte) {
     }
 }
 
+func dispPowerStatusCode(pwrStatName[] string, reg_value byte) {
+    if reg_value >= 0 && reg_value < 0x18 {
+        cli.Printf("i","Reset code:%-18s%d\n", pwrStatName[reg_value], reg_value)
+    } else {
+        cli.Printf("i","Invalid power reset code\n")
+    }
+}
+
 func powerStatusDumpOrtano(uutName string)  {
 
     cli.DisableVerbose()
@@ -517,6 +531,21 @@ func powerStatusDumpOrtano(uutName string)  {
     dispPowerStatus(OrtanoPowerFail0, stat0) 
     dispPowerStatus(OrtanoPowerFail1, stat1) 
     dispPowerStatus(OrtanoPowerFail2, stat2) 
+
+    return
+}
+
+func powerStatusDumpSalina(uutName string)  {
+
+    cli.DisableVerbose()
+    stat0, _ := hwdev.NaplesCpldRd("CPLD", uint64(salinaCpld.REG_RESET_CODE), uutName)
+    stat1, _ := hwdev.NaplesCpldRd("CPLD", uint64(salinaCpld.REG_POWER_FAULT), uutName)
+    cli.EnableVerbose()
+
+    dispPowerStatusCode(SalinaPowerFailCode, stat0) 
+    stat1 = stat1 & 0x3c
+    stat1 = stat1 >> 2 
+    dispPowerStatus(SalinaPowerFail, stat1) 
 
     return
 }
@@ -565,6 +594,9 @@ func powerStatusDump(slot int)  {
         return
     } else if cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5" {
         powerStatusDumpGinestra(uutName)
+        return
+    } else if cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI" || cardType == "LENI48G" {
+        powerStatusDumpSalina(uutName)
         return
     }
 
