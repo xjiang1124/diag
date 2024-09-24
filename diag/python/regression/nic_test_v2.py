@@ -407,6 +407,16 @@ class nic_test_v2:
     def nic_snake_mtp(self, args):
         print("tcl_path:", args.tcl_path)
 
+        session_bash = common.session_start()
+        session_bash.timeout = 30
+        cmd = "turn_on_slot.sh off {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        time.sleep(5)
+        cmd = "turn_on_slot.sh on {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        common.session_stop(session_bash)
+        time.sleep(30)
+
         session = common.session_start()
         # set spimode to be off
         cmd = "fpgautil spimode {} off".format(args.slot)
@@ -467,8 +477,19 @@ class nic_test_v2:
             return 0
 
         common.session_cmd(session, cmd, 360, False, "pcie done")
-        session.expect("SNAKE TEST DONE", args.timeout)
-
+        exp_list = [pexpect.TIMEOUT] + ["j2c : read req error"] + ["SNAKE TEST DONE"]
+        idx = session.expect(exp_list, args.timeout)
+        if idx <= 1:
+            if idx < 1:
+                print("\n==== TIMEOUT after command {}".format(cmd))
+            elif idx == 1:
+                print("\n==== J2C access failure")
+            session.send(chr(3))
+            session.expect("\$")
+            cmd = "inventory -sts -slot={}".format(args.slot)
+            common.session_cmd(session, cmd, 30, False, "\$")
+            common.session_stop(session)
+            return -1
         common.session_stop(session)
         # Print result
         return 0
