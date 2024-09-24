@@ -488,7 +488,6 @@ class nic_test_v2:
             session.expect("\$")
             cmd = "inventory -sts -slot={}".format(args.slot)
             common.session_cmd(session, cmd, 30, False, "\$")
-            session.expect("\$")
             common.session_stop(session)
             return -1
         common.session_stop(session)
