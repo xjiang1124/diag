@@ -405,7 +405,18 @@ class nic_test_v2:
         return full_range
 
     def nic_snake_mtp(self, args):
+        ret = 0
         print("tcl_path:", args.tcl_path)
+
+        session_bash = common.session_start()
+        session_bash.timeout = 30
+        cmd = "turn_on_slot.sh off {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        time.sleep(5)
+        cmd = "turn_on_slot.sh on {}".format(args.slot)
+        common.session_cmd(session_bash, cmd, 60)
+        common.session_stop(session_bash)
+        time.sleep(30)
 
         session = common.session_start()
         # set spimode to be off
@@ -430,45 +441,55 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
+        if args.card_type != "POLLARA":
+            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
+                return ret
 
         cmd = "jtag_accpcie_salina clr {}".format(args.slot)
         common.session_cmd(session, cmd)
 
         # Start CPU Burn on N1
-        print("Start CPU BURN on N1")
-        uart_session = common.session_start()
-        ret = self.nic_con.uart_session_start(uart_session, args.slot)
-        if ret != 0:
-            return ret
-        try:
-            self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
-        except pexpect.TIMEOUT:
-            print ("failed to run cpuburn")
-            return -1
-        self.nic_con.uart_session_stop(uart_session)
-        common.session_stop(uart_session)
+        if args.card_type != "POLLARA":
+            print("Start CPU BURN on N1")
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot)
+            if ret != 0:
+                return ret
+            try:
+                self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
+            except pexpect.TIMEOUT:
+                print ("failed to run cpuburn")
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            print("Done with Zephyr boot up.")
 
-        print("Done with Zephyr boot up, now start tcl")
+        print("Start tcl")
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+        elif args.card_type == "POLLARA":
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
             return 0
 
         common.session_cmd(session, cmd, 360, False, "pcie done")
-        session.expect(["SNAKE TEST DONE", "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
-        common.session_cmd(session, chr(3))
+        idx = session.expect(["SNAKE TEST DONE", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
 
+        if idx >= 1:
+            if idx == 1:
+                print("\n==== TIMEOUT after command {}".format(cmd))
+            elif idx == 2
+                print("\n==== J2C access failure")
+            ret = -1
+        common.session_cmd(session, chr(3))
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
-        # Print result
-        return 0
+        return ret
 
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
         for idx in range(ite):
