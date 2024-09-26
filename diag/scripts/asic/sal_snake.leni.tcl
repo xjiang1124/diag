@@ -95,7 +95,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G" } {
             find_avg_rate 5 3840
-        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_max_power_sor"} {
+        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_max_power_pcie_sor"} {
             find_avg_rate 5 8000
         } else {
             find_avg_rate 5 4000
@@ -121,14 +121,18 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_mc_check_ecc -1 -1 1 $cpld_id
         check_ecc_intr
 
-	#===============================
-	# Debug info dump
-	plog_msg "=== Debug info dump ==="
+	    #===============================
+	    # Debug info dump
+	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
         sal_xd_ptd_cnt_chk
         sal_pb_dump_cntrs 0 0
+
+        sal_mes_dump_stats 0 0
+        sal_pf_dump_ebuf_cnt 0 0
+        sal_pf_dump_ibuf_cnt 0 0
 
 	#die_temp_fan_control_1 $cali_ret
 
@@ -254,6 +258,10 @@ set ASIC_SRC $::env(ASIC_SRC)
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
+plog_msg "test_type: $test_type"
+#plog_msg "SNAKE TEST DONE"
+#exit 0
+
 set ::FAN_SPD 40
 set ::DEVMGR devmgr_v2
 
@@ -291,7 +299,7 @@ set j2c_secure 1
 
 set val [_msrd]
 if { $val != 0x1 } {
-    puts "OW sanity test failed!"
+    plog_msg "OW sanity test failed!"
     exit 0
 }
 
@@ -332,28 +340,33 @@ cd ../$test_type
 #set cpld_id 0x62
 
 #===========================
-# Disable PCIe for now
-#if {$test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_max_power_sor"} {
-#    set in_err_ecc [plog_get_err_count]
-#    if { $card_type == "MALFA" } {
-#        pcie_mtp_bringup_ports 1100 MALFA 4
-#    } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
-#        pcie_mtp_bringup_ports 1100 LENI 4
-#    }
-#    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
-#    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
-#    if {$err_cnt != 0} {
-#        plog_msg "pcie linkup failed"
-#	plog_msg "pcie done"
-#        after 10000
-#        plog_msg "SNAKE TEST DONE"
-#        exit 0
-#    }
-#}
-puts "pcie done"
+if { $test_type == "esam_pktgen_pcie_mtp_sor"       || 
+     $test_type == "esam_pktgen_ddr_arm_sor"        || 
+     $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
+     $test_type == "esam_pktgen_max_power_pcie_sor"      ||
+     1 } {
+    set in_err_ecc [plog_get_err_count]
+    if { $card_type == "MALFA" } {
+        pcie_mtp_bringup_ports 1100 MALFA 4
+    } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
+        pcie_mtp_bringup_ports 1100 LENI 4
+    }
+    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
+    if {$err_cnt != 0} {
+        plog_msg "pcie linkup failed"
+	    plog_msg "pcie done"
+        after 10000
+        plog_msg "SNAKE TEST DONE"
+        exit 0
+    }
+}
+plog_msg "pcie done"
 #after 10000
 after 1000
-if {$test_type == "esam_pktgen_ddr_no_mac_sor" || $test_type == "esam_pktgen_ddr_sor" || $test_type == "esam_pktgen_ddr_burst_400G"} {
+if { $test_type == "esam_pktgen_ddr_no_mac_sor" ||
+     $test_type == "esam_pktgen_ddr_sor"        ||
+     $test_type == "esam_pktgen_ddr_burst_400G" } {
     if { $card_type == "MALFA" } {
         cdn_ddr5_init 3200
         #set cpld_id 0x62
@@ -374,42 +387,45 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_pcie_mtp_sor"       || 
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
-     $test_type == "esam_pktgen_max_power_sor"      ||
+     $test_type == "esam_pktgen_max_power_pcie_sor"      ||
      1 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
-    sal_front_panel_port_up 0 "Fiber" 1
+    #sal_front_panel_port_up 0 "Fiber" 1
+    sal_front_panel_port_up 0 "CU" 1 "2x400" 0
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
-        #puts "SNAKE TEST DONE"
-        #exit 0
+        plog_msg "SNAKE TEST DONE"
+        exit 0
     }
 }
+plog_msg "mx done"
+sal_aw_dump_pmon
 
 # check for lback, should all be 0
 set ret [sal_mx_gmii_lpbk_get 0 0 0]
 if {$ret != 0} {
     plog_msg "sal_mx_gmii_lpbk_get 0 0 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_gmii_lpbk_get 0 1 0]
 if {$ret != 0} {
     plog_msg "sal_mx_gmii_lpbk_get 0 1 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_pcs_lpbk_get 0 0 0]
 if {$ret != 0} {
     plog_msg "sal_mx_pcs_lpbk_get 0 0 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_pcs_lpbk_get 0 1 0]
 if {$ret != 0} {
     plog_msg "sal_mx_pcs_lpbk_get 0 1 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 # before test start
@@ -420,8 +436,9 @@ sal_asic_init 2
 # before snake starts
 sal_top_eos 0
 
-if {$test_type == "esam_pktgen_max_power_sor"} {
-    set stream_list_all "1-21,30-37,40-47,50-57"
+if {$test_type == "esam_pktgen_max_power_pcie_sor"} {
+    set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
+    #set stream_list_all "0-21,30-37,40-47,50-57"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor"} {
     set stream_list_all "10,20"
 } elseif {$test_type == "esam_pktgen_pcie_mtp_sor"} {
@@ -481,12 +498,12 @@ if {$err_cnt != 0} {
     ddr5_dump_all
     cd ..
     set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-    puts $cur_time
+    plog_msg $cur_time
     exec tar cf ${slot}_dump_${cur_time}.tar ${slot}_dump/
 }
 
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
-puts "SNAKE TEST DONE"
+plog_msg "SNAKE TEST DONE"
 exit 0
