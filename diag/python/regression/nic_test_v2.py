@@ -483,7 +483,7 @@ class nic_test_v2:
         if idx >= 1:
             if idx == 1:
                 print("\n==== TIMEOUT after command {}".format(cmd))
-            elif idx == 2
+            elif idx == 2:
                 print("\n==== J2C access failure")
             ret = -1
         common.session_cmd(session, chr(3))
