@@ -49,7 +49,6 @@ proc display_test_list {{test_list {}}} {
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl
 set usage {
-    {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
@@ -59,7 +58,6 @@ set usage {
 array set arg [cmdline::getoptions argv $usage]
 foreach argname [array names arg] { set $argname $arg($argname) }
 if { $slot == "" } { puts "Missing required --slot arg" ; exit }
-if {   $sn == "" } { puts "Missing required --sn arg"   ; exit }
 parray arg ; # print them out
 
 ### initialize asic lib
