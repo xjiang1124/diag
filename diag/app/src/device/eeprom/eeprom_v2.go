@@ -85,6 +85,7 @@ const (
     PN_MALFA         string = "102-P10600-00"
     PN_POLLARA       string = "102-P11100-00"
     PN_LENI          string = "102-P10800-00"
+    PN_LENI48G       string = "102-P10801-00"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -858,6 +859,27 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_LENI48G: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_LENI,
+        SKU_LENI,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -889,6 +911,7 @@ var CardTypes = []card{
     card{"MALFA",                   PN_MALFA},
     card{"POLLARA",                 PN_POLLARA},
     card{"LENI",                    PN_LENI},
+    card{"LENI48G",                 PN_LENI48G},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
