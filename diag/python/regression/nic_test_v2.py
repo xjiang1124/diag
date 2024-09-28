@@ -404,6 +404,7 @@ class nic_test_v2:
         return full_range
 
     def nic_snake_mtp(self, args):
+        ret = 0
         print("tcl_path:", args.tcl_path)
 
         session_bash = common.session_start()
@@ -476,22 +477,18 @@ class nic_test_v2:
             return 0
 
         common.session_cmd(session, cmd, 360, False, "pcie done")
-        exp_list = [pexpect.TIMEOUT] + ["j2c : read req error"] + ["SNAKE TEST DONE"]
-        idx = session.expect(exp_list, args.timeout)
-        if idx <= 1:
-            if idx < 1:
+        idx = session.expect(["SNAKE TEST DONE", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
+
+        if idx >= 1:
+            if idx == 1:
                 print("\n==== TIMEOUT after command {}".format(cmd))
-            elif idx == 1:
+            elif idx == 2:
                 print("\n==== J2C access failure")
-            session.send(chr(3))
-            session.expect("\$")
-            cmd = "inventory -sts -slot={}".format(args.slot)
-            common.session_cmd(session, cmd, 30, False, "\$")
-            common.session_stop(session)
-            return -1
+            ret = -1
+        common.session_cmd(session, chr(3))
+        common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
-        # Print result
-        return 0
+        return ret
 
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
         for idx in range(ite):
@@ -1263,7 +1260,6 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/xin/nic')
     parser_nic_snake_mtp.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
     parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
-    parser_nic_snake_mtp.add_argument("-stream_list", "--stream_list", help="Stream list", type=str, default='0-21,30-37,40-47,50-57')
     parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)

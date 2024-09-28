@@ -40,6 +40,7 @@ for vmarg in "${vmarg_list[@]}"; do
     #./nic_test_v2.py nic_snake_mtp -slot $slot -ite 1 -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
     #./nic_test_v2_pcie.py nic_snake_mtp -slot $slot -ite 1 -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
     #./nic_test_v2_yanmin_2_lt.py nic_snake_mtp -slot $slot -ite 1 -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
-    ./nic_test_v2_yanmin_2.py nic_snake_mtp    -slot $slot -ite 1 -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
+    #./nic_test_v2_yanmin_2.py nic_snake_mtp    -slot $slot -ite 1 -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
+    ./nic_test_v2.py nic_snake_mtp  -slot $slot  -tcl_path "/home/diag/xin/nic${slot}/"  -timeout 3600 -dura 900 -snake_type esam_pktgen_max_power_pcie_sor -card_type LENI -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
 done
 
