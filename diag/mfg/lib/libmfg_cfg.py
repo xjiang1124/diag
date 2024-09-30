@@ -721,8 +721,8 @@ class MTP_IMAGES:
     amd64_img["MATERA"] = "image_amd64_elba.tar"
     arm64_img["MATERA"] = "image_arm64_elba.tar"
     # mtp_fpga_img["MATERA"] = "to_be_define.bin"
-    mtp_fpga_ver["MATERA"] = "a00e"
-    mtp_fpga_date["MATERA"] = "08112024"    #mmddYYYY
+    mtp_fpga_ver["MATERA"] = "a00f"
+    mtp_fpga_date["MATERA"] = "09112024"    #mmddYYYY
 
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
