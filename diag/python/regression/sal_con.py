@@ -187,10 +187,10 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--boot_to", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
-    parser.add_argument("--slot", "-slot", help="NIC slot", type=int, required=True)
+    parser.add_argument("--boot_to", "-b", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
+    parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
-    parser.add_argument("--raw_zephyr_binary", "-b", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
+    parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
 
     try:
         parsed_args = parser.parse_args()
