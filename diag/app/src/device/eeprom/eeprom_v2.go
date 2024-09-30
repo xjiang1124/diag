@@ -86,6 +86,8 @@ const (
     PN_POLLARA       string = "102-P11100-00"
     PN_LENI          string = "102-P10800-00"
     PN_LENI48G       string = "102-P10801-00"
+    PN_LENI_0B      string = "102-P10800-00B"
+    PN_LENI48G_0B    string = "102-P10801-00B"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -880,6 +882,48 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_LENI_0B: updateInfo {
+        PenStandardV2AltTbl,
+        PROD_NAME_LENI,
+        SKU_LENI,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
+    PN_LENI48G_0B: updateInfo {
+        PenStandardV2AltTbl,
+        PROD_NAME_LENI,
+        SKU_LENI,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -912,6 +956,8 @@ var CardTypes = []card{
     card{"POLLARA",                 PN_POLLARA},
     card{"LENI",                    PN_LENI},
     card{"LENI48G",                 PN_LENI48G},
+    card{"LENI_0B",                    PN_LENI_0B},
+    card{"LENI48G_0B",                 PN_LENI48G_0B},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
@@ -1658,8 +1704,9 @@ func CardInListNew(partNum string, skuMode bool) (found bool, minPN string) {
     for _, card := range(CardTypes) {
         // In the case of fru display, partNum is the whole string read from EEPROM containing trailing spaces
         partNum = strings.TrimSpace(partNum)
-        if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
-           (skuMode == false && strings.Contains(partNum, card.pn)) {
+        //if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
+        //   (skuMode == false && strings.Contains(partNum, card.pn)) {
+        if (partNum == card.pn) { // is there any impact on Ortano and Giglio variants?
             found = true
             minPN = card.pn //for SKU card types, SKU is actually returned in minPN
             return
