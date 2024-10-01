@@ -18,7 +18,7 @@ proc define_test_list {{override_test_list ""}} {
         switch $test_name {
             # #TEST NAME ############# RST PRE     COMMAND              POST
             ID      { set cmd_list [list 0 ""      sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   ""  ] }
+            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   check_vrd_fault ] } ; # make sure mbist didnt cause any current spikes
             FREQ    { set cmd_list [list 0 ""      sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             default { set cmd_list [list 0 "" "" ""] }
         }
@@ -43,6 +43,19 @@ proc display_test_list {{test_list {}}} {
         plog_msg [ format $fmtStr $cmd_0 $cmd_1 $cmd_2 $cmd_3 ]
     }
     plog_msg "============================================================================="
+}
+
+proc check_vrd_fault {} {
+    set resetcode [ssi_cpld_read 0x30]
+    set faultcode [ssi_cpld_read 0x32]
+    plog_msg "CPLD reg 0x30: $resetcode"
+    plog_msg "CPLD reg 0x32: $faultcode"
+    if { $resetcode != "0x0" && $resetcode != "0x13" } {
+        plog_err "Encountered abnormal reset code: $resetcode"
+    }
+    if { $faultcode != "0x0" } {
+        plog_err "Encountered abnormal fault code: $faultcode"
+    }
 }
 
 ### handle args
