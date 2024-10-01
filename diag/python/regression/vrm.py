@@ -2,6 +2,7 @@
 
 import sys
 import re
+import time
 
 sys.path.append("../lib")
 import common
@@ -86,6 +87,7 @@ def prog_smbalert_mask(slot, warm_reset=False):
         # Send byte – CMD Address: 0x15
         cmd = "i2c write i2c@30000 0x60 0x15"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
+        time.sleep(0.1) # 100ms to guarantee storage
 
     nc.uart_session_stop(uart_session)
     return ret
