@@ -43,18 +43,18 @@ def _boot_to_step(parsed_args):
 
     return ret
 
-
 def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
-    session.sendline(cmd)
-    exp_list = [pexpect.TIMEOUT] + fail_sig_list + pass_sig_list
-    idx = session.expect(exp_list, timeout)
-    if idx < 1:
-        print("\n==== TIMEOUT after command {}".format(cmd))
-        return False
-    elif 1 <= idx < 1+len(fail_sig_list):
-        return False
-    else:
-        return True
+    ret = 0
+    nc = nic_con()
+    cmdret, output = nc.uart_session_cmd_w_ot(session, cmd, timeout=timeout, ending=pass_sig_list)
+    if cmdret != 0:
+        print("Command {} failed".format(cmd))
+        ret = -1
+    for sig in fail_sig_list:
+        if sig in output:
+            print("Command {} returned error: {}".format(cmd, sig))
+            ret = -1
+    return ret
 
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
@@ -76,7 +76,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
-    if not exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
+    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
         print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -88,7 +88,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         cmd = "boot" #"bootm 0x8000000"
 
     # For ainic, the "uart:~$" prompt may be truncated
-    if not exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10):
+    if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
 
@@ -132,15 +132,15 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
     
-    if not exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1):
+    if 0 != exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1):
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
-    if not exp_cmd(session, "n1 fwsel goldfw", pass_sig_list=["uart:~\$"], timeout=5):
+    if 0 != exp_cmd(session, "n1 fwsel goldfw", pass_sig_list=["uart:~\$"], timeout=5):
         print("===== FAILED: slot {} fwsel command failed".format(slot))
         return -1
 
-    if not exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=45):
+    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=45):
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
 
@@ -163,7 +163,7 @@ def enter_n1_linux(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=1)
 
-    if not exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
+    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
         print("===== FAILED: slot {} couldn't enter n1 uboot".format(slot))
         return -1
 
