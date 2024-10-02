@@ -224,6 +224,9 @@ var lipariElbaExt = []fieldInfo {
     fieldInfo { 125, []byte{0x10}, },
 }
 
+// Salina: Leni48G/64G/48G_0B/64G_0B req. exact pn matching
+var prefix_exactPN_req = []string {"102",}
+
 type entryinfo struct {
 	Name     string
 	DataType int
@@ -1704,11 +1707,22 @@ func CardInListNew(partNum string, skuMode bool) (found bool, minPN string) {
     for _, card := range(CardTypes) {
         // In the case of fru display, partNum is the whole string read from EEPROM containing trailing spaces
         partNum = strings.TrimSpace(partNum)
-        //if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
-        //   (skuMode == false && strings.Contains(partNum, card.pn)) {
-        if (partNum == card.pn) { // is there any impact on Ortano and Giglio variants?
+        if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
+           (skuMode == false && strings.Contains(partNum, card.pn)) {
+            if CardReqExactPN(partNum) && (partNum != card.pn) { continue }
             found = true
             minPN = card.pn //for SKU card types, SKU is actually returned in minPN
+            return
+        }
+    }
+    return
+}
+
+func CardReqExactPN(partNum string) (ret bool) {
+    ret = false
+    for _, prefix := range(prefix_exactPN_req) {
+        if strings.HasPrefix(partNum, prefix) {
+            ret = true
             return
         }
     }
