@@ -209,6 +209,8 @@ proc set_vmarg { vmarg card_type } {
     if {$vmarg == "normal"} {
         plog_msg "Vmarg: $vmarg"
         return
+    } elseif {$vmarg == "none"} {
+        return
     } elseif {$vmarg == "high"} {
         plog_msg "Vmarg: $vmarg"
         sal_set_margin_by_value vdd 840
@@ -317,7 +319,7 @@ plog_msg "card_type = $card_type"
 plog_msg "cpld_id = $cpld_id"
 sal_print_die_id
 
-if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
+if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" || $vmarg == "none" } {
     set new_vmarg $vmarg
 } else {
     # Convert everything to UU_x
