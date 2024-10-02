@@ -73,6 +73,8 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE =
     puts $MTP_TYPE
     if {$ASIC_TYPE == "GIGLIO"} {
         source .tclrc.diag.gig
+    } elseif {$ASIC_TYPE == "SALINA"} {
+        source .tclrc.diag.sal
     } else {
         source .tclrc.diag.elb.new
     }
@@ -81,7 +83,36 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE =
         set port [get_port_turbo $slot]
         set slot 1
     } elseif { $MTP_TYPE == "MTP_MATERA" } {
-        set port $slot
+        if {$ASIC_TYPE == "SALINA"} {
+            set slot $slot
+            set port $slot
+
+            set ::slot $slot
+            set ::port $port
+
+            exec jtag_accpcie_salina clr $slot
+            exec fpgautil spimode $slot off
+
+            diag_close_j2c_if $port $slot
+            diag_open_j2c_if $port $slot
+            diag_close_j2c_if $port $slot
+
+            after 1000
+            diag_close_ow_if $port $slot
+            after 1000
+            diag_open_ow_if $port $slot
+            after 1000
+            sal_ow_axi
+
+            csr_write sal0.ms.ms.cfg_ow 3
+            after 500
+            rd sal0.ms.ms.cfg_ow
+
+            sal_j2c
+            set j2c_secure 1
+        } else {
+            set port $slot
+        }
     }
 } elseif {$MTP_TYPE == "MTP_TOR"} {
     puts "TOR MTP"
@@ -114,8 +145,9 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE =
     source .tclrc.diag.new
 }
 
-diag_open_j2c_if $port $slot
-
+if {$ASIC_TYPE != "SALINA"} {
+    diag_open_j2c_if $port $slot
+}
 set val [_msrd]
 if { $val != 0x00000001 } {
     plog_msg "J2C sanity test failed!"
@@ -130,6 +162,8 @@ plog_msg "=================="
 if {$ASIC_TYPE == "GIGLIO"} {
     #gig_platform 1
     gig_mc_irq_show -1 -1 $ddr5
+} elseif {$ASIC_TYPE == "SALINA"} {
+    sal_mc_irq_show -1 -1 1
 } else {
     mc_int
 }
@@ -143,8 +177,12 @@ plog_msg "\n\n\n"
 plog_msg "=================="
 plog_msg "ECC intr"
 plog_msg "=================="
-if {$ASIC_TYPE == "GIGLIO"} {
-    gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
+if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
+    if {$ASIC_TYPE == "GIGLIO"} {
+        gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
+    } else {
+        sal_mc_check_ecc -1 -1 1 $cpld_id
+    }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
         plog_msg "ECC happaned. Dumping DDR configuration"
@@ -158,8 +196,13 @@ if {$ASIC_TYPE == "GIGLIO"} {
     } else {
         plog_msg "ECC is clean"
     }
-    gig_mc_clear_ecc_irq  -1  -1  -1  $ddr5
-    gig_mc_clear_ecc_counter  -1  -1  $ddr5
+    if {$ASIC_TYPE == "GIGLIO"} {
+        gig_mc_clear_ecc_irq  -1  -1  -1  $ddr5
+        gig_mc_clear_ecc_counter  -1  -1  $ddr5
+    } else {
+        sal_mc_clear_ecc_irq  -1  -1  -1  1
+        sal_mc_clear_ecc_counter  -1  -1  1
+    }
 
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
 
@@ -235,6 +278,10 @@ if { $check_vrm != 0 } {
         gig_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0
         gig_print_voltage_temp
+    } elseif {$ASIC_TYPE == "SALINA"} {
+        sal_arm_reset 0
+        ssi_cpld_write 0x20 0x0
+        sal_print_voltage_temp_from_j2c
     } else {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0
