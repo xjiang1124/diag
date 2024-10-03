@@ -95,7 +95,11 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G" } {
             find_avg_rate 5 3840
-        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_max_power_pcie_sor"} {
+        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
+                   $test_type == "esam_pktgen_ddr_arm_sor.400g"     || 
+                   $test_type == "esam_pktgen_ddr_arm_sor"          || 
+                   $test_type == "esam_pktgen_max_power_pcie_sor"   ||
+                   $test_type == "esam_pktgen_max_power_sor" } {
             find_avg_rate 5 8000
         } else {
             find_avg_rate 5 4000
@@ -134,7 +138,19 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_pf_dump_ebuf_cnt 0 0
         sal_pf_dump_ibuf_cnt 0 0
 
-	#die_temp_fan_control_1 $cali_ret
+
+        # Check crypto counters
+        read_sal_mc_crypto_counters 0 0; set_sal_mc_crypto_counters 0 0
+        read_sal_mc_crypto_counters 0 1; set_sal_mc_crypto_counters 0 1
+        read_sal_mc_crypto_counters 0 2; set_sal_mc_crypto_counters 0 2
+        read_sal_mc_crypto_counters 0 3; set_sal_mc_crypto_counters 0 3
+        # IS counters
+        sal_ise_dump_cntrs 0 2
+        sal_isi_dump_cntrs 0 2
+        sal_isec_dump_cntrs 0
+        sal_isic_dump_cntrs 0
+
+       #die_temp_fan_control_1 $cali_ret
 
         plog_msg "Done Pulling"
     }
@@ -343,7 +359,7 @@ cd ../$test_type
 if { $test_type == "esam_pktgen_pcie_mtp_sor"       || 
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
-     $test_type == "esam_pktgen_max_power_pcie_sor"      ||
+     $test_type == "esam_pktgen_max_power_pcie_sor" ||
      1 } {
     set in_err_ecc [plog_get_err_count]
     if { $card_type == "MALFA" } {
@@ -387,7 +403,8 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_pcie_mtp_sor"       || 
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
-     $test_type == "esam_pktgen_max_power_pcie_sor"      ||
+     $test_type == "esam_pktgen_max_power_pcie_sor" ||
+     $test_type == "esam_pktgen_max_power_sor"      ||
      1 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
@@ -401,7 +418,6 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
     }
 }
 plog_msg "mx done"
-sal_aw_dump_pmon
 
 # check for lback, should all be 0
 set ret [sal_mx_gmii_lpbk_get 0 0 0]
@@ -433,10 +449,15 @@ sal_mx_get_mac_chsts 0 0 0 1
 sal_mx_get_mac_chsts 0 1 0 1
 # start test
 sal_asic_init 2
+
+plog_msg "sal_aw_dump_pmon"
+sal_aw_dump_pmon
+
 # before snake starts
 sal_top_eos 0
 
-if {$test_type == "esam_pktgen_max_power_pcie_sor"} {
+if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
+     $test_type == "esam_pktgen_max_power_sor" } {
     set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
     #set stream_list_all "0-21,30-37,40-47,50-57"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor"} {

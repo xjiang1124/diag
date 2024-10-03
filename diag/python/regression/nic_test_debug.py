@@ -68,6 +68,8 @@ class nic_test_debug:
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_port_up.leni.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+        elif args.card_type == "POLLARA":
+            cmd = "tclsh ~/diag/scripts/asic/sal_port_up.pollara.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -75,7 +77,22 @@ class nic_test_debug:
 
         common.session_cmd(session, cmd, ending="NAKE TEST DONE", timeout=args.timeout)
         common.session_stop(session)
-        # Print result
+
+        print("Dumping PCIe trace")
+        uart_session = common.session_start()
+        ret = self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
+        #ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+        try:
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+        except pexpect.TIMEOUT:
+            print ("failed to run cpuburn")
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        print("Done with Zephyr boot up.")
+
         return 0
 
 if __name__ == "__main__":

@@ -92,14 +92,13 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         #sal_pb_dump_cntrs 0 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
-        if { $test_type == "esam_pktgen_ddr_burst_400G" } {
-            find_avg_rate 5 3840
-        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_max_power_sor"} {
-            find_avg_rate 5 8000
+        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
+             $test_type == "esam_pktgen_pollara_max_power_arm"} {
+            plog_msg "find_avg_rate 5 500\n"
+            find_avg_rate 5 650
         } else {
             find_avg_rate 5 4000
         }
-
 
         if {[string first "FF" $vmarg] == 0} {
             set fn "$asic_src/ip/cosim/salina/sal_FF_thermal_calibration.csv"
@@ -117,32 +116,43 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
         sal_print_voltage_temp_from_j2c
 
-	#===============================
-	# Debug info dump
-	plog_msg "=== Debug info dump ==="
+        #===============================
+        # Debug info dump
+        plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
         sal_pb_dump_cntrs 0 0
 
-	#die_temp_fan_control_1 $cali_ret
+        # IS counters
+        plog_msg "Pulling inline crypto"
+        sal_ise_dump_cntrs 0 2
+        sal_isi_dump_cntrs 0 2
+        sal_isec_dump_cntrs 0
+        sal_isic_dump_cntrs 0
+
+        # Find pipeline PPS
+        plog_msg "Pulling pipeline PPS"
+        show_pbus_stats pipe
+
+        #die_temp_fan_control_1 $cali_ret
 
         plog_msg "Done Pulling"
     }
 }
 
 proc get_vmarg_by_index_vdd {corner_idx} {
-    #---------------------------------
-    dict set volt_VDD_Dict UU_0   675
-    dict set volt_VDD_Dict UU_1   630
-    dict set volt_VDD_Dict UU_2   680
-    dict set volt_VDD_Dict UU_3   730
-    dict set volt_VDD_Dict UU_4   780
-    dict set volt_VDD_Dict UU_5   830
-    dict set volt_VDD_Dict UU_6   880
-    dict set volt_VDD_Dict UU_7   930
-    dict set volt_VDD_Dict UU_8   980
-    dict set volt_VDD_Dict UU_9   1030
+    dict set volt_VDD_Dict UU_1   650
+    dict set volt_VDD_Dict UU_2   665
+    dict set volt_VDD_Dict UU_3   680
+    dict set volt_VDD_Dict UU_4   695
+    dict set volt_VDD_Dict UU_5   710
+    dict set volt_VDD_Dict UU_6   725
+    dict set volt_VDD_Dict UU_7   740
+    dict set volt_VDD_Dict UU_8   755
+    dict set volt_VDD_Dict UU_9   770
+    dict set volt_VDD_Dict UU_10  785
+    dict set volt_VDD_Dict UU_11  800
 
     if {[dict exists $volt_VDD_Dict $corner_idx]} {
         return [dict get $volt_VDD_Dict $corner_idx]
@@ -219,7 +229,7 @@ set j2c_secure 1
 
 set val [_msrd]
 if { $val != 0x1 } {
-    puts "OW sanity test failed!"
+    plog_msg "OW sanity test failed!"
     exit 0
 }
 
@@ -246,14 +256,6 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
     
     set_vmarg $new_vmarg $card_type
 
-#plog_msg "Change fan speed to $::FAN_SPD"
-#exec $::DEVMGR fanctrl --pct=$::FAN_SPD
-
-#return
-
-# put arm in reset
-#sal_pcc
-# start test snake test
 plog_msg "snake test_type: $test_type"
 cd ../$test_type
 plog_msg "cd ../$test_type"
@@ -262,35 +264,36 @@ plog_msg "pwd: [ pwd ]"
 
 #===========================
 # Disable PCIe for now
-#if {$test_type == "esam_pktgen_pcie_mtp_sor" || $test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_max_power_sor"} {
-#    set in_err_ecc [plog_get_err_count]
-#    if { $card_type == "MALFA" } {
-#        pcie_mtp_bringup_ports 1100 MALFA 4
-#    } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
-#        pcie_mtp_bringup_ports 1100 LENI 4
-#    }
-#    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
-#    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
-#    if {$err_cnt != 0} {
-#        plog_msg "pcie linkup failed"
-#	plog_msg "pcie done"
-#        after 10000
-#        plog_msg "SNAKE TEST DONE"
-#        exit 0
-#    }
-#}
-puts "pcie done"
-#after 10000
+plog_msg "pcie bring-up"
+if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
+    set in_err_ecc [plog_get_err_count]
+    # temporarily use LENI before POLLARA ready
+    plog_msg "pcie_mtp_bringup_ports 1100 LENI 4\n"
+    pcie_mtp_bringup_ports 1100 LENI 4
 
-if {$test_type == "esam_pktgen_pollara_sor" ||
-    $test_type == "esam_pktgen_max_power_ainic" } {
+    plog_msg "rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac\n"
+    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
+    if {$err_cnt != 0} {
+        plog_msg "pcie linkup failed"
+        plog_msg "pcie done"
+        after 1000
+        plog_msg "SNAKE TEST DONE"
+        exit 0
+    }
+}
+plog_msg "pcie done"
+after 1000
+
+if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
+     $test_type == "esam_pktgen_pollara_max_power_arm" } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
-    sal_front_panel_port_up 0 "Fiber" 1
+    sal_front_panel_port_up 0 "CU" 1 2x400 0
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
-        #puts "SNAKE TEST DONE"
+        #plog_msg "SNAKE TEST DONE"
         #exit 0
     }
 }
@@ -299,25 +302,25 @@ if {$test_type == "esam_pktgen_pollara_sor" ||
 set ret [sal_mx_gmii_lpbk_get 0 0 0]
 if {$ret != 0} {
     plog_msg "sal_mx_gmii_lpbk_get 0 0 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_gmii_lpbk_get 0 1 0]
 if {$ret != 0} {
     plog_msg "sal_mx_gmii_lpbk_get 0 1 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_pcs_lpbk_get 0 0 0]
 if {$ret != 0} {
     plog_msg "sal_mx_pcs_lpbk_get 0 0 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 set ret [sal_mx_pcs_lpbk_get 0 1 0]
 if {$ret != 0} {
     plog_msg "sal_mx_pcs_lpbk_get 0 1 0 check failed"
-    #puts "SNAKE TEST DONE"
+    #plog_msg "SNAKE TEST DONE"
     #exit 0
 }
 # before test start
@@ -332,14 +335,21 @@ sal_top_eos 0
 
 if {$test_type == "esam_pktgen_pollara_sor"} {
     set stream_list_all "10,20"
-} elseif {$test_type == "esam_pktgen_max_power_ainic"} {
+} elseif {$test_type == "esam_pktgen_max_power_ainic"            ||
+          $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
+          $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
     set stream_list_all "30-33,40-43"
 } else {
-    set stream_list_all "10"
+    plog_err "Unsupported snake: ${test_type} "
+    plog_msg "SNAKE TEST DONE"
+    exit 0
 }
 
 set stream_list [parse_number_string $stream_list_all]
 plog_msg "stream_list: ${stream_list}"
+
+# Pipeline PPS
+sal_window_setup 0xfff0 0xfff0
 
 foreach stream $stream_list { sal_top_stream_load_snake_traffic 0 $stream }
 foreach stream $stream_list { sal_top_stream_start_snake_traffic 0 $stream }
@@ -373,5 +383,5 @@ set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
-puts "SNAKE TEST DONE"
+plog_msg "SNAKE TEST DONE"
 exit 0
