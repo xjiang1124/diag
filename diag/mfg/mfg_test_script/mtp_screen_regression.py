@@ -666,7 +666,7 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("USB DriveValidation Test Finished")
 
     # clean up
-    cmd = "rm -rf *"
+    cmd = "rm -rf /home/diag/usb/*"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
         mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
     cmd = "cd -; umount -f " + usb_probe_result["MOUNTPOINTS"]

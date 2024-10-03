@@ -303,9 +303,14 @@ class LaunchApp(object):
 
         return defs.Result.SUCCESS
 
-    def __gen_mtp_env(self):
+    def __gen_mtp_env(self, mtp_resource):
         self.__settings["JOB_TYPE"] = self.__testsuite.config.job
         self.__settings["NIC_TYPE"] = GlobalOptions.nic_type.lower()
+
+        mtp_type = mtp_resource.get("mtp-nic-processor", "FST").upper()
+        if mtp_type == "ELBA":
+            mtp_type = "TURBO_ELBA"
+        self.__settings["MTP_TYPE"] = mtp_type
         try:
             with open(os.path.join(GlobalOptions.topdir, "env.sh"), "w") as fh:
                 for var, value in self.__settings.items():
@@ -434,7 +439,7 @@ class LaunchApp(object):
             return ret
 
 
-        ret = self.__gen_mtp_env()
+        ret = self.__gen_mtp_env(mtp_resource)
         if ret != defs.Result.SUCCESS:
             Logger.error(f"Failed to dump settings - ABORT")
             return ret

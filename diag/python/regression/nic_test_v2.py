@@ -18,7 +18,6 @@ import datetime
 sys.path.append("../lib")
 import common
 import sal_con
-import fru
 from nic_con import nic_con
 from nic_test import nic_test
 
@@ -873,6 +872,7 @@ class nic_test_v2:
         return ret
 
     def prog_dpu_fru(self, args):
+        import fru
         ret = 0
         slot=args.slot
     
@@ -910,6 +910,23 @@ class nic_test_v2:
         else:
             print("DPU_FRU update unsuccessful")
 
+        return ret
+
+    def mask_vrm_smbalert(self, args):
+        import vrm
+        ret = 0
+        slot=args.slot
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            return -1
+        if (slot):
+            if vrm.mask_smbalert(slot) != 0:
+                print("====== ERRORS encountered during fix_sal_vrm")
+                ret = -1
+        if ret == 0:
+            print("VRM mask applied successfully")
+        else:
+            print("VRM mask unsuccessful")
         return ret
    
     def multi_nic_cmds(self, args):
@@ -1252,6 +1269,11 @@ if __name__ == "__main__":
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
+
+    # Salina VRM fix
+    parser_fix_sal_vrm = subparsers.add_parser('fix_sal_vrm', help='Program Salina VRM with alert masking', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_fix_sal_vrm.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_fix_sal_vrm.set_defaults(func=test.mask_vrm_smbalert)
 
     try:
         args = parser.parse_args()

@@ -260,7 +260,7 @@ then
     echo "**************************************************"
 
     set -x
-    python3 ./mfg_test.py mtp ${TEST_ARGS} --mtp_type TURBO_ELBA < ${MTP_BARCODE_FILE}
+    python3 ./mfg_test.py mtp ${TEST_ARGS} --mtp_type ${MTP_TYPE} < ${MTP_BARCODE_FILE}
     ret=$?
 fi
 

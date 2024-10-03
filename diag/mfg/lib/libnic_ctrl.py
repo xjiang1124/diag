@@ -1840,7 +1840,7 @@ class nic_ctrl():
           Program CPLD or Secure CPLD
         """
 
-        if self._mtp_type == "MATERA":
+        if self._nic_type not in (CAPRI_NIC_TYPE_LIST + ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
             # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>
             # program
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
