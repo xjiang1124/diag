@@ -16,11 +16,9 @@ fi
 
 for ite in $(seq 1 $num_ite)
 do
-
     echo "===== Ite: $ite ====="
-    python3 ./nic_test_debug.py nic_port_up -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type LENI -vmarg $vmarg | tee $nic_log
+    python3 ./nic_test_debug.py nic_port_up -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type POLLARA -vmarg $vmarg | tee $nic_log
     sync
-
     inventory -sts -slot $slot
 
     if [[ $stop_on_err == "1" ]]
@@ -34,4 +32,5 @@ do
             echo "No Error happened, continue"
         fi
     fi
+
 done
