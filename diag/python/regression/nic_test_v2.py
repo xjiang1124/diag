@@ -449,6 +449,11 @@ class nic_test_v2:
         cmd = "jtag_accpcie_salina clr {}".format(args.slot)
         common.session_cmd(session, cmd)
 
+        print("Start Vmarge")
+        if args.card_type == "LENI" or args.card_type == "LENI48G":
+            cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+            common.session_cmd(session, cmd, 360, False, "vmarg set")
+
         # Start CPU Burn on N1
         if args.card_type != "POLLARA":
             print("Start CPU BURN on N1")
@@ -468,7 +473,7 @@ class nic_test_v2:
         print("Start tcl")
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, "none")
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
         else:
