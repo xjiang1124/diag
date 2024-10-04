@@ -105,7 +105,7 @@ const (
     PROD_NAME_GIG_SSDK      string = "Giglio 2x200G QSFP56"
     PROD_NAME_GIG_SSDK_CISCO string = "Giglio 2x200G QSFP56 SUP C"
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
-    PROD_NAME_POLLARA       string = "AI-NIC400 1x400G QSFP112"
+    PROD_NAME_POLLARA       string = "POLLARA 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
 
     // SKU 
@@ -130,8 +130,9 @@ const (
     SKU_GIN_D5_SSDK_C   string = "DSC2A-2Q200-32S32F64P-S4C"
     SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
-    SKU_POLLARA         string = "AI-NIC400-1Q400-P"
+    SKU_POLLARA         string = "POLLARA-1Q400P"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
+    SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -867,7 +868,7 @@ var CardDataInfo = map[string]updateInfo {
     PN_LENI48G: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_LENI,
-        SKU_LENI,
+        SKU_LENI48G,
         FRU_ID_LENI,
         []progInfo {
             progInfo {
@@ -909,7 +910,7 @@ var CardDataInfo = map[string]updateInfo {
     PN_LENI48G_0B: updateInfo {
         PenStandardV2AltTbl,
         PROD_NAME_LENI,
-        SKU_LENI,
+        SKU_LENI48G,
         FRU_ID_LENI,
         []progInfo {
             progInfo {
@@ -1101,6 +1102,12 @@ func findPnBlind() (pn string, err int) {
     dataString := string(DataRaw[:])
     for _, card := range CardTypes {
         if strings.Contains(dataString, card.pn) {
+            if CardReqExactPN(card.pn) {
+                pos := strings.Index(dataString, card.pn)
+                if pos <= 0 { continue }
+                pnLen := int(dataString[pos-1]&0x3F)
+                if dataString[pos : pos+pnLen] != card.pn { continue }
+            }
             pn = card.pn
             return
         }
