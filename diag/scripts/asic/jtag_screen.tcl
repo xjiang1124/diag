@@ -18,7 +18,7 @@ proc define_test_list {{override_test_list ""}} {
         switch $test_name {
             # #TEST NAME ############# RST PRE     COMMAND              POST
             ID      { set cmd_list [list 0 ""      sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   ""  ] }
+            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   check_vrd_fault ] } ; # make sure mbist didnt cause any current spikes
             FREQ    { set cmd_list [list 0 ""      sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             default { set cmd_list [list 0 "" "" ""] }
         }
@@ -45,11 +45,23 @@ proc display_test_list {{test_list {}}} {
     plog_msg "============================================================================="
 }
 
+proc check_vrd_fault {} {
+    set resetcode [ssi_cpld_read 0x30]
+    set faultcode [ssi_cpld_read 0x32]
+    plog_msg "CPLD reg 0x30: $resetcode"
+    plog_msg "CPLD reg 0x32: $faultcode"
+    if { $resetcode != "0x0" && $resetcode != "0x13" } {
+        plog_err "Encountered abnormal reset code: $resetcode"
+    }
+    if { $faultcode != "0x0" } {
+        plog_err "Encountered abnormal fault code: $faultcode"
+    }
+}
+
 ### handle args
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl
 set usage {
-    {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
@@ -59,7 +71,6 @@ set usage {
 array set arg [cmdline::getoptions argv $usage]
 foreach argname [array names arg] { set $argname $arg($argname) }
 if { $slot == "" } { puts "Missing required --slot arg" ; exit }
-if {   $sn == "" } { puts "Missing required --sn arg"   ; exit }
 parray arg ; # print them out
 
 ### initialize asic lib
