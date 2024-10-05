@@ -16,10 +16,10 @@ proc define_test_list {{override_test_list ""}} {
     set test_list [dict create]
     foreach test_name $names_list {
         switch $test_name {
-            # #TEST NAME ############# RST PRE     COMMAND              POST
-            ID      { set cmd_list [list 0 ""      sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 ""      sal_jtag_mbist_stp   check_vrd_fault ] } ; # make sure mbist didnt cause any current spikes
-            FREQ    { set cmd_list [list 0 ""      sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
+            # #TEST NAME ############# RST PRE                      COMMAND              POST
+            ID      { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
+            MBIST   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_mbist_stp   check_vrd_fault ] } ; # make sure mbist didnt cause any current spikes
+            FREQ    { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             default { set cmd_list [list 0 "" "" ""] }
         }
         dict append test_list $test_name $cmd_list
@@ -55,6 +55,17 @@ proc check_vrd_fault {} {
     }
     if { $faultcode != "0x0" } {
         plog_err "Encountered abnormal fault code: $faultcode"
+    }
+}
+
+proc set_pollara_freq {{card_type}} {
+    if { $card_type == "POLLARA" } {
+        ## this sets frequency using jtag
+        ## which will block the j2c connection
+        ## therefore it can only work over onewire
+        sal_ow
+        sal_set_pollara_freq
+        sal_j2c
     }
 }
 
