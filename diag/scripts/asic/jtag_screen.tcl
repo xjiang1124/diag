@@ -62,6 +62,7 @@ proc check_vrd_fault {} {
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl
 set usage {
+    {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
