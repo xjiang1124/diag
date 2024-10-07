@@ -337,7 +337,7 @@ if {$test_type == "esam_pktgen_pollara_sor"} {
     set stream_list_all "10,20"
 } elseif {$test_type == "esam_pktgen_max_power_ainic"            ||
           $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
-          $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
+          $test_type == "esam_pktgen_pollara_max_power_arm" } {
     set stream_list_all "30-33,40-43"
 } else {
     plog_err "Unsupported snake: ${test_type} "

@@ -181,6 +181,13 @@ proc get_vmarg_by_index_vdd {corner_idx} {
     dict set volt_VDD_Dict UU_17  781
     dict set volt_VDD_Dict UU_18  859
 
+    dict set volt_VDD_Dict UU_101  650
+    dict set volt_VDD_Dict UU_104  650
+    dict set volt_VDD_Dict UU_107  680
+    dict set volt_VDD_Dict UU_110  659
+    dict set volt_VDD_Dict UU_113  659
+    dict set volt_VDD_Dict UU_116  703
+
     if {[dict exists $volt_VDD_Dict $corner_idx]} {
         return [dict get $volt_VDD_Dict $corner_idx]
     } else {
@@ -212,6 +219,13 @@ proc get_vmarg_by_index_arm {corner_idx} {
     dict set volt_ARM_Dict UU_16  937
     dict set volt_ARM_Dict UU_17  1042
     dict set volt_ARM_Dict UU_18  1146
+
+    dict set volt_ARM_Dict UU_101  803
+    dict set volt_ARM_Dict UU_104  851
+    dict set volt_ARM_Dict UU_107  907
+    dict set volt_ARM_Dict UU_110  830
+    dict set volt_ARM_Dict UU_113  879
+    dict set volt_ARM_Dict UU_116  937
 
     if {[dict exists $volt_ARM_Dict $corner_idx]} {
         return [dict get $volt_ARM_Dict $corner_idx]
@@ -325,6 +339,11 @@ if { $val != 0x1 } {
 #rds sal0.txs.txs\[0].base
 set err_cnt_init [ plog_get_err_count ]
 
+if { $test_type == "esam_pktgen_ddr_burst_no_mac" } {
+    sal_set_proto_mode 0
+    sal_proto_mode_powerup
+}
+
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "snake_slot${slot}_${cur_time}.log"
 plog_start $fn
@@ -362,7 +381,7 @@ if { $test_type == "esam_pktgen_pcie_mtp_sor"       ||
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
-     1 } {
+     0 } {
     set in_err_ecc [plog_get_err_count]
     if { $card_type == "MALFA" } {
         pcie_mtp_bringup_ports 1100 MALFA 4
@@ -410,8 +429,9 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      1 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
+    after 3000
     #sal_front_panel_port_up 0 "Fiber" 1
-    sal_front_panel_port_up 0 "CU" 1 "2x400" 0
+    sal_front_panel_port_up 0 "CU" 0 "2x400" 0
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
