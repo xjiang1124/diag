@@ -437,6 +437,16 @@ class nic_con:
             cmd = "i2cset -yr {} 0x4a 0x10 0x3e".format(slot+2)
             common.session_cmd(session, cmd)
 
+    def nic_power_cycle(self, session, slot=0):
+        print("Powercycling...")
+        cmd = "turn_on_slot.sh off {}".format(slot)
+        common.session_cmd(session, cmd)
+        time.sleep(3)
+        cmd = "turn_on_slot.sh on {}".format(slot)
+        common.session_cmd(session, cmd)
+        time.sleep(3)
+        print("Powercycling done")
+
     def enter_uboot(self, session, slot=0, timeout=30, uboot_delay=60, num_retry=3, uart_id=1, warm_reset=False):
         expstr = ["Capri# ", "DSC# "]
         ret = -1

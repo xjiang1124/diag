@@ -12,14 +12,14 @@ tcl_path=$(realpath -sm $3)
 snake_name=$4
 dura=$5
 
-if [[ $slot == 1 ]]
-then
-    ln -s $tcl_path ${tcl_path}${slot}
-else
-    rm -fr ${tcl_path}${slot}
-    cp -r $tcl_path ${tcl_path}${slot}
-fi
-tcl_path=${tcl_path}${slot}
+#if [[ $slot == 1 ]]
+#then
+#    ln -s $tcl_path ${tcl_path}${slot}
+#else
+#    rm -fr ${tcl_path}${slot}
+#    cp -r $tcl_path ${tcl_path}${slot}
+#fi
+#tcl_path=${tcl_path}${slot}
 echo "run_pollara_snake.sh :: tcl_path: $tcl_path"
 
 # Define an array

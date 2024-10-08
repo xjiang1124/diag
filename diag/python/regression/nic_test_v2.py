@@ -431,7 +431,7 @@ class nic_test_v2:
         common.session_cmd(session, "source source_env_path")
         common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
         common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "rm -f *")
+        #common.session_cmd(session, "rm -f *")
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
@@ -440,8 +440,14 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
+
         if args.card_type != "POLLARA":
             if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
+                return ret
+        else:
+            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 ret = -1
                 return ret

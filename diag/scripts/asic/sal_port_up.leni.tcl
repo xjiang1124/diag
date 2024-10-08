@@ -5,12 +5,14 @@ set slot [lindex $argv 0]
 # esam_pktgen_llc_no_mac_sor : no ddr + no mac
 # esam_pktgen_llc_sor        :  no ddr + mac
 # esam_pktgen_ddr_no_mac_sor : ddr + no mac
-# esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
+# esam_pktgen_ddr_sor        : ddr + mac  <-- stress all ddr and mac
 # esam_pktgen_ddr_burst_400G : ddr burst
 # esam_pktgen_pcie_mtp_sor   : pcie + ddr + mac
 
 set card_type [lindex $argv 1]
 set vmarg [lindex $argv 2]
+set inf [lindex $argv 3]
+
 
 proc get_vmarg_by_index_vdd {corner_idx} {
     #---------------------------------
@@ -138,9 +140,6 @@ set ASIC_SRC $::env(ASIC_SRC)
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
-set ::FAN_SPD 40
-set ::DEVMGR devmgr_v2
-
 set port $slot
 set slot $slot
 set ::slot  $slot
@@ -211,29 +210,49 @@ set_vmarg $new_vmarg $card_type
 
 #===========================
 # Disable PCIe for now
-set in_err_ecc [plog_get_err_count]
-if { $card_type == "MALFA" } {
-    pcie_mtp_bringup_ports 1100 MALFA 4
-} elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
-    pcie_mtp_bringup_ports 1100 LENI 4
+if { $inf == "pcie" || 
+     $inf == "all" } {
+    set in_err_ecc [plog_get_err_count]
+    if { $card_type == "MALFA" } {
+        pcie_mtp_bringup_ports 1100 MALFA 4
+    } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
+        pcie_mtp_bringup_ports 1100 LENI 4
+    }
+    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
+    if {$err_cnt != 0} {
+        plog_err "pcie linkup failed"
+    }
+    plog_msg "pcie done"
 }
-rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
-set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
-if {$err_cnt != 0} {
-    plog_msg "pcie linkup failed"
-}
-plog_msg "pcie done"
 #after 10000
 after 1000
 
-plog_msg "SNAKE TEST DONE"
-exit 0
+if { $inf == "eth" || 
+     $inf == "all" } {
+    set in_err_ecc [plog_get_err_count]
+    sal_aw_srds_powerup_init
+    after 3000
+    #sal_front_panel_port_up 0 "Fiber" 1
+    sal_front_panel_port_up 0 "CU" 0 "2x400" 0
+    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
+    if {$err_cnt != 0} {
+        plog_err "MX linkup failed"
+    }
 
-set ret [sal_srds_vco_cdr_chk 0 0 0]
-if { $ret == 0 } {
-    plog_msg "sal_srds_vco_cdr_chk: PASS"
+    #set ret [sal_srds_vco_cdr_chk 0 0 0]
+    #if { $ret == 0 } {
+    #    plog_msg "sal_srds_vco_cdr_chk: PASS"
+    #} else {
+    #    plog_msg "sal_srds_vco_cdr_chk: FAIL"
+    #}
+    plog_msg "mx done"
+}
+set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
+if {$err_cnt != 0} {
+    plog_msg "Port up test FAILED"
 } else {
-    plog_msg "sal_srds_vco_cdr_chk: FAIL"
+    plog_msg "Port up test PASSED"
 }
 
 plog_msg "SNAKE TEST DONE"
