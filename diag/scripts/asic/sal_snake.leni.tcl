@@ -121,7 +121,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
         sal_print_voltage_temp_from_j2c
         sal_mc_irq_show -1 -1 1
-        sal_mc_check_ecc -1 -1 1 $cpld_id
+        sal_mc_check_ecc -1 -1 1 0x61 1
         check_ecc_intr
 
 	    #===============================
@@ -402,7 +402,7 @@ if { $test_type == "esam_pktgen_ddr_sor"        ||
         cdn_ddr5_init 6400 0x66 0
     }
     sal_mc_irq_show -1 -1 1
-    sal_mc_check_ecc -1 -1 1 $cpld_id
+    sal_mc_check_ecc -1 -1 1 0x61 1
     check_ecc_intr
 }
 
@@ -524,7 +524,7 @@ sal_mx_get_mac_chsts 0 1 0 1
 # check ecc
 set in_err_ecc [plog_get_err_count]
 sal_mc_irq_show -1 -1 1
-sal_mc_check_ecc -1 -1 1 $cpld_id
+sal_mc_check_ecc -1 -1 1 0x61 1
 check_ecc_intr
 set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
 if {$err_cnt != 0} {
