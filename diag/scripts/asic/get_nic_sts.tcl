@@ -181,7 +181,7 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     if {$ASIC_TYPE == "GIGLIO"} {
         gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
     } else {
-        sal_mc_check_ecc -1 -1 1 $cpld_id
+        sal_mc_check_ecc -1 -1 1 0x61 1
     }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
