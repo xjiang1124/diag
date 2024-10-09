@@ -1,16 +1,14 @@
 #!/bin/bash
 
-if [[ $1 == "-h" || $1 == "-help" || $# -ne 5 ]]
-then
-    echo "Usage: ./$(basename $0) <slot> <corner_index> <nic_path> <snake_type> <duration>"
-    exit
-fi
+#if [[ $1 == "-h" || $1 == "-help" || $# -ne 5 ]]
+#then
+#    echo "Usage: ./$(basename $0) <slot> <corner_index> <nic_path> <snake_type> <duration>"
+#    exit
+#fi
 
 slot=$1
 corner=$2
-tcl_path=$(realpath -sm $3)
-snake_name=$4
-dura=$5
+snake_type=$3
 
 #if [[ $slot == 1 ]]
 #then
@@ -20,7 +18,7 @@ dura=$5
 #    cp -r $tcl_path ${tcl_path}${slot}
 #fi
 #tcl_path=${tcl_path}${slot}
-echo "run_pollara_snake.sh :: tcl_path: $tcl_path"
+echo "run_pollara_snake.sh :: slot: $slot; corner: $corner; snake_type: $snake_type"
 
 # Define an array
 FF_vmarg_list=("FF_1" "FF_2" "FF_3" "FF_4" "FF_5" "FF_6" "FF_7" "FF_8" "FF_9")
@@ -43,6 +41,6 @@ fi
 # Iterate over the array
 for vmarg in "${vmarg_list[@]}"; do
     time_stamp=$(date "+%m%d%y_%H%M%S")
-    ./nic_test_v2.py nic_snake_mtp -slot $slot -tcl_path $tcl_path -timeout 3600 -dura $dura -snake_type $snake_name -card_type POLLARA -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
+    ./nic_test_v2.py nic_snake_mtp -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -timeout 3600 -dura 900 -snake_type $snake_type -card_type POLLARA -vmarg ${vmarg} | tee snake_slot${slot}_${vmarg}.log
 done
 
