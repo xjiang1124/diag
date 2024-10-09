@@ -130,7 +130,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_top_get_cntr 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
-        if { $test_type != "esam_pktgen_llc_sor" } {
+        if { $test_type != "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst" } {
             sal_xd_ptd_cnt_chk
         }
         sal_pb_dump_cntrs 0 0
