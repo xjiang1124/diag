@@ -17,10 +17,18 @@ proc define_test_list {{override_test_list ""}} {
     foreach test_name $names_list {
         switch $test_name {
             # #TEST NAME ############# RST PRE                      COMMAND              POST
-            ID      { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
-            MBIST   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_mbist_stp   check_vrd_fault ] } ; # make sure mbist didnt cause any current spikes
-            FREQ    { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
-            default { set cmd_list [list 0 "" "" ""] }
+            ID         { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
+            FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
+            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      check_vrd_fault ] }
+
+            MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     check_vrd_fault ] }
+            MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    check_vrd_fault ] }
+            MBIST_WEST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_stp    check_vrd_fault ] }
+
+            DIAG_ARM   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_diag    check_vrd_fault ] }
+            DIAG_EAST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_diag   check_vrd_fault ] }
+            DIAG_WEST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_diag   check_vrd_fault ] }
+            default    { set cmd_list [list 0 "" "" ""] }
         }
         dict append test_list $test_name $cmd_list
     }
@@ -45,7 +53,20 @@ proc display_test_list {{test_list {}}} {
     plog_msg "============================================================================="
 }
 
+proc set_pollara_frequency {} {
+    set card_type [sal_get_card_type]
+    if { $card_type == "POLLARA" } {
+        ## this sets frequency using jtag
+        ## which will block the j2c connection
+        ## therefore it can only work over onewire
+        sal_ow
+        sal_set_pollara_freq
+        sal_j2c
+    }
+}
+
 proc check_vrd_fault {} {
+    ### make sure mbist didnt cause any current spikes
     set resetcode [ssi_cpld_read 0x30]
     set faultcode [ssi_cpld_read 0x32]
     plog_msg "CPLD reg 0x30: $resetcode"
@@ -58,14 +79,41 @@ proc check_vrd_fault {} {
     }
 }
 
-proc set_pollara_freq {{card_type}} {
-    if { $card_type == "POLLARA" } {
-        ## this sets frequency using jtag
-        ## which will block the j2c connection
-        ## therefore it can only work over onewire
-        sal_ow
-        sal_set_pollara_freq
-        sal_j2c
+proc mbist_with_diag {} {
+    ### copy of sal_jtag_mbist_stp
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set arm_err  [sal_jtag_arm_stp]
+    set east_err [sal_jtag_east_stp]
+    set west_err [sal_jtag_west_stp]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "sal_jtag_mbist_stp::Test PASSED"
+    } else {
+       plog_err "sal_jtag_mbist_stp::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    ### diagnostics to report which memory bit failed.
+    ### (they'll cover mbist as well but takes longer)
+    if {$arm_err != 0} {
+        plog_msg "Errors encountered in ARM MBIST. Running diagnostics..."
+        set_pollara_frequency
+        sal_jtag_arm_diag
+        check_vrd_fault
+    } elseif {$east_err != 0} {
+        plog_msg "Errors encountered in East MBIST. Running diagnostics..."
+        set_pollara_frequency
+        sal_jtag_east_diag
+        check_vrd_fault
+    } elseif {$west_err != 0} {
+        plog_msg "Errors encountered in West MBIST. Running diagnostics..."
+        set_pollara_frequency
+        sal_jtag_west_diag
+        check_vrd_fault
     }
 }
 
