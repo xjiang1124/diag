@@ -123,6 +123,7 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 set usage {
     {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
+    {vmarg.arg      "none"                  "Voltage margin"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
     {DIAG_DIR.arg   "/home/diag/diag/asic/" "ASIC lib location"}
@@ -168,6 +169,7 @@ plog_msg "sal_pcc"
 sal_pcc
 plog_msg "Disabling WDT"
 ssi_cpld_write 0x1 0x0
+sal_set_vmarg $vmarg
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
