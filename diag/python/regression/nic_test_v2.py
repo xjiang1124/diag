@@ -441,7 +441,9 @@ class nic_test_v2:
 
         time.sleep(3)
 
-        if args.snake_type == "esam_pktgen_llc_sor" or args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or args.snake_type == "esam_pktgen_ddr_burst":
+        if args.snake_type == "esam_pktgen_llc_sor" or \
+           args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
+           args.snake_type == "esam_pktgen_ddr_burst":
             if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                 print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
                 ret = -1
@@ -462,7 +464,7 @@ class nic_test_v2:
             common.session_cmd(session, cmd, 360, False, "vmarg set")
 
         # Start CPU Burn on N1
-        if args.snake_type != "esam_pktgen_llc_sor" and args.snake_type != "esam_pktgen_ddr_burst_400G_no_mac" and args.snake_type != "esam_pktgen_ddr_burst":
+        if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
             if args.card_type != "POLLARA":
                 print("Start CPU BURN on N1")
                 uart_session = common.session_start()
@@ -502,7 +504,9 @@ class nic_test_v2:
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
         # check uart console
-        if args.snake_type != "esam_pktgen_llc_sor" and args.snake_type != "esam_pktgen_ddr_burst_400G_no_mac" and args.snake_type != "esam_pktgen_ddr_burst":
+        if args.snake_type != "esam_pktgen_llc_sor" and \
+           args.snake_type != "esam_pktgen_ddr_burst_400G_no_mac" and \
+           args.snake_type != "esam_pktgen_ddr_burst":
             uart_session = common.session_start()
             self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
             if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["uart:~\$"], timeout=5):

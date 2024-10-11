@@ -1,13 +1,6 @@
 # !/usr/bin/tclsh
 
 set slot [lindex $argv 0]
-# test types:
-# esam_pktgen_llc_no_mac_sor : no ddr + no mac
-# esam_pktgen_llc_sor        :  no ddr + mac
-# esam_pktgen_ddr_no_mac_sor : ddr + no mac
-# esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
-# esam_pktgen_ddr_burst_400G : ddr burst
-# esam_pktgen_pcie_mtp_sor   : pcie + ddr + mac
 
 set test_type [lindex $argv 1]
 set dura [lindex $argv 2]
@@ -95,8 +88,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst"} {
             find_avg_rate 5 3840
-        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
-                   $test_type == "esam_pktgen_ddr_arm_sor"          || 
+        } elseif { $test_type == "esam_pktgen_ddr_arm_sor"          || 
                    $test_type == "esam_pktgen_max_power_pcie_sor"   ||
                    $test_type == "esam_pktgen_max_power_sor" } {
             find_avg_rate 5 8000
@@ -132,9 +124,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         get_sal_offload_cnt 1
         get_sal_offload_cnt_chk 0
         get_sal_offload_cnt_chk 1
-        if { $test_type != "esam_pktgen_llc_sor" ||
-             $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
-             $test_type == "esam_pktgen_ddr_burst" } {
+        if { $test_type != "esam_pktgen_llc_sor" &&
+             $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
+             $test_type != "esam_pktgen_ddr_burst" } {
             sal_xd_ptd_cnt_chk
         }
         sal_pb_dump_cntrs 0 0
@@ -390,8 +382,7 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" || $vmarg == "non
 cd ../$test_type
 
 #===========================
-if { $test_type == "esam_pktgen_pcie_mtp_sor"       || 
-     $test_type == "esam_pktgen_ddr_arm_sor"        || 
+if { $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      0 } {
     set in_err_ecc [plog_get_err_count]
@@ -430,7 +421,6 @@ if { $test_type == "esam_pktgen_ddr_sor"        ||
 
 if { $test_type == "esam_pktgen_llc_sor"            || 
      $test_type == "esam_pktgen_ddr_sor"            || 
-     $test_type == "esam_pktgen_pcie_mtp_sor"       || 
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
@@ -440,11 +430,10 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
     after 3000
-    #sal_front_panel_port_up 0 "Fiber" 1
     if {$test_type == "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_burst"} {
-        sal_front_panel_port_up 1 "CU" 0 "2x400" 0
+        sal_front_panel_port_up 1 "CU" 1 "2x400" 0
     } else {
-        sal_front_panel_port_up 0 "CU" 0 "2x400" 0
+        sal_front_panel_port_up 0 "CU" 1 "2x400" 0
     }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
@@ -488,9 +477,7 @@ sal_mx_get_mac_chsts 0 1 0 1
 sal_asic_init 2
 
 plog_msg "sal_aw_dump_pmon"
-if { $test_type == "esam_pktgen_pcie_mtp_sor"       ||
-     $test_type == "esam_pktgen_max_power_pcie_sor" ||
-     0 } {
+if { $test_type == "esam_pktgen_max_power_pcie_sor" } {
     # if pcie is enabled, check all macro
     sal_aw_dump_pmon
 } elseif { $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
@@ -508,8 +495,6 @@ if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
     #set stream_list_all "0-21,30-37,40-47,50-57"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_llc_sor" } {
     set stream_list_all "10,20"
-} elseif {$test_type == "esam_pktgen_pcie_mtp_sor"} {
-    set stream_list_all "10,21"
 } else {
     set stream_list_all "10"
 }
