@@ -132,8 +132,8 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 	    # Debug info dump
 	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
-        get_sal_offload_cnt 0
-        get_sal_offload_cnt 1
+        get_sal_offload_cnt_chk 0
+        get_sal_offload_cnt_chk 1
         if { $test_type != "esam_pktgen_llc_sor" ||
              $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
              $test_type == "esam_pktgen_ddr_burst" } {
@@ -145,6 +145,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_pf_dump_ebuf_cnt 0 0
         sal_pf_dump_ibuf_cnt 0 0
 
+        show_pbus_stats pipe
 
         # Check crypto counters
         read_sal_mc_crypto_counters 0 0; set_sal_mc_crypto_counters 0 0
@@ -157,7 +158,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_isec_dump_cntrs 0
         sal_isic_dump_cntrs 0
 
-       #die_temp_fan_control_1 $cali_ret
+        sal_inline_crypto_chk
+
+        #die_temp_fan_control_1 $cali_ret
 
         plog_msg "Done Pulling"
     }
@@ -187,6 +190,10 @@ proc get_vmarg_by_index_vdd {corner_idx} {
     dict set volt_VDD_Dict UU_16  709
     dict set volt_VDD_Dict UU_17  781
     dict set volt_VDD_Dict UU_18  859
+
+    dict set volt_VDD_Dict UU_30  710
+    dict set volt_VDD_Dict UU_31  710
+    dict set volt_VDD_Dict UU_32  750
 
     dict set volt_VDD_Dict UU_101  650
     dict set volt_VDD_Dict UU_104  650
@@ -227,6 +234,10 @@ proc get_vmarg_by_index_arm {corner_idx} {
     dict set volt_ARM_Dict UU_17  1042
     dict set volt_ARM_Dict UU_18  1146
 
+    dict set volt_ARM_Dict UU_30  920
+    dict set volt_ARM_Dict UU_31  940
+    dict set volt_ARM_Dict UU_32  980
+
     dict set volt_ARM_Dict UU_101  803
     dict set volt_ARM_Dict UU_104  851
     dict set volt_ARM_Dict UU_107  907
@@ -243,38 +254,42 @@ proc get_vmarg_by_index_arm {corner_idx} {
 
 proc set_vmarg { vmarg card_type } {
     # do vmarg
-    if {$vmarg == "normal"} {
-        plog_msg "Vmarg: $vmarg"
-        return
-    } elseif {$vmarg == "none"} {
-        return
-    } elseif {$vmarg == "high"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 840
-        sal_set_margin_by_value arm 1100
-        if { $card_type == "MALFA" } {
-            sal_set_margin_by_value DDR_VDD_0 1167
-            sal_set_margin_by_value DDR_VDDQ_0 1167
-            sal_set_margin_by_value DDR_VDD_1 1167
-            sal_set_margin_by_value DDR_VDDQ_1 1167
-        } else {
-            sal_set_margin_by_value DDR_VDD 1167
-            sal_set_margin_by_value DDR_VDDQ 1167
+    if { $vmarg == "normal" ||
+         $vmarg == "none"   ||
+         $vmarg == "high"   ||
+         $vmarg  == "low" } {
+        if {$vmarg == "normal"} {
+            plog_msg "Vmarg: $vmarg"
+        } elseif {$vmarg == "none"} {
+            plog_msg "Vmarg: $vmarg"
+        } elseif {$vmarg == "high"} {
+            plog_msg "Vmarg: $vmarg"
+            sal_set_margin_by_value vdd 840
+            sal_set_margin_by_value arm 1100
+            if { $card_type == "MALFA" } {
+                sal_set_margin_by_value DDR_VDD_0 1167
+                sal_set_margin_by_value DDR_VDDQ_0 1167
+                sal_set_margin_by_value DDR_VDD_1 1167
+                sal_set_margin_by_value DDR_VDDQ_1 1167
+            } else {
+                sal_set_margin_by_value DDR_VDD 1167
+                sal_set_margin_by_value DDR_VDDQ 1167
+            }
+        } elseif {$vmarg  == "low"} {
+            plog_msg "Vmarg: $vmarg"
+            sal_set_margin_by_value vdd 760
+            sal_set_margin_by_value arm 975
+            if { $card_type == "MALFA" } {
+                sal_set_margin_by_value DDR_VDD_0 1067
+                sal_set_margin_by_value DDR_VDDQ_0 1067
+                sal_set_margin_by_value DDR_VDD_1 1067
+                sal_set_margin_by_value DDR_VDDQ_1 1067
+            } else {
+                sal_set_margin_by_value DDR_VDD 1067
+                sal_set_margin_by_value DDR_VDDQ 1067
+            }
         }
-        return
-    } elseif {$vmarg  == "low"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 760
-        sal_set_margin_by_value arm 975
-        if { $card_type == "MALFA" } {
-            sal_set_margin_by_value DDR_VDD_0 1067
-            sal_set_margin_by_value DDR_VDDQ_0 1067
-            sal_set_margin_by_value DDR_VDD_1 1067
-            sal_set_margin_by_value DDR_VDDQ_1 1067
-        } else {
-            sal_set_margin_by_value DDR_VDD 1067
-            sal_set_margin_by_value DDR_VDDQ 1067
-        }
+        sal_print_voltage_temp_from_j2c
         return
     }
 

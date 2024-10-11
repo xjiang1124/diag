@@ -72,14 +72,14 @@ def prog_smbalert_mask(slot, warm_reset=False):
 
     if ret == 0:
         print("\n====== Masking COMM and CML_OTHER faults\n")
-        # Write word – CMD Address: 0x1B, Data: 0x037E (7E = address pointer, 03 = mask)
+        # Write word – CMD Address: 0x1B, Address Pointer = 7E, Mask = 03
         cmd = "i2c write i2c@30000 0x60 0x1B 0x7E 0x3"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
 
     if ret == 0:
-        print("\n====== Masking RD_GRP fault\n")
-        # Write block – CMD Address: 0xCF, Data: 0x00000000000020
-        cmd = "i2c write i2c@30000 0x60 0xCF 0x7 0x00 0x00 0x00 0x00 0x00 0x00 0x20"
+        print("\n====== Masking EXT fault\n")
+        # Write word – CMD Address: 0x1B, Address pointer = 80, Mask = 46
+        cmd = "i2c write i2c@30000 0x60 0x1B 0x80 0x46"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
 
     if ret == 0:
