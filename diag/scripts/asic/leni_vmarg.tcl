@@ -29,6 +29,17 @@ proc get_vmarg_by_index_vdd {corner_idx} {
     dict set volt_VDD_Dict UU_17  781
     dict set volt_VDD_Dict UU_18  859
 
+    dict set volt_VDD_Dict UU_30  710
+    dict set volt_VDD_Dict UU_31  710
+    dict set volt_VDD_Dict UU_32  750
+
+    dict set volt_VDD_Dict UU_101  650
+    dict set volt_VDD_Dict UU_104  650
+    dict set volt_VDD_Dict UU_107  680
+    dict set volt_VDD_Dict UU_110  659
+    dict set volt_VDD_Dict UU_113  659
+    dict set volt_VDD_Dict UU_116  703
+
     if {[dict exists $volt_VDD_Dict $corner_idx]} {
         return [dict get $volt_VDD_Dict $corner_idx]
     } else {
@@ -60,6 +71,17 @@ proc get_vmarg_by_index_arm {corner_idx} {
     dict set volt_ARM_Dict UU_16  937
     dict set volt_ARM_Dict UU_17  1042
     dict set volt_ARM_Dict UU_18  1146
+
+    dict set volt_ARM_Dict UU_30  920
+    dict set volt_ARM_Dict UU_31  940
+    dict set volt_ARM_Dict UU_32  980
+
+    dict set volt_ARM_Dict UU_101  803
+    dict set volt_ARM_Dict UU_104  851
+    dict set volt_ARM_Dict UU_107  907
+    dict set volt_ARM_Dict UU_110  830
+    dict set volt_ARM_Dict UU_113  879
+    dict set volt_ARM_Dict UU_116  937
 
     if {[dict exists $volt_ARM_Dict $corner_idx]} {
         return [dict get $volt_ARM_Dict $corner_idx]
