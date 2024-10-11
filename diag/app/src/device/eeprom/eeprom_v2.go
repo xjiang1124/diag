@@ -908,7 +908,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LENI: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2AltTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -950,7 +950,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LENI48G: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2AltTbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
         FRU_ID_LENI,
