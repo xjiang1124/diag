@@ -91,10 +91,14 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         plog_msg " BW_voltage_temp report "
         sal_top_get_cntr 0
         #sal_pb_dump_cntrs 0 0
-        get_sal_offload_cnt 0
-        get_sal_offload_cnt 1
+        plog_msg "==1=="
+        #get_sal_offload_cnt 0
+        plog_msg "==2=="
+        #get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst"} {
+            plog_msg "==3=="
             find_avg_rate 5 3840
+            plog_msg "==4=="
         } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
                    $test_type == "esam_pktgen_ddr_arm_sor"          || 
                    $test_type == "esam_pktgen_max_power_pcie_sor"   ||
@@ -130,7 +134,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_top_get_cntr 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
-        if { $test_type != "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst" } {
+        if { $test_type != "esam_pktgen_llc_sor" ||
+             $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+             $test_type == "esam_pktgen_ddr_burst" } {
             sal_xd_ptd_cnt_chk
         }
         sal_pb_dump_cntrs 0 0
@@ -386,6 +392,7 @@ if { $test_type == "esam_pktgen_pcie_mtp_sor"       ||
 	    plog_msg "pcie done"
         after 1000
         plog_msg "SNAKE TEST FAILED"
+        plog_msg "SNAKE TEST DONE"
         exit 0
     }
 }
@@ -412,7 +419,9 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
-     $test_type == "esam_pktgen_ddr_burst" } {
+     $test_type == "esam_pktgen_ddr_burst"          ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     0 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
     after 3000
@@ -426,6 +435,7 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
         plog_msg "SNAKE TEST FAILED"
+        plog_msg "SNAKE TEST DONE"
         exit 0
     }
 }
@@ -464,12 +474,12 @@ sal_asic_init 2
 
 plog_msg "sal_aw_dump_pmon"
 if { $test_type == "esam_pktgen_pcie_mtp_sor"       ||
-     $test_type == "esam_pktgen_ddr_arm_sor"        ||
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      0 } {
     # if pcie is enabled, check all macro
     sal_aw_dump_pmon
-} elseif { $test_type != "esam_pktgen_ddr_burst_400G_no_mac" } {
+} elseif { $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
+           $test_type != "esam_pktgen_ddr_arm_sor"} {
     # only check MX0 and MX1
     sal_aw_dump_pmon 0x3
 }
@@ -548,4 +558,5 @@ if {$err_cnt != 0} {
 } else {
     plog_msg "SNAKE TEST PASSED"
 }
+plog_msg "SNAKE TEST DONE"
 exit 0
