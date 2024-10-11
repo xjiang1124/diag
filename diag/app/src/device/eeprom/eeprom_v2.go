@@ -823,7 +823,49 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_MALFA: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_MALFA,
+        SKU_MALFA,
+        FRU_ID_MALFA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     PN_POLLARA: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_POLLARA,
+        SKU_POLLARA,
+        FRU_ID_POLLARA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
+    SKU_POLLARA: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_POLLARA,
         SKU_POLLARA,
@@ -865,7 +907,49 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_LENI: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_LENI,
+        SKU_LENI,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     PN_LENI48G: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_LENI,
+        SKU_LENI48G,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
+    SKU_LENI48G: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
@@ -957,9 +1041,13 @@ var CardTypes = []card{
     //used in non SKU mode
     card{"ORTANO-GIN_D5_SSDK",      PN_GIN_D5_SSDK},
     card{"MALFA",                   PN_MALFA},
+    card{"MALFA_SKU",               SKU_MALFA},
     card{"POLLARA",                 PN_POLLARA},
+    card{"POLLARA_SKU",             SKU_POLLARA},
     card{"LENI",                    PN_LENI},
+    card{"LENI_SKU",                SKU_LENI},
     card{"LENI48G",                 PN_LENI48G},
+    card{"LENI48G_SKU",             SKU_LENI48G},
     card{"LENI_0B",                    PN_LENI_0B},
     card{"LENI48G_0B",                 PN_LENI48G_0B},
     //SKU type cards: used in SKU mode
