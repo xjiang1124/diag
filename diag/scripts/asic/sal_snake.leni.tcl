@@ -91,14 +91,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         plog_msg " BW_voltage_temp report "
         sal_top_get_cntr 0
         #sal_pb_dump_cntrs 0 0
-        plog_msg "==1=="
         #get_sal_offload_cnt 0
-        plog_msg "==2=="
         #get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst"} {
-            plog_msg "==3=="
             find_avg_rate 5 3840
-            plog_msg "==4=="
         } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
                    $test_type == "esam_pktgen_ddr_arm_sor"          || 
                    $test_type == "esam_pktgen_max_power_pcie_sor"   ||
