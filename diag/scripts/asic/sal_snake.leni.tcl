@@ -91,8 +91,8 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         plog_msg " BW_voltage_temp report "
         sal_top_get_cntr 0
         #sal_pb_dump_cntrs 0 0
-        #get_sal_offload_cnt 0
-        #get_sal_offload_cnt 1
+        get_sal_offload_cnt 0
+        get_sal_offload_cnt 1
         if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst"} {
             find_avg_rate 5 3840
         } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
@@ -128,6 +128,8 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 	    # Debug info dump
 	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
+        get_sal_offload_cnt 0
+        get_sal_offload_cnt 1
         get_sal_offload_cnt_chk 0
         get_sal_offload_cnt_chk 1
         if { $test_type != "esam_pktgen_llc_sor" ||
@@ -353,7 +355,9 @@ if { $val != 0x1 } {
 
 set err_cnt_init [ plog_get_err_count ]
 
-if { $test_type == "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst" } {
+if { $test_type == "esam_pktgen_llc_sor" ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     $test_type == "esam_pktgen_ddr_burst" } {
     sal_set_proto_mode 0
     sal_proto_mode_powerup
 }
