@@ -1,13 +1,6 @@
 # !/usr/bin/tclsh
 
 set slot [lindex $argv 0]
-# test types:
-# esam_pktgen_llc_no_mac_sor : no ddr + no mac
-# esam_pktgen_llc_sor        :  no ddr + mac
-# esam_pktgen_ddr_no_mac_sor : ddr + no mac
-# esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
-# esam_pktgen_ddr_burst_400G : ddr burst
-# esam_pktgen_pcie_mtp_sor   : pcie + ddr + mac
 
 set test_type [lindex $argv 1]
 set dura [lindex $argv 2]
@@ -93,11 +86,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         #sal_pb_dump_cntrs 0 0
         get_sal_offload_cnt 0
         get_sal_offload_cnt 1
-        if { $test_type == "esam_pktgen_ddr_burst_400G" } {
+        if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac" || $test_type == "esam_pktgen_ddr_burst"} {
             find_avg_rate 5 3840
-        } elseif { $test_type == "esam_pktgen_pcie_mtp_sor"         || 
-                   $test_type == "esam_pktgen_ddr_arm_sor.400g"     || 
-                   $test_type == "esam_pktgen_ddr_arm_sor"          || 
+        } elseif { $test_type == "esam_pktgen_ddr_arm_sor"          || 
                    $test_type == "esam_pktgen_max_power_pcie_sor"   ||
                    $test_type == "esam_pktgen_max_power_sor" } {
             find_avg_rate 5 8000
@@ -122,7 +113,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
         sal_print_voltage_temp_from_j2c
         sal_mc_irq_show -1 -1 1
-        sal_mc_check_ecc -1 -1 1 $cpld_id
+        sal_mc_check_ecc -1 -1 1 0x61 1
         check_ecc_intr
 
 	    #===============================
@@ -133,7 +124,11 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         get_sal_offload_cnt 1
         get_sal_offload_cnt_chk 0
         get_sal_offload_cnt_chk 1
-        sal_xd_ptd_cnt_chk
+        if { $test_type != "esam_pktgen_llc_sor" &&
+             $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
+             $test_type != "esam_pktgen_ddr_burst" } {
+            sal_xd_ptd_cnt_chk
+        }
         sal_pb_dump_cntrs 0 0
 
         sal_mes_dump_stats 0 0
@@ -308,8 +303,6 @@ cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
 plog_msg "test_type: $test_type"
-#plog_msg "SNAKE TEST DONE"
-#exit 0
 
 set ::FAN_SPD 40
 set ::DEVMGR devmgr_v2
@@ -352,11 +345,11 @@ if { $val != 0x1 } {
     exit 0
 }
 
-#csr_write sal0.txs.txs\[0].base 0xaabbcc
-#rds sal0.txs.txs\[0].base
 set err_cnt_init [ plog_get_err_count ]
 
-if { $test_type == "esam_pktgen_ddr_burst_no_mac" } {
+if { $test_type == "esam_pktgen_llc_sor" ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     $test_type == "esam_pktgen_ddr_burst" } {
     sal_set_proto_mode 0
     sal_proto_mode_powerup
 }
@@ -385,18 +378,11 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" || $vmarg == "non
 #plog_msg "Change fan speed to $::FAN_SPD"
 #exec $::DEVMGR fanctrl --pct=$::FAN_SPD
 
-#return
-
-# put arm in reset
-#sal_pcc
 # start test snake test
 cd ../$test_type
-#set cpld_id 0x62
 
 #===========================
-if { $test_type == "esam_pktgen_pcie_mtp_sor"       || 
-     $test_type == "esam_pktgen_ddr_arm_sor"        || 
-     $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
+if { $test_type == "esam_pktgen_ddr_arm_sor"        || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      0 } {
     set in_err_ecc [plog_get_err_count]
@@ -410,48 +396,49 @@ if { $test_type == "esam_pktgen_pcie_mtp_sor"       ||
     if {$err_cnt != 0} {
         plog_msg "pcie linkup failed"
 	    plog_msg "pcie done"
-        after 10000
+        after 1000
+        plog_msg "SNAKE TEST FAILED"
         plog_msg "SNAKE TEST DONE"
         exit 0
     }
 }
 plog_msg "pcie done"
-#after 10000
 after 1000
-if { $test_type == "esam_pktgen_ddr_no_mac_sor" ||
-     $test_type == "esam_pktgen_ddr_sor"        ||
-     $test_type == "esam_pktgen_ddr_burst_400G" } {
+if { $test_type == "esam_pktgen_ddr_sor"        ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     $test_type == "esam_pktgen_ddr_burst" } {
     if { $card_type == "MALFA" } {
         cdn_ddr5_init 3200
-        #set cpld_id 0x62
     } elseif { $card_type == "LENI" } {
         cdn_ddr5_init 6400 0x64 0
-        #set cpld_id 0x64
     } elseif { $card_type == "LENI48G" } {
         cdn_ddr5_init 6400 0x66 0
-        #set cpld_id 0x66
     }
     sal_mc_irq_show -1 -1 1
-    sal_mc_check_ecc -1 -1 1 $cpld_id
+    sal_mc_check_ecc -1 -1 1 0x61 1
     check_ecc_intr
 }
 
 if { $test_type == "esam_pktgen_llc_sor"            || 
      $test_type == "esam_pktgen_ddr_sor"            || 
-     $test_type == "esam_pktgen_pcie_mtp_sor"       || 
      $test_type == "esam_pktgen_ddr_arm_sor"        || 
-     $test_type == "esam_pktgen_ddr_arm_sor.400g"   || 
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
-     1 } {
+     $test_type == "esam_pktgen_ddr_burst"          ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     0 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
     after 3000
-    #sal_front_panel_port_up 0 "Fiber" 1
-    sal_front_panel_port_up 0 "CU" 0 "2x400" 0
+    if {$test_type == "esam_pktgen_llc_sor" || $test_type == "esam_pktgen_ddr_burst"} {
+        sal_front_panel_port_up 1 "CU" 1 "2x400" 0
+    } else {
+        sal_front_panel_port_up 0 "CU" 1 "2x400" 0
+    }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
+        plog_msg "SNAKE TEST FAILED"
         plog_msg "SNAKE TEST DONE"
         exit 0
     }
@@ -490,7 +477,14 @@ sal_mx_get_mac_chsts 0 1 0 1
 sal_asic_init 2
 
 plog_msg "sal_aw_dump_pmon"
-sal_aw_dump_pmon
+if { $test_type == "esam_pktgen_max_power_pcie_sor" } {
+    # if pcie is enabled, check all macro
+    sal_aw_dump_pmon
+} elseif { $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
+           $test_type != "esam_pktgen_ddr_arm_sor"} {
+    # only check MX0 and MX1
+    sal_aw_dump_pmon 0x3
+}
 
 # before snake starts
 sal_top_eos 0
@@ -499,10 +493,8 @@ if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor" } {
     set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
     #set stream_list_all "0-21,30-37,40-47,50-57"
-} elseif {$test_type == "esam_pktgen_ddr_arm_sor.400g" || $test_type == "esam_pktgen_ddr_arm_sor"} {
+} elseif {$test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_llc_sor" } {
     set stream_list_all "10,20"
-} elseif {$test_type == "esam_pktgen_pcie_mtp_sor"} {
-    set stream_list_all "10,21"
 } else {
     set stream_list_all "10"
 }
@@ -526,11 +518,6 @@ sal_top_get_cntr 0
 get_sal_offload_cnt 0
 get_sal_offload_cnt 1
 mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
-#sal_noc_nis_bwmon_setup 0 0
-#sal_noc_nis_bwmon_dump  0 0
-
-# Gen 4
-#rds sal0.pp.pxc\[0\].port_p.sat_p_port_cnt_ltssm_state_changed
 
 sal_top_stream_stop_snake_traffic 0
 # after test completes
@@ -547,7 +534,7 @@ sal_mx_get_mac_chsts 0 1 0 1
 # check ecc
 set in_err_ecc [plog_get_err_count]
 sal_mc_irq_show -1 -1 1
-sal_mc_check_ecc -1 -1 1 $cpld_id
+sal_mc_check_ecc -1 -1 1 0x61 1
 check_ecc_intr
 set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
 if {$err_cnt != 0} {
@@ -565,5 +552,11 @@ if {$err_cnt != 0} {
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
+set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
+if {$err_cnt != 0} {
+    plog_msg "SNAKE TEST FAILED"
+} else {
+    plog_msg "SNAKE TEST PASSED"
+}
 plog_msg "SNAKE TEST DONE"
 exit 0

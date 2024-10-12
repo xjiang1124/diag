@@ -441,16 +441,19 @@ class nic_test_v2:
 
         time.sleep(3)
 
-        if args.card_type != "POLLARA":
-            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
-                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+        if args.snake_type == "esam_pktgen_llc_sor" or \
+           args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
+           args.snake_type == "esam_pktgen_ddr_burst":
+            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
                 ret = -1
                 return ret
         else:
-            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-                ret = -1
-                return ret
+            if args.card_type != "POLLARA":
+                if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                    print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                    ret = -1
+                    return ret
 
         cmd = "jtag_accpcie_salina clr {}".format(args.slot)
         common.session_cmd(session, cmd)
@@ -461,20 +464,21 @@ class nic_test_v2:
             common.session_cmd(session, cmd, 360, False, "vmarg set")
 
         # Start CPU Burn on N1
-        if args.card_type != "POLLARA":
-            print("Start CPU BURN on N1")
-            uart_session = common.session_start()
-            ret = self.nic_con.uart_session_start(uart_session, args.slot)
-            if ret != 0:
-                return ret
-            try:
-                self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
-            except pexpect.TIMEOUT:
-                print ("failed to run cpuburn")
-                return -1
-            self.nic_con.uart_session_stop(uart_session)
-            common.session_stop(uart_session)
-            print("Done with Zephyr boot up.")
+        if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
+            if args.card_type != "POLLARA":
+                print("Start CPU BURN on N1")
+                uart_session = common.session_start()
+                ret = self.nic_con.uart_session_start(uart_session, args.slot)
+                if ret != 0:
+                    return ret
+                try:
+                    self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
+                except pexpect.TIMEOUT:
+                    print ("failed to run cpuburn")
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
+                print("Done with starting CPU BURN on N1")
 
         print("Start tcl")
         # TCL command
@@ -488,17 +492,35 @@ class nic_test_v2:
             return 0
 
         common.session_cmd(session, cmd, 360, False, "pcie done")
-        idx = session.expect(["SNAKE TEST DONE", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
+        idx = session.expect(["SNAKE TEST PASSED", "SNAKE TEST FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
 
-        if idx >= 1:
-            if idx == 1:
+        if idx >= 2:
+            if idx == 2:
                 print("\n==== TIMEOUT after command {}".format(cmd))
-            elif idx == 2:
+            elif idx == 3:
                 print("\n==== J2C access failure")
             ret = -1
         common.session_cmd(session, chr(3))
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
+        # check uart console
+        if args.snake_type != "esam_pktgen_llc_sor" and \
+           args.snake_type != "esam_pktgen_ddr_burst_400G_no_mac" and \
+           args.snake_type != "esam_pktgen_ddr_burst":
+            uart_session = common.session_start()
+            self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
+            if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["uart:~\$"], timeout=5):
+                print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            if args.card_type != "POLLARA":
+                uart_session = common.session_start()
+                self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
+                if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5):
+                    print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
         return ret
 
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
