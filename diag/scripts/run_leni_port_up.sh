@@ -19,7 +19,7 @@ for ite in $(seq 1 $num_ite)
 do
 
     echo "===== Ite: $ite ====="
-    python3 ./nic_test_debug.py nic_port_up -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type LENI -vmarg $vmarg -inf $inf | tee $nic_log
+    python3 ./nic_test_debug.py nic_port_up -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type LENI -vmarg $vmarg -inf $inf -timeout 900| tee $nic_log
     sync
 
     inventory -sts -slot $slot

@@ -503,7 +503,8 @@ class nic_test_v2:
         common.session_cmd(session, cmd, 360, False, "pcie done")
         idx = session.expect(["SNAKE TEST PASSED", "SNAKE TEST FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
 
-        if idx >= 2:
+        if idx >= 1:
+            print("ERROR :: Snake test has failed!")
             if idx == 2:
                 print("\n==== TIMEOUT after command {}".format(cmd))
             elif idx == 3:

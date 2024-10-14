@@ -208,6 +208,9 @@ set_vmarg $new_vmarg $card_type
 #plog_msg "Change fan speed to $::FAN_SPD"
 #exec $::DEVMGR fanctrl --pct=$::FAN_SPD
 
+set test_type esam_pktgen_max_power_pcie_sor
+cd ../$test_type
+
 #===========================
 # Disable PCIe for now
 if { $inf == "pcie" || 
@@ -219,6 +222,13 @@ if { $inf == "pcie" ||
         pcie_mtp_bringup_ports 1100 LENI 4
     }
     rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
+
+    #sal_asic_init 2
+    #
+    ## before snake starts
+    #sal_top_eos 0
+
+
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_err "pcie linkup failed"
