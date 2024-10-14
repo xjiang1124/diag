@@ -5003,7 +5003,7 @@ class mtp_ctrl():
                         logbuf[slot] += line + "\n"
 
         for slot in nic_list:
-            self._nic_ctrl_list[slot].mtp_exec_cmd(": <<'////'\nCopied log from mtp_diag.log:\n{:s}\n////".format(logbuf[slot]))
+            self._nic_ctrl_list[slot]._nic_handle.logfile_read.write(": <<'////'\nCopied log from mtp_diag.log:\n{:s}\n////".format(logbuf[slot]))
 
         return True
 
