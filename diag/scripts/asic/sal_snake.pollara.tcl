@@ -1,13 +1,6 @@
 # !/usr/bin/tclsh
 
 set slot [lindex $argv 0]
-# test types:
-# esam_pktgen_llc_no_mac_sor : no ddr + no mac
-# esam_pktgen_llc_sor        :  no ddr + mac
-# esam_pktgen_ddr_no_mac_sor : ddr + no mac
-# esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
-# esam_pktgen_ddr_burst_400G : ddr burst
-# esam_pktgen_pcie_mtp_sor   : pcie + ddr + mac
 
 set test_type [lindex $argv 1]
 set dura [lindex $argv 2]
@@ -233,9 +226,7 @@ if { $val != 0x1 } {
     exit 0
 }
 
-#csr_write sal0.txs.txs\[0].base 0xaabbcc
-#rds sal0.txs.txs\[0].base
-#set err_cnt_init [ plog_get_err_count ]
+set err_cnt_init [ plog_get_err_count ]
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "snake_slot${slot}_${cur_time}.log"
 plog_start $fn
@@ -260,7 +251,6 @@ plog_msg "snake test_type: $test_type"
 cd ../$test_type
 plog_msg "cd ../$test_type"
 plog_msg "pwd: [ pwd ]"
-#set cpld_id 0x62
 
 #===========================
 # Disable PCIe for now
@@ -278,6 +268,7 @@ if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
         plog_msg "pcie linkup failed"
         plog_msg "pcie done"
         after 1000
+        plog_msg "SNAKE TEST FAILED"
         plog_msg "SNAKE TEST DONE"
         exit 0
     }
@@ -289,12 +280,13 @@ if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
      $test_type == "esam_pktgen_pollara_max_power_arm" } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
-    sal_front_panel_port_up 0 "CU" 0 2x400 0
+    sal_front_panel_port_up 0 "CU" 1 2x400 0
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_msg "MX linkup failed"
-        #plog_msg "SNAKE TEST DONE"
-        #exit 0
+        plog_msg "SNAKE TEST FAILED"
+        plog_msg "SNAKE TEST DONE"
+        exit 0
     }
 }
 
@@ -341,6 +333,7 @@ if {$test_type == "esam_pktgen_pollara_sor"} {
     set stream_list_all "30-33,40-43"
 } else {
     plog_err "Unsupported snake: ${test_type} "
+    plog_msg "SNAKE TEST FAILED"
     plog_msg "SNAKE TEST DONE"
     exit 0
 }
@@ -358,11 +351,6 @@ foreach stream $stream_list { sal_top_stream_start_snake_traffic 0 $stream }
 sal_top_get_cntr 0
 get_sal_offload_cnt 0
 mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
-#sal_noc_nis_bwmon_setup 0 0
-#sal_noc_nis_bwmon_dump  0 0
-
-# Gen 4
-#rds sal0.pp.pxc\[0\].port_p.sat_p_port_cnt_ltssm_state_changed
 
 sal_top_stream_stop_snake_traffic 0
 # after test completes
@@ -376,12 +364,15 @@ sal_mx_get_mac_chsts 0 0 0 1
 #sal_mx_get_mac_chsts 0 1 0 1
 #sal_pf_cntrs
 #sal_pb_dump_cntrs 0 0
-# check ecc
-set in_err_ecc [plog_get_err_count]
-set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
 
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
+set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
+if {$err_cnt != 0} {
+    plog_msg "SNAKE TEST FAILED"
+} else {
+    plog_msg "SNAKE TEST PASSED"
+}
 plog_msg "SNAKE TEST DONE"
 exit 0
