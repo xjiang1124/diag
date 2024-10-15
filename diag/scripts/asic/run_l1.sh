@@ -128,8 +128,11 @@ if [[ $VMARG == "normal" ]]
 then
     PCT=0
 else
-    VMARG=$(echo $VMARG_PCT | cut -d "_" -f 1)
-    PCT=$(echo $VMARG_PCT | cut -s -d "_" -f 2)
+    if [[ $ASIC_TYPE == "GIGLIO" ]]
+    then
+        VMARG=$(echo $VMARG_PCT | cut -d "_" -f 1)
+        PCT=$(echo $VMARG_PCT | cut -s -d "_" -f 2)
+    fi
 fi
 echo "vmarg: $VMARG; pct: $PCT"
 
