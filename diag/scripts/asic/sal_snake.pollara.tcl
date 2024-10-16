@@ -385,7 +385,7 @@ set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
 if {$err_cnt != 0} {
-    plog_msg "SNAKE TEST FAILED"
+    plog_err "SNAKE TEST FAILED"
 } else {
     plog_msg "SNAKE TEST PASSED"
 }
