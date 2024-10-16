@@ -246,10 +246,10 @@ if { $test_type == "esam_pktgen_ddr_arm_sor"        ||
     rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
-        plog_msg "pcie linkup failed"
+        plog_err "pcie linkup failed"
 	    plog_msg "pcie done"
         after 1000
-        plog_msg "SNAKE TEST FAILED"
+        plog_err "SNAKE TEST FAILED"
         plog_msg "SNAKE TEST DONE"
         exit 0
     }
@@ -289,8 +289,8 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
     }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
-        plog_msg "MX linkup failed"
-        plog_msg "SNAKE TEST FAILED"
+        plog_err "MX linkup failed"
+        plog_err "SNAKE TEST FAILED"
         plog_msg "SNAKE TEST DONE"
         exit 0
     }
@@ -406,7 +406,7 @@ set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
 if {$err_cnt != 0} {
-    plog_msg "SNAKE TEST FAILED"
+    plog_err "SNAKE TEST FAILED"
 } else {
     plog_msg "SNAKE TEST PASSED"
 }
