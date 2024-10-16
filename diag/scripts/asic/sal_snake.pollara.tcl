@@ -134,52 +134,6 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
     }
 }
 
-proc get_vmarg_by_index_vdd {corner_idx} {
-    dict set volt_VDD_Dict UU_1   650
-    dict set volt_VDD_Dict UU_2   665
-    dict set volt_VDD_Dict UU_3   680
-    dict set volt_VDD_Dict UU_4   695
-    dict set volt_VDD_Dict UU_5   710
-    dict set volt_VDD_Dict UU_6   725
-    dict set volt_VDD_Dict UU_7   740
-    dict set volt_VDD_Dict UU_8   755
-    dict set volt_VDD_Dict UU_9   770
-    dict set volt_VDD_Dict UU_10  785
-    dict set volt_VDD_Dict UU_11  800
-
-    if {[dict exists $volt_VDD_Dict $corner_idx]} {
-        return [dict get $volt_VDD_Dict $corner_idx]
-    } else {
-        return -1
-    }
-}
-
-proc set_vmarg { vmarg card_type } {
-    # do vmarg
-    if {$vmarg == "normal"} {
-        plog_msg "Vmarg: $vmarg"
-        return
-    } elseif {$vmarg == "high"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 840
-        return
-    } elseif {$vmarg  == "low"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 760
-        return
-    }
-
-    plog_msg "Vmargin with index"
-    set key "${vmarg}"
-    set tgt_vdd_volt [get_vmarg_by_index_vdd $key]
-    plog_msg "key: $key; tgt_vdd_volt: $tgt_vdd_volt"
-    sal_set_margin_by_value VDD $tgt_vdd_volt
-
-    set vdd_volt [sal_get_vout VDD]
-    plog_msg "Set vmarg: vdd_volt: $vdd_volt"
-    sal_print_voltage_temp_from_j2c
-}
-
 set ASIC_SRC $::env(ASIC_SRC)
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -237,15 +191,9 @@ plog_msg "card_type = $card_type"
 plog_msg "cpld_id = $cpld_id"
 sal_print_die_id
 
-if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
-    set new_vmarg $vmarg
-} else {
-    set new_vmarg [string range $vmarg 2 end]
-    set new_vmarg "UU${new_vmarg}"
-}
-    plog_msg "new_vmarg: $new_vmarg"
+plog_msg "new_vmarg: $vmarg"
     
-    set_vmarg $new_vmarg $card_type
+sal_set_vmarg $vmarg
 
 plog_msg "snake test_type: $test_type"
 cd ../$test_type
