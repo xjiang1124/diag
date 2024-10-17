@@ -486,7 +486,13 @@ class nic_test_v2:
         print("Start tcl")
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, "none")
+            if args.snake_type == "esam_pktgen_llc_sor" or \
+               args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
+               args.snake_type == "esam_pktgen_ddr_burst":
+                new_vmarg = args.vmarg
+            else:
+                new_vmarg = "none"
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg)
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
         else:
