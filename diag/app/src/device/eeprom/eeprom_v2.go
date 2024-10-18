@@ -840,7 +840,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_POLLARA: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_POLLARA,
         SKU_POLLARA,
         FRU_ID_POLLARA,
@@ -861,7 +861,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_POLLARA: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_POLLARA,
         SKU_POLLARA,
         FRU_ID_POLLARA,
@@ -882,7 +882,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -903,7 +903,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LENI: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
