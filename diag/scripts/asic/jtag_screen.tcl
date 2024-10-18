@@ -19,15 +19,15 @@ proc define_test_list {{override_test_list ""}} {
             # #TEST NAME ############# RST PRE                      COMMAND              POST
             ID         { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
             FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
-            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      check_vrd_fault ] }
+            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      "" ] }
 
-            MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     check_vrd_fault ] }
-            MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    check_vrd_fault ] }
-            MBIST_WEST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_stp    check_vrd_fault ] }
+            MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
+            MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
+            MBIST_WEST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_stp    "" ] }
 
-            DIAG_ARM   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_diag    check_vrd_fault ] }
-            DIAG_EAST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_diag   check_vrd_fault ] }
-            DIAG_WEST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_diag   check_vrd_fault ] }
+            DIAG_ARM   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_diag    "" ] }
+            DIAG_EAST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_diag   "" ] }
+            DIAG_WEST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_diag   "" ] }
             default    { set cmd_list [list 0 "" "" ""] }
         }
         dict append test_list $test_name $cmd_list
@@ -62,7 +62,13 @@ proc set_pollara_frequency {} {
         sal_ow
         sal_set_pollara_freq
         sal_j2c
+        clear_vrd_fault
     }
+}
+
+proc clear_vrd_fault {} {
+    plog_msg "Clearing CPLD resetcode register"
+    ssi_cpld_write 0x30 0x0
 }
 
 proc check_vrd_fault {} {
@@ -71,7 +77,7 @@ proc check_vrd_fault {} {
     set faultcode [ssi_cpld_read 0x32]
     plog_msg "CPLD reg 0x30: $resetcode"
     plog_msg "CPLD reg 0x32: $faultcode"
-    if { $resetcode != "0x0" && $resetcode != "0x13" } {
+    if { $resetcode != "0x0" } {
         plog_err "Encountered abnormal reset code: $resetcode"
     }
     if { $faultcode != "0x0" } {
@@ -100,21 +106,19 @@ proc mbist_with_diag {} {
     ### diagnostics to report which memory bit failed.
     ### (they'll cover mbist as well but takes longer)
     if {$arm_err != 0} {
-        plog_msg "Errors encountered in ARM MBIST. Running diagnostics..."
+        plog_err "Errors encountered in ARM MBIST. Running diagnostics..."
         set_pollara_frequency
         sal_jtag_arm_diag
-        check_vrd_fault
     } elseif {$east_err != 0} {
-        plog_msg "Errors encountered in East MBIST. Running diagnostics..."
+        plog_err "Errors encountered in East MBIST. Running diagnostics..."
         set_pollara_frequency
         sal_jtag_east_diag
-        check_vrd_fault
     } elseif {$west_err != 0} {
-        plog_msg "Errors encountered in West MBIST. Running diagnostics..."
+        plog_err "Errors encountered in West MBIST. Running diagnostics..."
         set_pollara_frequency
         sal_jtag_west_diag
-        check_vrd_fault
     }
+    check_vrd_fault
 }
 
 ### handle args
@@ -171,6 +175,7 @@ plog_msg "sal_proto_mode_powerup"
 sal_proto_mode_powerup
 plog_msg "Disabling WDT"
 ssi_cpld_write 0x1 0x0
+clear_vrd_fault
 sal_set_vmarg $vmarg
 sal_print_voltage_temp_from_j2c
 set err_cnt_fnl [ plog_get_err_count ]

@@ -186,6 +186,8 @@ if {$use_zmq == 0} {
         sal_proto_mode_powerup
         plog_msg "Disabling WDT"
         ssi_cpld_write 0x1 0x0
+        plog_msg "Clearing resetcode"
+        ssi_cpld_write 0x30 0x0
         plog_msg "sal_soc_dump_slv_cntrs"
         sal_soc_dump_slv_cntrs
         plog_msg "sal_soc_dump_mst_cntrs"
