@@ -4,7 +4,6 @@ slot=$1
 vmarg=$2
 num_ite=$3
 stop_on_err=$4
-inf=$5
 
 nic_log=nic_port_up_slot${slot}.log
 
@@ -15,11 +14,15 @@ else
     echo "Free run mode enabled"
 fi
 
+card_type_v="UUT_${slot}"
+card_type=${!card_type_v}
+echo "card_type $card_type"
+
 for ite in $(seq 1 $num_ite)
 do
 
     echo "===== Ite: $ite ====="
-    python3 ./nic_test_debug.py nic_port_up -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type LENI -vmarg $vmarg -inf $inf -timeout 900| tee $nic_log
+    ./nic_test_v2.py pcie_prbs -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type $card_type -dura 60 -vmarg $vmarg | tee $nic_log
     sync
 
     inventory -sts -slot $slot

@@ -11,7 +11,7 @@ set slot [lindex $argv 0]
 
 set card_type [lindex $argv 1]
 set vmarg [lindex $argv 2]
-set inf [lindex $argv 3]
+set dura [lindex $argv 3]
 
 
 proc get_vmarg_by_index_vdd {corner_idx} {
@@ -186,10 +186,10 @@ set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
 set fn "snake_slot${slot}_${cur_time}.log"
 plog_start $fn
 
-set card_type [sal_get_card_type]
-set cpld_id [ ssi_cpld_read 0x80 ]
+#set card_type [sal_get_card_type]
+#set cpld_id [ ssi_cpld_read 0x80 ]
 plog_msg "card_type = $card_type"
-plog_msg "cpld_id = $cpld_id"
+#plog_msg "cpld_id = $cpld_id"
 sal_print_die_id
 
 if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
@@ -205,65 +205,15 @@ plog_msg "new_vmarg: $new_vmarg; vmarg: $vmarg"
 #exit 0   
 set_vmarg $new_vmarg $card_type
 
-#plog_msg "Change fan speed to $::FAN_SPD"
-#exec $::DEVMGR fanctrl --pct=$::FAN_SPD
+pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
 
-set test_type esam_pktgen_max_power_pcie_sor
-cd ../$test_type
+plog_msg "PRBS TEST DONE"
 
-#===========================
-# Disable PCIe for now
-if { $inf == "pcie" || 
-     $inf == "all" } {
-    set in_err_ecc [plog_get_err_count]
-    if { $card_type == "MALFA" } {
-        pcie_mtp_bringup_ports 1100 MALFA 4
-    } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
-        pcie_mtp_bringup_ports 1100 LENI 4
-    }
-    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
-
-    #sal_asic_init 2
-    #
-    ## before snake starts
-    #sal_top_eos 0
-
-
-    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
-    if {$err_cnt != 0} {
-        plog_err "pcie linkup failed"
-    }
-    plog_msg "pcie done"
-}
-#after 10000
-after 1000
-
-if { $inf == "eth" || 
-     $inf == "all" } {
-    set in_err_ecc [plog_get_err_count]
-    sal_aw_srds_powerup_init
-    after 3000
-    #sal_front_panel_port_up 0 "Fiber" 1
-    sal_front_panel_port_up 0 "CU" 0 "2x400" 0
-    set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
-    if {$err_cnt != 0} {
-        plog_err "MX linkup failed"
-    }
-
-    #set ret [sal_srds_vco_cdr_chk 0 0 0]
-    #if { $ret == 0 } {
-    #    plog_msg "sal_srds_vco_cdr_chk: PASS"
-    #} else {
-    #    plog_msg "sal_srds_vco_cdr_chk: FAIL"
-    #}
-    plog_msg "mx done"
-}
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {
-    plog_msg "Port up test FAILED"
+    plog_err "PRBS test FAILED"
 } else {
-    plog_msg "Port up test PASSED"
+    plog_msg "PRBS test PASSED"
 }
 
-plog_msg "SNAKE TEST DONE"
 exit 0

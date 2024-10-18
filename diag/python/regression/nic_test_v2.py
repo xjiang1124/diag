@@ -403,6 +403,78 @@ class nic_test_v2:
         
         return full_range
 
+    def pcie_prbs(self, args):
+        print("tcl_path:", args.tcl_path)
+
+        session = common.session_start()
+        # set spimode to be off
+        cmd = "fpgautil spimode {} off".format(args.slot)
+        common.session_cmd(session, cmd)
+
+        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+        common.session_cmd(session, cmd)
+
+        print("=== TCL ENV setup ===")
+        tcl_path = args.tcl_path
+        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "source source_env_path")
+        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        #common.session_cmd(session, "rm -f *")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+
+        time.sleep(3)
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+        print("Done with Zephyr boot up, now start tcl")
+
+        # TCL command
+        cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.dura)
+        if args.card_type == "LENI" or args.card_type == "LENI48G":
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura)
+        elif args.card_type == "POLLARA":
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura)
+        else:
+            print(args.card_type, "not supported!")
+            common.session_stop(session)
+            return 0
+
+        common.session_cmd(session, cmd, ending="PRBS TEST DONE", timeout=args.timeout)
+        idx = session.expect(["PRBS test PASSED", "PRBS test FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
+
+        if idx >= 1:
+            print("ERROR :: Snake test has failed!")
+            ret = -1
+
+        common.session_stop(session)
+
+        print("Dumping PCIe trace")
+        uart_session = common.session_start()
+        ret = self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
+        #ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+        try:
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+        except pexpect.TIMEOUT:
+            print ("Faied to dump pcie trace")
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        return 0
+
     def nic_snake_mtp(self, args):
         ret = 0
         print("tcl_path:", args.tcl_path)
@@ -503,7 +575,8 @@ class nic_test_v2:
         common.session_cmd(session, cmd, 360, False, "pcie done")
         idx = session.expect(["SNAKE TEST PASSED", "SNAKE TEST FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
 
-        if idx >= 2:
+        if idx >= 1:
+            print("ERROR :: Snake test has failed!")
             if idx == 2:
                 print("\n==== TIMEOUT after command {}".format(cmd))
             elif idx == 3:
@@ -1306,6 +1379,17 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
+
+    # NIC snake test from mtp
+    parser_nic_port_up = subparsers.add_parser('pcie_prbs', help='pcie_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_port_up.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_nic_port_up.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/xin/nic')
+    parser_nic_port_up.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
+    parser_nic_port_up.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_nic_port_up.add_argument("-dura", "--dura", help="Duration", type=str, default="30")
+    parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 
     # Enable/Disable WP single
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

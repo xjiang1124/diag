@@ -91,7 +91,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         } elseif { $test_type == "esam_pktgen_ddr_arm_sor"          || 
                    $test_type == "esam_pktgen_max_power_pcie_sor"   ||
                    $test_type == "esam_pktgen_max_power_sor" } {
-            find_avg_rate 5 8000
+            find_avg_rate 5 714
         } else {
             find_avg_rate 5 4000
         }
@@ -118,6 +118,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
 	    #===============================
 	    # Debug info dump
+
+        sal_eos_intr_chk  none none
+        sal_eos_intr_clr  none none
+
 	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
         get_sal_offload_cnt 0
@@ -277,7 +281,6 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
      $test_type == "esam_pktgen_ddr_burst"          ||
-     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
      0 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
@@ -325,6 +328,9 @@ if {$ret != 0} {
 # before test start
 sal_mx_get_mac_chsts 0 0 0 1
 sal_mx_get_mac_chsts 0 1 0 1
+
+sknobs_set_string  is/phv_crypto_skip_ok  1
+
 # start test
 sal_asic_init 2
 
@@ -344,7 +350,6 @@ sal_top_eos 0
 if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor" } {
     set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
-    #set stream_list_all "0-21,30-37,40-47,50-57"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_llc_sor" } {
     set stream_list_all "10,20"
 } else {
