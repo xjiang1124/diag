@@ -83,11 +83,9 @@ const (
     PN_GIN_D5_SSDK   string = "68-0076"
     PN_GIN_D5_CISCO  string = "68-0094"
     PN_MALFA         string = "102-P10600-00"
-    PN_POLLARA       string = "102-P11100-00"
-    PN_LENI          string = "102-P10800-00"
-    PN_LENI48G       string = "102-P10801-00"
-    PN_LENI_0B      string = "102-P10800-00B"
-    PN_LENI48G_0B    string = "102-P10801-00B"
+    PN_POLLARA       string = "102-P11100"
+    PN_LENI          string = "102-P10800"
+    PN_LENI48G       string = "102-P10801"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -224,9 +222,6 @@ var ginestraD5OracleExt = []fieldInfo {
 var lipariElbaExt = []fieldInfo {
     fieldInfo { 125, []byte{0x10}, },
 }
-
-// Salina: Leni48G/64G/48G_0B/64G_0B req. exact pn matching
-var prefix_exactPN_req = []string {"102",}
 
 type entryinfo struct {
 	Name     string
@@ -845,7 +840,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_POLLARA: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_POLLARA,
         SKU_POLLARA,
         FRU_ID_POLLARA,
@@ -866,7 +861,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_POLLARA: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_POLLARA,
         SKU_POLLARA,
         FRU_ID_POLLARA,
@@ -887,7 +882,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -908,7 +903,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LENI: updateInfo {
-        PenStandardV2AltTbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -929,7 +924,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI48G: updateInfo {
-        PenStandardV2Tbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
         FRU_ID_LENI,
@@ -950,49 +945,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LENI48G: updateInfo {
-        PenStandardV2AltTbl,
-        PROD_NAME_LENI,
-        SKU_LENI48G,
-        FRU_ID_LENI,
-        []progInfo {
-            progInfo {
-                FIELD_TYPE_NUM,
-                AREA_TYPE_BOARD_INFO,
-                FIELD_NUM_SN_3,
-                FIELD_NUM_PN_10,
-                FIELD_NUM_MAC_9,
-                FIELD_NUM_PROD_NAME_2,
-                FIELD_NUM_SKU_4,
-                FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_DPN_11,
-                },
-        },
-        nil,
-    },
-
-    PN_LENI_0B: updateInfo {
-        PenStandardV2AltTbl,
-        PROD_NAME_LENI,
-        SKU_LENI,
-        FRU_ID_LENI,
-        []progInfo {
-            progInfo {
-                FIELD_TYPE_NUM,
-                AREA_TYPE_BOARD_INFO,
-                FIELD_NUM_SN_3,
-                FIELD_NUM_PN_10,
-                FIELD_NUM_MAC_9,
-                FIELD_NUM_PROD_NAME_2,
-                FIELD_NUM_SKU_4,
-                FIELD_NUM_FRU_ID_5,
-                FIELD_NUM_DPN_11,
-                },
-        },
-        nil,
-    },
-
-    PN_LENI48G_0B: updateInfo {
-        PenStandardV2AltTbl,
+        PenStandardV2NewTbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
         FRU_ID_LENI,
@@ -1048,8 +1001,6 @@ var CardTypes = []card{
     card{"LENI_SKU",                SKU_LENI},
     card{"LENI48G",                 PN_LENI48G},
     card{"LENI48G_SKU",             SKU_LENI48G},
-    card{"LENI_0B",                    PN_LENI_0B},
-    card{"LENI48G_0B",                 PN_LENI48G_0B},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
@@ -1190,12 +1141,6 @@ func findPnBlind() (pn string, err int) {
     dataString := string(DataRaw[:])
     for _, card := range CardTypes {
         if strings.Contains(dataString, card.pn) {
-            if CardReqExactPN(card.pn) {
-                pos := strings.Index(dataString, card.pn)
-                if pos <= 0 { continue }
-                pnLen := int(dataString[pos-1]&0x3F)
-                if dataString[pos : pos+pnLen] != card.pn { continue }
-            }
             pn = card.pn
             return
         }
@@ -1804,20 +1749,8 @@ func CardInListNew(partNum string, skuMode bool) (found bool, minPN string) {
         partNum = strings.TrimSpace(partNum)
         if (skuMode == true && partNum == card.pn) ||// for SKU card types, this is to find the exactly matching SKU
            (skuMode == false && strings.Contains(partNum, card.pn)) {
-            if CardReqExactPN(partNum) && (partNum != card.pn) { continue }
             found = true
             minPN = card.pn //for SKU card types, SKU is actually returned in minPN
-            return
-        }
-    }
-    return
-}
-
-func CardReqExactPN(partNum string) (ret bool) {
-    ret = false
-    for _, prefix := range(prefix_exactPN_req) {
-        if strings.HasPrefix(partNum, prefix) {
-            ret = true
             return
         }
     }

@@ -55,7 +55,7 @@ var PenStandardV2Tbl = []entry {
     entry{"Board Info Area Checksum",               INT8,       175,       1,    []byte{0x00}},
 }
 
-var PenStandardV2AltTbl = []entry {
+var PenStandardV2NewTbl = []entry {
     entry{"Common Format Version",                  INT8,        0,        1,    []byte{0x01}},
     entry{"Internal Use Area Offset",               INT8,        1,        1,    []byte{0x00}},
     entry{"Chassis Area Offset",                    INT8,        2,        1,    []byte{0x00}},
@@ -99,13 +99,14 @@ var PenStandardV2AltTbl = []entry {
     entry{"Number of MAC Address",                  INT8,       140,       2,    []byte{0x18, 0x00}},
     entry{"MAC Address Base Type/Length",           INT8,       142,       1,    []byte{0x06}},
     entry{"MAC Address Base",                       INT8,       143,       6,    []byte{0x00, 0xAE, 0xCD, 0x00, 0x00, 0x00}},
-    entry{"Assembly Number Type/Length",            INT8,       149,       1,    []byte{0xCE}},
-    entry{"Assembly Number",                        STRING,     150,      14,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-                                                                                        0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
-    entry{"DPN Type/Length",                        INT8,       164,       1,    []byte{0xCA}},
-    entry{"DPN (Diagnostic Part Number)",           STRING,     165,      10,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+    entry{"Assembly Number Type/Length",            INT8,       149,       1,    []byte{0xD4}},
+    entry{"Assembly Number",                        STRING,     150,      20,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+                                                                                        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+                                                                                        0x20, 0x20, 0x20, 0x20}},
+    entry{"DPN Type/Length",                        INT8,       170,       1,    []byte{0xCA}},
+    entry{"DPN (Diagnostic Part Number)",           STRING,     171,      10,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20}},
-    entry{"End of Field",                           INT8,       175,       1,    []byte{0xC1}},
-    entry{"PAD",                                    INT8,       176,       7,    []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}},
+    entry{"End of Field",                           INT8,       181,       1,    []byte{0xC1}},
+    entry{"PAD",                                    INT8,       182,       1,    []byte{0x00}},
     entry{"Board Info Area Checksum",               INT8,       183,       1,    []byte{0x00}},
 }
