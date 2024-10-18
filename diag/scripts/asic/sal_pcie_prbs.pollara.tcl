@@ -126,7 +126,7 @@ if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
     set new_vmarg "UU${new_vmarg}"
 }
 plog_msg "new_vmarg: $new_vmarg"
-sal_set_vmarg $new_vmarg $card_type
+sal_set_vmarg $new_vmarg 
 
 pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
 
