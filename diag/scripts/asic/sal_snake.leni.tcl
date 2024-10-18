@@ -349,7 +349,8 @@ sal_top_eos 0
 
 if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor" } {
-    set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
+    #set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
+    set stream_list_all "61,62,30-33,40-43,50-53,4-15,0-3,16-21"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_llc_sor" } {
     set stream_list_all "10,20"
 } else {
