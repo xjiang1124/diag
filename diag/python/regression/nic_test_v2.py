@@ -1155,6 +1155,35 @@ class nic_test_v2:
 
         return ret
 
+    def sal_misc_eqbk_ctrl(self, args):
+        ret = 0
+        session = common.session_start()
+
+        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+
+        #ret = self.nic_con.uart_session_start(session, args.slot)
+        ret = self.nic_con.uart_session_connect(session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+        try:
+            if args.enable == True:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_eqbk_en 1")
+            else:
+                self.nic_con.uart_session_cmd(session, "setenv delete pcieawd_eqbk_en")
+            self.nic_con.uart_session_cmd(session, "saveenv")
+        except pexpect.TIMEOUT:
+            print ("Failed to set eqbk")
+            ret = -1
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+        print("Done setting EQBK")
+
+        return 0
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1400,6 +1429,20 @@ if __name__ == "__main__":
     parser_fix_sal_vrm = subparsers.add_parser('fix_sal_vrm', help='Program Salina VRM with alert masking', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_fix_sal_vrm.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_fix_sal_vrm.set_defaults(func=test.mask_vrm_smbalert)
+
+    #=====================================================
+    # Salina misc commands
+    sal_misc_parser = subparsers.add_parser('sal_misc', help='Salina misc commands', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    sal_misc_subp = sal_misc_parser.add_subparsers(title="Salina misc commands", dest="sal_misc_subp", description="Salina misc commands", help='Salina misc commands description')
+
+    #---------------------------------------
+    # Salina misc sub commands
+    parser_eqbk = sal_misc_subp.add_parser('eqbk', help='EQBK Enable/Disalbe', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_eqbk.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    group_eqbk = parser_eqbk.add_mutually_exclusive_group(required=True)
+    group_eqbk.add_argument("-enable", '--enable', action='store_true', help='Enabled')
+    group_eqbk.add_argument("-disable", '--disable', action='store_true', help='Disabled')
+    parser_eqbk.set_defaults(func=test.sal_misc_eqbk_ctrl)
 
     try:
         args = parser.parse_args()
