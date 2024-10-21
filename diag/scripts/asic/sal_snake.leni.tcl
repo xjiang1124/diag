@@ -124,13 +124,13 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
 	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
-        get_sal_offload_cnt 0
-        get_sal_offload_cnt 1
-        get_sal_offload_cnt_chk 0
-        get_sal_offload_cnt_chk 1
         if { $test_type != "esam_pktgen_llc_sor" &&
              $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&
              $test_type != "esam_pktgen_ddr_burst" } {
+            get_sal_offload_cnt 0
+            get_sal_offload_cnt 1
+            get_sal_offload_cnt_chk 0
+            get_sal_offload_cnt_chk 1
             sal_xd_ptd_cnt_chk
         }
         sal_pb_dump_cntrs 0 0
@@ -147,11 +147,7 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         read_sal_mc_crypto_counters 0 2; set_sal_mc_crypto_counters 0 2
         read_sal_mc_crypto_counters 0 3; set_sal_mc_crypto_counters 0 3
         # IS counters
-        sal_ise_dump_cntrs 0 2
-        sal_isi_dump_cntrs 0 2
-        sal_isec_dump_cntrs 0
-        sal_isic_dump_cntrs 0
-
+        sal_inline_crypto
         sal_inline_crypto_chk
 
         #die_temp_fan_control_1 $cali_ret
@@ -281,6 +277,7 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
      $test_type == "esam_pktgen_ddr_burst"          ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac"          ||
      0 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
@@ -331,6 +328,12 @@ sal_mx_get_mac_chsts 0 1 0 1
 
 sknobs_set_string  is/phv_crypto_skip_ok  1
 
+if { $test_type == "esam_pktgen_ddr_sor"        ||
+     $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
+     $test_type == "esam_pktgen_ddr_burst" } {
+    sknobs_set_string sal0/ms/ms/int_prp5/intreg/read_interrupt/int_exclude_field 1
+}
+
 # start test
 sal_asic_init 2
 
@@ -349,7 +352,8 @@ sal_top_eos 0
 
 if { $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor" } {
-    set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
+    #set stream_list_all "61,62,30-37,40-47,50-57,4-15,0-3,16-21"
+    set stream_list_all "61,62,30-33,40-43,50-53,4-15,0-3,16-21"
 } elseif {$test_type == "esam_pktgen_ddr_arm_sor" || $test_type == "esam_pktgen_llc_sor" } {
     set stream_list_all "10,20"
 } else {
