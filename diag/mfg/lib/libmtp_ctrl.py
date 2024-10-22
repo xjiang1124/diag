@@ -2818,7 +2818,7 @@ class mtp_ctrl():
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
 
-        if inlet_1 and inlet_2:
+        if inlet_1 is not None and inlet_2 is not None:
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
@@ -2867,7 +2867,7 @@ class mtp_ctrl():
                 inlet_1 = float(match.group(3))
                 inlet_2 = float(match.group(4))
 
-        if inlet_1 and inlet_2:
+        if inlet_1 is not None and inlet_2 is not None:
             # validate the readings
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
