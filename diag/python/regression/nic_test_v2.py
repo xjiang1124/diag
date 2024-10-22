@@ -564,9 +564,9 @@ class nic_test_v2:
                 new_vmarg = args.vmarg
             else:
                 new_vmarg = "none"
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -1448,6 +1448,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
+    parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
