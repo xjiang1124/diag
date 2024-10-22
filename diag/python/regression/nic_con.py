@@ -247,7 +247,7 @@ class nic_con:
     # 
     #================================================== 
     def uart_session_wait_for_login(self, session, timeout=15):
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "elba login:", "resetting ..."]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "resetting ..."]
 
         for ite in range(3):
             print("ite: ", ite)
