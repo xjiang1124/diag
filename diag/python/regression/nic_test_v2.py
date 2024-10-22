@@ -811,10 +811,16 @@ class nic_test_v2:
 
     def setup_env_single(self, args):
         print(args)
-        ret = self.setup_env(args.slot, args.mgmt, args.first_pwr_on, not args.no_pwr_cycle, args.asic_type, args.uefi, args.dis_net_port, 1, "")
+        if args.asic_type == "elba":
+            ret = self.setup_env(args.slot, args.mgmt, args.first_pwr_on, not args.no_pwr_cycle, args.asic_type, args.uefi, args.dis_net_port, 1, "")
+        elif args.asic_type == "salina":
+            ret = self.setup_env_salina(args.slot, args.mgmt, args.first_pwr_on, not args.no_pwr_cycle, args.asic_type, args.uefi, args.dis_net_port, 1, "")
+        else:
+            ret = -1
+            printf("asic type is not supported")
         return ret
 
-    # setup_env for single slot
+    # setup_env for single slot elba
     def setup_env(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=1, do_untar=""):
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
@@ -878,6 +884,75 @@ class nic_test_v2:
                         self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
                         self.nic_con.uart_session_cmd(session_uart, "/data/nic_util/xo3dcpld -smird 0 0x3")
                     sleep(0.5)
+                    ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session_bash, session_uart)
+
+                self.nic_con.uart_session_stop(session_uart)
+                common.session_stop(session_uart)
+                common.session_stop(session_bash)
+
+            except pexpect.TIMEOUT:
+                print("=== TIMEOUT: Failed to set up env single slot {} ===".format(slot))
+                ret = -1
+
+            if ret == 0:
+                break
+
+        if ret != 0:
+            print("=== Setup env single slot failed!", slot)
+        else:
+            print("=== Setup env single slot done #", retry, "===")
+        print("timestamp", datetime.datetime.now().time())
+        return ret
+
+    # setup_env for single slot salina
+    def setup_env_salina(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=1, do_untar=""):
+        for retry in range(numRetry):
+            print("Setting up #{}".format(retry))
+            print("slot", slot)
+            print("timestamp", datetime.datetime.now().time())
+            try:
+                ret = 0
+                if pwr_cycle == True:
+                    session_bash = common.session_start()
+                    session_bash.timeout = 30
+                    cmd = "turn_on_slot.sh off {}".format(slot)
+                    common.session_cmd(session_bash, cmd, 60)
+                    time.sleep(5)
+                    cmd = "turn_on_slot.sh on {}".format(slot)
+                    common.session_cmd(session_bash, cmd, 60)
+                    time.sleep(30)
+                    cmd = "fpgautil spimode {} off".format(slot)
+                    common.session_cmd(session_bash, cmd)
+                    if sal_con.enter_n1_linux(int(slot), session_bash, warm_reset=False):
+                        print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                        common.session_stop(session_bash)
+                        continue
+                common.session_stop(session_bash)
+                time.sleep(30)
+                session_uart = common.session_start()
+                session_uart.timeout = 30
+                ret = self.nic_con.uart_session_connect(session_uart, slot)
+                if ret != 0:
+                    self.nic_con.uart_session_stop(session_uart)
+                    common.session_stop(session_uart)
+                    continue
+                print("=== Starting setup env on slot {} ===".format(slot))
+                # get_mtp_rev() not work on Matera, hard code for now
+                #mtp_rev = self.nic_test.get_mtp_rev()
+                mtp_rev = "REV_04"
+                print("MTP_REV: ", mtp_rev)
+                self.nic_con.uart_session_cmd(session_uart, "fsck -y /dev/mmcblk0p10")
+                self.nic_con.uart_session_cmd(session_uart, "mount /dev/mmcblk0p10 /data")
+                self.nic_con.uart_session_cmd(session_uart, "source /data/nic_arm/nic_salina_setup_env.sh " + do_untar, 120)
+                self.nic_con.uart_session_cmd(session_uart, "export MTP_REV="+mtp_rev)
+                # if this file exists, it means the card is not rebooted
+                self.nic_con.uart_session_cmd(session_uart, "touch /root/reboot_check")
+
+                if mgmt == True:
+                    ret = self.nic_con.enable_mnic(int(slot), first_pwr_on, session_uart)
+                    print("Sleep 30 sec")
+                    time.sleep(30)
+                    self.nic_con.uart_session_cmd(session_uart, "pdsctl show port status")
                     ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session_bash, session_uart)
 
                 self.nic_con.uart_session_stop(session_uart)

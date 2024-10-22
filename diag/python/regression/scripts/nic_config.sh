@@ -24,16 +24,10 @@ PATH=$PATH:/data/nic_arm/
 
 CORECLK417MHZ=0
 CORECLK833MHZ=0
-cpld_id="$(xo3dcpld -r 0x80)"
+cpld_id="$(cpldapp -r 0x80)"
 if [[ $cpld_id == "0x0" ]]
 then
-    echo "Capri CPLD"
     cpld_id="$(cpld -r 0x80)"
-elif [[ $cpld_id == "0x60" || $cpld_id == "0x61" ]]
-then
-    echo "Giglio CPLD"
-else
-    echo "Elba CPLD"
 fi
 
 echo "P0: cpld_id $cpld_id"
@@ -46,151 +40,187 @@ if [[ $cpld_id == "0x12" ]]
 then
     type="NAPLES100"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x13" ]]
 then
     type="NAPLES25"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x14" ]]
 then
     type="FORIO"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x15" ]]
 then
     type="VOMERO"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x1e" ]]
 then
     type="VOMERO2"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x17" ]]
 then
     type="NAPLES25SWM"
     CORECLK417MHZ=1
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x19" ]]
 then
     type="NAPLES25OCP"
     CORECLK417MHZ=1
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x1c" ]]
 then
     type="NAPLES100IBM"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x1e" ]]
 then
     type="VOMERO2"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x1f" ]]
 then
     type="NAPLES100HPE"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x22" ]]
 then
     type="NAPLES100DELL"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x20" ]]
 then
     type="NAPLES25SWMDELL"
     CORECLK417MHZ=1
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x21" ]]
 then
     type="NAPLES25SWM833"
     CORECLK833MHZ=1
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x40" ]]
 then
     type="BIODONA_D4"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x41" ]]
 then
     type="BIODONA_D5"
     asic_type="CAPRI"
+    echo "Capri CPLD"
 elif [[ $cpld_id == "0x43" ]]
 then
     type="ORTANO"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x44" ]]
 then
     type="ORTANO2"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x45" ]]
 then
     type="LACONADELL"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x46" ]]
 then
     type="LACONA"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x47" ]]
 then
     type="POMONTEDELL"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x48" ]]
 then
     type="POMONTE"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x49" ]]
 then
     type="LACONA32DELL"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x4a" ]]
 then
     type="LACONA32"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x4b" ]]
 then
     type="ORTANO2A"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x4c" ]]
 then
     itp_type="$(xo3dcpld -r 0x93)"
     type="ORTANO2I"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x4e" ]]
 then
     itp_type="$(xo3dcpld -r 0x99)"
     type="ORTANO2S"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x50" ]]
 then
     type="ORTANO2AC"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x60" ]]
 then
     type="GINESTRA_D4"
     asic_type="GIGLIO"
+    echo "Giglio CPLD"
 elif [[ $cpld_id == "0x61" ]]
 then
     type="GINESTRA_D5"
     asic_type="GIGLIO"
+    echo "Giglio CPLD"
 elif [[ $cpld_id == "0x62" ]]
 then
     type="MALFA"
     asic_type="SALINA"
+    echo "Salina CPLD"
 elif [[ $cpld_id == "0x64" ]]
 then
     type="LENI"
     asic_type="SALINA"
+    echo "Salina CPLD"
 elif [[ $cpld_id == "0x65" ]]
 then
     type="POLLARA"
     asic_type="SALINA"
+    echo "Salina CPLD"
 elif [[ $cpld_id == "0x66" ]]
 then
     type="LENI48G"
     asic_type="SALINA"
+    echo "Salina CPLD"
 elif [[ $cpld_id == "0x81" ]]
 then
     type="LIPARI"
     asic_type="ELBA"
+    echo "Elba CPLD"
 elif [[ $cpld_id == "0x82" ]]
 then
     type="MTFUJI"
     asic_type="ELBA"
+    echo "Elba CPLD"
 else
     type="UNKNOW"
     asic_type="UNKNOW"
+    echo "Unknown CPLD"
 fi
 
 echo "$type Detected!"
@@ -264,6 +294,9 @@ then
         elif [[ $asic_type == "GIGLIO" ]]
         then
             ARM_ASIC_PATH=$NIC_ARM_DIR/giglio
+        elif [[ $asic_type == "SALINA" ]]
+        then
+            ARM_ASIC_PATH=$NIC_ARM_DIR/salina
         else
             ARM_ASIC_PATH=$NIC_ARM_DIR/capri
         fi

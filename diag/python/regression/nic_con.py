@@ -247,7 +247,7 @@ class nic_con:
     # 
     #================================================== 
     def uart_session_wait_for_login(self, session, timeout=15):
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "elba login:", "resetting ..."]
 
         for ite in range(3):
             print("ite: ", ite)
@@ -955,6 +955,8 @@ class nic_con:
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2-2Q200-32R32F64P-R", slot, "68-0015-02 01")
         elif asic_type == "GIGLIO_CPLD":
             dummy_fru_json = fmt_dummy_fru_json.format("DSC2A-2Q200-32S32F64P-R", slot, "68-0075-01")
+        elif asic_type == "SALINA":
+            pass
         else:
             dummy_fru_json = fmt_dummy_fru_json.format("0PCFPCA00", slot, "68-0015-02 01")
 
@@ -966,8 +968,8 @@ class nic_con:
         session.timeout = 60
 
         cmd_pre = "ulimit -c unlimited"
-        cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
-        cmd_mac = cmd_mac.format(slot)
+        #cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
+        #cmd_mac = cmd_mac.format(slot)
         #print "MAC:", cmd_mac
         try:
             if first_pwr_on == True:
@@ -975,12 +977,14 @@ class nic_con:
                     self.uart_session_cmd(session, "cd /nic/conf/")
                     self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
                     self.uart_session_cmd(session, cmd_mac)
-                else:
+                elif asic_type == "ELBA":
                     session.send("cat > /tmp/fru.json")
                     session.send("\r")
                     session.send(dummy_fru_json)
                     session.send(chr(3))
                     session.expect("#")
+                else:
+                    pass
 
             if asic_type == "GIGLIO_CPLD":
                 cmd = "sed -i 's/\"port_num\" : \"8\", \"mac_id\" : \"1\"/\"port_num\" : \"8\", \"mac_id\" : \"2\"/' /nic/conf/catalog_hw_board_id_0x03610001.json"
@@ -988,6 +992,9 @@ class nic_con:
                 cmd = "sed -i 's/\"port_num\" : \"9\", \"mac_id\" : \"2\"/\"port_num\" : \"9\", \"mac_id\" : \"1\"/' /nic/conf/catalog_hw_board_id_0x03610001.json"
                 self.uart_session_cmd(session, cmd)
 
+            if asic_type == "SALINA":
+                self.uart_session_cmd(session, cmd_pre)
+                self.uart_session_cmd(session, "dpctl debug update pipeline pin-lif --lif 65 --uplink 8", 30)
             session.sendline("ifconfig -a")
             session.expect("\#")
             temp = session.after
@@ -1049,13 +1056,16 @@ class nic_con:
                 # only works for Elba FPGA cards with PS48
                 if asic_type == "ELBA_FPGA":
                     self.run_mes_mtp_reset_commands(session)
-                self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
-                time.sleep(0.5)
-                print('oob_mnic0 enabled')
-                self.uart_session_cmd(session, "ifconfig oob_mnic0 up")
-                self.uart_session_cmd(session, "halctl debug port --port Eth1/3 --admin-state up")
-                if dis_net_port == True:
-                    self.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
+                elif asic_type == "SALINA":
+                    pass
+                else:
+                    self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
+                    time.sleep(0.5)
+                    print('oob_mnic0 enabled')
+                    self.uart_session_cmd(session, "ifconfig oob_mnic0 up")
+                    self.uart_session_cmd(session, "halctl debug port --port Eth1/3 --admin-state up")
+                    if dis_net_port == True:
+                        self.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig")
             else:
