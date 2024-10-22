@@ -277,7 +277,6 @@ if { $test_type == "esam_pktgen_llc_sor"            ||
      $test_type == "esam_pktgen_max_power_pcie_sor" ||
      $test_type == "esam_pktgen_max_power_sor"      ||
      $test_type == "esam_pktgen_ddr_burst"          ||
-     $test_type == "esam_pktgen_ddr_burst_400G_no_mac"          ||
      0 } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
@@ -334,6 +333,11 @@ if { $test_type == "esam_pktgen_ddr_sor"        ||
     sknobs_set_string sal0/ms/ms/int_prp5/intreg/read_interrupt/int_exclude_field 1
 }
 
+if { $test_type == "esam_pktgen_ddr_burst_400G_no_mac"} {
+    sknobs_load_file mx_1x400g.out
+    sknobs_set_string "sal0/top/mac_cfg/mx0/mode" "mode_1x400gr4kp"
+    sknobs_set_string "sal0/top/mac_cfg/mx1/mode" "mode_1x400gr4kp"
+}
 # start test
 sal_asic_init 2
 
