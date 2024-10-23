@@ -16,6 +16,8 @@ stage = (
     "zephyr",
     "n1_uboot",
     "linux",
+    "diag",
+    "nondiag",
 )
 
 def _boot_to_step(parsed_args):
@@ -36,6 +38,10 @@ def _boot_to_step(parsed_args):
         ret = enter_n1_uboot(slot, session, **vars(parsed_args))
     elif boot_to == stage[3]:
         ret = enter_n1_linux(slot, session, **vars(parsed_args))
+    elif boot_to == stage[4]:
+        ret = boot_goldfw_diagmode(slot, session, **vars(parsed_args))
+    elif boot_to == stage[5]:
+        ret = boot_goldfw_nondiagmode(slot, session, **vars(parsed_args))
     else:
         print("Unknown stage: {}".format(boot_to))
         ret = -1
@@ -183,6 +189,43 @@ def enter_n1_linux(slot, session, *args, **kwargs):
     print("\n=================== STAGE 4 BOOT (N1 LINUX) DONE ===================")
     return 0
 
+def boot_goldfw_diagmode(slot, session, *args, **kwargs):
+
+    if 0 != enter_n1_linux(slot, session, *args, **kwargs):
+        print("======= FAILED: slot {} couldn't enter n1 linux".format(slot))
+        return -1
+    con_ctrl = nic_con()
+    if con_ctrl.uart_session_connect(session, slot, uart_id=1) != 0:
+        print("set diagmode failed entering uart console")
+        return - 1
+    if con_ctrl.uart_session_cmd(session, "board_config -M 1") != 0:
+        print("set diagmode failed issuing board config command")
+        return -1
+    if con_ctrl.uart_session_stop(session) != 0:
+        print("set diagmode failed to exit uart")
+        return -1
+
+    print("\n===================set golfw in diag mode finished ===================")
+    return 0
+
+def boot_goldfw_nondiagmode(slot, session, *args, **kwargs):
+
+    if 0 != enter_n1_linux(slot, session, *args, **kwargs):
+        print("======= FAILED: slot {} couldn't enter n1 linux".format(slot))
+        return -1
+    con_ctrl = nic_con()
+    if con_ctrl.uart_session_connect(session, slot, uart_id=1) != 0:
+        print("set nondiag failed entering uart console")
+        return - 1
+    if con_ctrl.uart_session_cmd(session, "board_config -M 0") != 0:
+        print("set nondiag failed issuing board config command")
+        return -1
+    if con_ctrl.uart_session_stop(session) != 0:
+        print("set nondiag failed to exit uart")
+        return -1
+
+    print("\n===================set golfw in non-diag mode finished===================")
+    return 0
 
 if __name__ == "__main__":
 

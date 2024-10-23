@@ -912,26 +912,21 @@ class nic_test_v2:
             print("timestamp", datetime.datetime.now().time())
             try:
                 ret = 0
+                card_type = self.nic_con.get_card_type(slot)
+
+                if card_type != "LENI" and card_type != "LENI48G" and card_type != "MALFA":
+                    print("======setup_env on slot {} is not supported for non LENI/LENI48 card======".format(slot))
+                    continue               
+                session_bash = common.session_start()
+                session_bash.timeout = 90
                 if pwr_cycle == True:
-                    session_bash = common.session_start()
-                    session_bash.timeout = 30
-                    cmd = "turn_on_slot.sh off {}".format(slot)
-                    common.session_cmd(session_bash, cmd, 60)
-                    time.sleep(5)
-                    cmd = "turn_on_slot.sh on {}".format(slot)
-                    common.session_cmd(session_bash, cmd, 60)
-                    time.sleep(30)
-                    cmd = "fpgautil spimode {} off".format(slot)
-                    common.session_cmd(session_bash, cmd)
                     if sal_con.enter_n1_linux(int(slot), session_bash, warm_reset=False):
                         print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                         common.session_stop(session_bash)
                         continue
-                common.session_stop(session_bash)
-                time.sleep(30)
                 session_uart = common.session_start()
-                session_uart.timeout = 30
-                ret = self.nic_con.uart_session_connect(session_uart, slot)
+                session_uart.timeout = 60
+                ret = self.nic_con.uart_session_start(session_uart, slot)
                 if ret != 0:
                     self.nic_con.uart_session_stop(session_uart)
                     common.session_stop(session_uart)
@@ -950,8 +945,8 @@ class nic_test_v2:
 
                 if mgmt == True:
                     ret = self.nic_con.enable_mnic(int(slot), first_pwr_on, session_uart)
-                    print("Sleep 30 sec")
-                    time.sleep(30)
+                    print("Sleep 10 sec for link to be up")
+                    time.sleep(10)
                     self.nic_con.uart_session_cmd(session_uart, "pdsctl show port status")
                     ret = self.nic_con.get_mgmt_rdy(int(slot), first_pwr_on, True, asic_type, uefi, dis_net_port, session_bash, session_uart)
 

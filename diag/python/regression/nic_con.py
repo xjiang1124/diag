@@ -45,7 +45,7 @@ class nic_con:
     def uart_session_start_login(self, session, slot, timeout=15):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "resetting ..."]
+        expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
         for ite in range(3):
             print("ite: ", ite)
@@ -93,7 +93,7 @@ class nic_con:
     def uart_session_start(self, session, slot, numRetry=10):
         ret = 0
         cmd = self.get_connect_cmd(slot)
-        expstr = ["capri login:", "-gold login", "elba-haps login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
+        expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
         session.sendline(cmd)
         for ite in range(numRetry):
             print("ite: ", ite)
@@ -994,6 +994,8 @@ class nic_con:
 
             if asic_type == "SALINA":
                 self.uart_session_cmd(session, cmd_pre)
+                print("wait 30 s for mgmt port to be ready")
+                time.sleep(30)
                 self.uart_session_cmd(session, "dpctl debug update pipeline pin-lif --lif 65 --uplink 8", 30)
             session.sendline("ifconfig -a")
             session.expect("\#")
@@ -1205,7 +1207,7 @@ class nic_con:
             print("=== Management port is ready ===")
         # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
         asic_type = self.get_asic_type(slot)
-        if asic_type == "GIGLIO_CPLD":
+        if asic_type == "GIGLIO_CPLD" or asic_type == "SALINA":
             print ("sleep 10")
             time.sleep(10)
         ret = self.ping_check_mtp(slot, session_bash)
