@@ -6,6 +6,7 @@ set test_type [lindex $argv 1]
 set dura [lindex $argv 2]
 set card_type [lindex $argv 3]
 set vmarg [lindex $argv 4]
+set int_lpbk [lindex $argv 5]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -228,7 +229,7 @@ if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
      $test_type == "esam_pktgen_pollara_max_power_arm" } {
     set in_err_ecc [plog_get_err_count]
     sal_aw_srds_powerup_init
-    sal_front_panel_port_up 0 "CU" 1 2x400 0
+    sal_front_panel_port_up $int_lpbk "CU" 1 2x400 0
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_err "MX linkup failed"
