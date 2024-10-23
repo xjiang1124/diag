@@ -479,16 +479,6 @@ class nic_test_v2:
         ret = 0
         print("tcl_path:", args.tcl_path)
 
-        session_bash = common.session_start()
-        session_bash.timeout = 30
-        cmd = "turn_on_slot.sh off {}".format(args.slot)
-        common.session_cmd(session_bash, cmd, 60)
-        time.sleep(5)
-        cmd = "turn_on_slot.sh on {}".format(args.slot)
-        common.session_cmd(session_bash, cmd, 60)
-        common.session_stop(session_bash)
-        time.sleep(30)
-
         session = common.session_start()
         # set spimode to be off
         cmd = "fpgautil spimode {} off".format(args.slot)
