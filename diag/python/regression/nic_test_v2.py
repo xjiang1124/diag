@@ -905,7 +905,7 @@ class nic_test_v2:
         return ret
 
     # setup_env for single slot salina
-    def setup_env_salina(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="elba", uefi=False, dis_net_port=False, numRetry=1, do_untar=""):
+    def setup_env_salina(self, slot, mgmt=False, first_pwr_on=False, pwr_cycle=True, asic_type="salina", uefi=False, dis_net_port=False, numRetry=1, do_untar=""):
         for retry in range(numRetry):
             print("Setting up #{}".format(retry))
             print("slot", slot)
@@ -916,7 +916,7 @@ class nic_test_v2:
 
                 if card_type != "LENI" and card_type != "LENI48G" and card_type != "MALFA":
                     print("======setup_env on slot {} is not supported for non LENI/LENI48 card======".format(slot))
-                    continue               
+                    break              
                 session_bash = common.session_start()
                 session_bash.timeout = 90
                 if pwr_cycle == True:
