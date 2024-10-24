@@ -968,9 +968,9 @@ class nic_con:
         session.timeout = 60
 
         cmd_pre = "ulimit -c unlimited"
-        #cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
-        #cmd_mac = cmd_mac.format(slot)
-        #print "MAC:", cmd_mac
+        cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
+        cmd_mac = cmd_mac.format(slot)
+        print "MAC:", cmd_mac
         try:
             if first_pwr_on == True:
                 if asic_type == "CAPRI":
