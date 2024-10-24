@@ -512,13 +512,13 @@ def expand_range_of_numbers(data, range_min=1, range_max=10, dev=None):
                     if start < end:
                         expanded = expanded + list(range(start,end+1))
                     else:
-                        sys_exit("{:s} Invalid slot range '{:s}-{:s}' in config file".format(dev, start, end))
+                        sys_exit("{:s} Invalid slot range '{:s}-{:s}' in config file".format(str(dev), str(start), str(end)))
 
         #remove duplicates
         expanded = list(set(expanded))
         #range check
         if not all(x >= range_min and x <= range_max for x in expanded):
-            sys_exit("{:s} Invalid slot in config file: must be between {:s}-{:s}".format(dev, range_min, range_max))
+            sys_exit("{:s} Invalid slot in config file: must be between {:s}-{:s}".format(str(dev), str(range_min), str(range_max)))
 
     except ValueError as e:
         #not a number
