@@ -1,5 +1,5 @@
-#include "accpcie.h"
 #include <time.h>
+#include "accpcie.h"
 
 #define SCRATCH_REG1 0x30780000
 #define SCRATCH_REG2 0x6f240000
@@ -145,10 +145,11 @@ int main(int argc, char *argv[])
     ULONGLONG address;
     char  acc_mode[20];
     char asic_name[20];
-    int rc;
+    int rc, errno;
 
     if ( argc < 2 ) {
         printf("Invalid command syntax\n");
+        printf("jtag_accpcie show_error <error number>\n");
         printf("jtag_accpcie rst <port(1 based)>\n");
         printf("jtag_accpcie ena <port(1 based)>\n");
         printf("jtag_accpcie rd <port(1 based)> <address>\n");
@@ -812,6 +813,14 @@ int main(int argc, char *argv[])
 
         printf("Clear port %d\n", port);
         jtag_clear(port);
+    } else if ( !strcmp("error", acc_mode) ) {
+        if ( argc < 3 ) {
+            printf("incorrect command syntax, missing parameters\n");
+            return 0;
+        }
+
+        errno = string_to_integer(argv[2]);
+        jtag_map_error_code(errno);
     } else if ( !strcmp("test", acc_mode) ) {
         if (argc < 7) {
             printf("ERROR: Invalid command syntax for test\n");

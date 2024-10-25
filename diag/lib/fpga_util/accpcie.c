@@ -608,3 +608,13 @@ void ftHandle_close()
     return;
 }
 
+void jtag_map_error_code(int errno)
+{
+    int dummy;
+
+    dummy = errno;
+    errno = dummy;
+
+    return;
+}
+
