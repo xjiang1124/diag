@@ -977,7 +977,7 @@ class nic_con:
                     self.uart_session_cmd(session, "cd /nic/conf/")
                     self.uart_session_cmd(session, "cp catalog_hw_68-0003.json catalog_hw_")
                     self.uart_session_cmd(session, cmd_mac)
-                elif asic_type == "ELBA":
+                elif asic_type == "ELBA_CPLD" or asic_type == "ELAB_FPGA":
                     session.send("cat > /tmp/fru.json")
                     session.send("\r")
                     session.send(dummy_fru_json)

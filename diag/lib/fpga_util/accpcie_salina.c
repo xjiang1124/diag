@@ -51,6 +51,44 @@ BYTE dis_lpbk[1] = { 0x85 }; /* disable TDI/TDO loopback */
 BYTE setup_reg[3] = { 0x80, 0x00, 0x0B }; /* TMS start high; TDO is input */
 BYTE setClock[3] = { 0x86, 0x00, 0x00 }; /* TCK divisor: CLK = 6 MHz / (1 + 0004) == 1.2 MHz */
 
+const char *err_str[] = {
+        "FT_OK",
+        "FT_INVALID_HANDLE",
+        "FT_DEVICE_NOT_FOUND",
+        "FT_DEVICE_NOT_OPENED",
+        "FT_IO_ERROR",
+        "FT_INSUFFICIENT_RESOURCES",
+        "FT_INVALID_PARAMETER",
+        "FT_INVALID_BAUD_RATE",
+        "FT_DEVICE_NOT_OPENED_FOR_ERASE",
+        "FT_DEVICE_NOT_OPENED_FOR_WRITE",
+        "FT_FAILED_TO_WRITE_DEVICE",
+        "FT_EEPROM_READ_FAILED",
+        "FT_EEPROM_WRITE_FAILED",
+        "FT_EEPROM_ERASE_FAILED",
+        "FT_EEPROM_NOT_PRESENT",
+        "FT_EEPROM_NOT_PROGRAMMED",
+        "FT_INVALID_ARGS",
+        "FT_NOT_SUPPORTED",
+        "FT_OTHER_ERROR",
+        "FT_DEVICE_LIST_NOT_READY",
+        "FT_INIT_FAILURE",
+        "FT_ERROR_OPEN_MEM",
+        "FT_ERROR_MAP_PCIE",
+        "FT_NO_HANDLE",
+        "FT_WRITE_FAILURE",
+        "FT_READ_FAILURE",
+        "FT_RESP_ERROR",
+        "FT_RESP_TIMEOUT",
+        "FT_INVALID_RESP",
+        "FT_CMD_NOT_READY",
+        "FT_PORT_TAKEN",
+        "FT_ERROR_LOCKPORT",
+        "FT_ERROR_ID",
+        "FT_SHORT_RESPONSE",
+        "FT_SHORT_TXFIFO"
+};
+
 FPGA_ASIC_TARGET fpga_asic_target[ ] = {
 	/* asic name, nst size, top pos of address bit */
 	{"elba", 256, 5, 0},
@@ -92,6 +130,16 @@ ULONGLONG xtoi(char *hexstring)
 void set_verbosity(int level)
 {
     verbosity = level;
+    return;
+}
+
+void jtag_map_error_code(int errno)
+{
+    if ( (errno > FT_SHORT_TXFIFO) || (errno < 0) )
+        printf("invalid error code %x\n", errno);
+    else
+        printf("%s\n", err_str[errno]);
+
     return;
 }
 

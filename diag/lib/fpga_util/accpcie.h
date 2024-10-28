@@ -5,6 +5,9 @@
  *      Author: David Wang 
  */
 
+#ifndef ACCPCIE_H
+#define ACCPCIE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -45,6 +48,7 @@ enum {
         FT_ERROR_ID,
 };
 */
+
 #define J2C_NOP_COMMAND    0x0
 #define J2C_RESET_COMMAND  0x1
 #define J2C_ENABLE_COMMAND 0x2
@@ -83,7 +87,7 @@ enum {
 #define J2C_OW_INIT_DONE     0x00000040
 #define J2C_OW_DRDY          0x00000020
 #define J2C_OW_RESP_ERROR    0x00000013
-#define J2C_OW_INIT          0x00000300
+#define J2C_OW_INIT          0x00000100
 
 #define J2C_OW_SECURE_MASK   0x00000001
 #define J2C_OW_SECURE_SHIFT  2
@@ -160,6 +164,7 @@ FT_STATUS jtag_clear(DWORD portNum);
 void set_asic_target(char *asic_name);
 void show_asic_target(char *asic_name);
 void set_verbosity(int);
+void jtag_map_error_code(int);
 void set_bar(ULONGLONG);
 void jtag_close();
 FT_STATUS spi_init(DWORD portNum);
@@ -212,3 +217,4 @@ extern BYTE   ena_lpbk[1];
 extern BYTE   dis_lpbk[1];
 extern BYTE   setClock[3];
 
+#endif /* ACCPCIE_H */
