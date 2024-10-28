@@ -970,7 +970,7 @@ class nic_con:
         cmd_pre = "ulimit -c unlimited"
         cmd_mac = "echo \'00:11:22:33:{:02}:00\' > /sysconfig/config0/sysuuid"
         cmd_mac = cmd_mac.format(slot)
-        print "MAC:", cmd_mac
+        #print "MAC:", cmd_mac
         try:
             if first_pwr_on == True:
                 if asic_type == "CAPRI":
@@ -1208,7 +1208,7 @@ class nic_con:
         # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
         asic_type = self.get_asic_type(slot)
         if asic_type == "GIGLIO_CPLD" or asic_type == "SALINA":
-            print ("sleep 10")
+            print("sleep 10")
             time.sleep(10)
         ret = self.ping_check_mtp(slot, session_bash)
         print(("ret:", ret))
