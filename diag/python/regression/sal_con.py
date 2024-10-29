@@ -65,6 +65,8 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline("con_cleanup.sh {}".format(slot))
+    session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
+    session.sendline("")
 
     con_ctrl = nic_con()
     if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
