@@ -72,19 +72,19 @@ def prog_smbalert_mask(slot, warm_reset=False):
 
     if ret == 0:
         print("\n====== Masking COMM and CML_OTHER faults\n")
-        # Write word – CMD Address: 0x1B, Address Pointer = 7E, Mask = 03
+        # Write word - CMD Address: 0x1B, Address Pointer = 7E, Mask = 03
         cmd = "i2c write i2c@30000 0x60 0x1B 0x7E 0x3"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
 
     if ret == 0:
         print("\n====== Masking EXT fault\n")
-        # Write word – CMD Address: 0x1B, Address pointer = 80, Mask = 46
+        # Write word - CMD Address: 0x1B, Address pointer = 80, Mask = 46
         cmd = "i2c write i2c@30000 0x60 0x1B 0x80 0x46"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
 
     if ret == 0:
         print("\n====== Write all registers to NVM\n")
-        # Send byte – CMD Address: 0x15
+        # Send byte - CMD Address: 0x15
         cmd = "i2c write i2c@30000 0x60 0x15"
         ret, _ = vrm_zephyr_cmd(uart_session, cmd)
         time.sleep(0.1) # 100ms to guarantee storage
@@ -93,17 +93,20 @@ def prog_smbalert_mask(slot, warm_reset=False):
     return ret
 
 def mask_smbalert(slot, warm_reset=False):
-    if 0 == verify_smbalert_mask(slot, warm_reset=warm_reset):
-        print("\n====== VRM already has correct mask settings. Skipping test\n")
-        return 0
+    ### No way to verify from zephyr currently.
+    # if 0 == verify_smbalert_mask(slot, warm_reset=warm_reset):
+    #     print("\n====== VRM already has correct mask settings. Skipping test\n")
+    #     return 0
 
     if 0 != prog_smbalert_mask(slot, warm_reset=warm_reset):
         print("\n====== FAILED to program SMB_ALERT mask\n")
         return -1
 
-    if 0 == verify_smbalert_mask(slot, warm_reset=warm_reset):
-        print("\n====== New VRM mask verified\n")
-        return 0
-    else:
-        print("\n====== New VRM settings failed to apply\n")
-        return -1
+    ### No way to verify from zephyr currently.
+    # if 0 == verify_smbalert_mask(slot, warm_reset=warm_reset):
+    #     print("\n====== New VRM mask verified\n")
+    #     return 0
+    # else:
+    #     print("\n====== New VRM settings failed to apply\n")
+    #     return -1
+    return 0
