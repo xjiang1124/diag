@@ -5,7 +5,7 @@ proc test_proc {input} {
     return $input
 }
 
-proc clear_vrd_fault {} {
+proc clear_resetcode {} {
     plog_msg "Clearing CPLD resetcode register"
     ssi_cpld_write 0x30 0x0
 }
@@ -22,10 +22,34 @@ proc set_pollara_frequency {} {
         sal_j2c
         # redo proto mode
         sal_proto_mode_unreset
-        clear_vrd_fault
+        clear_resetcode
         plog_msg "nxc   freq: [sal_get_freq_nxc]"
         plog_msg "nxc_2 freq: [sal_get_freq_nxc_by2]"
     }
+}
+
+proc reset_to_proto_mode {} {
+    sal_set_proto_mode 0
+    sal_proto_mode_unreset
+    plog_msg "Clearing expected VRD fault"
+    #sal_tps53688_clear_fault 2 0x60 0
+    sal_smbus_write_byte_data 2 0x60 0x0 0x0
+    sal_smbus_write_byte 2 0x60 0x03
+    set card_type [sal_get_card_type]
+    if { $card_type != "POLLARA" } {
+        #sal_tps53688_clear_fault 2 0x60 1
+        sal_smbus_write_byte_data 2 0x60 0x0 0x1
+        sal_smbus_write_byte 2 0x60 0x03
+    }
+    clear_resetcode
+    plog_msg "Disabling WDT"
+    ssi_cpld_write 0x1 0x0
+    sal_arm_show_reset
+    plog_msg "sal_soc_dump_slv_cntrs"
+    sal_soc_dump_slv_cntrs
+    plog_msg "sal_soc_dump_mst_cntrs"
+    sal_soc_dump_mst_cntrs
+    sal_dump_cpld_regs
 }
 
 set sn       [lindex $argv 0]
@@ -203,18 +227,7 @@ if {$use_zmq == 0} {
             sal_j2c
         }
 
-        plog_msg "sal_set_proto_mode"
-        sal_set_proto_mode 0
-        plog_msg "sal_proto_mode_powerup"
-        sal_proto_mode_powerup
-        plog_msg "Disabling WDT"
-        ssi_cpld_write 0x1 0x0
-        plog_msg "Clearing resetcode"
-        ssi_cpld_write 0x30 0x0
-        plog_msg "sal_soc_dump_slv_cntrs"
-        sal_soc_dump_slv_cntrs
-        plog_msg "sal_soc_dump_mst_cntrs"
-        sal_soc_dump_mst_cntrs
+        reset_to_proto_mode
         sal_print_voltage_temp_from_j2c
         set_pollara_frequency
 
