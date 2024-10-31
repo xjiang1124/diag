@@ -22,6 +22,13 @@ get_asic_type () {
         ]]
     then
         echo "GIGLIO"
+    elif [[ $c_type == "MALFA"        || \
+            $c_type == "POLLARA"      || \
+            $c_type == "LENI"         || \
+            $c_type == "LENI48G"
+        ]]
+    then
+        echo "SALINA"
     else
         echo "CAPRI"
     fi
@@ -40,6 +47,9 @@ enroll_puf () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_giglio.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        tclsh ./esec_prog_salina.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     else
         tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -fn "pub_ek.tcl.txt" -stage puf_enroll
     fi
@@ -61,6 +71,9 @@ hsm_sign_ek () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         id="giglio.v1"
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        id="salina.v1"
     else
         id="v1"
     fi
@@ -114,6 +127,9 @@ otp_init () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_giglio.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        tclsh ./esec_prog_salina.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     else
         tclsh ./esec_prog.tcl -sn $SN -slot $SLOT -stage otp_init -cm_file ./images/OTP_cm.hex -sm_file ./images/OTP_sm.hex
     fi
@@ -131,6 +147,9 @@ post_check () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_giglio.tcl -stage POST_CHECK -slot $SLOT -sn $SN
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        tclsh ./esec_prog_salina.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     else
         tclsh ./esec_prog.tcl -stage POST_CHECK -slot $SLOT -sn $SN
     fi
@@ -148,6 +167,9 @@ show_status () {
     elif [[ $asic_type == "GIGLIO" ]]
     then
         tclsh ./esec_prog_giglio.tcl -stage SHOW_STS -slot $SLOT -sn $SN
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        tclsh ./esec_prog_salina.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     else
         tclsh ./esec_prog.tcl -stage SHOW_STS -slot $SLOT -sn $SN
     fi
@@ -166,6 +188,8 @@ img_prog () {
     elba_ibm_host_img="images/elba_ibm_boot_nonsec_packed.hex"
     giglio_esec_img="images/giglio_firmware_cortex_m0_20181121_packed.hex"
     giglio_host_img="images/giglio_boot_nonsec_packed.hex"
+    salina_esec_img="images/salina_softrom_cortex_m0.mif"
+    salina_host_img="images/salina_boot_nonsec_packed.hex"
 
     uut="UUT_$SLOT"
     card_type="${!uut}"
@@ -190,6 +214,12 @@ img_prog () {
         tcl_file="./esec_prog_giglio.tcl"
         esec_img=$giglio_esec_img
         host_img=$giglio_host_img
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        echo "SALINA"
+        tcl_file="./esec_prog_salina.tcl"
+        esec_img=$salina_esec_img
+        host_img=$salina_host_img
     else
         echo "CAPRI"
         tcl_file="./esec_prog.tcl"
@@ -218,6 +248,9 @@ efuse_prog () {
     if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
     then
         id="elba.v1"
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        id="salina.v1"
     else
         id="v1"
     fi
@@ -238,6 +271,10 @@ efuse_prog () {
     then
         echo "GIGLIO"
         tcl_file="./esec_prog_giglio.tcl"
+    elif [[ $asic_type == "SALINA" ]]
+    then
+        echo "SALINA"
+        tcl_file="./esec_prog_salina.tcl"
     else
         echo "Unsupported card type $card_type"
         return 1
@@ -262,7 +299,7 @@ efuse_test () {
     asic_type=$(get_asic_type $card_type)
     echo "asic_type: $asic_type"
 
-    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" ]]
+    if [[ $asic_type == "ELBA" || $asic_type == "GIGLIO" || $asic_type == "SALINA" ]]
     then
         echo "Skip efuse test for Elba cards"
     else

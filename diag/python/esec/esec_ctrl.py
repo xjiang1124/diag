@@ -190,7 +190,7 @@ WATCHDOG 1
 ESEC_FW_ENABLE 1
 CHIP_TAMPERED 0
 PUBCMREVOKED 0x00
-DEBUGPROTENCM 0x00F
+DEBUGPROTENCM 0xFFFF
 SERIALNO {}
 PUBCM0 <sign_CM0.pk>
 PUBCM1 <sign_CM1.pk>
@@ -233,11 +233,11 @@ TAMPERFILTERTHRESHOLDCM 0x05
 CHIPCERT <chipcert.der>
 PRIVEK <ek.sk>"""
 
-        print "=== Creating OTP_content_CM; sn: {} ===".format(sn)
+        print("=== Creating OTP_content_CM; sn: {} ===".format(sn))
 
         sn_len = len(sn)
         if sn_len > 16 or sn_len == 0:
-            print "Invalid SN lenth: expect less than 16; received {}".format(len(sn))
+            print("Invalid SN lenth: expect less than 16; received {}".format(len(sn)))
             ret = -1
         else:
             output = sn.ljust(tgt_sn_len, '\0')
@@ -270,25 +270,30 @@ PRIVEK <ek.sk>"""
             text_file.write(file_output)
             text_file.close()
 
-        print "=== Creating OTP_content_CM done"
+        print("=== Creating OTP_content_CM done")
         return ret
 
     def get_pn(self, slot):
         ret = 0
         cmd = 'eeutil -disp -uut=UUT_{}'.format(slot)
         cmd_list = shlex.split(cmd)
-        output = subprocess.check_output(cmd_list)
+        output = subprocess.check_output(cmd_list, encoding="utf-8")
         #print(output)
 
-        ma = re.compile(r".*Assembly Number\s+([\d]{2}-[\d]{4}-[\d]{2}) .*")
+        card_type = os.environ['UUT_{}'.format(args.slot)]    
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "SALINA":
+            ma = re.compile(r".*Assembly Number\s+([\w]{3}-[\w]{6}-[\w]{2}) .*")
+        else:
+            ma = re.compile(r".*Assembly Number\s+([\d]{2}-[\d]{4}-[\d]{2}) .*")
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "PN not found with Assembly Number"
+            print("PN not found with Assembly Number")
             pn = "UNKNOWN"
         else:
             pn = result.group(1)
-            print "PN:", pn
+            print("PN:", pn)
             return pn
 
         # Some cards does not have Assembly Number, they use Part Number instead
@@ -296,14 +301,14 @@ PRIVEK <ek.sk>"""
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "PN not found with Part Number"
+            print("PN not found with Part Number")
             pn = "UNKNOWN"
-            print "========== Dumping eeutil output ============"
+            print("========== Dumping eeutil output ============")
             print(output)
         else:
             pn = result.group(1)
 
-        print "PN:", pn
+        print("PN:", pn)
         return pn
 
     def enroll_puf(self, sn, slot):
@@ -313,7 +318,7 @@ PRIVEK <ek.sk>"""
         ret = common.session_cmd_pass(session, cmd, pass_sign, 120)
         common.session_stop(session)
 
-        print "ret:", ret
+        print("ret:", ret)
         return ret
 
     def sign_ek(self, sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
@@ -322,10 +327,10 @@ PRIVEK <ek.sk>"""
         num_retry = 3
 
         cmd = cmd_fmt.format(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
-        print cmd
+        print(cmd)
 
         for retry in range(num_retry):
-            print url, "signing EK #", retry
+            print(url, "signing EK #", retry)
             session = common.session_start()
             ret = common.session_cmd_pass_multi(session, cmd, ["PKI PASSED", "SIGNING EK PASSED"])
             common.session_stop(session)
@@ -333,7 +338,7 @@ PRIVEK <ek.sk>"""
                 break
             time.sleep(5)
 
-        print "ret:", ret
+        print("ret:", ret)
         return ret
 
     def sign_ek_crc(self):
@@ -348,11 +353,11 @@ PRIVEK <ek.sk>"""
         src_str = "".join(session.before.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "CRC32 not found"
+            print("CRC32 not found")
             ret = -1
         else:
             crc32_ek = result.group(1)
-            print "CRC32 calculated:", crc32_ek
+            print("CRC32 calculated:", crc32_ek)
             ret = 0
 
         common.session_stop(session)
@@ -368,10 +373,10 @@ PRIVEK <ek.sk>"""
         session.expect("diag@MTP.*\$")
 
         if "Signature Algorithm: ecdsa-with-SHA384" in session.before:
-            print "Signed EK validated"
+            print("Signed EK validated")
             ret = 0
         else:
-            print "Failed to validate signed EK"
+            print("Failed to validate signed EK")
             ret = -1
 
         common.session_stop(session)
@@ -422,6 +427,11 @@ PRIVEK <ek.sk>"""
         if card_type == "GINESTRA_D4"       or \
            card_type == "GINESTRA_D5":
             asic_type = "GIGLIO"
+        if card_type == "MALFA"       or \
+           card_type == "POLLARA"     or \
+           card_type == "LENI"        or \
+           card_type == "LENI48G":
+            asic_type = "SALINA"
         print("ASIC_TYPE:", asic_type)
         return asic_type
 
@@ -448,13 +458,18 @@ PRIVEK <ek.sk>"""
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
                 format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
+        elif asic_type == "SALINA":
+            cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_salina.tcl -stage esec_all\
+                -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
+                -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+                format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
         else:
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog.tcl -stage esec_all\
                 -sn {} -slot {} -pn \"{}\" -mac {} -mtp {}\
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
                 format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
 
-        print cmd
+        print(cmd)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
@@ -482,7 +497,7 @@ PRIVEK <ek.sk>"""
                 -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
                 format(sn, slot, pn, mac, mtp, client_key, client_cert, trust_roots, backend_url)
 
-        print cmd
+        print(cmd)
         pass_sign = "ESEC PROG PASSED"
         session = common.session_start()
         ret = common.session_cmd_pass(session, cmd, pass_sign, 1200)
@@ -502,58 +517,58 @@ PRIVEK <ek.sk>"""
         ret = self.create_otp_cm_fmt(sn, slot)
         if ret != 0:
             print("Failed to create OTP CM")
-            print "=== ESEC PROG FAILED ==="
+            print("=== ESEC PROG FAILED ===")
             return -1
 
         numRetry = 3
 
         for retry in range(numRetry):
-            print "=== ESEC PROG #{}".format(retry)
+            print("=== ESEC PROG #{}".format(retry))
 
             # Disable legacy way
             if 0:
                 ret = self.enroll_puf(sn, slot)
                 if ret != 0:
-                    print "=== Enroll PUF failed ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== Enroll PUF failed ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 ret = self.sign_ek(sn, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
                 if ret != 0:
-                    print "=== Failed to sign pub_ek ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== Failed to sign pub_ek ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 ret = self.ek_check()
                 if ret != 0:
-                    print "=== Failed to validate signed EK ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== Failed to validate signed EK ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 [ret, crc32_ek] = self.sign_ek_crc()
                 if ret != 0:
-                    print "=== Failed to calculated CRC32 of signed EK ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== Failed to calculated CRC32 of signed EK ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 ret = self.gen_otp()
                 if ret != 0:
-                    print "=== Failed to generate OTP binary ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== Failed to generate OTP binary ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 ret = self.otp_init(sn, slot)
                 if ret != 0:
-                    print "=== OTP init failed ==="
-                    print "=== ESEC PROG FAILED ==="
+                    print("=== OTP init failed ===")
+                    print("=== ESEC PROG FAILED ===")
                     return ret
 
                 ret = self.boot_test(sn, slot, card_type)
                 if ret != 0:
                     # Enter retry
-                    print "=== Bad OTP init ==="
-                    print "=== Post boot test failed ==="
-                    print "Power cycle slot #{}".format(slot)
+                    print("=== Bad OTP init ===")
+                    print("=== Post boot test failed ===")
+                    print("Power cycle slot #{}".format(slot))
                     self.nic_con.power_cycle_multi(slot, 10)
                 else:
                     # Move forward
@@ -564,7 +579,7 @@ PRIVEK <ek.sk>"""
             else:
                 ret = self.key_prog_all_pac(sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url)
             if ret != 0:
-                print "=== ESEC PROG FAILED ==="
+                print("=== ESEC PROG FAILED ===")
                 return ret
             else:
                 # Move forward
@@ -577,42 +592,41 @@ PRIVEK <ek.sk>"""
         file1.close()
 
         if ret != 0:
-            print "=== ESEC PROG FAILED ==="
+            print("=== ESEC PROG FAILED ===")
             return ret
         else:
-            print "=== OTP PROG validated #{} ===".format(retry-1)
+            print("=== OTP PROG validated #{} ===".format(retry-1))
 
         print ("slot:", slot)
         [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
         if ret != 0:
-            print "=== Failed to check ESEC in uboot ==="
-            print "=== ESEC PROG FAILED ==="
+            print("=== Failed to check ESEC in uboot ===")
+            print("=== ESEC PROG FAILED ===")
             return ret
 
         if crc32_ek != crc32_ek_uboot:
-            print "CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot
-            print "=== ESEC PROG FAILED ==="
+            print("CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot)
+            print("=== ESEC PROG FAILED ===")
             return -1
 
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA" or asic_type == "GIGLIO":
+        if asic_type == "ELBA" or asic_type == "GIGLIO" or "SALINA":
             print("Skip sys reset test")
         else:
             ret = self.sysrst_test(int(slot))
             if ret != 0:
-               print "sysreset test failed"
-               print "=== ESEC PROG FAILED ==="
+               print("sysreset test failed")
+               print("=== ESEC PROG FAILED ===")
                return -1
 
         ret = self.efuse_test(int(slot), card_type)
         if ret != 0:
-            print "=== Efuse test failed ==="
-
+            print("=== Efuse test failed ===")
 
         if ret == 0:
-            print "=== ESEC PROG/VALICATION PASSED ==="
+            print("=== ESEC PROG/VALICATION PASSED ===")
         else:
-            print "=== ESEC PROG FAILED ==="
+            print("=== ESEC PROG FAILED ===")
 
         return ret
 
@@ -627,7 +641,7 @@ PRIVEK <ek.sk>"""
     def sysreset(self, session, slot=0, timeout=300):
         ret = 0
         if slot == 0 or slot > 10:
-            print "Invalid slot number:", slot
+            print("Invalid slot number:", slot)
             sys.exit(0)
 
         session.timeout = timeout
@@ -651,14 +665,14 @@ PRIVEK <ek.sk>"""
         time.sleep(1)
         cmd = "turn_on_slot.sh on {}".format(slot)
         common.session_cmd(session, cmd)
-        print "turn on slot, wait for 30 seconds\n"
+        print("turn on slot, wait for 30 seconds\n")
         sys.stdout.flush()
         time.sleep(30)
 
         uartsession = common.session_start()
         uartsession.timeout = timeout
         for retry in range(10):
-            print "iteration %d\n" % (retry + 1)
+            print("iteration %d\n" % (retry + 1))
             try:
                 expstr = ["capri login:", "elba login:"]
                 self.nic_con.uart_session_start(uartsession, slot)
@@ -669,7 +683,7 @@ PRIVEK <ek.sk>"""
 
             except:
                 self.nic_con.uart_session_stop(uartsession)
-                print "=== TIMEOUT: failed to sysreset NIC in slot {}".format(slot)
+                print("=== TIMEOUT: failed to sysreset NIC in slot {}".format(slot))
                 return -1;
 
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x2a".format(slot)
@@ -678,7 +692,7 @@ PRIVEK <ek.sk>"""
             res = output.split(";")
             reg = res[1].split("=")
             if int(reg[1],16) != 0:
-                print "Puf error counter is no zero %s\n" % reg[1]
+                print("Puf error counter is no zero %s\n" % reg[1])
                 return -1;
 
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x21".format(slot)
@@ -687,7 +701,7 @@ PRIVEK <ek.sk>"""
             res = output.split(";")
             reg = res[1].split("=")
             if int(reg[1], 16) & 0xfe != 0x34:
-                print "Register 0x21 value is not expected %s\n" % reg[1]
+                print("Register 0x21 value is not expected %s\n" % reg[1])
                 return -1;
 
             cmd = "smbutil -uut=uut_{} -dev=cpld -rd -addr=0x20".format(slot)
@@ -696,7 +710,7 @@ PRIVEK <ek.sk>"""
             res = output.split(";")
             reg = res[1].split("=")
             if reg[1] != "0x7\n":
-                print "Register 0x20 value is not expected %s\n" % reg[1]
+                print("Register 0x20 value is not expected %s\n" % reg[1])
                 return -1;
 
             cmd = "inventory -sts -slot {}".format(slot)
@@ -711,11 +725,11 @@ PRIVEK <ek.sk>"""
         session = common.session_start()
         ret = self.nic_con.enter_uboot_esec(session, slot)
         if ret != 0:
-            print "Failed to enter uboot"
+            print("Failed to enter uboot")
             return ret
         ret = self.nic_con.conn_uboot(session, slot)
         if ret != 0:
-            print "Failed to connect uboot"
+            print("Failed to connect uboot")
             return ret
 
         self.nic_con.uart_session_cmd(session, "esec read_serial_number", 30, expstr)
@@ -730,10 +744,10 @@ PRIVEK <ek.sk>"""
         src_str = "".join(session.before.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "CRC32 not found"
+            print("CRC32 not found")
             ret = -1
         else:
-            print "EK validated"
+            print("EK validated")
             crc32_ek = result.group(1)
             ret = 0
 
@@ -753,9 +767,9 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
 
         if ret == 0:
-            print "IMG PROG PASSED"
+            print("IMG PROG PASSED")
         else:
-            print "IMG PROG FAILED"
+            print("IMG PROG FAILED")
 
         return ret
 
@@ -776,12 +790,12 @@ PRIVEK <ek.sk>"""
         src_str = "".join(output.splitlines())
         result = ma.match(src_str)
         if result == None:
-            print "HSM RN not found"
+            print("HSM RN not found")
             return -1
         else:
             hsm_rn = result.group(1)
             hsm_rn = hsm_rn.upper()
-            print "HSM RN:", hsm_rn
+            print("HSM RN:", hsm_rn)
 
         nic_con1 = nic_con()
         nic_con1.switch_console(int(slot))
@@ -806,15 +820,15 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
 
         if ret == 0:
-            print "EFUSE PROG PASSED"
+            print("EFUSE PROG PASSED")
         else:
-            print "EFUSE PROG FAILED"
+            print("EFUSE PROG FAILED")
 
         return ret
 
     def efuse_test(self, slot, card_type):
         asic_type = self.get_asic_type(card_type)
-        if asic_type == "ELBA" or asic_type == "GIGLIO":
+        if asic_type == "ELBA" or asic_type == "GIGLIO" or asic_type == "SALINA":
             print("Skip efuse test for Elba cards")
             print("EFUSE TEST PASSED")
             return 0
@@ -830,9 +844,9 @@ PRIVEK <ek.sk>"""
         common.session_stop(session)
 
         if ret == 0:
-            print "EFUSE TEST PASSED"
+            print("EFUSE TEST PASSED")
         else:
-            print "EFUSE TEST FAILED"
+            print("EFUSE TEST FAILED")
 
         return ret
 
@@ -842,9 +856,9 @@ PRIVEK <ek.sk>"""
         ret = self.sysreset(session, slot)
         session = common.session_stop(session)
         if ret == 0:
-            print "systest TEST PASSED"
+            print("systest TEST PASSED")
         else:
-            print "systest TEST FAILED"
+            print("systest TEST FAILED")
         return ret
 
 if __name__ == "__main__":
@@ -929,4 +943,4 @@ if __name__ == "__main__":
         esec_ctrl.get_pn(int(args.slot))
         sys.exit()
 
-    print "Invalid input"
+    print("Invalid input")
