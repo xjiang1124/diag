@@ -92,9 +92,9 @@ var CpldInfo interface{}
 // EEPROM list
 var naplesEepList = []string {"FRU"}
 var GinestraEepList = []string {"FRU", "PCIE_FRU"}
-var MalfaEepList  = []string {"FRU", "DPU_FRU"}
-var PollaraEepList  = []string {"FRU", "DPU_FRU"}
-var LeniEepList   = []string {"FRU", "DPU_FRU"}
+var MalfaEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
+var PollaraEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
+var LeniEepList   = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
 var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
 var materaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 
