@@ -65,6 +65,8 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline("con_cleanup.sh {}".format(slot))
+    session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
+    session.sendline("")
 
     con_ctrl = nic_con()
     if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
@@ -146,7 +148,10 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} fwsel command failed".format(slot))
         return -1
 
-    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=45):
+    # get earliest signature that will catch error messages from previous a35 command,
+    # while getting maximum messages from n1 uboot
+    # A higher timeout may be required for a larger fw.
+    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Loading U-Boot image goldfw"], timeout=80):
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
 
