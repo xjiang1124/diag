@@ -277,7 +277,7 @@ PRIVEK <ek.sk>"""
         ret = 0
         cmd = 'eeutil -disp -uut=UUT_{}'.format(slot)
         cmd_list = shlex.split(cmd)
-        output = subprocess.check_output(cmd_list, encoding="utf-8")
+        output = subprocess.check_output(cmd_list)
         #print(output)
 
         card_type = os.environ['UUT_{}'.format(args.slot)]    
