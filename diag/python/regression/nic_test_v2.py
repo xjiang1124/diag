@@ -1244,6 +1244,50 @@ class nic_test_v2:
 
         return 0
 
+    def sal_misc_pcieawd_env_ctrl(self, args):
+        ret = 0
+        session = common.session_start()
+
+        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+
+        #ret = self.nic_con.uart_session_start(session, args.slot)
+        ret = self.nic_con.uart_session_connect(session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+        try:
+            if args.eqbk_en is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_eqbk_en {}".format(args.eqbk_en))
+            if args.cmn_kp is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_kp {}".format(args.cmn_kp))
+            if args.cmn_ki is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_ki {}".format(args.cmn_ki))
+            if args.tx_prop_adj is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_prop_adj {}".format(args.tx_prop_adj))
+            if args.rx_prop_adj is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_prop_adj {}".format(args.rx_prop_adj))
+            self.nic_con.uart_session_cmd(session, "saveenv")
+            self.nic_con.uart_session_cmd(session, "env print")
+        except pexpect.TIMEOUT:
+            print ("Failed to set pcieawd env")
+            ret = -1
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+        print("Done setting pcieawd env")
+
+        session = common.session_start()
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(args.slot))
+            ret = -1
+        nc = nic_con()
+        nc.uart_session_connect(session, args.slot, uart_id=0)
+        nc.uart_session_cmd(session, "pcieawd showparams", ending="uart:~\$")
+        nc.uart_session_stop(session)
+        return 0
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1493,7 +1537,7 @@ if __name__ == "__main__":
 
     #=====================================================
     # Salina misc commands
-    sal_misc_parser = subparsers.add_parser('sal_misc', help='Salina misc commands', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    sal_misc_parser = subparsers.add_parser('salina', help='Salina misc commands', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sal_misc_subp = sal_misc_parser.add_subparsers(title="Salina misc commands", dest="sal_misc_subp", description="Salina misc commands", help='Salina misc commands description')
 
     #---------------------------------------
@@ -1504,6 +1548,15 @@ if __name__ == "__main__":
     group_eqbk.add_argument("-enable", '--enable', action='store_true', help='Enabled')
     group_eqbk.add_argument("-disable", '--disable', action='store_true', help='Disabled')
     parser_eqbk.set_defaults(func=test.sal_misc_eqbk_ctrl)
+
+    parser_pcieawd_env = sal_misc_subp.add_parser('pcieawd_env', help='pcieawd setenv', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_pcieawd_env.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_pcieawd_env.add_argument("-eqbk_en", '--eqbk_en', help='pcieawd_eqbk_en', type=str, default=None)
+    parser_pcieawd_env.add_argument("-cmn_kp", '--cmn_kp', help='pcieawd_cmn_kp', type=str, default=None)
+    parser_pcieawd_env.add_argument("-cmn_ki", '--cmn_ki', help='pcieawd_cmn_ki', type=str, default=None)
+    parser_pcieawd_env.add_argument("-tx_prop_adj", '--tx_prop_adj', help='pcieawd_tx_prop_adj', type=str, default=None)
+    parser_pcieawd_env.add_argument("-rx_prop_adj", '--rx_prop_adj', help='pcieawd_rx_prop_adj', type=str, default=None)
+    parser_pcieawd_env.set_defaults(func=test.sal_misc_pcieawd_env_ctrl)
 
     try:
         args = parser.parse_args()
