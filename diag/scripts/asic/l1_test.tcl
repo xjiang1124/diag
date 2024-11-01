@@ -5,6 +5,29 @@ proc test_proc {input} {
     return $input
 }
 
+proc clear_vrd_fault {} {
+    plog_msg "Clearing CPLD resetcode register"
+    ssi_cpld_write 0x30 0x0
+}
+
+proc set_pollara_frequency {} {
+    set card_type [sal_get_card_type]
+    if { $card_type == "POLLARA" } {
+        plog_msg "Lowering pollara frequency"
+        ## this sets frequency using jtag
+        ## which will block the j2c connection
+        ## therefore it can only work over onewire
+        sal_ow
+        sal_set_pollara_freq
+        sal_j2c
+        # redo proto mode
+        sal_proto_mode_unreset
+        clear_vrd_fault
+        plog_msg "nxc   freq: [sal_get_freq_nxc]"
+        plog_msg "nxc_2 freq: [sal_get_freq_nxc_by2]"
+    }
+}
+
 set sn       [lindex $argv 0]
 set slot     [lindex $argv 1]
 set mode     [lindex $argv 2]
@@ -193,6 +216,7 @@ if {$use_zmq == 0} {
         plog_msg "sal_soc_dump_mst_cntrs"
         sal_soc_dump_mst_cntrs
         sal_print_voltage_temp_from_j2c
+        set_pollara_frequency
 
         set err_cn [eval $l1_cmd]
         set err_cnt 0
