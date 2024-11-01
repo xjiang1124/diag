@@ -150,6 +150,12 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         # IS counters
         sal_inline_crypto
         sal_inline_crypto_chk
+        # BX
+        sal_bx_mac_stat 0 2 0
+        sal_bx_mac_stat 0 3 0
+        sal_ix_mac_stat 0 0 0
+        sal_bx_check_bad_crc_counter 0 2
+        sal_bx_check_bad_crc_counter 0 3
 
         #die_temp_fan_control_1 $cali_ret
 
