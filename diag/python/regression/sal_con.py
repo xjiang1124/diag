@@ -148,7 +148,10 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} fwsel command failed".format(slot))
         return -1
 
-    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Releasing CPU reset"], timeout=45):
+    # get earliest signature that will catch error messages from previous a35 command,
+    # while getting maximum messages from n1 uboot
+    # A higher timeout may be required for a larger fw.
+    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Loading U-Boot image goldfw"], timeout=80):
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
 
