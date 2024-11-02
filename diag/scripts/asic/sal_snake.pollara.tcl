@@ -1,12 +1,13 @@
 # !/usr/bin/tclsh
 
-set slot [lindex $argv 0]
+set slot        [lindex $argv 0]
 
-set test_type [lindex $argv 1]
-set dura [lindex $argv 2]
-set card_type [lindex $argv 3]
-set vmarg [lindex $argv 4]
-set int_lpbk [lindex $argv 5]
+set test_type   [lindex $argv 1]
+set dura        [lindex $argv 2]
+set card_type   [lindex $argv 3]
+set vmarg       [lindex $argv 4]
+set int_lpbk    [lindex $argv 5]
+set ite         [lindex $argv 6]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -112,6 +113,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
         #===============================
         # Debug info dump
+        sal_eos_intr_chk  none none
+        sal_eos_intr_clr  none none
+
         plog_msg "=== Debug info dump ==="
         sal_eos_intr_chk  none none
         sal_eos_intr_clr  none none
@@ -297,14 +301,20 @@ plog_msg "stream_list: ${stream_list}"
 sal_window_setup 0xfff0 0xfff0
 
 foreach stream $stream_list { sal_top_stream_load_snake_traffic 0 $stream }
-foreach stream $stream_list { sal_top_stream_start_snake_traffic 0 $stream }
 
-# check if pkt is running
-sal_top_get_cntr 0
-get_sal_offload_cnt 0
-mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
+for {set idx 0} {$idx < $ite} {incr idx} {
+    plog_msg "======================================"
+    plog_msg "Snake start-stop iteration $idx"
 
-sal_top_stream_stop_snake_traffic 0
+    foreach stream $stream_list { sal_top_stream_start_snake_traffic 0 $stream }
+    
+    # check if pkt is running
+    sal_top_get_cntr 0
+    get_sal_offload_cnt 0
+    mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
+    
+    sal_top_stream_stop_snake_traffic 0
+}
 # after test completes
 sal_top_eos 0
 plog_msg "Counters after stop snake"

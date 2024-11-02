@@ -454,7 +454,7 @@ class nic_test_v2:
         idx = session.expect(["PRBS test PASSED", "PRBS test FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
 
         if idx >= 1:
-            print("ERROR :: Snake test has failed!")
+            print("ERROR :: PRBS test has failed!")
             ret = -1
 
         common.session_stop(session)
@@ -506,15 +506,17 @@ class nic_test_v2:
 
         time.sleep(3)
 
-        if args.snake_type == "esam_pktgen_llc_sor" or \
-           args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
-           args.snake_type == "esam_pktgen_ddr_burst":
+        if args.card_type == "POLLARA":
             if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                 print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
                 ret = -1
                 return ret
         else:
-            if args.card_type != "POLLARA":
+            if args.snake_type == "esam_pktgen_llc_sor" or \
+               args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
+               args.snake_type == "esam_pktgen_ddr_burst":
+                print("ARM not booted")
+            else:
                 if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
                     print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                     ret = -1
@@ -530,20 +532,19 @@ class nic_test_v2:
 
         # Start CPU Burn on N1
         if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
-            if args.card_type != "POLLARA":
-                print("Start CPU BURN on N1")
-                uart_session = common.session_start()
-                ret = self.nic_con.uart_session_start(uart_session, args.slot)
-                if ret != 0:
-                    return ret
-                try:
-                    self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
-                except pexpect.TIMEOUT:
-                    print ("failed to run cpuburn")
-                    return -1
-                self.nic_con.uart_session_stop(uart_session)
-                common.session_stop(uart_session)
-                print("Done with starting CPU BURN on N1")
+            print("Start CPU BURN on N1")
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot)
+            if ret != 0:
+                return ret
+            try:
+                self.nic_con.uart_session_cmd(uart_session, "/nic/bin/cpuburn_16 &")
+            except pexpect.TIMEOUT:
+                print ("failed to run cpuburn")
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            print("Done with starting CPU BURN on N1")
 
         print("Start tcl")
         # TCL command
@@ -556,7 +557,7 @@ class nic_test_v2:
                 new_vmarg = "none"
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -1512,6 +1513,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
