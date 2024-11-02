@@ -106,7 +106,7 @@ proc reset_to_proto_mode {} {
         sal_smbus_write_byte_data 2 0x60 0x0 0x1
         sal_smbus_write_byte 2 0x60 0x03
     }
-    clear_vrd_fault
+    clear_resetcode
     plog_msg "Disabling WDT"
     ssi_cpld_write 0x1 0x0
     sal_arm_show_reset
