@@ -1297,6 +1297,89 @@ class nic_test_v2:
         nc.uart_session_stop(session)
         return 0
 
+    def google_stress_test(self, args):
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+        if card_type == "POLLARA":
+            print("===== FAILED: This test not applicable to Pollara")
+            return -1
+
+        session = common.session_start()
+        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+
+        print("Start Vmarge")
+        print("tcl_path:", args.tcl_path)
+        print("=== TCL ENV setup ===")
+        tcl_path = args.tcl_path
+        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "source source_env_path")
+        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        #common.session_cmd(session, "rm -f *")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        time.sleep(3)
+        cmd = "fpgautil spimode {} off".format(args.slot)
+        common.session_cmd(session, cmd)
+        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+        common.session_cmd(session, cmd)
+        print("\nDisable WDT since vmarg will occupy i2c bus")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
+        common.session_cmd(session, cmd, 360, False, "vmarg set")
+
+        print("Start test on N1")
+        uart_session = common.session_start()
+        ret = self.nic_con.uart_session_start(uart_session, args.slot)
+        if ret != 0:
+            return ret
+        try:
+            cmd = "stressapptest_arm -m {} -s {}".format(args.threads, args.dura)
+            cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
+            pass_sig = "Status: PASS"
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
+            if cmdret != 0:
+                print("Command {} failed".format(cmd))
+                ret = -1
+            if pass_sig not in output:
+                print("===== FAILED: missing passing signature")
+                ret = -1
+        except pexpect.TIMEOUT:
+            print ("failed to run memory stress test")
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 0".format(args.slot)
+        common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
+
+        common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
+        common.session_stop(session)
+        # check uart console
+        uart_session = common.session_start()
+        self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
+        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5):
+            print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1548,6 +1631,15 @@ if __name__ == "__main__":
     parser_fix_sal_vrm = subparsers.add_parser('fix_sal_vrm', help='Program Salina VRM with alert masking', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_fix_sal_vrm.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_fix_sal_vrm.set_defaults(func=test.mask_vrm_smbalert)
+
+    # Google stress test
+    parser_mem_test = subparsers.add_parser('mem_test', help='Memory test using google stress test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_mem_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_mem_test.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_mem_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_mem_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
+    parser_mem_test.add_argument("-threads", "--threads", help="number of memory copy threads to run", type=int, default=16)
+    parser_mem_test.set_defaults(func=test.google_stress_test)
 
     #=====================================================
     # Salina misc commands
