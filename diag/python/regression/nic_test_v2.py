@@ -442,16 +442,16 @@ class nic_test_v2:
         # TCL command
         cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.dura)
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura)
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura)
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
             return 0
 
         common.session_cmd(session, cmd, ending="PRBS TEST DONE", timeout=args.timeout)
-        idx = session.expect(["PRBS test PASSED", "PRBS test FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
+        idx = session.expect(["PRBS test PASSED", "PRBS test FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed"], args.timeout)
 
         if idx >= 1:
             print("ERROR :: PRBS test has failed!")
@@ -555,16 +555,16 @@ class nic_test_v2:
                 new_vmarg = args.vmarg
             else:
                 new_vmarg = "none"
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk, args.mtp_clk)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite, args.mtp_clk)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
             return 0
 
         common.session_cmd(session, cmd, 360, False, "pcie done")
-        idx = session.expect(["SNAKE TEST PASSED", "SNAKE TEST FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed", "core dumped"], args.timeout)
+        idx = session.expect(["SNAKE TEST PASSED", "SNAKE TEST FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed"], args.timeout)
 
         if idx >= 1:
             print("ERROR :: Snake test has failed!")
@@ -1514,6 +1514,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
+    parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
@@ -1524,6 +1525,7 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_port_up.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_port_up.add_argument("-dura", "--dura", help="Duration", type=str, default="30")
+    parser_nic_port_up.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 

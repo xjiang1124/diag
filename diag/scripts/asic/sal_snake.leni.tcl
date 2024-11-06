@@ -1,12 +1,12 @@
 # !/usr/bin/tclsh
 
-set slot [lindex $argv 0]
-
-set test_type [lindex $argv 1]
-set dura [lindex $argv 2]
-set card_type [lindex $argv 3]
-set vmarg [lindex $argv 4]
-set int_lpbk [lindex $argv 5]
+set slot        [lindex $argv 0]
+set test_type   [lindex $argv 1]
+set dura        [lindex $argv 2]
+set card_type   [lindex $argv 3]
+set vmarg       [lindex $argv 4]
+set int_lpbk    [lindex $argv 5]
+set mtp_clk     [lindex $argv 6]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -210,6 +210,8 @@ if { $val != 0x1 } {
     plog_msg "OW sanity test failed!"
     exit 0
 }
+
+set ::env(MTP_PCIE_USE_REFCLK_0) $mtp_clk
 
 set err_cnt_init [ plog_get_err_count ]
 
