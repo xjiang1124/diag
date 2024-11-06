@@ -150,7 +150,6 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
 
     # get earliest signature that will catch error messages from previous a35 command,
     # while getting maximum messages from n1 uboot
-    # A higher timeout may be required for a larger fw.
     if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Loading U-Boot image goldfw"], timeout=80):
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
@@ -158,7 +157,8 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     if con_ctrl.uart_session_stop(session) != 0:
         return -1
 
-    if con_ctrl.enter_uboot_salina(session, slot, uart_id=1, pc=0) != 0:
+    # A higher timeout may be required for a larger fw.
+    if con_ctrl.enter_uboot_salina(session, slot, timeout=80, uart_id=1, pc=0) != 0:
         print("==== FAILED: slot {} couldn't reach n1 uboot".format(slot))
         return -1
 
