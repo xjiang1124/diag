@@ -1,17 +1,10 @@
 # !/usr/bin/tclsh
 
-set slot [lindex $argv 0]
-# test types:
-# esam_pktgen_llc_no_mac_sor : no ddr + no mac
-# esam_pktgen_llc_sor        :  no ddr + mac
-# esam_pktgen_ddr_no_mac_sor : ddr + no mac
-# esam_pktgen_ddr_sor        : ddr + mac  <-- stress both ddr and mac
-# esam_pktgen_ddr_burst_400G : ddr burst
-# esam_pktgen_pcie_mtp_sor   : pcie + ddr + mac
-
-set card_type [lindex $argv 1]
-set vmarg [lindex $argv 2]
-set dura [lindex $argv 3]
+set slot        [lindex $argv 0]
+set card_type   [lindex $argv 1]
+set vmarg       [lindex $argv 2]
+set dura        [lindex $argv 3]
+set mtp_clk     [lindex $argv 4]
 
 proc get_vmarg_by_index_vdd {corner_idx} {
     dict set volt_VDD_Dict UU_1   650
@@ -108,6 +101,8 @@ if { $val != 0x1 } {
     plog_msg "OW sanity test failed!"
     exit 0
 }
+
+set ::env(MTP_PCIE_USE_REFCLK_0) $mtp_clk
 
 #csr_write sal0.txs.txs\[0].base 0xaabbcc
 #rds sal0.txs.txs\[0].base
