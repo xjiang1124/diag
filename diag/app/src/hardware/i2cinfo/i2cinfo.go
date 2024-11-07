@@ -245,7 +245,10 @@ var MalfaMtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"DPU_FRU",        "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ/WRITE TO CPLD UMF2 FLASH. 
     I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ FROM THE I2C INTERFACE FOR the CPLD UMF2 EEPROM
+    I2cInfo {"CPLD_FRU_I2C",   "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 var MalfaTbl  = []I2cInfo {
@@ -307,7 +310,10 @@ var PollaraMtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"DPU_FRU",        "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ/WRITE TO CPLD UMF2 FLASH. 
     I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ FROM THE I2C INTERFACE FOR the CPLD UMF2 EEPROM
+    I2cInfo {"CPLD_FRU_I2C",   "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 var PollaraTbl = []I2cInfo {
@@ -328,7 +334,10 @@ var LeniMtpTbl = []I2cInfo {
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
     I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"DPU_FRU",        "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ/WRITE TO CPLD UMF2 FLASH. 
     I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ FROM THE I2C INTERFACE FOR the CPLD UMF2 EEPROM
+    I2cInfo {"CPLD_FRU_I2C",   "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 var LeniTbl = []I2cInfo {
