@@ -1585,7 +1585,7 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
 
     if devName == "CPLD_FRU" {
         //Writes FRU data to CPLD UFM2 FLASH
-        fmt.Printf("DEBUG: WRITE TO UFM2\n");
+        fmt.Printf("WRITE TO UFM2\n");
         i2cinfo.SwitchI2cTbl("UUT_NONE")
         errGo := materafpga.Spi_cpldXO3_program_flash(uint32(bus-3), "ufm2", false, "", Data)
         if errGo != nil {
@@ -1593,7 +1593,6 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
         }
     } else {
         //Writes FRU data to EEPROM
-        fmt.Printf("DEBUG: WRITE TO EEPROM\n");
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
             return
@@ -1622,6 +1621,7 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
     if devName == "CPLD_FRU" {
         //Read FRU data from CPLD UFM2 FLASH
         var errGo error
+        fmt.Printf(" Read from CPLD UFM2\n")
         i2cinfo.SwitchI2cTbl("UUT_NONE")
         DataRaw, errGo = materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", 0x00, uint32(MAX_BYTES))
         if errGo != nil {
@@ -1644,7 +1644,6 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     //Reads values from FRU and uploads into Data slice
     var sliceLen int
     var fruData byte
-    
     //Fills Data slice with 0xFF temporarily
     for i:=0;i<MAX_BYTES;i++ {
         Data = append(Data, 0xFF)
@@ -1652,8 +1651,8 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
 
     //Read FRU data from CPLD UFM2 FLASH and return out
     if devName == "CPLD_FRU" {
-        
         var errGo error
+        fmt.Printf(" Read from CPLD UFM2\n")
         i2cinfo.SwitchI2cTbl("UUT_NONE")
         Data, errGo = materafpga.Spi_cpldX03_read_flash(uint32(bus-3), "ufm2", 0x00, uint32(MAX_BYTES))
         if errGo != nil {
@@ -1702,9 +1701,14 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     } else if boardInfoOff != 0 {
         sliceLen = start+boardInfoOff + boardInfoLen
     }
-
     //Clears Data slice
     Data = nil
+
+    if strings.Contains(devName, "CPLD_FRU")==true {
+        if sliceLen == 0 {
+            sliceLen = MAX_BYTES
+        }
+    }
 
     //Reads data from FRU and fills the Data slice
     for i:=0;i<sliceLen;i++ {
@@ -1824,7 +1828,13 @@ func DisplayData(devName string, bus uint32, devAddr byte, field string, fpo boo
     if (err == errType.SUCCESS) {
         EepromTbl=CardDataInfo[cardPN].tbl
     } else {
-        err = errType.PN_NOT_SUPPORT
+        // If using Salina CPLD FRU and no part number is found, set a different error type
+        // If err = PN_NOT_SUPPORT, eeutil will fall back to checking Legacy cards which we don't want to do for CPLD Salina FRU 
+        if strings.Contains(devName, "CPLD_FRU")==true {
+            err = errType.FAIL
+        } else {
+            err = errType.PN_NOT_SUPPORT
+        }
         return
     }
 
