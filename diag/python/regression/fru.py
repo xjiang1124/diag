@@ -29,12 +29,12 @@ def _program(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=
     nc.uart_session_cmd(uart_session, "i2c dev {}".format(fru_bus), ending="DSC#")
 
     fn = "eeprom_{}".format(slot)
-    cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
+    cmd = "eeutil -uut=uut_{} -dump -numBytes 512 -fn {}".format(slot, fn)
     common.session_cmd(bash_session, cmd)
 
     # Write DPU FRU from uboot cli
     # Write one byte each time
-    numBytes = 256
+    numBytes = 512
     for offset in range(numBytes):
         cmd = "od -An -tx1 -j {} -N 1 {}".format(offset, fn)
         common.session_cmd(bash_session, cmd)
@@ -49,7 +49,7 @@ def _program(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=
             print("FRU PROG command {} returned error".format(cmd))
             ret = -1
 
-    cmd = "i2c md 0x{:x} 0.2 128".format(fru_addr)
+    cmd = "i2c md 0x{:x} 0.2 0x200".format(fru_addr)
     cmdret, output = nc.uart_session_cmd_w_ot(uart_session, cmd, ending="DSC#")
     if cmdret != 0:
         print("\nFRU PROG command {} failed".format(cmd))
@@ -73,7 +73,7 @@ def _verify(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=F
         _swap_smbus(slot)
     nc.uart_session_connect(uart_session, slot, uart_id=0)
     nc.uart_session_cmd(uart_session, "i2c dev {}".format(fru_bus), ending="DSC#")
-    cmd = "i2c md 0x{:x} 0.2 128".format(fru_addr)
+    cmd = "i2c md 0x{:x} 0.2 0x200".format(fru_addr)
     cmdret, output = nc.uart_session_cmd_w_ot(uart_session, cmd, ending="DSC#")
     if cmdret != 0:
         print("\nFRU VERIFY command {} failed".format(cmd))
@@ -87,7 +87,7 @@ def _verify(slot, fru_bus=1, fru_addr=0x52, needs_smbus_swap=False, warm_reset=F
     bash_session = common.session_start()
     print("===== Original FRU Content =====")
     fn = "eeprom_{}".format(slot)
-    cmd = "eeutil -uut=uut_{} -dump -numBytes 256 -fn {}".format(slot, fn)
+    cmd = "eeutil -uut=uut_{} -dump -numBytes 512 -fn {}".format(slot, fn)
     common.session_cmd(bash_session, cmd)
     common.session_cmd(bash_session, "hexdump -C " + fn)
     common.session_stop(bash_session)

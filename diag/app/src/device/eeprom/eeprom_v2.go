@@ -906,7 +906,8 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LENI: updateInfo {
-        PenStandardV2NewTbl,
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -921,13 +922,25 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
     },
 
     SKU_LENI: updateInfo {
-        PenStandardV2NewTbl,
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_LENI,
         SKU_LENI,
         FRU_ID_LENI,
@@ -943,12 +956,24 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
                 },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
         },
         nil,
     },
 
     PN_LENI48G: updateInfo {
-        PenStandardV2NewTbl,
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
         FRU_ID_LENI,
@@ -964,12 +989,24 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
                 },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
         },
         nil,
     },
 
     SKU_LENI48G: updateInfo {
-        PenStandardV2NewTbl,
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
         PROD_NAME_LENI,
         SKU_LENI48G,
         FRU_ID_LENI,
@@ -984,6 +1021,17 @@ var CardDataInfo = map[string]updateInfo {
                 FIELD_NUM_SKU_4,
                 FIELD_NUM_FRU_ID_5,
                 FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
                 },
         },
         nil,
