@@ -231,6 +231,8 @@ if {$use_zmq == 0} {
         sal_print_voltage_temp_from_j2c
         set_pollara_frequency
 
+        set err_cnt_init [ plog_get_err_count ] ;# WA to jtag issue: ignore errs from set_pollara_freq
+
         set err_cn [eval $l1_cmd]
         set err_cnt 0
 
