@@ -89,7 +89,11 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     if con_ctrl.get_card_type(slot) in ["POLLARA"]:
-        cmd = "bootm 0x78140000"
+        new_ainic_layout = kwargs.get('new_ainic_layout', False)
+        if new_ainic_layout:
+            cmd = "bootm 0x78300000"
+        else:
+            cmd = "bootm 0x78140000"
     elif kwargs.get("raw_zephyr_binary", False):
         cmd = "bootm 0x7E500000"
     else:
@@ -239,6 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
+    parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
 
     try:
         parsed_args = parser.parse_args()
