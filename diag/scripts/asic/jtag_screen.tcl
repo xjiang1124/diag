@@ -53,70 +53,6 @@ proc display_test_list {{test_list {}}} {
     plog_msg "============================================================================="
 }
 
-proc set_pollara_frequency {} {
-    set card_type [sal_get_card_type]
-    if { $card_type == "POLLARA" } {
-        ## this sets frequency using jtag
-        ## which will block the j2c connection
-        ## therefore it can only work over onewire
-        sal_ow
-        sal_set_pollara_freq
-        sal_j2c
-        clear_resetcode
-    }
-}
-
-proc clear_resetcode {} {
-    plog_msg "Clearing CPLD resetcode register"
-    ssi_cpld_write 0x30 0x0
-}
-
-proc check_vrd_fault {} {
-    ### make sure mbist didnt cause any current spikes
-    set resetcode [ssi_cpld_read 0x30]
-    set faultcode [ssi_cpld_read 0x32]
-    plog_msg "CPLD reg 0x30: $resetcode"
-    plog_msg "CPLD reg 0x32: $faultcode"
-    if { $resetcode != "0x0" } {
-        plog_err "Encountered abnormal reset code: $resetcode"
-    }
-    if { $faultcode != "0x0" } {
-        plog_err "Encountered abnormal fault code: $faultcode"
-    }
-}
-
-proc reset_to_proto_mode {} {
-    # Avoid getting a VRD fault on Leni when
-    #  protomode is set while ARM is running
-    #  Ensure ARM is in reset, other cores out of reset
-    #
-    # The 2nd unreset may throw a VRD fault too
-    #  To avoid that, put ARM in reset after sal_pc.
-    #
-    # Despite this, there is a timing issue, sometimes it works.
-    sal_set_proto_mode 0
-    sal_proto_mode_unreset
-    plog_msg "Clearing expected VRD fault"
-    #sal_tps53688_clear_fault 2 0x60 0
-    sal_smbus_write_byte_data 2 0x60 0x0 0x0
-    sal_smbus_write_byte 2 0x60 0x03
-    set card_type [sal_get_card_type]
-    if { $card_type != "POLLARA" } {
-        #sal_tps53688_clear_fault 2 0x60 1
-        sal_smbus_write_byte_data 2 0x60 0x0 0x1
-        sal_smbus_write_byte 2 0x60 0x03
-    }
-    clear_resetcode
-    plog_msg "Disabling WDT"
-    ssi_cpld_write 0x1 0x0
-    sal_arm_show_reset
-    plog_msg "sal_soc_dump_slv_cntrs"
-    sal_soc_dump_slv_cntrs
-    plog_msg "sal_soc_dump_mst_cntrs"
-    sal_soc_dump_mst_cntrs
-    sal_dump_cpld_regs
-}
-
 proc mbist_with_diag {} {
     ### copy of sal_jtag_mbist_stp
     set arm_err  0
@@ -180,6 +116,7 @@ set DIAG_SRC "$DIAG_DIR/diag/scripts/asic/"
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 #source /home/diag/diag/scripts/asic/sal_init.tcl
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize card properties
 set slot $slot
