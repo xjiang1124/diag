@@ -137,8 +137,10 @@ fi
 echo "vmarg: $VMARG; pct: $PCT"
 
 time_stamp=$(date "+%m%d%y_%H%M%S")
-
 fn="l1_screen_board_${SN}_${time_stamp}.log"
+if [[ $JOO == "0" ]]; then
+    fn="l1_ow_screen_board_${SN}_${time_stamp}.log"
+fi
 echo $fn
 
 for (( idx=0; idx<$ITE; idx++ ))
