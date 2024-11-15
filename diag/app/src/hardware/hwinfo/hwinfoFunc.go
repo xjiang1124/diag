@@ -213,6 +213,7 @@ func EnableHubChannelUut(uutName string) (err int) {
 func LockDev(devName string) (lockName string, i2cif i2cinfo.I2cInfo, err int) {
     i2cif, err = i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
+        cli.Println("e", "Getting I2C Info Failed: ", err)
         return
     }
 
