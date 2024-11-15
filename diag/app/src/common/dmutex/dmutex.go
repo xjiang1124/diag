@@ -13,7 +13,7 @@ type mutexInfo struct {
 }
 
 var mutexMap map[string]*filemutex.FileMutex
-var lockList = []string{"i2c-0", "i2c-1", "i2c-2", "i2c-3"}
+var lockList = []string{"i2c-0", "i2c-1", "i2c-2", "i2c-3", "i2c-4", "i2c-5", "i2c-6", "i2c-7", "i2c-8", "i2c-9", "i2c-10", "i2c-11", "i2c-12"}
 
 func init() {
     mutexMap = make(map[string]*filemutex.FileMutex)

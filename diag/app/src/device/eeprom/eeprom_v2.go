@@ -13,6 +13,7 @@ import (
     "protocol/smbusNew"
     "device/fpga/materafpga"
     "hardware/i2cinfo"
+    "hardware/hwinfo"
 )
 
 //New card PNs can be added here
@@ -1592,6 +1593,14 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             return errType.FAIL 
         }
     } else {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            var lockName string
+            lockName, _, err = hwinfo.LockDev(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+            defer hwinfo.UnlockDev(lockName)
+        }
         //Writes FRU data to EEPROM
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
@@ -1628,14 +1637,28 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
             return errType.FAIL 
         }
     } else {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            var lockName string
+            lockName, _, err = hwinfo.LockDev(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+            defer hwinfo.UnlockDev(lockName)
+        }
+        err = smbusNew.Open(devName, bus, devAddr)
+        if err != errType.SUCCESS {
+            return
+        }
         //Read FRU data from EEPROM
         for i:=0;i<MAX_BYTES;i++ {
             fruData, err =readOffset(devName, bus, devAddr, i)
             DataRaw = append(DataRaw, fruData)
             if err != errType.SUCCESS {
+                smbusNew.Close()
                 return
             }
         }
+        smbusNew.Close()
     }
     return
 }
@@ -1661,6 +1684,18 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         return
     } 
 
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        var lockName string
+        lockName, _, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+        defer hwinfo.UnlockDev(lockName)
+    }
+    err = smbusNew.Open(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        return
+    }
     //Read FRU data from EEPROM
     // Calculate FRU table size based on IPMI headers
     //Checks header for variables
@@ -1675,6 +1710,7 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     }
     boardInfoOff, productInfoOff, mraInfoOff, err := getOffsetsCHdr(start)
     if err != errType.SUCCESS {
+        smbusNew.Close()
         return
     }
 
@@ -1716,19 +1752,16 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         Data = append(Data, fruData)
         if err != errType.SUCCESS {
             cli.Printf("e", "ERROR: Failed to read from FRU at offset %s", i)
+            smbusNew.Close()
             return
         }
     }
+    smbusNew.Close()
     return
 }
 
 func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte, err int) {
     //Generic FRU reading function
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
-
     if I2cAddr16 == true {
         data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
     } else {
@@ -1737,7 +1770,6 @@ func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to read from FRU at offset %d\n", offset)
     }
-    smbusNew.Close()
     return
 }
 
