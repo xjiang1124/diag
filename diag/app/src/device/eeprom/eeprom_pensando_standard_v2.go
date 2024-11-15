@@ -127,7 +127,7 @@ var PenStandardV2ProdInfoTbl = []entry {
     entry{"Language Code",                          INT8,        10,       1,    []byte{0x19}},
     entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
     entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0xC8}},
-    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x50, 0x65, 0x6E, 0x73, 0x61, 0x6E, 0x64, 0x6F}},
+    entry{"Manufacturer",                           STRING,      15,       8,    []byte{0x41, 0x4D, 0x44, 0x20, 0x20, 0x20, 0x20, 0x20}},
     entry{"Product Name Type/Length",               INT8,        23,       1,    []byte{0xF2}},
     entry{"Product Name",                           STRING,      24,      50,    []byte{0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -169,7 +169,7 @@ var PenStandardV2ProdInfoTbl = []entry {
     // Product Info Area
     entry{"Product Info Format Version",            INT8,        184,      1,    []byte{0x01}},
     entry{"Product Area Length",                    INT8,        185,      1,    []byte{0x15}},
-    entry{"Language Code",                          INT8,        186,      1,    []byte{0x00}},
+    entry{"Language Code",                          INT8,        186,      1,    []byte{0x19}},
     entry{"Manufacturing Type/Length",              INT8,        187,      1,    []byte{0xD4}},
     entry{"Manufacturer",                           STRING,      188,      20,   []byte{0x41, 0x4D, 0x44, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                                                                         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20}},
