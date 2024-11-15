@@ -14,6 +14,11 @@ proc check_vrd_fault {} {
     }
     if { $faultcode != "0x0" } {
         plog_err "Encountered abnormal fault code: $faultcode"
+        if { $faultcode == "0x08"} {
+            plog_msg "Dumping VRM faultcodes:"
+            sal_j2c
+            sal_tps53688_explain_status 2 0x60 0
+        }
     }
 }
 

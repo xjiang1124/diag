@@ -20,6 +20,7 @@ proc define_test_list {{override_test_list ""}} {
             ID         { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
             FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      "" ] }
+            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      "" ] }
 
             MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
             MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
@@ -89,6 +90,27 @@ proc mbist_with_diag {} {
     check_vrd_fault
 }
 
+proc mbist_only_diag {} {
+    ### copy of sal_jtag_mbist_stp
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set arm_err  [sal_jtag_arm_diag]
+    set east_err [sal_jtag_east_diag]
+    set west_err [sal_jtag_west_diag]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "mbist_only_diag::Test PASSED"
+    } else {
+       plog_err "mbist_only_diag::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    check_vrd_fault
+}
+
 ### handle args
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl
@@ -98,7 +120,7 @@ set usage {
     {vmarg.arg      "none"                  "Voltage margin"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
-    {DIAG_DIR.arg   "/home/diag/diag/asic/" "ASIC lib location"}
+    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -108,11 +130,11 @@ parray arg ; # print them out
 
 ### initialize asic lib
 source /home/diag/diag/scripts/asic/asic_tests.tcl
-set ASIC_LIB_BUNDLE "$DIAG_DIR"
+set ASIC_LIB_BUNDLE "$tcl_path"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
-set DIAG_SRC "$DIAG_DIR/diag/scripts/asic/"
+set DIAG_SRC "$tcl_path/diag/scripts/asic/"
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 #source /home/diag/diag/scripts/asic/sal_init.tcl
