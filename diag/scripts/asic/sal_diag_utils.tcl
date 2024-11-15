@@ -66,3 +66,16 @@ proc reset_to_proto_mode {} {
     sal_soc_dump_mst_cntrs
     sal_dump_cpld_regs
 }
+
+proc set_pollara_low_power_mode {} {
+    set card_type [sal_get_card_type]
+    if { $card_type == "POLLARA" } {
+        plog_msg "Setting clock gating for low power mode"
+        plog_msg "sal_ainic_low_pwr_mode"
+        sal_ainic_low_pwr_mode
+        plog_msg "sal_ainic_chk_clk_gate"
+        sal_ainic_chk_clk_gate
+        plog_msg "ARM resets: (0=reset)"
+        sal_arm_show_reset
+    }
+}

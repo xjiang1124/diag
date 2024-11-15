@@ -8,6 +8,7 @@ set vmarg       [lindex $argv 4]
 set int_lpbk    [lindex $argv 5]
 set ite         [lindex $argv 6]
 set mtp_clk     [lindex $argv 7]
+set lpmode      [lindex $argv 8]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -64,7 +65,7 @@ proc parse_number_string {input_string} {
     return $result_list
 }
 
-proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"}} {
+proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vmarg "TT"} {lpmode 0}} {
     set time_left $duration
     set time_passed 0
 
@@ -85,8 +86,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         plog_msg " BW_voltage_temp report "
         sal_top_get_cntr 0
         #sal_pb_dump_cntrs 0 0
-        get_sal_offload_cnt 0
-        get_sal_offload_cnt 1
+        if { $lpmode != "1" } {
+            get_sal_offload_cnt 0
+            get_sal_offload_cnt 1
+        }
         if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" ||
              $test_type == "esam_pktgen_pollara_max_power_arm"} {
             plog_msg "find_avg_rate 5 500\n"
@@ -121,8 +124,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_eos_intr_clr  none none
 
         sal_top_get_cntr 0
-        get_sal_offload_cnt 0
-        get_sal_offload_cnt 1
+        if { $lpmode != "1" } {
+            get_sal_offload_cnt 0
+            get_sal_offload_cnt 1
+        }
         sal_pb_dump_cntrs 0 0
 
         # IS counters
@@ -146,6 +151,7 @@ set ASIC_SRC $::env(ASIC_SRC)
 
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 set ::FAN_SPD 80
 set ::DEVMGR devmgr_v2
@@ -280,6 +286,7 @@ sal_mx_get_mac_chsts 0 0 0 1
 plog_msg "sal_asic_init 2 ..."
 sal_asic_init 2
 plog_msg "Done: sal_asic_init 2"
+if { $lpmode == "1" } { set_pollara_low_power_mode }
 # before snake starts
 sal_top_eos 0
 
@@ -312,8 +319,8 @@ for {set idx 0} {$idx < $ite} {incr idx} {
     
     # check if pkt is running
     sal_top_get_cntr 0
-    get_sal_offload_cnt 0
-    mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg
+    if { $lpmode != "1" } { get_sal_offload_cnt 0 }
+    mtp_sts_pull $ASIC_SRC $cpld_id $test_type $dura 30 $vmarg $lpmode
     
     sal_top_stream_stop_snake_traffic 0
 }
