@@ -118,6 +118,7 @@ set usage {
     {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {vmarg.arg      "none"                  "Voltage margin"}
+    {logEn.arg      "yes"                   "Save to logfile"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
     {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
@@ -148,6 +149,14 @@ set ::port $port
 set uut "UUT_$slot"
 set card_type $::env($uut)
 plog_msg "card type: $card_type; UUT: $uut"
+
+if { $logEn == "yes" } {
+    set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+    if { $sn == "" } { set sn SLOT$slot }
+    set log_file $ASIC_SRC/ip/cosim/tclsh/sal_jtag_mbist_${sn}_${cur_time}.log
+    plog_stop
+    plog_start $log_file 1000000000
+}
 
 ### handle test list
 set test_list [define_test_list $test_list]
@@ -250,3 +259,4 @@ if { $final_rslt != 0 } {
     plog_msg "JTAG TESTS PASSED"
 }
 
+if { $logEn == "yes" } { plog_stop }
