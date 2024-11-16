@@ -9,7 +9,7 @@ SIMPLIFY=0
 HC=0
 DDR=1
 ITE=1
-JOO=0
+JOO=1
 MODE="hod"
 
 usage () {
@@ -17,7 +17,7 @@ usage () {
     echo "./run_l1.sh -sn <> -slot <> -joo <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>"
     echo "sn:   SN"
     echo "slot: Slot number"
-    echo "joo:  J2C or OW; J2C; 1: OW: 0; default: 0"
+    echo "joo:  J2C or OW; J2C; 1: OW: 0; default: 1"
     echo "m:    Mode hod/hod_1100/nod/nod_525"
     echo "i:    0: external loopback; 1 internal loopback; default: 0"
     echo "v:    Voltage margin: normal/low/high; default: normal"
