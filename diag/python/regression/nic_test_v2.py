@@ -1072,14 +1072,17 @@ class nic_test_v2:
 
         # Program 2nd PCIE fru as well
         if self.nic_con.get_card_type(slot) != "MALFA":
-            print("====== PROGRAMMING 2nd PCIE FRU")
-            if fru.program_2nd_pcie_fru(slot):
-                print("====== ERRORS encountered programming 2nd PCIE FRU")
-                ret = -1
-            print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
-            if fru.verify_2nd_pcie_fru(slot):
-                print("====== ERRORS encountered dumping 2nd PCIE FRU")
-                ret = -1
+            if args.skip_fru2 == True:
+                print("PROGRAMMING 2nd PCIE FRU - Skipped")
+            else:
+                print("====== PROGRAMMING 2nd PCIE FRU")
+                if fru.program_2nd_pcie_fru(slot):
+                    print("====== ERRORS encountered programming 2nd PCIE FRU")
+                    ret = -1
+                print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
+                if fru.verify_2nd_pcie_fru(slot):
+                    print("====== ERRORS encountered dumping 2nd PCIE FRU")
+                    ret = -1
 
         if ret == 0:
             print("DPU_FRU updated successfully")
@@ -1269,6 +1272,11 @@ class nic_test_v2:
                 self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_prop_adj {}".format(args.tx_prop_adj))
             if args.rx_prop_adj is not None:
                 self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_prop_adj {}".format(args.rx_prop_adj))
+            if args.tx_mag is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_change_mag {}".format(args.tx_mag))
+            if args.rx_mag is not None:
+                self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_change_mag {}".format(args.rx_mag))
+
             self.nic_con.uart_session_cmd(session, "saveenv")
             self.nic_con.uart_session_cmd(session, "env print")
         except pexpect.TIMEOUT:
@@ -1532,6 +1540,7 @@ if __name__ == "__main__":
     # Enable/Disable WP single
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_prog_dpu_fru.add_argument("-skip_fru2", '--skip_fru2', action='store_true', help='Skip 2nd host FRU')
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
 
     # Salina VRM fix
@@ -1560,6 +1569,8 @@ if __name__ == "__main__":
     parser_pcieawd_env.add_argument("-cmn_ki", '--cmn_ki', help='pcieawd_cmn_ki', type=str, default=None)
     parser_pcieawd_env.add_argument("-tx_prop_adj", '--tx_prop_adj', help='pcieawd_tx_prop_adj', type=str, default=None)
     parser_pcieawd_env.add_argument("-rx_prop_adj", '--rx_prop_adj', help='pcieawd_rx_prop_adj', type=str, default=None)
+    parser_pcieawd_env.add_argument("-tx_mag", '--tx_mag', help='pcieawd_tx_change_mag', type=str, default=None)
+    parser_pcieawd_env.add_argument("-rx_mag", '--rx_mag', help='pcieawd_rx_change_mag', type=str, default=None)
     parser_pcieawd_env.set_defaults(func=test.sal_misc_pcieawd_env_ctrl)
 
     try:
