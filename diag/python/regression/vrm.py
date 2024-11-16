@@ -67,8 +67,11 @@ def prog_smbalert_mask(slot, warm_reset=False):
     if sal_con.enter_a35_zephyr(slot, uart_session, warm_reset=warm_reset):
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
-    nc.uart_session_connect(uart_session, slot, uart_id=0)
-    nc.uart_session_cmd(uart_session, "help", ending="uart:~\$")
+    ret = nc.uart_session_connect(uart_session, slot, uart_id=0)
+    if ret != 0:
+        print("=== Failed to connect")
+        return ret
+    # nc.uart_session_cmd(uart_session, "help", ending="uart:~\$")
 
     if ret == 0:
         print("\n====== Masking COMM and CML_OTHER faults\n")
