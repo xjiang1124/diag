@@ -1570,5 +1570,5 @@ if __name__ == "__main__":
         sys.exit(1)
         #parser.exit(status=1, message=parser.print_help())
 
-    sys.exit(not args.func(args))
+    sys.exit(args.func(args))
 
