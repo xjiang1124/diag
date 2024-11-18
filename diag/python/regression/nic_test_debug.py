@@ -192,7 +192,7 @@ class nic_test_debug:
                     new_vmarg = "none"
                 cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk)
             elif args.card_type == "POLLARA":
-                cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.yanmin.tcl {} {} {} {} {} {} 1 0".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk)
+                cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} 1 0".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk)
             else:
                 print(args.card_type, "not supported!")
                 common.session_stop(session)
