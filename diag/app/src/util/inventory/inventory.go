@@ -302,6 +302,22 @@ func getPowerGoodOrtano(uutName string) (powerGood bool) {
     return
 }
 
+func getPowerGoodSalina(uutName string) (powerGood bool) {
+    addr := uint64(salinaCpld.REG_RESET_CODE)
+
+    stat1, err := hwdev.NaplesCpldRd("CPLD", addr, uutName)
+    if err != errType.SUCCESS {
+        powerGood = false
+    } else {
+        if stat1 == 0 {
+            powerGood = true
+        } else {
+            powerGood = false
+        }
+    }
+    return
+}
+
 func getPowerGood(uutName string) (powerGood bool) {
     addr := uint64(naples100Cpld.REG_POWER_STAT1)
 
@@ -330,6 +346,8 @@ func powerStatusCheck(slot int) (err int) {
     err, asicType := cardinfo.GetAsicType(cardType)
     if asicType == "ELBA" || asicType == "GIGLIO" {
         powerGood = getPowerGoodOrtano(uutName)
+    } else if asicType == "SALINA" {
+        powerGood = getPowerGoodSalina(uutName)
     } else {
         powerGood = getPowerGood(uutName)
     }
@@ -514,7 +532,7 @@ func dispPowerStatus(pwrStatName[] string, reg_value byte) {
 
 func dispPowerStatusCode(pwrStatName[] string, reg_value byte) {
     if reg_value >= 0 && reg_value < 0x18 {
-        cli.Printf("i","Reset code:%-18s%d\n", pwrStatName[reg_value], reg_value)
+        cli.Printf("i","Reset code:%-7s%d\n", pwrStatName[reg_value], reg_value)
     } else {
         cli.Printf("i","Invalid power reset code\n")
     }
