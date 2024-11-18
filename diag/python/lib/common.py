@@ -84,7 +84,7 @@ class _Const(object):
 CONST = _Const()
 
 pwd_prompt = "password: "
-bash_prompt = "\$ "
+bash_prompt = "\$"
 #bash_prompt = r"$ "
 sudo_pwd = "lab123"
 
@@ -328,6 +328,18 @@ def session_cmd_pass_multi(session, cmd, pass_sign_list=["NO PASS SIGN"], timeou
         return -2
 
 #=============================
+def session_cmd_exp_multi(session, cmd, exp_list=["NO PASS SIGN"], timeout=30, ending=bash_prompt):
+    session.timeout = timeout
+    try:
+        session.sendline(cmd)
+        i = session.expect(exp_list)
+        return i
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT: ", cmd, " ===")
+        return -1
+
+#=============================
 # Start bash session
 def session_start(timeout=30):
     print("Encoding:", encoding)
@@ -455,3 +467,58 @@ def split_into_threads(func):
         return fail_nic_list
 
     return wrapper
+
+#=============================
+# ssh
+def ssh_login(session, ip, usr, passwd):
+    ret = 0
+    try:
+        session.sendline("ssh "+usr+ "@"+ip)
+        session.expect("password:")
+        session.sendline(passwd)
+        session.expect("\$")
+    except pexpect.TIMEOUT:
+        print("Failed to ssh to " + ip)
+        ret = -1
+
+    return ret
+
+#=============================
+def ssh_exit(session):
+    ret = 0
+    try:
+        session.sendline("exit")
+        session.expect("\$")
+    except pexpect.TIMEOUT:
+        print("Failed to exit ssh")
+        ret = -1
+
+    return ret
+
+#=============================
+def switch_to_sudo(session, sudo_passwd, ending=bash_prompt, timeout=30):
+    ret = 0
+
+    session.timeout = timeout
+    if type(ending) is str:
+        expstr = [pwd_prompt, ending]
+    elif type(ending) is list:
+        expstr = [pwd_prompt] + ending
+    else:
+        expstr = [pwd_prompt, ending]
+
+    expstr = ["password for diag: "] + expstr
+    try:
+        session.sendline("sudo su")
+        i = session.expect(expstr)
+        if i == 0:
+            session.sendline(sudo_passwd)
+            session.expect(expstr)
+
+    except pexpect.TIMEOUT:
+        print("=== TIMEOUT: sudo su ===")
+        ret = -1
+
+    return ret
+
+
