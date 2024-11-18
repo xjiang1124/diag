@@ -13,6 +13,7 @@ import (
     "protocol/smbusNew"
     "device/fpga/materafpga"
     "hardware/i2cinfo"
+    "hardware/hwinfo"
 )
 
 //New card PNs can be added here
@@ -1664,9 +1665,19 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             return errType.FAIL 
         }
     } else {
+        var lockName string
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            lockName, _, err = hwinfo.LockDev(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+        }
         //Writes FRU data to EEPROM
         err = smbusNew.Open(devName, bus, devAddr)
         if err != errType.SUCCESS {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                hwinfo.UnlockDev(lockName)
+            }
             return
         }
         for i:=0;i<len(Data);i++ {
@@ -1679,10 +1690,16 @@ func writeToFRU(devName string, bus uint32, devAddr byte) (err int) {
             if err != errType.SUCCESS {
                 cli.Printf("e", "ERROR: Failed to write to FRU at offset %d", i)
                 smbusNew.Close()
+                if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                    hwinfo.UnlockDev(lockName)
+                }
                 return err
             }
         }
         smbusNew.Close()
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            hwinfo.UnlockDev(lockName)
+        }
     }
     return
 }
@@ -1700,13 +1717,35 @@ func readFromFruBlind(devName string, bus uint32, devAddr byte) (err int) {
             return errType.FAIL 
         }
     } else {
+        var lockName string
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            lockName, _, err = hwinfo.LockDev(devName)
+            if err != errType.SUCCESS {
+                return
+            }
+        }
+        err = smbusNew.Open(devName, bus, devAddr)
+        if err != errType.SUCCESS {
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                hwinfo.UnlockDev(lockName)
+            }
+            return
+        }
         //Read FRU data from EEPROM
         for i:=0;i<MAX_BYTES;i++ {
             fruData, err =readOffset(devName, bus, devAddr, i)
             DataRaw = append(DataRaw, fruData)
             if err != errType.SUCCESS {
+                smbusNew.Close()
+                if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                    hwinfo.UnlockDev(lockName)
+                }
                 return
             }
+        }
+        smbusNew.Close()
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            hwinfo.UnlockDev(lockName)
         }
     }
     return
@@ -1716,6 +1755,7 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     //Reads values from FRU and uploads into Data slice
     var sliceLen int
     var fruData byte
+    var lockName string
     //Fills Data slice with 0xFF temporarily
     for i:=0;i<MAX_BYTES;i++ {
         Data = append(Data, 0xFF)
@@ -1733,6 +1773,19 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         return
     } 
 
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        lockName, _, err = hwinfo.LockDev(devName)
+        if err != errType.SUCCESS {
+            return
+        }
+    }
+    err = smbusNew.Open(devName, bus, devAddr)
+    if err != errType.SUCCESS {
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            hwinfo.UnlockDev(lockName)
+        }
+        return
+    }
     //Read FRU data from EEPROM
     // Calculate FRU table size based on IPMI headers
     //Checks header for variables
@@ -1747,6 +1800,10 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
     }
     boardInfoOff, productInfoOff, mraInfoOff, err := getOffsetsCHdr(start)
     if err != errType.SUCCESS {
+        smbusNew.Close()
+        if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+            hwinfo.UnlockDev(lockName)
+        }
         return
     }
 
@@ -1788,19 +1845,22 @@ func readFromFru(devName string, bus uint32, devAddr byte) (err int) {
         Data = append(Data, fruData)
         if err != errType.SUCCESS {
             cli.Printf("e", "ERROR: Failed to read from FRU at offset %s", i)
+            smbusNew.Close()
+            if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+                hwinfo.UnlockDev(lockName)
+            }
             return
         }
+    }
+    smbusNew.Close()
+    if os.Getenv("CARD_TYPE") == "MTP_MATERA" {
+        hwinfo.UnlockDev(lockName)
     }
     return
 }
 
 func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte, err int) {
     //Generic FRU reading function
-    err = smbusNew.Open(devName, bus, devAddr)
-    if err != errType.SUCCESS {
-        return
-    }
-
     if I2cAddr16 == true {
         data, err = smbusNew.I2C16ReadByte(devName, uint16(offset))
     } else {
@@ -1809,7 +1869,6 @@ func readOffset(devName string, bus uint32, devAddr byte, offset int) (data byte
     if err != errType.SUCCESS {
         cli.Printf("e", "ERROR: Failed to read from FRU at offset %d\n", offset)
     }
-    smbusNew.Close()
     return
 }
 
