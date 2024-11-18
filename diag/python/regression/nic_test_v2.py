@@ -557,7 +557,7 @@ class nic_test_v2:
                 new_vmarg = "none"
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk, args.mtp_clk)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite, args.mtp_clk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite, args.mtp_clk, args.lpmode)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -1523,6 +1523,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
@@ -1580,5 +1581,5 @@ if __name__ == "__main__":
         sys.exit(1)
         #parser.exit(status=1, message=parser.print_help())
 
-    sys.exit(not args.func(args))
+    sys.exit(args.func(args))
 

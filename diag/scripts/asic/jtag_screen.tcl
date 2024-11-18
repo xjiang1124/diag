@@ -20,6 +20,7 @@ proc define_test_list {{override_test_list ""}} {
             ID         { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
             FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
             MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      "" ] }
+            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      "" ] }
 
             MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
             MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
@@ -51,70 +52,6 @@ proc display_test_list {{test_list {}}} {
         plog_msg [ format $fmtStr $cmd_0 $cmd_1 $cmd_2 $cmd_3 ]
     }
     plog_msg "============================================================================="
-}
-
-proc set_pollara_frequency {} {
-    set card_type [sal_get_card_type]
-    if { $card_type == "POLLARA" } {
-        ## this sets frequency using jtag
-        ## which will block the j2c connection
-        ## therefore it can only work over onewire
-        sal_ow
-        sal_set_pollara_freq
-        sal_j2c
-        clear_resetcode
-    }
-}
-
-proc clear_resetcode {} {
-    plog_msg "Clearing CPLD resetcode register"
-    ssi_cpld_write 0x30 0x0
-}
-
-proc check_vrd_fault {} {
-    ### make sure mbist didnt cause any current spikes
-    set resetcode [ssi_cpld_read 0x30]
-    set faultcode [ssi_cpld_read 0x32]
-    plog_msg "CPLD reg 0x30: $resetcode"
-    plog_msg "CPLD reg 0x32: $faultcode"
-    if { $resetcode != "0x0" } {
-        plog_err "Encountered abnormal reset code: $resetcode"
-    }
-    if { $faultcode != "0x0" } {
-        plog_err "Encountered abnormal fault code: $faultcode"
-    }
-}
-
-proc reset_to_proto_mode {} {
-    # Avoid getting a VRD fault on Leni when
-    #  protomode is set while ARM is running
-    #  Ensure ARM is in reset, other cores out of reset
-    #
-    # The 2nd unreset may throw a VRD fault too
-    #  To avoid that, put ARM in reset after sal_pc.
-    #
-    # Despite this, there is a timing issue, sometimes it works.
-    sal_set_proto_mode 0
-    sal_proto_mode_unreset
-    plog_msg "Clearing expected VRD fault"
-    #sal_tps53688_clear_fault 2 0x60 0
-    sal_smbus_write_byte_data 2 0x60 0x0 0x0
-    sal_smbus_write_byte 2 0x60 0x03
-    set card_type [sal_get_card_type]
-    if { $card_type != "POLLARA" } {
-        #sal_tps53688_clear_fault 2 0x60 1
-        sal_smbus_write_byte_data 2 0x60 0x0 0x1
-        sal_smbus_write_byte 2 0x60 0x03
-    }
-    clear_resetcode
-    plog_msg "Disabling WDT"
-    ssi_cpld_write 0x1 0x0
-    sal_arm_show_reset
-    plog_msg "sal_soc_dump_slv_cntrs"
-    sal_soc_dump_slv_cntrs
-    plog_msg "sal_soc_dump_mst_cntrs"
-    sal_soc_dump_mst_cntrs
-    sal_dump_cpld_regs
 }
 
 proc mbist_with_diag {} {
@@ -153,6 +90,27 @@ proc mbist_with_diag {} {
     check_vrd_fault
 }
 
+proc mbist_only_diag {} {
+    ### copy of sal_jtag_mbist_stp
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set arm_err  [sal_jtag_arm_diag]
+    set east_err [sal_jtag_east_diag]
+    set west_err [sal_jtag_west_diag]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "mbist_only_diag::Test PASSED"
+    } else {
+       plog_err "mbist_only_diag::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    check_vrd_fault
+}
+
 ### handle args
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl
@@ -160,9 +118,10 @@ set usage {
     {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {vmarg.arg      "none"                  "Voltage margin"}
+    {logEn.arg      "yes"                   "Save to logfile"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
-    {DIAG_DIR.arg   "/home/diag/diag/asic/" "ASIC lib location"}
+    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -172,14 +131,15 @@ parray arg ; # print them out
 
 ### initialize asic lib
 source /home/diag/diag/scripts/asic/asic_tests.tcl
-set ASIC_LIB_BUNDLE "$DIAG_DIR"
+set ASIC_LIB_BUNDLE "$tcl_path"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
 set ASIC_GEN "$ASIC_SRC"
-set DIAG_SRC "$DIAG_DIR/diag/scripts/asic/"
+set DIAG_SRC "$tcl_path/diag/scripts/asic/"
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 #source /home/diag/diag/scripts/asic/sal_init.tcl
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize card properties
 set slot $slot
@@ -189,6 +149,14 @@ set ::port $port
 set uut "UUT_$slot"
 set card_type $::env($uut)
 plog_msg "card type: $card_type; UUT: $uut"
+
+if { $logEn == "yes" } {
+    set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
+    if { $sn == "" } { set sn SLOT$slot }
+    set log_file $ASIC_SRC/ip/cosim/tclsh/sal_jtag_mbist_${sn}_${cur_time}.log
+    plog_stop
+    plog_start $log_file 1000000000
+}
 
 ### handle test list
 set test_list [define_test_list $test_list]
@@ -291,3 +259,4 @@ if { $final_rslt != 0 } {
     plog_msg "JTAG TESTS PASSED"
 }
 
+if { $logEn == "yes" } { plog_stop }
