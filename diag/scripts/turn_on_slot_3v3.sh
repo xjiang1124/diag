@@ -1,8 +1,21 @@
 #!/bin/bash
 
-matera_v12_addr="0x174"
-matera_v3v3_addr="0x178"
+matera_P12V_addr="0x174"
+matera_P3V3_addr="0x178"
 matera_perst_addr="0x17c"
+
+declare -a slotI2Cmap=(
+[1]=3
+[2]=4
+[3]=5
+[4]=6
+[5]=7
+[6]=8
+[7]=9
+[8]=10
+[9]=11
+[10]=12
+)
 
 #For Naples25OCP and Naples25SWM.  They need an additional power up through the CPLD.
 power_on_naples25_swm_ocp() {
@@ -59,7 +72,18 @@ power_on_naples25_swm_ocp() {
 elba_enable_jtag() {
     slot=$1
 
-    if [[ $MTP_TYPE == "MTP_MATERA" || $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
+    then
+        reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x22)
+        if [ $? -ne 0 ]
+        then
+            echo "Empty slot $slot"
+            return
+        fi
+
+        reg1=$(( $reg1 & 0xFC ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x22 $reg1
+    elif [[ $mtp_id == "0x42" || $mtp_id == "0x4d" ]]
     then
         reg=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x22)
         reg=$(expr match "$reg" '.*data=\(0x[0-9|a-f|A-F]*\)')
@@ -85,31 +109,57 @@ elba_delay() {
 # Enable NIC MTP Rev3 mode
 enable_nic_mtp_r3() {
     slot=$1
-    #turn_on_hub.sh $slot
-    sleep 1
 
-    reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21)
-    echo $reg1
-    reg1=$(expr match "$reg1" '.*data=\(0x[0-9|a-f|A-F]*\)')
-    if [[ $reg1 = "" ]]
+    if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        echo "Empty slot $slot"
-        return
-    fi
+        echo "uart_id is $uart_id"
 
-    mtp_rev=$(echo $MTP_REV | awk -F"_" '{print $2}')
-    echo "Rev: $mtp_rev"
-    if [[ "$mtp_rev" -lt 3 ]]
-    then
-        echo "MTP Rev 2 detected, clear bit 0"
-        reg1=$(( $reg1 & 0xFE ))
+        reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x21)
+        #echo $reg1
+        if [ $? -ne 0 ]
+        then
+            echo "Empty slot $slot"
+            return
+        fi
+
+        board_type=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
+        if [[ "$board_type" -ge 0x62 ]]
+        then
+            data=$(i2cget -y $(($slot + 2)) 0x4a 0x21)
+            data=$(( $data & 0xF8 ))
+            data=$(( $data | $uart_id ))
+            i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $data
+        else
+            reg1=$(( $reg1 | 0x25 ))
+            reg1=$(( $reg1 & 0xBF ))
+            i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x21 $reg1
+        fi
     else
-        echo "MTP Rev $mtp_rev detected, set bit 0"
-        reg1=$(( $reg1 | 0x1 ))
+        sleep 1
+
+        reg1=$(smbutil -uut=uut_$slot -dev=CPLD -rd -addr=0x21)
+        echo $reg1
+        reg1=$(expr match "$reg1" '.*data=\(0x[0-9|a-f|A-F]*\)')
+        if [[ $reg1 = "" ]]
+        then
+            echo "Empty slot $slot"
+            return
+        fi
+
+        mtp_rev=$(echo $MTP_REV | awk -F"_" '{print $2}')
+        echo "Rev: $mtp_rev"
+        if [[ "$mtp_rev" -lt 3 ]]
+        then
+            echo "MTP Rev 2 detected, clear bit 0"
+            reg1=$(( $reg1 & 0xFE ))
+        else
+            echo "MTP Rev $mtp_rev detected, set bit 0"
+            reg1=$(( $reg1 | 0x1 ))
+        fi
+        reg1=$(( $reg1 | 0x25 ))
+        reg1=$(( $reg1 & 0xBF ))
+        smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
     fi
-    reg1=$(( $reg1 | 0x25 ))
-    reg1=$(( $reg1 & 0xBF ))
-    smbutil -uut=uut_$slot -dev=CPLD -wr -addr=0x21 -data=$reg1
 }
 
 reset_hub() {
@@ -121,6 +171,19 @@ reset_hub() {
     #sleep 0.2
     cpldutil -cpld-rd -addr=0x2
     echo "Reset hub done"
+}
+
+# Set bit between proto mode or production mode
+set_prod_mode() {
+    slot=$1
+    if [[ $prod_mode == "0" ]]
+    then
+        # mode = prototype
+        reg20=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x20)
+        reg20=$(( $reg20 & 0xFE )) # set bit0 = 0
+        i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x20 $reg20
+        echo "Proto mode set"
+    fi
 }
 
 control_slot() {
@@ -175,23 +238,25 @@ control_slot_matera() {
 
     printf "Setting power control to $on_off with 0x%x\n" $wValue
 
-    fpgautil r32 $matera_v3v3_addr
-    v3v3=$?
+    v3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
 
     if [[ $on_off == "off" ]]
     then
         wValue=$(( ~$wValue ))
         wValue=$(( $wValue & 0x3ff ))
-        wValue=$(( $wValue | 0xfffffc00 ))
-        v3v3=$(( $v3v3 & $wValue ))
-        fpgautil w32 $matera_v3v3_addr $v3v3
+        fpgautil w32 $matera_P3V3_addr $(( $v3v3 & $wValue ))
         sleep 0.2
     else
-        wValue=$(( $wValue & 0x3ff ))
-        v3v3=$(( $v3v3 | $wValue ))
-        fpgautil w32 $matera_v3v3_addr -data=$v3v3
+        fpgautil w32 $matera_P3V3_addr $(( $v3v3 | $wValue ))
+        sleep 1
+        for slot in $slot_list
+        do
+            enable_nic_mtp_r3 $slot
+            elba_enable_jtag $slot
+            set_prod_mode $slot $prod_mode
+        done
     fi
-    fpgautil r32 $matera_v3v3_addr
+    fpgautil r32 $matera_P3V3_addr
 }
 
 control_all() {
@@ -200,10 +265,14 @@ control_all() {
         echo "Turning on all slots"
         if [[ $MTP_TYPE == "MTP_MATERA" ]]
         then
-            fpgautil r32 $matera_v3v3_addr
-            v3v3=$?
-            v3v3=$(( $v3v3 | 0x3ff ))
-            fpgautil w32 $matera_v3v3_addr $v3v3
+            fpgautil w32 $matera_P3V3_addr 0x3ff
+            sleep 1
+            for i in {1..10}
+            do
+                enable_nic_mtp_r3 $i
+                set_prod_mode $slot $prod_mode
+                elba_enable_jtag $i
+            done
         else
             cpldutil -cpld-wr -addr=0x12 -data=0
             cpldutil -cpld-wr -addr=0x13 -data=0
@@ -229,7 +298,7 @@ control_all() {
         echo "Turning off all slots"
         if [[ $MTP_TYPE == "MTP_MATERA" ]]
         then
-            fpgautil w32 $matera_3v3_addr 0x0
+            fpgautil w32 $matera_P3V3_addr 0x0
         else
             cpldutil -cpld-wr -addr=0x12 -data=0xff
             cpldutil -cpld-wr -addr=0x13 -data=0xff
@@ -239,7 +308,7 @@ control_all() {
     fi
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        fpgautil r32 $matera_3v3_addr
+        fpgautil r32 $matera_P3V3_addr
     else
         cpldutil -cpld-rd -addr=0x12
         cpldutil -cpld-rd -addr=0x13
@@ -251,7 +320,7 @@ usage() {
     echo "Turn_on_slot.sh Usage"
     echo "========================="
     echo "Turn on specific slot"
-    echo "turn_on_slot.sh on <slot_id>"
+    echo "turn_on_slot.sh on <slot_id> <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off_specific slot"
@@ -259,7 +328,7 @@ usage() {
 
     echo "-------------------------"
     echo "Turn on all slots"
-    echo "turn_on_slot.sh on all"
+    echo "turn_on_slot.sh on all <uart_id> <prod_mode>"
 
     echo "-------------------------"
     echo "Turn off all slots"
@@ -271,12 +340,7 @@ if [[ $1 == "show" ]]
 then
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        # P12V_CTRL_REG
-        fpgautil r32 $matera_v12_addr
-        # P03V_CTRL_REG
-        fpgautil r32 $matera_v3v3_addr
-        # PERST_CTRL_REG
-        fpgautil r32 $matera_perst_addr
+        fpgautil r32 $matera_P3V3_addr
     else
         cpldutil -cpld-rd -addr=0x12
         cpldutil -cpld-rd -addr=0x13
@@ -284,18 +348,31 @@ then
     exit
 fi
 
-if [[ $# -ne 2 ]] && [[ $# -ne 3 ]]
+if [[ $# -lt 2 ]] && [[ $# -lt 3 ]] && [[ $# -lt 4 ]]
 then
     usage
     exit
 fi
 
-swm_lp_mode=0
-if [[ $# -eq 3 ]]
+if [[ $MTP_TYPE != "MTP_MATERA" ]]
 then
-    echo "3rd arg = $3"
-    swm_lp_mode=$3
-    echo "swm_lp_mode = $swm_lp_mode"
+    swm_lp_mode=0
+    if [[ $# -eq 3 ]]
+    then
+        echo "3rd arg = $3"
+        swm_lp_mode=$3
+        echo "swm_lp_mode = $swm_lp_mode"
+    fi
+else
+    uart_id=0
+    if [ $# -ge 3 ]
+    then
+        uart_id=$(($3 & 0x7))
+    fi
+    if [ $# -ge 4 ]
+    then
+        prod_mode=$4
+    fi
 fi
 
 if [[ $MTP_TYPE != "MTP_MATERA" ]]
@@ -307,7 +384,9 @@ fi
 
 if [[ $2 == "all" ]]
 then
-    control_all $1
+    on_off=$1
+    (flock -x -w 50 99 || exit 1; control_all $on_off;
+    ) 99>/home/diag/turn_on_slot.lock
 else
     slot_list=$(echo $2 | tr "," "\n")
 	pc_low=0
@@ -344,7 +423,8 @@ else
 
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        control_slot_matera
+        (flock -x -w 50 99 || exit 1; control_slot_matera;
+        ) 99>/home/diag/turn_on_slot.lock
     else
         declare -a low_high_list=("low" "high")
         for low_high in "${low_high_list[@]}"
