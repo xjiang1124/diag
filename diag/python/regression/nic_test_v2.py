@@ -1380,6 +1380,83 @@ class nic_test_v2:
         common.session_stop(uart_session)
         return ret
 
+    def read_qsfp_from_arm(self, args):
+        ret = 0
+        session = common.session_start()
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+            ret = -1
+            return ret
+
+        print("Start Vmarge")
+        print("tcl_path:", args.tcl_path)
+        print("=== TCL ENV setup ===")
+        tcl_path = args.tcl_path
+        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "source source_env_path")
+        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        #common.session_cmd(session, "rm -f *")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        time.sleep(3)
+        cmd = "fpgautil spimode {} off".format(args.slot)
+        common.session_cmd(session, cmd)
+        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+        common.session_cmd(session, cmd)
+        print("\nDisable WDT since vmarg will occupy i2c bus")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} x {}".format(args.slot, args.vmarg)
+        common.session_cmd(session, cmd, 360, False, "vmarg set")
+
+        print("Start test on Zephyr")
+        card_type = self.nic_con.get_card_type(args.slot)
+        if card_type == "POLLARA":
+            ports = ("0")
+        else:
+            ports = ("0", "1")
+
+        for port in ports:
+            cmd = "i2cset -y {} 0x4A 0x2 0x3c".format(int(args.slot) + 2)
+            common.session_cmd(session, cmd)
+            cmd = "i2cget -y {} 0x4a 0x2".format(int(args.slot) + 2)
+            cmdret, output = common.session_cmd_w_ot(session, cmd)
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+            if ret != 0:
+                print("=== FAILED to connect")
+                return ret
+            for eeprom_address in (
+                "0x80",
+                "0x90",
+                "0xa0",
+                "0xb0",
+                "0xc0",
+                "0xd0",
+                "0xe0",
+                "0xf0"):
+                cmd = "i2c read cpld-i2c@{} 0x50 {}".format(port, eeprom_address)
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, ending="uart:~\$")
+                if "Failed to read" in output:
+                    print("=== Command {} failed".format(cmd))
+                    ret = -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        common.session_stop(session)
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1640,6 +1717,13 @@ if __name__ == "__main__":
     parser_mem_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
     parser_mem_test.add_argument("-threads", "--threads", help="number of memory copy threads to run", type=int, default=16)
     parser_mem_test.set_defaults(func=test.google_stress_test)
+
+    # SPI-to-CPLD test from ARM
+    parser_spi_cpld_test = subparsers.add_parser('test_spi', help='Test SPI-to-CPLD from ARM on QSFP loopbacks', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_spi_cpld_test.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_spi_cpld_test.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_spi_cpld_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_spi_cpld_test.set_defaults(func=test.read_qsfp_from_arm)
 
     #=====================================================
     # Salina misc commands
