@@ -279,9 +279,11 @@ if { $check_vrm != 0 } {
         ssi_cpld_write 0x20 0x0
         gig_print_voltage_temp
     } elseif {$ASIC_TYPE == "SALINA"} {
-        sal_arm_reset 0
-        ssi_cpld_write 0x20 0x0
         sal_print_voltage_temp_from_j2c
+        sal_dump_cpld_regs
+        if {[ssi_cpld_read 0x32] == "0x08"} {
+            sal_tps53688_explain_status 2 0x60 0
+        }
     } else {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0

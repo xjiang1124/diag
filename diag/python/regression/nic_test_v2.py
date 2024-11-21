@@ -1365,7 +1365,7 @@ class nic_test_v2:
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
 
-        cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 0".format(args.slot)
+        cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 1".format(args.slot)
         common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
 
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
