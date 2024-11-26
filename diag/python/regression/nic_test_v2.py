@@ -507,10 +507,26 @@ class nic_test_v2:
         time.sleep(3)
 
         if args.card_type == "POLLARA":
-            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                ret = -1
-                return ret
+            if args.arm_freq == "default":
+                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
+
+            else:
+                # Change the freq (includes warm reset), then boot to zephyr cleanly
+                if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
+
+                cmd = "tclsh ~/diag/scripts/asic/sal_arm_freq.tcl -slot {} -arm_freq {}".format(args.slot, args.arm_freq)
+                common.session_cmd(session, cmd, timeout=60)
+
+                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=True):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
         else:
             if args.snake_type == "esam_pktgen_llc_sor" or \
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
@@ -1684,6 +1700,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
