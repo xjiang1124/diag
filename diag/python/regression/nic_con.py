@@ -90,9 +90,9 @@ class nic_con:
 
         return ret
 
-    def uart_session_start(self, session, slot, numRetry=10):
+    def uart_session_start(self, session, slot, numRetry=10, uart_id=1):
         ret = 0
-        cmd = self.get_connect_cmd(slot)
+        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
         expstr = ["capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "\#", "uart:~\$"]
         session.sendline(cmd)
         for ite in range(numRetry):
@@ -117,16 +117,18 @@ class nic_con:
                     print("=== TIMEOUT: Can not connect to NIC on UART!")
                 ret = -1
 
-        currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
-        session.sendline("date -s " + currentTime)
-        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
-        if i != 0:
-            ret = -1
-        session.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
-        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
-        i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
-        if i != 0:
-            ret = -1
+        if uart_id == 1:
+            # not applicable to non-salina & zephyr
+            currentTime = datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
+            session.sendline("date -s " + currentTime)
+            i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
+            if i != 0:
+                ret = -1
+            session.sendline(r'PS1="[$(date +%Y-%m-%d_)\\t] \u# "')
+            i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout) # expect the # in my send command
+            i = session.expect(["#", pexpect.TIMEOUT, pexpect.EOF], timeout)
+            if i != 0:
+                ret = -1
         return ret
 
     def uart_session_start_slot(self, session, slot=0):
