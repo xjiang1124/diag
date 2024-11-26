@@ -507,10 +507,26 @@ class nic_test_v2:
         time.sleep(3)
 
         if args.card_type == "POLLARA":
-            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                ret = -1
-                return ret
+            if args.arm_freq == "default":
+                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
+
+            else:
+                # Change the freq (includes warm reset), then boot to zephyr cleanly
+                if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
+
+                cmd = "tclsh ~/diag/scripts/asic/sal_arm_freq.tcl -slot {} -arm_freq {}".format(args.slot, args.arm_freq)
+                common.session_cmd(session, cmd, timeout=60)
+
+                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=True):
+                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                    ret = -1
+                    return ret
         else:
             if args.snake_type == "esam_pktgen_llc_sor" or \
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
@@ -527,7 +543,13 @@ class nic_test_v2:
 
         print("Start Vmarge")
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+            if args.vmargCORE != "0" and args.vmargARM != "0":
+                cmd = "tclsh ~/diag/scripts/asic/sal_vmarg.tcl"
+                cmd += " -slot {}".format(args.slot)
+                cmd += " -vmarg_core {}".format(args.vmargCORE)
+                cmd += " -vmarg_arm {}".format(args.vmargARM)
+            else:
+                cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
             common.session_cmd(session, cmd, 360, False, "vmarg set")
 
         # Start CPU Burn on N1
@@ -555,9 +577,29 @@ class nic_test_v2:
                 new_vmarg = args.vmarg
             else:
                 new_vmarg = "none"
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk, args.mtp_clk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl"
+            cmd += " " + args.slot
+            cmd += " " + args.snake_type
+            cmd += " " + args.dura
+            cmd += " " + args.card_type
+            cmd += " " + new_vmarg
+            cmd += " " + args.int_lpbk
+            cmd += " " + args.mtp_clk
+            cmd += " " + args.vmargCORE
+            cmd += " " + args.vmargARM
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk, args.ite, args.mtp_clk, args.lpmode)
+            cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
+            cmd += " " + args.slot
+            cmd += " " + args.snake_type
+            cmd += " " + args.dura
+            cmd += " " + args.card_type
+            cmd += " " + args.vmarg
+            cmd += " " + args.int_lpbk
+            cmd += " " + args.ite
+            cmd += " " + args.mtp_clk
+            cmd += " " + args.lpmode
+            cmd += " " + args.vmargCORE
+            cmd += " " + args.vmargARM
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -1684,11 +1726,14 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
     parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_nic_snake_mtp.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
+    parser_nic_snake_mtp.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp

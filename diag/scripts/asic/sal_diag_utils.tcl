@@ -15,28 +15,38 @@ proc check_vrd_fault {} {
     if { $faultcode != "0x0" } {
         plog_err "Encountered abnormal fault code: $faultcode"
         if { $faultcode == "0x08"} {
-            plog_msg "Dumping VRM faultcodes:"
             sal_j2c
+            plog_msg "Dumping VRM faultcodes:"
             sal_tps53688_explain_status 2 0x60 0
         }
     }
 }
 
-proc set_pollara_frequency {} {
+proc set_pollara_frequency {{arm_freq "1500"} {protomode "yes"}} {
     set card_type [sal_get_card_type]
     if { $card_type == "POLLARA" } {
-        plog_msg "Lowering pollara frequency"
+        plog_msg "Changing ARM frequency to $arm_freq"
         ## this sets frequency using jtag
         ## which will block the j2c connection
         ## therefore it can only work over onewire
         sal_ow
-        sal_set_pollara_freq
+        if { $arm_freq == "3000"} {
+            sal_set_pollara_freq
+        } elseif { $arm_freq == "2000" } {
+            sal_set_pollara_freq_arm_2000; #waiting for stream, not implemented
+        } elseif { $arm_freq == "1500" } {
+            sal_set_pollara_freq_arm_1500
+        } elseif { $arm_freq == "1250" } {
+            sal_set_pollara_freq_arm_1250
+        } elseif { $arm_freq == "750" } {
+            sal_set_pollara_freq_arm_750
+        }
         sal_j2c
-        # redo proto mode
-        sal_proto_mode_unreset
+        if { $protomode == "yes" } {
+            # redo proto mode
+            sal_proto_mode_unreset
+        }
         clear_resetcode
-        plog_msg "nxc   freq: [sal_get_freq_nxc]"
-        plog_msg "nxc_2 freq: [sal_get_freq_nxc_by2]"
     }
 }
 
