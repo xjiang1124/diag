@@ -60,7 +60,7 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
         if sig in output:
             print("Command {} returned error: {}".format(cmd, sig))
             ret = -1
-    return ret
+    return ret, output
 
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
@@ -84,7 +84,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
-    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
+    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
         print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -100,7 +100,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         cmd = "boot" #"bootm 0x8000000"
 
     # For ainic, the "uart:~$" prompt may be truncated
-    if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10):
+    if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
 
@@ -143,18 +143,26 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
 
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
-    
-    if 0 != exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1):
+
+    ret, help_output = exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1)
+    if ret != 0:
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
-    if 0 != exp_cmd(session, "n1 fwsel goldfw", pass_sig_list=["uart:~\$"], timeout=5):
+    if "system   :System commands" in help_output:
+        fwsel_cmd = "system fwsel dpu"
+        boot_cmd = "system boot-dpu"
+    else:
+        fwsel_cmd = "n1 fwsel goldfw"
+        boot_cmd = "n1 boot"
+
+    if 0 != exp_cmd(session, fwsel_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
         print("===== FAILED: slot {} fwsel command failed".format(slot))
         return -1
 
     # get earliest signature that will catch error messages from previous a35 command,
     # while getting maximum messages from n1 uboot
-    if 0 != exp_cmd(session, "n1 boot", pass_sig_list=["Loading U-Boot image goldfw"], timeout=80):
+    if 0 != exp_cmd(session, boot_cmd, pass_sig_list=["Loading U-Boot image goldfw"], timeout=80)[0]:
         print("===== FAILED: slot {} boot didn't go through".format(slot))
         return -1
 
@@ -178,7 +186,7 @@ def enter_n1_linux(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=1)
 
-    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1):
+    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
         print("===== FAILED: slot {} couldn't enter n1 uboot".format(slot))
         return -1
 
