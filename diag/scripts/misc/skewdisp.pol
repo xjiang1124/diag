@@ -1,0 +1,36 @@
+for bin in 650 \
+665 \
+680 \
+695 \
+710 \
+725 \
+740 \
+750 \
+755 \
+770 \
+785 \
+800 ; do echo -en "\t_$bin"; done; echo
+for slot in `seq 1 10`; do
+    echo -n "SL$slot"
+    for bin in 650 \
+    665 \
+    680 \
+    695 \
+    710 \
+    725 \
+    740 \
+    750 \
+    755 \
+    770 \
+    785 \
+    800; do
+        rgx=$(grep -e "$1" -c -h snake*slot${slot}_*CORE${bin}*.log --text 2> /dev/null); echo -en "\t$rgx"
+        
+        ## idle temp
+        #rgx=$(grep -e "$1" -h snake*slot${slot}_*CORE${bin}*.log --text 2> /dev/null | awk '{print $(NF-2)}' | grep -v "VDD" | sort | head -n1); echo -en "\t$rgx"
+
+        ## max temp
+        #rgx=$(grep -e "$1" -h snake*slot${slot}_*CORE${bin}*.log --text 2> /dev/null | awk '{print $(NF-2)}' | grep -v "VDD" | sort | tail -n1); echo -en "\t$rgx"
+        done
+    echo
+done

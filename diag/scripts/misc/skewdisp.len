@@ -1,0 +1,13 @@
+bins=$(ls *.log | awk -F"[(CORE)(_ARM)]" '{print $(NF-4) "/" $(NF)}' | cut -d'.' -f1 | sort -u)
+echo -n "    "; for bin in ${bins[*]}; do printf "%9s" $bin; done; echo
+for slot in `seq 1 10`; do
+    printf "%4s" "SL$slot"
+    for bin in ${bins[*]}; do 
+        core=$(echo $bin | cut -d'/' -f1)
+        arm=$(echo $bin | cut -d'/' -f2)
+        ls *slot${slot}_*CORE${core}*ARM${arm}*.log > /dev/null 2>&1; ret=$?
+        if [[ $ret != 0 ]]; then printf "%9s" "-"; continue; fi #no log exists for this combination
+        rgx=$(grep -e "$1" -c -h *slot${slot}_*CORE${core}*ARM${arm}*.log --text 2> /dev/null); printf "%9s" $rgx
+        done
+    echo
+done
