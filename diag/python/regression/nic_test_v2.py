@@ -1455,6 +1455,11 @@ class nic_test_v2:
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
         common.session_stop(session)
+
+        if ret == 0:
+            print("QSFP READ TEST PASSED")
+        else:
+            print("QSFP READ TEST FAILED")
         return ret
 
 if __name__ == "__main__":
