@@ -578,28 +578,28 @@ class nic_test_v2:
             else:
                 new_vmarg = "none"
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl"
-            cmd += " " + args.slot
-            cmd += " " + args.snake_type
-            cmd += " " + args.dura
-            cmd += " " + args.card_type
-            cmd += " " + new_vmarg
-            cmd += " " + args.int_lpbk
-            cmd += " " + args.mtp_clk
-            cmd += " " + args.vmargCORE
-            cmd += " " + args.vmargARM
+            cmd += " " + str(args.slot)
+            cmd += " " + str(args.snake_type)
+            cmd += " " + str(args.dura)
+            cmd += " " + str(args.card_type)
+            cmd += " " + str(new_vmarg)
+            cmd += " " + str(args.int_lpbk)
+            cmd += " " + str(args.mtp_clk)
+            cmd += " " + str(args.vmargCORE)
+            cmd += " " + str(args.vmargARM)
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
-            cmd += " " + args.slot
-            cmd += " " + args.snake_type
-            cmd += " " + args.dura
-            cmd += " " + args.card_type
-            cmd += " " + args.vmarg
-            cmd += " " + args.int_lpbk
-            cmd += " " + args.ite
-            cmd += " " + args.mtp_clk
-            cmd += " " + args.lpmode
-            cmd += " " + args.vmargCORE
-            cmd += " " + args.vmargARM
+            cmd += " " + str(args.slot)
+            cmd += " " + str(args.snake_type)
+            cmd += " " + str(args.dura)
+            cmd += " " + str(args.card_type)
+            cmd += " " + str(args.vmarg)
+            cmd += " " + str(args.int_lpbk)
+            cmd += " " + str(args.ite)
+            cmd += " " + str(args.mtp_clk)
+            cmd += " " + str(args.lpmode)
+            cmd += " " + str(args.vmargCORE)
+            cmd += " " + str(args.vmargARM)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
