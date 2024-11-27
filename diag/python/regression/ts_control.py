@@ -3,6 +3,7 @@
 import argparse
 import pexpect
 import sys
+import time
 import os
 
 sys.path.append("../lib")
@@ -81,8 +82,10 @@ class ts_control:
         ret = 0
         try:
             session.sendline("telnet " + ip + " " + port)
-            session.expect("Escape character is ")
-            session.sendline("")
+            session.expect("Escape character is")
+            time.sleep(1)
+            #session.sendline('')
+            session.sendline('help')
             #session.expect("uart:")
             session.expect(exp_str)
         except pexpect.TIMEOUT:
