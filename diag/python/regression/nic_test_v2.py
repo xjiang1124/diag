@@ -584,24 +584,24 @@ class nic_test_v2:
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl"
             cmd += " " + args.slot
             cmd += " " + args.snake_type
-            cmd += " " + args.dura
+            cmd += " " + str(args.dura)
             cmd += " " + args.card_type
             cmd += " " + new_vmarg
-            cmd += " " + args.int_lpbk
-            cmd += " " + args.mtp_clk
+            cmd += " " + str(args.int_lpbk)
+            cmd += " " + str(args.mtp_clk)
             cmd += " " + args.vmargCORE
             cmd += " " + args.vmargARM
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
             cmd += " " + args.slot
             cmd += " " + args.snake_type
-            cmd += " " + args.dura
+            cmd += " " + str(args.dura)
             cmd += " " + args.card_type
             cmd += " " + args.vmarg
-            cmd += " " + args.int_lpbk
-            cmd += " " + args.ite
-            cmd += " " + args.mtp_clk
-            cmd += " " + args.lpmode
+            cmd += " " + str(args.int_lpbk)
+            cmd += " " + str(args.ite)
+            cmd += " " + str(args.mtp_clk)
+            cmd += " " + str(args.lpmode)
             cmd += " " + args.vmargCORE
             cmd += " " + args.vmargARM
         else:

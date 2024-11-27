@@ -250,7 +250,7 @@ if __name__ == "__main__":
     parser.add_argument("--boot_to", "-b", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
     parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
-    parser.add_argument("--v12_reset", "-w", help="v12 reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
 
