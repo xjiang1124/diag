@@ -79,7 +79,7 @@ FPL2439007E~FF~710~885~POLLARA \
 FPL24390054~FF~710~885~POLLARA \
 )
 
-runtest() {
+runsnaketest() {
     LOGFILE=$1
     slot=$2
     card_type=$3
@@ -117,6 +117,39 @@ runtest() {
     if [[ $ret == 0 ]]; then echo "=== ERROR :: card hung" | tee -a $LOGFILE; cd ~/diag/scripts/asic; tclsh get_nic_sts.tcl X $slot 1 | tee -a $LOGFILE; fi
 }
 
+runMBIST() {
+    LOGFILE=$1
+    slot=$2
+    card_type=$3
+    coreV=$4
+    armV=$5
+
+    if [[ ${card_type} == "POLLARA" ]]; then devmgr_v2 fanctrl --pct 40; else devmgr_v2 fanctrl --pct 60; fi
+
+    cd ~/diag/scripts/asic
+    devmgr_v2 status | tee $LOGFILE
+    fpgautil show fan | tee -a $LOGFILE
+    turn_on_slot.sh off $slot | tee -a $LOGFILE
+    sleep 3; turn_on_slot_3v3.sh on $slot | tee -a $LOGFILE
+    data=$(i2cget -y $(($slot + 2)) 0x4a 0x11)
+    data=$(( $data & 0xFA ))
+    data=$(( $data | 0x0A ))
+    i2cset -y $((slot+2)) 0x4a 0x11 $data
+    inventory -sts -slot $slot | tee -a $LOGFILE
+    turn_on_slot_12v.sh on $slot | tee -a $LOGFILE
+    tclsh jtag_screen.tcl \
+        -slot $slot \
+        -tcl_path "/home/diag/nabeel/nic${slot}/" \
+        -test_list "DIAG_MBIST" \
+        -vmarg "none" \
+        -vmarg_core ${coreV} \
+        -vmarg_arm ${armV} \
+        | tee -a $LOGFILE
+    ret=$?
+    if [[ $ret != 0 ]]; then echo "=== ERROR :: Test loop did not exit successfully" | tee -a $LOGFILE; fi
+    inventory -sts -slot $slot | tee -a $LOGFILE
+}
+
 slotsn=$(inventory -present | grep "UUT_${slot} " | sed 's/\s*]/]/g' | awk -F " " '{print $6}')
 for card in "${skew_selection[@]}"; do
     sn=$(echo $card | cut -d"~" -f1)
@@ -141,7 +174,7 @@ for card in "${skew_selection[@]}"; do
         if [[ ${card_type} == "POLLARA" ]]; then coreV=$armV; fi
         LOGFILE=/home/diag/nabeel/skewc/${testname}_${card_type}_${sn}_slot${slot}_${skew}_CORE${coreV}_ARM${armV}.log
         echo $LOGFILE
-        runtest $LOGFILE $slot $card_type $coreV $armV
+        runMBIST $LOGFILE $slot $card_type $coreV $armV
     done
 
     ## SECOND LOOP: fix arm to fused, shmoo over core
@@ -150,7 +183,7 @@ for card in "${skew_selection[@]}"; do
         if [[ ${card_type} == "POLLARA" ]]; then break; fi
         armV=${arm_fused}
         LOGFILE=/home/diag/nabeel/skewc/${testname}_${card_type}_${sn}_slot${slot}_${skew}_CORE${coreV}_ARM${armV}.log
-        runtest $LOGFILE $slot $card_type $coreV $armV
+        runMBIST $LOGFILE $slot $card_type $coreV $armV
     done
     break # dont continue search
 done

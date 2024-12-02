@@ -442,9 +442,23 @@ class nic_test_v2:
         # TCL command
         cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.dura)
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl"
+            cmd += " {}".format(args.slot)
+            cmd += " {}".format("LENI")
+            cmd += " {}".format(args.vmarg)
+            cmd += " {}".format(args.dura)
+            cmd += " {}".format(args.mtp_clk)
+            cmd += " {}".format(args.vmargCORE)
+            cmd += " {}".format(args.vmargARM)
         elif args.card_type == "POLLARA":
-            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl"
+            cmd += " {}".format(args.slot)
+            cmd += " {}".format("LENI")
+            cmd += " {}".format(args.vmarg)
+            cmd += " {}".format(args.dura)
+            cmd += " {}".format(args.mtp_clk)
+            cmd += " {}".format(args.vmargCORE)
+            cmd += " {}".format(args.vmargARM)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -1960,6 +1974,8 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_port_up.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
+    parser_nic_port_up.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
+    parser_nic_port_up.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 
     # Program FRUs

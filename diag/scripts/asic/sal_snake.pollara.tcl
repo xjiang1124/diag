@@ -213,12 +213,12 @@ if {$vmarg_core != "0"} {
     set new_vout [sal_get_vout VDD]
     plog_msg "New VDD vout: $new_vout"
 }
-# if {$vmarg_arm != "0"} {
-#     plog_msg "set vmarg ARM: $vmarg_arm"
-#     sal_set_margin_by_value ARM $vmarg_arm
-#     set new_vout [sal_get_vout ARM]
-#     plog_msg "New ARM vout: $new_vout"
-# }
+if {$vmarg_arm != "0"} {
+    plog_msg "set vmarg ARM: $vmarg_arm"
+    sal_set_margin_by_value ARM $vmarg_arm
+    set new_vout [sal_get_vout ARM]
+    plog_msg "New ARM vout: $new_vout"
+}
 sal_print_voltage_temp
 
 plog_msg "snake test_type: $test_type"
