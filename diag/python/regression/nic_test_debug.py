@@ -20,6 +20,7 @@ import common
 import sal_con
 from nic_con import nic_con
 from nic_test import nic_test
+from nic_test_v2 import nic_test_v2
 
 class nic_test_debug:
     def __init__(self):
@@ -28,6 +29,7 @@ class nic_test_debug:
         self.fmt_con_cmd = "con_connect.sh {}"
         self.nic_con = nic_con()
         self.nic_test = nic_test()
+        self.nic_test_v2 = nic_test_v2()
         self.encoding = common.encoding
 
     def nic_port_up(self, args):
@@ -235,6 +237,42 @@ class nic_test_debug:
 
         return ret
 
+    def qspi_prog_single(self, slot, qspi_image_path):
+        print("qspi_image_path:", qspi_image_path)
+        ret = 0
+        if not qspi_image_path:
+            print("===== FAILED: Please provide a qspi image path")
+            return -1
+        if not os.path.exists(os.path.join(qspi_image_path, "qspi_prog.sh")):
+            print("===== FAILED: Unable to locate qspi_prog.sh in {} directory".format(qspi_image_path))
+            return -1
+        cur_dir = os.getcwd()
+        session = common.session_start()
+        common.session_cmd(session, "cd {}".format(qspi_image_path))
+        ret = common.session_cmd(session, "./qspi_prog.sh {}".format(slot), ending=["QSPI PROG PASSED", "FAILED"], timeout=180)
+        print("QSPI programming result:", ret)
+        if ret != 1:
+            print("ERROR :: QSPI programming has failed!")
+            ret = -1
+        else:
+            ret = 0
+        common.session_cmd(session, "cd {}".format(cur_dir))
+        common.session_stop(session)
+        return ret
+
+    def qspi_prog_parallel(self, args):
+        print(args)
+        for ite in range(args.ite):
+            print("=== Iteration {} ===".format(ite))
+            # run qspi_prog_single in parallel
+            slot_list = args.slot_list.split(',')
+            test_args = ()
+            test_kwargs = {"qspi_image_path": args.qspi_image_path}
+            fail_nic_list = self.nic_test_v2.split_into_threads(self.qspi_prog_single, slot_list, *test_args, **test_kwargs)
+            print ("Failed NIC list:", fail_nic_list)
+            if fail_nic_list:
+                return -1
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -267,6 +305,14 @@ if __name__ == "__main__":
     parser_nic_stress_reset.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_stress_reset.add_argument("-ite", "--ite", help="Iteration of start and stop snake", type=int, default=1)
     parser_nic_stress_reset.set_defaults(func=test.nic_stress_reset)
+
+    # NIC QSPI programming in parallel
+    parser_qspi_prog_parallel = subparsers.add_parser('qspi_prog_parallel', help='NIC QSPI programming in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_qspi_prog_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_qspi_prog_parallel.add_argument("-qspi_image_path", "--qspi_image_path", help="QSPI image folder path", type=str, default='/home/diag/qspi/pollara_standalone_ss36')
+    parser_qspi_prog_parallel.add_argument("-ite", "--ite", help="Iteration of QSPI programming", type=int, default=1)
+    parser_qspi_prog_parallel.set_defaults(func=test.qspi_prog_parallel)
 
     try:
         args = parser.parse_args()
