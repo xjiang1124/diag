@@ -256,6 +256,7 @@ control_slot_matera() {
             set_prod_mode $slot $prod_mode
         done
     fi
+    sleep 0.2
     fpgautil r32 $matera_P3V3_addr
 }
 
@@ -385,7 +386,7 @@ fi
 if [[ $2 == "all" ]]
 then
     on_off=$1
-    (flock -x -w 50 99 || exit 1; control_all $on_off;
+    (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_all $on_off;
     ) 99>/home/diag/turn_on_slot.lock
 else
     slot_list=$(echo $2 | tr "," "\n")
@@ -423,7 +424,7 @@ else
 
     if [[ $MTP_TYPE == "MTP_MATERA" ]]
     then
-        (flock -x -w 50 99 || exit 1; control_slot_matera;
+        (flock -x -w 50 99 || { echo "ERROR: Failed to acquire lock within 50 seconds"; exit 1;}; control_slot_matera;
         ) 99>/home/diag/turn_on_slot.lock
     else
         declare -a low_high_list=("low" "high")
