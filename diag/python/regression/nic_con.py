@@ -468,7 +468,7 @@ class nic_con:
                 print("Powercycling...")
                 cmd = "turn_on_slot.sh off {}".format(slot)
                 common.session_cmd(session, cmd)
-                time.sleep(3)
+                time.sleep(5)
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
@@ -501,7 +501,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, warm_reset=False, pc=True):
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, warm_reset=False, pc=True, v12_reset=False):
         expstr = ["DSC# "]
         ret = 0
         if slot == 0 or slot > 10:
@@ -519,6 +519,13 @@ class nic_con:
         if pc:
             if warm_reset:
                 self.nic_warm_reset(session, slot)
+            elif v12_reset:
+                print("Powercycling 12V...")
+                cmd = "turn_on_slot_12v.sh off {}".format(slot)
+                common.session_cmd(session, cmd)
+                time.sleep(5)
+                cmd = "turn_on_slot_12v.sh on {}".format(slot)
+                common.session_cmd(session, cmd)
             else:
                 print("Powercycling...")
                 cmd = "turn_on_slot.sh off {}".format(slot)

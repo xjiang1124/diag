@@ -69,7 +69,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline("")
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -103,6 +103,9 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
         print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
         return -1
+
+    time.sleep(3)
+    exp_cmd(session, "", pass_sig_list="uart:~\$", timeout=10)
 
     # For non-ainic, keep pressing any key to stop N1 autoboot
     for i in range(kwargs.get('n1_autoboot_delay', 10)): #10 = 2 keypresses per sec
@@ -250,6 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("--boot_to", "-b", type=str, choices=stage, default=[stage[3]], help="Boot stage: a35_uboot/zephyr/n1_uboot/linux", nargs=1)
     parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
 
