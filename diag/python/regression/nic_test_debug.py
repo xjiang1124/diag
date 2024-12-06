@@ -21,6 +21,7 @@ import sal_con
 from nic_con import nic_con
 from nic_test import nic_test
 from nic_test_v2 import nic_test_v2
+from ts_control import ts_control
 
 class nic_test_debug:
     def __init__(self):
@@ -30,6 +31,7 @@ class nic_test_debug:
         self.nic_con = nic_con()
         self.nic_test = nic_test()
         self.nic_test_v2 = nic_test_v2()
+        self.ts_con = ts_control()
         self.encoding = common.encoding
 
     def nic_port_up(self, args):
@@ -99,7 +101,7 @@ class nic_test_debug:
             if ret != 0:
                 return ret
             try:
-                self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+                self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:")
             except pexpect.TIMEOUT:
                 print ("Faied to dump pcie trace")
                 return -1
@@ -237,6 +239,56 @@ class nic_test_debug:
 
         return ret
 
+    def srv_prbs(self, args):
+        # miniPC session 
+        session = common.session_start()
+        ret = common.ssh_login(session, args.mini_ip, "diag", "lab123")
+        if ret != 0:
+            return
+
+        tcl_ending = "tclsh]"
+        sudo_ending = "\#"
+        common.switch_to_sudo(session, "lab123", sudo_ending)
+        common.session_cmd(session, "rmmod ftdi_sio", ending=sudo_ending)
+        common.session_cmd(session, "rmmod usbserial", ending=sudo_ending)
+        common.session_cmd(session, "export MTP_TYPE=MTP_MATERA", ending=sudo_ending)
+        common.session_cmd(session, "cd "+args.tcl_path, ending=sudo_ending)
+
+        # UaRT session
+        uart_session = common.session_start()
+        self.ts_con.connect_ts_port(uart_session, args.ts_ip, args.ts_port, "uart:")
+
+        for ite in range(args.num_ite):
+            print("===== Ite: ", ite, " =====")
+            
+            # Reboot NIC first
+            common.session_cmd(uart_session, "kernel reboot cold", ending="uart:")
+
+            common.session_cmd(session, "./MTP -s 384 -p -y", ending=tcl_ending)
+            common.session_cmd(session, "pcie_mtp_prbs_server_setup_test", ending=tcl_ending, timeout=120)
+            i = common.session_cmd_exp_multi(session, "pcie_mtp_prbs_server_check_test "+args.prbs_dura, exp_list=["PCIe PRBS PASS", "PCIe PRBS FAIL"], ending=tcl_ending, timeout=600)
+            print("PRBS Index: ", i)
+
+            session.expect(tcl_ending)
+            #common.session_cmd(session, "", ending=tcl_ending)
+            common.session_cmd(session, "exit", ending=sudo_ending)
+            if args.stop_on_error == True and i != 0:
+                print("===== PCIe ERROR has happened! Quitting test =====")
+                break
+
+        print("===== Clean up =====")
+        # Quit sudo
+        common.session_cmd(session, "exit")
+        # Quit ssh
+        ret = common.ssh_exit(session)
+        common.session_stop(session)
+
+        # Exit telnet
+        self.ts_con.disconnect_ts_port(uart_session, "\$")
+        common.session_stop(uart_session)
+
+        return 0
+
     def qspi_prog_single(self, slot, qspi_image_path):
         print("qspi_image_path:", qspi_image_path)
         ret = 0
@@ -289,6 +341,7 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_port_up.add_argument("-inf", "--inf", help="inf", type=str, default='pcie')
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+
     parser_nic_port_up.set_defaults(func=test.nic_port_up)
 
     # NIC warm reboot during snake
@@ -313,6 +366,22 @@ if __name__ == "__main__":
     parser_qspi_prog_parallel.add_argument("-qspi_image_path", "--qspi_image_path", help="QSPI image folder path", type=str, default='/home/diag/qspi/pollara_standalone_ss36')
     parser_qspi_prog_parallel.add_argument("-ite", "--ite", help="Iteration of QSPI programming", type=int, default=1)
     parser_qspi_prog_parallel.set_defaults(func=test.qspi_prog_parallel)
+
+    parser_srv_prbs = subparsers.add_parser('srv_prbs', help='Run PRBS on server, between NIC and CPU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_srv_prbs.add_argument("-slot", "--slot", help="NIC slot", type=str, default="384")
+    parser_srv_prbs.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/xin/nic')
+    parser_srv_prbs.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
+    parser_srv_prbs.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_srv_prbs.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_srv_prbs.add_argument("-mini_ip", "--mini_ip", help="miniPC IP", type=str, default=None)
+    parser_srv_prbs.add_argument("-ts_ip", "--ts_ip", help="TS IP", type=str, default=None)
+    parser_srv_prbs.add_argument("-ts_port", "--ts_port", help="TS port", type=str, default=None)
+    parser_srv_prbs.add_argument("-prbs_dura", "--prbs_dura", help="PRBS duration", type=str, default=None)
+    parser_srv_prbs.add_argument("-stop_on_error", "--stop_on_error", help="Stop on error", action='store_true')
+    parser_srv_prbs.add_argument("-num_ite", "--num_ite", help="Number of iteration", type=int, default=1)
+
+    parser_srv_prbs.set_defaults(func=test.srv_prbs)
 
     try:
         args = parser.parse_args()

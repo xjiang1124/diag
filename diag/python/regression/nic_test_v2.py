@@ -433,7 +433,7 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+        if sal_con.enter_a35_zephyr(int(args.slot), session, v12_reset=args.v12_reset):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             ret = -1
             return ret
@@ -481,8 +481,8 @@ class nic_test_v2:
 
         session = common.session_start()
         # set spimode to be off
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
+        #cmd = "fpgautil spimode {} off".format(args.slot)
+        #common.session_cmd(session, cmd)
         print("=== TCL ENV setup ===")
         tcl_path = args.tcl_path
         common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
@@ -527,6 +527,10 @@ class nic_test_v2:
                     print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
                     ret = -1
                     return ret
+#            if sal_con.enter_a35_zephyr(int(args.slot), session, v12_reset=args.v12_reset):
+#                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+#                ret = -1
+#                return ret
         else:
             if args.snake_type == "esam_pktgen_llc_sor" or \
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
@@ -1734,6 +1738,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
+    parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC snake test from mtp
@@ -1746,6 +1751,7 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-dura", "--dura", help="Duration", type=str, default="30")
     parser_nic_port_up.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_port_up.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 
     # Enable/Disable WP single
