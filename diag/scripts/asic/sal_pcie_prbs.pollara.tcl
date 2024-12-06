@@ -6,56 +6,6 @@ set vmarg       [lindex $argv 2]
 set dura        [lindex $argv 3]
 set mtp_clk     [lindex $argv 4]
 
-proc get_vmarg_by_index_vdd {corner_idx} {
-    dict set volt_VDD_Dict UU_1   650
-    dict set volt_VDD_Dict UU_2   665
-    dict set volt_VDD_Dict UU_3   680
-    dict set volt_VDD_Dict UU_4   695
-    dict set volt_VDD_Dict UU_5   710
-    dict set volt_VDD_Dict UU_6   725
-    dict set volt_VDD_Dict UU_7   740
-    dict set volt_VDD_Dict UU_8   755
-    dict set volt_VDD_Dict UU_9   770
-    dict set volt_VDD_Dict UU_10  785
-    dict set volt_VDD_Dict UU_11  800
-
-    dict set volt_VDD_Dict UU_30  710
-    dict set volt_VDD_Dict UU_31  710
-    dict set volt_VDD_Dict UU_32  750
-
-    if {[dict exists $volt_VDD_Dict $corner_idx]} {
-        return [dict get $volt_VDD_Dict $corner_idx]
-    } else {
-        return -1
-    }
-}
-
-proc set_vmarg { vmarg card_type } {
-    # do vmarg
-    if {$vmarg == "normal"} {
-        plog_msg "Vmarg: $vmarg"
-        return
-    } elseif {$vmarg == "high"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 840
-        return
-    } elseif {$vmarg  == "low"} {
-        plog_msg "Vmarg: $vmarg"
-        sal_set_margin_by_value vdd 760
-        return
-    }
-
-    plog_msg "Vmargin with index"
-    set key "${vmarg}"
-    set tgt_vdd_volt [get_vmarg_by_index_vdd $key]
-    plog_msg "key: $key; tgt_vdd_volt: $tgt_vdd_volt"
-    sal_set_margin_by_value VDD $tgt_vdd_volt
-
-    set vdd_volt [sal_get_vout VDD]
-    plog_msg "Set vmarg: vdd_volt: $vdd_volt"
-    sal_print_voltage_temp_from_j2c
-}
-
 set ASIC_SRC $::env(ASIC_SRC)
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -108,19 +58,11 @@ set ::env(MTP_PCIE_USE_REFCLK_0) $mtp_clk
 #rds sal0.txs.txs\[0].base
 set err_cnt_init [ plog_get_err_count ]
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
-set fn "snake_slot${slot}_${cur_time}.log"
+set fn "pcie_prbs_slot${slot}_${cur_time}.log"
 plog_start $fn
 
 plog_msg "card_type = $card_type"
 sal_print_die_id
-
-if { $vmarg == "high" || $vmarg == "low" || $vmarg == "normal" } {
-    set new_vmarg $vmarg
-} else {
-    set new_vmarg [string range $vmarg 2 end]
-    set new_vmarg "UU${new_vmarg}"
-}
-plog_msg "new_vmarg: $new_vmarg"
 sal_set_vmarg $new_vmarg 
 
 pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
