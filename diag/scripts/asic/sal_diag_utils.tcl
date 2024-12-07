@@ -50,7 +50,7 @@ proc set_pollara_frequency {{arm_freq "1500"} {protomode "yes"}} {
     }
 }
 
-proc reset_to_proto_mode {} {
+proc reset_to_proto_mode {{verbosity "noisy"}} {
     # Avoid getting a VRD fault on Leni when
     #  protomode is set while ARM is running
     #  Ensure ARM is in reset, other cores out of reset
@@ -74,12 +74,15 @@ proc reset_to_proto_mode {} {
     clear_resetcode
     plog_msg "Disabling WDT"
     ssi_cpld_write 0x1 0x0
-    sal_arm_show_reset
-    plog_msg "sal_soc_dump_slv_cntrs"
-    sal_soc_dump_slv_cntrs
-    plog_msg "sal_soc_dump_mst_cntrs"
-    sal_soc_dump_mst_cntrs
-    sal_dump_cpld_regs
+
+    if { $verbosity == "noisy" } {
+        sal_arm_show_reset
+        plog_msg "sal_soc_dump_slv_cntrs"
+        sal_soc_dump_slv_cntrs
+        plog_msg "sal_soc_dump_mst_cntrs"
+        sal_soc_dump_mst_cntrs
+        sal_dump_cpld_regs
+    }
 }
 
 proc set_pollara_low_power_mode {} {
