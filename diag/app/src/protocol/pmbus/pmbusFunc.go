@@ -36,6 +36,35 @@ func Close() (err int) {
 
 }
 
+/**********************************************************************
+*  I2C PEC CODE --> Code to generate i2c pec byte
+* 
+* 
+***********************************************************************/ 
+const POLY    uint32 = (0x1070 << 3)
+
+func I2C_generate_pec(crc uint8, data []uint8) (pec uint8, err int) {
+    var i int
+
+    for i=0; i<len(data);i++ {
+       crc = crc8(uint16(crc ^ data[i]) << 8)
+    }
+    pec = crc
+    return
+}
+
+
+func crc8(data uint16) (data8 uint8) {
+    for i:=0; i<8; i++ {
+        if (data & 0x8000) == 0x8000 {
+            data = (data ^ uint16(POLY))
+        }
+        data = (data << 1)
+    }
+    data8 = uint8(data >> 8)
+    return
+}
+
 
 func Convert_vr13_5mvVID(data uint16) (integer uint64, dec uint64, err int) {
     var vr13 float64

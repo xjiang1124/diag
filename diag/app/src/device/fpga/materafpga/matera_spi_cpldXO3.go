@@ -10,7 +10,7 @@ import (
     "strings"
     "strconv"
     "time"
-    "io"
+    //"io"
 )
 
 
@@ -60,6 +60,9 @@ var CPLDXO3_DISABLE_CONFIG_INTF_OP_RDLNG uint32 = 0
 
 var CPLDXO3_RD_USERCODE_OP             = []byte{0xC0, 0x00, 0x00, 0x00}
 var CPLDXO3_RD_USERCODE_OP_RDLNG       uint32 = 4
+
+var CPLDXO3_WR_USERCODE_OP             = []byte{0xC2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+var CPLDXO3_WR_USERCODE_OP_RDLNG       uint32 = 0
 
 var CPLDXO3_RD_DEVICE_ID_OP            = []byte{0xE0, 0x00, 0x00, 0x00}
 var CPLDXO3_RD_DEVICE_ID_OP_RDLNG      uint32 = 4
@@ -146,6 +149,7 @@ func Spi_cpldXO3_spi_write_reg(spiNumber uint32, reg uint8, data uint8) (err err
     }
     return
 }
+
 func Spi_cpldXO3_read_usercode(spiNumber uint32) (ucode uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
@@ -157,6 +161,21 @@ func Spi_cpldXO3_read_usercode(spiNumber uint32) (ucode uint32, err error) {
         ucode = ucode | (uint32(data[j])<<uint32(i))
         j++
     }
+    return
+}
+
+func Spi_cpldXO3_write_usercode(spiNumber uint32, usercode uint32) (err error) {
+
+    CPLDXO3_WR_USERCODE_OP[4] = uint8((usercode>>24) & 0xFF)
+    CPLDXO3_WR_USERCODE_OP[5] = uint8((usercode>>16) & 0xFF)
+    CPLDXO3_WR_USERCODE_OP[6] = uint8((usercode>>8)  & 0xFF)
+    CPLDXO3_WR_USERCODE_OP[7] = uint8(usercode & 0xFF)
+    fmt.Println(CPLDXO3_WR_USERCODE_OP)
+    _, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_WR_USERCODE_OP, CPLDXO3_WR_USERCODE_OP_RDLNG) 
+    if err != nil {
+        return
+    }
+    
     return
 }
 
@@ -1100,6 +1119,86 @@ func Spi_cpldXO3_erase_flash(spiNumber uint32, image string) (err error) {
 
 
 
+func Spi_cpldXO3_program_usercode(spiNumber uint32, image string, usercode uint32) (err error) {
+
+    var data32 uint32 = 0
+    //var config uint32 = 0
+
+
+    if spiNumber > SPI_DBG_SLOT {
+        err = fmt.Errorf("ERROR:  Spi_cpldXO3_program_flash. Spi Bus entered = %x.  Max Bus Number=%x    i=%d\n", spiNumber, SPI_DBG_SLOT)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+
+    err = Spi_cpldXO3_enable_config_interface(spiNumber)
+    if err != nil {
+        return
+    }
+    data32, err = Spi_cpldXO3_read_busy_flag(spiNumber)
+    if err != nil {
+        return
+    }
+    if data32 & CPLD_BUSYFLAG_BUSY_BIT == CPLD_BUSYFLAG_BUSY_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
+    if err != nil {
+        return
+    }
+    if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+    if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
+        err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+        cli.Printf("e", "%v", err)
+        return
+    }
+
+    err = Spi_cpldXO3_reset_config_flash(spiNumber, image)
+    if err != nil {
+        return
+    }
+
+
+    fmt.Printf("Writing usercode row 0x%x\n", usercode)
+    err = Spi_cpldXO3_write_usercode(spiNumber, usercode)
+    if err != nil {
+         return
+    }
+
+    err = Spi_cpldXO3_set_programming_done(spiNumber)
+    if err != nil {
+        return
+    }
+
+    err = Spi_cpldXO3_disable_config_interface(spiNumber)
+    if err != nil {
+        return
+    }
+    err = Spi_cpldXO3_no_op_cmd(spiNumber)
+    if err != nil {
+        return
+    }
+
+
+    if err == nil {
+        fmt.Printf("Programming PASSED\n")
+    } else {
+        fmt.Printf("Programming FAILED\n")
+    }
+
+    return
+}
+
+
+
 
 
 /////////////////////////////////////////////////////
@@ -1221,6 +1320,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
     if err != nil {
         return
     }
+
     if config == FEATUREROW {
         err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, fileData)
         if err != nil {
@@ -1228,6 +1328,21 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
         }
     } else {
         err = Spi_cpldXO3_program_page_flash_cmd(spiNumber, config, fileData)
+        if err != nil {
+            return
+        }
+    }
+
+    if config == CONFIG0 {
+        fmt.Printf("Writing usercode row 0x10060000\n")
+        err = Spi_cpldXO3_write_usercode(spiNumber, 0x10060000)
+        if err != nil {
+            return
+        }
+    }
+    if config == CONFIG1 {
+        fmt.Printf("Writing usercode row 0x10060001\n")
+        err = Spi_cpldXO3_write_usercode(spiNumber, 0x10060001)
         if err != nil {
             return
         }
@@ -1353,90 +1468,97 @@ func Spi_cpldXO3_convert_jed_file(filename string) (err error) {
 }
 
 
+
+/****************************************************************************************
+DESIGN NAME:    malfa_impl1.ncd
+DEVICE NAME:    LCMXO3D-9400HC
+CREATED BY: Lattice Semiconductor
+CREATION DATE:  Fri Aug 30 16:34:13
+DATA:
+010001010000000001000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000001000011000100000
+
+**** DIAG PROGRAMMING FEATURE ROW *************
+[2024-09-04_11:55:14] diag@MTP:$ hexdump -C slot3_feature_row.bin
+00000000  45 00 40 00 00 00 00 00  00 00 00 00 00 00 86 20  |E.@............ |
+00000010
+
+
+**** DONGLE PROGRAMMING FEATURE ROW *************
+[2024-09-04_11:55:10] diag@MTP:$ hexdump -C fea.bin
+00000000  00 00 00 00 45 00 40 00  00 00 00 00 00 00 00 00  |....E.@.........|
+00000010
+****************************************************************************************/
 func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
     WRdata := []byte{}
-    bytes := []uint8{}
-    var u64 uint64 = 0
-    var start, j int
+    var max_row int = 12541
+    var lines_converted int = 0
+    var start_convert int = 0
+    //var u64 uint64 = 0
 
-    if strings.Contains(filename, "fea")==true {
-        fmt.Printf(" fea file detected\n")
+    if strings.Contains(filename, ".fea")==true {
+        fmt.Printf(" Jed file detected\n")
     } else {
-        err = fmt.Errorf("ERROR: Input file is not a fea file type!!\n")
+        err = fmt.Errorf("ERROR: Input file is not a jed file type!!\n")
         cli.Printf("e", "%v", err)
         return
     }
 
     inF, err := os.Open(filename)
     if err != nil {
-        fmt.Printf(" Failed to open filename=%s.   ERR=%s\n", filename, err)
-        return
-    }
-    filename = strings.Replace(filename, "fea", "bin", 1)
-    fmt.Printf(" BIN FILENAME = %s\n", filename)
-
-    rd := bufio.NewReader(inF)
-    for {
-        tbyte := []byte{}
-        tbyte, err = rd.ReadBytes('\n')
-
-        bytes = append(bytes, tbyte...)
-
-        if err == io.EOF {
-            break
-        }
-
-        if err != nil {
-            fmt.Printf("[ERROR] READING FEATURE ROW FILE  ERR=%s\n", err)
-            inF.Close()
-            return 
-        }
-    }
-    inF.Close()
-
-    for i:=0x00; i<len(bytes)-5; i++ {
-        if bytes[i] == 'T' && bytes[i+1] == 'A' && bytes[i+2] == ':' {
-            fmt.Printf("Prefix Match %.02x %.02x\n", bytes[i+3],bytes[i+4]);
-            if bytes[i+4] == 0x0A {
-                start = i+5
-                fmt.Printf("Prefix Match2 start =%x %x\n", start, len(bytes));
-                break
-            } else {
-                start = i+4
-                fmt.Printf("Prefix Match1 start =%x %x\n", start, len(bytes));
-                break
-            }
-        }
-    }
-
-
-
-
-    for i:=start; i<len(bytes); {
-        fmt.Printf("I=%x\n", i);
-        u64, _ = strconv.ParseUint(string(bytes[i:(i+8)]), 2, 8)
-        WRdata = append(WRdata, uint8(u64))
-        //if i==0xF7 {
-        //    i = i+2
-        //}
-        i = i + 8
-        j++
-        if j == 16 {
-            break
-        }
-    }
-
-    //Write converted JED file to BIN file
-    outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-    if err != nil {
         fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
         return
     }
+    filename = strings.Replace(filename, ".fea", ".bin", 1)
+    fmt.Printf(" BIN FILENAME = %s\n", filename)
+    outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
+        inF.Close()
+        return
+    }
+
+    scanner := bufio.NewScanner(inF)
+    for scanner.Scan() {
+        if(lines_converted == max_row) {
+            break
+        }
+        lines := scanner.Text()
+        bytes := []uint8(lines)
+        if strings.Contains(lines, "DATA:")==true {
+            start_convert=1
+            continue
+        }
+
+        if start_convert > 0 {
+            WRdata = append(WRdata, 0x00)
+            WRdata = append(WRdata, 0x00)
+            WRdata = append(WRdata, 0x00)
+            WRdata = append(WRdata, 0x00)
+            var u64 uint64 = 0
+            for i:=0; i<len(bytes); i=i+8 {
+                u64, _ = strconv.ParseUint(string(bytes[i:(i+8)]), 2, 8)
+                WRdata = append(WRdata, uint8(u64))
+            }
+            start_convert=0
+        }
+    } 
+    
+    if err = scanner.Err(); err != nil {
+        fmt.Println(err)
+        inF.Close() 
+        outF.Close()
+        return
+    }
+
     outF.WriteString(string(WRdata[:]))
+
+    inF.Close()
     outF.Close()
 
     return
 }
+
 
 
 

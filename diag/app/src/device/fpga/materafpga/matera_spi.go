@@ -86,6 +86,7 @@ const SPI_TRGT_DEVICE_SPROM_WR    uint32 = 5  //SPROM WRITE
 const SPI_TRGT_DEVICE_CPLD_FLASH  uint32 = 6  //cpld flash
 const SPI_TRGT_DEVICE_SPI2I2C     uint32 = 7  //SPI to I2C FOR QSFP
 const SPI_TRGT_DEVICE_FPGA        uint32 = 8  //fpga flash
+const SPI_TRGT_DEVICE_SPI2SMBUS   uint32 = 9  //DesignWare I2C (SMBUS)
 
 //Global to keep track if we have enabled a spi at the cpld so we don't do constant i2c access to the cpld to enable it on every spi transcation
 var TARGET_SPI_ENABLED             uint32 = 999
@@ -98,7 +99,7 @@ func ReadByteSmbus(devName string, offset uint, slot uint32) (Data byte, err int
 
     uut := fmt.Sprintf("UUT_%d", slot+1)
     lock, _ := hwinfo.PreUutSetup(uut)
-
+ 
     //Opens smbus connection
     i2cSmbus, err := i2cinfo.GetI2cInfo(devName)
     if err != errType.SUCCESS {
@@ -137,7 +138,7 @@ func WriteByteSmbus(devName string, offset uint, val byte, slot uint32) (err int
         cli.Println("e", "Failed to obtain smbus info for dev", devName)
         hwinfo.PostUutClean(lock)
         return
-    }
+    } 
     err = smbusNew.Open(devName, i2cSmbus.Bus, i2cSmbus.DevAddr)
     if err != errType.SUCCESS {
         cli.Println("e", "Failed to open smbus: dev", devName,
@@ -267,9 +268,9 @@ func CpldEnableSPI_old(spiNumber uint32, targetSPI uint32) (err error) {
 
 
 /*********************************************************************
-* Set the SPI SELECT on the Netwrok Adapter CPLD
-* 
-* DEV = CPLD_SLOT0 - CPLD_SLOT9 
+*  
+* Set the SPI SELECT on the Netwrok Adapter CPLD register 0x05. 
+* This set the target device to access with SPI 
 *  
 *********************************************************************/
 func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
@@ -286,6 +287,8 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
             data8 = 0x01
         case SPI_TRGT_DEVICE_SPI2I2C: 
             data8 = 0x02
+        case SPI_TRGT_DEVICE_SPI2SMBUS:
+            data8 = 0x03
         case SPI_TRGT_DEVICE_QSPI0:
             data8 = 0x04
         case SPI_TRGT_DEVICE_QSPI1:
@@ -296,7 +299,6 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
             return
         }
     }
-
     err_i = WriteByteSmbus(devName, uint(0x05), data8, spiNumber) 
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: CpldEnableSPI: Slot-%d %s i2c write access to 0x05 failed\n", spiNumber, devName);
@@ -617,26 +619,27 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
             }
         }
 
-        if (CPLD_OLD_OR_NEW & 0x40000000) == 0 {
-            data8, err_i := ReadByteSmbus("CPLD", 0x92, spiNumber) 
-            if err_i != errType.SUCCESS {
-                err = fmt.Errorf("ERROR: Slot-%d CPLD i2c access failed at offset 0x92 to check date code\n", spiNumber+1);
-                fmt.Printf("%v", err)
-                goto SPI_TRANSACTION_END2
-            }
-            CPLD_OLD_OR_NEW = 0x40000000 | uint32(data8)
-        }
-        if (CPLD_OLD_OR_NEW & 0xFF) == 0 {
-            err = CpldEnableSPI_old(spiNumber, spiDevice)
-            if err != nil {
-                goto SPI_TRANSACTION_END2
-            }
-        } else {
+        //Enable the SPI CS on THE CPLD.  i.e. THE SPI TARGET DEVICE / IP
+        //if (CPLD_OLD_OR_NEW & 0x40000000) == 0 {
+        //    data8, err_i := ReadByteSmbus("CPLD", 0x92, spiNumber) 
+        //    if err_i != errType.SUCCESS {
+        //        err = fmt.Errorf("ERROR: Slot-%d CPLD i2c access failed at offset 0x92 to check date code\n", spiNumber+1);
+        //        fmt.Printf("%v", err)
+        //        goto SPI_TRANSACTION_END2
+        //    }
+        //    CPLD_OLD_OR_NEW = 0x40000000 | uint32(data8)
+        //}
+        //if (CPLD_OLD_OR_NEW & 0xFF) == 0 {
+        //    err = CpldEnableSPI_old(spiNumber, spiDevice)
+        //    if err != nil {
+        //        goto SPI_TRANSACTION_END2
+        //    }
+        //} else {
             err = CpldEnableSPI(spiNumber, spiDevice)
             if err != nil {
                 goto SPI_TRANSACTION_END2
             }
-        }
+        //}
         
         if SPIDEBUGENABLE > 0 {
             fmt.Printf("\nSPI -->")
@@ -752,6 +755,7 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
 SPI_TRANSACTION_END:
         MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_CONTROL_OFFSET, 0x00) //turn off spi output
         MateraWriteU32(SpiTable[spiNumber].spiMBaddr + SPI_MUXSEL_OFFSET, 0x01)  //turn mux select to FPGA off
+        //2ms wait time
     } else {
         err = fmt.Errorf("ERROR matera_spi_generic_transaction. FPGA SPI BUS-%d, STATUS REGISTER, BIT31 (FIFO MODE) NOT SET.  Status Reg = 0x%x\n", spiNumber, data32)
         cli.Printf("e", "%v", err)

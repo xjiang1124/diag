@@ -321,7 +321,6 @@ func Spi_flash_WriteImage(spiNumber uint32, partition string, filename string) (
 
 
 func Spi_flash_erase_all_sectors(spiNumber uint32) (err error) {
-    //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
     var i uint32 = 0
 
     fmt.Printf("SPI BUS=%d\n", spiNumber)
@@ -340,8 +339,6 @@ func Spi_flash_erase_all_sectors(spiNumber uint32) (err error) {
 
 
 func Spi_flash_erase_sector(spiNumber uint32, addr uint32) (err error) {
-    //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
-
     err = Spi_flash_disable_4byte_addr_mode(spiNumber, 0)
     if err != nil {
         return
