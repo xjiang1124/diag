@@ -1495,14 +1495,14 @@ class nic_test_v2:
                         break
                     self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
                     if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-                        print("Failed ECC check")
+                        print("EDMA test FAILED ECC check")
                         ret = -1
                         break
                     time.sleep(10)
                 self.nic_con.uart_session_cmd(uart_session, "killall eth_dbgtool")
                 self.nic_con.uart_session_cmd(uart_session, "\r")
         except pexpect.TIMEOUT:
-            print ("failed to run EDMA test")
+            print("FAILED to run EDMA test")
             ret = -1
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
@@ -1521,6 +1521,7 @@ class nic_test_v2:
             return -1
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
+        print("EDMA test PASSED")
         return ret
 
     def read_qsfp_from_arm(self, args):
