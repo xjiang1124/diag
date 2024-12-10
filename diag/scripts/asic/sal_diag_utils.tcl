@@ -1,6 +1,20 @@
-proc clear_resetcode {} {
-    plog_msg "Clearing CPLD resetcode register"
-    ssi_cpld_write 0x30 0x0
+proc clear_resetcode {expected_code} {
+    set reg_data [ssi_cpld_read 0x30]
+    if { $reg_data == $expected_code } {
+        plog_msg "Clearing CPLD resetcode register"
+        ssi_cpld_write 0x30 0x0
+    } else {
+        plog_err "CPLD resetcode register 0x30: $reg_data"
+    }
+}
+
+proc clear_vrd_faults {} {
+    plog_msg "Clearing VRD fault"
+    sleep 2 ; # wait for power sequencing after an unreset
+    sal_tps53688_clear_faults 2 0x60 0
+    if {[dict exists [sal_i2c_tbl] ARM]} {
+        sal_tps53688_clear_faults 2 0x60 1
+    }
 }
 
 proc check_vrd_fault {} {
@@ -46,43 +60,91 @@ proc set_pollara_frequency {{arm_freq "1500"} {protomode "yes"}} {
             # redo proto mode
             sal_proto_mode_unreset
         }
-        clear_resetcode
+        clear_resetcode 0x0b
+    }
+}
+
+proc cpld_disable_wdt {} {
+    plog_msg "Disabling WDT"
+    set reg_data [ssi_cpld_read 0x1]
+    ssi_cpld_write 0x1 [expr {$reg_data & 0xFD}]
+}
+
+proc cpld_set_core_pll {{freq 1100}} {
+    set reg_data [ssi_cpld_read 0x11]
+
+    switch $freq {
+        100     {set new_div 0}
+        275     {set new_div 1}
+        550     {set new_div 2}
+        1100    {set new_div 3}
+        default {set new_div 3}
+    }
+    plog_msg "Setting CORE PLL to $freq"
+    ssi_cpld_write 0x11 [expr { ($reg_data & 0xFC) | ($new_div & 0x3) }]
+
+
+    set reg_data [ssi_cpld_read 0x11]
+    plog_msg "New CORE PLL: $reg_data"
+}
+
+proc cpld_set_cpu_pll {{freq 3000}} {
+    set reg_data [ssi_cpld_read 0x11]
+    switch $freq {
+        100     {set new_div 0}
+        750     {set new_div 1}
+        1500    {set new_div 2}
+        3000    {set new_div 3}
+        default {set new_div 3}
+    }
+    plog_msg "Setting CPU PLL to $freq"
+    ssi_cpld_write 0x11 [expr { ($reg_data & 0xF3) | ($new_div & 0xC) }]
+
+    set reg_data [ssi_cpld_read 0x11]
+    plog_msg "New CPU PLL: $reg_data"
+}
+
+proc verify_soc_cntrs {} {
+    plog_msg "sal_soc_dump_slv_cntrs"
+    sal_soc_dump_slv_cntrs
+    plog_msg "sal_soc_dump_mst_cntrs"
+    sal_soc_dump_mst_cntrs
+
+    set regs { CNT_d_aw CNT_d_w CNT_d_b CNT_d_ar CNT_d_r }
+    foreach j $regs {
+        set a [csr_read sal0.np.npmaxi\[18\].${j}] ; # A35 cntrs at indx 18
+        set b [expr {$a > 0 ? $a :  "-"}]
+        if { $b != "-" } { plog_err "ARM counters are not zero" ; break }
     }
 }
 
 proc reset_to_proto_mode {{verbosity "noisy"}} {
-    # Avoid getting a VRD fault on Leni when
-    #  protomode is set while ARM is running
-    #  Ensure ARM is in reset, other cores out of reset
-    #
-    # The 2nd unreset may throw a VRD fault too
-    #  To avoid that, put ARM in reset after sal_pc.
-    #
-    # Despite this, there is a timing issue, sometimes it works.
-    sal_set_proto_mode 0
-    sal_proto_mode_unreset
-    plog_msg "Clearing expected VRD fault"
-    #sal_tps53688_clear_fault 2 0x60 0
-    sal_smbus_write_byte_data 2 0x60 0x0 0x0
-    sal_smbus_write_byte 2 0x60 0x03
-    set card_type [sal_get_card_type]
-    if { $card_type != "POLLARA" } {
-        #sal_tps53688_clear_fault 2 0x60 1
-        sal_smbus_write_byte_data 2 0x60 0x0 0x1
-        sal_smbus_write_byte 2 0x60 0x03
-    }
-    clear_resetcode
-    plog_msg "Disabling WDT"
-    ssi_cpld_write 0x1 0x0
+    ### chip draws high current when in reset
+    ### to avoid this, lower the clocks before putting in reset
+    ### when coming out of reset, the CPLD will raise the clocks back
 
-    if { $verbosity == "noisy" } {
-        sal_arm_show_reset
-        plog_msg "sal_soc_dump_slv_cntrs"
-        sal_soc_dump_slv_cntrs
-        plog_msg "sal_soc_dump_mst_cntrs"
-        sal_soc_dump_mst_cntrs
-        sal_dump_cpld_regs
-    }
+    # kill clock
+    cpld_set_core_pll 100
+    cpld_set_cpu_pll 100
+
+    # set CPLD bit
+    sal_set_proto_mode 0
+
+    # keep ARM in reset. unreset other cores
+    sal_proto_mode_powerup
+
+    # current CPLD version does not reset CPU PLL to default
+    # revert CPU PLL back
+    cpld_set_cpu_pll 3000
+
+    # cleanup
+    sal_j2c
+    cpld_disable_wdt
+    clear_resetcode 0x13
+
+    sal_arm_show_reset
+    verify_soc_cntrs
+    plog_msg [exec inventory -sts -slot $::slot]
 }
 
 proc set_pollara_low_power_mode {} {
