@@ -302,6 +302,7 @@ class nic_test_debug:
         session = common.session_start()
         common.session_cmd(session, "cd {}".format(qspi_image_path))
         ret = common.session_cmd(session, "./qspi_prog.sh {}".format(slot), ending=["QSPI PROG PASSED", "FAILED"], timeout=180)
+        #ret = common.session_cmd(session, "fpgautil flash {} 1 wrenrdsr".format(slot), ending=["Status Reg=0x02", "Status Reg=0x00"], timeout=5)
         print("QSPI programming result:", ret)
         if ret != 1:
             print("ERROR :: QSPI programming has failed!")
@@ -318,6 +319,12 @@ class nic_test_debug:
             print("=== Iteration {} ===".format(ite))
             # run qspi_prog_single in parallel
             slot_list = args.slot_list.split(',')
+            for slot in slot_list:
+                session = common.session_start()
+                # set spimode to be off
+                cmd = "fpgautil spimode {} off".format(slot)
+                common.session_cmd(session, cmd)
+                common.session_stop(session)
             test_args = ()
             test_kwargs = {"qspi_image_path": args.qspi_image_path}
             fail_nic_list = self.nic_test_v2.split_into_threads(self.qspi_prog_single, slot_list, *test_args, **test_kwargs)
@@ -363,7 +370,7 @@ if __name__ == "__main__":
     parser_qspi_prog_parallel = subparsers.add_parser('qspi_prog_parallel', help='NIC QSPI programming in parallel', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_qspi_prog_parallel.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
-    parser_qspi_prog_parallel.add_argument("-qspi_image_path", "--qspi_image_path", help="QSPI image folder path", type=str, default='/home/diag/qspi/pollara_standalone_ss36')
+    parser_qspi_prog_parallel.add_argument("-qspi_image_path", "--qspi_image_path", help="QSPI image folder path", type=str, default='/home/diag/qspi/leni_standalone_1121')
     parser_qspi_prog_parallel.add_argument("-ite", "--ite", help="Iteration of QSPI programming", type=int, default=1)
     parser_qspi_prog_parallel.set_defaults(func=test.qspi_prog_parallel)
 
