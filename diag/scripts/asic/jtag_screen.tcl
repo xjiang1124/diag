@@ -1,8 +1,22 @@
 # !/usr/bin/tclsh
+source /home/diag/diag/scripts/asic/cmdline.tcl
 
-##################################
-# Tests for screening Salina JTAG
-##################################
+set usage {
+    {sn.arg         ""                      "Serial number"}
+    {slot.arg       ""                      "Slot number"}
+    {vmarg.arg      "none"                  "Voltage margin"}
+    {vmarg_core.arg "none"                  "Set CORE VOUT value"}
+    {vmarg_arm.arg  "none"                  "Set ARM VOUT value"}
+    {logEn.arg      "yes"                   "Save to logfile"}
+    {loops.arg      "1"                     "Number of loops to run tests"}
+    {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
+    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
+}
+# rename argv variables to call them more easily
+array set arg [cmdline::getoptions argv $usage]
+foreach argname [array names arg] { set $argname $arg($argname) }
+if { $slot == "" } { puts "Missing required --slot arg" ; exit }
+parray arg
 
 proc define_test_list {{override_test_list ""}} {
     # borrowed from L1 test list format
@@ -17,10 +31,10 @@ proc define_test_list {{override_test_list ""}} {
     foreach test_name $names_list {
         switch $test_name {
             # #TEST NAME ############# RST PRE                      COMMAND              POST
-            ID         { set cmd_list [list 0 ""                       sal_jtag_id          ""  ] }
-            FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc  ] } ; # this test will lower the stage freq. need reset to restore 1.5GHz.
-            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      "" ] }
-            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      "" ] }
+            ID         { set cmd_list [list 0 ""                       sal_jtag_id          "" ] }
+            FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc ] }
+            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      verify_arm_frequency ] }
+            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      verify_arm_frequency ] }
 
             MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
             MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
@@ -76,15 +90,12 @@ proc mbist_with_diag {} {
     ### (they'll cover mbist as well but takes longer)
     if {$arm_err != 0} {
         plog_err "Errors encountered in ARM MBIST. Running diagnostics..."
-        set_pollara_frequency
         sal_jtag_arm_diag
     } elseif {$east_err != 0} {
         plog_err "Errors encountered in East MBIST. Running diagnostics..."
-        set_pollara_frequency
         sal_jtag_east_diag
     } elseif {$west_err != 0} {
         plog_err "Errors encountered in West MBIST. Running diagnostics..."
-        set_pollara_frequency
         sal_jtag_west_diag
     }
     check_vrd_fault
@@ -111,26 +122,9 @@ proc mbist_only_diag {} {
     check_vrd_fault
 }
 
-### handle args
-#package require cmdline
-source /home/diag/diag/scripts/asic/cmdline.tcl
-set usage {
-    {sn.arg         ""                      "Serial number"}
-    {slot.arg       ""                      "Slot number"}
-    {vmarg.arg      "none"                  "Voltage margin"}
-    {logEn.arg      "yes"                   "Save to logfile"}
-    {loops.arg      "1"                     "Number of loops to run tests"}
-    {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
-    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
-}
-# rename argv variables to call them more easily
-array set arg [cmdline::getoptions argv $usage]
-foreach argname [array names arg] { set $argname $arg($argname) }
-if { $slot == "" } { puts "Missing required --slot arg" ; exit }
-parray arg ; # print them out
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize asic lib
-source /home/diag/diag/scripts/asic/asic_tests.tcl
 set ASIC_LIB_BUNDLE "$tcl_path"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
 set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
@@ -138,8 +132,6 @@ set ASIC_GEN "$ASIC_SRC"
 set DIAG_SRC "$tcl_path/diag/scripts/asic/"
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
-#source /home/diag/diag/scripts/asic/sal_init.tcl
-source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize card properties
 set slot $slot
@@ -171,6 +163,18 @@ plog_msg "_msrd"
 plog_msg [eval _msrd]
 reset_to_proto_mode
 sal_set_vmarg $vmarg
+if {$vmarg_core != "none"} {
+    plog_msg "set vmarg VDD: $vmarg_core"
+    sal_set_margin_by_value VDD $vmarg_core
+    set new_volt [sal_get_vout VDD]
+    plog_msg "New VDD vout: $new_volt"
+}
+if {$vmarg_arm != "none"} {
+    plog_msg "set vmarg ARM: $vmarg_arm"
+    sal_set_margin_by_value ARM $vmarg_arm
+    set new_volt [sal_get_vout ARM]
+    plog_msg "New ARM vout: $new_volt"
+}
 sal_print_voltage_temp_from_j2c
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
@@ -254,9 +258,11 @@ diag_close_j2c_if $port $slot
 if { $final_rslt != 0 } {
     plog_msg "JTAG TESTS FAILED"
     plog_msg "JTAG TESTS FAILED"
+    exit -1
 } else {
     plog_msg "JTAG TESTS PASSED"
     plog_msg "JTAG TESTS PASSED"
+    exit 0
 }
 
 if { $logEn == "yes" } { plog_stop }
