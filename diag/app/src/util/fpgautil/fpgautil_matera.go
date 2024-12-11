@@ -1084,8 +1084,8 @@ func matera_fpga_cli() {
             materafpga.SpiBusEnableIOexpander(slot)
         } else if os.Args[3] == "off" {
             fmt.Printf("setting SPI Mode to OFF\n")
-            materafpga.SetJTAGbusToJTAG(slot)
             materafpga.SpiBusDisableIOexpander(slot)
+            materafpga.SetJTAGbusToJTAG(slot)
         } else {
             fmt.Printf(" ERROR: Invalid SPI Mode Command\n")
             fmt.Printf(" %s \n", errhelpMatera)

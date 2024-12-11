@@ -10,8 +10,14 @@ import (
     "fmt"
     "protocol/smbusNew"
     "time"
+    "github.com/gofrs/flock"
+    "encoding/json"
+    "os"
 )
 
+var mcp23008_lock_filename = "/tmp/mcp23008_lock.txt"
+var TARGET_SPI_IOEXPANDER_EN =[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var mcp23008_lock = flock.New(mcp23008_lock_filename)
 
 type spiDevMap struct{
     spiMBaddr     uint64
@@ -90,7 +96,7 @@ const SPI_TRGT_DEVICE_FPGA        uint32 = 8  //fpga flash
 //Global to keep track if we have enabled a spi at the cpld so we don't do constant i2c access to the cpld to enable it on every spi transcation
 var TARGET_SPI_ENABLED             uint32 = 999
 var TARGET_QSPI_UNRESET            bool = false
-var TARGET_SPI_IOEXPANDER_EN       bool = false
+//var TARGET_SPI_IOEXPANDER_EN       bool = false
 var CPLD_OLD_OR_NEW                uint32 = 0x00
 
 func ReadByteSmbus(devName string, offset uint, slot uint32) (Data byte, err int) {
@@ -309,6 +315,36 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
     return
 }
 
+// writeArrayToFile writes a 1D array to a file in JSON format
+func writeArrayToFile(fileName string, array []int) {
+    file, err := os.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+    if err != nil {
+        fmt.Errorf("Failed to open file: %v", err)
+    }
+    defer file.Close()
+
+    encoder := json.NewEncoder(file)
+    if err := encoder.Encode(array); err != nil {
+        fmt.Errorf("Failed to write mcp23008 status to file: %v", err)
+    }
+}
+
+// readArrayFromFile reads a 1D array from a JSON file
+func readArrayFromFile(fileName string) ([]int, error) {
+    file, err := os.Open(fileName)
+    if err != nil {
+        return nil, err
+    }
+    defer file.Close()
+
+    var array []int
+    decoder := json.NewDecoder(file)
+    if err := decoder.Decode(&array); err != nil {
+        return nil, err
+    }
+
+    return array, nil
+}
 
 /*********************************************************************
 * Enable the SPI Bus on the MATERA IOB MPC23008 I/O EXPANDER
@@ -317,11 +353,31 @@ func CpldEnableSPI(spiNumber uint32, targetSPI uint32) (err error) {
 *********************************************************************/
 func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     var dev string
-    var shift, data8 byte
+    var shift, data8, i byte
     err_i := errType.SUCCESS
 
-    if TARGET_SPI_IOEXPANDER_EN == true {
+    for i=0; i<100; i++ {
+        locked, err_l := mcp23008_lock.TryLock()
+        if err_l != nil {
+            fmt.Println("Error trying to lock the mcp23008 lock")
+        }
+        if locked {
+            break
+        }
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+    if i == 100 {
+        err = fmt.Errorf("ERROR: SpiBusDisableIOexpander: Slot-%d Failed to get lock on mcp23008\n", spiNumber+1);
         return
+    }
+    readArray, err_r := readArrayFromFile(mcp23008_lock_filename)
+    if err_r == nil {
+        if len(readArray) == 10 {
+            if readArray[spiNumber] == 1 {
+                mcp23008_lock.Unlock()
+                return
+            }
+        }
     }
 
     if ( spiNumber <= SPI_SLOT4 ) {
@@ -338,15 +394,16 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
-
     data8 = data8 & byte(^(1 << shift))
 
     err_i = mcp23008.WriteByteSmbus(dev, mcp23008.IODIR, data8) 
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
@@ -355,6 +412,7 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
@@ -364,10 +422,13 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
-    TARGET_SPI_IOEXPANDER_EN = true
+    TARGET_SPI_IOEXPANDER_EN[spiNumber] = 1
+    writeArrayToFile(mcp23008_lock_filename, TARGET_SPI_IOEXPANDER_EN)
+    mcp23008_lock.Unlock()
 
     return
 }
@@ -380,8 +441,31 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
 *********************************************************************/
 func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     var dev string
-    var shift, data8 byte
+    var shift, data8, i byte
     err_i := errType.SUCCESS
+    for i=0; i<100; i++ {
+        locked, err_l := mcp23008_lock.TryLock()
+        if err_l != nil {
+            fmt.Println("Error trying to lock the mcp23008 lock")
+        }
+        if locked {
+            break
+        }
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+    if i == 100 {
+        err = fmt.Errorf("ERROR: SpiBusDisableIOexpander: Slot-%d Failed to get lock on mcp23008\n", spiNumber+1);
+        return
+    }
+    readArray, err_r := readArrayFromFile(mcp23008_lock_filename)
+    if err_r == nil {
+        if len(readArray) == 10 {
+            if readArray[spiNumber] == 0 {
+                mcp23008_lock.Unlock()
+                return
+            }
+        }
+    }
 
     if ( spiNumber <= SPI_SLOT4 ) {
         dev = "EXPDER_IOBL"
@@ -397,6 +481,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
@@ -406,6 +491,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
@@ -414,6 +500,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
 
@@ -423,9 +510,12 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     if err_i != errType.SUCCESS {
         err = fmt.Errorf("ERROR: %s i2c access failed\n", dev);
         fmt.Printf("%v", err)
+        mcp23008_lock.Unlock()
         return
     }
-
+    TARGET_SPI_IOEXPANDER_EN[spiNumber] = 0
+    writeArrayToFile(mcp23008_lock_filename, TARGET_SPI_IOEXPANDER_EN)
+    mcp23008_lock.Unlock()
     return
 }
 
@@ -769,11 +859,12 @@ SPI_TRANSACTION_END2:
     }
     //For network adapter slots, need to set various enables / muxes to get spi working
     if spiNumber < SPI_FPGA {
+        //Disable spi bus on the iob card via the mcp23008 i/o expander,
+        // this needs to be done before set JTAG bus to JTAG
+        //SpiBusDisableIOexpander(spiNumber)
+
         //Disable the spi bus mux that muxes between spi and j2c
         //SetJTAGbusToJTAG(spiNumber)
-
-        //Enable spi bus on the iob card via the mcp23008 i/o expander
-        //SpiBusDisableIOexpander(spiNumber)
     }
     return 
 }

@@ -15,9 +15,13 @@ import (
 
     "common/cli"
     //"common/errType"
+    "github.com/gofrs/flock"
 )
 
 
+var fpga_misc_ctrl_reg_filename = "/tmp/fpga_misc_ctrl_reg.txt"
+var jtag_bus_spi = []int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var fpga_misc_ctrl_reg_lock = flock.New(fpga_misc_ctrl_reg_filename)
 
 const (
     ELBA0_PCIBUS = "0b:00.0"
@@ -515,17 +519,44 @@ func PSU_alert(PSUnumber uint32) (alert bool, err error) {
 *********************************************************************/
 func SetJTAGbusToSPI(slot uint32) (err error) {
     var data32 uint32 = 0
+    var i byte
 
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Invalid slot number -> %d \n", slot);
         fmt.Printf("%v", err)
         return
     }
-
+    for i=0; i<100; i++ {
+        locked, err_l := fpga_misc_ctrl_reg_lock.TryLock()
+        if err_l != nil {
+            fmt.Println("Error trying to lock the fpga_misc_ctrl_reg lock")
+        }
+        if locked {
+            break
+        }
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+    if i == 100 {
+        err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Slot-%d Failed to get lock\n", slot);
+        return
+    }
+    readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
+    if err_r == nil {
+        if len(readArray) == 10 {
+            if readArray[slot] == 1 {
+                fpga_misc_ctrl_reg_lock.Unlock()
+                return
+            }
+        }
+    }
     //Mask in the enable bit
     data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
     data32 |= (FPGA_MISC_CTRL_SLOT0_SPI_EN << slot) 
     MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
+    //write array to file
+    jtag_bus_spi[slot] = 1
+    writeArrayToFile(fpga_misc_ctrl_reg_filename, jtag_bus_spi)
+    fpga_misc_ctrl_reg_lock.Unlock()
 
     return
 }
@@ -541,18 +572,44 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
 *********************************************************************/
 func SetJTAGbusToJTAG(slot uint32) (err error) {
     var data32 uint32 = 0
+    var i byte
 
     if slot > MAXSLOT {
         err = fmt.Errorf("ERROR: SetJTAGbusToJTAG: Invalid slot number -> %d \n", slot);
         fmt.Printf("%v", err)
         return
     }
-
+    for i=0; i<100; i++ {
+        locked, err_l := fpga_misc_ctrl_reg_lock.TryLock()
+        if err_l != nil {
+            fmt.Println("Error trying to lock the fpga_misc_ctrl_reg lock")
+        }
+        if locked {
+            break
+        }
+        time.Sleep(time.Duration(100) * time.Millisecond)
+    }
+    if i == 100 {
+        err = fmt.Errorf("ERROR: SetJTAGbusToSPI: Slot-%d Failed to get lock\n", slot);
+        return
+    }
+    readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
+    if err_r == nil {
+        if len(readArray) == 10 {
+            if readArray[slot] == 0 {
+                fpga_misc_ctrl_reg_lock.Unlock()
+                return
+            }
+        }
+    }
     //Mask out the enable bit
     data32, err = MateraReadU32(FPGA_MISC_CTRL_REG)
     data32 = data32 & (^(FPGA_MISC_CTRL_SLOT0_SPI_EN << slot))
     MateraWriteU32(FPGA_MISC_CTRL_REG, data32) 
-
+    //write array to file
+    jtag_bus_spi[slot] = 0
+    writeArrayToFile(fpga_misc_ctrl_reg_filename, jtag_bus_spi)
+    fpga_misc_ctrl_reg_lock.Unlock()
     return
 }
 

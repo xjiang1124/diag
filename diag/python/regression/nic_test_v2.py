@@ -628,14 +628,14 @@ class nic_test_v2:
            args.snake_type != "esam_pktgen_ddr_burst":
             uart_session = common.session_start()
             self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
-            if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["uart:~\$"], timeout=5):
+            if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["uart:~\$"], timeout=5)[0]:
                 print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
                 return -1
             self.nic_con.uart_session_stop(uart_session)
             if args.card_type != "POLLARA":
                 uart_session = common.session_start()
                 self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
-                if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5):
+                if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
                     print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
                     return -1
                 self.nic_con.uart_session_stop(uart_session)
@@ -1419,11 +1419,109 @@ class nic_test_v2:
         # check uart console
         uart_session = common.session_start()
         self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
-        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5):
+        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
             print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
             return -1
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
+        return ret
+
+    def sal_edma_test(self, args):
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+        if card_type == "POLLARA":
+            print("===== FAILED: This test not applicable to Pollara")
+            return -1
+
+        session = common.session_start()
+        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+
+        print("Start Vmarge")
+        print("tcl_path:", args.tcl_path)
+        print("=== TCL ENV setup ===")
+        tcl_path = args.tcl_path
+        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "source source_env_path")
+        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        #common.session_cmd(session, "rm -f *")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        time.sleep(3)
+        cmd = "fpgautil spimode {} off".format(args.slot)
+        common.session_cmd(session, cmd)
+        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+        common.session_cmd(session, cmd)
+        print("\nDisable WDT since vmarg will occupy i2c bus")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
+        common.session_cmd(session, cmd, 360, False, "vmarg set")
+
+        print("Start test on N1")
+        uart_session = common.session_start()
+        ret = self.nic_con.uart_session_start(uart_session, args.slot)
+        if ret != 0:
+            return ret
+        try:
+            # clear interrupts before test
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts")
+            time.sleep(10)
+            # ECC check before test
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
+            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+                print("New interrupts before EDMA test")
+                ret = -1
+            else:
+                cmd = "eth_dbgtool ddr_stress 65 100 0 0 0 0 3 100 wrcnt 500 1 3 &"
+                self.nic_con.uart_session_cmd(uart_session, cmd, timeout=30, ending="wr_dst_sz ")
+                start_time = time.time()
+                while True:
+                    if time.time() - start_time > args.dura:
+                        break
+                    self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
+                    if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+                        print("EDMA test FAILED ECC check")
+                        ret = -1
+                        break
+                    time.sleep(10)
+                self.nic_con.uart_session_cmd(uart_session, "killall eth_dbgtool")
+                self.nic_con.uart_session_cmd(uart_session, "\r")
+        except pexpect.TIMEOUT:
+            print("FAILED to run EDMA test")
+            ret = -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        if ret != 0:
+            cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 1".format(args.slot)
+            common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
+
+        common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
+        common.session_stop(session)
+        # check uart console
+        uart_session = common.session_start()
+        self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
+        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
+            print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+        print("EDMA test PASSED")
         return ret
 
     def read_qsfp_from_arm(self, args):
@@ -1773,6 +1871,14 @@ if __name__ == "__main__":
     parser_mem_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
     parser_mem_test.add_argument("-threads", "--threads", help="number of memory copy threads to run", type=int, default=16)
     parser_mem_test.set_defaults(func=test.google_stress_test)
+
+    # EDMA test
+    parser_edma_test = subparsers.add_parser('edma_test', help='EDMA test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_edma_test.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_edma_test.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_edma_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_edma_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
+    parser_edma_test.set_defaults(func=test.sal_edma_test)
 
     # SPI-to-CPLD test from ARM
     parser_spi_cpld_test = subparsers.add_parser('test_spi', help='Test SPI-to-CPLD from ARM on QSFP loopbacks', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
