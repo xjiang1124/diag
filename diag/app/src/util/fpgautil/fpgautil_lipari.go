@@ -9,6 +9,7 @@ import (
     "common/cli"
     "unsafe"
     "device/fpga/liparifpga"
+    "device/psu/dps2100"
 )
 
 const errhelpLipari = "\nfpgautil:\n" +
@@ -69,6 +70,22 @@ func lipari_fpga_cli() {
         liparifpga.FpgaDumpRegionRegisters(uint32(fpga_number))
         fmt.Printf(" FPGA0_FPGA_REV_ID_REG=%x\n  fpga_number=%d", liparifpga.FPGA0_FPGA_REV_ID_REG, fpga_number)
         os.Exit(0)
+    } else if os.Args[1] == "show" {
+        if os.Args[2] == "psu" {
+            var present bool
+            present, _ = liparifpga.PSU_present(0)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_1", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_1 is not present")
+            }
+            present, _ = liparifpga.PSU_present(1)
+            if present == true {
+                dps2100.DisplayManufacturingInfo("PSU_2", 1)
+            } else {
+                fmt.Printf(" INFO: PSU_2 is not present")
+            }
+        }
     } else if os.Args[1] == "r32" || os.Args[1] == "w32" {
         if (os.Args[1] == "r32") && argc < 4  {
             if argc < 4 {

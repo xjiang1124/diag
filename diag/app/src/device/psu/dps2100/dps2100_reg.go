@@ -76,8 +76,15 @@ const (
     MFR_HW_COMPATIBILITY      = 0xD4
     MFR_FWUPLOAD_CAPABILITY   = 0xD5
     MFR_FWUPLOAD_MODE         = 0xD6
+        EXIT_FIRMWARE_UPLOAD_MODE = 0x00
+        FIRMWARE_UPLOAD_MODE      = 0x01
     MFR_FWUPLOAD              = 0xD7
     MFR_FWUPLOAD_STATUS       = 0xD8
+        FULL_IMAGE_RECEIVED         = 0x00
+        FULL_IMAGE_NOT_RECEIVED_YET = 0x01
+        BAD_IMAGE_RECEIVED          = 0x02
+        IMAGE_NOT_SUPPORTED         = 0x04
+
     MFR_FW_REVISION           = 0xD9
         MFR_FW_REVISION_BLK_SIZE = 0x03
     MFR_BLACKBOX              = 0xDC

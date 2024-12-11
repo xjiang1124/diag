@@ -668,17 +668,18 @@ func QSFPAmphenolVerifyCheckSums(spiNumber uint32, bus uint8, i2cAddr uint8) (er
 
 func QSFPdump(spiNumber uint32, bus uint8, i2cAddr uint8) (err error) {
     rdData := []uint8{}
-    wrData := []uint8{}
-
-    //Set the address pointer in the qsfp
-    wrData = append(wrData, 0)
-    err = BridgeI2CtransactionWrite(spiNumber, bus, i2cAddr, wrData) 
-    if err != nil {
-        return
-    }
+    wrData := []uint8{ 0x00 }
 
     //Read the data needed for the checksum
     for i:=0; i < (256); i+=int(I2C_MAX_BYTES) {
+
+        //Set the address pointer in the qsfp
+        wrData[0] = uint8(i)
+        err = BridgeI2CtransactionWrite(spiNumber, bus, i2cAddr, wrData) 
+        if err != nil {
+            return
+        }
+
         tmpRdData := []uint8{}
         tmpRdData, err = BridgeI2CtransactionRead(spiNumber, bus, i2cAddr, I2C_MAX_BYTES) 
         if err != nil {

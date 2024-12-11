@@ -323,7 +323,6 @@ func ReadTemp(devName string, sensorNumber uint32) (integer uint64, dec uint64, 
 * 
 **********************************************************************/ 
 func GetTemperature(devName string) (temperatures []float64, err int) {
-
     cardType := os.Getenv("CARD_TYPE")
     if cardType == "LIPARI" {
         var PSUnumber uint32
@@ -348,6 +347,7 @@ func GetTemperature(devName string) (temperatures []float64, err int) {
     temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
     dig, frac, err = ReadTemp(devName, 2)
     temperatures = append(temperatures, float64(dig) + (float64(frac)/1000))
+
     return
 }
 
@@ -625,6 +625,7 @@ func DispStatus(devName string) (err int) {
     outStr = outStr + fmt.Sprintf(fmtStr, outStrTemp)
 
     cli.Println("i", outStr)
+
     return
 }
 

@@ -107,6 +107,7 @@ type mvlStat struct {
 
 var Glob_fd0 *os.File = nil
 var Glob_mmap0 []byte
+var test uint32
 
 
 func init () {
