@@ -69,7 +69,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
     session.sendline("")
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -173,7 +173,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         return -1
 
     # A higher timeout may be required for a larger fw.
-    if con_ctrl.enter_uboot_salina(session, slot, timeout=80, uart_id=1, pc=0) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, timeout=120, uart_id=1, pc=0) != 0:
         print("==== FAILED: slot {} couldn't reach n1 uboot".format(slot))
         return -1
 

@@ -63,7 +63,7 @@ plog_start $fn
 
 plog_msg "card_type = $card_type"
 sal_print_die_id
-sal_set_vmarg $new_vmarg 
+sal_set_vmarg $vmarg 
 
 pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
 

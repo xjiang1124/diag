@@ -511,6 +511,7 @@ class nic_con:
         session.timeout = timeout
  
         uart_session = common.session_start()
+        uart_session.timeout = timeout
         # Start console first
         cmd = self.get_connect_cmd(slot, uart_id=uart_id)
         uart_session.sendline(cmd)
@@ -538,8 +539,13 @@ class nic_con:
         #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart
         #session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
 
-        uart_session.expect("Autoboot ")
-        #session_cmd(uart_session, cmd, ending="Autoboot in 5 seconds")
+        try:
+            uart_session.expect("Autoboot ")
+        except pexpect.TIMEOUT:
+            print("==== Failed: did not reach uboot shell")
+            self.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            return -1
 
         for i in range(uboot_delay):
             uart_session.timeout = 0.5
