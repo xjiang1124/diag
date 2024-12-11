@@ -544,6 +544,7 @@ func SetJTAGbusToSPI(slot uint32) (err error) {
     readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
     if err_r == nil {
         if len(readArray) == 10 {
+            jtag_bus_spi = readArray
             if readArray[slot] == 1 {
                 fpga_misc_ctrl_reg_lock.Unlock()
                 return
@@ -597,6 +598,7 @@ func SetJTAGbusToJTAG(slot uint32) (err error) {
     readArray, err_r := readArrayFromFile(fpga_misc_ctrl_reg_filename)
     if err_r == nil {
         if len(readArray) == 10 {
+            jtag_bus_spi = readArray
             if readArray[slot] == 0 {
                 fpga_misc_ctrl_reg_lock.Unlock()
                 return
