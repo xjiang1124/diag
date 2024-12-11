@@ -1,0 +1,119 @@
+---
+version: 2.0
+
+queue_name: asic
+image:
+  bind_dir: "/psdiag"
+  work_dir: "/psdiag"
+
+host_mounts:
+  "/hw": "/vol/hw"
+
+logfiles:
+ - /psdiag/diag_detailed_log.tgz
+
+e2e-targets:
+  qsfp-pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh qsfp --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  dpufru-pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh dpufru --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  pcieprbs-pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh pcieprbs --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  snake-pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh snake --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
