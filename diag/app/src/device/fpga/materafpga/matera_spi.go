@@ -375,6 +375,7 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     readArray, err_r := readArrayFromFile(mcp23008_lock_filename)
     if err_r == nil {
         if len(readArray) == 10 {
+            TARGET_SPI_IOEXPANDER_EN = readArray
             if readArray[spiNumber] == 1 {
                 mcp23008_lock.Unlock()
                 return
@@ -431,7 +432,6 @@ func SpiBusEnableIOexpander(spiNumber uint32) (err error) {
     TARGET_SPI_IOEXPANDER_EN[spiNumber] = 1
     writeArrayToFile(mcp23008_lock_filename, TARGET_SPI_IOEXPANDER_EN)
     mcp23008_lock.Unlock()
-
     return
 }
 
@@ -462,6 +462,7 @@ func SpiBusDisableIOexpander(spiNumber uint32) (err error) {
     readArray, err_r := readArrayFromFile(mcp23008_lock_filename)
     if err_r == nil {
         if len(readArray) == 10 {
+            TARGET_SPI_IOEXPANDER_EN = readArray
             if readArray[spiNumber] == 0 {
                 mcp23008_lock.Unlock()
                 return
