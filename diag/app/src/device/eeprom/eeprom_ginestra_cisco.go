@@ -16,7 +16,7 @@ var GinestraCiscoTbl = []entry {
     entry{"Manufacturing Date/Time",                INT8,        11,       3,    []byte{0x00, 0x00, 0x00}},
     entry{"Manufacturing Type/Length",              INT8,        14,       1,    []byte{0x94}},
     entry{"Manufacturer",                           INT8,        15,       20,   []byte{0xF5, 0x38, 0x8F, 0x0D, 0xDC, 0x90, 0xF3, 0x28, 0x85, 0x12,
-                                                                                        0x04, 0x01, 0x36, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}},
+                                                                                        0x04, 0x01, 0x36, 0x14, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}},
     entry{"Product Name Type/Length",               INT8,        35,       1,    []byte{0xF2}},
     entry{"Product Name",                           STRING,      36,       50,   []byte{0x47, 0x69, 0x67, 0x6c, 0x69, 0x6f, 0x20, 0x32, 0x78, 0x32,
                                                                                         0x30, 0x30, 0x47, 0x20, 0x51, 0x53, 0x46, 0x50, 0x35, 0x36,
