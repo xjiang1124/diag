@@ -151,13 +151,15 @@ do
 
     echo "script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c \"tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT $JOO \""
     script -f $ASIC_SRC/ip/cosim/tclsh/$fn -c "tclsh l1_test.tcl $SN $SLOT $MODE $INT_LPBK $VMARG 0 $OFFLOAD $ESEC_EN $SIMPLIFY $HC $DDR 0 $PCT $JOO"
+    ret=$?
     sync
     num_fail=$(cat $ASIC_SRC/ip/cosim/tclsh/$fn | grep "L1 SCREENING FAILED" | wc | awk -F " " '{print $1}')
     if [[ $num_fail -ne 0 ]]
     then
         echo "L1 Iteration $idx failed"
-        #exit 0
+        ret=-1
     fi
 
 done
 
+exit $ret

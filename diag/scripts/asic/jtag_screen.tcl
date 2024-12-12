@@ -258,11 +258,12 @@ diag_close_j2c_if $port $slot
 if { $final_rslt != 0 } {
     plog_msg "JTAG TESTS FAILED"
     plog_msg "JTAG TESTS FAILED"
-    exit -1
+    set ret -1
 } else {
     plog_msg "JTAG TESTS PASSED"
     plog_msg "JTAG TESTS PASSED"
-    exit 0
+    set ret 0
 }
 
 if { $logEn == "yes" } { plog_stop }
+return $ret
