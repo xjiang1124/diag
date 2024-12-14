@@ -281,6 +281,66 @@ proc set_avs_gig { {board_id SN000001} {j2c_slot 1} {core_freq 1100} {arm_freq 3
     return $err_cnt
 }
 
+proc set_avs_sal {} {
+    reset_to_proto_mode
+
+    sal_print_die_id
+
+    set tgt_vdd     710
+    set tgt_arm     935
+    set die_id      [ sal_die_id_rd ]
+    set pmro        [ sal_die_id_get_pmro ]
+    set avs_c       [ sal_die_id_get_vdd_core ]
+    set avs_a       [ sal_die_id_get_vdd_arm ]
+
+    plog_msg "sal_set_avs :: Core SVS bucket: $avs_c; ARM SVS bucket: $avs_a"
+
+    # Program Core mV to NVRAM
+    switch $avs_c {
+        9           { set tgt_vdd  770 }
+        8           { set tgt_vdd  755 }
+        7           { set tgt_vdd  740 }
+        6           { set tgt_vdd  725 }
+        5           { set tgt_vdd  710 }
+        default     { set tgt_vdd  710 }
+    }
+
+    # Program ARM mV to NVRAM if it has separate ARM rail
+    if [dict exists [sal_i2c_tbl] ARM] {
+        switch $avs_a {
+            11          { set tgt_arm 1035 }
+            10          { set tgt_arm 1010 }
+            9           { set tgt_arm  985 }
+            8           { set tgt_arm  960 }
+            7           { set tgt_arm  935 }
+            6           { set tgt_arm  910 }
+            5           { set tgt_arm  885 }
+            default     { set tgt_arm  935 }
+        }
+    }
+
+    sal_update_vout_min VDD 700
+    sal_update_vboot VDD $tgt_vdd
+    set new_volt [sal_get_vboot VDD]
+    if { [expr $new_volt - $tgt_vdd] > 5 } {
+        plog_err "sal_set_avs :: New VDD vboot: $new_volt, expected $tgt_vdd"
+    } else {
+        plog_msg "sal_set_avs :: New VDD vboot: $new_volt"
+    }
+
+    if [dict exists [sal_i2c_tbl] ARM] {
+        sal_update_vboot ARM $tgt_arm
+        set new_volt [sal_get_vboot ARM]
+        if { [expr $new_volt - $tgt_arm] > 5 } {
+            plog_err "sal_set_avs :: New ARM vboot: $new_volt, expected $tgt_arm"
+        } else {
+            plog_msg "sal_set_avs :: New ARM vboot: $new_volt"
+        }
+    }
+
+    sal_print_voltage_temp
+}
+
 proc asic_snake { {asic_type CAPRI} {board_id SN000001} {j2c_slot 1} {mode pcie_lb} {core_freq 833} {mac_serdes_int_lpbk 1} {duration 60} {use_zmq 0} {zmq_conn ""} {fan_ctrl 0} {tgt_temp 115} } {
     global G_USE_ZMQ
     global G_ZMQ_CONN
