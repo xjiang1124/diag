@@ -70,41 +70,7 @@ proc cpld_disable_wdt {} {
     ssi_cpld_write 0x1 [expr {$reg_data & 0xFD}]
 }
 
-proc cpld_set_core_pll {{freq 1100}} {
-    set reg_data [ssi_cpld_read 0x11]
-
-    switch $freq {
-        100     {set new_div 0}
-        275     {set new_div 1}
-        550     {set new_div 2}
-        1100    {set new_div 3}
-        default {set new_div 3}
-    }
-    plog_msg "Setting CORE PLL to $freq"
-    ssi_cpld_write 0x11 [expr { ($reg_data & 0xFC) | ($new_div & 0x3) }]
-
-
-    set reg_data [ssi_cpld_read 0x11]
-    plog_msg "New CORE PLL: $reg_data"
-}
-
-proc cpld_set_cpu_pll {{freq 3000}} {
-    set reg_data [ssi_cpld_read 0x11]
-    switch $freq {
-        100     {set new_div 0}
-        750     {set new_div 1}
-        1500    {set new_div 2}
-        3000    {set new_div 3}
-        default {set new_div 3}
-    }
-    plog_msg "Setting CPU PLL to $freq"
-    ssi_cpld_write 0x11 [expr { ($reg_data & 0xF3) | ($new_div & 0xC) }]
-
-    set reg_data [ssi_cpld_read 0x11]
-    plog_msg "New CPU PLL: $reg_data"
-}
-
-proc verify_soc_cntrs {} {
+proc sal_verify_arm_cntrs {} {
     plog_msg "sal_soc_dump_slv_cntrs"
     sal_soc_dump_slv_cntrs
     plog_msg "sal_soc_dump_mst_cntrs"
@@ -118,32 +84,18 @@ proc verify_soc_cntrs {} {
     }
 }
 
-proc reset_to_proto_mode {{verbosity "noisy"}} {
-    ### chip draws high current when in reset
-    ### to avoid this, lower the clocks before putting in reset
-    ### when coming out of reset, the CPLD will raise the clocks back
-
-    # kill clock
-    cpld_set_core_pll 100
-    cpld_set_cpu_pll 100
-
-    # set CPLD bit
-    sal_set_proto_mode 0
-
-    # keep ARM in reset. unreset other cores
-    sal_proto_mode_powerup
-
-    # current CPLD version does not reset CPU PLL to default
-    # revert CPU PLL back
-    cpld_set_cpu_pll 3000
-
-    # cleanup
-    sal_j2c
+proc reset_to_proto_mode {{reset "cold"}} {
     cpld_disable_wdt
-    clear_resetcode 0x13
-
+    if { $reset == warm } {
+        sal_irstn_no_arm warm
+        clear_resetcode 0x12
+    } elseif { $reset == cold } {
+        sal_irstn_no_arm cold
+        clear_resetcode 0x15
+    }
+    # verify ARM is truly in reset
     sal_arm_show_reset
-    verify_soc_cntrs
+    sal_verify_arm_cntrs
     plog_msg [exec inventory -sts -slot $::slot]
 }
 
@@ -157,5 +109,6 @@ proc set_pollara_low_power_mode {} {
         sal_ainic_chk_clk_gate
         plog_msg "ARM resets: (0=reset)"
         sal_arm_show_reset
+        plog_msg [exec inventory -sts -slot $::slot]
     }
 }
