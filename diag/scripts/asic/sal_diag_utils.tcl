@@ -86,10 +86,10 @@ proc sal_verify_arm_cntrs {} {
 
 proc reset_to_proto_mode {{reset "cold"}} {
     cpld_disable_wdt
-    if { $reset == warm } {
+    if { $reset == "warm" } {
         sal_irstn_no_arm warm
         clear_resetcode 0x12
-    } elseif { $reset == cold } {
+    } elseif { $reset == "cold" } {
         sal_irstn_no_arm cold
         clear_resetcode 0x15
     }
