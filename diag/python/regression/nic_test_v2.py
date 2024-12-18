@@ -433,7 +433,7 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.enter_a35_zephyr(int(args.slot), session, v12_reset=args.v12_reset):
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             ret = -1
             return ret
