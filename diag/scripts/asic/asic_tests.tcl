@@ -321,7 +321,7 @@ proc set_avs_sal {} {
         }
     }
 
-    sal_update_vout_min VDD 665
+    sal_update_vout_min VDD 700
     sal_update_vboot VDD $tgt_vdd
     set new_volt [sal_get_vboot VDD]
     if { [expr $new_volt - $tgt_vdd] > 5 } {
@@ -331,7 +331,7 @@ proc set_avs_sal {} {
     }
 
     if [dict exists [sal_i2c_tbl] ARM] {
-        sal_update_vout_min ARM 665
+        sal_update_vout_min ARM 700
         sal_update_vboot ARM $tgt_arm
         set new_volt [sal_get_vboot ARM]
         if { [expr $new_volt - $tgt_arm] > 5 } {
