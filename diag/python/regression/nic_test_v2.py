@@ -1111,29 +1111,61 @@ class nic_test_v2:
             ret = -1
 
         # Now check from uboot
-        print("====== DUMPING PROGRAMMED DPU FRU")
+        print("====== VERIFYING PROGRAMMED DPU FRU")
         if fru.verify_dpu_fru(slot):
-            print("====== ERRORS encountered dumping DPU FRU")
+            print("====== ERRORS encountered verifying DPU FRU")
             ret = -1
 
         # Program 2nd PCIE fru as well
         if self.nic_con.get_card_type(slot) != "MALFA":
             if args.skip_fru2 == True:
-                print("PROGRAMMING 2nd PCIE FRU - Skipped")
+                print("VERIFYING 2nd PCIE FRU - Skipped")
             else:
                 print("====== PROGRAMMING 2nd PCIE FRU")
                 if fru.program_2nd_pcie_fru(slot):
                     print("====== ERRORS encountered programming 2nd PCIE FRU")
                     ret = -1
-                print("====== DUMPING PROGRAMMED 2nd PCIE FRU")
+                print("====== VERIFYING PROGRAMMED 2nd PCIE FRU")
                 if fru.verify_2nd_pcie_fru(slot):
-                    print("====== ERRORS encountered dumping 2nd PCIE FRU")
+                    print("====== ERRORS encountered verifying 2nd PCIE FRU")
                     ret = -1
 
         if ret == 0:
             print("DPU_FRU updated successfully")
         else:
             print("DPU_FRU update unsuccessful")
+
+        return ret
+
+    def verify_dpu_fru(self, args):
+        import fru
+        ret = 0
+        slot=args.slot
+
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            return -1
+
+        self.nic_con.power_cycle_multi(str(slot), wtime=1, proto_mode_dis=0)
+
+        print("====== VERIFYING PROGRAMMED DPU FRU")
+        if fru.verify_dpu_fru(slot):
+            print("====== ERRORS encountered verifying DPU FRU")
+            ret = -1
+
+        if self.nic_con.get_card_type(slot) != "MALFA":
+            if args.skip_fru2 == True:
+                print("PROGRAMMING 2nd PCIE FRU - Skipped")
+            else:
+                print("====== VERIFYING PROGRAMMED 2nd PCIE FRU")
+                if fru.verify_2nd_pcie_fru(slot):
+                    print("====== ERRORS encountered verifying 2nd PCIE FRU")
+                    ret = -1
+
+        if ret == 0:
+            print("DPU_FRU checked and verified")
+        else:
+            print("DPU_FRU failed verification")
 
         return ret
 
@@ -1839,7 +1871,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
-    # NIC snake test from mtp
+    # NIC PCIE PRBS test from mtp
     parser_nic_port_up = subparsers.add_parser('pcie_prbs', help='pcie_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_nic_port_up.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
@@ -1852,11 +1884,16 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 
-    # Enable/Disable WP single
+    # Program FRUs
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_prog_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
     parser_prog_dpu_fru.add_argument("-skip_fru2", '--skip_fru2', action='store_true', help='Skip 2nd host FRU')
     parser_prog_dpu_fru.set_defaults(func=test.prog_dpu_fru)
+
+    parser_verif_dpu_fru = subparsers.add_parser('verify_dpu_fru', help='Verify programmed Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_verif_dpu_fru.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_verif_dpu_fru.add_argument("-skip_fru2", '--skip_fru2', action='store_true', help='Skip 2nd host FRU')
+    parser_verif_dpu_fru.set_defaults(func=test.verify_dpu_fru)
 
     # Salina VRM fix
     parser_fix_sal_vrm = subparsers.add_parser('fix_sal_vrm', help='Program Salina VRM with alert masking', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

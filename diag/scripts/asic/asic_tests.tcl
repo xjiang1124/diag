@@ -305,8 +305,10 @@ proc set_avs_sal {} {
         default     { set tgt_vdd  710 }
     }
 
-    # Program ARM mV to NVRAM if it has separate ARM rail
-    if [dict exists [sal_i2c_tbl] ARM] {
+    set card_type [sal_get_card_type]
+    if {$card_type == "POLLARA"} {
+        set tgt_arm $tgt_vdd ; # tie core and arm
+    } else {
         switch $avs_a {
             11          { set tgt_arm 1035 }
             10          { set tgt_arm 1010 }
@@ -329,6 +331,7 @@ proc set_avs_sal {} {
     }
 
     if [dict exists [sal_i2c_tbl] ARM] {
+        sal_update_vout_min ARM 700
         sal_update_vboot ARM $tgt_arm
         set new_volt [sal_get_vboot ARM]
         if { [expr $new_volt - $tgt_arm] > 5 } {

@@ -37,11 +37,11 @@ diag_close_j2c_if $::slot $::port
 plog_stop
 # Print twice for DSP to capture signature
 if {$err_cnt == 0} {
-    puts "SET AVS PASSED"
-    puts "SET AVS PASSED"
+    plog_msg "SET AVS PASSED"
+    plog_msg "SET AVS PASSED"
     exit 0
 } else {
-    puts "SET AVS FAILED"
-    puts "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
+    plog_err "SET AVS FAILED"
     exit -1
 }
