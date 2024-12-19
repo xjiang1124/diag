@@ -283,7 +283,7 @@ PRIVEK <ek.sk>"""
         card_type = os.environ['UUT_{}'.format(args.slot)]    
         asic_type = self.get_asic_type(card_type)
         if asic_type == "SALINA":
-            ma = re.compile(r".*Assembly Number\s+([\w]{3}-[\w]{6}-[\w]{2}) .*")
+            ma = re.compile(r".*Assembly Number\s+([\w]{3}-[\w]{6}-[\w]{3}) .*")
         else:
             ma = re.compile(r".*Assembly Number\s+([\d]{2}-[\d]{4}-[\d]{2}) .*")
         src_str = "".join(output.splitlines())
