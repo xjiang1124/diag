@@ -166,7 +166,13 @@ class nic_test_debug:
 
             print("Start Vmarg")
             if args.card_type == "LENI" or args.card_type == "LENI48G":
-                cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+                if args.vmargCORE != "0" and args.vmargARM != "0":
+                    cmd = "tclsh ~/diag/scripts/asic/sal_vmarg.tcl"
+                    cmd += " -slot {}".format(args.slot)
+                    cmd += " -vmarg_core {}".format(args.vmargCORE)
+                    cmd += " -vmarg_arm {}".format(args.vmargARM)
+                else:
+                    cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
                 common.session_cmd(session, cmd, 360, False, "vmarg set")
 
             # Start CPU Burn on N1
@@ -194,9 +200,29 @@ class nic_test_debug:
                     new_vmarg = args.vmarg
                 else:
                     new_vmarg = "none"
-                cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl {} {} {} {} {} {}".format(args.slot, args.snake_type, args.dura, args.card_type, new_vmarg, args.int_lpbk)
+                cmd = "tclsh ~/diag/scripts/asic/sal_snake.leni.tcl"
+                cmd += " " + str(args.slot)
+                cmd += " " + str(args.snake_type)
+                cmd += " " + str(args.dura)
+                cmd += " " + str(args.card_type)
+                cmd += " " + str(new_vmarg)
+                cmd += " " + str(args.int_lpbk)
+                cmd += " " + str(args.mtp_clk)
+                cmd += " " + str(args.vmargCORE)
+                cmd += " " + str(args.vmargARM)
             elif args.card_type == "POLLARA":
-                cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl {} {} {} {} {} {} 1 0".format(args.slot, args.snake_type, args.dura, args.card_type, args.vmarg, args.int_lpbk)
+                cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
+                cmd += " " + str(args.slot)
+                cmd += " " + str(args.snake_type)
+                cmd += " " + str(args.dura)
+                cmd += " " + str(args.card_type)
+                cmd += " " + str(args.vmarg)
+                cmd += " " + str(args.int_lpbk)
+                cmd += " " + str(args.ite)
+                cmd += " " + str(args.mtp_clk)
+                cmd += " " + str(args.lpmode)
+                cmd += " " + str(args.vmargCORE)
+                cmd += " " + str(args.vmargARM)
             else:
                 print(args.card_type, "not supported!")
                 common.session_stop(session)
@@ -211,14 +237,16 @@ class nic_test_debug:
                args.snake_type != "esam_pktgen_ddr_burst":
                 uart_session = common.session_start()
                 self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
-                if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["uart:~\$"], timeout=5):
+                uart_session.send(chr(3))
+                uart_session.expect(["uart:~\$"])
+                if 0 != sal_con.exp_cmd(uart_session, "help", pass_sig_list=["uart:~\$"], timeout=5)[0]:
                     print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
                     return -1
                 self.nic_con.uart_session_stop(uart_session)
                 if args.card_type != "POLLARA":
                     uart_session = common.session_start()
                     self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
-                    if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5):
+                    if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
                         print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
                         return -1
                     self.nic_con.uart_session_stop(uart_session)
@@ -227,8 +255,11 @@ class nic_test_debug:
             # do warm reset
             uart_session = common.session_start()
             self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
-            if 0 != sal_con.exp_cmd(uart_session, "kernel reboot warm", pass_sig_list=["uart:~\$"], timeout=10):
+            if 0 != sal_con.exp_cmd(uart_session, "kernel reboot warm", pass_sig_list=["uart:~\$"], timeout=10)[0]:
                 print("===== FAILED: slot {} warm reboot failed".format(args.slot))
+                return -1
+            if 0 != sal_con.exp_cmd(uart_session, "help", pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} A35 console is not responsive after warm reboot".format(args.slot))
                 return -1
             self.nic_con.uart_session_stop(uart_session)
 
@@ -237,6 +268,7 @@ class nic_test_debug:
             common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
             common.session_stop(session)
 
+        print("===== PASSED: slot {} passed stress reset".format(args.slot))
         return ret
 
     def srv_prbs(self, args):
@@ -361,9 +393,15 @@ if __name__ == "__main__":
     parser_nic_stress_reset.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     #parser_nic_stress_reset.add_argument("-inf", "--inf", help="inf", type=str, default='pcie')
     parser_nic_stress_reset.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
-    parser_nic_stress_reset.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_stress_reset.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=2400)
     parser_nic_stress_reset.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_stress_reset.add_argument("-ite", "--ite", help="Iteration of start and stop snake", type=int, default=1)
+    parser_nic_stress_reset.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
+    parser_nic_stress_reset.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
+    parser_nic_stress_reset.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
+    parser_nic_stress_reset.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_stress_reset.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
+    parser_nic_stress_reset.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_stress_reset.set_defaults(func=test.nic_stress_reset)
 
     # NIC QSPI programming in parallel

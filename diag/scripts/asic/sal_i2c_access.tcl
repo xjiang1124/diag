@@ -69,8 +69,8 @@ proc sal_rc19008_access_test {} {
     set val [sal_smbus_read_word 2 0x6c 6]
     set dev_id [expr ($val >> 8) & 0xFF]
     plog_msg "rc19008 devid read: [format "0x%x" $dev_id]"
-    if {($dev_id != 0x88) && ($dev_id != 0x8)} {
-        plog_err "RC19008 access test failed, exp: 0x88 or 0x08, act: [format "0x%x" $dev_id]"
+    if {$dev_id != 0x88} {
+        plog_err "RC19008 access test failed, exp: 0x88, act: [format "0x%x" $dev_id]"
     }
 }
 
@@ -79,7 +79,7 @@ proc sal_rc19004_access_test {} {
     set dev_id [expr ($val >> 8) & 0xFF]
     plog_msg "rc19004 devid read: [format "0x%x" $dev_id]"
     if {($dev_id != 0x84) && ($dev_id != 0x4)} {
-        plog_err "RC19004 access test failed, exp: 0x88 or 0x08, act: [format "0x%x" $dev_id]"
+        plog_err "RC19004 access test failed, exp: 0x84 or 0x04, act: [format "0x%x" $dev_id]"
     }
 }
 
