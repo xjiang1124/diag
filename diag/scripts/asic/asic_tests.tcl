@@ -305,20 +305,15 @@ proc set_avs_sal {} {
         default     { set tgt_vdd  710 }
     }
 
-    set card_type [sal_get_card_type]
-    if {$card_type == "POLLARA"} {
-        set tgt_arm $tgt_vdd ; # tie core and arm
-    } else {
-        switch $avs_a {
-            11          { set tgt_arm 1035 }
-            10          { set tgt_arm 1010 }
-            9           { set tgt_arm  985 }
-            8           { set tgt_arm  960 }
-            7           { set tgt_arm  935 }
-            6           { set tgt_arm  910 }
-            5           { set tgt_arm  885 }
-            default     { set tgt_arm  935 }
-        }
+    switch $avs_a {
+        11          { set tgt_arm 1035 }
+        10          { set tgt_arm 1010 }
+        9           { set tgt_arm  985 }
+        8           { set tgt_arm  960 }
+        7           { set tgt_arm  935 }
+        6           { set tgt_arm  910 }
+        5           { set tgt_arm  885 }
+        default     { set tgt_arm  935 }
     }
 
     sal_update_vout_min VDD 700
