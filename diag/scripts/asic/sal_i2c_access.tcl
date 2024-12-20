@@ -2,6 +2,7 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 set usage {
     {slot.arg       ""          "Slot number"}
+    {vmarg.arg      "none"      "Voltage margin"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -55,13 +56,19 @@ if { $val != 0x1 } {
 }
 
 proc sal_rtc_access_test {} {
-    # write to the YEAR register
-    sal_smbus_write_byte_data 2 0x51 7 80
-    # read back
-    set val [sal_smbus_read_byte_data 2 0x51 7]
-    plog_msg "RTC read: $val"
-    if {$val != 80} {
-        plog_err "RTC access test failed, exp: 80, act: $val"
+    set secondPre [sal_smbus_read_byte_data 2 0x51 1]
+    set secondPre [expr ($secondPre & 0xF) + (($secondPre >> 4) & 7) * 10]
+    plog_msg "pre: $secondPre"
+    after 3000
+    set secondPost [sal_smbus_read_byte_data 2 0x51 1]
+    set secondPost [expr ($secondPost & 0xF) + (($secondPost >> 4) & 7) * 10]
+    plog_msg "post: $secondPost"
+    if {$secondPost < $secondPre} {
+        $secondPost = $secondPost + 60
+    }
+    set diff [expr $secondPost - $secondPre]
+    if {$diff < 2 || $diff > 4} {
+        plog_err "RTC access test failed, expected time difference: 3, actual: $diff"
     }
 }
 
@@ -90,11 +97,15 @@ plog_stop
 plog_start $log_file 1000000000
 set err_cnt_init [ plog_get_err_count ]
 
-# run test
 exec fpgautil spimode $slot off
 exec jtag_accpcie_salina clr $slot
 sal_set_proto_mode 0
 #sal_proto_mode_powerup
+
+# set vmarg
+sal_set_vmarg $vmarg
+
+# run test
 sal_rtc_access_test
 sal_rc19008_access_test
 sal_rc19004_access_test
