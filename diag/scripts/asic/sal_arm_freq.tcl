@@ -5,7 +5,6 @@ set usage {
     {arm_freq.arg   "1500"      "Change ARM frequency"}
     {ddr_freq.arg   "3200"      "Change DDR frequency"}
     {nxc_freq.arg   "800"       "Change NXC frequency"}
-    {protomode.arg  "no"        "Set back proto mode after changing. For snake use 'no'; for L1/MBIST use 'yes'"}
     {verify.arg     "yes"       "Parse to verify"}
 }
 # rename argv variables to call them more easily
@@ -28,16 +27,15 @@ plog_start $log_file 1000000000
 # run test
 exec fpgautil spimode $slot off
 exec jtag_accpcie_salina clr $slot
-set_pollara_frequency $arm_freq $protomode
-plog_msg "Measuring frequencies:"
-sal_get_freq
+set_pollara_frequency $arm_freq
 diag_close_j2c_if $::slot $::port
 
 # close
 plog_stop
 
 # verify
-if { $verify == "yes" } {
+if { $verify == "yes" && $arm_freq != "1500" } {
+    ### 1500 sequence does not print the counters...verify is already part of it.
     set got_arm_freq [scan [exec grep arm_counter_bits $log_file | tail -n1 | awk "{print \$NF}"] %x ]
     set got_ddr_freq [scan [exec grep ddr_counter_bits $log_file | tail -n1 | awk "{print \$NF}"] %x ]
     set got_nxc_freq [scan [exec grep nxc_counter_bits $log_file | tail -n1 | awk "{print \$NF}"] %x ]
@@ -48,4 +46,5 @@ if { $verify == "yes" } {
     if { [expr $got_ddr_freq - $ddr_freq] > 50 } { plog_err "Not able to set correct DDR frequency, expecting '$ddr_freq' got '$got_ddr_freq'" }
     if { [expr $got_nxc_freq - $nxc_freq] > 50 } { plog_err "Not able to set correct NXC frequency, expecting '$nxc_freq' got '$got_nxc_freq'" }
 }
+puts "SAL_ARM_FREQ DONE"
 exit 0
