@@ -1427,7 +1427,8 @@ class nic_test_v2:
         if ret != 0:
             return ret
         try:
-            cmd = "stressapptest_arm -m {} -s {}".format(args.threads, args.dura)
+            self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
+            cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
             cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
             pass_sig = "Status: PASS"
             cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
