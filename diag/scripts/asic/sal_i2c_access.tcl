@@ -99,8 +99,7 @@ set err_cnt_init [ plog_get_err_count ]
 
 exec fpgautil spimode $slot off
 exec jtag_accpcie_salina clr $slot
-sal_set_proto_mode 0
-#sal_proto_mode_powerup
+reset_to_proto_mode
 
 # set vmarg
 sal_set_vmarg $vmarg
