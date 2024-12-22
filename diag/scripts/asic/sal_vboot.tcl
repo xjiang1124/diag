@@ -24,7 +24,7 @@ set ::port  $slot
 sal_j2c
 set ret [_msrd]
 plog_msg "_msrd: $ret"
-reset_to_proto_mode quietly
+reset_to_proto_mode 
 if {$vboot_core != "none"} {
     # break the limits
     sal_update_vout_min VDD [expr $vboot_core - 10]
