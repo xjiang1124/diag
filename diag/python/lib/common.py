@@ -84,7 +84,7 @@ class _Const(object):
 CONST = _Const()
 
 pwd_prompt = "password: "
-bash_prompt = "\$"
+bash_prompt = "\$ "
 #bash_prompt = r"$ "
 sudo_pwd = "lab123"
 
