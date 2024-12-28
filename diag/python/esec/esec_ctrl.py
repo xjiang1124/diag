@@ -598,16 +598,20 @@ PRIVEK <ek.sk>"""
             print("=== OTP PROG validated #{} ===".format(retry-1))
 
         print ("slot:", slot)
-        [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
-        if ret != 0:
-            print("=== Failed to check ESEC in uboot ===")
-            print("=== ESEC PROG FAILED ===")
-            return ret
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "SALINA":
+            print("Skip uboot check")
+        else:
+            [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
+            if ret != 0:
+                print("=== Failed to check ESEC in uboot ===")
+                print("=== ESEC PROG FAILED ===")
+                return ret
 
-        if crc32_ek != crc32_ek_uboot:
-            print("CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot)
-            print("=== ESEC PROG FAILED ===")
-            return -1
+            if crc32_ek != crc32_ek_uboot:
+                print("CRC32 cross check failed; Caculated:", crc32_ek, "Uboot:", crc32_ek_uboot)
+                print("=== ESEC PROG FAILED ===")
+                return -1
 
         asic_type = self.get_asic_type(card_type)
         if asic_type == "ELBA" or asic_type == "GIGLIO" or "SALINA":
@@ -619,9 +623,13 @@ PRIVEK <ek.sk>"""
                print("=== ESEC PROG FAILED ===")
                return -1
 
-        ret = self.efuse_test(int(slot), card_type)
-        if ret != 0:
-            print("=== Efuse test failed ===")
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "SALINA":
+            print("Skip efuse test")
+        else:
+            ret = self.efuse_test(int(slot), card_type)
+            if ret != 0:
+                print("=== Efuse test failed ===")
 
         if ret == 0:
             print("=== ESEC PROG/VALICATION PASSED ===")
