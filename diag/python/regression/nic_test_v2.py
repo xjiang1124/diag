@@ -433,7 +433,7 @@ class nic_test_v2:
         common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
 
         time.sleep(3)
-        if sal_con.enter_a35_zephyr(int(args.slot), session, v12_reset=args.v12_reset):
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             ret = -1
             return ret
@@ -1639,6 +1639,21 @@ class nic_test_v2:
             print("QSFP READ TEST FAILED")
         return ret
 
+    def sal_pc_test(self, args):
+        print(args)
+        ret = 0
+    
+        for ite in range(args.iteration):
+            print("=== Ite:", ite, "===")
+    
+            uart_session = common.session_start()
+            if sal_con.enter_a35_zephyr(args.slot, uart_session, warm_reset=args.warm, v12_reset=args.v12, awd_showparms=False):
+                print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+                ret = -1
+                break
+
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1949,6 +1964,15 @@ if __name__ == "__main__":
     parser_pcieawd_env.add_argument("-tx_mag", '--tx_mag', help='pcieawd_tx_change_mag', type=str, default=None)
     parser_pcieawd_env.add_argument("-rx_mag", '--rx_mag', help='pcieawd_rx_change_mag', type=str, default=None)
     parser_pcieawd_env.set_defaults(func=test.sal_misc_pcieawd_env_ctrl)
+
+    # salina power cycle test
+    parser_sal_pc = sal_misc_subp.add_parser('pc_test', help='Power cycle test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_pc.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
+    parser_sal_pc.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    group_sal_pc = parser_sal_pc.add_mutually_exclusive_group(required=False)
+    group_sal_pc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
+    group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_pc.set_defaults(func=test.sal_pc_test)
 
     try:
         args = parser.parse_args()
