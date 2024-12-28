@@ -111,6 +111,10 @@ jobs:
     labels: ["CI-DIAG-Build", "CI-DIAG-Release"]
   qa-infra/daily:
     labels: ["CI-DIAG-Daily"]
+  diag/scripts/asic:
+    labels: ["CI-DIAG-Tests"]
+  diag/python/regression:
+    labels: ["CI-DIAG-Tests"]
 ### JOB LABELS ###
   test/FST:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-FST"]
@@ -151,6 +155,10 @@ dependencies:
     - reference: asset-build
   asset-build:
     - reference: asset-build
+  diag/scripts/asic:
+    - reference: diag/scripts/asic
+  diag/python/regression:
+    - reference: diag/python/regression
 
   diag:
 ### TEST DIAG CHANGES ###

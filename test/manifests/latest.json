@@ -3,6 +3,15 @@
     "MfgDiagImages" : [
         {
             "Release" : "latest",
+            "Asic" : "salina",
+            "Board" : "pollara",
+            "Images" : {
+                "AMD64" : "image_amd64_salina.tar",
+                "ARM64" : "image_arm64_salina.tar"
+            }
+	},
+        {
+            "Release" : "latest",
             "Asic" : "giglio",
             "Board" : "ginestra",
             "Images" : {

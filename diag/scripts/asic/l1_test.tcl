@@ -215,8 +215,10 @@ set err_cnt_fnl [ plog_get_err_count ]
 if { $err_cnt_init != $err_cnt_fnl } {
     puts "L1 TEST FAILED"
     puts "L1 TEST FAILED"
+    return -1
 } else {
     puts "L1 TEST PASSED"
     puts "L1 TEST PASSED"
+    return 0
 }
 

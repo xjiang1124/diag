@@ -72,8 +72,8 @@ plog_msg "PRBS TEST DONE"
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {
     plog_err "PRBS test FAILED"
+    exit -1
 } else {
     plog_msg "PRBS test PASSED"
+    exit 0
 }
-
-exit 0
