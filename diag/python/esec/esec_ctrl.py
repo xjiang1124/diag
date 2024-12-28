@@ -447,6 +447,7 @@ PRIVEK <ek.sk>"""
 
     def key_prog_all(self, sn, slot, pn, mac, card_type, mtp, client_key, client_cert, trust_roots, backend_url):
         os.chdir("/home/diag/diag/scripts/asic/")
+        common.bash_prompt = '\$ '
         asic_type = self.get_asic_type(card_type)
         if asic_type == "ELBA":
             cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_elba.tcl -stage esec_all\
