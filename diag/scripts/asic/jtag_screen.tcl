@@ -161,7 +161,7 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
-reset_to_proto_mode
+reset_to_proto_mode no_proto
 sal_set_vmarg $vmarg
 if {$vmarg_core != "none"} {
     plog_msg "set vmarg VDD: $vmarg_core"
