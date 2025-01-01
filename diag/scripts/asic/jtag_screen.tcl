@@ -181,7 +181,7 @@ set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
     plog_err "JTAG TESTS FAILED"
     plog_err "JTAG TESTS FAILED"
-    return 0
+    exit -2
 }
 
 ### run tests
@@ -266,4 +266,4 @@ if { $final_rslt != 0 } {
 }
 
 if { $logEn == "yes" } { plog_stop }
-return $ret
+exit $ret

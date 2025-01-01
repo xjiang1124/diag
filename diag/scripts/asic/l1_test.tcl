@@ -139,7 +139,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
     
 } else {
    puts "[ERROR] l1_test.tcl INVALID PLATFORM/MTP TYPE\n"
-   return -1
+   exit -1
 }
 
 set err_cnt_init [ plog_get_err_count ]
@@ -215,10 +215,10 @@ set err_cnt_fnl [ plog_get_err_count ]
 if { $err_cnt_init != $err_cnt_fnl } {
     puts "L1 TEST FAILED"
     puts "L1 TEST FAILED"
-    return -1
+    exit -1
 } else {
     puts "L1 TEST PASSED"
     puts "L1 TEST PASSED"
-    return 0
+    exit 0
 }
 
