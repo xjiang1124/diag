@@ -140,6 +140,9 @@ proc reset_to_proto_mode {{reset "cold"}} {
     } elseif { $reset == "cold" } {
         sal_irstn_no_arm cold
         clear_resetcode 0x15
+    } elseif { $reset == "no_proto" } {
+        sal_irstn_no_arm no_proto
+        clear_resetcode 0x13
     }
     # verify ARM is truly in reset
     sal_arm_show_reset
