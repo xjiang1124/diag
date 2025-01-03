@@ -154,7 +154,7 @@ func UpdateFlashSize(slot uint32) () {
 }
 
 
-func  Spi_flash_set_extended_addr_register(spiNumber uint32, qspiNumber uint32, addr uint32) (err error) {
+func  Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, addr uint32, spiBusEnable bool) (err error) {
     //var flash_size int = 0x10000000  //2Gb (256MB)  4096 sectors * 65536
    
     if addr < 0x1000000 {
@@ -195,21 +195,25 @@ func  Spi_flash_set_extended_addr_register(spiNumber uint32, qspiNumber uint32, 
         return
     }
 
-    err = Spi_flash_WriteEnable(spiNumber, qspiNumber) 
+    err = Spi_flash_WriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable) 
     if err != nil {
         return
     }
-    err = Spi_flash_CheckWriteEnable(spiNumber, qspiNumber)
+    err = Spi_flash_CheckWriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)
     if err != nil {
         return
     }
 
-    _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_EXTENDED_ADDR_REG_OP, WRITE_EXTENDED_ADDR_REG_RDLNG) 
+    _ , err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, WRITE_EXTENDED_ADDR_REG_OP, WRITE_EXTENDED_ADDR_REG_RDLNG, spiBusEnable) 
     if err != nil {
         return
     }
 
     return
+}
+
+func  Spi_flash_set_extended_addr_register(spiNumber uint32, qspiNumber uint32, addr uint32) (err error) {
+    return Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber, qspiNumber, addr, true)
 }
 
 
@@ -219,9 +223,13 @@ func Spi_flash_enable_4byte_addr_mode(spiNumber uint32, qspiNumber uint32) (err 
 }
 
 
-func Spi_flash_disable_4byte_addr_mode(spiNumber uint32, qspiNumber uint32) (err error) {
-    _, err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_DISABLE_4BYTE_ADDR_OP, WRITE_DISABLE_4BYTE_ADDR_RDLNG) 
+func Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, spiBusEnable bool) (err error) {
+    _, err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, WRITE_DISABLE_4BYTE_ADDR_OP, WRITE_DISABLE_4BYTE_ADDR_RDLNG, spiBusEnable) 
     return
+}
+
+func Spi_flash_disable_4byte_addr_mode(spiNumber uint32, qspiNumber uint32) (err error) {
+    return Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(spiNumber, qspiNumber, true)
 }
 
 
@@ -369,9 +377,9 @@ func Spi_flash_write_nonvolatile_config(spiNumber uint32, qspiNumber uint32, dat
 }
 
 
-func Spi_flash_read_status_register(spiNumber uint32, qspiNumber uint32) (flag uint32, err error) {
+func Spi_flash_read_status_register_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, spiBusEnable bool) (flag uint32, err error) {
     data := []byte{}
-    data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, READ_STATUS_REG_OP, READ_STATUS_REG_RDLNG) 
+    data, err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, READ_STATUS_REG_OP, READ_STATUS_REG_RDLNG, spiBusEnable) 
     if err == nil {
         flag = uint32(data[0])
     } else {
@@ -380,6 +388,10 @@ func Spi_flash_read_status_register(spiNumber uint32, qspiNumber uint32) (flag u
     return
 }
 
+
+func Spi_flash_read_status_register(spiNumber uint32, qspiNumber uint32) (flag uint32, err error) {
+    return Spi_flash_read_status_register_w_spiBus_enable(spiNumber, qspiNumber, true)
+}
 
 
 func Spi_flash_write_status_register(spiNumber uint32, qspiNumber uint32, data uint32) (err error) {
@@ -427,10 +439,10 @@ func Spi_flash_read_flag_status(spiNumber uint32, qspiNumber uint32) (flag uint3
 
 
 //Check if the flash is busy before executing erase or write
-func Spi_flash_Poll_STS_WIP(spiNumber uint32, qspiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
+func Spi_flash_Poll_STS_WIP_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, timeout_ms int, spiBusEnable bool) (sr_reg uint32, err int) {
     var errGo error
     for i:=0; i<timeout_ms; i++ {
-        sr_reg, errGo = Spi_flash_read_status_register(spiNumber, qspiNumber)  
+        sr_reg, errGo = Spi_flash_read_status_register_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)  
         if errGo != nil {
             fmt.Printf("ERROR: Spi_flash_Poll_STS_WIP-> Read Status Failed\n")
             err = 1
@@ -446,12 +458,17 @@ func Spi_flash_Poll_STS_WIP(spiNumber uint32, qspiNumber uint32, timeout_ms int)
 }
 
 
+func Spi_flash_Poll_STS_WIP(spiNumber uint32, qspiNumber uint32, timeout_ms int) (sr_reg uint32, err int) {
+    return Spi_flash_Poll_STS_WIP_w_spiBus_enable(spiNumber, qspiNumber, timeout_ms, true)
+}
+
+
 //Check if the flash is busy before executing erase or write
-func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error) {
+func Spi_flash_CheckWriteEnable_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, spiBusEnable bool) (err error) {
     var errGo error
     var sr_reg uint32
     for i:=0; i< 5000; i++ {
-        sr_reg, errGo = Spi_flash_read_status_register(spiNumber, qspiNumber)  
+        sr_reg, errGo = Spi_flash_read_status_register_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)  
         if errGo != nil {
             fmt.Printf("ERROR: Slot-%d Qspi-%d: Spi_flash_CheckWriteEnable-> Read Status Failed\n", spiNumber+1, qspiNumber)
             return
@@ -467,13 +484,23 @@ func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error)
 }
 
 
-func Spi_flash_WriteEnable(spiNumber uint32, qspiNumber uint32) (err error) {
-    _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, WRITE_ENABLE_OP, WRITE_ENABLE_RDLNG)
+func Spi_flash_CheckWriteEnable(spiNumber uint32, qspiNumber uint32) (err error) {
+    return Spi_flash_CheckWriteEnable_w_spiBus_enable(spiNumber, qspiNumber, true)
+}
+
+
+func Spi_flash_WriteEnable_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, spiBusEnable bool) (err error) {
+    _ , err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, WRITE_ENABLE_OP, WRITE_ENABLE_RDLNG, spiBusEnable)
     if err != nil {
         err = fmt.Errorf("ERROR: Slot-%d Qspi-%d: Spi_flash_WriteEnable Failed\n", spiNumber+1, qspiNumber)
         cli.Printf("e", "%s", err)
     }
     return
+}
+
+
+func Spi_flash_WriteEnable(spiNumber uint32, qspiNumber uint32) (err error) {
+    return Spi_flash_WriteEnable_w_spiBus_enable(spiNumber, qspiNumber, true)
 }
 
 
@@ -799,22 +826,22 @@ func Spi_salina_flash_erase_all_sectors(spiNumber uint32, qspiNumber uint32) (er
 }
 
 
-func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr uint32) (err error) {
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
+func Spi_salina_flash_erase_sector_w_spiBus_enable(spiNumber uint32, qspiNumber uint32,  addr uint32, spiBusEnable bool) (err error) {
+    err = Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber, qspiNumber, addr, spiBusEnable) 
     if err != nil {
         return
     }
    
-    err = Spi_flash_WriteEnable(spiNumber, qspiNumber) 
+    err = Spi_flash_WriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable) 
     if err != nil {
         return
     }
-    err = Spi_flash_CheckWriteEnable(spiNumber, qspiNumber)
+    err = Spi_flash_CheckWriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)
     if err != nil {
         return
     }
@@ -824,14 +851,14 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
     ERASE_SECTOR_OP[2] = byte(addr >> 8)
     ERASE_SECTOR_OP[3] = byte(addr)
 
-    _ , err = matera_spi_generic_transaction(spiNumber, qspiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG) 
+    _ , err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, ERASE_SECTOR_OP, ERASE_SECTOR_RDLNG, spiBusEnable)
     if err != nil {
         err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector Failed. Slot-%d Qspi-%d:  Erase Addr=%.08x\n", spiNumber+1, qspiNumber, addr)
         cli.Printf("e", "%s", err)
         return
     }
 
-    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, qspiNumber, ELB_SECTOR_ERASE_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP_w_spiBus_enable(spiNumber, qspiNumber, ELB_SECTOR_ERASE_DELAY, spiBusEnable)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_salina_flash_erase_sector.  Slot-%d Qspi-%d: Timeout Waiting for Sector Erase to Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber+1, qspiNumber, addr, ELB_SECTOR_ERASE_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
@@ -840,7 +867,12 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
 }
 
 
-func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []byte, addr uint32) (err error) {
+func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr uint32) (err error) {
+    return Spi_salina_flash_erase_sector_w_spiBus_enable(spiNumber, qspiNumber, addr, true)
+}
+
+
+func Spi_salina_flash_Write_N_Bytes_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, data []byte, addr uint32, spiBusEnable bool) (err error) {
     wr_data := []byte{}
 
     //Check if the card is Pollara which has a 32MB flash
@@ -858,18 +890,18 @@ func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []
     }
 
     
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
+    err = Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)
     if err != nil {
         return
     }
 
-    err =  Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, addr) 
+    err =  Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber, qspiNumber, addr, spiBusEnable) 
     if err != nil {
         return
     } 
 
-    Spi_flash_WriteEnable(spiNumber, qspiNumber) 
-    err = Spi_flash_CheckWriteEnable(spiNumber, qspiNumber)
+    Spi_flash_WriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable) 
+    err = Spi_flash_CheckWriteEnable_w_spiBus_enable(spiNumber, qspiNumber, spiBusEnable)
     if err != nil {
         return
     }
@@ -881,13 +913,13 @@ func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []
     wr_data = append(wr_data, PAGE_PROGRAM_OP...)
     wr_data = append(wr_data, data...)
 
-    data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, wr_data, PAGE_PROGRAM_RDLNG) 
+    data, err = matera_spi_generic_transaction_w_spiBus_enable(spiNumber, qspiNumber, wr_data, PAGE_PROGRAM_RDLNG, spiBusEnable) 
     if err != nil {
        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Slot-%d Qspi-%d: matera_spi_generic_transaction Failed\n", spiNumber+1, qspiNumber,)
        cli.Printf("e", "%s", err)
     }
 
-    sr_reg, rc := Spi_flash_Poll_STS_WIP(spiNumber, qspiNumber, ELB_PAGE_WR_DELAY)
+    sr_reg, rc := Spi_flash_Poll_STS_WIP_w_spiBus_enable(spiNumber, qspiNumber, ELB_PAGE_WR_DELAY, spiBusEnable)
     if rc != 0 {
        err = fmt.Errorf("ERROR: Spi_salina_flash_Write_N_Bytes.  Slot-%d Qspi-%d: Timeout Waiting for Write To Compelte.  Address Passsed = 0x%x  Delay = %d.   Status Reg=%.02x\n", spiNumber+1, qspiNumber, addr, ELB_PAGE_WR_DELAY, sr_reg)
        cli.Printf("e", "%s", err)
@@ -895,6 +927,11 @@ func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []
     }
 
     return
+}
+
+
+func Spi_salina_flash_Write_N_Bytes(spiNumber uint32, qspiNumber uint32, data []byte, addr uint32) (err error) {
+    return Spi_salina_flash_Write_N_Bytes_w_spiBus_enable(spiNumber, qspiNumber, data, addr, true)
 }
 
 
@@ -913,7 +950,7 @@ func Spi_salina_flash_FourByteAddr_Read_N_Bytes(spiNumber uint32, qspiNumber uin
 }
 
 
-func Spi_salina_flash_Read_N_Bytes(spiNumber uint32, qspiNumber uint32, addr uint32, length uint32, cli_call uint32) (data []byte, err error) {
+func Spi_salina_flash_Read_N_Bytes_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, addr uint32, length uint32, cli_call uint32, spiBusEnable bool) (data []byte, err error) {
 
     READ_OP[1] = byte(addr >> 16)
     READ_OP[2] = byte(addr >> 8)
@@ -921,6 +958,12 @@ func Spi_salina_flash_Read_N_Bytes(spiNumber uint32, qspiNumber uint32, addr uin
     data, err = matera_spi_generic_transaction(spiNumber, qspiNumber, READ_OP, length) 
     return
 }
+
+
+func Spi_salina_flash_Read_N_Bytes(spiNumber uint32, qspiNumber uint32, addr uint32, length uint32, cli_call uint32) (data []byte, err error) {
+    return Spi_salina_flash_Read_N_Bytes_w_spiBus_enable(spiNumber, qspiNumber, addr, length, cli_call, true)
+}
+
 
 
 func Spi_salina_flash_DualOp_Read_N_Bytes(spiNumber uint32, qspiNumber uint32, addr uint32, length uint32) (data []byte, err error) {
@@ -943,7 +986,7 @@ func Spi_salina_flash_DualOp_FastRead_N_Bytes(spiNumber uint32, qspiNumber uint3
 }
 
 
-
+// Only used by QSPI programming, skip SPI bus enable
 func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string)(err error) {
     var flash_size uint32
     var i, count int = 0, 0
@@ -1016,7 +1059,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     fmt.Printf(" Erasing flash sectors\n");
     for j=start_addr; j<start_addr + uint32(len(data)); j = j+elba_flash_info.sector_size {
         fmt.Printf(".")
-        err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, j)
+        err = Spi_salina_flash_erase_sector_w_spiBus_enable(spiNumber, qspiNumber, j, false)
         if err != nil {
            fmt.Printf(" ERROR: Erasing Flash Failed\n")
            return
@@ -1041,7 +1084,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
        count = count + FLASH_PAGE_WRITE_SIZE 
 
        if write_page == true {
-           err = Spi_salina_flash_Write_N_Bytes(spiNumber, qspiNumber, wr_data, j)
+           err = Spi_salina_flash_Write_N_Bytes_w_spiBus_enable(spiNumber, qspiNumber, wr_data, j, false)
            if err != nil {
                fmt.Printf("\n ERROR: Writing Flash Failed\n")
                return
@@ -1057,6 +1100,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     return
 }
 
+// Only used by QSPI programming, skip SPI bus enable
 func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr uint32, filename string) (err error) {
     var flash_size uint32
     var read_size = uint32(elba_flash_info.sector_size)
@@ -1112,12 +1156,12 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     }
     f.Close()
 
-    err = Spi_flash_disable_4byte_addr_mode(spiNumber, qspiNumber)
+    err = Spi_flash_disable_4byte_addr_mode_w_spiBus_enable(spiNumber, qspiNumber, false)
     if err != nil {
         return
     }
 
-    err = Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, start_addr) 
+    err = Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber, qspiNumber, start_addr, false) 
     if err != nil {
         return
     }
@@ -1128,13 +1172,13 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
             fmt.Printf("\r%.08x", i)
         }
         if (i % 0x1000000) <= read_size {
-            err = Spi_flash_set_extended_addr_register(spiNumber, qspiNumber, i) 
+            err = Spi_flash_set_extended_addr_register_w_spiBus_enable(spiNumber, qspiNumber, i, false) 
             if err != nil {
                 return
             }
         }
          
-        rd_data, err = Spi_salina_flash_Read_N_Bytes(spiNumber, qspiNumber, i, read_size, 0)
+        rd_data, err = Spi_salina_flash_Read_N_Bytes_w_spiBus_enable(spiNumber, qspiNumber, i, read_size, 0, false)
         if err != nil {
             fmt.Printf("\n ERROR: Flash Read Failed.  StartAddr=0x%X.  I=0x%X\n", start_addr, i)
             return

@@ -677,7 +677,7 @@ func Spi_Read_Data(spiNumber uint32) (data32 uint32, err error) {
 // *   The spi number corresponds to the spi mail box in the fpga.
 // *
 // ***********************************************************************************
-func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode []byte, rdLength uint32) (rdData []byte, err error) {
+func matera_spi_generic_transaction_w_spiBus_enable(spiNumber uint32, spiDevice uint32, opCode []byte, rdLength uint32, spiBusEnable bool) (rdData []byte, err error) {
     var data32 uint32 = 0
     var tmpRdLength uint32 = 0
     var ChkTxDrain uint32 = 0
@@ -691,15 +691,17 @@ func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode [
 
     //For network adapter slots, need to set various enables / muxes to get spi working
     if spiNumber < SPI_FPGA {
-        //Enable the spi bus mux on the fpga that muxes between spi and j2c.  
-        //This is seperate from the spi mailbox mux that controls the mux between the fpga and elba.
-        //Too many muxes.......
-        SetJTAGbusToSPI(spiNumber)
+        if spiBusEnable == true {
+            //Enable the spi bus mux on the fpga that muxes between spi and j2c.  
+            //This is seperate from the spi mailbox mux that controls the mux between the fpga and elba.
+            //Too many muxes.......
+            SetJTAGbusToSPI(spiNumber)
 
-        //Enable spi bus on the iob card via the mcp23008 i/o expander
-        err = SpiBusEnableIOexpander(spiNumber)
-        if err != nil {
-            goto SPI_TRANSACTION_END2
+            //Enable spi bus on the iob card via the mcp23008 i/o expander
+            err = SpiBusEnableIOexpander(spiNumber)
+            if err != nil {
+                goto SPI_TRANSACTION_END2
+            }
         }
 
         //Take QSPI out of reset on the network adapter CPLD
@@ -874,3 +876,7 @@ SPI_TRANSACTION_END2:
     return 
 }
 
+
+func matera_spi_generic_transaction(spiNumber uint32, spiDevice uint32, opCode []byte, rdLength uint32) (rdData []byte, err error) {
+    return matera_spi_generic_transaction_w_spiBus_enable(spiNumber, spiDevice, opCode, rdLength, true)
+}

@@ -333,7 +333,7 @@ class nic_test_debug:
         cur_dir = os.getcwd()
         session = common.session_start()
         common.session_cmd(session, "cd {}".format(qspi_image_path))
-        ret = common.session_cmd(session, "./qspi_prog.sh {}".format(slot), ending=["QSPI PROG PASSED", "FAILED"], timeout=180)
+        ret = common.session_cmd(session, "./qspi_prog.sh {}".format(slot), ending=["QSPI PROG PASSED", "FAILED"], timeout=600)
         #ret = common.session_cmd(session, "fpgautil flash {} 1 wrenrdsr".format(slot), ending=["Status Reg=0x02", "Status Reg=0x00"], timeout=5)
         print("QSPI programming result:", ret)
         if ret != 1:

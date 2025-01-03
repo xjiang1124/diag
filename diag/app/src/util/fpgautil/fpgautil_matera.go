@@ -839,6 +839,9 @@ func matera_fpga_cli() {
                      fmt.Printf(" Args[5] ParseUint is showing ERR = %v.   Exiting Program\n", err); return
                 }
                 filename := os.Args[6]
+                // enable SPI Mode only once
+                materafpga.SetJTAGbusToSPI(flashID)
+                materafpga.SpiBusEnableIOexpander(flashID)
                 if os.Args[4] == "writefile" {
                     err = materafpga.Spi_salina_flash_WriteFile(flashID, qspiNumber, uint32(addr), filename) 
                     if err != nil {
