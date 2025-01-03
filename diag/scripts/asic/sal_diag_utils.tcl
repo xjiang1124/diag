@@ -103,6 +103,8 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
         }
         sal_j2c
         clear_resetcode 0x0b
+    } else {
+        sal_j2c
     }
     plog_msg "Measuring frequencies:"
     set freq_core  [sal_get_freq_core];    plog_msg "  freq_core:  $freq_core"
