@@ -20,7 +20,7 @@ proc sal_rtc_access_test {} {
     set secondPost [expr ($secondPost & 0xF) + (($secondPost >> 4) & 7) * 10]
     plog_msg "post: $secondPost"
     if {$secondPost < $secondPre} {
-        $secondPost = $secondPost + 60
+        set secondPost [expr {$secondPost + 60}]
     }
     set diff [expr $secondPost - $secondPre]
     if {$diff < 2 || $diff > 4} {
