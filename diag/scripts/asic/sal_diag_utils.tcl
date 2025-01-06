@@ -148,8 +148,7 @@ proc reset_to_proto_mode {{reset "cold"}} {
     }
     # verify ARM is truly in reset
     sal_arm_show_reset
-    # Disable ARM counter checking for now
-    #sal_verify_arm_cntrs
+    if { $reset != "no_proto" } { sal_verify_arm_cntrs }
     plog_msg [exec inventory -sts -slot $::slot]
 }
 
