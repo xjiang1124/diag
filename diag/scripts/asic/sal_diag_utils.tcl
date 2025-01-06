@@ -63,6 +63,11 @@ proc set_pollara_frequency_2000_workaround {} {
 }
 
 proc verify_arm_frequency {{arm_freq "1500"}} {
+    set card_type [sal_get_card_type]
+    if { $card_type != "POLLARA" } {
+        # not supported
+        return
+    }
     sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS $arm_freq
 }
 
