@@ -876,8 +876,8 @@ if __name__ == "__main__":
 
     # cleanup does not need slot
     if args.cleanup == True:
-        esec_ctrl.cleanup()
-        sys.exit()
+        ret = esec_ctrl.cleanup()
+        sys.exit(ret)
 
     card_type = os.environ['UUT_{}'.format(args.slot)]    
     print("CARD_TYPE:", card_type)
@@ -903,9 +903,9 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.esec_prog == True:
-        esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
+        ret = esec_ctrl.esec_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
                 args.sn, args.slot, args.pn, args.mac, card_type, args.mtp, args.sku, args.fast_path)
-        sys.exit()
+        sys.exit(ret)
 
     if args.check_uboot == True:
         esec_ctrl.check_uboot_esec(int(args.slot), args.post_check)
@@ -925,8 +925,8 @@ if __name__ == "__main__":
         sys.exit()
 
     if args.img_prog == True:
-        esec_ctrl.img_prog(int(args.slot))
-        sys.exit()
+        ret = esec_ctrl.img_prog(int(args.slot))
+        sys.exit(ret)
 
     if args.efuse_prog == True:
         esec_ctrl.efuse_prog(args.sn, int(args.slot), args.pn, args.mac, card_type, args.mtp, args.client_key,\
