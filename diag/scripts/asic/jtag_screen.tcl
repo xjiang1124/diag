@@ -10,7 +10,7 @@ set usage {
     {logEn.arg      "yes"                   "Save to logfile"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
-    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
+    {tcl_path.arg   ""                      "ASIC lib location"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -125,12 +125,20 @@ proc mbist_only_diag {} {
 source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize asic lib
-set ASIC_LIB_BUNDLE "$tcl_path"
+if { $tcl_path != "" } {
+    set ASIC_LIB_BUNDLE "$tcl_path"
+} elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
+    set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
+} else {
+    set ASIC_LIB_BUNDLE "/home/diag/diag/asic"
+}
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
-set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
-set ASIC_GEN "$ASIC_SRC"
-set DIAG_SRC "$tcl_path/diag/scripts/asic/"
-cd $ASIC_SRC/ip/cosim/tclsh
+set env(ASIC_LIB_BUNDLE) "$ASIC_LIB_BUNDLE"
+set env(ASIC_LIB) "$ASIC_LIB_BUNDLE/asic_lib"
+set env(ASIC_SRC) "$ASIC_LIB_BUNDLE/asic_src"
+set env(ASIC_GEN) "$ASIC_LIB_BUNDLE/asic_src"
+set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
+cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.sal
 
 ### initialize card properties
