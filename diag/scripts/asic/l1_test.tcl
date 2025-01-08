@@ -183,6 +183,9 @@ if {$use_zmq == 0} {
 
         reset_to_proto_mode
         sal_print_voltage_temp_from_j2c
+        sal_print_die_id
+        plog_msg "Measuring frequencies:"
+        sal_get_freq
 
         set err_cnt_init [ plog_get_err_count ] ;# WA to jtag issue: ignore errs from set_pollara_freq
 

@@ -184,6 +184,7 @@ if {$vmarg_arm != "none"} {
     plog_msg "New ARM vout: $new_volt"
 }
 sal_print_voltage_temp_from_j2c
+sal_print_die_id
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
