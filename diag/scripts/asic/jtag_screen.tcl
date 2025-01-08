@@ -202,6 +202,9 @@ foreach test_name $test_name_list {
     set cmd_1 [lindex $cmd_list 1]
     set cmd_2 [lindex $cmd_list 2]
     set cmd_3 [lindex $cmd_list 3]
+    set err_cnt1 0
+    set err_cnt2 0
+    set err_cnt3 0
 
     for { set iter 1 } { $iter <= $loops } {incr iter} {
         if { $iter > 1 } {
@@ -225,7 +228,7 @@ foreach test_name $test_name_list {
         set cmd [lindex $cmd_list 1]
         if {$cmd != ""} {
             plog_msg "cmd_1 $cmd"
-            eval $cmd
+            set err_cnt1 [sal_get_myerr_cnt $cmd]
         }
 
         ## exec test command
@@ -233,15 +236,17 @@ foreach test_name $test_name_list {
         set cmd [lindex $cmd_list 2]
         if {$cmd != ""} {
             plog_msg "cmd_2 $cmd"
-            set err_cnt [sal_get_myerr_cnt $cmd 0 0 1]
+            set err_cnt2 [sal_get_myerr_cnt $cmd 0 0 1]
         }
 
         ## exec post command
         set cmd [lindex $cmd_list 3]
         if {$cmd != ""} {
             plog_msg "cmd_3 $cmd"
-            eval $cmd
+            set err_cnt3 [sal_get_myerr_cnt $cmd]
         }
+
+        set err_cnt [expr $err_cnt1 + $err_cnt2 + $err_cnt3]
 
         if {$err_cnt != 0} {
             set final_rslt 1
