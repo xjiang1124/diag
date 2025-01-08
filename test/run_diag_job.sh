@@ -304,6 +304,33 @@ if [[ $ret == 0 ]]; then
             ret=$?
             echo "RETURN CODE= $ret"
             ;;
+        i2caccess_leni)
+            echo "Running I2C TEST leni" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/python/regression; \
+            python3 ./nic_test_v2.py prog_dpu_fru -skip_fru2 -slot $SLOT; \
+            ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+        i2caccess_pollara)
+            echo "Running I2C TEST pollara" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/scripts/asic; \
+            tclsh sal_i2c_access.tcl -slot $SLOT; \
+            ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+
         *)
             echo "Unknown test name ${DIAG_JOB} or card ${NIC_TYPE}" | tee -a $LOGFILE
             ret=-1

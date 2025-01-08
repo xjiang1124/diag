@@ -85,7 +85,8 @@ set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
 if {$err_cnt != 0} {
     plog_err "I2C ACCESS TEST FAILED"
+    exit -1
 } else {
     plog_msg "I2C ACCESS TEST PASSED"
+    exit 0
 }
-exit 0

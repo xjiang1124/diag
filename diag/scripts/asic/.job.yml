@@ -117,3 +117,28 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  i2caccess-pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh i2caccess --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
