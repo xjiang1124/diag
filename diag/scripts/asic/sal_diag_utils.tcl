@@ -36,53 +36,14 @@ proc check_vrd_fault {} {
     }
 }
 
-proc verify_clk_obs {arm_freq} {
-    set err_cnt 0
-    foreach tile [list 1_1 1_2 2_1 2_2 3_1 3_2 4_1 4_2] {
-        set x [sal_jtag_arm_${tile}_clk_obs_pad_func]
-        plog_msg "set_pollara_frequency :: Checking ARM_${tile} clk_obs Exp: $arm_freq Act: $x"
-        if {$x != $arm_freq} { set err_cnt 1 }
-    }
-    return $err_cnt
-}
-
-proc set_pollara_frequency_2000_workaround {} {
-    # keep setting until readback is correct
-    set arm_freq 200 ; #=Freq/10
-    for {set retry 0} {$retry < 3} {incr retry} {
-        sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 0 64 1 0 1 0 64 1 2 1 1
-        sal_warm_rst
-        if {[verify_clk_obs $arm_freq] == 0} { break }
-        plog_msg "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...retrying."
-    }
-    if {$retry == 3} {
-        plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
-        return -1
-    }
-    return 0
-}
-
 proc verify_arm_frequency {{arm_freq "1500"}} {
     set card_type [sal_get_card_type]
     if { $card_type != "POLLARA" } {
         # not supported
-        return
+        plog_msg "set_pollara_frequency :: not pollara, skipping verify_arm_frequency"
+        return 0
     }
-    sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS $arm_freq
-}
-
-proc set_pollara_frequency_2000 {} {
-    sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
-    plog_msg "set_pollara_frequency :: Verify CLKs are at 2000 MHz"
-    verify_arm_frequency 2000
-    sal_warm_rst
-}
-
-proc set_pollara_frequency_1500 {} {
-    sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
-    plog_msg "set_pollara_frequency :: Verify CLKs are at 1500 MHz"
-    verify_arm_frequency 1500
-    sal_warm_rst
+    return [sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS $arm_freq]
 }
 
 proc set_pollara_frequency {{arm_freq "1500"}} {
@@ -93,22 +54,31 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
         ## which will block the j2c connection
         ## therefore it can only work over onewire
         sal_ow
-        if { $arm_freq == "3000"} {
-            sal_set_pollara_freq
-            plog_msg "wr sal0.ms.soc.cfg_clk 0x6"
-            wr sal0.ms.soc.cfg_clk 0x6
-        } elseif { $arm_freq == "2000" } {
-            set_pollara_frequency_2000
-        } elseif { $arm_freq == "1500" } {
-            set_pollara_frequency_1500
-        } elseif { $arm_freq == "1250" } {
-            sal_set_pollara_freq_arm_1250
-        } elseif { $arm_freq == "750" } {
-            sal_set_pollara_freq_arm_750
+
+        # keep setting until readback is correct
+        for {set retry 0} {$retry < 3} {incr retry} {
+            if { $arm_freq == "2000" } {
+                sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
+            } elseif { $arm_freq == "1500" } {
+                sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+            }
+            plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
+            if {[verify_arm_frequency $arm_freq] != 0} {
+                plog_msg "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...retrying."
+                plog_clr_err_count
+                continue
+            } else {
+                break
+            }
         }
-        sal_j2c
+        if {$retry == 3} {
+            plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
+        }
+        sal_warm_rst
         clear_resetcode 0x0b
+        sal_j2c
     } else {
+        plog_msg "set_pollara_frequency :: not pollara, skipping set_pollara_frequency"
         sal_j2c
     }
     plog_msg "Measuring frequencies:"
