@@ -96,6 +96,9 @@ cp -r ${PSDIAG_ROOT}/tools/python_packets/amd64/lib ${HOME}/.local/
 
 MTPIP=$(grep "IP:" ${MTP_CFG_YML} | awk -F": " '{print $NF}')
 SLOT=$(grep "NIC-" ${NIC_BARCODE_FILE} | head -n1 | awk -F"-0" '{print $NF}')  ##TODO: better way to get single digit slot
+NIC_SN=$(awk 'NR==2' ${NIC_BARCODE_FILE})
+NIC_MAC=$(awk 'NR==3' ${NIC_BARCODE_FILE} | sed 's/../&:/g;s/:$//')
+NIC_PN=$(awk 'NR==4' ${NIC_BARCODE_FILE})
 LOGFILE=${PSDIAG_ROOT}/log/test.log
 echo $(date) > $LOGFILE
 echo "**************************************************"
@@ -128,7 +131,7 @@ if [[ $ret == 0 ]]; then
             sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
             source ~/.bash_profile; set -x; \
             cd /home/diag/diag/scripts/asic; \
-            tclsh l1_test.tcl slot$SLOT $SLOT hod 0 normal 0 0 0 0 0 1 1 0 1; \
+            tclsh l1_test.tcl $NIC_SN $SLOT hod 0 normal 0 0 0 0 0 1 1 0 1; \
             ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
             " | tee -a $LOGFILE
             grep "jobd-passed" $LOGFILE
@@ -141,7 +144,7 @@ if [[ $ret == 0 ]]; then
             sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
             source ~/.bash_profile; set -x; \
             cd /home/diag/diag/scripts/asic; \
-            tclsh l1_test.tcl slot$SLOT $SLOT hod 0 normal 0 0 0 0 0 0 1 0 1; \
+            tclsh l1_test.tcl $NIC_SN $SLOT hod 0 normal 0 0 0 0 0 0 1 0 1; \
             ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
             " | tee -a $LOGFILE
             grep "jobd-passed" $LOGFILE
@@ -299,6 +302,64 @@ if [[ $ret == 0 ]]; then
             cd /home/diag/diag/python/regression; \
             python3 ./nic_test_v2.py prog_dpu_fru -skip_fru2 -slot $SLOT; \
             ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+        i2caccess_leni)
+            echo "Running I2C TEST leni" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/python/regression; \
+            python3 ./nic_test_v2.py prog_dpu_fru -skip_fru2 -slot $SLOT; \
+            ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+        i2caccess_pollara)
+            echo "Running I2C TEST pollara" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/scripts/asic; \
+            tclsh sal_i2c_access.tcl -slot $SLOT; \
+            ret=\$?; if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+        seckeyprog_leni)
+            echo "Running ESEC PROG leni" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/python/esec; \
+            python2 ./esec_ctrl.py -img_prog -slot $SLOT; \
+            python2 ./esec_ctrl.py -esec_prog -sn $NIC_SN -pn \'$NIC_PN\' -mac $NIC_MAC -brd_name LENI48G -mtp $MTP_ID -fast -slot $SLOT; \
+            ret=\$?; \
+            python2 ./esec_ctrl.py -cleanup; \
+            if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
+            " | tee -a $LOGFILE
+            grep "jobd-passed" $LOGFILE
+            ret=$?
+            echo "RETURN CODE= $ret"
+            ;;
+        seckeyprog_pollara)
+            echo "Running ESEC PROG pollara" | tee -a $LOGFILE
+            echo "**************************************************"
+            sshpass -p lab123 ssh ${SSH_OPTIONS[@]} diag@$MTPIP " \
+            source ~/.bash_profile; set -x; \
+            cd /home/diag/diag/python/esec; \
+            python2 ./esec_ctrl.py -img_prog -slot $SLOT; \
+            python2 ./esec_ctrl.py -esec_prog -sn $NIC_SN -pn \'$NIC_PN\' -mac $NIC_MAC -brd_name POLLARA -mtp $MTP_ID -fast -slot $SLOT; \
+            ret=\$?; \
+            python2 ./esec_ctrl.py -cleanup; \
+            if [[ \$ret == 0 ]]; then echo jobd-passed; fi \
             " | tee -a $LOGFILE
             grep "jobd-passed" $LOGFILE
             ret=$?

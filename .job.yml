@@ -115,6 +115,8 @@ jobs:
     labels: ["CI-DIAG-Tests"]
   diag/python/regression:
     labels: ["CI-DIAG-Tests"]
+  diag/python/esec:
+    labels: ["CI-DIAG-Tests"]
 ### JOB LABELS ###
   test/FST:
     labels: ["CI-DIAG-Model", "CI-DIAG-Release", "CI-DIAG-FST"]
@@ -159,6 +161,10 @@ dependencies:
     - reference: diag/scripts/asic
   diag/python/regression:
     - reference: diag/python/regression
+  diag/python/esec:
+    - reference: diag/python/esec
+  diag/python/esec/scripts:
+    - reference: diag/python/esec
 
   diag:
 ### TEST DIAG CHANGES ###
