@@ -155,7 +155,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         return -1
 
     if "system   :System commands" in help_output:
-        fwsel_cmd = "system fwsel dpu"
+        fwsel_cmd = "system fwsel dpu goldfw"
         boot_cmd = "system boot-dpu"
     else:
         fwsel_cmd = "n1 fwsel goldfw"
