@@ -282,6 +282,7 @@ proc set_avs_gig { {board_id SN000001} {j2c_slot 1} {core_freq 1100} {arm_freq 3
 }
 
 proc set_avs_sal {} {
+    sal_j2c
     reset_to_proto_mode
 
     sal_print_die_id

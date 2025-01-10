@@ -10,7 +10,7 @@ set usage {
     {logEn.arg      "yes"                   "Save to logfile"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
-    {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
+    {tcl_path.arg   ""                      "ASIC lib location"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -125,12 +125,20 @@ proc mbist_only_diag {} {
 source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 ### initialize asic lib
-set ASIC_LIB_BUNDLE "$tcl_path"
+if { $tcl_path != "" } {
+    set ASIC_LIB_BUNDLE "$tcl_path"
+} elseif { $::env(ASIC_LIB_BUNDLE) != "" } {
+    set ASIC_LIB_BUNDLE $::env(ASIC_LIB_BUNDLE)
+} else {
+    set ASIC_LIB_BUNDLE "/home/diag/diag/asic"
+}
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
-set ASIC_LIB "$ASIC_LIB_BUNDLE/asic_lib"
-set ASIC_GEN "$ASIC_SRC"
-set DIAG_SRC "$tcl_path/diag/scripts/asic/"
-cd $ASIC_SRC/ip/cosim/tclsh
+set env(ASIC_LIB_BUNDLE) "$ASIC_LIB_BUNDLE"
+set env(ASIC_LIB) "$ASIC_LIB_BUNDLE/asic_lib"
+set env(ASIC_SRC) "$ASIC_LIB_BUNDLE/asic_src"
+set env(ASIC_GEN) "$ASIC_LIB_BUNDLE/asic_src"
+set env(LD_LIBRARY_PATH) "$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:${::env(LD_LIBRARY_PATH)}"
+cd $ASIC_LIB_BUNDLE/asic_src/ip/cosim/tclsh
 source .tclrc.diag.sal
 
 ### initialize card properties
@@ -176,6 +184,7 @@ if {$vmarg_arm != "none"} {
     plog_msg "New ARM vout: $new_volt"
 }
 sal_print_voltage_temp_from_j2c
+sal_print_die_id
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
@@ -193,6 +202,9 @@ foreach test_name $test_name_list {
     set cmd_1 [lindex $cmd_list 1]
     set cmd_2 [lindex $cmd_list 2]
     set cmd_3 [lindex $cmd_list 3]
+    set err_cnt1 0
+    set err_cnt2 0
+    set err_cnt3 0
 
     for { set iter 1 } { $iter <= $loops } {incr iter} {
         if { $iter > 1 } {
@@ -216,7 +228,7 @@ foreach test_name $test_name_list {
         set cmd [lindex $cmd_list 1]
         if {$cmd != ""} {
             plog_msg "cmd_1 $cmd"
-            eval $cmd
+            set err_cnt1 [sal_get_myerr_cnt $cmd]
         }
 
         ## exec test command
@@ -224,15 +236,17 @@ foreach test_name $test_name_list {
         set cmd [lindex $cmd_list 2]
         if {$cmd != ""} {
             plog_msg "cmd_2 $cmd"
-            set err_cnt [sal_get_myerr_cnt $cmd 0 0 1]
+            set err_cnt2 [sal_get_myerr_cnt $cmd 0 0 1]
         }
 
         ## exec post command
         set cmd [lindex $cmd_list 3]
         if {$cmd != ""} {
             plog_msg "cmd_3 $cmd"
-            eval $cmd
+            set err_cnt3 [sal_get_myerr_cnt $cmd]
         }
+
+        set err_cnt [expr $err_cnt1 + $err_cnt2 + $err_cnt3]
 
         if {$err_cnt != 0} {
             set final_rslt 1
