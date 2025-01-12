@@ -100,16 +100,8 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
             find_avg_rate 5 4000
         }
 
-        if {[string first "FF" $vmarg] == 0} {
-            set fn "$asic_src/ip/cosim/salina/sal_FF_thermal_calibration.csv"
-        } elseif {[string first "SS" $vmarg] == 0} {
-            set fn "$asic_src/ip/cosim/salina/sal_SS_thermal_calibration.csv"
-        } else {
-            set fn "$asic_src/ip/cosim/salina/sal_TT_thermal_calibration.csv"
-        }
-        plog_msg "AW Cal file: $fn"
-        set cali_ret [sal_aw_adc_temp_read 0 50 100 0 3 100 $fn]
-        plog_msg "sal_aw_adc_temp_read: $cali_ret"
+        set cali_ret [sal_aw_adc_temp_read_ref_fuse 0 3 100]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: $cali_ret"
 
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
