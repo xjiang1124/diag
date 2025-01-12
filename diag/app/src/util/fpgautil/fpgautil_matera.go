@@ -779,6 +779,9 @@ func matera_fpga_cli() {
                 }
                 if os.Args[5] == "all" {
                     fmt.Printf(" Erasing the entire flash\n")
+                    // enable SPI Mode only once
+                    materafpga.SetJTAGbusToSPI(flashID)
+                    materafpga.SpiBusEnableIOexpander(flashID)
                     err = materafpga.Spi_salina_flash_erase_all_sectors(flashID, qspiNumber) 
                 } else {
                     addr, err := strconv.ParseUint(os.Args[5], 0, 32)

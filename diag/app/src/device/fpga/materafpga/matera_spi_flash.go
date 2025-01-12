@@ -815,7 +815,7 @@ func Spi_salina_flash_erase_all_sectors(spiNumber uint32, qspiNumber uint32) (er
     fmt.Printf("Erasing Sector at addr:")
     for i=0; i<elba_flash_info.region_size; i = i + elba_flash_info.sector_size {
         fmt.Printf(".")
-        err = Spi_salina_flash_erase_sector(spiNumber, qspiNumber, i) 
+        err = Spi_salina_flash_erase_sector_w_spiBus_enable(spiNumber, qspiNumber, i, false) 
         if err != nil {
             fmt.Printf("\nERROR: Erase All Sectors Failed.  Slot-%d Qspi-%d:\n", spiNumber+1, qspiNumber)
             return
