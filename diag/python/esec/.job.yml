@@ -39,3 +39,28 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  seckeyprog-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh seckeyprog --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
