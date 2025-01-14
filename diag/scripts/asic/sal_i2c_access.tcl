@@ -12,6 +12,12 @@ if { $slot == "" } { puts "Missing required --slot arg" ; exit -1 }
 parray arg
 
 proc sal_rtc_access_test {} {
+    # do a software reset
+    sal_smbus_write_byte_data 2 0x51 0x2F 0x2C
+    after 1000
+    # read stop_en bit
+    set stop_en [sal_smbus_read_byte_data 2 0x51 0x2E]
+    plog_msg "stop_en: $stop_en"
     set secondPre [sal_smbus_read_byte_data 2 0x51 1]
     set secondPre [expr ($secondPre & 0xF) + (($secondPre >> 4) & 7) * 10]
     plog_msg "pre: $secondPre"
