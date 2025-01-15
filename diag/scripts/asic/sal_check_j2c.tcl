@@ -74,7 +74,7 @@ for {set i 0} {$i < $ite} {incr i} {
             plog_msg "OW APB is good"
             set ow_apb_good 1
         } else {
-            plog_msg "OW APB is bad"
+            plog_err "OW APB is bad"
         }
     }
 
@@ -102,7 +102,7 @@ for {set i 0} {$i < $ite} {incr i} {
         plog_err "PC_TEST_J2C FAILED"
         set ret 1
         if {$use_j2c == 0} {
-            plog_msg "OW AXI is bad"
+            plog_err "OW AXI is bad"
             set ow_axi_good 0
         }
     } else {
