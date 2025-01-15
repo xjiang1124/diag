@@ -1654,6 +1654,68 @@ class nic_test_v2:
 
         return ret
 
+    def sal_pc_test_j2c(self, args):
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+
+
+        for ite in range(args.iteration):
+            print("=== Ite:", ite, "===")
+
+            session = common.session_start()
+            common.session_cmd(session, "mbist_power_on.sh "+str(args.slot), timeout=90)
+
+            print("tcl_path:", args.tcl_path)
+            print("=== TCL ENV setup ===")
+            tcl_path = args.tcl_path
+            common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+            common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+            common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+            common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+            common.session_cmd(session, "source source_env_path")
+            common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            #common.session_cmd(session, "rm -f *")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+            time.sleep(3)
+            cmd = "fpgautil spimode {} off".format(args.slot)
+            common.session_cmd(session, cmd)
+            cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+            common.session_cmd(session, cmd)
+
+            use_j2c = 1         if args.j2c             else 0
+            use_gpio3 = 1       if args.gpio3           else 0
+            use_pwr_ok_rst = 1  if args.pwr_ok_rst      else 0
+            stop_on_error = 1   if args.stop_on_error   else 0
+
+            cmd = "tclsh ~/diag/scripts/asic/sal_check_j2c.tcl -slot {} -ite {} -use_j2c {} -use_gpio3 {} -use_pwr_ok_rst {} -stop_on_error {}".format(args.slot, args.tcl_ite, use_j2c, use_gpio3, use_pwr_ok_rst, stop_on_error)
+            timeout = 120+6*args.tcl_ite
+            ret = common.session_cmd(session, cmd, timeout, False, "PC_TEST_J2C PASSED")
+            session.expect("\$ ")
+
+            common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
+            common.session_cmd(session, "i2cdump -y {} 0x4a".format(args.slot+2))
+
+            if ret != 1:
+                print("PC_TEST_J2C has failed!", ite)
+                if args.stop_on_error:
+                    print("Stoping scripti")
+                    break
+            else:
+                print("PC_TEST_J2C has passed!", ite)
+
+            common.session_stop(session)
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -1973,6 +2035,18 @@ if __name__ == "__main__":
     group_sal_pc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
     group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
     parser_sal_pc.set_defaults(func=test.sal_pc_test)
+
+    # salina power cycle test
+    parser_sal_pc_j2c = sal_misc_subp.add_parser('pc_test_j2c', help='Power cycle test, check with J2C', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_pc_j2c.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_pc_j2c.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
+    parser_sal_pc_j2c.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    parser_sal_pc_j2c.add_argument("-tcl_ite", "--tcl_ite", help="Number of iteration in TCL file", type=int, default=10)
+    parser_sal_pc_j2c.add_argument("-gpio3", '--gpio3', action='store_true', help='Use GPIO3 reset')
+    parser_sal_pc_j2c.add_argument("-pwr_ok_rst", '--pwr_ok_rst', action='store_true', help='Toggle CPLD Power OK')
+    parser_sal_pc_j2c.add_argument("-j2c", '--j2c', action='store_true', help='Use j2c to check; Otherwise use OW')
+    parser_sal_pc_j2c.add_argument("-soe", '--stop_on_error', action='store_true', help='Stop the script on the first error')
+    parser_sal_pc_j2c.set_defaults(func=test.sal_pc_test_j2c)
 
     try:
         args = parser.parse_args()
