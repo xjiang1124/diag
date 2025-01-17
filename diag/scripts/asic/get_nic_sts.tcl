@@ -185,7 +185,7 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
-        plog_msg "ECC happaned. Dumping DDR configuration"
+        plog_msg "GET_NIC_STS_DBG_INFO: ECC happaned. Dumping DDR configuration"
         exec rm -rf ${sn}_dump 
         exec mkdir ${sn}_dump 
         cd ${sn}_dump
@@ -207,7 +207,7 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
 
     if {$err_cnt != 0} {
-        plog_msg "ECC happaned. Dumping DDR configuration"
+        plog_msg "GET_NIC_STS_DBG_INFO: ECC happaned. Dumping DDR configuration"
         exec rm -rf ${sn}_dump 
         exec mkdir ${sn}_dump 
         cd ${sn}_dump

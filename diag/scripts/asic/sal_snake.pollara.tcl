@@ -100,8 +100,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
             find_avg_rate 5 4000
         }
 
-        set cali_ret [sal_aw_adc_temp_read_ref_fuse 0 3 100]
-        plog_msg "sal_aw_adc_temp_read_ref_fuse: $cali_ret"
+        set cali_ret_mx0 [sal_aw_adc_temp_read_ref_fuse 0 3 100]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: MX0: $cali_ret_mx0"
+        set cali_ret_mx1 [sal_aw_adc_temp_read_ref_fuse 1 3 100]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: MX1: $cali_ret_mx1"
 
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
