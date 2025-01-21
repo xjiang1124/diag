@@ -286,6 +286,11 @@ proc validate_pmro {} {
     set avs_c       [ sal_die_id_get_vdd_core ]
     set avs_a       [ sal_die_id_get_vdd_arm ]
 
+    if { $pmro == 0 && $avs_c == 0 && $avs_a == 0 } {
+        plog_msg "Skip checking PMRO"
+        return
+    }
+
     switch $avs_c {
         9           { set pmro_min    0; set pmro_max 9999; }
         8           { set pmro_min    0; set pmro_max 2700; }
@@ -295,7 +300,7 @@ proc validate_pmro {} {
         default     { set pmro_min    0; set pmro_max 9999; }
     }
 
-    if { $pmro > $pmro_max || $pmro <= $pmro_min } {
+    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
         plog_err "PMRO of $pmro does not fall within correct CORE range $pmro_min-$pmro_max"
     } else {
         plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"
@@ -312,7 +317,7 @@ proc validate_pmro {} {
         default     { set pmro_min    0; set pmro_max 9999; }
     }
 
-    if { $pmro > $pmro_max || $pmro <= $pmro_min } {
+    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
         plog_err "PMRO of $pmro does not fall within correct ARM range $pmro_min-$pmro_max"
     } else {
         plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"

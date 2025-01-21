@@ -935,7 +935,7 @@ class nic_test_v2:
                 break
 
         if ret != 0:
-            print("=== Setup env single slot failed!", slot)
+            print("=== Setup env single slot failed! failed slot:", slot)
         else:
             print("=== Setup env single slot done #", retry, "===")
         print("timestamp", datetime.datetime.now().time())
@@ -999,7 +999,7 @@ class nic_test_v2:
                 break
 
         if ret != 0:
-            print("=== Setup env single slot failed!", slot)
+            print("=== Setup env single slot failed! failed slot:", slot)
         else:
             print("=== Setup env single slot done #", retry, "===")
         print("timestamp", datetime.datetime.now().time())
