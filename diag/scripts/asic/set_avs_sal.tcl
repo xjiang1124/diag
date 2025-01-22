@@ -4,6 +4,7 @@ source /home/diag/diag/scripts/asic/asic_tests.tcl
 set usage {
     {slot.arg       ""                      "Slot number"}
     {sn.arg         ""                      "Serial Number"}
+    {arm_freq.arg   "3000"                  "ARM Frequency (3000 or 1500)"}
     {tcl_path.arg   "/home/diag/diag/asic/" "ASIC lib location"}
 }
 # rename argv variables to call them more easily
@@ -11,6 +12,7 @@ array set arg [cmdline::getoptions argv $usage]
 foreach argname [array names arg] { set $argname $arg($argname) }
 if { $slot == "" } { puts "Missing required --slot arg" ; exit -1 }
 if { $sn   == "" } { set sn "Slot${slot}" }
+if { $arm_freq != 1500 && $arm_freq != 3000 } { puts "Invalid --arm_freq arg: choose from 3000 or 1500"; exit -1 }
 
 set ASIC_LIB_BUNDLE "$tcl_path"
 set ASIC_SRC "$ASIC_LIB_BUNDLE/asic_src"
@@ -31,7 +33,7 @@ plog_start $log_file 1000000000
 # run test
 exec fpgautil spimode $slot off
 exec jtag_accpcie_salina clr $slot
-set err_cnt [sal_get_myerr_cnt set_avs_sal]
+set err_cnt [sal_get_myerr_cnt "set_avs_sal $arm_freq"]
 diag_close_j2c_if $::slot $::port
 
 plog_stop
