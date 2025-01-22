@@ -362,7 +362,7 @@ proc set_avs_sal {arm_freq} {
         default     { set tgt_arm  935 }
     }
 
-    sal_update_vout_min VDD 700
+    sal_update_vout_min VDD 600
     sal_update_vboot VDD $tgt_vdd
     set new_volt [sal_get_vboot VDD]
     if { [expr $new_volt - $tgt_vdd] > 5 } {
@@ -376,7 +376,7 @@ proc set_avs_sal {arm_freq} {
             plog_msg "sal_set_avs :: Ignoring ARM SVS for frequency $arm_freq. Applying Core SVS voltage onto ARM"
             set tgt_arm $tgt_vdd
         }
-        sal_update_vout_min ARM 700
+        sal_update_vout_min ARM 600
         sal_update_vboot ARM $tgt_arm
         set new_volt [sal_get_vboot ARM]
         if { [expr $new_volt - $tgt_arm] > 5 } {
