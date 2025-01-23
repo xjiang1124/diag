@@ -324,10 +324,13 @@ proc validate_pmro {} {
     }
 }
 
-proc set_avs_sal {} {
+proc set_avs_sal {arm_freq} {
+    ############################################
+    # arm_freq = 3000: use SVS voltage for arm
+    # arm_freq = 1500: use core voltage for arm
+    ############################################
     sal_j2c
     reset_to_proto_mode
-
     sal_print_die_id
 
     set tgt_vdd     710
@@ -359,7 +362,7 @@ proc set_avs_sal {} {
         default     { set tgt_arm  935 }
     }
 
-    sal_update_vout_min VDD 700
+    sal_update_vout_min VDD 600
     sal_update_vboot VDD $tgt_vdd
     set new_volt [sal_get_vboot VDD]
     if { [expr $new_volt - $tgt_vdd] > 5 } {
@@ -369,7 +372,11 @@ proc set_avs_sal {} {
     }
 
     if [dict exists [sal_i2c_tbl] ARM] {
-        sal_update_vout_min ARM 700
+        if {$arm_freq == 1500} {
+            plog_msg "sal_set_avs :: Ignoring ARM SVS for frequency $arm_freq. Applying Core SVS voltage onto ARM"
+            set tgt_arm $tgt_vdd
+        }
+        sal_update_vout_min ARM 600
         sal_update_vboot ARM $tgt_arm
         set new_volt [sal_get_vboot ARM]
         if { [expr $new_volt - $tgt_arm] > 5 } {

@@ -280,10 +280,12 @@ if { $check_vrm != 0 } {
         gig_print_voltage_temp
     } elseif {$ASIC_TYPE == "SALINA"} {
         sal_print_voltage_temp_from_j2c
-        sal_dump_cpld_regs
         if {[ssi_cpld_read 0x32] == "0x08"} {
-            sal_tps53688_explain_status 2 0x60 0
+            plog_msg "VDD_CORE status registers:"; sal_tps53688_explain_status 2 0x60 0
+            plog_msg "VDD_ARM  status registers:"; sal_tps53688_explain_status 2 0x60 1
         }
+        plog_msg "Measuring frequencies:"; sal_get_freq
+        plog_msg "Measuring ARM frequency:"; sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS
     } else {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0

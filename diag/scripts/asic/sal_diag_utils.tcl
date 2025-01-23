@@ -60,7 +60,12 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
             if { $arm_freq == "2000" } {
                 sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
             } elseif { $arm_freq == "1500" } {
-                sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+                # sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+                ## above command only sets some clocks.
+                ## if UFM1 is in play, it may change other clocks MBIST relies on so above command is not enough.
+                ## using below command will reconfigure ALL clocks:
+                ## arm core ddr eth flash gmac stg nxc fcw0 refclk postdiv dpll pll_out_sel
+                sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 30 1 1 2 1
             }
             plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
             if {[verify_arm_frequency $arm_freq] != 0} {
