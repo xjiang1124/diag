@@ -12,6 +12,7 @@ import (
     "platform/matera"
     "device/fpga/materafpga"
     "device/psu/dps2100"
+    "github.com/gofrs/flock"
 )
 
 const errhelpMatera = "\nfpgautil:\n" +
@@ -42,7 +43,7 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil spimode <slot#> on/off\n"
         
 
-                               
+var fpga_mdio_lock = flock.New("/tmp/fpga_mdio_lock")
 
 func matera_fpga_cli() {
     
@@ -53,6 +54,7 @@ func matera_fpga_cli() {
     var port int64
     var data16 uint16
     var i int = 0
+    var retry uint16
 
     argc := len(os.Args[0:])
 
@@ -1063,10 +1065,25 @@ func matera_fpga_cli() {
             fmt.Printf(" Args[4] ParseUint is showing ERR = %v.   Exiting Program\n", err)
             os.Exit(-1)
         }
+        for retry := 0; retry < 1000; retry++ {
+            locked, err_l := fpga_mdio_lock.TryLock()
+            if err_l != nil {
+                fmt.Println("Error trying to lock the fpga_mdio_lock")
+            }
+            if locked {
+                break
+            }
+            time.Sleep(time.Duration(10) * time.Millisecond)
+        }
+        if retry == 100 {
+            err = fmt.Errorf("ERROR: MdioRead: Failed to get mdio lock\n");
+            os.Exit(-1)
+        }
         if (os.Args[1] == "mdiord") {
             data16, err = materafpga.MdioRead(uint8(inst), uint8(phy), uint8(addr))
             if err != nil {
                 cli.Printf("e", "MdioRead Failed")
+                fpga_mdio_lock.Unlock()
                 os.Exit(-1)
             }
             fmt.Printf("RD [0x%.02x] = 0x%.04x\n", addr, data16)
@@ -1075,10 +1092,12 @@ func matera_fpga_cli() {
             err = materafpga.MdioWrite(uint8(inst), uint8(phy), uint8(addr), uint16(data64))
             if err != nil {
                 cli.Printf("e", "MdioWrite Failed")
+                fpga_mdio_lock.Unlock()
                 os.Exit(-1)
             }
             fmt.Printf("WR [0x%.02x] = 0x%.04x\n", addr, uint16(data64))
         }
+        fpga_mdio_lock.Unlock()
         os.Exit(0)
     } else if os.Args[1] == "mvldump" {
         inst, err = strconv.ParseUint(os.Args[2], 0, 8)
@@ -1091,14 +1110,44 @@ func matera_fpga_cli() {
             fmt.Printf(" Args[3] ParseUint is showing ERR = %v.   Exiting Program\n", err)
             os.Exit(-1)
         }
+        for retry := 0; retry < 1000; retry++ {
+            locked, err_l := fpga_mdio_lock.TryLock()
+            if err_l != nil {
+                fmt.Println("Error trying to lock the fpga_mdio_lock")
+            }
+            if locked {
+                break
+            }
+            time.Sleep(time.Duration(10) * time.Millisecond)
+        }
+        if retry == 100 {
+            err = fmt.Errorf("ERROR: MdioRead: Failed to get mdio lock\n");
+            os.Exit(-1)
+        }
         materafpga.MvlDump(uint8(inst), int8(port))
+        fpga_mdio_lock.Unlock()
     } else if os.Args[1] == "mvlclear" {
         inst, err = strconv.ParseUint(os.Args[2], 0, 8)
         if err != nil {
             fmt.Printf(" Args[2] ParseUint is showing ERR = %v.   Exiting Program\n", err)
             os.Exit(-1)
         }
+        for retry := 0; retry < 1000; retry++ {
+            locked, err_l := fpga_mdio_lock.TryLock()
+            if err_l != nil {
+                fmt.Println("Error trying to lock the fpga_mdio_lock")
+            }
+            if locked {
+                break
+            }
+            time.Sleep(time.Duration(10) * time.Millisecond)
+        }
+        if retry == 100 {
+            err = fmt.Errorf("ERROR: MdioRead: Failed to get mdio lock\n");
+            os.Exit(-1)
+        }
         materafpga.MvlClear(uint8(inst))
+        fpga_mdio_lock.Unlock()
     } else if os.Args[1] == "spimode" {
         if argc < 4 {
             fmt.Printf(" %s \n", errhelpMatera)

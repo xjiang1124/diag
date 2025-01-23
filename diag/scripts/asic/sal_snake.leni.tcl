@@ -215,8 +215,8 @@ set err_cnt_init [ plog_get_err_count ]
 if { $test_type == "esam_pktgen_llc_sor" ||
      $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
      $test_type == "esam_pktgen_ddr_burst" } {
-    sal_set_proto_mode 0
-    sal_proto_mode_powerup
+    sal_pcc
+    sal_arm_reset
 }
 
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
