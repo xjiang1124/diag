@@ -1427,6 +1427,14 @@ class nic_test_v2:
         if ret != 0:
             return ret
         try:
+            # clear interrupts before test
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts")
+            time.sleep(10)
+            # ECC check before test
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
+            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+                print("===== FAILED: New interrupts before stress test")
+                ret = -1
             self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
             cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
             cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
@@ -1437,6 +1445,12 @@ class nic_test_v2:
                 ret = -1
             if pass_sig not in output:
                 print("===== FAILED: missing passing signature")
+                ret = -1
+                time.sleep(3)
+            # ECC check after test
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
+            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+                print("===== FAILED: Failed ECC check")
                 ret = -1
         except pexpect.TIMEOUT:
             print ("failed to run memory stress test")
@@ -1457,6 +1471,7 @@ class nic_test_v2:
             return -1
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
+        print("GOOGLE STRESS TEST PASSED")
         return ret
 
     def sal_edma_test(self, args):
