@@ -5,6 +5,8 @@ set card_type   [lindex $argv 1]
 set vmarg       [lindex $argv 2]
 set dura        [lindex $argv 3]
 set mtp_clk     [lindex $argv 4]
+set vmarg_core  [lindex $argv 5]
+set vmarg_arm   [lindex $argv 6]
 
 set ASIC_SRC $::env(ASIC_SRC)
 
@@ -64,6 +66,19 @@ plog_start $fn
 plog_msg "card_type = $card_type"
 sal_print_die_id
 sal_set_vmarg $vmarg 
+if {$vmarg_core != "0"} {
+    plog_msg "set vmarg VDD: $vmarg_arm"
+    sal_set_margin_by_value VDD $vmarg_core
+    set new_vout [sal_get_vout VDD]
+    plog_msg "New VDD vout: $new_vout"
+}
+if {$vmarg_arm != "0" && [dict exists [sal_i2c_tbl] ARM]} {
+    plog_msg "set vmarg ARM: $vmarg_arm"
+    sal_set_margin_by_value ARM $vmarg_arm
+    set new_vout [sal_get_vout ARM]
+    plog_msg "New ARM vout: $new_vout"
+}
+sal_print_voltage_temp
 
 pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
 

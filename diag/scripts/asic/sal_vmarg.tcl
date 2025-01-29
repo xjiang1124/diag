@@ -5,8 +5,8 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 set parameters {
     {slot.arg       ""                      "Slot number"}
     {vmarg.arg      "0"                     "Voltage margin: normal/high/low"}
-    {vmarg_core.arg "0"                     "Core vmargin percentage"}
-    {vmarg_arm.arg  "0"                     "arm vmargin percentage"}
+    {vmarg_core.arg "0"                     "Set CORE VOUT value"}
+    {vmarg_arm.arg  "0"                     "Set ARM VOUT value"}
     {vmarg_ddr.arg  "0"                     "DDR vmargin percentage"} ;# need to add support
     {tcl_path.arg   "/home/diag/diag/asic/" "ASIC nic.tar path"}
 }
