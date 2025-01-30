@@ -113,7 +113,6 @@ for {set i 0} {$i < $ite} {incr i} {
     set core_pll_good 1
     if { $ret!=0 } {
         try {
-            source ~/xin/jtag_core_clk_obs_pad.tcl
             set core_pll [sal_jtag_core_clk_obs_pad]
 
             if {$core_pll == 110} {
