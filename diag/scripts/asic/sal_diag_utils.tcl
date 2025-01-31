@@ -79,13 +79,13 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
         if {$retry == 3} {
             plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
         }
-        sal_warm_rst
-        clear_resetcode 0x0b
-        sal_j2c
     } else {
-        plog_msg "set_pollara_frequency :: not pollara, skipping set_pollara_frequency"
-        sal_j2c
+        plog_msg "set_pollara_frequency :: not pollara, skipping changing PLLs"
     }
+    plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
+    sal_j2c
+    sal_warm_rst
+    clear_resetcode 0x0b
     plog_msg "Measuring frequencies:"
     set freq_core  [sal_get_freq_core];    plog_msg "  freq_core:  $freq_core"
     set freq_stg   [sal_get_freq_stg];     plog_msg "  freq_stg:   $freq_stg"
