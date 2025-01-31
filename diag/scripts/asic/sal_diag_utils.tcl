@@ -84,14 +84,8 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
     }
     plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
     sal_j2c
-    sal_warm_rst
-    clear_resetcode 0x0b
-    plog_msg "Measuring frequencies:"
-    set freq_core  [sal_get_freq_core];    plog_msg "  freq_core:  $freq_core"
-    set freq_stg   [sal_get_freq_stg];     plog_msg "  freq_stg:   $freq_stg"
-    set freq_nxc   [sal_get_freq_nxc];     plog_msg "  freq_nxc:   $freq_nxc"
-    set freq_nxc2  [sal_get_freq_nxc_by2]; plog_msg "  freq_nxc2:  $freq_nxc2"
-    set freq_flash [sal_get_freq_flash];   plog_msg "  freq_flash: $freq_flash"
+    sal_cpld_warm_reset
+    clear_resetcode 0x12
 }
 
 proc cpld_disable_wdt {} {
