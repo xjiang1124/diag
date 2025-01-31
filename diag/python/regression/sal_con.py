@@ -5,6 +5,7 @@ import pexpect
 import os
 import sys
 import time
+import re
 #from enum import Enum
 
 sys.path.append("../lib")
@@ -154,7 +155,7 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
-    if "system   :System commands" in help_output:
+    if re.search("system.*system commands", help_output, re.IGNORECASE):
         fwsel_cmd = "system fwsel dpu goldfw"
         boot_cmd = "system boot-dpu"
     else:

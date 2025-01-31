@@ -1397,11 +1397,10 @@ class nic_test_v2:
             return -1
 
         session = common.session_start()
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
-
+        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+            return -1
+        # set vmarg before booting N1, otherwise the card reboots with reason "DPU internal reset GPIO8"
         print("Start Vmarge")
         print("tcl_path:", args.tcl_path)
         print("=== TCL ENV setup ===")
@@ -1435,57 +1434,79 @@ class nic_test_v2:
         cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
         common.session_cmd(session, cmd, 360, False, "vmarg set")
 
+        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=True):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            return -1
+
         print("Start test on N1")
         uart_session = common.session_start()
         ret = self.nic_con.uart_session_start(uart_session, args.slot)
         if ret != 0:
             return ret
-        try:
-            # clear interrupts before test
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts")
-            time.sleep(10)
-            # ECC check before test
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
-            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-                print("===== FAILED: New interrupts before stress test")
+        # clear interrupts before test
+        for i in range(10):
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts", 1)
+            if "Interrupts cleared" in uart_session.before:
+                ret = 0
+                break
+            else:
                 ret = -1
-            self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
-            cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
-            cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
-            pass_sig = "Status: PASS"
-            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
-            if cmdret != 0:
-                print("Command {} failed".format(cmd))
-                ret = -1
-            if pass_sig not in output:
-                print("===== FAILED: missing passing signature")
-                ret = -1
-                time.sleep(3)
-            # ECC check after test
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
-            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-                print("===== FAILED: Failed ECC check")
-                ret = -1
-        except pexpect.TIMEOUT:
-            print ("failed to run memory stress test")
-            return -1
+                time.sleep(1)
+        if ret != 0:
+            return ret
+        time.sleep(10)
+        # ECC check before test
+        if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
+            ret = -1
+        if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+            print("===== FAILED: New interrupts before stress test")
+            ret = -1
+        self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
+        cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
+        cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
+        pass_sig = "Status: PASS"
+        cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
+        if cmdret != 0:
+            print("Command {} failed".format(cmd))
+            ret = -1
+        if pass_sig not in output:
+            print("===== FAILED: missing passing signature")
+            ret = -1
+            time.sleep(3)
+        # ECC check after test
+        if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
+            ret = -1
+        if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+            print("===== FAILED: Failed ECC check")
+            ret = -1
+
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
 
-        cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 1".format(args.slot)
-        common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
+        if ret != 0:
+            cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 1".format(args.slot)
+            common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
+        else:
+            # check ECC from tcl too
+            cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 0 1".format(args.slot)
+            common.session_cmd(session, cmd, 360, False, "Getting ASIC ECC status - Done")
+            match = re.search(r'ECC happened', session.before)
+            if match:
+                print("ECC check FAILED for GOOGLE STRESS TEST")
+                ret = -1
 
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
         # check uart console
-        uart_session = common.session_start()
-        self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
-        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
-            print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
-            return -1
-        self.nic_con.uart_session_stop(uart_session)
-        common.session_stop(uart_session)
-        print("GOOGLE STRESS TEST PASSED")
+        if ret == 0:
+            uart_session = common.session_start()
+            self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
+            if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
+                print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            print("GOOGLE STRESS TEST PASSED")
         return ret
 
     def sal_edma_test(self, args):
@@ -1496,11 +1517,10 @@ class nic_test_v2:
             return -1
 
         session = common.session_start()
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
-
+        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+            return -1
+        # set vmarg before booting N1, otherwise the card reboots with reason "DPU internal reset GPIO8"
         print("Start Vmarge")
         print("tcl_path:", args.tcl_path)
         print("=== TCL ENV setup ===")
@@ -1534,56 +1554,78 @@ class nic_test_v2:
         cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
         common.session_cmd(session, cmd, 360, False, "vmarg set")
 
+        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=True):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            return -1
+
         print("Start test on N1")
         uart_session = common.session_start()
         ret = self.nic_con.uart_session_start(uart_session, args.slot)
         if ret != 0:
             return ret
-        try:
-            # clear interrupts before test
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts")
-            time.sleep(10)
-            # ECC check before test
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
-            if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-                print("New interrupts before EDMA test")
-                ret = -1
+
+        # clear interrupts before test
+        for i in range(10):
+            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts", 1)
+            if "Interrupts cleared" in uart_session.before:
+                ret = 0
+                break
             else:
-                cmd = "eth_dbgtool ddr_stress 65 100 0 0 0 0 3 100 wrcnt 500 1 3 &"
-                self.nic_con.uart_session_cmd(uart_session, cmd, timeout=30, ending="wr_dst_sz ")
-                start_time = time.time()
-                while True:
-                    if time.time() - start_time > args.dura:
-                        break
-                    self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc")
-                    if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-                        print("EDMA test FAILED ECC check")
-                        ret = -1
-                        break
-                    time.sleep(10)
-                self.nic_con.uart_session_cmd(uart_session, "killall eth_dbgtool")
-                self.nic_con.uart_session_cmd(uart_session, "\r")
-        except pexpect.TIMEOUT:
-            print("FAILED to run EDMA test")
+                ret = -1
+                time.sleep(1)
+        if ret != 0:
+            return ret
+        time.sleep(10)
+        # ECC check before test
+        if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
             ret = -1
+        if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+            print("New interrupts before EDMA test")
+            ret = -1
+        else:
+            cmd = "eth_dbgtool ddr_stress 65 100 0 0 0 0 3 100 wrcnt 500 1 3 &"
+            if self.nic_con.uart_session_cmd(uart_session, cmd, timeout=30, ending="wr_dst_sz ") != 0:
+                ret = -1
+            start_time = time.time()
+            while True:
+                if time.time() - start_time > args.dura:
+                    break
+                if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
+                    ret = -1
+                if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+                    print("EDMA test FAILED ECC check")
+                    ret = -1
+                    break
+                time.sleep(10)
+            self.nic_con.uart_session_cmd(uart_session, "killall eth_dbgtool")
+            self.nic_con.uart_session_cmd(uart_session, "\r")
+
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
 
         if ret != 0:
             cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 1".format(args.slot)
             common.session_cmd(session, cmd, 360, False, "Getting ASIC status - Done")
-
+        else:
+            # check ECC from tcl too
+            cmd = "tclsh ~/diag/scripts/asic/get_nic_sts.tcl x {} 0 1".format(args.slot)
+            common.session_cmd(session, cmd, 360, False, "Getting ASIC ECC status - Done")
+            match = re.search(r'ECC happened', session.before)
+            if match:
+                print("ECC check FAILED for EDMA TEST")
+                ret = -1
         common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
         common.session_stop(session)
         # check uart console
-        uart_session = common.session_start()
-        self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
-        if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
-            print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
-            return -1
-        self.nic_con.uart_session_stop(uart_session)
-        common.session_stop(uart_session)
-        print("EDMA test PASSED")
+        if ret == 0:
+            uart_session = common.session_start()
+            self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
+            if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
+                print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
+                return -1
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+            print("EDMA test PASSED")
         return ret
 
     def read_qsfp_from_arm(self, args):
