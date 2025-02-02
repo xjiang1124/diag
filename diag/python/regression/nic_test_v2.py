@@ -489,6 +489,78 @@ class nic_test_v2:
 
         return 0
 
+    def sal_pcie_prbs_v2(self, args):
+        print("tcl_path:", args.tcl_path)
+
+        session = common.session_start()
+        # set spimode to be off
+        cmd = "fpgautil spimode {} off".format(args.slot)
+        common.session_cmd(session, cmd)
+
+        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
+        common.session_cmd(session, cmd)
+
+        print("=== TCL ENV setup ===")
+        tcl_path = args.tcl_path
+        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
+        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
+        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
+        common.session_cmd(session, "source source_env_path")
+        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
+        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        #common.session_cmd(session, "rm -f *")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+
+        time.sleep(3)
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+            ret = -1
+            return ret
+        print("Done with Zephyr boot up, now start tcl")
+
+        # TCL command
+        if args.card_type == "LENI" or args.card_type == "LENI48G":
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
+        elif args.card_type == "POLLARA":
+            cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara_v2.tcl -slot {} -card_type {} -vmarg {} -dura {} -mtp_clk {} -aw_txfir_ow {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk, args.aw_txfir_ow)
+        else:
+            print(args.card_type, "not supported!")
+            common.session_stop(session)
+            return 0
+
+        common.session_cmd(session, cmd, ending="PRBS TEST DONE", timeout=args.timeout)
+        idx = session.expect(["PRBS test PASSED", "PRBS test FAILED", pexpect.TIMEOUT, "j2c : read req error", "min <= max", "sync failed"], args.timeout)
+
+        if idx >= 1:
+            print("ERROR :: PRBS test has failed!")
+            ret = -1
+
+        common.session_stop(session)
+
+        print("Dumping PCIe trace")
+        uart_session = common.session_start()
+        ret = self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
+        #ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+        try:
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showparams", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+        except pexpect.TIMEOUT:
+            print ("Faied to dump pcie trace")
+            return -1
+        self.nic_con.uart_session_stop(uart_session)
+        common.session_stop(uart_session)
+
+        return 0
+
     def nic_snake_mtp(self, args):
         ret = 0
         print("tcl_path:", args.tcl_path)
@@ -1354,23 +1426,30 @@ class nic_test_v2:
         if ret != 0:
             return ret
         try:
-            if args.eqbk_en is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_eqbk_en {}".format(args.eqbk_en))
-            if args.cmn_kp is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_kp {}".format(args.cmn_kp))
-            if args.cmn_ki is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_ki {}".format(args.cmn_ki))
-            if args.tx_prop_adj is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_prop_adj {}".format(args.tx_prop_adj))
-            if args.rx_prop_adj is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_prop_adj {}".format(args.rx_prop_adj))
-            if args.tx_mag is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_change_mag {}".format(args.tx_mag))
-            if args.rx_mag is not None:
-                self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_change_mag {}".format(args.rx_mag))
+            if args.erase:
+                self.nic_con.uart_session_cmd(session, "env erase")
+            else:
+                if args.eqbk_en is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_eqbk_en {}".format(args.eqbk_en))
+                if args.cmn_kp is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_kp {}".format(args.cmn_kp))
+                if args.cmn_ki is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_cmn_ki {}".format(args.cmn_ki))
+                if args.tx_prop_adj is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_prop_adj {}".format(args.tx_prop_adj))
+                if args.rx_prop_adj is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_prop_adj {}".format(args.rx_prop_adj))
+                if args.tx_mag is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_tx_change_mag {}".format(args.tx_mag))
+                if args.rx_mag is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_change_mag {}".format(args.rx_mag))
+                if args.rx_rate_nt is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_rate_nt {}".format(args.rx_rate_nt))
+                if args.txfirgen5 is not None:
+                    self.nic_con.uart_session_cmd(session, "setenv pcieawd_txfirgen5 {}".format(args.txfirgen5))
 
-            self.nic_con.uart_session_cmd(session, "saveenv")
-            self.nic_con.uart_session_cmd(session, "env print")
+                self.nic_con.uart_session_cmd(session, "saveenv")
+                self.nic_con.uart_session_cmd(session, "env print")
         except pexpect.TIMEOUT:
             print ("Failed to set pcieawd env")
             ret = -1
@@ -1770,8 +1849,7 @@ class nic_test_v2:
 
             cmd = "tclsh ~/diag/scripts/asic/sal_check_j2c.tcl -slot {} -ite {} -use_j2c {} -use_gpio3 {} -use_pwr_ok_rst {} -stop_on_error {}".format(args.slot, args.tcl_ite, use_j2c, use_gpio3, use_pwr_ok_rst, stop_on_error)
             timeout = 120+6*args.tcl_ite
-            ret = common.session_cmd(session, cmd, timeout, False, "PC_TEST_J2C PASSED")
-            session.expect("\$ ")
+            ret = common.session_cmd_pass(session, cmd, pass_sign="PC_TEST_J2C PASSED", timeout=timeout)
 
             common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
             common.session_cmd(session, "i2cdump -y {} 0x4a".format(args.slot+2))
@@ -2004,7 +2082,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp = subparsers.add_parser('nic_snake_mtp', help='NIC snake test from mtp', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_nic_snake_mtp.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
-    parser_nic_snake_mtp.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/xin/nic')
+    parser_nic_snake_mtp.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
     parser_nic_snake_mtp.add_argument("-dura", "--dura", help="test duration in seconds", type=int, default=3)
     parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
     parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
@@ -2024,7 +2102,7 @@ if __name__ == "__main__":
     parser_nic_port_up = subparsers.add_parser('pcie_prbs', help='pcie_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser_nic_port_up.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
-    parser_nic_port_up.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/xin/nic')
+    parser_nic_port_up.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
     parser_nic_port_up.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_port_up.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_port_up.add_argument("-dura", "--dura", help="Duration", type=str, default="30")
@@ -2091,6 +2169,7 @@ if __name__ == "__main__":
 
     parser_pcieawd_env = sal_misc_subp.add_parser('pcieawd_env', help='pcieawd setenv', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_pcieawd_env.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_pcieawd_env.add_argument("-erase", '--erase', action='store_true', help='Erase env')
     parser_pcieawd_env.add_argument("-eqbk_en", '--eqbk_en', help='pcieawd_eqbk_en', type=str, default=None)
     parser_pcieawd_env.add_argument("-cmn_kp", '--cmn_kp', help='pcieawd_cmn_kp', type=str, default=None)
     parser_pcieawd_env.add_argument("-cmn_ki", '--cmn_ki', help='pcieawd_cmn_ki', type=str, default=None)
@@ -2098,6 +2177,8 @@ if __name__ == "__main__":
     parser_pcieawd_env.add_argument("-rx_prop_adj", '--rx_prop_adj', help='pcieawd_rx_prop_adj', type=str, default=None)
     parser_pcieawd_env.add_argument("-tx_mag", '--tx_mag', help='pcieawd_tx_change_mag', type=str, default=None)
     parser_pcieawd_env.add_argument("-rx_mag", '--rx_mag', help='pcieawd_rx_change_mag', type=str, default=None)
+    parser_pcieawd_env.add_argument("-rx_rate_nt", '--rx_rate_nt', help='pcieawd_rx_rate_nt', type=str, default=None)
+    parser_pcieawd_env.add_argument("-txfirgen5", '--txfirgen5', help='pcieawd_txfirgen5', type=str, default=None)
     parser_pcieawd_env.set_defaults(func=test.sal_misc_pcieawd_env_ctrl)
 
     # salina power cycle test
@@ -2120,6 +2201,20 @@ if __name__ == "__main__":
     parser_sal_pc_j2c.add_argument("-j2c", '--j2c', action='store_true', help='Use j2c to check; Otherwise use OW')
     parser_sal_pc_j2c.add_argument("-soe", '--stop_on_error', action='store_true', help='Stop the script on the first error')
     parser_sal_pc_j2c.set_defaults(func=test.sal_pc_test_j2c)
+
+    # NIC PCIE PRBS test from mtp
+    parser_sal_pcie_prbs = sal_misc_subp.add_parser('pcie_prbs', help='pcie_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_sal_pcie_prbs.add_argument("-slot",          "--slot",       help="NIC slot", type=str, default="")
+    parser_sal_pcie_prbs.add_argument("-tcl_path",      "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_pcie_prbs.add_argument("-card_type",     "--card_type",  help="Card type", type=str, default='LENI')
+    parser_sal_pcie_prbs.add_argument("-vmarg",         "--vmarg",      help="vmarg", type=str, default='normal')
+    parser_sal_pcie_prbs.add_argument("-dura",          "--dura",       help="Duration", type=str, default="30")
+    parser_sal_pcie_prbs.add_argument("-mtp_clk",       "--mtp_clk",    help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
+    parser_sal_pcie_prbs.add_argument("-aw_txfir_ow",   "--aw_txfir_ow", help="TX FIR overwrite", type=int, default=100)
+    parser_sal_pcie_prbs.add_argument("-timeout",       "--timeout",    help="nic session cmd time out seconds", type=int, default=300)
+    parser_sal_pcie_prbs.add_argument("-v12_reset",     '--v12_reset',  help='Power cycle 12v', action='store_true' )
+    parser_sal_pcie_prbs.set_defaults(func=test.sal_pcie_prbs_v2)
 
     try:
         args = parser.parse_args()

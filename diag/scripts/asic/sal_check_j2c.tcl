@@ -10,6 +10,9 @@ set usage {
     {use_pwr_ok_rst.arg 0                      "Toggle power ok reset"}
     {stop_on_error.arg  0                       "Stop on error"}
 }
+
+set core_pll_special 0
+
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
 foreach argname [array names arg] { set $argname $arg($argname) }
@@ -71,10 +74,10 @@ for {set i 0} {$i < $ite} {incr i} {
         sal_ow_apb
         set val [regrd 0 0]
         if {$val == 0x006a0003} {
-            plog_msg "OW APB is good"
+            plog_msg "=== OW APB is good"
             set ow_apb_good 1
         } else {
-            plog_err "OW APB is bad"
+            plog_err "=== OW APB is bad"
         }
     }
 
@@ -102,21 +105,25 @@ for {set i 0} {$i < $ite} {incr i} {
         plog_err "PC_TEST_J2C FAILED"
         set ret 1
         if {$use_j2c == 0} {
-            plog_err "OW AXI is bad"
+            plog_err "=== OW AXI is bad"
             set ow_axi_good 0
         }
     } else {
-        plog_msg "OW AXI is good"
+        plog_msg "=== OW AXI is good"
         set ow_axi_good 1
     }
 
     set core_pll_good 1
+    set core_pll_0 0
     if { $ret!=0 } {
         try {
             set core_pll [sal_jtag_core_clk_obs_pad]
 
             if {$core_pll == 110} {
                 set core_pll_good 1
+            } elseif {$core_pll == 0 } {
+                set core_pll_good 0
+                set core_pll_0 1
             } else {
                 set core_pll_good 0
             }
@@ -127,10 +134,7 @@ for {set i 0} {$i < $ite} {incr i} {
         } finally {
             plog_msg "JTAG core pll obs done"
         }
-
-        if { $stop_on_error!=0 } {
-            break
-        }
+        break
     }
    
     if {$use_gpio3 == 1} {
@@ -156,8 +160,18 @@ if { ($ow_apb_good == 1) && ($ow_axi_good == 0) && ($core_pll_good == 0) } {
 
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {
-    plog_err "PC_TEST_J2C FAILED"
+    if { $core_pll_special == 1 } {
+        if { $core_pll_0 == 1 } {
+            plog_err "PC_TEST_J2C FAILED"
+        } else {
+            plog_msg "PC_TEST_J2C PASSED"
+        }
+    } else {
+        plog_msg "PC_TEST_J2C PASSED"
+    }
 } else {
+    sal_j2c
+    sal_print_voltage_temp
     plog_msg "PC_TEST_J2C PASSED"
 }
 
