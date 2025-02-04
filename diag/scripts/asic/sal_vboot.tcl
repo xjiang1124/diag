@@ -26,17 +26,11 @@ set ret [_msrd]
 plog_msg "_msrd: $ret"
 reset_to_proto_mode 
 if {$vboot_core != "none"} {
-    # break the limits
-    sal_update_vout_min VDD [expr $vboot_core - 10]
-    sal_update_vout_max VDD [expr $vboot_core + 10]
     sal_update_vboot VDD $vboot_core
     set new_volt [sal_get_vboot VDD]
     plog_msg "New VDD vboot: $new_volt"
 }
 if {$vboot_arm != "none"} {
-    # break the limits
-    sal_update_vout_min ARM [expr $vboot_arm - 10]
-    sal_update_vout_max ARM [expr $vboot_arm + 10]
     sal_update_vboot ARM $vboot_arm
     set new_volt [sal_get_vboot ARM]
     plog_msg "New ARM vboot: $new_volt"
