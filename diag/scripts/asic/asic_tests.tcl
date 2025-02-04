@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 
 proc init {} {
     set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"

@@ -1,3 +1,4 @@
+#! /usr/bin/tclsh
 source /home/diag/diag/scripts/asic/cmdline.tcl
 source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 source /home/diag/diag/scripts/asic/asic_tests.tcl

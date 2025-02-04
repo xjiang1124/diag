@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 #
 #package require cmdline
 source /home/diag/diag/scripts/asic/cmdline.tcl

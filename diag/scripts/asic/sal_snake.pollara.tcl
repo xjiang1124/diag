@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 
 set slot        [lindex $argv 0]
 set test_type   [lindex $argv 1]
