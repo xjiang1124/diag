@@ -65,7 +65,7 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
                 ## if UFM1 is in play, it may change other clocks MBIST relies on so above command is not enough.
                 ## using below command will reconfigure ALL clocks:
                 ## arm core ddr eth flash gmac stg nxc fcw0 refclk postdiv dpll pll_out_sel
-                sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 30 1 1 2 1
+                sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 60 2 1 2 1
             }
             plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
             if {[verify_arm_frequency $arm_freq] != 0} {
@@ -84,14 +84,8 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
     }
     plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
     sal_j2c
-    sal_warm_rst
-    clear_resetcode 0x0b
-    plog_msg "Measuring frequencies:"
-    set freq_core  [sal_get_freq_core];    plog_msg "  freq_core:  $freq_core"
-    set freq_stg   [sal_get_freq_stg];     plog_msg "  freq_stg:   $freq_stg"
-    set freq_nxc   [sal_get_freq_nxc];     plog_msg "  freq_nxc:   $freq_nxc"
-    set freq_nxc2  [sal_get_freq_nxc_by2]; plog_msg "  freq_nxc2:  $freq_nxc2"
-    set freq_flash [sal_get_freq_flash];   plog_msg "  freq_flash: $freq_flash"
+    sal_cpld_warm_reset
+    clear_resetcode 0x12
 }
 
 proc cpld_disable_wdt {} {
