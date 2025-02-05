@@ -66,7 +66,7 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
 
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
-    session.sendline("con_cleanup.sh {}".format(slot))
+    common.session_cmd(session, "con_cleanup.sh {}".format(slot), ending=["Killed uart","\$ "])
     session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
     session.sendline("")
 
