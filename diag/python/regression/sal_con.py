@@ -156,8 +156,11 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
-    if re.search("system.*system commands", help_output, re.IGNORECASE):
+    if "system   :System commands" in help_output:
         fwsel_cmd = "system fwsel dpu goldfw"
+        boot_cmd = "system boot-dpu"
+    elif re.search("system.*system commands", help_output, re.IGNORECASE):
+        fwsel_cmd = "system fwsel pipeline-fw goldfw"
         boot_cmd = "system boot-dpu"
     else:
         fwsel_cmd = "n1 fwsel goldfw"
