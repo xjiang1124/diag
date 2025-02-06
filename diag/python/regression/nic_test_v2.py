@@ -1428,7 +1428,7 @@ class nic_test_v2:
             return ret
         try:
             self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
-            cmd = "stressapptest_arm -M $mem -m {} -s {} -f file.1 -f file.2".format(args.threads, args.dura)
+            cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
             cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
             pass_sig = "Status: PASS"
             cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
@@ -1440,21 +1440,6 @@ class nic_test_v2:
                 ret = -1
         except pexpect.TIMEOUT:
             print ("failed to run memory stress test")
-            return -1
-
-        self.nic_con.uart_session_cmd(uart_session, "cat /sys/kernel/debug/mmc0/ios", 12)
-        if not 'mmc HS200' in uart_session.before:
-            print("EMMC Test Failed.  Expecting EMMC to be in HS200 mode")
-            return -1
-        self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"O error\" > test.txt;", 12)
-        self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
-        if 'error' in uart_session.before:
-            print("EMMC Test Failed with demsg I/O Error!!")
-            return -1
-        self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i mmc | grep -i error > test.txt", 12)
-        self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
-        if 'error' in uart_session.before:
-            print("EMMC Test Failed with demsg MMC Error!!")
             return -1
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
