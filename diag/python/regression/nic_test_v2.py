@@ -1689,8 +1689,8 @@ class nic_test_v2:
             
             self.nic_con.uart_session_cmd(uart_session, "mount /dev/mmcblk0p10 /data;cd /data;pwd", 12)
             self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
-            cmd = "/data/nic_util/stressapptest_arm -M $mem -s 60 -m 8 -f file.1 -f file.2"
-            cmd_timeout = 120
+            cmd = "/data/nic_util/stressapptest_arm -M $mem -s {} -m 8 -f file.1 -f file.2".format(args.dura)
+            cmd_timeout = 60 + args.dura
             pass_sig = "Status: PASS"
             cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
             if cmdret != 0:
@@ -2036,14 +2036,15 @@ if __name__ == "__main__":
     group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
     parser_sal_pc.set_defaults(func=test.sal_pc_test)
 
-    # salina power cycle test
-    parser_sal_pc = sal_misc_subp.add_parser('emmc_test', help='power cycle EMMC test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser_sal_pc.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
-    parser_sal_pc.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
-    group_sal_pc = parser_sal_pc.add_mutually_exclusive_group(required=False)
-    group_sal_pc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
-    group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
-    parser_sal_pc.set_defaults(func=test.sal_emmc_test)
+    # salina emmc test
+    parser_sal_emmc = sal_misc_subp.add_parser('emmc_test', help='power cycle EMMC test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_emmc.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
+    parser_sal_emmc.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
+    parser_sal_emmc.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    group_sal_emmc = parser_sal_emmc.add_mutually_exclusive_group(required=False)
+    group_sal_emmc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
+    group_sal_emmc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_emmc.set_defaults(func=test.sal_emmc_test)
 
 
 
