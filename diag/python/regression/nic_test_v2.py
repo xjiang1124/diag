@@ -1654,7 +1654,6 @@ class nic_test_v2:
 
         return ret
 
-
     def sal_emmc_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
@@ -1714,11 +1713,8 @@ class nic_test_v2:
             print("Test Ite:", ite, " PASSED")
             self.nic_con.uart_session_stop(uart_session)
             common.session_stop(uart_session)
-
             common.session_stop(session)
-
         return ret
-
 
 if __name__ == "__main__":
 
