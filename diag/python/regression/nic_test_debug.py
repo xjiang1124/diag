@@ -176,6 +176,37 @@ class nic_test_debug:
                     cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
                 common.session_cmd(session, cmd, 360, False, "vmarg set")
 
+            # boot Linux for Leni
+            if args.card_type != "POLLARA" and ite != 0:
+                uart_session = common.session_start()
+                self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+                ret, help_output = sal_con.exp_cmd(uart_session, "help", pass_sig_list=["uart:~\$"], timeout=1)
+                if ret != 0:
+                    print("===== FAILED: slot {} couldn't enter zephyr".format(args.slot))
+                    return -1
+
+                if re.search("system.*system commands", help_output, re.IGNORECASE):
+                    fwsel_cmd = "system fwsel dpu goldfw"
+                    boot_cmd = "system boot-dpu"
+                else:
+                    fwsel_cmd = "n1 fwsel goldfw"
+                    boot_cmd = "n1 boot"
+                if 0 != sal_con.exp_cmd(uart_session, fwsel_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                    print("===== FAILED: slot {} fwsel command failed".format(args.slot))
+                    return -1
+
+                # get earliest signature that will catch error messages from previous a35 command,
+                # while getting maximum messages from n1 uboot
+                if 0 != sal_con.exp_cmd(uart_session, boot_cmd, pass_sig_list=["Loading U-Boot image goldfw"], timeout=80)[0]:
+                    print("===== FAILED: slot {} boot didn't go through".format(args.slot))
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                if self.nic_con.uart_session_start_login(uart_session, args.slot) != 0:
+                    print("Couldnt get N1 login prompt")
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
+
             # Start CPU Burn on N1
             if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
                 print("Start CPU BURN on N1")
@@ -375,50 +406,39 @@ class nic_test_debug:
         else:
             nc = nic_con()
             nc.uart_session_connect(session, args.slot, uart_id=0)
-            for retry in range (3):
-                ret = nc.uart_session_cmd(session, "flash erase qspi@a0000 0x0 0x1000", ending="uart:~\$")
-                if ret != 0 or "Erase success" not in session.before:
-                    continue
-                else:
-                    break
-            if retry == 3:
+            nc.uart_session_cmd(session, "kernel log-level pcieawd 0", ending="uart:~\$")
+            ret = nc.uart_session_cmd(session, "flash erase qspi@a0000 0x0 0x1000", ending="uart:~\$")
+            if ret != 0 or "Erase success" not in session.before:
                 print("Failed to erase QSPI offset=0")
                 nc.uart_session_stop(session)
                 return -1
             for i in range (size / 4):
                 pattern = random.getrandbits(32)
                 offset = i * 4
-                for retry in range (3):
-                    ret = nc.uart_session_cmd(session, "flash write qspi@a0000 {} {}".format(hex(offset), hex(pattern)), ending="uart:~\$")
-                    if ret != 0 or "Verified" not in session.before:
-                        continue
-                    else:
-                        break
-                if retry == 3:
+                ret = nc.uart_session_cmd(session, "flash write qspi@a0000 {} {}".format(hex(offset), hex(pattern)), ending="uart:~\$")
+                if ret != 0 or "Verified" not in session.before:
                     print("Failed to write QSPI offset={}".format(offset))
                     nc.uart_session_stop(session)
                     return -1
-                for retry in range (3):
-                    ret = nc.uart_session_cmd(session, "flash read qspi@a0000 {} 4".format(hex(offset)), ending="uart:~\$")
-                    if ret != 0:
-                        continue
-                    match = re.search(r'([a-fA-F0-9]+):\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)', session.before)
-                    if match:
-                        byte0 = int(match.group(2), 16)
-                        byte1 = int(match.group(3), 16)
-                        byte2 = int(match.group(4), 16)
-                        byte3 = int(match.group(5), 16)
-                        data = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0
-                        print("data:", hex(data))
-                        if data != pattern:
-                            print("Failed data comparison at offset: {}, expected: {}, actual: {}".format(offset, hex(pattern), hex(data)))
-                            nc.uart_session_stop(session)
-                            return -1
-                        break
-                    else:
-                        continue
-                if retry == 3:
+                ret = nc.uart_session_cmd(session, "flash read qspi@a0000 {} 4".format(hex(offset)), ending="uart:~\$")
+                if ret != 0:
                     print("Failed to read QSPI offset={}".format(offset))
+                    nc.uart_session_stop(session)
+                    return -1
+                match = re.search(r'([a-fA-F0-9]+):\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)', session.before)
+                if match:
+                    byte0 = int(match.group(2), 16)
+                    byte1 = int(match.group(3), 16)
+                    byte2 = int(match.group(4), 16)
+                    byte3 = int(match.group(5), 16)
+                    data = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0
+                    print("data:", hex(data))
+                    if data != pattern:
+                        print("Failed data comparison at offset: {}, expected: {}, actual: {}".format(offset, hex(pattern), hex(data)))
+                        nc.uart_session_stop(session)
+                        return -1
+                else:
+                    print("Failed to read data from QSPI offset={}".format(offset))
                     nc.uart_session_stop(session)
                     return -1
         nc.uart_session_stop(session)
