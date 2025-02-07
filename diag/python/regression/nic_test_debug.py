@@ -406,7 +406,8 @@ class nic_test_debug:
         else:
             nc = nic_con()
             nc.uart_session_connect(session, args.slot, uart_id=0)
-            nc.uart_session_cmd(session, "kernel log-level pcieawd 0", ending="uart:~\$")
+            nc.uart_session_cmd(session, "kernel log-level hwmon 0", ending="uart:~\$")
+            nc.uart_session_cmd(session, "log backend log_backend_uart enable err LOGWRN", ending="uart:~\$")
             ret = nc.uart_session_cmd(session, "flash erase qspi@a0000 0x0 0x1000", ending="uart:~\$")
             if ret != 0 or "Erase success" not in session.before:
                 print("Failed to erase QSPI offset=0")
