@@ -1790,6 +1790,66 @@ class nic_test_v2:
 
         return ret
 
+    def sal_emmc_test(self, args):
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+        if card_type == "POLLARA":
+            print("===== FAILED: This test is not applicable to Pollara")
+            return -1
+
+        for ite in range(args.iteration):
+            print("=== Ite:", ite, "===")
+            session = common.session_start()
+            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                ret = -1
+                return ret
+
+            uart_session = common.session_start()
+            uart_session.timeout = 60
+            ret = self.nic_con.uart_session_start(uart_session, args.slot)
+            if ret != 0:
+                return ret
+
+            print("Start test on N1")
+
+            self.nic_con.uart_session_cmd(uart_session, "fdisk -l", 10)
+            if not 'Data Filesystem' in uart_session.before:
+                print("Failed EMMC TEST:  EMMC is not formated.  Do not see Partition 10 -> Data Filesystem")
+                return False
+
+            self.nic_con.uart_session_cmd(uart_session, "cat /sys/kernel/debug/mmc0/ios", 12)
+            if not 'mmc HS200' in uart_session.before:
+                print("EMMC Test Failed.  Expecting EMMC to be in HS200 mode")
+                return False
+            
+            self.nic_con.uart_session_cmd(uart_session, "mount /dev/mmcblk0p10 /data;cd /data;pwd", 12)
+            self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
+            cmd = "/data/nic_util/stressapptest_arm -M $mem -s {} -m 8 -f file.1 -f file.2".format(args.dura)
+            cmd_timeout = 60 + args.dura
+            pass_sig = "Status: PASS"
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
+            if cmdret != 0:
+                print("Command {} failed".format(cmd))
+                return False
+            if pass_sig not in output:
+                print("===== FAILED: stressapptest_arm")
+                return False
+
+            self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"O error\" > test.txt;", 12)
+            self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
+            if 'error' in uart_session.before:
+                print("EMMC Test Failed with demsg I/O Error!!")
+                return False
+            self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i mmc | grep -i error > test.txt", 12)
+            self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
+            if 'error' in uart_session.before:
+                print("EMMC Test Failed with demsg MMC Error!!")
+                return False
+            print("Test Ite:", ite, " PASSED")
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
+
     def sal_pc_test_j2c(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
@@ -2171,6 +2231,16 @@ if __name__ == "__main__":
     group_sal_pc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
     group_sal_pc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
     parser_sal_pc.set_defaults(func=test.sal_pc_test)
+
+    # salina emmc test
+    parser_sal_emmc = sal_misc_subp.add_parser('emmc_test', help='power cycle EMMC test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_emmc.add_argument("-slot", "--slot", help="NIC slot", type=int, default=1)
+    parser_sal_emmc.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
+    parser_sal_emmc.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    group_sal_emmc = parser_sal_emmc.add_mutually_exclusive_group(required=False)
+    group_sal_emmc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
+    group_sal_emmc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_emmc.set_defaults(func=test.sal_emmc_test)
 
     # salina power cycle test
     parser_sal_pc_j2c = sal_misc_subp.add_parser('pc_test_j2c', help='Power cycle test, check with J2C', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
