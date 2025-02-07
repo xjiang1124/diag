@@ -7,8 +7,6 @@ set card_type   [lindex $argv 3]
 set vmarg       [lindex $argv 4]
 set int_lpbk    [lindex $argv 5]
 set mtp_clk     [lindex $argv 6]
-set vmarg_core  [lindex $argv 7]
-set vmarg_arm   [lindex $argv 8]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -99,8 +97,12 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
             find_avg_rate 5 4000
         }
 
-        set cali_ret [sal_aw_adc_temp_read_ref_fuse 0 3 100]
-        plog_msg "sal_aw_adc_temp_read_ref_fuse: $cali_ret"
+        set cali_ret_mx0 [sal_aw_adc_temp_read_ref_fuse 0 3 100]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: MX0: $cali_ret_mx0"
+        set cali_ret_mx1 [sal_aw_adc_temp_read_ref_fuse 1 3 100]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: MX1: $cali_ret_mx1"
+        set cali_ret [expr ($cali_ret_mx0 + $cali_ret_mx1) / 2]
+        plog_msg "sal_aw_adc_temp_read_ref_fuse: AVG: $cali_ret"
 
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
@@ -211,8 +213,8 @@ set err_cnt_init [ plog_get_err_count ]
 if { $test_type == "esam_pktgen_llc_sor" ||
      $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
      $test_type == "esam_pktgen_ddr_burst" } {
-    sal_set_proto_mode 0
-    sal_proto_mode_powerup
+    sal_pcc
+    sal_arm_reset
 }
 
 set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
@@ -225,22 +227,7 @@ plog_msg "card_type = $card_type"
 plog_msg "cpld_id = $cpld_id"
 sal_print_die_id
 
-plog_msg "new_vmarg: $vmarg"
-    
 sal_set_vmarg $vmarg
-if {$vmarg_core != "0"} {
-    plog_msg "set vmarg VDD: $vmarg_core"
-    sal_set_margin_by_value VDD $vmarg_core
-    set new_vout [sal_get_vout VDD]
-    plog_msg "New VDD vout: $new_vout"
-}
-if {$vmarg_arm != "0"} {
-    plog_msg "set vmarg ARM: $vmarg_arm"
-    sal_set_margin_by_value ARM $vmarg_arm
-    set new_vout [sal_get_vout ARM]
-    plog_msg "New ARM vout: $new_vout"
-}
-sal_print_voltage_temp
 
 #plog_msg "Change fan speed to $::FAN_SPD"
 #exec $::DEVMGR fanctrl --pct=$::FAN_SPD

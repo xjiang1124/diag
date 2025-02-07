@@ -5,8 +5,6 @@ set usage {
     {sn.arg         ""                      "Serial number"}
     {slot.arg       ""                      "Slot number"}
     {vmarg.arg      "none"                  "Voltage margin"}
-    {vmarg_core.arg "none"                  "Set CORE VOUT value"}
-    {vmarg_arm.arg  "none"                  "Set ARM VOUT value"}
     {logEn.arg      "yes"                   "Save to logfile"}
     {loops.arg      "1"                     "Number of loops to run tests"}
     {test_list.arg  ""                      "Run only some tests. For multiple tests pass as \'test1 test2\'"}
@@ -171,19 +169,6 @@ plog_msg "_msrd"
 plog_msg [eval _msrd]
 reset_to_proto_mode no_proto
 sal_set_vmarg $vmarg
-if {$vmarg_core != "none"} {
-    plog_msg "set vmarg VDD: $vmarg_core"
-    sal_set_margin_by_value VDD $vmarg_core
-    set new_volt [sal_get_vout VDD]
-    plog_msg "New VDD vout: $new_volt"
-}
-if {$vmarg_arm != "none"} {
-    plog_msg "set vmarg ARM: $vmarg_arm"
-    sal_set_margin_by_value ARM $vmarg_arm
-    set new_volt [sal_get_vout ARM]
-    plog_msg "New ARM vout: $new_volt"
-}
-sal_print_voltage_temp_from_j2c
 sal_print_die_id
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]

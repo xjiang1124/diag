@@ -47,6 +47,8 @@ class nic_con:
         cmd = self.get_connect_cmd(slot)
         expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
+        if self.get_asic_type(slot) == "SALINA":
+            timeout=30
         for ite in range(3):
             print("ite: ", ite)
             #timeout = 15
@@ -1189,6 +1191,29 @@ class nic_con:
             common.session_stop(session)
         return ret
 
+    def sal_wait_for_uplink_ready(self, slot=0, session_uart=None):
+        ret = -1
+        if session_uart == None:
+            session = common.session_start()
+            self.uart_session_start(session, slot)
+        else:
+            session = session_uart
+
+        try:
+            self.uart_session_cmd(session, "pdsctl show port status", 360)
+            match = re.search(r'Eth1\/1\s+.*UP\/', session.before)
+            if match:
+                ret = 0
+            else:
+                print("=== Uplink port is not ready ===")
+        except pexpect.TIMEOUT:
+            print("=== TIMEOUT: Failed to wait for uplink ready ===")
+
+        if session_uart == None:
+            self.uart_session_stop(session)
+            common.session_stop(session)
+        return ret
+
     def get_mgmt_rdy(self, slot=0, first_pwr_on=False, skip_enable=False, asic_type="elba", uefi=False, dis_net_port=False, session_bash=None, session_uart=None):
         numRetry = 6
         ret = 0
@@ -1222,9 +1247,14 @@ class nic_con:
             print("=== Management port is ready ===")
         # for FW rev 1.68-G-9 or later, need to wait 10s before ping check
         asic_type = self.get_asic_type(slot)
-        if asic_type == "GIGLIO_CPLD" or asic_type == "SALINA":
+        if asic_type == "GIGLIO_CPLD":
             print("sleep 10")
             time.sleep(10)
+        if asic_type == "SALINA":
+            ret = self.sal_wait_for_uplink_ready(slot, session_uart)
+            if ret != 0:
+                print("=== FAIL to wait for uplink ready! ===")
+                return ret
         ret = self.ping_check_mtp(slot, session_bash)
         print(("ret:", ret))
 

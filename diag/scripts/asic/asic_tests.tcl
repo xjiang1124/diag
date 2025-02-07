@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 
 proc init {} {
     set ASIC_LIB_BUNDLE "/home/diag/diag/asic/"
@@ -281,16 +281,61 @@ proc set_avs_gig { {board_id SN000001} {j2c_slot 1} {core_freq 1100} {arm_freq 3
     return $err_cnt
 }
 
-proc set_avs_sal {} {
+proc validate_pmro {} {
+    set pmro        [ sal_die_id_get_pmro ]
+    set avs_c       [ sal_die_id_get_vdd_core ]
+    set avs_a       [ sal_die_id_get_vdd_arm ]
+
+    if { $pmro == 0 && $avs_c == 0 && $avs_a == 0 } {
+        plog_msg "Skip checking PMRO"
+        return
+    }
+
+    switch $avs_c {
+        9           { set pmro_min    0; set pmro_max 9999; }
+        8           { set pmro_min    0; set pmro_max 2700; }
+        7           { set pmro_min 2700; set pmro_max 2950; }
+        6           { set pmro_min 2950; set pmro_max 3050; }
+        5           { set pmro_min 3050; set pmro_max 9999; }
+        default     { set pmro_min    0; set pmro_max 9999; }
+    }
+
+    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
+        plog_err "PMRO of $pmro does not fall within correct CORE range $pmro_min-$pmro_max"
+    } else {
+        plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"
+    }
+
+    switch $avs_a {
+        11          { set pmro_min    0; set pmro_max 9999; }
+        10          { set pmro_min    0; set pmro_max 2700; }
+        9           { set pmro_min 2700; set pmro_max 2900; }
+        8           { set pmro_min 2900; set pmro_max 3000; }
+        7           { set pmro_min 3000; set pmro_max 3270; }
+        6           { set pmro_min 3270; set pmro_max 3361; }
+        5           { set pmro_min 3361; set pmro_max 9999; }
+        default     { set pmro_min    0; set pmro_max 9999; }
+    }
+
+    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
+        plog_err "PMRO of $pmro does not fall within correct ARM range $pmro_min-$pmro_max"
+    } else {
+        plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"
+    }
+}
+
+proc set_avs_sal {arm_freq} {
+    ############################################
+    # arm_freq = 3000: use SVS voltage for arm
+    # arm_freq = 1500: use core voltage for arm
+    ############################################
     sal_j2c
     reset_to_proto_mode
-
     sal_print_die_id
 
     set tgt_vdd     710
     set tgt_arm     935
     set die_id      [ sal_die_id_rd ]
-    set pmro        [ sal_die_id_get_pmro ]
     set avs_c       [ sal_die_id_get_vdd_core ]
     set avs_a       [ sal_die_id_get_vdd_arm ]
 
@@ -317,7 +362,7 @@ proc set_avs_sal {} {
         default     { set tgt_arm  935 }
     }
 
-    sal_update_vout_min VDD 700
+    sal_update_vout_min VDD 600
     sal_update_vboot VDD $tgt_vdd
     set new_volt [sal_get_vboot VDD]
     if { [expr $new_volt - $tgt_vdd] > 5 } {
@@ -327,7 +372,11 @@ proc set_avs_sal {} {
     }
 
     if [dict exists [sal_i2c_tbl] ARM] {
-        sal_update_vout_min ARM 700
+        if {$arm_freq == 1500} {
+            plog_msg "sal_set_avs :: Ignoring ARM SVS for frequency $arm_freq. Applying Core SVS voltage onto ARM"
+            set tgt_arm $tgt_vdd
+        }
+        sal_update_vout_min ARM 600
         sal_update_vboot ARM $tgt_arm
         set new_volt [sal_get_vboot ARM]
         if { [expr $new_volt - $tgt_arm] > 5 } {
@@ -336,6 +385,8 @@ proc set_avs_sal {} {
             plog_msg "sal_set_avs :: New ARM vboot: $new_volt"
         }
     }
+
+    validate_pmro
 
     sal_print_voltage_temp
 }

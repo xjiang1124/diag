@@ -5,6 +5,7 @@ import pexpect
 import os
 import sys
 import time
+import re
 #from enum import Enum
 
 sys.path.append("../lib")
@@ -52,7 +53,8 @@ def _boot_to_step(parsed_args):
 def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
     ret = 0
     nc = nic_con()
-    cmdret, output = nc.uart_session_cmd_w_ot(session, cmd, timeout=timeout, ending=pass_sig_list)
+    cmdret = nc.uart_session_cmd(session, cmd, timeout=timeout, ending=pass_sig_list)
+    output = session.before
     if cmdret != 0:
         print("Command {} failed".format(cmd))
         ret = -1
@@ -64,7 +66,7 @@ def exp_cmd(session, cmd, timeout=1, pass_sig_list=[], fail_sig_list=[]):
 
 
 def enter_a35_uboot(slot, session, *args, **kwargs):
-    session.sendline("con_cleanup.sh {}".format(slot))
+    common.session_cmd(session, "con_cleanup.sh {}".format(slot), ending=["Killed uart","\$ "])
     session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
     session.sendline("")
 
@@ -157,6 +159,9 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     if "system   :System commands" in help_output:
         fwsel_cmd = "system fwsel dpu goldfw"
         boot_cmd = "system boot-dpu"
+    elif re.search("system.*system commands", help_output, re.IGNORECASE):
+        fwsel_cmd = "system fwsel pipeline-fw goldfw"
+        boot_cmd = "system boot-dpu"
     else:
         fwsel_cmd = "n1 fwsel goldfw"
         boot_cmd = "n1 boot"
@@ -195,7 +200,23 @@ def enter_n1_linux(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter n1 uboot".format(slot))
         return -1
 
-    session.sendline("bootm 0x80500000")
+    old_memory_layout = kwargs.get('old_memory_layout', False)
+    if old_memory_layout:
+        # goldfw at fixed address
+        cmd = "bootm 0x80500000"
+    else:
+        # goldfw at dynamic address pointer located at fixed address
+        ret, output = exp_cmd(session, "md 0x80021010 1", pass_sig_list=["DSC#"], timeout=1)
+        if ret != 0:
+            return ret
+        m = re.search("80021010: ([0-9a-f]*)", output)
+        if not m:
+            print("===== FAILED: failed to find goldfw address pointer")
+            return -1
+        cmd = "bootm 0x{}".format(m.group(1))
+    if 0 != exp_cmd(session, cmd, pass_sig_list=["## Loading"], timeout=1)[0]:
+        print("===== FAILED: failed to load goldfw")
+        return -1
 
     if con_ctrl.uart_session_stop(session) != 0:
         return -1
@@ -258,6 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
+    parser.add_argument("--old_memory_layout", "-om", help="following old Leni memory layout before Jan 15", action='store_true', default=False)
 
     try:
         parsed_args = parser.parse_args()

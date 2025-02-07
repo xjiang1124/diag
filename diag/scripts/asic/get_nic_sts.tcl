@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 puts "argv: $argv"
 
 proc test_proc {input} {
@@ -43,7 +43,16 @@ proc print_pmic_events {} {
 
 set sn      [lindex $argv 0]
 set slot    [lindex $argv 1]
-set check_vrm    [lindex $argv 2]
+if {[llength $argv] >= 3} {
+    set check_vrm    [lindex $argv 2]
+} else {
+    set check_vrm 0
+}
+if {[llength $argv] >= 4} {
+    set check_ecc_only [lindex $argv 3]
+} else {
+    set check_ecc_only 0
+}
 
 set port 10
 
@@ -65,7 +74,7 @@ if { $BOARD_TYPE == "GINESTRA_D5" } {
     set ddr5 1
     set cpld_id 0x61
 }
-puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; board_type: $BOARD_TYPE"
+puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; check_ecc_only: $check_ecc_only; board_type: $BOARD_TYPE"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
@@ -185,7 +194,7 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     }
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
     if {$err_cnt != 0} {
-        plog_msg "ECC happaned. Dumping DDR configuration"
+        plog_msg "GET_NIC_STS_DBG_INFO: ECC happened. Dumping DDR configuration"
         exec rm -rf ${sn}_dump 
         exec mkdir ${sn}_dump 
         cd ${sn}_dump
@@ -207,7 +216,7 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err ) ]
 
     if {$err_cnt != 0} {
-        plog_msg "ECC happaned. Dumping DDR configuration"
+        plog_msg "GET_NIC_STS_DBG_INFO: ECC happened. Dumping DDR configuration"
         exec rm -rf ${sn}_dump 
         exec mkdir ${sn}_dump 
         cd ${sn}_dump
@@ -231,6 +240,11 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
         exec tar cf ${sn}_dump.tar ${sn}_dump/
     }
     elb_ddr_rst_ecc_intr_counter
+}
+
+if { $check_ecc_only != 0 } {
+    plog_msg "Getting ASIC ECC status - Done"
+    exit 0
 }
 
 set val [_msrd]
@@ -280,10 +294,12 @@ if { $check_vrm != 0 } {
         gig_print_voltage_temp
     } elseif {$ASIC_TYPE == "SALINA"} {
         sal_print_voltage_temp_from_j2c
-        sal_dump_cpld_regs
         if {[ssi_cpld_read 0x32] == "0x08"} {
-            sal_tps53688_explain_status 2 0x60 0
+            plog_msg "VDD_CORE status registers:"; sal_tps53688_explain_status 2 0x60 0
+            plog_msg "VDD_ARM  status registers:"; sal_tps53688_explain_status 2 0x60 1
         }
+        plog_msg "Measuring frequencies:"; sal_get_freq
+        plog_msg "Measuring ARM frequency:"; sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS
     } else {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0

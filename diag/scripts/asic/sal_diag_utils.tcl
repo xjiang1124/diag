@@ -60,7 +60,12 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
             if { $arm_freq == "2000" } {
                 sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
             } elseif { $arm_freq == "1500" } {
-                sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+                # sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+                ## above command only sets some clocks.
+                ## if UFM1 is in play, it may change other clocks MBIST relies on so above command is not enough.
+                ## using below command will reconfigure ALL clocks:
+                ## arm core ddr eth flash gmac stg nxc fcw0 refclk postdiv dpll pll_out_sel
+                sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 60 2 1 2 1
             }
             plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
             if {[verify_arm_frequency $arm_freq] != 0} {
@@ -74,19 +79,13 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
         if {$retry == 3} {
             plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
         }
-        sal_warm_rst
-        clear_resetcode 0x0b
-        sal_j2c
     } else {
-        plog_msg "set_pollara_frequency :: not pollara, skipping set_pollara_frequency"
-        sal_j2c
+        plog_msg "set_pollara_frequency :: not pollara, skipping changing PLLs"
     }
-    plog_msg "Measuring frequencies:"
-    set freq_core  [sal_get_freq_core];    plog_msg "  freq_core:  $freq_core"
-    set freq_stg   [sal_get_freq_stg];     plog_msg "  freq_stg:   $freq_stg"
-    set freq_nxc   [sal_get_freq_nxc];     plog_msg "  freq_nxc:   $freq_nxc"
-    set freq_nxc2  [sal_get_freq_nxc_by2]; plog_msg "  freq_nxc2:  $freq_nxc2"
-    set freq_flash [sal_get_freq_flash];   plog_msg "  freq_flash: $freq_flash"
+    plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
+    sal_j2c
+    sal_cpld_warm_reset
+    clear_resetcode 0x12
 }
 
 proc cpld_disable_wdt {} {
