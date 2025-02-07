@@ -10,6 +10,7 @@ import re
 import sys
 import time
 import threading
+import random
 from collections import OrderedDict
 from time import sleep
 
@@ -168,6 +169,37 @@ class nic_test_debug:
             if args.card_type == "LENI" or args.card_type == "LENI48G":
                 cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
                 common.session_cmd(session, cmd, 360, False, "vmarg set")
+
+            # boot Linux for Leni
+            if args.card_type != "POLLARA" and ite != 0:
+                uart_session = common.session_start()
+                self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+                ret, help_output = sal_con.exp_cmd(uart_session, "help", pass_sig_list=["uart:~\$"], timeout=1)
+                if ret != 0:
+                    print("===== FAILED: slot {} couldn't enter zephyr".format(args.slot))
+                    return -1
+
+                if re.search("system.*system commands", help_output, re.IGNORECASE):
+                    fwsel_cmd = "system fwsel dpu goldfw"
+                    boot_cmd = "system boot-dpu"
+                else:
+                    fwsel_cmd = "n1 fwsel goldfw"
+                    boot_cmd = "n1 boot"
+                if 0 != sal_con.exp_cmd(uart_session, fwsel_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                    print("===== FAILED: slot {} fwsel command failed".format(args.slot))
+                    return -1
+
+                # get earliest signature that will catch error messages from previous a35 command,
+                # while getting maximum messages from n1 uboot
+                if 0 != sal_con.exp_cmd(uart_session, boot_cmd, pass_sig_list=["Loading U-Boot image goldfw"], timeout=80)[0]:
+                    print("===== FAILED: slot {} boot didn't go through".format(args.slot))
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                if self.nic_con.uart_session_start_login(uart_session, args.slot) != 0:
+                    print("Couldnt get N1 login prompt")
+                    return -1
+                self.nic_con.uart_session_stop(uart_session)
+                common.session_stop(uart_session)
 
             # Start CPU Burn on N1
             if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
@@ -354,6 +386,57 @@ class nic_test_debug:
             if fail_nic_list:
                 return -1
 
+    def sal_qspi_erase_write_read(self, args):
+        ret = 0
+        size = 0x1000
+        session = common.session_start()
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False, new_ainic_layout=True):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(args.slot))
+            ret = -1
+        else:
+            nc = nic_con()
+            nc.uart_session_connect(session, args.slot, uart_id=0)
+            nc.uart_session_cmd(session, "kernel log-level hwmon 0", ending="uart:~\$")
+            nc.uart_session_cmd(session, "log backend log_backend_uart enable err LOGWRN", ending="uart:~\$")
+            ret = nc.uart_session_cmd(session, "flash erase qspi@a0000 0x0 0x1000", ending="uart:~\$")
+            if ret != 0 or "Erase success" not in session.before:
+                print("Failed to erase QSPI offset=0")
+                nc.uart_session_stop(session)
+                return -1
+            for i in range (size / 4):
+                pattern = random.getrandbits(32)
+                offset = i * 4
+                ret = nc.uart_session_cmd(session, "flash write qspi@a0000 {} {}".format(hex(offset), hex(pattern)), ending="uart:~\$")
+                if ret != 0 or "Verified" not in session.before:
+                    print("Failed to write QSPI offset={}".format(offset))
+                    nc.uart_session_stop(session)
+                    return -1
+                ret = nc.uart_session_cmd(session, "flash read qspi@a0000 {} 4".format(hex(offset)), ending="uart:~\$")
+                if ret != 0:
+                    print("Failed to read QSPI offset={}".format(offset))
+                    nc.uart_session_stop(session)
+                    return -1
+                match = re.search(r'([a-fA-F0-9]+):\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)\s+([a-fA-F0-9]+)', session.before)
+                if match:
+                    byte0 = int(match.group(2), 16)
+                    byte1 = int(match.group(3), 16)
+                    byte2 = int(match.group(4), 16)
+                    byte3 = int(match.group(5), 16)
+                    data = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0
+                    print("data:", hex(data))
+                    if data != pattern:
+                        print("Failed data comparison at offset: {}, expected: {}, actual: {}".format(offset, hex(pattern), hex(data)))
+                        nc.uart_session_stop(session)
+                        return -1
+                else:
+                    print("Failed to read data from QSPI offset={}".format(offset))
+                    nc.uart_session_stop(session)
+                    return -1
+        nc.uart_session_stop(session)
+        if ret == 0:
+            print("QSPI erase/write/read test PASSED")
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -415,6 +498,11 @@ if __name__ == "__main__":
     parser_srv_prbs.add_argument("-num_ite", "--num_ite", help="Number of iteration", type=int, default=1)
 
     parser_srv_prbs.set_defaults(func=test.srv_prbs)
+
+    # QSPI erase/write/read test
+    parser_qspi_erase_write_read = subparsers.add_parser('qspi_erase_write_read', help='QSPI erase/write/read test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_qspi_erase_write_read.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_qspi_erase_write_read.set_defaults(func=test.sal_qspi_erase_write_read)
 
     try:
         args = parser.parse_args()
