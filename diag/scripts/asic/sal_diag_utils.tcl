@@ -37,13 +37,28 @@ proc check_vrd_fault {} {
 }
 
 proc verify_arm_frequency {{arm_freq "1500"}} {
+    return [sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS $arm_freq]
+}
+
+proc verify_nxc_frequency {{nxc_freq 750}} {
+    set exp_freq [expr {$nxc_freq/10}]
+    set got_freq [sal_jtag_nxc_clk_obs_pad]
+    if {[expr {$exp_freq - $got_freq}] > 1} {
+        plog_err "set_pollara_frequency :: Incorrect NXC frequency, expecting $nxc_freq Mhz, got $got_freq"
+        return -1
+    }
+    return 0
+}
+
+proc verify_frequencies {} {
     set card_type [sal_get_card_type]
     if { $card_type != "POLLARA" } {
         # not supported
         plog_msg "set_pollara_frequency :: not pollara, skipping verify_arm_frequency"
         return 0
     }
-    return [sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS $arm_freq]
+    verify_arm_frequency
+    verify_nxc_frequency
 }
 
 proc set_pollara_frequency {{arm_freq "1500"}} {

@@ -31,8 +31,8 @@ proc define_test_list {{override_test_list ""}} {
             # #TEST NAME ############# RST PRE                      COMMAND              POST
             ID         { set cmd_list [list 0 ""                       sal_jtag_id          "" ] }
             FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc ] }
-            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      verify_arm_frequency ] }
-            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      verify_arm_frequency ] }
+            MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      verify_frequencies ] }
+            DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      verify_frequencies ] }
 
             MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
             MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
