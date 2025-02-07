@@ -200,8 +200,8 @@ def enter_n1_linux(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter n1 uboot".format(slot))
         return -1
 
-    old_memory_layout = kwargs.get('old_memory_layout', False)
-    if old_memory_layout:
+    new_memory_layout = kwargs.get('new_memory_layout', False)
+    if not new_memory_layout:
         # goldfw at fixed address
         cmd = "bootm 0x80500000"
     else:
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
-    parser.add_argument("--old_memory_layout", "-om", help="following old Leni memory layout before Jan 15", action='store_true', default=False)
+    parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
 
     try:
         parsed_args = parser.parse_args()
