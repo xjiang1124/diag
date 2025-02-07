@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 
 set slot        [lindex $argv 0]
 set test_type   [lindex $argv 1]
@@ -9,8 +9,6 @@ set int_lpbk    [lindex $argv 5]
 set ite         [lindex $argv 6]
 set mtp_clk     [lindex $argv 7]
 set lpmode      [lindex $argv 8]
-set vmarg_core  [lindex $argv 9]
-set vmarg_arm   [lindex $argv 10]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -206,20 +204,6 @@ sal_print_die_id
 plog_msg "new_vmarg: $vmarg"
     
 sal_set_vmarg $vmarg
-
-if {$vmarg_core != "0"} {
-    plog_msg "set vmarg VDD: $vmarg_arm"
-    sal_set_margin_by_value VDD $vmarg_core
-    set new_vout [sal_get_vout VDD]
-    plog_msg "New VDD vout: $new_vout"
-}
-if {$vmarg_arm != "0"} {
-    plog_msg "set vmarg ARM: $vmarg_arm"
-    sal_set_margin_by_value ARM $vmarg_arm
-    set new_vout [sal_get_vout ARM]
-    plog_msg "New ARM vout: $new_vout"
-}
-sal_print_voltage_temp
 
 plog_msg "snake test_type: $test_type"
 cd ../$test_type

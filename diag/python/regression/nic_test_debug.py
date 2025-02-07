@@ -166,13 +166,7 @@ class nic_test_debug:
 
             print("Start Vmarg")
             if args.card_type == "LENI" or args.card_type == "LENI48G":
-                if args.vmargCORE != "0" and args.vmargARM != "0":
-                    cmd = "tclsh ~/diag/scripts/asic/sal_vmarg.tcl"
-                    cmd += " -slot {}".format(args.slot)
-                    cmd += " -vmarg_core {}".format(args.vmargCORE)
-                    cmd += " -vmarg_arm {}".format(args.vmargARM)
-                else:
-                    cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+                cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
                 common.session_cmd(session, cmd, 360, False, "vmarg set")
 
             # Start CPU Burn on N1
@@ -208,8 +202,6 @@ class nic_test_debug:
                 cmd += " " + str(new_vmarg)
                 cmd += " " + str(args.int_lpbk)
                 cmd += " " + str(args.mtp_clk)
-                cmd += " " + str(args.vmargCORE)
-                cmd += " " + str(args.vmargARM)
             elif args.card_type == "POLLARA":
                 cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
                 cmd += " " + str(args.slot)
@@ -221,8 +213,6 @@ class nic_test_debug:
                 cmd += " " + str(args.ite)
                 cmd += " " + str(args.mtp_clk)
                 cmd += " " + str(args.lpmode)
-                cmd += " " + str(args.vmargCORE)
-                cmd += " " + str(args.vmargARM)
             else:
                 print(args.card_type, "not supported!")
                 common.session_stop(session)
@@ -396,8 +386,6 @@ if __name__ == "__main__":
     parser_nic_stress_reset.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=2400)
     parser_nic_stress_reset.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_stress_reset.add_argument("-ite", "--ite", help="Iteration of start and stop snake", type=int, default=1)
-    parser_nic_stress_reset.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
-    parser_nic_stress_reset.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
     parser_nic_stress_reset.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_stress_reset.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
     parser_nic_stress_reset.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")

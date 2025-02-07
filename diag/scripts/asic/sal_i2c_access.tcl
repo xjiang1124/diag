@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 source /home/diag/diag/scripts/asic/cmdline.tcl
 
 set usage {

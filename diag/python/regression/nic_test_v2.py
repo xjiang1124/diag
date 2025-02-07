@@ -448,8 +448,6 @@ class nic_test_v2:
             cmd += " {}".format(args.vmarg)
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
-            cmd += " {}".format(args.vmargCORE)
-            cmd += " {}".format(args.vmargARM)
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl"
             cmd += " {}".format(args.slot)
@@ -457,8 +455,6 @@ class nic_test_v2:
             cmd += " {}".format(args.vmarg)
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
-            cmd += " {}".format(args.vmargCORE)
-            cmd += " {}".format(args.vmargARM)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -633,13 +629,7 @@ class nic_test_v2:
 
         print("Start Vmarge")
         if args.card_type == "LENI" or args.card_type == "LENI48G":
-            if args.vmargCORE != "0" and args.vmargARM != "0":
-                cmd = "tclsh ~/diag/scripts/asic/sal_vmarg.tcl"
-                cmd += " -slot {}".format(args.slot)
-                cmd += " -vmarg_core {}".format(args.vmargCORE)
-                cmd += " -vmarg_arm {}".format(args.vmargARM)
-            else:
-                cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
+            cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
             common.session_cmd(session, cmd, 360, False, "vmarg set")
 
         # Start CPU Burn on N1
@@ -675,8 +665,6 @@ class nic_test_v2:
             cmd += " " + str(new_vmarg)
             cmd += " " + str(args.int_lpbk)
             cmd += " " + str(args.mtp_clk)
-            cmd += " " + str(args.vmargCORE)
-            cmd += " " + str(args.vmargARM)
         elif args.card_type == "POLLARA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
             cmd += " " + str(args.slot)
@@ -688,8 +676,6 @@ class nic_test_v2:
             cmd += " " + str(args.ite)
             cmd += " " + str(args.mtp_clk)
             cmd += " " + str(args.lpmode)
-            cmd += " " + str(args.vmargCORE)
-            cmd += " " + str(args.vmargARM)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -2087,8 +2073,6 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-snake_type", "--snake_type", help="Snake type", type=str, default='esam_pktgen_llc_no_mac_sor')
     parser_nic_snake_mtp.add_argument("-card_type", "--card_type", help="Card type", type=str, default='LENI')
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
-    parser_nic_snake_mtp.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
-    parser_nic_snake_mtp.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
@@ -2109,8 +2093,6 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_port_up.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
-    parser_nic_port_up.add_argument("-vmargCORE", "--vmargCORE", help="set CORE vout", type=str, default="0")
-    parser_nic_port_up.add_argument("-vmargARM", "--vmargARM", help="set ARM vout", type=str, default="0")
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
 
     # Program FRUs

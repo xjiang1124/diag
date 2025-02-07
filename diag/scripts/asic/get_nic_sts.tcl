@@ -1,4 +1,4 @@
-# !/usr/bin/tclsh
+#! /usr/bin/tclsh
 puts "argv: $argv"
 
 proc test_proc {input} {

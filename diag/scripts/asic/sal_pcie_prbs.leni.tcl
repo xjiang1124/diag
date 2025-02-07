@@ -5,8 +5,6 @@ set card_type   [lindex $argv 1]
 set vmarg       [lindex $argv 2]
 set dura        [lindex $argv 3]
 set mtp_clk     [lindex $argv 4]
-set vmarg_core  [lindex $argv 5]
-set vmarg_arm   [lindex $argv 6]
 
 set ASIC_SRC $::env(ASIC_SRC)
 
