@@ -627,6 +627,10 @@ class nic_test_v2:
         cmd = "jtag_accpcie_salina clr {}".format(args.slot)
         common.session_cmd(session, cmd)
 
+        # Disable WDT
+        cmd = "i2cset -y {} 0x4f 0x1 0".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
+
         print("Start Vmarge")
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
@@ -1433,6 +1437,13 @@ class nic_test_v2:
                     self.nic_con.uart_session_cmd(session, "setenv pcieawd_rx_rate_nt {}".format(args.rx_rate_nt))
                 if args.txfirgen5 is not None:
                     self.nic_con.uart_session_cmd(session, "setenv pcieawd_txfirgen5 {}".format(args.txfirgen5))
+                if args.all_params is not None:
+                    self.nic_con.uart_session_cmd(session, "env erase")
+                    param_list = args.all_params.split("#")
+                    for param in param_list:
+                        name = param.split(":")[0]
+                        value = param.split(":")[1]
+                        self.nic_con.uart_session_cmd(session, "setenv {} {}".format(name, value))
 
                 self.nic_con.uart_session_cmd(session, "saveenv")
                 self.nic_con.uart_session_cmd(session, "env print")
@@ -2221,6 +2232,7 @@ if __name__ == "__main__":
     parser_pcieawd_env.add_argument("-rx_mag", '--rx_mag', help='pcieawd_rx_change_mag', type=str, default=None)
     parser_pcieawd_env.add_argument("-rx_rate_nt", '--rx_rate_nt', help='pcieawd_rx_rate_nt', type=str, default=None)
     parser_pcieawd_env.add_argument("-txfirgen5", '--txfirgen5', help='pcieawd_txfirgen5', type=str, default=None)
+    parser_pcieawd_env.add_argument("-all_params", '--all_params', help='all parameters in one; format: param1:value1#param2:value2', type=str, default=None)
     parser_pcieawd_env.set_defaults(func=test.sal_misc_pcieawd_env_ctrl)
 
     # salina power cycle test
