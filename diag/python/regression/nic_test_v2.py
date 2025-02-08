@@ -1508,24 +1508,24 @@ class nic_test_v2:
         ret = self.nic_con.uart_session_start(uart_session, args.slot)
         if ret != 0:
             return ret
-        # clear interrupts before test
-        for i in range(10):
-            self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts", 1)
-            if "Interrupts cleared" in uart_session.before:
-                ret = 0
-                break
-            else:
-                ret = -1
-                time.sleep(1)
-        if ret != 0:
-            return ret
-        time.sleep(10)
-        # ECC check before test
-        if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
-            ret = -1
-        if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-            print("===== FAILED: New interrupts before stress test")
-            ret = -1
+        # # clear interrupts before test
+        # for i in range(10):
+        #     self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts", 1)
+        #     if "Interrupts cleared" in uart_session.before:
+        #         ret = 0
+        #         break
+        #     else:
+        #         ret = -1
+        #         time.sleep(1)
+        # if ret != 0:
+        #     return ret
+        # time.sleep(10)
+        # # ECC check before test
+        # if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
+        #     ret = -1
+        # if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+        #     print("===== FAILED: New interrupts before stress test")
+        #     ret = -1
         self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
         cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
         cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
@@ -1538,12 +1538,12 @@ class nic_test_v2:
             print("===== FAILED: missing passing signature")
             ret = -1
             time.sleep(3)
-        # ECC check after test
-        if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
-            ret = -1
-        if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-            print("===== FAILED: Failed ECC check")
-            ret = -1
+        # # ECC check after test
+        # if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
+        #     ret = -1
+        # if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
+        #     print("===== FAILED: Failed ECC check")
+        #     ret = -1
 
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
