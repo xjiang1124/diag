@@ -619,7 +619,7 @@ class nic_test_v2:
                args.snake_type == "esam_pktgen_ddr_burst":
                 print("ARM not booted")
             else:
-                if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+                if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False, new_memory_layout=args.new_memory_layout):
                     print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                     ret = -1
                     return ret
@@ -1539,7 +1539,7 @@ class nic_test_v2:
         cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
         common.session_cmd(session, cmd, 360, False, "vmarg set")
 
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=True):
+        if sal_con.enter_n1_linux(int(args.slot), session, new_memory_layout=args.new_memory_layout, warm_reset=True):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             return -1
 
@@ -1659,7 +1659,7 @@ class nic_test_v2:
         cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
         common.session_cmd(session, cmd, 360, False, "vmarg set")
 
-        if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=True):
+        if sal_con.enter_n1_linux(int(args.slot), session, new_memory_layout=args.new_memory_layout):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             return -1
 
@@ -1840,7 +1840,7 @@ class nic_test_v2:
         for ite in range(args.iteration):
             print("=== Ite:", ite, "===")
             session = common.session_start()
-            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False):
+            if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False, new_memory_layout=args.new_memory_layout):
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 ret = -1
                 return ret
@@ -2187,6 +2187,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
+    parser_nic_snake_mtp.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
     parser_nic_snake_mtp.set_defaults(func=test.nic_snake_mtp)
 
     # NIC PCIE PRBS test from mtp
@@ -2225,6 +2226,7 @@ if __name__ == "__main__":
     parser_mem_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_mem_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
     parser_mem_test.add_argument("-threads", "--threads", help="number of memory copy threads to run", type=int, default=16)
+    parser_mem_test.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
     parser_mem_test.set_defaults(func=test.google_stress_test)
 
     # EDMA test
@@ -2233,6 +2235,7 @@ if __name__ == "__main__":
     parser_edma_test.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
     parser_edma_test.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_edma_test.add_argument("-dura", "--dura", help="number of seconds to run", type=int, default=60)
+    parser_edma_test.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
     parser_edma_test.set_defaults(func=test.sal_edma_test)
 
     # SPI-to-CPLD test from ARM
@@ -2293,6 +2296,7 @@ if __name__ == "__main__":
     group_sal_emmc = parser_sal_emmc.add_mutually_exclusive_group(required=False)
     group_sal_emmc.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
     group_sal_emmc.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    group_sal_emmc.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
     parser_sal_emmc.set_defaults(func=test.sal_emmc_test)
 
     # salina power cycle test
