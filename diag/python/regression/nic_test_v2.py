@@ -630,6 +630,8 @@ class nic_test_v2:
         # Disable WDT
         cmd = "i2cset -y {} 0x4f 0x1 0".format(int(args.slot)+2)
         common.session_cmd(session, cmd)
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
 
         print("Start Vmarge")
         if args.card_type == "LENI" or args.card_type == "LENI48G":
@@ -651,6 +653,9 @@ class nic_test_v2:
             self.nic_con.uart_session_stop(uart_session)
             common.session_stop(uart_session)
             print("Done with starting CPU BURN on N1")
+
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
 
         print("Start tcl")
         # TCL command
