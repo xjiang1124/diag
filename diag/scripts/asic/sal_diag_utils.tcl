@@ -124,7 +124,6 @@ proc sal_verify_arm_cntrs {} {
 }
 
 proc reset_to_proto_mode {{reset "cold"}} {
-    cpld_disable_wdt
     if { $reset == "warm" } {
         sal_irstn_no_arm warm
         clear_resetcode 0x12
@@ -138,6 +137,7 @@ proc reset_to_proto_mode {{reset "cold"}} {
     # verify ARM is truly in reset
     sal_arm_show_reset
     if { $reset != "no_proto" } { sal_verify_arm_cntrs }
+    cpld_disable_wdt
     plog_msg [exec inventory -sts -slot $::slot]
 }
 
