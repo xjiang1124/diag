@@ -69,6 +69,7 @@ if { $slot == "" } {
 
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 proc sal_get_err_cnt { proc_to_run } {
    plog_msg "===> running  $proc_to_run"
@@ -221,7 +222,9 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     set rtn [eval _msrd]
     puts $rtn
 
-    sal_arm_reset
+    #sal_arm_reset
+    reset_to_proto_mode no_proto
+
     sal_print_voltage_temp_from_j2c
 
     set ret [sal_prog_qspi $fw_ptr 0x78010000]
@@ -578,7 +581,9 @@ proc esec_all {sn usb_port slot PN MAC MTP
     set rtn [eval _msrd]
     puts $rtn
 
-    sal_arm_reset
+    #sal_arm_reset
+    reset_to_proto_mode no_proto
+
     sal_print_voltage_temp_from_j2c
 
     set card_type [sal_get_card_type]
