@@ -61,9 +61,9 @@ proc verify_frequencies {} {
     verify_nxc_frequency
 }
 
-proc set_pollara_frequency {{arm_freq "1500"}} {
+proc set_pollara_frequency {{arm_freq "none"}} {
     set card_type [sal_get_card_type]
-    if { $card_type == "POLLARA" } {
+    if { $arm_freq != "none" && $card_type == "POLLARA" } {
         plog_msg "set_pollara_frequency :: Changing ARM frequency to $arm_freq"
         ## this sets frequency using jtag
         ## which will block the j2c connection
@@ -95,7 +95,7 @@ proc set_pollara_frequency {{arm_freq "1500"}} {
             plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
         }
     } else {
-        plog_msg "set_pollara_frequency :: not pollara, skipping changing PLLs"
+        plog_msg "set_pollara_frequency :: skipping changing PLLs by JTAG sequence"
     }
     plog_msg "set_pollara_frequency :: running with repairs"; sal_jtag_smsg_ctrl_saferr
     sal_j2c
