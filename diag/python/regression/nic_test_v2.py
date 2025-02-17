@@ -1922,8 +1922,8 @@ class nic_test_v2:
             common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
             common.session_cmd(session, "i2cdump -y {} 0x4a".format(args.slot+2))
 
-            if ret != 1:
-                print("PC_TEST_J2C has failed!", ite)
+            if ret != 0:
+                print("PC_TEST_J2C has failed!", ite, ret)
                 if args.stop_on_error:
                     print("Stoping scripti")
                     break
