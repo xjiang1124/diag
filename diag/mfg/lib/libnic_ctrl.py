@@ -145,6 +145,8 @@ class nic_ctrl():
             self._asic_type = "capri"
         elif self._nic_type in GIGLIO_NIC_TYPE_LIST:
             self._asic_type = "giglio"
+        elif self._nic_type in SALINA_NIC_TYPE_LIST:
+            self._asic_type = "salina"
 
     def mtp_exec_cmd(self, cmd, timeout=MTP_Const.OS_CMD_DELAY, sig_list=[]):
         rc = True
@@ -167,7 +169,12 @@ class nic_ctrl():
         elif idx < 0:
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             self.nic_set_cmd_buf(self._nic_handle.before)
-            self.nic_set_err_msg("Encountered script timeout with command buffer: " + str(repr(self._nic_handle.before)))
+            com_buffer_lines = self._nic_handle.before.splitlines()
+            self.nic_set_err_msg("Encountered script timeout with command buffer:")
+            if len(com_buffer_lines) > 100:
+                com_buffer_lines = com_buffer_lines[-100:]
+            for line in com_buffer_lines:
+                self.nic_set_err_msg(str(repr(line)))
             return False
         else:
             self.nic_set_cmd_buf(self._buf_before_sig + self._nic_handle.before)
@@ -401,6 +408,13 @@ class nic_ctrl():
         """
         self._refresh_required = val
 
+    def mbist_nic_power_on(self):
+        cmd = MFG_DIAG_CMDS.SALINA_MBIST_POWER_ON_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
+        return True
+
     def nic_power_off(self):
         cmd = MFG_DIAG_CMDS.NIC_POWER_OFF_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd):
@@ -409,14 +423,23 @@ class nic_ctrl():
         return True
 
 
-    def nic_power_on(self):
+    def nic_power_on(self, uart_selection='0', proto_mode='1'):
+        '''
+        Parameter uart_selection and prod_mode are only for Salina cards
+        uart_selection, 0(detault) means switch uart to A35 when boot, 1 means switch uart to N1
+        proto_mode, 0 mean put salina into proto_mode(A1 and A35 won't boot), non-zero means normal mode
+        '''
         cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
+        if self._nic_type in SALINA_NIC_TYPE_LIST:
+            cmd += " " + uart_selection + " " + proto_mode
         if not self.mtp_exec_cmd(cmd):
             return False
         # For Matera + Malfa, if Such error happend, workaround is sleep 10 seconds then re-send the turn on command again
         if "Error: Read failed".lower() in self.nic_get_cmd_buf().lower() and "Empty slot".lower() in self.nic_get_cmd_buf().lower():
             libmfg_utils.count_down(10)
             cmd = MFG_DIAG_CMDS.NIC_POWER_ON_FMT.format(self._slot+1)
+            if self._nic_type in SALINA_NIC_TYPE_LIST:
+                cmd += " " + uart_selection + " " + proto_mode
             if not self.mtp_exec_cmd(cmd):
                 return False
         libmfg_utils.count_down(MTP_Const.NIC_POWER_ON_DELAY)
@@ -639,7 +662,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(self._nic_handle.before)
         return rc
 
-    def nic_console_attach(self):
+    def nic_console_attach(self, uart_selecttor):
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
@@ -648,11 +671,15 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
+        if uart_selecttor:
+            cmd += ' ' + str(uart_selecttor)
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
         if idx < 0:
             self.nic_set_err_msg("{:s} failed - occupied or missing".format(cmd))
             return False
+        if self._nic_type in SALINA_NIC_TYPE_LIST and ( not uart_selecttor ):
+            self.nic_send_ctrl_c()
         time.sleep(5)
         # send return
         self._nic_handle.sendline("")
@@ -751,17 +778,24 @@ class nic_ctrl():
         else:
             return True
 
-    def nic_console_test_section(func):
-        def start_end(self, *args, **kwargs):
-            if not self.nic_console_attach():
-                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                return False
-            ret = func(self, *args, **kwargs)
-            if not self.nic_console_detach():
-                self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
-                return False
-            return ret
-        return start_end
+    def nic_console_test(uart_selecttor=None):
+        def nic_console_test_section(func):
+            def start_end(self, *args, **kwargs):
+                uart_sel = uart_selecttor
+                # For Salina DPU cards, made the default uart_sekector to N1, namely uart selector to 1
+                if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+                    if uart_selecttor is None:
+                        uart_sel = "1"
+                if not self.nic_console_attach(uart_sel):
+                    self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                    return False
+                ret = func(self, *args, **kwargs)
+                if not self.nic_console_detach():
+                    self.nic_set_status(NIC_Status.NIC_STA_TERM_FAIL)
+                    return False
+                return ret
+            return start_end
+        return nic_console_test_section
 
     def nic_fast_console_test_section(func):
         def start_end(self, *args, **kwargs):
@@ -794,7 +828,184 @@ class nic_ctrl():
         self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT)
         self._cmd_buf = cmd_buf             #reset the cmd_buf to failure buffer
 
-    @nic_console_test_section
+    def nic_salina_jtag_mbist(self, vmarg="normal"):
+        '''
+        run mbist from jtag, salina cards only
+        '''
+
+        if not self.mbist_nic_power_on():
+            return False
+
+        # goto the asic dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_MTP_SALINA_NIC_JTAG_MBIST.format(self._sn, str(self._slot+1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+        if MFG_DIAG_SIG.MATERA_NIC_SALINA_JTAG_MBIST_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+            run salina snake from mtp without mgmt
+        '''
+
+        if not slot_asic_dir_path:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        test_name = "max_pwr" if snake_type=="esam_pktgen_max_power_sor" else "ddr_burst"
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_NIC_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def ainic_snake_mtp_salina(self, snake_type='esam_pktgen_pollara_max_power_pcie_arm', vmarg="normal", dura=900, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+            run salina snake from mtp without mgmt
+        '''
+
+        if not slot_asic_dir_path:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        test_name = "max_pwr"
+
+        cmd = MFG_DIAG_CMDS.MATERA_AINIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_AINIC_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_pcie_prbs_salina(self, vmarg="normal", timeout=300, slot_asic_dir_path=None):
+        '''
+            run salina snake from mtp without mgmt
+        '''
+
+        if not slot_asic_dir_path:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        test_name = "pcie_prbs"
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_PCIE_PRBS_FMT.format(str(self._slot + 1), vmarg, self._nic_type, slot_asic_dir_path)
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_AINIC_PCIE_PRBS_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def set_piceawd_env_salina(self, timeout=300):
+        '''
+            set salina pcieawd env
+        '''
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_SET_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        return True
+
+    def erase_piceawd_env_salina(self, timeout=300):
+        '''
+            set salina pcieawd env
+        '''
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_ERASE_PCIEAWD_ENV_FMT.format(str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        return True
+
+    def i2c_qsfp_salina(self, vmarg="normal", timeout=180):
+        '''
+            set salina i2c qsfp
+        '''
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_I2C_QSFP_FMT.format(str(self._slot + 1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_I2C_QSFP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def i2c_rtc_salina(self, vmarg="normal", timeout=180):
+        '''
+            set salina i2c rtc
+        '''
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_I2C_RTC_FMT.format(str(self._slot + 1), vmarg)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_I2C_RTC_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_salina_fix_vrm(self, timeout=300):
+        '''
+            salina vrm fix
+        '''
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_MTP_SALINA_NIC_VRM_FIX_FMT.format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_SALINA_FIX_VRM_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    @nic_console_test()
     def nic_mgmt_config(self):
         # config the mgmt port
         cmd = MFG_DIAG_CMDS.NIC_SET_MGMT_IP_FMT.format(self._slot+101)
@@ -808,7 +1019,7 @@ class nic_ctrl():
         self.nic_set_status(NIC_Status.NIC_STA_OK)
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_extdiag_boot(self):
         # set default to extdiag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTDIAG_BOOT_FMT)
@@ -851,7 +1062,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_erase_board_config(self):
         # earse board config
         self._nic_handle.sendline(MFG_DIAG_CMDS.ERASE_BOARD_CONFIG_FMT)
@@ -861,7 +1072,7 @@ class nic_ctrl():
             return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_cpld_update_request(self):
         # get diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_BOOT_SHOW_RUNNING_IMG_FMT)
@@ -894,7 +1105,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_board_config_cert(self, cert_img, directory="/data/"):
         img_name = os.path.basename(cert_img)
         # set ibm board config
@@ -932,7 +1143,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_secboot_verify(self):
         # send bash command elba-chk-secboot-rdy.sh and it's leading commands
         nic_secboot_verify_cmd_list = [MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT, MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT, MFG_DIAG_CMDS.NIC_CHK_SECBOOT_FMT]
@@ -951,7 +1162,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_cfg_verify(self):
         # dump cfg0
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_CFG_DUMP_FMT.format("4","0"))
@@ -987,7 +1198,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_diag_boot(self):
         # set default to diag boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_DIAG_BOOT_FMT)
@@ -1018,7 +1229,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_mainfw_boot(self):
         # set default to mainfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_SW_BOOT_FMT)
@@ -1049,7 +1260,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_goldfw_boot(self):
         # set default to goldfw boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_GOLD_BOOT_FMT)
@@ -1080,7 +1291,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_set_extos_boot(self):
         # set default to extosa boot
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SET_EXTOSA_BOOT_FMT)
@@ -1111,7 +1322,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_sw_cleanup_shutdown(self):
         # 1. remove diag utils on NIC
         # 2. kill all processes
@@ -1151,7 +1362,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_sw_shutdown(self, cloud=False, isRelC=False):
         # 1. remove diag utils on NIC
         # 2. kill all processes
@@ -1218,7 +1429,7 @@ class nic_ctrl():
             return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_sw_mode_switch(self):
         mode_switch_cmd_list = [MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
                                 MFG_DIAG_CMDS.NIC_SW_MODE_SWITCH_FMT,
@@ -1239,7 +1450,7 @@ class nic_ctrl():
             return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_sw_mode_switch_verify(self):
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
@@ -1270,7 +1481,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_pdsctl_system_show(self):
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
@@ -1355,7 +1566,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_read_firmware_image(self, smode=False):
         if smode:
             cmd = MFG_DIAG_CMDS.NIC_BOOT_SHOW_STARTUP_IMG_FMT
@@ -1378,7 +1589,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("NIC booted from {:s} not allowed here".format(self._boot_image))
                 return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_read_kernel_version(self):
         cmd = MFG_DIAG_CMDS.NIC_IMG_VER_DISP_FMT
         self._nic_handle.sendline(cmd)
@@ -1399,6 +1610,71 @@ class nic_ctrl():
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
                 return False
+
+    def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+            run salina snake from mtp without mgmt
+        '''
+
+        if not slot_asic_dir_path:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        test_name = "max_pwr" if snake_type=="esam_pktgen_max_power_sor" else "ddr_burst"
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        print(cmd)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_NIC_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_google_stress_test(self, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        ./nic_test_v2.py mem_test -slot <slot> -vmarg VMARG -dura DURA -tcl_path TCL_PATH -threads THREADS
+        '''
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_MEM_TEST_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg), str(mem_copy_thread))
+        nic_test_v2_sub_cmd = "mem_test"
+        cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run)+1800):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_NIC_MEM_TEST_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_test_v2_py_edma(self, vmarg='normal', seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        ./nic_test_v2.py edma_test -slot <slot> -vmarg VMARG -dura DURA -tcl_path TCL_PATH
+        '''
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_EDMA_MTP_FMT.format(str(self._slot + 1), slot_asic_dir_path, str(seconds2run), str(vmarg))
+        nic_test_v2_sub_cmd = "edma_test"
+        cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run)+1800):
+            return False
+
+        if MFG_DIAG_SIG.MATERA_NIC_EDMA_MTP_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
 
     def nic_boot_info_init(self, smode=False):
         # save boot image info into self._boot_image and self._kernel_timestamp
@@ -1807,7 +2083,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_set_sw_profile(self, profile):
         nic_cmd = MFG_DIAG_CMDS.NIC_SW_PROFILE_CMD_FMT.format(profile)
         self._nic_handle.sendline(nic_cmd)
@@ -1840,8 +2116,13 @@ class nic_ctrl():
           Program CPLD or Secure CPLD
         """
 
-        if self._nic_type not in (CAPRI_NIC_TYPE_LIST + ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST):
-            # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>
+        if self._mtp_type == "MATERA":
+            # put the card into proto mode before program QSPI
+            if not self.nic_power_off():
+                return False
+            if not self.nic_power_on(proto_mode='0'):
+                return False
+            # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm1/fea> <filename>
             # program
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
             if not self.mtp_exec_cmd(cmd):
@@ -1976,9 +2257,17 @@ class nic_ctrl():
         if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
             return False
 
+        nic_cmd_list.append("dmesg")
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
+            return False
+
         nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
-        if not cmd_buf:
+        nic_cmd = "dmesg | grep mmc"
+        dmesg_cmd_buf = self.nic_get_info(nic_cmd).lower()
+        if not cmd_buf or not dmesg_cmd_buf:
+            return False
+        if "error" in dmesg_cmd_buf or "fail" in dmesg_cmd_buf:
             return False
         if MFG_DIAG_SIG.NIC_PARTITION1_OK_SIG in cmd_buf:
             return True
@@ -2153,6 +2442,27 @@ class nic_ctrl():
 
         return True
 
+    def nic_salina_clear_j2c(self):
+        cmd = MFG_DIAG_CMDS.MATERA_MTP_CLEAR_J2C_IF_LOCK.format(str(self._slot+1))
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_esecure_hw_lock(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_HW_LOCK_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
     def nic_program_sec_key_dump(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
@@ -2192,7 +2502,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
+        if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST or self._nic_type in SALINA_NIC_TYPE_LIST:
             cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_ELBA_FMT.format(self._slot+1,
                                                          self._sn,
                                                          self._pn,
@@ -2264,11 +2574,10 @@ class nic_ctrl():
 
         return True
 
-    def salina_nic_program_qspi(self, qspi_imgs):
+    def salina_nic_program_qspi(self, image_path=None):
         '''
         This funtion is for Matera capability NIC cards to program NIC QSPI Flash
-        passed all qspi images in a list, qspi)imgs list format
-        ['a35_boot0.img', 'a35_uboota.img', a35_zephyr_img', 'n1_boot0.img', 'n1_uboota.img', n1_kernel_img']
+        image_path is the path of program qspi bash script in with file name or path only
         '''
 
         # fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>
@@ -2279,54 +2588,42 @@ class nic_ctrl():
         # ### PROGRAM SLOT 1, QSPI 1, zephyr llc image ###
         # fpgautil flash 1 1 writefile  0x04A00000 zerphy_llc.img
 
-        arm_a35_boot0_img = qspi_imgs[0]
-        arm_a35_uboota_img = qspi_imgs[1]
-        arm_a35_zephyr_img = qspi_imgs[2]
-        arm_n1_boot0_img = qspi_imgs[3]
-        arm_n1_uboota_img = qspi_imgs[4]
-        arm_n1_kernel_img = qspi_imgs[5]
+        if not image_path:
+            return False
 
-        # program arm_a35 boot0
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x00100000", arm_a35_boot0_img)
+        prog_cmd = ""
+        if os.path.isfile(image_path):
+            prog_cmd = os.path.basename(image_path)
+            image_path = os.path.dirname(image_path)
+
+        # put the card into proto mode before program QSPI
+        if not self.nic_power_off():
+            return False
+        if not self.nic_power_on(proto_mode='0'):
+            return False
+
+        cmd = "cd {:s}".format(image_path)
         if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
+
+        # call qspi_prog.sh to program qspi flash
+        if not prog_cmd:
+            cmd = "chmod +x {:s}".format("./qspi_prog.sh")
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+            cmd = MFG_DIAG_CMDS.MTP_MATERA_QSPI_PROG_SH_CMD_FMT.format(str(self._slot + 1))
+        else:
+            cmd = "chmod +x {:s}".format(prog_cmd)
+            if not self.mtp_exec_cmd(cmd):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+            cmd = "./" + prog_cmd + " " + str(self._slot + 1)
+
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
-        # program arm_a35 uboota
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x06800000", arm_a35_uboota_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
-            return False
-        # program arm_a35 uboota
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x6500000", arm_a35_zephyr_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
-            return False
-        # program arm_n1 boot0
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x06350000", arm_n1_boot0_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
-            return False
-        # program arm_n1 uboota
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x01f50000", arm_n1_uboota_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
-            return False
-        # program arm_n1 kernel
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x02350000", arm_n1_kernel_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
-            return False
-        # program arm_n1 uboota
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT.format(str(self._slot + 1), "1", "writefile", "0x0cc70000", arm_n1_uboota_img)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-        if 'Verification passed' not in self.nic_get_cmd_buf():
+        if 'FAILED' in self.nic_get_cmd_buf():
             return False
 
         self.nic_boot_info_reset()
@@ -2354,6 +2651,50 @@ class nic_ctrl():
         self.nic_boot_info_reset()
 
         return True
+
+
+    def salina_nic_erase_qspi(self):
+        cmd = MFG_DIAG_CMDS.NIC_ERASE_QSPI_FMT.format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+        cmd_buf = cmd_buf
+        if "Erasing QSPI of slot" in cmd_buf:
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        return True
+
+    def salina_nic_erase_boot0(self, image_path=""):
+        cmd = "cd {:s}".format(image_path)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
+            return False
+
+        cmd = MFG_DIAG_CMDS.SALINA_NIC_ERASE_BOOT0_FMT.format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_BOOT0_IMG_DELAY):
+            return False
+
+        if MFG_DIAG_SIG.SALINA_NIC_ERASE_BOOT0_OK_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def salina_nic_program_boot0(self, image_path=""):
+        cmd = "cd {:s}".format(image_path)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
+            return False
+
+        cmd = MFG_DIAG_CMDS.SALINA_NIC_PROGRAM_BOOT0_FMT.format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_PROG_BOOT0_IMG_DELAY):
+            return False
+
+        if MFG_DIAG_SIG.SALINA_NIC_PROG_BOOT0_OK_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
 
     def nic_copy_cpld_img(self, cpld_img):
         if not self.nic_copy_image(cpld_img):
@@ -2943,13 +3284,37 @@ class nic_ctrl():
 
     def nic_set_vmarg(self, vmarg_param, percentage=""):
         nic_cmd_list = list()
-        nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
-        nic_cmd_list.append(nic_cmd)
+        percentage = int(percentage) if percentage else 0
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # sleep let firmware fully up and enbaled the watchdog timer, then we using i2c command to diable it. 
+            # otherwaise firmware enable watchdog timer after we disable it, which cause N1 reboot
+            if vmarg_param.lower() == "high":
+                normal_percentage = 3
+            elif vmarg_param.lower() == "low":
+                normal_percentage = -3
+            else:
+                normal_percentage = 0
 
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
-            return False
+            target_percentage = normal_percentage if abs(normal_percentage) > abs(percentage) else percentage
 
-        return True
+            cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(self._slot) + 3)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+                return False
+            cmd = MFG_DIAG_CMDS.SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), self._nic_type, target_percentage)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+                return False
+            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf():
+                return True
+            else:
+                return False
+        else:
+            nic_cmd = MFG_DIAG_CMDS.NIC_VMARG_SET_FMT.format(vmarg_param, str(percentage))
+            nic_cmd_list.append(nic_cmd)
+
+            if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY):
+                return False
+
+            return True
 
     def nic_display_voltage(self):
         nic_cmd = [MFG_DIAG_CMDS.NIC_DISP_VOLT_FMT]
@@ -3157,6 +3522,21 @@ class nic_ctrl():
 
         return True
 
+    def nic_smb_dpn_fru_init(self, factory_location, fpo=False):
+        """ Same as nic_fru_init(), but SMB fru only, and no validation """
+        fru_buf = self.nic_read_fru(fpo, smb_fru=True)
+        if not fru_buf:
+            self.nic_set_err_msg("Unable to read SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        if not self.nic_fru_parse_set_dpn(fru_buf):
+            self.nic_set_err_msg("DPN doesn't match any known formats in SMB FRU")
+            self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        return True
+
     def nic_alom_fru_init(self, factory_location, fpo=False):
         fru_buf = self.nic_read_fru(fpo, smb_fru=True, alom=True)
         if not fru_buf:
@@ -3238,6 +3618,12 @@ class nic_ctrl():
             pn_format = self._pn_format
 
         if not self.validate_serial_number_strict(sn, factory_location, pn_format, pn):
+            return False
+        return True
+
+    def nic_fru_parse_set_dpn(self, fru_buf):
+        if not self.nic_fru_parse_dpn(fru_buf):
+            self.nic_set_err_msg("Unable to parse dpn fru")
             return False
         return True
 
@@ -3372,13 +3758,16 @@ class nic_ctrl():
                 (PART_NUM_FIELD, PART_NUMBERS_MATCH.LACONA32_PN_FMT)                      #P47930-001       LACONA32 HPE
                 ],
             NIC_Type.LENI: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI_PN_FMT)                          #102-P10600-0 XX    MALFA
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI_PN_FMT)                          #105-P10800-0 XX    LENI
                 ],
             NIC_Type.LENI48G: [
-                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI48G_PN_FMT)                         #102-P10600-0 XX    MALFA
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LENI48G_PN_FMT)                       #102-P10600-0 XX    LENI48G
                 ],
             NIC_Type.MALFA: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.MALFA_PN_FMT)                         #102-P10600-0 XX    MALFA
+                ],
+            NIC_Type.POLLARA: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.POLLARA_PN_FMT)                       #102-P11100-0 XX    POLLARA
                 ],
 
         }
@@ -3597,7 +3986,7 @@ class nic_ctrl():
         else:
             return self._pn
 
-    def nic_read_fru(self, fpo=False, smb_fru=False, alom=False, ocp_adap=False):
+    def nic_read_fru(self, fpo=False, smb_fru=False, alom=False, ocp_adap=False, dev=None):
         cmd = "eeutil -disp"
         if fpo:
             cmd += " -fpo"
@@ -3615,34 +4004,15 @@ class nic_ctrl():
             cmd += " -hpe"
 
         if smb_fru:
-            cmd += " -dev=fru"
+            cmd += " -dev=fru" if dev is None else " -dev=" + dev
             cmd += " -uut=UUT_{:d}".format(self._slot+1)
             fru_buf = self.mtp_get_info(cmd)
         else:
-            if self._nic_type in SALINA_NIC_TYPE_LIST:
-                # To D DPU FRU, we need swap SMbus to NIC first
-                smbus_cmd = "swap_smbus.sh {:d}".format(self._slot+1)
-                if not self.mtp_exec_cmd(smbus_cmd):
-                    self.nic_set_err_msg("Failed Command: {:s}".format(smbus_cmd))
-                    return False
-                if 'smbus has been swapped to NIC'.lower() not in self.nic_get_cmd_buf().lower():
-                    self.nic_set_err_msg("SMBUS Failed to swapped to NIC")
-                    return False
-                # Display DPU FRU
-                cmd += " -uut=UUT_{:d}".format(self._slot+1)
-                cmd += " -dev=DPU_FRU"
-                fru_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
-                # when display command done, we need swap SMbus to MTP, only way to do this is power cycle NIC card
-                # Marco suggest swap smbus to MTP no matter display command pass or fail, since EEProm failed scene will be keep even over power cycle
-                if not self.nic_power_cycle():
-                    self.nic_set_err_msg("Power Cylce NIC failed when try to swap smbus to MTP")
-                    return False
-            else:
-                fru_buf = self.nic_get_info(cmd)
+            fru_buf = self.nic_get_info(cmd)
 
         return fru_buf
 
-    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False):
+    def nic_write_fru(self, date, sn, mac, pn, nic_type=None, dpn=False, sku=False, smb_fru=False, dev=None):
         eeutil_cmd_lookup = {
             PART_NUMBERS_MATCH.N100_PEN_PN_FMT:         "eeutil -dev=fru -update",
             PART_NUMBERS_MATCH.N100_NET_PN_FMT:         "eeutil -dev=fru -update",
@@ -3677,7 +4047,7 @@ class nic_ctrl():
                 self.nic_set_err_msg("FRU not initialized correctly")
                 return False
             cmd = eeutil_cmd_lookup[self._pn_format]
-        elif nic_type == NIC_Type.MALFA:
+        elif nic_type in SALINA_NIC_TYPE_LIST:
             cmd = "eeutil -update"
         else:
             cmd = "eeutil -dev=fru -update -erase -numBytes=512"
@@ -3691,29 +4061,23 @@ class nic_ctrl():
 
         if smb_fru:
             cmd += " -uut=UUT_{:d}".format(self._slot+1)
-            if nic_type == NIC_Type.MALFA:
-                cmd += " -dev=FRU"
+            if nic_type in SALINA_NIC_TYPE_LIST:
+                if dev:
+                    cmd += " -dev=" + dev
+                else:
+                    cmd += " -dev=FRU"
             cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
         else:
             if nic_type in SALINA_NIC_TYPE_LIST:
-                # To Program DPU FRU, we need swap SMbus to NIC first
-                smbus_cmd = "swap_smbus.sh {:d}".format(self._slot+1)
-                # smbus_cmd = "smbutil -smbus=nic -uut=UUT_{:d}".format(self._slot+1)
-                if not self.mtp_exec_cmd(smbus_cmd):
-                    self.nic_set_err_msg("Failed Command: {:s}".format(smbus_cmd))
+                cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+                if not self.mtp_exec_cmd(cmd):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
-                if 'smbus has been swapped to NIC'.lower() not in self.nic_get_cmd_buf().lower():
-                    self.nic_set_err_msg("SMBUS Failed to swapped to NIC")
+                cmd = MFG_DIAG_CMDS.MATERA_MTP_PROG_DPU_DRU_FMT.format(str(self._slot+1))
+                if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY):
+                    self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
                     return False
-                # program DPU FRU
-                cmd += " -uut=UUT_{:d}".format(self._slot+1)
-                cmd += " -dev=DPU_FRU"
-                cmd_buf = self.mtp_get_info(cmd, timeout=MTP_Const.MTP_FRU_UPDATE_DELAY)
-                # when program done, we need swap SMbus to MTP, only way to do this is power cycle NIC card
-                # Marco suggest swap smbus to MTP no matter program pass or fail, since EEProm failed scene will be keep even over power cycle
-                if not self.nic_power_cycle():
-                    self.nic_set_err_msg("Power Cylce NIC failed when try to swap smbus to MTP")
-                    return False
+                cmd_buf = self.nic_get_cmd_buf()
             else:
                 cmd_buf = self.nic_get_info(cmd)
 
@@ -3725,7 +4089,8 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
-        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated", cmd_buf)
+        match = re.findall(r"FRU Checkum and Type\/Length Checks Passed|EEPROM updated|DPU_FRU\s+updated\s+successfully", cmd_buf)
+
         if not match:
             self.nic_set_err_msg(" FRU PROGRAMMING FAILED\n")
             self.nic_set_err_msg(" BUF =  {:s}".format(cmd_buf))
@@ -3804,7 +4169,30 @@ class nic_ctrl():
             return False
         self._cpld_id = "0x{:X}".format(read_data[0])
 
-        if self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
+        if self._nic_type in SALINA_NIC_TYPE_LIST:
+            # There is date and time, return in format mm-dd-YY_HH:MM as libmfg_cfg.py defined
+            # For salina cards, cpld timestamp register address mapping as following:
+            # DATECODE_MM   0x90
+            # DATECODE_HH   0x91
+            # DATECODE_DD   0x92
+            # DATECODE_mm   0x93
+            # DATECODE_YY   0x94
+            registers = [0x94, 0x93, 0x92, 0x91, 0x90]
+            date_time = []
+            for register in registers:
+                read_data = [0]
+                if smb:
+                    rc = self.nic_read_cpld_via_smbus(register, read_data)
+                else:
+                    rc = self.nic_read_cpld(register, read_data)
+                if not rc:
+                    self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+                    return False
+                date_time.append("{:02X}".format(read_data[0]))
+
+            self._cpld_timestamp = f'{date_time[1]}-{date_time[2]}-{date_time[0]}_{date_time[3]}:{date_time[4]}'
+            return True
+        elif self._nic_type in ELBA_NIC_TYPE_LIST or self._nic_type in GIGLIO_NIC_TYPE_LIST:
             # there are no CPLD timestamps; use major revision + minor revision
             read_data = [0]
             if smb:
@@ -3878,7 +4266,7 @@ class nic_ctrl():
         else:
             return [self._boot_image, self._kernel_timestamp]
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_read_i2c(self, bus_num, dev_addr, reg_addr, read_data):
         nic_cmd = "i2cget -y {:d} {:x} {:x}".format(bus_num, dev_addr, reg_addr)
         self._nic_handle.sendline(nic_cmd)
@@ -3978,7 +4366,7 @@ class nic_ctrl():
             return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_read_cpld(self, reg_addr, read_data):
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -4832,7 +5220,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_mvl_acc_test(self):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:
             return False
@@ -4863,7 +5251,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_mvl_stub_test(self, loopback=True):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:
             return False
@@ -4898,7 +5286,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_mvl_link_test(self, ports=1):
         nic_cmd_list = list()
         if not self.nic_check_emmc_mounted():
@@ -4937,7 +5325,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_phy_xcvr_test(self):
         if self._nic_type not in FPGA_TYPE_LIST:
             return False
@@ -4976,7 +5364,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_phy_xcvr_link_test(self):
         if self._nic_type not in FPGA_TYPE_LIST:
             return False
@@ -5015,7 +5403,7 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_edma_test(self):
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_DIAG_STOP_HAL_FMT)
@@ -5070,8 +5458,25 @@ class nic_ctrl():
         else:
             return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_check_rebooted(self):
+
+        if self._nic_type in SALINA_NIC_TYPE_LIST:
+            nic_cmd_list = list()
+            nic_cmd_list.append("kernel uptime")
+            for nic_cmd in nic_cmd_list:
+                self._nic_handle.sendline(nic_cmd)
+                idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=10)
+                if idx < 0:
+                    self.nic_set_cmd_buf(self._nic_handle.before)
+                    return False
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+            ret = True
+            if not cmd_buf:
+                self.nic_set_err_msg("Buffer empty")
+                ret &= False
+            return ret
+
         nic_cmd_list = list()
         nic_cmd_list.append("uptime")
         nic_cmd_list.append("dmesg | tail -n20")
@@ -5125,22 +5530,60 @@ class nic_ctrl():
         if not self.mtp_exec_cmd("cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)):
             return False
 
-        cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(str(self._sn), self._slot+1)
-        if skip_reboot:
-            cmd += " 0" #skips VRM
+        if self._nic_type in SALINA_NIC_TYPE_LIST:
+            cmd = "tclsh get_nic_sts.tcl {:s} {:d} {:s}".format(str(self._sn), self._slot+1, "1")
+        else:
+            cmd = "tclsh get_nic_sts.tcl {:s} {:d}".format(str(self._sn), self._slot+1)
+
+            if skip_reboot:
+                cmd += " 0" #skips VRM
+
         if not self.mtp_exec_cmd(cmd, timeout=180):
             self.nic_stop_test()
             return False
         self.nic_stop_test()
         return True
 
-    @nic_console_test_section
+    def clear_nic_uart(self):
+        cmd = "ps -elf | grep -e 'fpga_uart {:d}' | grep -v grep".format(self._slot)
+        if not self.mtp_exec_cmd(cmd, timeout=10):
+            self.nic_stop_test()
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self.nic_get_cmd_buf())
+        ps_info = re.findall(r"(\d+)\s+(\w+)\s+(\w+)\s+(\d+)\s+.*fpga_uart\s+({:d})".format(self._slot), cmd_buf)
+
+        for ps in ps_info:
+            ps_pid = str(ps[3])
+            cmd = "kill -9 {:s}".format(ps_pid)
+            if not self.mtp_exec_cmd(cmd, timeout=15):
+                self.nic_stop_test()
+                return False
+
+        self.nic_stop_test()
+        return True
+
+    def sal_check_j2c(self):
+        if not self.mtp_exec_cmd(MFG_DIAG_CMDS.NIC_DIAG_STOP_TCLSH_FMT):
+            return False
+
+        cmd = "tclsh /home/diag/diag/scripts/asic/sal_check_j2c.tcl -slot {:d} -ite 1".format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=600):
+            self.nic_stop_test()
+            return False
+        self.nic_stop_test()
+        return True
+
+    @nic_console_test()
     def nic_port_counters(self):
+        cmd = "halctl"
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            cmd = "pdsctl"
         nic_cmd_list = list()
-        nic_cmd_list.append("halctl show port status")
-        nic_cmd_list.append("halctl show port statistics --port eth1/3")    # BX port counters
-        nic_cmd_list.append("halctl show port internal")                    # MVL switch port status
-        nic_cmd_list.append("halctl show port internal statistics")         # all port counters
+        nic_cmd_list.append("{:s} show port status".format(cmd))
+        nic_cmd_list.append("{:s} show port statistics --port eth1/3".format(cmd))    # BX port counters
+        nic_cmd_list.append("{:s} show port internal".format(cmd))                    # MVL switch port status
+        nic_cmd_list.append("{:s} show port internal statistics".format(cmd))         # all port counters
 
         for nic_cmd in nic_cmd_list:
             self._nic_handle.sendline(nic_cmd)
@@ -5150,7 +5593,7 @@ class nic_ctrl():
                 return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_read_sgmii(self, port, reg_addr, read_data):
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -5181,7 +5624,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(self._nic_handle.before)
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_write_sgmii(self, port, reg_addr, write_data):
         nic_cmd_list = list()
         nic_cmd_list.append(MFG_DIAG_CMDS.NIC_FSCK_EMMC_FMT)
@@ -5289,7 +5732,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_ping(self, to_slot):
         ipaddr = libmfg_utils.get_nic_ip_addr(to_slot)
 
@@ -5315,7 +5758,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return False
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_read_uboot(self):
         exp_boot0_version = ""
         exp_golduboot_version = ""
@@ -5372,7 +5815,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(self._nic_handle.before)
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_read_secure_boot_keys(self):
         """
           "extosa": {
@@ -5558,7 +6001,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_vdd_ddr_fix(self, d3_val, d4_val, vddq_prog):
         nic_cmd_list = list()
         nic_cmd_list.append("i2cset -y 0 0x1c 0xd4 {:s}".format(d4_val))
@@ -5604,7 +6047,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_console_vdd_ddr_check(self, d3_val, d4_val, vddq_prog):
         ### check frequency set ###
         nic_cmd_list = list()
@@ -5738,6 +6181,27 @@ class nic_ctrl():
 
         return True
 
+    def nic_l1_pre_setup(self):
+        '''
+        run l1 res-setup, salina cards only
+        '''
+
+        # goto the asic dir
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_L1_PRE_SETUP_FMT.format(str(self._slot+1))
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_L1_PRE_SETUP_OK_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
     def nic_i2c_bus_scan(self):
         bus_list = [0, 1, 2]
 
@@ -5752,7 +6216,7 @@ class nic_ctrl():
 
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_detect_transceiver_presence(self, port):
         if port not in ("0","1","2"):
             self.nic_set_err_msg("Script error: invalid port specified")
@@ -5780,7 +6244,7 @@ class nic_ctrl():
             return False
         return True
 
-    @nic_console_test_section
+    @nic_console_test()
     def nic_read_transceiver_sn(self, port):
         if port not in ("0","1","2"):
             self.nic_set_err_msg("Script error: invalid port specified")
@@ -5813,7 +6277,32 @@ class nic_ctrl():
         self.nic_set_cmd_buf(cmd_buf)
         return True
 
-    @nic_console_test_section
+    def nic_read_salina_transceiver_sn(self, port):
+        if port not in ("0","1","2"):
+            self.nic_set_err_msg("Script error: invalid port specified")
+            return False
+
+        cmd = "/home/diag/diag/scripts/xcvr_sn.sh -s {:s} -p {:s}".format(str(self._slot + 1), port)
+
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
+            return False
+
+        if "not present" in self.nic_get_cmd_buf():
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        sn_match = re.search(r"XCVR SN:\s+(.*)", cmd_buf)
+
+        if sn_match is None or len(sn_match.groups()) == 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            self.nic_set_err_msg("Failed to parse Port {:s} loopback transceiver EEPROM".format(port))
+            return False
+        self._loopback_sn[port] = sn_match.group(1).strip()
+
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test()
     def nic_console_call_sysresetsh(self, ending="login", checkPoints=[]):
         """
         Excute systeset.sh command in new establishe console session.

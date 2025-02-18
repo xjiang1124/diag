@@ -334,6 +334,11 @@ def launch_remote_server_only_script(args):
         libmfg_utils.cli_inf("MFG MTP {:s} Test Passed with exit code:{:s}".format(args.subcommand.upper(), str(com_proc.returncode)))
         exist_code = com_proc.returncode
 
+    if not args.run_from_remote:
+        mfg_test_stop_ts = libmfg_utils.timestamp_snapshot()
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Duration:{:s}".format(args.subcommand.upper(), str(mfg_test_stop_ts - mfg_test_start_ts)))
+        libmfg_utils.cli_inf("MFG MTP {:s} Test Log in ./{:s} To Copy Out ".format(args.subcommand.upper(), logfile_path))
+
     return exist_code
 
 
@@ -617,5 +622,9 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
         # parser.exit(status=1, message=parser.print_help())
+    else:
+        if not args.subcommand:
+            parser.print_help()
+            sys.exit(1)
 
     sys.exit(not args.func(args))

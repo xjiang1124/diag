@@ -910,12 +910,23 @@ def mtp_update_firmware(mtp_mgmt_ctrl, image_list):
     image_list_unique.sort()
     image_on_mtp = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     for image in image_list_unique:
+        image_dir = "/home/diag/"
+        image = image.strip("/")
         if image == "":
             continue
         image_rel_path = "release/{:s}".format(image)
         if not file_exist(image_rel_path):
             mtp_mgmt_ctrl.cli_log_err("Firmware image {:s} doesn't exist... Abort".format(image_rel_path), level=0)
             return False
+        # make remote sub directory on MTP
+        if "/" in image:
+            image_dir += os.path.dirname(image) + os.path.sep
+            mkdir_cmd = f"ssh diag@{mtp_ip_addr} 'mkdir -p {image_dir}'"
+            (command_output, exitstatus) = pexpect.run(mkdir_cmd, events={'(?i)password': mtp_passwd +'\n', '\(yes\/no': 'yes\n'}, withexitstatus=1)
+            if exitstatus != 0:
+                mtp_mgmt_ctrl.cli_log_err(str(command_output))
+                return False
+
         if image not in image_on_mtp and image not in done_list:
             mtp_mgmt_ctrl.cli_log_inf("Copy Firmware image {:s}".format(image), level=0)
             if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, image_rel_path, image_dir):
@@ -1077,12 +1088,15 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
 
     return True
 
-def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, nic_image=MFG_IMAGE_FILES.penctl_token_img):
+def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, nic_image=MFG_IMAGE_FILES.penctl_token_img, nic_ctl_image=MFG_IMAGE_FILES.nic_ctl_image):
     if "penctl.linux" not in mtp_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl image: {:s}".format(mtp_image), level=0)
         return False
     if "penctl.token" not in nic_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl TOKEN image: {:s}".format(nic_image), level=0)
+        return False
+    if "nicctl" not in nic_ctl_image:
+        mtp_mgmt_ctrl.cli_log_err("Wrong FST NIC CTL image: {:s}".format(nic_image), level=0)
         return False
 
     if os.path.isabs(mtp_image):
@@ -1101,6 +1115,14 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_mgmt_ctrl.cli_log_err("NIC Penctl_TOKEN image {:s} doesn't exist... Abort".format(nic_image_file), level=0)
         return False
 
+    if os.path.isabs(nic_ctl_image):
+        mtp_nic_ctl_image_file = nic_ctl_image
+    else:
+        mtp_nic_ctl_image_file = "release/{:s}".format(nic_ctl_image)
+    if not file_exist(nic_image_file):
+        mtp_mgmt_ctrl.cli_log_err("NIC NIC CTL image {:s} doesn't exist... Abort".format(mtp_nic_ctl_image_file), level=0)
+        return False
+
     mtp_mgmt_ctrl.cli_log_inf("Copy FST Penctl image: {:s}".format(mtp_image_file), level=0)
     mtp_mgmt_cfg = mtp_mgmt_ctrl.get_mgmt_cfg()
     mtp_ip_addr = mtp_mgmt_cfg[0]
@@ -1111,7 +1133,8 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
     image_on_mtp = mtp_mgmt_ctrl.mtp_diag_get_img_files()
     if mtp_image in image_on_mtp and nic_image in image_on_mtp:
         if not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_image_file, remote_dir + os.path.basename(mtp_image)) and \
-            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)):
+            not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, nic_image_file, remote_dir + os.path.basename(nic_image)) and \
+             not need_mtp_file_update(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_nic_ctl_image_file, remote_dir + os.path.basename(nic_ctl_image)):
             mtp_mgmt_ctrl.cli_log_inf("Diag images on MTP is up-to-date", level=0)
             return True
 
@@ -1138,6 +1161,12 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_mgmt_ctrl.cli_log_err("Update FST Penctl TOKEN image failed... Abort", level=0)
         return False
     mtp_mgmt_ctrl.cli_log_inf("Update FST PENCTL image complete\n", level=0)
+
+    mtp_mgmt_ctrl.cli_log_inf("Copy FST NIC CTL image: {:s}".format(mtp_nic_ctl_image_file), level=0)
+    if not network_copy_file(mtp_ip_addr, mtp_usrid, mtp_passwd, mtp_nic_ctl_image_file, remote_dir):
+        mtp_mgmt_ctrl.cli_log_err("Copy FST NIC CTL image failed... Abort", level=0)
+        return False
+    mtp_mgmt_ctrl.cli_log_inf("Update FST NIC CTL image complete\n", level=0)
 
     return True
 
@@ -1179,13 +1208,13 @@ def fail_all_slots(mtp_mgmt_ctrl):
             alom_sn = mtp_mgmt_ctrl.mtp_get_nic_alom_sn(slot)
             mtp_mgmt_ctrl.cli_log_inf("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
-def post_fail_steps(mtp_mgmt_ctrl, slot):
+def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Init new connection for failed NIC")
     ret = mtp_mgmt_ctrl.mtp_nic_para_session_init(slot_list=[slot], fpo=False)
     if not ret:
         mtp_mgmt_ctrl.cli_log_err("Init NIC Connection Failed", level = 0)
     mtp_mgmt_ctrl.log_nic_file(slot, "######## {:s} ########".format("START post fail debug"))
-    powered_on = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+    powered_on = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot, testname)
     if not powered_on:
         mtp_mgmt_ctrl.cli_log_slot_err(slot, "NIC not powered on")
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
@@ -1199,7 +1228,7 @@ def post_fail_steps(mtp_mgmt_ctrl, slot):
 
         mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
-        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in ELBA_NIC_TYPE_LIST or mtp_mgmt_ctrl.mtp_get_nic_type(slot) in GIGLIO_NIC_TYPE_LIST:
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST):
             mtp_mgmt_ctrl.mtp_single_j2c_lock()
             mtp_mgmt_ctrl.mtp_nic_read_temp(slot)
             if mtp_mgmt_ctrl.mtp_nic_failed_boot(slot):
@@ -1957,12 +1986,15 @@ def display_failures(mtp_mgmt_ctrl, nic_list, loopback_fail_list, fail_nic_list,
     # Port 2 row
     pre="|     "
     for slot in range(MTP_Const.MTP_SLOT_NUM):
-        if slot not in nic_list or slot in fail_nic_list:
-            pre += "    "
-        elif loopback_fail_list[slot+length] > 0:
-            pre += "X   "
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST:
+            if slot not in nic_list or slot in fail_nic_list:
+                pre += "    "
+            elif loopback_fail_list[slot+length] > 0:
+                pre += "X   "
+            else:
+                pre += "o   "
         else:
-            pre += "o   "
+            pre += "    "
     pre += "  |"
     print(pre)
 
@@ -2092,26 +2124,41 @@ def loopback_sanity_check(mtp_mgmt_ctrl, nic_list):
                 cur_fail_list[slot+length] = 0
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
 
-                if nic_type in CAPRI_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
+                if nic_type in CAPRI_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_DPU_NIC_TYPE_LIST:
                     port_list = ["0", "1"]
                 elif nic_type in ELBA_NIC_TYPE_LIST:
                     port_list = ["1", "2"]
+                elif nic_type in SALINA_AI_NIC_TYPE_LIST:
+                    port_list = ["0"]
 
                 for port_num in port_list:
-                    if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_detect_transceiver_presence(port_num):
-                        # not present, retry 3x
-                        if loopback_fail_list[slot] == max_retries_per_slot:
-                            if slot not in fail_nic_list:
-                                fail_nic_list.append(slot)
-                            continue
+                    if nic_type not in SALINA_NIC_TYPE_LIST:
+                        if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_detect_transceiver_presence(port_num):
+                            # not present, retry 3x
+                            if loopback_fail_list[slot] == max_retries_per_slot:
+                                if slot not in fail_nic_list:
+                                    fail_nic_list.append(slot)
+                                continue
+                            else:
+                                cur_fail_list[slot] = 1
+                                loopback_fail_list[slot] += 1
+                                failure_detected = True
                         else:
-                            cur_fail_list[slot] = 1
-                            loopback_fail_list[slot] += 1
-                            failure_detected = True
+                            # log the transceiver serial number. retry 3x if unable to read.
+                            if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, port_num):
+                                mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                                if loopback_fail_list[slot] == max_retries_per_slot:
+                                    if slot not in fail_nic_list:
+                                        fail_nic_list.append(slot)
+                                    continue
+                                else:
+                                    cur_fail_list[slot] = 1
+                                    loopback_fail_list[slot] += 1
+                                    failure_detected = True
                     else:
-                        # log the transceiver serial number. retry 3x if unable to read.
-                        if not mtp_mgmt_ctrl.mtp_nic_read_transceiver_sn(slot, port_num):
-                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback EEPROM")
+                        if not mtp_mgmt_ctrl.mtp_nic_read_salina_transceiver_sn(slot, port_num):
+                            mtp_mgmt_ctrl.cli_log_slot_err(slot, "Unable to read loopback sn")
+                            # not present, retry 3x
                             if loopback_fail_list[slot] == max_retries_per_slot:
                                 if slot not in fail_nic_list:
                                     fail_nic_list.append(slot)
@@ -2480,6 +2527,8 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "hod_1100"
     elif test == "SNAKE_ELBA":
         mode = "nod"
+    elif nic_type in (NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA):
+        mode = "hod"
     else:
         mode = ""
 
@@ -2574,3 +2623,32 @@ def check_sku_allowed(mtp_mgmt_ctrl, pn, dpn, sku):
             sku, pn, dpn))
         return False
     return True
+
+def extract_json(content):
+    # Find 1th occurrence of '{'
+    start = content.find('{')
+    if start == -1:
+        return None
+    brace_count = 0
+    end = start
+    in_string = False
+    escape = False
+
+    for i, char in enumerate(content[start:], start=start):
+        if char == '"' and not escape:
+            in_string = not in_string
+        if not in_string:
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end = i + 1
+                    break
+        if char == '\\' and not escape:
+            escape = True
+        else:
+            escape = False
+
+    json_str = content[start:end]
+    return json_str

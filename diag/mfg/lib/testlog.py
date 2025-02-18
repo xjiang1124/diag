@@ -7,6 +7,7 @@ from libdefs import MTP_DIAG_Report
 from libdefs import FF_Stage
 from libdefs import MFG_DIAG_CMDS
 from libdefs import NIC_Type
+from libdefs import MTP_TYPE
 from libdefs import Voltage_Margin
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import RUNNING_EDVT
@@ -452,6 +453,8 @@ def gather_dsp_logs(mtp_mgmt_ctrl, vmarg):
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_FILES, tlf + asic_sub_dir)
+    if mtp_mgmt_ctrl.mtp_get_mtp_type() == MTP_TYPE.MATERA:
+        cmd = MTP_DIAG_Logfile.MATERA_ONBOARD_ASIC_LOG_FILES.format(tlf + asic_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_ASIC_DUMP_FILES, tlf + asic_sub_dir)

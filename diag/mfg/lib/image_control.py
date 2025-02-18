@@ -5,6 +5,7 @@ cpld = "CPLD"
 sec_cpld = "Secure CPLD"
 fail_cpld = "Failsafe CPLD"
 fea_cpld = "CPLD Feature Row"
+ufm1 = "UFM1"
 fpga = "FPGA"
 test_fpga = "Test FPGA"
 timer1 = "FPGA timer1"
@@ -18,10 +19,22 @@ ubootb = "ubootb"
 cert = "certificate"
 arm_a_boot0 = "arm_a_boot0"
 arm_a_uboota = "arm_a_uboota"
-arm_a_zephyr = "arm_a_zephyr"
+arm_a_ubootb = "arm_a_ubootb"
+arm_a_ubootg = "arm_a_ubootg"
 arm_n_boot0 = "arm_n_boot0"
 arm_n_uboota = "arm_n_uboota"
-arm_n_kernel = "arm_n_kernel"
+arm_n_ubootb = "arm_n_ubootb"
+arm_n_ubootg = "arm_n_ubootg"
+arm_n_kernel_goldfw = "arm_n_kernel_goldfw"
+qspi_prog_sh_img = "qspi_prog_sh_img"
+qspi_snake_img = "qspi_snake_img"
+arm_a_zephyr = "arm_a_zephyr"
+arm_a_zephyr_gold = "arm_a_zephyr_gold"
+arm_a_zephyr_a = "arm_a_zephyr_a"
+arm_a_zephyr_b = "arm_a_zephyr_b"
+device_config_dtb = "device_config_dtb"
+firmware_config_dtb = "firmware_config_dtb"
+mbist_boot0_img = "mbist_boot0_img"
 
 def get_dict_entry(mtp_mgmt_ctrl, img_dict, nic_type):
     try:
@@ -57,6 +70,12 @@ def get_fea_cpld(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, fea_cpld)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fea_cpld_img, nic_type)
+    }
+
+def get_ufm1(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, cpld)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.ufm1_img, nic_type)
     }
 
 def get_timer1(mtp_mgmt_ctrl, slot, stage):
@@ -139,10 +158,52 @@ def get_arm_a_uboota_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_uboota_img, nic_type)
     }
 
+def get_arm_a_ubootb_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_ubootb)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_ubootb_img, nic_type)
+    }
+
+def get_arm_a_ubootg_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_ubootg)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_ubootg_img, nic_type)
+    }
+
 def get_arm_a_zephyr_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_zephyr)
     return {
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_img, nic_type)
+    }
+
+def get_arm_a_zephyr_gold_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_zephyr_gold)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_gold_img, nic_type)
+    }
+
+def get_arm_a_zephyr_a_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_zephyr_a)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_a_img, nic_type)
+    }
+
+def get_arm_a_zephyr_b_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_a_zephyr_b)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_b_img, nic_type)
+    }
+
+def get_device_config_dtb_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, device_config_dtb)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.device_config_dtb, nic_type)
+    }
+
+def get_firmware_config_dtb_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, firmware_config_dtb)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.firmware_config_dtb, nic_type)
     }
 
 def get_arm_n_boot0_img(mtp_mgmt_ctrl, slot, stage):
@@ -157,10 +218,40 @@ def get_arm_n_uboota_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_uboota_img, nic_type)
     }
 
-def get_arm_n_kernel_img(mtp_mgmt_ctrl, slot, stage):
-    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_kernel)
+def get_arm_n_ubootb_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_ubootb)
     return {
-    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_kernel_img, nic_type)
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_ubootb_img, nic_type)
+    }
+
+def get_arm_n_ubootg_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_ubootg)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_ubootg_img, nic_type)
+    }
+
+def get_arm_n_kernel_goldfw_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, arm_n_kernel_goldfw)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_n_kernel_goldfw_img, nic_type)
+    }
+
+def get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_prog_sh_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_prog_sh_img, nic_type)
+    }
+
+def get_qspi_snake_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, qspi_snake_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.qspi_snake_img, nic_type)
+    }
+
+def get_mbist_boot0_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, mbist_boot0_img)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.mbist_boot0_img, nic_type)
     }
 
 def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
@@ -171,6 +262,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         sec_cpld: get_sec_cpld,
         fail_cpld: get_fail_cpld,
         fea_cpld: get_fea_cpld,
+        ufm1: get_ufm1,
         test_fpga: get_test_fpga,
         timer1: get_timer1,
         timer2: get_timer2,
@@ -183,10 +275,22 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         cert: get_cert,
         arm_a_boot0: get_arm_a_boot0_img,
         arm_a_uboota: get_arm_a_uboota_img,
+        arm_a_ubootb: get_arm_a_ubootb_img,
+        arm_a_ubootg: get_arm_a_ubootg_img,
         arm_a_zephyr: get_arm_a_zephyr_img,
+        arm_a_zephyr_gold: get_arm_a_zephyr_gold_img,
+        arm_a_zephyr_a: get_arm_a_zephyr_a_img,
+        arm_a_zephyr_b: get_arm_a_zephyr_b_img,
+        device_config_dtb: get_device_config_dtb_img,
+        firmware_config_dtb: get_firmware_config_dtb_img,
         arm_n_boot0: get_arm_n_boot0_img,
         arm_n_uboota: get_arm_n_uboota_img,
-        arm_n_kernel: get_arm_n_kernel_img
+        arm_n_ubootb: get_arm_n_ubootb_img,
+        arm_n_ubootg: get_arm_n_ubootg_img,
+        arm_n_kernel_goldfw: get_arm_n_kernel_goldfw_img,
+        qspi_prog_sh_img: get_qspi_prog_sh_img,
+        qspi_snake_img: get_qspi_snake_img,
+        mbist_boot0_img: get_mbist_boot0_img
         }
 
     images_needed = list()
@@ -199,10 +303,22 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         if nic_type in SALINA_NIC_TYPE_LIST:
             images_needed.append(arm_a_boot0)
             images_needed.append(arm_a_uboota)
-            images_needed.append(arm_a_zephyr)
-            images_needed.append(arm_n_boot0)
-            images_needed.append(arm_n_uboota)
-            images_needed.append(arm_n_kernel)
+            images_needed.append(arm_a_ubootb)
+            images_needed.append(arm_a_ubootg)
+            images_needed.append(arm_a_zephyr_a)
+            images_needed.append(arm_a_zephyr_b)
+            images_needed.append(arm_a_zephyr_gold)
+            images_needed.append(qspi_prog_sh_img)
+            images_needed.append(fail_cpld)
+            images_needed.append(ufm1)
+            images_needed.append(qspi_snake_img)
+            if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+                images_needed.append(arm_n_boot0)
+                images_needed.append(arm_n_uboota)
+                images_needed.append(arm_n_ubootb)
+                images_needed.append(arm_n_ubootg)
+                images_needed.append(arm_n_kernel_goldfw)
+                images_needed.append(device_config_dtb)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -223,15 +339,37 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(uboota)
             images_needed.append(ubootb)
 
-    elif stage == FF_Stage.FF_P2C:
+    elif stage in (FF_Stage.FF_P2C, FF_Stage.FF_RDT, FF_Stage.FF_ORT, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L):
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(test_fpga)
             images_needed.append(cpld)
 
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            images_needed.append(mbist_boot0_img)
+            if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+                images_needed.append(arm_a_boot0)
+                images_needed.append(arm_a_uboota)
+                images_needed.append(arm_a_ubootb)
+                images_needed.append(arm_a_ubootg)
+                images_needed.append(arm_a_zephyr_a)
+                images_needed.append(arm_a_zephyr_b)
+                images_needed.append(arm_a_zephyr_gold)
+                images_needed.append(device_config_dtb)
+                images_needed.append(qspi_prog_sh_img)
+                images_needed.append(fail_cpld)
+                images_needed.append(ufm1)
+                images_needed.append(qspi_snake_img)
+                images_needed.append(arm_n_boot0)
+                images_needed.append(arm_n_uboota)
+                images_needed.append(arm_n_ubootb)
+                images_needed.append(arm_n_ubootg)
+                images_needed.append(arm_n_kernel_goldfw)
+
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
         images_needed.append(sec_cpld)
-        images_needed.append(goldfw)
+        if nic_type != NIC_Type.POLLARA:
+            images_needed.append(goldfw)
 
         if nic_type in FPGA_TYPE_LIST:
             images_needed.append(fail_cpld)
@@ -248,6 +386,28 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
 
         if nic_type in MAINFW_TYPE_LIST:
             images_needed.append(mainfw)
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            images_needed.append(arm_a_boot0)
+            images_needed.append(arm_a_uboota)
+            images_needed.append(arm_a_ubootb)
+            images_needed.append(arm_a_ubootg)
+            images_needed.append(arm_a_zephyr_a)
+            images_needed.append(arm_a_zephyr_b)
+            images_needed.append(arm_a_zephyr_gold)
+            images_needed.append(device_config_dtb)
+            images_needed.append(fail_cpld)
+            images_needed.append(ufm1)
+            images_needed.append(qspi_prog_sh_img)
+            if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+                images_needed.append(arm_n_boot0)
+                images_needed.append(arm_n_uboota)
+                images_needed.append(arm_n_ubootb)
+                images_needed.append(arm_n_ubootg)
+                images_needed.append(arm_n_kernel_goldfw)
+            if nic_type in SALINA_AI_NIC_TYPE_LIST:
+                images_needed.append(firmware_config_dtb)
+                images_needed.append(arm_a_zephyr)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()

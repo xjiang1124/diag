@@ -35,6 +35,7 @@ class NIC_Type:
     LENI = "LENI"
     LENI48G = "LENI48G"
     MALFA = "MALFA"
+    POLLARA = "POLLARA"
     UNKNOWN = "Unknown"
 
 class PRODUCT_SKU(Enum):
@@ -189,6 +190,9 @@ class MTP_Const:
     NIC_ESEC_WRITE_PROT_DELAY = 15 * 60
     NIC_I2C_DETECT_DELAY = 60
     NIC_EDMA_ENV_INIT_CMD_DELAY = 600
+    NIC_ERASE_QSPI_IMG_DELAY = 900
+    NIC_ERASE_BOOT0_IMG_DELAY = 300
+    NIC_PROG_BOOT0_IMG_DELAY = 300
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -205,6 +209,8 @@ class MTP_Const:
     MTP_PARA_TEST_TIMEOUT = 30*60
     # para/asic l1 test, 30 min
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
+    MTP_PARA_POLLARA_ASIC_L1_TEST_TIMEOUT = 60*15
+    SALINA_DPU_ASIC_L1_TEST_TIMEOUT = 60*60
     MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
     # more than 12 hours
@@ -237,7 +243,7 @@ class MTP_Const:
 
     MFG_MATERA_ORT_HIGH_FAN_SPD = 80
     MFG_MATERA_RDT_HIGH_FAN_SPD = 80
-    MFG_MATERA_EDVT_HIGH_FAN_SPD = 80
+    MFG_MATERA_EDVT_HIGH_FAN_SPD = 90
     MFG_MATERA_EDVT_NORM_FAN_SPD = 50
     MFG_MATERA_EDVT_LOW_FAN_SPD = 50
 
@@ -272,6 +278,7 @@ class MTP_DIAG_Error:
 class MTP_DIAG_Logfile:
     ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
     NIC_ONBOARD_DIAG_LOG_FILES = "/home/diag/diag/log/*"
+    MATERA_ONBOARD_ASIC_LOG_FILES = "find /home/diag/diag/asic/asic_src/ip/cosim/tclsh -maxdepth 1 -type f -regex '.*.log' -not -name 'snake_slot*log' -not -name 'pcie_prbs*log' -exec mv {{}} {:s} \\; "
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
     ONBOARD_ASIC_DUMP_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*tar"
@@ -329,7 +336,7 @@ class MFG_DIAG_CMDS:
     MTP_FAN_STATUS_FMT = "devmgr -dev FAN -status"
     MTP_FAN_SET_SPD_FMT = "devmgr -dev=fan -speed -pct={:d}"
     MTP_PSU_DISP_FMT = "devmgr -dev=psu_{:s} -status"
-    MTP_MATERA_PSU_DISP_FMT = "devmgr_v2 -dev=psu_{:s} -status"
+    MTP_MATERA_PSU_DISP_FMT = "fpgautil show psu"
     MTP_VRM_TEST_FMT = "mtptest -vrm"
     MTP_FAN_TEST_FMT = "mtptest -fanspd"
     MTP_FAN_PRSNT_FMT = "mtptest -present"
@@ -345,10 +352,15 @@ class MFG_DIAG_CMDS:
     MTP_MATERA_FPGA_SHOW_FAN_FMT = "fpgautil show fan"
     MTP_FPGA_UTIL_READ32_FMT = "fpgautil r32 {:s}"
     MTP_FPGA_UTIL_WRITE32_FMT = "fpgautil w32 {:s} {:s}"
+    MTP_FPGA_UTIL_SPIMODE_OFF_FMT = "fpgautil spimode {:s} off"
     MTP_FPGA_UTIL_REGDUMP_FMT = "fpgautil regdump"
     # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>
     MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT = "fpgautil cpld {:s} {:s} {:s} {:s}"
     MTP_MATERA_FPGAUTIL_FLASH_CMD_FMT = "fpgautil flash {:s} {:s} {:s} {:s} {:s}"
+    MTP_MATERA_FPGAUTIL_MVLDUMP_CMD_FMT = "fpgautil mvldump {:s} {:s}"
+    MTP_MATERA_QSPI_PROG_SH_CMD_FMT = "./qspi_prog.sh {:s}"
+    MTP_MATERA_SWITCH_NIC_CONSOLE2A35_FMT = "con_switch.sh {:s} 0"
+    MTP_MATERA_SWITCH_NIC_CONSOLE2N1_FMT = "con_switch.sh {:s} 1"
     MTP_CPLD_READ_FMT  = "cpldutil -cpld-rd -addr=0x{:x}"
     MTP_CPLD_WRITE_FMT = "cpldutil -cpld-wr -addr=0x{:x} -data=0x{:x}"
     MTP_MAC_FMT = "cat /sys/class/net/enp4s0/address"
@@ -425,6 +437,7 @@ class MFG_DIAG_CMDS:
     NIC_SET_EXTOSA_BOOT_FMT = "fwupdate -s extosa"
     NIC_SET_MGMT_IP_FMT = "ifconfig oob_mnic0 10.1.1.{:d} netmask 255.255.255.0"
     NIC_DATE_SET_FMT = "date --set='{:s}'"
+    NIC_HW_CLOCK_SYNC_FMT = "hwclock -w"
     NIC_UNTAR_FMT = "tar xf {:s} -C {:s}"
     NIC_SYS_CLEAN_FMT = "{:s}scripts/sys_clean.sh"
     NIC_SET_EXTDIAG_BOOT_FMT = "fwupdate -s extdiag"
@@ -439,17 +452,18 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_ELBA_FMT        = "python2 ./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s} -fast"
     NIC_ESEC_PROG_DUMP_FMT        = "python2 ./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
     NIC_ESEC_PROG_QSPI_DUMP_FMT   = "tclsh qspi_esec_data_dump.tcl -slot {:d} -mode {:s}"
+    NIC_ESEC_HW_LOCK_FMT          = "sal_esecure_lockbits.sh {:d} 0x30 0xAB"
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
     NIC_L1_ESEC_PROG_FMT = "tclsh ./esec_l1_prog_elba.tcl -slot {:d}"
     NIC_L1_ESEC_GIGLIO_PROG_FMT = "tclsh ./esec_l1_prog_giglio.tcl -slot {:d}"
-    NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
-
+    NIC_MATERA_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
+    SALINA_NIC_VMARG_SET_FMT = "tclsh /home/diag/diag/scripts/asic/leni_vmarg.tcl {} {} {}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
@@ -465,6 +479,9 @@ class MFG_DIAG_CMDS:
     NIC_ERASE_QSPI_PARTITION_FMT = "flash_erase /dev/mtd{:d} 0 0"
     NIC_GET_EMMC_PARTITION_FMT = "sgdisk -p /dev/mmcblk0"
     NIC_ERASE_EMMC_PARTITION_FMT = "dd if=/dev/zero of=/dev/mmcblk0p{:d} bs=512 count=16"
+    NIC_ERASE_QSPI_FMT = "fpgautil flash {:s} 1 sectorerase all"
+    SALINA_NIC_ERASE_BOOT0_FMT = "./qspi_erase_boot0.sh {:s}"
+    SALINA_NIC_PROGRAM_BOOT0_FMT = "./qspi_prog_boot0.sh {:s}"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -502,11 +519,14 @@ class MFG_DIAG_CMDS:
     ORTANO2_VRM_FIX_OC_FMT = "/data/nic_util/fix_o2_vrm_oc.sh apply"
     # Ginestra
     GINESTRA_AVS_SET_FMT  = "tclsh set_avs_gig.tcl -sn {:s} -slot {:d} -core_freq 1100 -arm_freq 3000"
+    # Salina
+    SALINA_AVS_SET_FMT  = "tclsh set_avs_sal.tcl -slot {:d}"
 
     NIC_POWER_ON_FMT = "turn_on_slot.sh on {:d}"
     NIC_POWER_OFF_FMT = "turn_on_slot.sh off {:d}"
     MTP_POWER_ON_NIC_FMT = "turn_on_slot.sh on {:s}"
     MTP_POWER_OFF_NIC_FMT = "turn_on_slot.sh off {:s}"
+    SALINA_MBIST_POWER_ON_FMT = "mbist_power_on.sh {:d}"
 
     MTP_RD_ALOM_CPLD_FMT = "smbutil -rd -addr=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
     MTP_WR_ALOM_CPLD_FMT = "smbutil -wr -addr=0x{:x} -data=0x{:x} -uut='UUT_{:d}' -dev=CPLD_ADAP"
@@ -520,6 +540,7 @@ class MFG_DIAG_CMDS:
     NIC_POWER_RAIL_DISP_FMT = "inventory -pw -slot={:d}"
     NIC_PRESENT_DISP_FMT = "inventory -present"
     NIC_AVS_POST_FMT = "inventory -sts -slot {:d}"
+    NIC_I2C_DUMP_POST_FMT = "i2cdump -y {:d} 0x4a"
 
     NIC_ENA_ESEC_WRITE_PROT_FMT = "nic_test.py -ena_esec_wp -slot_list='{:s}'"
     NIC_DIS_ESEC_WRITE_PROT_FMT = "nic_test.py -dis_esec_wp -slot_list='{:s}'"
@@ -553,22 +574,40 @@ class MFG_DIAG_CMDS:
     MTP_PARA_DDR_BIST_ELBA_FMT = "python2 ddr_bist.py -arm_ddrbist -slot_list '{:s}' -wtime=780 -vmarg {:s}"
     MTP_NCSI_RMII_LINKUP_FMT = "nic_test.py -rmii_linkup_test   -slot_list='{:s}' -vmarg {:s}"
     MTP_NCSI_UART_LPBACK_FMT = "nic_test.py -uart_loopback_test -slot_list='{:s}' -vmarg {:s}"
-    MTP_PARA_EDMA_ENV_INIT_FMT  = "nic_test_v2.py check_edma -slot_list {:s}"
+    MTP_PARA_EDMA_ENV_INIT_FMT  = "python3 nic_test_v2.py check_edma -slot_list {:s}"
 
     #MATER MTP
     MATERA_MTP_SINGLE_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s}"
+    MATERA_SALINA_SINGLE_MGMT_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -no_pc"
     MATERA_MTP_SINGLE_MGMT_FPO_FMT = "nic_test_v2.py setup_single -slot {:s} -mgmt -asic_type {:s} -fpo"
     MATERA_MTP_SINGLE_INIT_FMT = "nic_test_v2.py setup_single -slot {:s} -asic_type {:s}"
-    MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 60 -poly {:s} -mode PCIE"
+    MATERA_MTP_PARA_PCIE_PRBS_FMT = "nic_test_v2.py nic_pcie_prbs_single -slot {:s} -vmarg {:s} -dura 120 -poly {:s} -mode PCIE"
     MATERA_MTP_PARA_SNAKE_ELBA_ORC_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 700 -vmarg {:s} -mode hod -int_lpbk -verbose"
     MATERA_MTP_PARA_SNAKE_ELBA_PEN_FMT = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 700 -vmarg {:s}  -mode hod_1100 -int_lpbk -verbose"
     MATERA_MTP_PARA_SNAKE_LACONA_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 500 -vmarg {:s} -mode nod_525 -int_lpbk -verbose"
     MATERA_MTP_PARA_SNAKE_ELBA_FMT     = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 60 -timeout 700 -vmarg {:s}  -mode nod -int_lpbk -verbose"
     MATERA_MTP_PARA_SNAKE_GIGLIO_FMT   = "nic_test_v2.py nic_snake_single -slot {:s} -snake_num 6 -dura 120 -timeout 700 -vmarg {:s} -mode=hod_1100 -int_lpbk -verbose"
+    MATERA_NIC_SNAKE_MTP_FMT           = "nic_test_v2.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -ite {:s} -int_lpbk {:s}"
+    MATERA_NIC_MEM_TEST_MTP_FMT        = "nic_test_v2.py mem_test -slot {:s} -tcl_path {:s} -dura {:s} -vmarg {:s} -threads {:s}"
+    MATERA_NIC_EDMA_MTP_FMT           = "nic_test_v2.py edma_test -slot {:s} -tcl_path {:s} -dura {:s} -vmarg {:s}"
+    MATERA_AINIC_SNAKE_MTP_FMT         = "nic_test_v2.py nic_snake_mtp -slot {:s} -timeout {:d} -dura {:d} -snake_type {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}' -ite {:s} -int_lpbk {:s} --lpmode 1"
+    MATERA_NIC_PCIE_PRBS_FMT         = "nic_test_v2.py pcie_prbs -slot {:s} -vmarg {:s} -card_type {:s} -tcl_path '{:s}'"
+    MATERA_MTP_NIC_BOOT_TO = "python3 sal_con.py --boot_to {:s} --slot {:s}"
+    MATERA_MTP_PROG_DPU_DRU_FMT = "nic_test_v2.py prog_dpu_fru -slot {:s}  -skip_fru2"
+    MATERA_MTP_SALINA_NIC_JTAG_MBIST = "tclsh jtag_screen.tcl -sn {:s} -slot {:s} -vmarg {:s}"
+    MATERA_MTP_SALINA_NIC_VRM_FIX_FMT = "nic_test_v2.py fix_sal_vrm -slot {:s}"
+    MATERA_MTP_CLEAR_J2C_IF_LOCK = "/home/diag/diag/util/jtag_accpcie_salina clr {:s}"
+    MATERA_SET_PCIEAWD_ENV_FMT         = "nic_test_v2.py salina pcieawd_env -slot {:s} -eqbk_en 1 -cmn_kp 56 -cmn_ki 9 -tx_prop_adj 1 -rx_prop_adj 4 -tx_mag 9 -rx_mag 9"
+    MATERA_ERASE_PCIEAWD_ENV_FMT = "nic_test_v2.py salina pcieawd_env -slot {:s} -erase"
+    MATERA_FIX_VRM_FMT         = "nic_test_v2.py fix_sal_vrm -slot {:s}"
+    MATERA_I2C_QSFP_FMT         = "nic_test_v2.py test_spi -slot {:s} -vmarg {:s}"
+    MATERA_I2C_RTC_FMT         = "tclsh sal_i2c_access.tcl -slot {:s} -vmarg {:s}"
+    MATERA_L1_PRE_SETUP_FMT     = "tclsh sal_arm_freq.tcl -slot {:s}"
 
     MTP_PARA_UBOOT_ENV_FMT = "nic_test.py -setup_uboot_env -slot_list {:s}"
     MTP_PARA_INIT_FMT = "nic_test.py -setup_multi -slot_list {:s} -asic_type {:s}"
     MTP_DISP_ECC_FMT = "nic_test.py -disp_ecc -slot_list {:s}"
+    MTP_HWCLOCK_WRITE_FMT = "hwclock -w"
 
     MTP_ARP_DELET_FMT = "arp -d {:s}"
     MTP_NIC_MAC_DISP_FMT = "arp -n -i enp2s0"
@@ -661,6 +700,15 @@ class MFG_DIAG_SIG:
     NIC_MGMT_PARA_SIG = "=== Setup env top"
     NIC_PARA_SIG = "=== Setup env top"
     MATERA_NIC_MGMT_PARA_SIG = "=== Setup env"
+    MATERA_NIC_SALINA_JTAG_MBIST_SIG = "JTAG TESTS PASSED"
+    MATERA_NIC_SNAKE_MTP_SIG = "SNAKE TEST PASSED"
+    MATERA_NIC_MEM_TEST_MTP_SIG = "GOOGLE STRESS TEST PASSED"
+    MATERA_NIC_EDMA_MTP_SIG = "EDMA test PASSED"
+    MATERA_AINIC_SNAKE_MTP_SIG = "SNAKE TEST PASSED"
+    MATERA_AINIC_PCIE_PRBS_SIG = "PRBS test PASSED"
+    MATERA_SALINA_FIX_VRM_SIG = "VRM mask applied successfully"
+    MATERA_I2C_QSFP_SIG = "QSFP READ TEST PASSED"
+    MATERA_I2C_RTC_SIG = "I2C ACCESS TEST PASSED"
     NIC_PARA_EDMA_ENV_INIT_SIG = "EDMA Checking Done"
     NIC_HAL_RUNNING_SIG = "/nic/bin/hal"
     NIC_CON_MTEST_PASS_SIG = "=== MTEST PASSED ==="
@@ -696,11 +744,16 @@ class MFG_DIAG_SIG:
     NIC_FPGA_PHY_LINK_TEST_SIG = "TRANSCEIVER RJ45 port link is up"
     NIC_EDMA_TEST_SIG = "EDMA TEST PASSED"
     NIC_PARA_ASIC_L1_OK_SIG = "L1 TEST PASSED"
+    NIC_PARA_ASIC_L1_FAIL_SIG = "L1 TEST FAILED"
     NIC_PARA_DDR_BIST_OK_SIG = "DDR BIST PASSED"
     NIC_L1_ESEC_PROG_OK_SIG = "L1 ESEC PROG PASSED"
+    NIC_L1_PRE_SETUP_OK_SIG = "SAL_ARM_FREQ DONE"
     NIC_EMMC_CHECK_OK_SIG = "Partitioning Setting [PARTITION_SETTING_COMPLETED]: 0x01"
     NIC_ESEC_WRITE_PROT_SIG = "=== ena_dis_esec_wp done"
     NIC_ESEC_WRITE_PROT_OK_SIG = "=== ena_dis_esec_wp passed ==="
+    SALINA_NIC_ERASE_BOOT0_OK_SIG = "QSPI ERASE PASSED"
+    SALINA_NIC_PROG_BOOT0_OK_SIG = "QSPI PROG PASSED"
+    SALINA_NIC_VMARG_SET = "vmarg set"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"
@@ -729,3 +782,4 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_MALFA = r"\bUUT_(\d+) +MALFA\b"
     MFG_NIC_TYPE_LENI = r"\bUUT_(\d+) +LENI\b"
     MFG_NIC_TYPE_LENI48G = r"\bUUT_(\d+) +LENI48G\b"
+    MFG_NIC_TYPE_POLLARA = r"\bUUT_(\d+) +POLLARA\b"

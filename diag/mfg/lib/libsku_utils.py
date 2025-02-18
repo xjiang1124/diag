@@ -91,10 +91,10 @@ class PART_NUMBERS_MATCH:
     GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
     GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
     GINESTRA_S4_PN_FMT = r"68-0076-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0076-01 01    GINESTRA_S4
-    LENI_PN_FMT = r"102-P10800-0[0-9]{1}"                                                           #102-P10800-00 01    LENNI 102-P10800-00
-    LENI48G_PN_FMT = r"102-P10900-0[0-9]{1}"                                                          #102-P10600-00 01    MALFA 102-P10600-00
-    # MALFA_PN_FMT = r"102-P10600-0[1-9]{1} [A-Z0-9]{2}"                                              #102-P10600-00 01    MALFA
-    MALFA_PN_FMT = r"102-P10600-0[0-9]{1}"                                                          #102-P10600-00 01    MALFA 102-P10600-00
+    LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                      #102-P10800-00B 01  LENI
+    LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                   #102-P10801-00B 01  LENI48G
+    POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                 #102-P11100-00B 01  OLLARA
+    MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{2})?"                                        #102-P10600-00 01   MALFA
 
 SN_FORMAT_TABLE = {
     Factory.P1: {
@@ -134,9 +134,10 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.ORTANO2ADI_CR_MSFT_PN_FMT:       "FPG" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT:              "FPH" + FLX_SN_SUFFIX_FMT,
-        PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
-        PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.LENI_PN_FMT:                     "FPK" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
     },
     Factory.FSP: {
@@ -288,10 +289,13 @@ PN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT                   #68-0076-01 01    GINESTRA_S4
         ],
     NIC_Type.LENI: [
-        PART_NUMBERS_MATCH.LENI_PN_FMT                         #102-P10600-0 01    MALFA
+        PART_NUMBERS_MATCH.LENI_PN_FMT                          #102-P10800-00B   LENI
         ],
     NIC_Type.LENI48G: [
-        PART_NUMBERS_MATCH.LENI48G_PN_FMT                         #102-P10600-0 01    MALFA
+        PART_NUMBERS_MATCH.LENI48G_PN_FMT                       #102-P10801-00B   LENI48G
+        ],
+    NIC_Type.POLLARA: [
+        PART_NUMBERS_MATCH.POLLARA_PN_FMT                       #102-P11100-00    POLLARA
         ],
     NIC_Type.MALFA: [
         PART_NUMBERS_MATCH.MALFA_PN_FMT                         #102-P10600-0 01    MALFA
@@ -397,6 +401,12 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.ORTANO2SOLOORCTHS
     elif "68-0090-01" in pn:
         product_name = NIC_Type.ORTANO2SOLOMSFT
+    elif "POLLARA-1Q400P" in pn:
+        product_name = NIC_Type.POLLARA
+    elif "AI-NIC400-1Q400-P" in pn:
+        product_name = NIC_Type.POLLARA
+    elif "DSC3-2Q400-48R64E64P" in pn:
+        product_name = NIC_Type.LENI48G
     else:
         product_name = NIC_Type.UNKNOWN
 

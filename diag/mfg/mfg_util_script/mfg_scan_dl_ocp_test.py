@@ -444,7 +444,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, dsp, test))
             start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
             if test == "NIC_POWER":
-                ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot)
+                ret = mtp_mgmt_ctrl.mtp_mgmt_check_nic_pwr_status(slot, test)
             elif test == "NIC_PRSNT":
                 ret = mtp_mgmt_ctrl.mtp_nic_check_prsnt(slot)
             elif test == "NIC_INIT":
@@ -462,7 +462,7 @@ def main():
                         fail_nic_list.append(slot)
                     if slot in pass_nic_list:
                         pass_nic_list.remove(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))
@@ -519,7 +519,7 @@ def main():
                     fail_nic_list.append(slot)
                 if slot in pass_nic_list:
                     pass_nic_list.remove(slot)
-                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test)
                 break
             else:
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, dsp, test, duration))

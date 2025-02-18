@@ -426,7 +426,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
 
     return ret
 
-def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr=None):
+def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='1', simplified='0', ite='1', ddr="1"):
 
     @parallelize.parallel_nic_using_j2c
     def run_j2c_test_normally(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -462,13 +462,13 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn, ow=True if test == "L1_OW" else False)
             number_of_l1_tests = 9 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA else 6
             if nic_type in (NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.LENI):
-                # assuming running ASIC L1 from j2c first then run from one wire,  run only ONCE from both J2C  and one wire
-                number_of_l1_tests = 9 if joo == '1' else 13
+                # assuming running ASIC L1 rom j2c first then run from one wire,  run only ONCE from both J2C  and one wire
+                number_of_l1_tests = 9 if joo == '1' else 4
             if nic_type in (NIC_Type.POLLARA):
-                number_of_l1_tests = 7 if joo == '1' else 11
+                number_of_l1_tests = 8 if joo == '1' else 4
             err_msg_list = list()
             if pass_count != number_of_l1_tests:
                 err_msg_list = ["L1 Sub Test only passed: {:d}".format(pass_count)]
@@ -495,7 +495,7 @@ def ncsi_prod_fpga_program(mtp_mgmt_ctrl, slot):
 def salina_snake_qspi_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_P2C
     image_file = image_control.get_qspi_snake_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
-    image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file) + os.sep + os.path.basename(image_file).split(".")[0]
+    image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file) + os.sep + os.path.basename(image_file)[:-len(".tar.gz")]
     return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
 
 @parallelize.parallel_nic_using_ssh
@@ -963,7 +963,7 @@ def main():
                 elif test == "SALINA_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SALINA_CONSOLE_GOOGLE_STRESS":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress(nic_list, ram2test=test_kwargs["ram2test"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"], logfile=test_kwargs["logfile"])
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress(nic_list, vmarg==test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
                 elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
                     rlist = mtp_mgmt_ctrl.mtp_make_copies_of_asic_dir(nic_list, number=test_kwargs["number"])
                 elif test == "SNAKE_SALINA_NIC_SNAKE_MTP":
@@ -973,7 +973,7 @@ def main():
                 elif test == "SNAKE_SALINA_AINIC_SNAKE_SOR_MTP":
                     rlist = mtp_mgmt_ctrl.mtp_ainic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
                 elif test == "SNAKE_SALINA_AINIC_PCIE_PRBS":
-                    rlist = mtp_mgmt_ctrl.mtp_ainic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
+                    rlist = mtp_mgmt_ctrl.mtp_nic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
                 elif test == "ADI_NIC_PWRCYC":
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_type_list, dl=True, count_down=False)
 
@@ -1006,6 +1006,8 @@ def main():
 
                 elif test == "L1_SETUP":
                     rlist = mtp_mgmt_ctrl.mtp_l1_setup(nic_list)
+                elif test == "L1_PRE_SETUP":
+                    rlist = mtp_mgmt_ctrl.mtp_l1_pre_setup(nic_list)
 
                 elif test == "PCIE_POLL_DISABLE":
                     rlist = mtp_mgmt_ctrl.mtp_nic_pcie_poll_enable(nic_list, False)
@@ -1015,7 +1017,7 @@ def main():
                 elif test == "NIC_JTAG":
                     rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 elif test == "NIC_POWER":
-                    rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
+                    rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list, test)
                 elif test == "NIC_MEM":
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_test_nic_mem(nic_list)
                 elif test == "NIC_STATUS":
@@ -1076,7 +1078,7 @@ def main():
                             rlist.remove(slot)
 
                 for slot in rlist:
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test)
                     if slot in nic_list_orig:
                         nic_list_orig.remove(slot)
                     if slot in pass_nic_list:
@@ -1161,6 +1163,8 @@ def main():
                     rlist = naples_get_nic_logfile(mtp_mgmt_ctrl, nic_list, nic_test_history)
                 elif test == "NIC_LOG_SAVE":
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_save_nic_diag_logfile(nic_list, aapl=test_kwargs["aapl"])
+                elif test == "SEC_KEY_PROG":
+                    rlist = mtp_mgmt_ctrl.mtp_program_nic_sec_key(nic_list)
 
                 else:
                     mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -1363,9 +1367,12 @@ def main():
                     run_test(capri_nic_list, "PCIE_POLL_DISABLE")
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
-                run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
             else:
-                run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
+                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
+                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
+                pass
 
             test_section_list = []
 
@@ -1385,7 +1392,9 @@ def main():
 
             ### SALINA TEST ORDER
             if get_slots_of_type(SALINA_NIC_TYPE_LIST):
-                test_section_list = ["STRESS", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                if stage == FF_Stage.FF_P2C:
+                    test_section_list.append("SALINA_ESEC_IN_P2C")
             
             ### EMMC Validation TEST ORDER
             test_section_list = ["EMMC_VALIDATION"]
@@ -1635,22 +1644,42 @@ def main():
                     ######################################################################
                     #  Salina NIC JTAG BIST test
                     ######################################################################
+                    prepare_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    run_regression_test(prepare_boot0_list, "SALINA_NIC_MBIST_BOOT0_MTP_PREPARE")
+
+                    erase_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    run_regression_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
+
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-                    run_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
+                    run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
+
+                    prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    run_regression_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(l1_setup_list, "L1_SETUP")
 
-                    l1_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST)
+                    l1_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     for slot in l1_type_list[:]:
                         if mtp_mgmt_ctrl.mtp_get_nic_type(slot) == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
                             l1_type_list.remove(slot)
 
-                    run_regression_test(l1_type_list, "L1", "ASIC", l1_sequence=l1_sequence)
+                    run_regression_test(l1_type_list, "L1", "ASIC", l1_sequence=l1_sequence, ddr='1')
+                    salina_ainic_type_list = get_slots_of_type(SALINA_AI_NIC_TYPE_LIST)
+                    run_regression_test(salina_ainic_type_list, "L1", "ASIC", l1_sequence=l1_sequence, ddr='0')
                     salina_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(salina_type_list, "L1_OW", "ASIC", l1_sequence=l1_sequence, joo='0', ddr='0', offload='1')
 
                     mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Diag Regression Sequential Test Complete\n".format(nic_type), level=0)
+
+                elif test_section == "I2C":
+                    ######################################################################
+                    #
+                    #  NIC I2C_SALINA
+                    #
+                    ######################################################################
+                    run_regression_test(pass_nic_list, "SALINA_I2C_QSFP", vmarg=vmarg)
+                    run_regression_test(pass_nic_list, "SALINA_I2C_RTC", vmarg=vmarg)
 
                 elif test_section == "ALOM_LP_MODE":
                     ######################################################################
@@ -1674,60 +1703,64 @@ def main():
                     #
                     ######################################################################
                     run_test(pass_nic_list, "NIC_DIAG_INIT", dis_hal=True)
+                elif test_section == "P2C_IMG_PROG":
+                    ######################################################################
+                    # Replace DL image for Leni only so far
+                    ######################################################################
+                    salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
+                    #prog special image
+                    run_regression_test(salina_dpu_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
+                    run_regression_test(salina_dpu_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
                 elif test_section == "STRESS":
                     ######################################################################
                     #  Salina NIC Power cycle test
                     ######################################################################
                     for i in range(5):
-                        run_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage='linux')
-                        run_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_WARM_RESET", bootstage='linux', warm_reset=True)
-                        run_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage="zephyr")
-                        run_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=True)
+                        run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage='linux')
+                        run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_WARM_RESET", bootstage='linux', warm_reset=True)
+                        run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage="zephyr")
+                        run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=True)
 
                     ######################################################################
                     #  Salina NIC Google stress  test
                     ######################################################################
                     google_stress_list = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-                    run_test(google_stress_list, "SALINA_NIC_BOOT_STAGE", bootstage='linux')
-                    run_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS", ram2test=None, mem_copy_thread=16, seconds2run=60, logfile=None)
+                    run_regression_test(google_stress_list, "SALINA_NIC_BOOT_STAGE", bootstage='linux')
+                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS", vmarg="normal", mem_copy_thread=16, seconds2run=60)
+
+                elif test_section == "SALINA_ESEC_IN_P2C":
+                    run_regression_test(pass_nic_list, "SEC_KEY_PROG")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage='linux')
+                    run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage="zephyr")
+                    run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
 
                 elif test_section == "SALINA_SNAKE":
-                    salina_max_power_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-                    #prog special image
-                    run_test(salina_max_power_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
-                    run_test(salina_max_power_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
+                    salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
 
                     # make copies of asic directory
-                    run_test(salina_max_power_snake, "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE", number=5)
+                    salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
+                    run_regression_test(salina_dpu_snake, "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE")
 
                     # run snake test dpu
-                    salina_max_power_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-                    max_power_snake = 'esam_pktgen_max_power_pcie_sor'
-                    if len(salina_max_power_snake) > 5:
-                        salina_max_power_snake_lists = [salina_max_power_snake[0:5], salina_max_power_snake[5:]]
-                    else:
-                        salina_max_power_snake_lists = [salina_max_power_snake]
-
-                    for salina_max_power_snake_list in salina_max_power_snake_lists:
-                        slot2asicdir = dict()
-                        for index, slot in enumerate(salina_max_power_snake_list):
-                            new_index = index % 5
-                            if new_index == 0:
-                                dir_path = '/home/diag/diag/asic'
-                            else:
-                                dir_path = '/home/diag/diag/asic' + str(new_index)
-                            slot2asicdir[slot] = dir_path
-
-                        print(slot2asicdir)
-                        run_test(salina_max_power_snake_list, "SNAKE_SALINA_NIC_SNAKE_MTP", snake_type=max_power_snake, asic_dir_path=slot2asicdir, vmarg=vmarg)
+                    slot2asicdir = dict()
+                    for slot in salina_dpu_snake:
+                        if slot == 0:
+                            dir_path = '/home/diag/diag/asic'
+                        else:
+                            dir_path = '/home/diag/diag/asic' + str(slot)
+                        slot2asicdir[slot] = dir_path
+                    run_regression_test(salina_dpu_snake, "SALINA_DPU_SNAKE_MAX_PWR", snake_type="esam_pktgen_max_power_pcie_sor", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=120, timeout=3600, int_lpbk='0')
+                    run_regression_test(salina_dpu_snake, "SALINA_DPU_SNAKE_DDR_BURST", snake_type="esam_pktgen_ddr_burst_400G_no_mac", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=60, timeout=3600, int_lpbk='0')
+                    run_regression_test(salina_dpu_snake, "SNAKE_SALINA_NIC_PCIE_PRBS", asic_dir_path='/home/diag/diag/asic', vmarg=vmarg)
 
 
                     salina_ainic_max_power_snake = get_slots_of_type(SALINA_AI_NIC_TYPE_LIST)
-                    run_test(salina_ainic_max_power_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
-                    run_test(salina_ainic_max_power_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
+                    run_regression_test(salina_ainic_max_power_snake, "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE")
+                    # run_regression_test(salina_ainic_max_power_snake, "SALINA_SNAKE_QSPI_IMG_PROG")
+                    run_regression_test(salina_ainic_max_power_snake, "SALINA_SET_PCIEAWD_ENV")
                     # make copies of asic directory ai nic
-                    run_test(salina_ainic_max_power_snake, "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE", number=5)
-                    run_test(salina_ainic_max_power_snake, "SNAKE_SALINA_AINIC_PCIE_PRBS", asic_dir_path='/home/diag/diag/asic', vmarg=vmarg)
+                    run_regression_test(salina_ainic_max_power_snake, "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE")
+                    run_regression_test(salina_ainic_max_power_snake, "SNAKE_SALINA_NIC_PCIE_PRBS", asic_dir_path='/home/diag/diag/asic', vmarg=vmarg)
 
                     # run snake test ai nic
                     salina_ai_max_power_snake = get_slots_of_type(SALINA_AI_NIC_TYPE_LIST)
@@ -1737,23 +1770,19 @@ def main():
                     else:
                         salina_ai_max_power_snake_lists = [salina_ai_max_power_snake]
 
-                    for salina_ai_max_power_snake_list in salina_ai_max_power_snake_lists:
-                        slot2asicdir = dict()
-                        for index, slot in enumerate(salina_ai_max_power_snake_list):
-                            new_index = index % 5
-                            if new_index == 0:
-                                dir_path = '/home/diag/diag/asic'
-                            else:
-                                dir_path = '/home/diag/diag/asic' + str(new_index)
-                            slot2asicdir[slot] = dir_path
-
-                        print(slot2asicdir)
-                        run_test(salina_ai_max_power_snake_list, "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP", snake_type="esam_pktgen_pollara_max_power_pcie_arm", asic_dir_path=slot2asicdir, vmarg=vmarg)
+                    slot2asicdir = dict()
+                    for slot in salina_ai_max_power_snake:
+                        if slot == 0:
+                            dir_path = '/home/diag/diag/asic'
+                        else:
+                            dir_path = '/home/diag/diag/asic' + str(slot)
+                        slot2asicdir[slot] = dir_path
+                    run_regression_test(salina_ai_max_power_snake, "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP", snake_type="esam_pktgen_pollara_max_power_pcie_arm", asic_dir_path=slot2asicdir, vmarg=vmarg, dura=900, timeout=3600, int_lpbk='0')
 
                     # recovery, prog normal qspi images
-                    run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
-                    run_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux')
-                    run_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+                    # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+                    # run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
+                    # run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
                 elif test_section == "EMMC_VALIDATION":
                     run_test(pass_nic_list, "EMMC_VALIDATION", emmc_test_suites=emmc_test_suites, stop_on_err=stop_on_err, aapl=False, swmtestmode=swmtestmode)
 

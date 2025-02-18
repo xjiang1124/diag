@@ -703,6 +703,8 @@ def main():
                 mtp_exp_capability = 0x2
             elif nic_type in MTP_REV02_CAPABLE_NIC_TYPE_LIST:
                 mtp_exp_capability = 0x1
+            elif nic_type in MTP_MATERA_CAPABLE_NIC_TYPE_LIST:
+                mtp_exp_capability = 0x4
             else:
                 mtp_mgmt_ctrl.cli_log_err("NIC Type {:s}'s MTP compatibility unknown".format(nic_type), level=0)
                 continue
