@@ -904,7 +904,7 @@ class MTP_IMAGES:
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
     rotctrl_img = "rotctrl"
-    nic_ctl_image = "nicctl"
+    nic_ctl_img = "nicctl"
     python_site_package4mtp_img = "python3.6_site_package.tar.gz"
     mtp_cpu_validation_tool_avt_img = "AVT_Linux_NDA_2.8.24.tar"
 

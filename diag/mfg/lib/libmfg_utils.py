@@ -1088,7 +1088,7 @@ def mtp_update_diag_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.MTP_AMD64_IMA
 
     return True
 
-def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, nic_image=MFG_IMAGE_FILES.penctl_token_img, nic_ctl_image=MFG_IMAGE_FILES.nic_ctl_image):
+def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, nic_image=MFG_IMAGE_FILES.penctl_token_img, nic_ctl_image=MFG_IMAGE_FILES.nic_ctl_img):
     if "penctl.linux" not in mtp_image:
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl image: {:s}".format(mtp_image), level=0)
         return False
@@ -1096,7 +1096,7 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_mgmt_ctrl.cli_log_err("Wrong FST Penctl TOKEN image: {:s}".format(nic_image), level=0)
         return False
     if "nicctl" not in nic_ctl_image:
-        mtp_mgmt_ctrl.cli_log_err("Wrong FST NIC CTL image: {:s}".format(nic_image), level=0)
+        mtp_mgmt_ctrl.cli_log_err("Wrong FST NIC CTL image: {:s}".format(nic_ctl_image), level=0)
         return False
 
     if os.path.isabs(mtp_image):
@@ -1119,7 +1119,7 @@ def mtp_update_fst_image(mtp_mgmt_ctrl, mtp_image=MFG_IMAGE_FILES.penctl_img, ni
         mtp_nic_ctl_image_file = nic_ctl_image
     else:
         mtp_nic_ctl_image_file = "release/{:s}".format(nic_ctl_image)
-    if not file_exist(nic_image_file):
+    if not file_exist(mtp_nic_ctl_image_file):
         mtp_mgmt_ctrl.cli_log_err("NIC NIC CTL image {:s} doesn't exist... Abort".format(mtp_nic_ctl_image_file), level=0)
         return False
 
