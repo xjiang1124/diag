@@ -915,7 +915,7 @@ class MFG_IMAGE_FILES:
     
     penctl_img = "penctl.linux.042021"
     penctl_token_img = "penctl.token"
-    nic_ctl_image = "nicctl"
+    nic_ctl_img = "nicctl"
 
 class FLEX_ERR_CODE_MAP:
     err_code = dict()
