@@ -142,3 +142,158 @@ e2e-targets:
       password: lab123
       vars:
         BmOs: linux
+
+  mbist-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh mbist --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  l1-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh l1 --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  pcieprbs-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh pcieprbs --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  snake-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh snake --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  ddrsnake-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh ddrsnake --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  i2caccess-leni:
+    commands: ["sh", "-c", "/psdiag/test/run_diag_job.sh i2caccess --nic-type leni --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
