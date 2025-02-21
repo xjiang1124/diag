@@ -6047,22 +6047,13 @@ class mtp_ctrl():
             And assign slot # in the order it appears in lspci
         """
         self.cli_log_inf("Init NIC Presence, Type")
+        cmd = "lspci -d 1dd8:1002" if self._fst_ver == 0x6 else "lspci -d 1dd8:1004"
 
-        cmd = "lspci -d 1dd8:1004"
         self.mtp_mgmt_exec_cmd(cmd)
         result = self.mtp_get_cmd_buf()
         bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
 
-        cmd = "lspci -d 1dd8:1002"
-        self.mtp_mgmt_exec_cmd(cmd)
-        result = self.mtp_get_cmd_buf()
-        bus_salina_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
-
-        if not bool(bus_list_match) ^ bool(bus_salina_list_match):
-            self.cli_log_err("detect mix card in fst station")
-            return False
-
-        bus_list_match = list(set(bus_list_match + bus_salina_list_match))
+        bus_list_match = list(set(bus_list_match))
 
         # extra info dump
         cmd = "lspci -d 1dd8: -vvv"

@@ -662,7 +662,7 @@ class nic_ctrl():
         self.nic_set_cmd_buf(self._nic_handle.before)
         return rc
 
-    def nic_console_attach(self, uart_selecttor):
+    def nic_console_attach(self, uart_selecttor=None):
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_DIAG_STOP_PICOCOM_FMT)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
