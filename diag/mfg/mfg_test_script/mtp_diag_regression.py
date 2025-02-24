@@ -931,10 +931,11 @@ def main():
                     run_test(capri_nic_list, "PCIE_POLL_DISABLE")
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)   # NIC_DIAG_INIT not ready yet
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)   # NIC_DIAG_INIT not ready yet
             else:
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)  # NIC_DIAG_INIT not ready yet
-                pass
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)  # NIC_DIAG_INIT not ready yet
 
             test_section_list = []
 
