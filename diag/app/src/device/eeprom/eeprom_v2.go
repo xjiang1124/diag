@@ -1169,6 +1169,7 @@ var CardTypes = []card{
     card{"LENI48G_SKU",             SKU_LENI48G},
     card{"LINGUA",                  PN_LINGUA},
     card{"LINGUA_SKU",              SKU_LINGUA},
+    card{"OCP_ADPT",                PN_OCP_ADPT},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
