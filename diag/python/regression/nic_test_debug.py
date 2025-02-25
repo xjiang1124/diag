@@ -84,7 +84,7 @@ class nic_test_debug:
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_port_up.leni.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.inf)
-        elif args.card_type == "POLLARA" || args.card_type == "LINGUA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_port_up.pollara.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.inf)
         else:
             print(args.card_type, "not supported!")
