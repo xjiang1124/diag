@@ -210,6 +210,8 @@ func present() (err int) {
                 presentStr = "LENI"
             case nicCpldCommon.ID_LENI48G:
                 presentStr = "LENI48G"
+            case nicCpldCommon.ID_LINGUA:
+                presentStr = "LINGUA"
             case nicCpldCommon.ID_NAPLES_MTP:
                 presentStr = "NAPLES_MTP"
             default:
@@ -482,6 +484,8 @@ func sysDetect() (err int) {
                 presentStr = "LENI"
             case nicCpldCommon.ID_LENI48G:
                 presentStr = "LENI48G"
+            case nicCpldCommon.ID_LINGUA:
+                presentStr = "LINGUA"
             default:
                 presentStr = "Unknown"
             }
@@ -613,7 +617,7 @@ func powerStatusDump(slot int)  {
     } else if cardType == "GINESTRA_D4" || cardType == "GINESTRA_D5" {
         powerStatusDumpGinestra(uutName)
         return
-    } else if cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI" || cardType == "LENI48G" {
+    } else if cardType == "MALFA" || cardType == "POLLARA" || cardType == "LENI" || cardType == "LENI48G" || cardType == "LINGUA" {
         powerStatusDumpSalina(uutName)
         return
     }

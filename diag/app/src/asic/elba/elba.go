@@ -173,8 +173,8 @@ func CheckECC() (err int) {
     }
     fmt.Printf("MC0 ecc_dataout_corrected_1_interrupt  = 0x%x\n", ReadData[0] & 0x2) 
     fmt.Printf("MC0 ecc_dataout_corrected_0_interrupt  = 0x%x\n", ReadData[0] & 0x1)
-    fmt.Printf("MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[2] | (ReadData[3]<<32))
-    fmt.Printf("MC0-DATA[63:0]                         = 0x%x\n", ReadData[4] | (ReadData[5]<<32))
+    fmt.Printf("MC0-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x%.08x\n", ReadData[3], ReadData[2])
+    fmt.Printf("MC0-DATA[63:0]                         = 0x%x%.08x\n", ReadData[5], ReadData[4])
     fmt.Printf("MC0-ECC C ID[16]                       = 0x%x\n", ReadData[6])
     if ( ((ReadData[12] & 0xA)>0) || 
           (ReadData[12] & 0x5)>0) {
@@ -182,7 +182,7 @@ func CheckECC() (err int) {
         if syndrome != 0 {
             syndrome_string, ok := syndrome_map[int(syndrome)]
             if ok {
-                fmt.Println("MC0 ECC Syndrome=%s", syndrome_string)
+                fmt.Println("MC0 ECC Syndrome=", syndrome_string)
             }
         }
     }
@@ -196,8 +196,8 @@ func CheckECC() (err int) {
     }
     fmt.Printf("MC1 ecc_dataout_corrected_1_interrupt  = 0x%x\n", ReadData[1] & 0x2) 
     fmt.Printf("MC1 ecc_dataout_corrected_0_interrupt  = 0x%x\n", ReadData[1] & 0x1)
-    fmt.Printf("MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x\n", ReadData[7] | (ReadData[8]<<32))
-    fmt.Printf("MC1-DATA[63:0]                         = 0x%x\n", ReadData[9] | (ReadData[10]<<32))
+    fmt.Printf("MC1-SYNCD_ADDR[47:40] / MC0-ADDR[39:0] = 0x%x%.08x\n", ReadData[8], ReadData[7])
+    fmt.Printf("MC1-DATA[63:0]                         = 0x%x%.08x\n", ReadData[10], ReadData[9])
     fmt.Printf("MC1-ECC C ID[16]                       = 0x%x\n", ReadData[11])
     if ( ((ReadData[13] & 0xA)>0) || 
         (ReadData[13] & 0x5)>0) {
@@ -205,7 +205,7 @@ func CheckECC() (err int) {
         if syndrome != 0 {
             syndrome_string, ok := syndrome_map[syndrome]
             if ok {
-                fmt.Println("MC1 ECC Syndrome=%s", syndrome_string)
+                fmt.Println("MC1 ECC Syndrome=", syndrome_string)
             }
         }
     }

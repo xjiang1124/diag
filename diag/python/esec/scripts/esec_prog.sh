@@ -24,6 +24,7 @@ get_asic_type () {
         echo "GIGLIO"
     elif [[ $c_type == "MALFA"        || \
             $c_type == "POLLARA"      || \
+            $c_type == "LINGUA"       || \
             $c_type == "LENI"         || \
             $c_type == "LENI48G"
         ]]

@@ -52,9 +52,9 @@ proc verify_nxc_frequency {{nxc_freq 750}} {
 
 proc verify_frequencies {} {
     set card_type [sal_get_card_type]
-    if { $card_type != "POLLARA" } {
+    if { $card_type != "POLLARA" && $card_type != "LINGUA" } {
         # not supported
-        plog_msg "set_pollara_frequency :: not pollara, skipping verify_arm_frequency"
+        plog_msg "set_pollara_frequency :: not pollara or lingua, skipping verify_arm_frequency"
         return 0
     }
     verify_arm_frequency
@@ -63,36 +63,38 @@ proc verify_frequencies {} {
 
 proc set_pollara_frequency {{arm_freq "none"}} {
     set card_type [sal_get_card_type]
-    if { $arm_freq != "none" && $card_type == "POLLARA" } {
-        plog_msg "set_pollara_frequency :: Changing ARM frequency to $arm_freq"
-        ## this sets frequency using jtag
-        ## which will block the j2c connection
-        ## therefore it can only work over onewire
-        sal_ow
+    if { $arm_freq != "none" } {
+        if { $card_type == "POLLARA" || $card_type == "LINGUA"} {
+            plog_msg "set_pollara_frequency :: Changing ARM frequency to $arm_freq"
+            ## this sets frequency using jtag
+            ## which will block the j2c connection
+            ## therefore it can only work over onewire
+            sal_ow
 
-        # keep setting until readback is correct
-        for {set retry 0} {$retry < 3} {incr retry} {
-            if { $arm_freq == "2000" } {
-                sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
-            } elseif { $arm_freq == "1500" } {
-                # sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
-                ## above command only sets some clocks.
-                ## if UFM1 is in play, it may change other clocks MBIST relies on so above command is not enough.
-                ## using below command will reconfigure ALL clocks:
-                ## arm core ddr eth flash gmac stg nxc fcw0 refclk postdiv dpll pll_out_sel
-                sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 60 2 1 2 1
+            # keep setting until readback is correct
+            for {set retry 0} {$retry < 3} {incr retry} {
+                if { $arm_freq == "2000" } {
+                    sal_jtag_arm_nxc_ddr_pll_no_rdbk 40 0 1 1 1 64 1 0 1 0 64 1 2 1 1
+                } elseif { $arm_freq == "1500" } {
+                    # sal_jtag_arm_nxc_ddr_pll_no_rdbk 60 0 2 1 1 64 1 0 1 0 64 1 2 1 1
+                    ## above command only sets some clocks.
+                    ## if UFM1 is in play, it may change other clocks MBIST relies on so above command is not enough.
+                    ## using below command will reconfigure ALL clocks:
+                    ## arm core ddr eth flash gmac stg nxc fcw0 refclk postdiv dpll pll_out_sel
+                    sal_pll_lock_max 60 1 1 1 0 44 1 1 3 1 64 1 0 1 0 44 1 1 3 1 32 2 1 2 1 40 1 1 3 1 60 1 1 1 1 60 2 1 2 1
+                }
+                plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
+                if {[verify_arm_frequency $arm_freq] != 0} {
+                    plog_msg "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...retrying."
+                    plog_clr_err_count
+                    continue
+                } else {
+                    break
+                }
             }
-            plog_msg "set_pollara_frequency :: Verifying CLKs are at $arm_freq MHz"
-            if {[verify_arm_frequency $arm_freq] != 0} {
-                plog_msg "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...retrying."
-                plog_clr_err_count
-                continue
-            } else {
-                break
+            if {$retry == 3} {
+                plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
             }
-        }
-        if {$retry == 3} {
-            plog_err "set_pollara_frequency :: Could not read consistent ARM frequency on clk_obs...aborting."
         }
     } else {
         plog_msg "set_pollara_frequency :: skipping changing PLLs by JTAG sequence"
@@ -143,7 +145,7 @@ proc reset_to_proto_mode {{reset "cold"}} {
 
 proc set_pollara_low_power_mode {} {
     set card_type [sal_get_card_type]
-    if { $card_type == "POLLARA" } {
+    if { $card_type == "POLLARA" || $card_type == "LINGUA" } {
         plog_msg "Setting clock gating for low power mode"
         plog_msg "sal_ainic_low_pwr_mode"
         sal_ainic_low_pwr_mode

@@ -47,7 +47,7 @@ func check_mcc_interrupts() (err int) {
 
 func MemDdr_StressHdl(argList []string) {
     fs := flag.NewFlagSet("FlagSet", flag.ContinueOnError)
-    secondsPtr := fs.Int("seconds", 60, "number of seconds to run")
+    secondsPtr := fs.Int("seconds", 900, "number of seconds to run")
     copy_threadsPtr := fs.Int("copy_threads", 16, "number of memory copy threads to run")
     logfilePtr := fs.String("logfile", "stressapptest.log", "log output to file 'logfile'")
     var cmd string

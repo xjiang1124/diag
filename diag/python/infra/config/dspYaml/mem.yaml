@@ -64,11 +64,11 @@ DSP:
         PARAM:
             timeout:
                 VALUE:
-                    ALL: 400
+                    ALL: 1100
                 INFO: Test timeout setting
             seconds:
                 VALUE:
-                    ALL: 60
+                    ALL: 900
                 INFO: number of seconds to run
             copy_threads:
                 VALUE:

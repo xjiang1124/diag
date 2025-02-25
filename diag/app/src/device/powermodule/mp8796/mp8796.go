@@ -122,6 +122,62 @@ func ReadStatus(devName string) (status uint16, err int) {
 }
 
 
+/*****************************************************************
+* 
+* VOUT_COMMAND and the MARGIN REGISTERS ARE 2mv per tick
+*
+*****************************************************************/
+func SetVMargin(devName string, pct int) (err int) {
+    var marginReg uint64
+    var marginCmd uint8
+    var marginVal int16
+    var vboot uint16
+
+    err = smbus.Open(devName)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to open device", devName)
+        return
+    }
+    
+    vboot, err = pmbus.ReadWord(devName, VOUT_COMMAND)
+    if err != errType.SUCCESS {
+        cli.Println("e", "Failed to read voutcmd on device ", devName)
+        smbus.Close()
+        return
+    }
+
+    if (pct == 0) {
+        marginCmd = MARGIN_NONE_CMD;
+    } else if (pct > 0) {
+        marginCmd = MARGIN_HIGH_CMD;
+        marginReg = VOUT_MARGIN_HIGH
+    } else {
+        marginCmd = MARGIN_LOW_CMD;
+        marginReg = VOUT_MARGIN_LOW
+        
+    }
+
+    if (pct != 0 ) {
+        marginVal = int16(vboot)
+        marginVal = ( (marginVal * 2) + (((marginVal * 2) * int16(pct)) / 100) ) / 2 
+        err = pmbus.WriteWord(devName, marginReg, uint16(marginVal))
+        if err != errType.SUCCESS {
+            cli.Println("e", "WriteWord to %s reg %d failed", devName, marginReg)
+            smbus.Close()
+            return
+        }
+    }
+
+    err = pmbus.WriteByte(devName, OPERATION, marginCmd)
+    if err != errType.SUCCESS {
+        cli.Println("e", "WriteByte to %s reg %d failed", devName, OPERATION)
+        smbus.Close()
+        return
+    }
+
+    smbus.Close()
+    return 0;
+}
 
 
 // vrmTitle := []string {"VBOOT", "VOUT", "POUT", "IOUT", "VIN", "PIN", "IIN"}
