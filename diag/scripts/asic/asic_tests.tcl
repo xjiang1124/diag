@@ -292,12 +292,12 @@ proc validate_pmro {} {
     }
 
     switch $avs_c {
-        9           { set pmro_min    0; set pmro_max 9999; }
-        8           { set pmro_min    0; set pmro_max 2700; }
-        7           { set pmro_min 2700; set pmro_max 2950; }
-        6           { set pmro_min 2950; set pmro_max 3050; }
-        5           { set pmro_min 3050; set pmro_max 9999; }
-        default     { set pmro_min    0; set pmro_max 9999; }
+        9           { set pmro_min 2400; set pmro_max 2700; }
+        8           { set pmro_min 2400; set pmro_max 2950; }
+        7           { set pmro_min 2700; set pmro_max 3050; }
+        6           { set pmro_min 2950; set pmro_max 4000; }
+        5           { set pmro_min 3050; set pmro_max 4000; }
+        default     { set pmro_min 2400; set pmro_max 4000; }
     }
 
     if { $pmro <= $pmro_min || $pmro_max < $pmro } {
@@ -307,14 +307,14 @@ proc validate_pmro {} {
     }
 
     switch $avs_a {
-        11          { set pmro_min    0; set pmro_max 9999; }
-        10          { set pmro_min    0; set pmro_max 2700; }
-        9           { set pmro_min 2700; set pmro_max 2900; }
-        8           { set pmro_min 2900; set pmro_max 3000; }
-        7           { set pmro_min 3000; set pmro_max 3270; }
-        6           { set pmro_min 3270; set pmro_max 3361; }
-        5           { set pmro_min 3361; set pmro_max 9999; }
-        default     { set pmro_min    0; set pmro_max 9999; }
+        11          { set pmro_min 2400; set pmro_max 2900; }
+        10          { set pmro_min 2400; set pmro_max 3000; }
+        9           { set pmro_min 2700; set pmro_max 3270; }
+        8           { set pmro_min 2900; set pmro_max 3361; }
+        7           { set pmro_min 3000; set pmro_max 4000; }
+        6           { set pmro_min 3270; set pmro_max 4000; }
+        5           { set pmro_min 3361; set pmro_max 4000; }
+        default     { set pmro_min 2400; set pmro_max 4000; }
     }
 
     if { $pmro <= $pmro_min || $pmro_max < $pmro } {
