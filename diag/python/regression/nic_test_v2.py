@@ -524,7 +524,7 @@ class nic_test_v2:
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl {} {} {} {} {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk)
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara_v2.tcl -slot {} -card_type {} -vmarg {} -dura {} -mtp_clk {} -aw_txfir_ow {}".format(args.slot, "LENI", args.vmarg, args.dura, args.mtp_clk, args.aw_txfir_ow)
         else:
             print(args.card_type, "not supported!")
@@ -588,7 +588,7 @@ class nic_test_v2:
 
         time.sleep(3)
 
-        if args.card_type == "POLLARA":
+        if args.card_type == "POLLARA" or args.card_type == "LINGUA":
             if args.arm_freq == "default":
                 if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                     print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
@@ -674,7 +674,7 @@ class nic_test_v2:
             cmd += " " + str(new_vmarg)
             cmd += " " + str(args.int_lpbk)
             cmd += " " + str(args.mtp_clk)
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
             cmd += " " + str(args.slot)
             cmd += " " + str(args.snake_type)
@@ -713,7 +713,7 @@ class nic_test_v2:
                 print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
                 return -1
             self.nic_con.uart_session_stop(uart_session)
-            if args.card_type != "POLLARA":
+            if args.card_type != "POLLARA" or args.card_type != "LINGUA":
                 uart_session = common.session_start()
                 self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
                 if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
@@ -1473,8 +1473,8 @@ class nic_test_v2:
     def google_stress_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA":
-            print("===== FAILED: This test not applicable to Pollara")
+        if card_type == "POLLARA" or card_type == "LINGUA"::
+            print("===== FAILED: This test not applicable to Pollara or Lingua")
             return -1
 
         session = common.session_start()
@@ -1593,8 +1593,8 @@ class nic_test_v2:
     def sal_edma_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA":
-            print("===== FAILED: This test not applicable to Pollara")
+        if card_type == "POLLARA" or card_type == "LINGUA":
+            print("===== FAILED: This test not applicable to Pollara or Lingua")
             return -1
 
         session = common.session_start()
@@ -1752,7 +1752,7 @@ class nic_test_v2:
 
         print("Start test on Zephyr")
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA":
+        if card_type == "POLLARA" or card_type == "LINGUA":
             ports = ("0")
         else:
             ports = ("0", "1")
@@ -1809,8 +1809,8 @@ class nic_test_v2:
     def sal_emmc_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA":
-            print("===== FAILED: This test is not applicable to Pollara")
+        if card_type == "POLLARA" || card_type == "LINGUA":
+            print("===== FAILED: This test is not applicable to Pollara or Lingua")
             return -1
 
         for ite in range(args.iteration):
@@ -1852,6 +1852,12 @@ class nic_test_v2:
                 print("===== FAILED: stressapptest_arm")
                 return False
 
+
+            self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"SDHCI REGISTER DUMP\" > test.txt;", 12)
+            self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
+            if 'REGISTER' in uart_session.before:
+                print("EMMC Test Failed with demsg I/O Error!!")
+                return False
             self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"O error\" > test.txt;", 12)
             self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
             if 'error' in uart_session.before:
