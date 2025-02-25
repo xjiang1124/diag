@@ -579,6 +579,70 @@ class ddr_test:
 
 
     def stress(self, nic_list=[], num_ite=1, num_stress=20, vmarg="normal"):
+            if len(nic_list) == 0:
+                print "No nic specified -- Exit"
+                sys.exit(0)
+
+            for ite in range(num_ite):
+                print("=== Ite:", ite, "===")
+                slot_list = ",".join(nic_list)
+                print("slot_list:", slot_list)
+
+                for slot in nic_list:
+                    try:
+                        session = common.session_start()
+                        common.session_cmd(session, "killall picocom", 20)
+                        self.nic_con.power_cycle_multi(slot, 30)
+
+                        self.nic_con.switch_console(int(slot))
+                        ret = self.nic_con.uart_session_start(session, slot)
+                        if ret != 0:
+                            self.nic_con.uart_session_stop(session)
+                            common.session_stop(session)
+                            #sys.exit(0)
+                            print("Failed to connect console")
+                            continue
+                        self.nic_con.uart_session_cmd(session, "mount /dev/mmcblk0p10 /data")
+                        #self.nic_con.uart_session_cmd(session, "source /data/nic_arm/nic_setup_env.sh")
+                        self.nic_con.uart_session_cmd(session, "export CARD_TYPE=GINESTRA_D5", 10)
+                        vmarg = vmarg.replace('_', ' ')
+                        self.nic_con.uart_session_cmd(session, "/data/nic_arm/vmarg.sh {}".format(vmarg))
+                        print("num_stress:", num_stress)
+                        for stress_ite in range(num_stress):
+                            print("=== stress_ite:", stress_ite, "===")
+                            # clear interrupts before test
+                            self.nic_con.uart_session_cmd(session, "halctl clear interrupts")
+                            time.sleep(10)
+                            # ECC check before test
+                            self.nic_con.uart_session_cmd(session, "halctl show interrupts | grep -i mcc")
+                            if 'int_mcc_ecc' in session.before or 'int_mcc_controller' in session.before:
+                                print("New interrupts before stress test, failed in ite:", stress_ite)
+                                print("Failed in ite:", stress_ite)
+                                continue
+                            self.nic_con.uart_session_cmd(session, "/data/nic_util/stressapptest_arm -m 16 -i 16 -C 16 -M 22000 -s 300", 360)
+                            if 'Status: PASS' not in session.before:
+                                print("Failed in ite:", stress_ite)
+                                #continue
+                            time.sleep(3)
+                            # ECC check
+                            self.nic_con.uart_session_cmd(session, "halctl show interrupts | grep -i mcc")
+                            if 'int_mcc_ecc' in session.before or 'int_mcc_controller' in session.before:
+                                print("Failed in ite:", stress_ite)
+                                continue
+                            self.nic_con.uart_session_cmd(session, "/data/nic_util/devmgr -status", 20)
+
+                        self.nic_con.uart_session_stop(session)
+
+                        #common.session_cmd(session, "cd ~/diag/scripts/asic/; tclsh get_nic_sts.tcl "+slot, 120)
+                        common.session_stop(session)
+
+                    except pexpect.TIMEOUT:
+                        print(slot, "DDR test failed")
+                        common.session_stop(j2c_session)
+                        return
+
+
+    def stress_skhynix_revD(self, nic_list=[], num_ite=1, num_stress=20, vmarg="normal"):
         if len(nic_list) == 0:
             print "No nic specified -- Exit"
             sys.exit(0)
@@ -1030,6 +1094,7 @@ if __name__ == "__main__":
     group.add_argument("-two_step_snake", "--two_step_snake", help="Two step Snake test", action='store_true')
     group.add_argument("-edma", "--edma", help="EDMA test", action='store_true')
     group.add_argument("-stress", "--stress", help="Stress test", action='store_true')
+    group.add_argument("-hynixstress", "--hynixstress", help="Stress test for Ortano with Skhynix D Die", action='store_true')
     group.add_argument("-liparielbastress", "--liparielbastress", help="Stress test", action='store_true')
     group.add_argument("-qspi_crpt", "--qspi_crpt", help="test", action='store_true')
     group.add_argument("-qspi_s_crpt", "--qspi_s_crpt", help="test", action='store_true')
@@ -1084,6 +1149,11 @@ if __name__ == "__main__":
         test.stress(slot_list, args.num_ite, args.num_stress, args.vmarg)
         sys.exit()
 
+    if args.hynixstress == True:
+        slot_list = args.slot_list.split(',')
+        test.stress_skhynix_revD(slot_list, args.num_ite, args.num_stress, args.vmarg)
+        sys.exit()
+                
     if args.liparielbastress == True:
         slot_list = args.slot_list.split(',')
         test.liparielbastress(slot_list, args.num_ite, args.num_stress, args.vmarg)
