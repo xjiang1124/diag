@@ -1650,6 +1650,10 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
         #parser.exit(status=1, message=parser.print_help())
+    else:
+        if not args.subcommand:
+            parser.print_help()
+            sys.exit(1)
 
     sys.exit(args.func(args))
 

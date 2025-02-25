@@ -310,7 +310,7 @@ def naples_get_nic_logfile(mtp_mgmt_ctrl, slot, mtp_para_test_list):
 
     return ret
 
-def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr=None):
+def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequential, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr="1"):
 
     @parallelize.parallel_nic_using_j2c
     def run_j2c_test_normally(mtp_mgmt_ctrl, slot, test, vmarg):
@@ -346,13 +346,13 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
-            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
+            pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn, ow=True if test == "L1_OW" else False)
             number_of_l1_tests = 9 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA else 6
             if nic_type in (NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.LENI):
                 # assuming running ASIC L1 from j2c first then run from one wire,  run only ONCE from both J2C  and one wire
-                number_of_l1_tests = 9 if joo == '1' else 13
+                number_of_l1_tests = 9 if joo == '1' else 5
             if nic_type in (NIC_Type.POLLARA):
-                number_of_l1_tests = 7 if joo == '1' else 11
+                number_of_l1_tests = 8 if joo == '1' else 5
             err_msg_list = list()
             if pass_count != number_of_l1_tests:
                 err_msg_list = ["L1 Sub Test only passed: {:d}".format(pass_count)]
@@ -508,7 +508,7 @@ def single_nic_ddr_bist_test(mtp_mgmt_ctrl, slot, ddr_test_db, test_case_name, n
                 # Post Failure check
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "=== Post Fail Check Steps Start ===>")
                 try:
-                    libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+                    libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot, "DDR_BIST")
                 except Exception:
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Post Fail Check Issue, Ignore")
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "<=== Post Fail Check Steps End ===")
@@ -672,7 +672,7 @@ def diag_seq_ddr_bist_test(mtp_mgmt_ctrl, nic_list, ddr_test_db, test_case_name,
                 # Post Failure check
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "=== Post Fail Check Steps Start ===>")
                 try:
-                    libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+                    libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot, "DDR_BIST")
                 except Exception:
                     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Post Fail Check Issue, Ignore")
                 mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "<=== Post Fail Check Steps End ===")
@@ -714,7 +714,7 @@ def nic_power_cycle_stress_test(mtp_mgmt_ctrl, nic_list, vmarg, stop_on_err, ite
                     mtp_mgmt_ctrl.cli_log_err("STOP_ON_ERR asserted when diag initial")
                     raise Exception
         
-        new_failed_list = single_nic_post_powercycle_check(mtp_mgmt_ctrl, new_nic_list, stop_on_err, ite)
+        new_failed_list = single_nic_post_powercycle_check(mtp_mgmt_ctrl, new_nic_list, stop_on_err, ite, "Power_Cycle_Only_Test")
 
         for slot in new_failed_list:
             if stop_on_err:
@@ -734,7 +734,7 @@ def nic_power_cycle_stress_test(mtp_mgmt_ctrl, nic_list, vmarg, stop_on_err, ite
     return fail_list
 
 @parallelize.parallel_nic_using_ssh
-def single_nic_post_powercycle_check(mtp_mgmt_ctrl, slot, stop_on_err, current_iter):
+def single_nic_post_powercycle_check(mtp_mgmt_ctrl, slot, stop_on_err, current_iter, testname):
 
     rc = True
     sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
@@ -753,7 +753,7 @@ def single_nic_post_powercycle_check(mtp_mgmt_ctrl, slot, stop_on_err, current_i
         # Post Failure check
         mtp_mgmt_ctrl.cli_log_inf("=== Post Fail Check Steps Start ===>")
         try:
-            libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot)
+            libmfg_utils.post_fail_steps(mtp_mgmt_ctrl, slot, testname)
         except Exception:
             mtp_mgmt_ctrl.cli_log_inf("Post Fail Check Issue, Ignore")
         mtp_mgmt_ctrl.cli_log_inf("<=== Post Fail Check Steps End ===")
@@ -994,7 +994,7 @@ def main():
                 elif test == "SALINA_JTAG_MBIST":
                     rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SALINA_CONSOLE_GOOGLE_STRESS":
-                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress(nic_list, ram2test=test_kwargs["ram2test"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"], logfile=test_kwargs["logfile"])
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress(nic_list, vmarg==test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
                 elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
                     rlist = mtp_mgmt_ctrl.mtp_make_copies_of_asic_dir(nic_list, number=test_kwargs["number"])
                 elif test == "SNAKE_SALINA_NIC_SNAKE_MTP":
@@ -1004,7 +1004,7 @@ def main():
                 elif test == "SNAKE_SALINA_AINIC_SNAKE_SOR_MTP":
                     rlist = mtp_mgmt_ctrl.mtp_ainic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
                 elif test == "SNAKE_SALINA_AINIC_PCIE_PRBS":
-                    rlist = mtp_mgmt_ctrl.mtp_ainic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
+                    rlist = mtp_mgmt_ctrl.mtp_nic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
                 elif test == "ADI_NIC_PWRCYC":
                     rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(adi_type_list, dl=True, count_down=False)
 
@@ -1046,7 +1046,7 @@ def main():
                 elif test == "NIC_JTAG":
                     rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 elif test == "NIC_POWER":
-                    rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
+                    rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list, test)
                 elif test == "NIC_MEM":
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_test_nic_mem(nic_list)
                 elif test == "NIC_STATUS":
@@ -1107,7 +1107,7 @@ def main():
                             rlist.remove(slot)
 
                 for slot in rlist:
-                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot)
+                    mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname=test)
                     if slot in nic_list_orig:
                         nic_list_orig.remove(slot)
                     if slot in pass_nic_list:
@@ -1844,7 +1844,7 @@ def main():
                                     run_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
                                     for ite_pc in range(iterations_per_pc):
                                         mtp_mgmt_ctrl.cli_log_inf("DDR Validation:{:s} at iteration {:d} In {:d}th Power Cycle Loop".format(test_case, ite_pc, ite), level=0)
-                                        for cur_nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
+                                        for cur_nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_DPU_NIC_TYPE_LIST:
                                             snake_type_list = get_slots_of_type(cur_nic_type)
                                             run_regression_test(snake_type_list, "SNAKE_ELBA", "ASIC")
 

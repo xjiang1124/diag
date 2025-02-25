@@ -118,7 +118,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
         for slot in nic_list:
             sn = mtp_mgmt_ctrl.mtp_get_nic_sn(slot)
             pass_count, log_err_msg_list = mtp_mgmt_ctrl.mtp_mgmt_retrieve_nic_l1_err(sn)
-            number_of_l1_tests = 7
+            number_of_l1_tests = 8 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA else 7
             err_msg_list = list()
             if pass_count != number_of_l1_tests:
                 err_msg_list = ["L1 Sub Test only passed: {:d}".format(pass_count)]
@@ -666,7 +666,7 @@ def mtp_usb_validation_test(mtp_mgmt_ctrl):
     mtp_mgmt_ctrl.cli_log_inf("USB DriveValidation Test Finished")
 
     # clean up
-    cmd = "rm -rf /home/diag/usb/*"
+    cmd = "rm -rf *"
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=tout):
         mtp_mgmt_ctrl.cli_log_inf("Clean up USB drive Command {:s} Failed, Ignore".format(cmd))
     cmd = "cd -; umount -f " + usb_probe_result["MOUNTPOINTS"]
@@ -1062,7 +1062,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_jtag(nic_list)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_POWER":
-                rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list)
+                rlist = mtp_mgmt_ctrl.mtp_check_nic_list_pwr_status(nic_list, test)
                 fail_desc = "Fail to Pre check(slots: {:s})".format(",".join([str(slot+1) for slot in rlist]))
             elif test == "NIC_STATUS":
                 rlist = mtp_mgmt_ctrl.mtp_check_nic_list_status(nic_list)

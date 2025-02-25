@@ -571,7 +571,7 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
                 nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
                 if nic_type in [NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4]:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))
-                elif nic_type in GIGLIO_NIC_TYPE_LIST:
+                elif nic_type in GIGLIO_NIC_TYPE_LIST  + SALINA_NIC_TYPE_LIST:
                     mtp_mgmt_ctrl.cli_log_slot_inf(slot, "Skip {:s} For This Slot".format(test))
                 else:
                     rj45_nic_list.append(slot)

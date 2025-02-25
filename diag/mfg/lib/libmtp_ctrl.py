@@ -5,6 +5,7 @@ import sys
 import libmfg_utils
 import re
 import threading
+import shutil
 import json
 from datetime import datetime
 import ipaddress
@@ -893,20 +894,6 @@ class mtp_ctrl():
         userid = self._mgmt_cfg[1]
         passwd = self._mgmt_cfg[2]
 
-        ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
-        handle = pexpect.spawn(ssh_cmd, encoding='utf-8', codec_errors='ignore')
-        idx = libmfg_utils.mfg_expect(handle, ["assword:"])
-        if idx < 0:
-            self.cli_log_err("Can not connect to mtp, check the console.\n", level=0)
-            return None
-        else:
-            handle.sendline(passwd)
-
-        idx = libmfg_utils.mfg_expect(handle, self._prompt_list)
-        if idx < 0:
-            self.cli_log_err("Connect to mtp mgmt timeout", level=0)
-            return None
-
         # SSH session to MTP
         if not running_on_mtp:
             ssh_cmd = libmfg_utils.get_ssh_connect_cmd(userid, ip)
@@ -1090,7 +1077,7 @@ class mtp_ctrl():
             return None
 
         # set logfile
-        self._mgmt_handle.logfile_read = self._diag_filep
+        # self._mgmt_handle.logfile_read = self._diag_filep
         self._mgmt_handle.logfile_send = self._diag_cmd_filep
         if prompt_cfg:
             # config the prompt
@@ -1296,14 +1283,22 @@ class mtp_ctrl():
     def mtp_mgmt_set_date(self, stage=None):
         timestamp_str = str(libmfg_utils.timestamp_snapshot())
         cmd = MFG_DIAG_CMDS.NIC_DATE_SET_FMT.format(timestamp_str)
+        cmd1 = MFG_DIAG_CMDS.MTP_HWCLOCK_WRITE_FMT
         if stage == FF_Stage.FF_FST:
             if not self.mtp_mgmt_exec_cmd(cmd):
                 self.cli_log_err("Unable to set MTP date")
+                return False
+        if stage == FF_Stage.FF_FST:
+            if not self.mtp_mgmt_exec_cmd(cmd1):
+                self.cli_log_err("Unable to write hwclock")
                 return False
             return True
         # else:
         if not self.mtp_mgmt_exec_sudo_cmd(cmd):
             self.cli_log_err("Unable to set MTP date")
+            return False
+        if not self.mtp_mgmt_exec_sudo_cmd(cmd1):
+            self.cli_log_err("Unable  to write hwclock")
             return False
 
         return True
@@ -1480,15 +1475,15 @@ class mtp_ctrl():
                     self._swmtestmode[slot] = Swm_Test_Mode.SWM
         return True
 
-    def mtp_set_nic_status_fail(self, slot, skip_fa=False):
+    def mtp_set_nic_status_fail(self, slot, skip_fa=False, testname=""):
         if self._nic_ctrl_list:
             # was previously OK, this is first failure
             if self.mtp_check_nic_status(slot) and not skip_fa:
-                libmfg_utils.post_fail_steps(self, slot)
+                libmfg_utils.post_fail_steps(self, slot, testname)
 
             # failed inside libnic_ctrl, didnt trigger post_fail_steps
             elif self.mtp_check_nic_missed_fa(slot) and not skip_fa:
-                libmfg_utils.post_fail_steps(self, slot)
+                libmfg_utils.post_fail_steps(self, slot, testname)
             self._nic_ctrl_list[slot].nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
 
     def mtp_clear_nic_status(self, slot):
@@ -1673,7 +1668,8 @@ class mtp_ctrl():
                 self.cli_log_err("Executing command {:s} failed".format(cmd))
                 rc = False
                 continue
-            psu_sn_match = re.search("MFR_SERIAL: *(.*)", self.mtp_get_cmd_buf())
+            psu_sn_pattern = r"MFR_SERIAL: *(.*)"  if self._mtp_type != MTP_TYPE.MATERA else r'PSU_' + psu + r'.*S\/N:\s+(\w+)'
+            psu_sn_match = re.search(psu_sn_pattern, self.mtp_get_cmd_buf())
             if not psu_sn_match:
                 self.cli_log_err("Failed to read PSU_{:s} Serial Number".format(psu))
                 if not MFG_BYPASS_PSU_CHECK and self._mtp_type != MTP_TYPE.MATERA:
@@ -1945,60 +1941,60 @@ class mtp_ctrl():
             self.cli_log_inf("MTP FAN present and status check passed")
             # Fan speed test
             ## Set Fan PWM to 50%, check fan speed RPM
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(50)
-            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-            if not rc:
-                self.cli_log_err("Failed to set fan speed to {:d}%".format(50))
-                return rc
-            time.sleep(30)
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                self.cli_log_err("MTP command {:s} failed".format(cmd))
-                return False
-            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
-            for k, v in fan_info.items():
-                if "PSU" in k:
-                    if int(v['outRPM']) < 6000:
-                        self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
-                        return False
-                if "FAN" in k:
-                    if v['pwm'] != '128':
-                        self.cli_log_err("{:s} read back pwm {:s}, not match setting value 50%".format(k, v['pwm']))
-                        return False
-                    if abs(int(v['inRPM']) - 5440) > 1000:
-                        self.cli_log_err("{:s} Inlet RPM {:s} at PWM 50 out of range".format(k, v['inRPM']))
-                        return False
-                    if abs(int(v['outRPM']) - 6220) > 1000:
-                        self.cli_log_err("{:s} Outlet RPM {:s} at PWM 50 out of range".format(k, v['outRPM']))
-                        return False
-            ## Set Fan PWM to 100%, check fan speed RPM
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(100)
-            rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
-            if not rc:
-                self.cli_log_err("Failed to set fan speed to {:d}%".format(100))
-                return rc
-            time.sleep(30)
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
-            if not self.mtp_mgmt_exec_cmd(cmd):
-                self.cli_log_err("MTP command {:s} failed".format(cmd))
-                return False
-            fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
-            for k, v in fan_info.items():
-                if "PSU" in k:
-                    if int(v['outRPM']) < 6000:
-                        self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
-                        return False
-                if "FAN" in k:
-                    if v['pwm'] != '255':
-                        self.cli_log_err("{:s} read back pwm {:s}, not match setting value 100%".format(k, v['pwm']))
-                        return False
-                    if abs(int(v['inRPM']) - 10400) > 1000:
-                        self.cli_log_err("{:s} Inlet RPM {:s} at PWM 100 out of range".format(k, v['inRPM']))
-                        return False
-                    if abs(int(v['outRPM']) - 12100) > 1000:
-                        self.cli_log_err("{:s} Outlet RPM {:s} at PWM 100 out of range".format(k, v['outRPM']))
-                        return False
-            self.cli_log_inf("MTP FAN speed test passed")
+            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(50)
+            # rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            # if not rc:
+            #     self.cli_log_err("Failed to set fan speed to {:d}%".format(50))
+            #     return rc
+            # time.sleep(30)
+            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            # if not self.mtp_mgmt_exec_cmd(cmd):
+            #     self.cli_log_err("MTP command {:s} failed".format(cmd))
+            #     return False
+            # fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            # for k, v in fan_info.items():
+            #     if "PSU" in k:
+            #         if int(v['outRPM']) < 6000:
+            #             self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
+            #             return False
+            #     if "FAN" in k:
+            #         if v['pwm'] != '128':
+            #             self.cli_log_err("{:s} read back pwm {:s}, not match setting value 50%".format(k, v['pwm']))
+            #             return False
+            #         if abs(int(v['inRPM']) - 5440) > 1000:
+            #             self.cli_log_err("{:s} Inlet RPM {:s} at PWM 50 out of range".format(k, v['inRPM']))
+            #             return False
+            #         if abs(int(v['outRPM']) - 6220) > 1000:
+            #             self.cli_log_err("{:s} Outlet RPM {:s} at PWM 50 out of range".format(k, v['outRPM']))
+            #             return False
+            # ## Set Fan PWM to 100%, check fan speed RPM
+            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(100)
+            # rc = self.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MTP_OS_CMD_DELAY)
+            # if not rc:
+            #     self.cli_log_err("Failed to set fan speed to {:d}%".format(100))
+            #     return rc
+            # time.sleep(30)
+            # cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGA_SHOW_FAN_FMT
+            # if not self.mtp_mgmt_exec_cmd(cmd):
+            #     self.cli_log_err("MTP command {:s} failed".format(cmd))
+            #     return False
+            # fan_info = parse_fpga_show_fan(self.mtp_get_cmd_buf())
+            # for k, v in fan_info.items():
+            #     if "PSU" in k:
+            #         if int(v['outRPM']) < 6000:
+            #             self.cli_log_err("{:s} FAN Outlet RPM {:s} out of range".format(k, v['outRPM']))
+            #             return False
+            #     if "FAN" in k:
+            #         if v['pwm'] != '255':
+            #             self.cli_log_err("{:s} read back pwm {:s}, not match setting value 100%".format(k, v['pwm']))
+            #             return False
+            #         if abs(int(v['inRPM']) - 10400) > 1000:
+            #             self.cli_log_err("{:s} Inlet RPM {:s} at PWM 100 out of range".format(k, v['inRPM']))
+            #             return False
+            #         if abs(int(v['outRPM']) - 12100) > 1000:
+            #             self.cli_log_err("{:s} Outlet RPM {:s} at PWM 100 out of range".format(k, v['outRPM']))
+            #             return False
+            # self.cli_log_inf("MTP FAN speed test passed")
             # Fan speed set target value
             self.cli_log_inf("Set FAN PWM to target {:d}%".format(fan_pwm))
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FAN_SET_SPD_FMT.format(fan_pwm)
@@ -2079,6 +2075,17 @@ class mtp_ctrl():
         else:
             self.cli_log_err("Failed to get MTP type", level = 0)
             return False
+
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd = "killall fpga_uart"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                return False
+            if not start_dsp:
+                cmd = "fstrim -v /home/diag/"
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                    return False
 
         if start_dsp:
             # kill other diagmgr instances
@@ -2201,7 +2208,7 @@ class mtp_ctrl():
                 # validate the readings
                 inlet_1 = float(match.group(3))
                 inlet_2 = float(match.group(4))
-        if inlet_1 is not None and inlet_2 is not None:
+        if inlet_1 != None and inlet_2 != None:
             inlet_1_rs = True
             inlet_2_rs = True
             max_temp = 70
@@ -2413,6 +2420,7 @@ class mtp_ctrl():
             rc &= self.mtp_fpga_chk_test()
             # MTP FRU check and display, Serial Number is valid
             rc &= self.matera_mtp_fru_chk_test()
+            rc = True
         else:
             rc &= self.mtp_cpld_test()
             # fan init
@@ -2424,6 +2432,7 @@ class mtp_ctrl():
 
             # other platform init
             rc &= self.mtp_misc_init()
+
         if rc:
             self.cli_log_inf("MTP chassis sanity check passed\n", level=0)
         else:
@@ -2628,19 +2637,19 @@ class mtp_ctrl():
             self.cli_log_err("MTP command {:s} failed".format(cmd))
             return False
         devmgr_status_output = self.mtp_get_cmd_buf()
-        found_iobl = re.findall(r'TSENSOR_IOBL\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        found_iobl = re.findall(r'TSENSOR_IOBL\(°C\)\s+(\-?\d+\.\d+)', devmgr_status_output)
         if not found_iobl:
             self.cli_log_err("Failed to parse TSENSOR_IOBL reading")
             self.cli_log_err(devmgr_status_output)
             return False
         iobl_reading = found_iobl[0]
-        found_iobr = re.findall(r'TSENSOR_IOBR\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        found_iobr = re.findall(r'TSENSOR_IOBR\(°C\)\s+(\-?\d+\.\d+)', devmgr_status_output)
         if not found_iobr:
             self.cli_log_err("Failed to parse TSENSOR_IOBR reading")
             self.cli_log_err(devmgr_status_output)
             return False
         iobr_reading = found_iobr[0]
-        found_mb = re.findall(r'TSENSOR_MB\(°C\)\s+(\d+\.\d+)', devmgr_status_output)
+        found_mb = re.findall(r'TSENSOR_MB\(°C\)\s+(\-?\d+\.\d+)', devmgr_status_output)
         if not found_mb:
             self.cli_log_err("Failed to parse TSENSOR_MB reading")
             self.cli_log_err(devmgr_status_output)
@@ -2697,11 +2706,12 @@ class mtp_ctrl():
                 return False
             for line in fru_info_output.splitlines():
                 if 'Serial Number' in line:
-                    fru_sn = line.split('Serial Number')[-1].strip()
+                    fru_sn = line.split('Serial Number')[-1].strip().replace('\x00', '')
             if not fru_sn:
                 self.cli_log_err("Failed to parse {:s} serial number".format(fru))
                 return False
             # if eeprom is blank, we fake one for validation script logic with command: eeutil -update -dev=IOBR -pn="102-P10400-00" -sn="IOB_R000000" -mac="000000000000" -date="050324"
+            # one example, eeutil -update -dev=FRU -pn="102-P10200-00 21" -sn="FPF24390192" -mac="049081568E48" -date="121824"
             if not re.match(r'FPF\w{8}', fru_sn):
                 self.cli_log_err("{:s} serial number {:s} format check failed".format(fru, fru_sn))
                 return False
@@ -2818,7 +2828,7 @@ class mtp_ctrl():
             inlet_1 = float(match.group(3))
             inlet_2 = float(match.group(4))
 
-        if inlet_1 is not None and inlet_2 is not None:
+        if inlet_1 != None and inlet_2 != None:
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
             if inlet_diff > 10.0:
@@ -2850,7 +2860,15 @@ class mtp_ctrl():
                 return 0.00
             cmd_buf_2 = self.mtp_get_cmd_buf()
             match_1 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_1)
+            if not match_1:
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get sensor TSENSOR_IOBL reading failed")
+                return 0.00
             match_2 = re.search(r"TSENSOR.* (-?\d+\.\d+)", cmd_buf_2)
+            if not match_2:
+                self.mtp_dump_err_msg(self.mtp_get_cmd_buf())
+                self.cli_log_err("MTP get sensor TSENSOR_IOBR reading failed")
+                return 0.00
             inlet_1 = float(match_1.group(1))
             inlet_2 = float(match_2.group(1))
         else:
@@ -2867,7 +2885,7 @@ class mtp_ctrl():
                 inlet_1 = float(match.group(3))
                 inlet_2 = float(match.group(4))
 
-        if inlet_1 is not None and inlet_2 is not None:
+        if inlet_1 != None and inlet_2 != None:
             # validate the readings
             inlet_diff = abs(inlet_1 - inlet_2)
             # if the difference is more than 10, something is wrong, relay on any inlet near the threshold
@@ -2901,12 +2919,15 @@ class mtp_ctrl():
         return self._fanspd
 
     # return list of error message
-    def mtp_mgmt_retrieve_nic_l1_err(self, sn):
+    def mtp_mgmt_retrieve_nic_l1_err(self, sn, ow=False):
         err_msg_list = list()
         pass_count = 0
         path = MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR
         # logfile_exp = r"(cap|elb)_l1_screen_board_{:s}.*log".format(sn)
-        logfile_exp = r"l1_screen_board_{:s}.*log".format(sn)
+        if ow:
+            logfile_exp = r"l1_ow_screen_board_{:s}.*log".format(sn)
+        else:
+            logfile_exp = r"l1_screen_board_{:s}.*log".format(sn)
         for filename in os.listdir(path):
             if re.match(logfile_exp, filename):
                 with open(os.path.join(path, filename), 'r') as f:
@@ -3045,6 +3066,25 @@ class mtp_ctrl():
 
         return self.mtp_nic_check_extdiag_boot(slot)
 
+    @parallelize.parallel_nic_using_j2c
+    def mtp_salina_nic_get_qsfp_present(self, slot, port_num):
+        cmd = "i2cget -y {:d} 0x4a 0x02".format(int(slot)+3)
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
+            self.cli_log_slot_err(slot, "Command {:s} failed")
+            rs = False
+
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        match = re.findall(r"(0x[0-9a-fA-F]+)", cmd_buf)
+
+        if len(match) > 2:
+            read_val = int(match[2], 16)
+            if (read_val & (1 << 4 + int(port_num))):
+                return True
+            else:
+                return False
+        else:
+            return False
+
 ########################################
 ######  NIC CTRL Routines ##############
 ########################################
@@ -3145,6 +3185,7 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, "NIC default boot from {:s}({:s})".format(boot_image, kernel_timestamp))
         return True
 
+
     @parallelize.parallel_nic_using_console
     def mtp_nic_sw_mode_switch(self, slot):
         if not self._nic_ctrl_list[slot].nic_sw_mode_switch():
@@ -3242,12 +3283,14 @@ class mtp_ctrl():
             return True
 
     @parallelize.parallel_nic_using_smbus
-    def mtp_check_nic_list_pwr_status(self, slot):
-        return self.mtp_mgmt_check_nic_pwr_status(slot)
+    def mtp_check_nic_list_pwr_status(self, slot, testname=""):
+        return self.mtp_mgmt_check_nic_pwr_status(slot, testname)
 
-    def mtp_mgmt_check_nic_pwr_status(self, slot):
+    def mtp_mgmt_check_nic_pwr_status(self, slot, testname=""):
         if not self._nic_ctrl_list[slot].nic_power_check():
             self.mtp_dump_nic_err_msg(slot)
+            sub_error = " :POWER_GOOG_ERROR"
+            self.cli_log_slot_err(slot, testname + sub_error)
             return False
 
         return True
@@ -3330,7 +3373,7 @@ class mtp_ctrl():
     def mtp_get_nic_cmd_buf(self, slot):
         return self._nic_ctrl_list[slot].nic_get_cmd_buf()
 
-    def mtp_get_nic_cmd_buf_before_sig(self):
+    def mtp_get_nic_cmd_buf_before_sig(self, slot):
         return self._nic_ctrl_list[slot]._buf_before_sig
 
     def mtp_exec_nic_cmd_get_info(self, slot, cmd, timeout=None):
@@ -3369,14 +3412,48 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
         if sku:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
-        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=False):
+        # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to True to program smbus FRU
+        smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
+        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
             self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
+
+        # for Salina cards need program cpld_fru
+        if smb_fru:
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, dev="cpld_fru"):
+                self.cli_log_slot_err_lock(slot, "Program ASIC NIC CPLD FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_power_cycle():
+                self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="cpld_fru"):
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC CPLD FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            # for Salina cpld_fru_i2c address will need to match with cpld rev
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="cpld_fru_i2c"):
+                self.cli_log_slot_err_lock(slot, "Display SMB NIC CPLD I2C FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+
         if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
-            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True):
+            # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to False to program DPU FRU
+            smb_fru = False if nic_type in SALINA_NIC_TYPE_LIST else True
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
                 self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+            if nic_type in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_power_cycle():
+                self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
@@ -3385,7 +3462,8 @@ class mtp_ctrl():
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-        if not self._nic_ctrl_list[slot].nic_read_fru():
+
+        if nic_type not in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -3834,28 +3912,30 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "This cpld update function not meant for this card {:s}".format(nic_type))
             return False
 
-        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
-        if not nic_cpld_info:
-            self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
-            return False
-        cur_ver = nic_cpld_info[0]
-        cur_timestamp = nic_cpld_info[1]
-
         if dl_step:
             stage = FF_Stage.FF_DL
         else:
             stage = FF_Stage.FF_SWI
-        expected_version = image_control.get_cpld(self, slot, stage)["version"]
-        expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
 
-        if nic_type in self._proto_type_list:
-            self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
-            return True
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+            if not nic_cpld_info:
+                self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed, can not retrieve CPLD info")
+                return False
+            cur_ver = nic_cpld_info[0]
+            cur_timestamp = nic_cpld_info[1]
 
-        if cur_ver == expected_version and cur_timestamp == expected_timestamp:
-            self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
-            self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
-            return True
+            expected_version = image_control.get_cpld(self, slot, stage)["version"]
+            expected_timestamp = image_control.get_cpld(self, slot, stage)["timestamp"]
+
+            if nic_type in self._proto_type_list:
+                self.cli_log_slot_inf_lock(slot, "Skip CPLD update for Proto NIC")
+                return True
+
+            if cur_ver == expected_version and cur_timestamp == expected_timestamp:
+                self.cli_log_slot_inf_lock(slot, "NIC CPLD is up-to-date")
+                self._nic_ctrl_list[slot].nic_require_cpld_refresh(False)
+                return True
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg0"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
@@ -3884,6 +3964,19 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_cpld(cpld_img, "cfg1"):
             self.cli_log_slot_err_lock(slot, "Program NIC CPLD failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
+    def mtp_program_nic_ufm1(self, slot, ufm1_img):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no ufm1 image for {:s}".format(nic_type))
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_program_cpld(ufm1_img, "ufm1"):
+            self.cli_log_slot_err_lock(slot, "Program NIC UFM1 failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
 
@@ -4131,17 +4224,26 @@ class mtp_ctrl():
 
         return True
 
-    @parallelize.parallel_nic_using_console
+    @parallelize.sequential_nic_test
     def mtp_program_nic_sec_key(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type in self._proto_type_list:
             self.cli_log_slot_inf_lock(slot, "Skip Secure Key program for Proto NIC")
             return True
 
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+                self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+                return False
+
         if not self._nic_ctrl_list[slot].nic_program_sec_key_pre():
             self.cli_log_slot_err(slot, "Pre init key programming failed")
             self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            # Salina require power cycle
+            self.mtp_power_cycle_nic(slot, dl=False)
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key(self._id):
             self.cli_log_slot_err(slot, "Program NIC Secure Key failed")
@@ -4152,6 +4254,11 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "Post cleanup key programming failed")
             self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
+
+        # if nic_type in SALINA_NIC_TYPE_LIST:
+        #     if not self._nic_ctrl_list[slot].nic_esecure_hw_lock():
+        #         self.cli_log_slot_err(slot, "Esecure hw lock failed")
+        #         return False
 
         return True
 
@@ -4211,16 +4318,30 @@ class mtp_ctrl():
             return False
         return True
 
-    def matera_mtp_program_nic_qspi(self, slot, qspi_imgs, force_update=True):
-        if not force_update:
-            # check for the desired qspi version
-            if not self.mtp_verify_nic_qspi(slot):
-                pass
-            else:
-                self.cli_log_slot_inf_lock(slot, "NIC QSPI is up-to-date")
-                return True
-        if not self._nic_ctrl_list[slot].salina_nic_program_qspi(qspi_imgs):
+    def matera_mtp_program_nic_qspi(self, slot, image_path):
+        if not self._nic_ctrl_list[slot].salina_nic_program_qspi(image_path):
             self.cli_log_slot_inf_lock(slot, "Program NIC QSPI failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def matera_mtp_erase_nic_qspi(self, slot):
+        if not self._nic_ctrl_list[slot].salina_nic_erase_qspi():
+            self.cli_log_slot_err_lock(slot, "Erase NIC QSPI failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def matera_mtp_erase_nic_boot0(self, slot, image_path):
+        if not self._nic_ctrl_list[slot].salina_nic_erase_boot0(image_path):
+            self.cli_log_slot_inf_lock(slot, "Erase NIC Boot0 failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def matera_mtp_program_nic_boot0(self, slot, image_path):
+        if not self._nic_ctrl_list[slot].salina_nic_program_boot0(image_path):
+            self.cli_log_slot_inf_lock(slot, "Program NIC Boot0 failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
         return True
@@ -4298,7 +4419,6 @@ class mtp_ctrl():
         kernel_timestamp = qspi_info[1]
         nic_type = self.mtp_get_nic_type(slot)
         expected_timestamp = image_control.get_diagfw(self, slot, FF_Stage.FF_DL)["timestamp"]
-
         if (boot_image != "diagfw"):
             self.cli_log_slot_err_lock(slot, "Checking Boot Image is Diagfw Failed, NIC is booted from {:s}".format(boot_image))
             return False
@@ -4453,7 +4573,7 @@ class mtp_ctrl():
         self.cli_log_slot_err(slot, "Performing post DSP {:s} fail steps".format(test))
         self.log_nic_file(slot, "#######= {:s} =#######".format("START post dsp {:s} fail debug".format(test)))
 
-        powered_on = self.mtp_mgmt_check_nic_pwr_status(slot)
+        powered_on = self.mtp_mgmt_check_nic_pwr_status(slot, test)
 
         # dump cpld status bits
         if not self.mtp_mgmt_set_nic_avs_post(slot):
@@ -4493,9 +4613,20 @@ class mtp_ctrl():
             else:
                 self.mtp_single_j2c_lock()
                 self.mtp_nic_console_lock()
-                self.mtp_get_nic_sts(slot, skip_vrm_check)
+                self.mtp_get_nic_sts(slot, skip_vrm_check, test)
+                self.mtp_sal_check_j2c(slot, test)
                 self.mtp_nic_console_unlock()
                 self.mtp_single_j2c_unlock()
+
+        # For Salina Cards run get_nic_sts.tcl for every failure
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            self.mtp_single_j2c_lock()
+            self.mtp_nic_console_lock()
+            self.mtp_get_nic_sts(slot, skip_vrm_check, test)
+            self.mtp_sal_check_j2c(slot, test)
+            self.mtp_nic_console_unlock()
+            self.mtp_single_j2c_unlock()
+            self.mtp_clear_nic_uart(slot)
 
         self.mtp_mgmt_nic_diag_sys_clean()
 
@@ -4675,6 +4806,12 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].nic_smb_fru_init(self._factory_location, fpo=fpo):
                 return False
             self.mtp_set_nic_sn(slot, self._nic_ctrl_list[slot]._sn)
+        return True
+
+    def mtp_nic_dpn_init(self, slot, fpo=False):
+        if not self._nic_ctrl_list[slot]._dpn:
+            if not self._nic_ctrl_list[slot].nic_smb_dpn_fru_init(self._factory_location, fpo=fpo):
+                return False
         return True
 
     def mtp_nic_cpld_init(self, slot, smb=False):
@@ -4951,6 +5088,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port with FPO")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_FPO_FMT.format(nic_list_param, asic_type)
             if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_FPO_FMT.format(nic_list_param, asic_type)
+            if asic_type == "salina": cmd = MFG_DIAG_CMDS.MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
         elif aapl:
             for slot in nic_list:
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT/AAPL port")
@@ -4960,6 +5098,7 @@ class mtp_ctrl():
                 self.cli_log_slot_inf(slot, "Para Init NIC MGMT port")
             cmd = MFG_DIAG_CMDS.MTP_PARA_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if self._mtp_type == MTP_TYPE.MATERA: cmd = MFG_DIAG_CMDS.MATERA_MTP_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
+            if asic_type == "salina": cmd = MFG_DIAG_CMDS.MATERA_SALINA_SINGLE_MGMT_INIT_FMT.format(nic_list_param, asic_type)
             if swm_lp:
                 cmd = "".join((cmd, " -swm_lp"))
 
@@ -4980,6 +5119,18 @@ class mtp_ctrl():
 
 
     def mtp_nic_mgmt_para_init_fpo(self, nic_list, stop_on_err=False):
+        # dump MTP Marvel Switch Port status
+        if self._mtp_type == MTP_TYPE.MATERA:
+            self.cli_log_inf("Dump MTP Marvel Switch Port Status", level=0)
+            port = '-1'
+            for mvl_instance in ("0", "1"):
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_MVLDUMP_CMD_FMT.format(mvl_instance, port)
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("Dump MTP Marvel Switch Port Status Failed", level=0)
+                    self.mtp_dump_err_msg(self._mgmt_handle.before)
+                    return False
+            self.cli_log_inf("Dump MTP Marvel Switch Port Status complete", level=0)
+
         fail_setup_multi_list = self.mtp_nic_test_setup_multi(nic_list, fpo=True)
         if stop_on_err:
             return fail_setup_multi_list
@@ -5220,7 +5371,7 @@ class mtp_ctrl():
 
             # catch bad return value
             if not isinstance(rlist, list):
-                mtp_mgmt_ctrl.cli_log_err("Test failed with '{}', expected slot list".format(repr(rlist)))
+                self.cli_log_err("Test failed with '{}', expected slot list".format(repr(rlist)))
                 rlist = nic_list[:]
 
             for slot in rlist:
@@ -5343,6 +5494,376 @@ class mtp_ctrl():
             return slot_list[:]
         return []
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_i2cget_nic_register(self, slot, chip_addr='0x4a', reg_addr2exp_val={}):
+        '''
+        i2cget utility usage:
+        Usage: i2cget [-f] [-y] [-a] I2CBUS CHIP-ADDRESS [DATA-ADDRESS [MODE [LENGTH]]]
+            I2CBUS is an integer or an I2C bus name
+            ADDRESS is an integer (0x08 - 0x77, or 0x00 - 0x7f if -a is given)
+            MODE is one of:
+                b (read byte data, default)
+                w (read word data)
+                c (write byte/read byte)
+                s (read SMBus block data)
+                i (read I2C block data)
+                Append p for SMBus PEC
+            LENGTH is the I2C block data length (between 1 and 32, default 32)
+
+        For Matera MTP, I2CBUS number is the one based slotid + 2;
+        For legacy MTP the I2CBUS number always 0, using turn_on_hub.sh to control i2c bus mux.
+
+        Most of our user case DATA-ADDRESS is register address
+        '''
+
+        if not reg_addr2exp_val:
+            return False
+
+        if self._mtp_type != MTP_TYPE.MATERA:
+            cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1)
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+                return False
+        bus_num = slot + 1 + 2 if self._mtp_type == MTP_TYPE.MATERA else 0
+
+        for reg_addr, exp_val in reg_addr2exp_val.items():
+            cmd = "i2cget -y {:d} {:s} {:s}".format(bus_num, chip_addr, reg_addr)
+            if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+                self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
+                return False
+            match = re.findall(r"(0x[0-9a-fA-F]+)", self.mtp_get_nic_cmd_buf(slot).replace(cmd, ''))
+            if not match:
+                self.cli_log_slot_err(slot, "Failed to get command {:s} return value".format(cmd))
+                return False
+            if int(match[0], 16) != int(exp_val, 16):
+                self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
+                return False
+        return True
+
+    # def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal"):
+
+    #     failed_slot_list = []
+    #     slots_list = slot
+    #     for slot in slots_list:
+    #         if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg):
+    #             self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
+    #             self.mtp_get_nic_err_msg(slot)
+    #             failed_slot_list.append(slot)
+    #             continue
+    #         self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
+    #     return failed_slot_list
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal"):
+
+        if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg):
+            self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+        else:
+            self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
+
+        return True
+
+    def mtp_l1_pre_setup(self, slot):
+
+        failed_slot_list = []
+        slots_list = slot
+        for slot in slots_list:
+            if not self._nic_ctrl_list[slot].nic_l1_pre_setup():
+                self.cli_log_slot_err(slot, "NIC L1 PRE-SETUP FAILED")
+                self.mtp_get_nic_err_msg(slot)
+                failed_slot_list.append(slot)
+                continue
+            self.cli_log_slot_inf(slot, "NIC L1 PRE-SETUP PASS")
+        return failed_slot_list
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_salina_console_google_stress(self, slot, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        run google stress test from nic console before mgmt port ready
+        '''
+
+        if not self._nic_ctrl_list[slot].nic_google_stress_test(vmarg, mem_copy_thread, seconds2run, slot_asic_dir_path):
+            self.cli_log_slot_err(slot, "NIC CONSOLE GOOGLE STRESS TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_salina_edma(self, slot, vmarg='normal', seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        from salina run edma test from mtp script nic_test_v2.py
+        ./nic_test_v2.py edma_test -slot <slot> -vmarg VMARG -dura DURA -tcl_path TCL_PATH
+        '''
+
+        if not self._nic_ctrl_list[slot].nic_test_v2_py_edma(vmarg, seconds2run, slot_asic_dir_path):
+            self.cli_log_slot_err(slot, "NIC_TEST_V2 EDMA TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_snake_mtp_salina(self, slot, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+        run salina max power snake
+        '''
+
+        if not asic_dir_path:
+            return False
+
+        slot_asic_dir_path = asic_dir_path[slot]
+
+        if not self._nic_ctrl_list[slot].nic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
+            if snake_type == 'esam_pktgen_max_power_sor':
+                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN MAX POWER SOR SNAKE TEST FAILED")
+            elif snake_type == 'esam_pktgen_ddr_burst_400G_no_mac':
+                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN DDR BURST 400G SNAKE TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_ainic_snake_mtp_salina(self, slot, snake_type='esam_pktgen_pollara_max_power_pcie_arm', vmarg="normal", dura=900, timeout=3600, asic_dir_path=None, ite='1', int_lpbk='0'):
+        '''
+        run salina max power snake
+        '''
+
+        if not asic_dir_path:
+            return False
+
+        slot_asic_dir_path = asic_dir_path[slot]
+
+        if not self._nic_ctrl_list[slot].ainic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
+            if snake_type == "esam_pktgen_pollara_max_power_pcie_arm":
+                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN MAX POWER SNAKE TEST FAILED")
+            else:
+                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN SOR SNAKE TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_pcie_prbs_salina(self, slot, vmarg="normal", timeout=300, asic_dir_path=None):
+        '''
+        run salina pcie prbs
+        '''
+
+        if not asic_dir_path:
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_pcie_prbs_salina(vmarg, timeout, asic_dir_path):
+            self.cli_log_slot_err(slot, "NIC PCIE PRBS TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_set_piceawd_env_salina(self, slot, timeout=300):
+        '''
+        run salina set piceawd env
+        '''
+
+        if not self._nic_ctrl_list[slot].set_piceawd_env_salina(timeout):
+            self.cli_log_slot_err(slot, "NIC SET PCIEAWD ENV TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_erase_piceawd_env_salina(self, slot, timeout=300):
+        '''
+        run salina set piceawd env
+        '''
+
+        if not self._nic_ctrl_list[slot].erase_piceawd_env_salina(timeout):
+            self.cli_log_slot_err(slot, "NIC ERASE PCIEAWD ENV TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_i2c_qsfp_salina(self, slot, vmarg="normal", timeout=180):
+        '''
+        run salina i2c qsfp
+        '''
+
+        if not self._nic_ctrl_list[slot].i2c_qsfp_salina(vmarg, timeout):
+            self.cli_log_slot_err(slot, "NIC I2C QSFP TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_i2c_rtc_salina(self, slot, vmarg="normal", timeout=180):
+        '''
+        run salina i2c rtc
+        '''
+
+        if not self._nic_ctrl_list[slot].i2c_rtc_salina(vmarg, timeout):
+            self.cli_log_slot_err(slot, "NIC I2C RTC TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    def mtp_make_copies_of_asic_dir(self, slot_list=[]):
+        """
+        make copies of asic working directory to support Salina snake to run at different directory in parallel.
+        """
+
+        if not slot_list:
+            return []
+
+        for i in range(1, 10):
+            cmd = f"rm -rf /home/diag/diag/asic{i}"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err(f"Failed to execute command: {cmd}")
+                self.mtp_dump_err_msg(self._mgmt_handle.before)
+
+        # check disk free capacity, return False if less then 4G per slot
+        total, used, free = shutil.disk_usage("/home/diag")
+        freeinGb = int( free / 1024 / 1024 /1024)
+        if freeinGb <= 4 * len(slot_list):
+            self.cli_log_err(f"Limited Available Disk Space, Not ready for Prallel Snake Test")
+            return slot_list
+
+        for slot in slot_list:
+            if slot == 0:
+                continue
+            cmd = f"cp -r /home/diag/diag/asic_all/salina /home/diag/diag/asic{slot}"
+            if not self.mtp_mgmt_exec_cmd(cmd):
+                self.cli_log_err(f"Failed to execute command: {cmd}")
+                self.mtp_dump_err_msg(self._mgmt_handle.before)
+                return slot_list
+        return []
+
+    def mtp_untar_snake_qspi_img(self, slot_list=[]):
+        """
+        untar special qspi image for salina snake test
+        """
+        if len(slot_list) == 0:
+            return []
+
+        dsp = FF_Stage.FF_P2C
+        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_snake_img(self, slot_list[0], dsp)["filename"]
+
+        cmd = f"tar -xzf {image_path} -C " + os.path.dirname(image_path)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err(f"Failed to execute command: {cmd}")
+            self.mtp_dump_err_msg(self._mgmt_handle.before)
+            return slot_list
+        return []
+
+    def mtp_untar_mbist_boot0_img(self, slot_list=[]):
+        """
+        untar special qspi image for salina snake test
+        """
+        if len(slot_list) == 0:
+            return []
+
+        dsp = FF_Stage.FF_P2C
+        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mbist_boot0_img(self, slot_list[0], dsp)["filename"]
+
+        cmd = f"tar -xzf {image_path} -C " + os.path.dirname(image_path)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err(f"Failed to execute command: {cmd}")
+            self.mtp_dump_err_msg(self._mgmt_handle.before)
+            return slot_list
+        return []
+
+    @parallelize.parallel_nic_using_nic_test
+    def mtp_power_cycle_boot_stage(self, slot_list=[], bootstage=None, warm_reset=False, new_layout=False, new_mem_layout=False):
+        """
+        argument bootstage and warmreset are only for Matera MTP and Salina cards
+        """
+        fail_nic_list = slot_list[:]
+        verify_reg_map = {
+            '0x14': '0x07',
+            '0x30': '0x00',
+            '0x31': '0x00',
+            '0x32': '0x00'
+        }
+
+        if not slot_list:
+            # self.cli_log_err("No NICs passed")
+            return fail_nic_list
+        slot_main = slot_list[0]
+
+        if self._mtp_type == MTP_TYPE.MATERA and bootstage:
+            if bootstage not in ('a35_uboot', 'n1_uboot', 'zephyr', 'linux'):
+                self.cli_log_slot_err(slot_main, f"Unsupported Salina boot stage {bootstage}")
+                return fail_nic_list
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+            if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+                self.cli_log_slot_err(slot_main, "Failed to execute command {:s}".format(cmd))
+                return fail_nic_list
+            cmd = MFG_DIAG_CMDS.MATERA_MTP_NIC_BOOT_TO.format(bootstage, ",".join(str(slot+1) for slot in slot_list))
+            if warm_reset:
+                verify_reg_map['0x30'] = '0x12'
+                cmd += " --warm_reset"
+            if new_layout:
+                cmd += " --new_ainic_layout"
+            if new_mem_layout:
+                cmd += " --new_memory_layout"
+            if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+                self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+                return fail_nic_list
+            buf = self.mtp_get_nic_cmd_buf(slot_main)
+            match_obj = re.findall(r"Slot\s+(\d+)\s+PASSED", buf)
+            if match_obj:
+                for m_obj in match_obj:
+                    pass_slot = int(m_obj) - 1
+                    fail_nic_list.remove(pass_slot)
+            else:
+                for slot in fail_nic_list:
+                    self.cli_log_slot_err(slot, "Command {:s} failed of this slot".format(cmd))
+
+            rlist = self.mtp_i2cget_nic_register(slot_list, reg_addr2exp_val=verify_reg_map)
+            for slot in rlist:
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+
+            return fail_nic_list
+
+    def boot_n1_linux(self, nic_list):
+        fail_nic_list = list()
+        if not nic_list:
+            # self.cli_log_err("No NICs passed")
+            return fail_nic_list
+        # first slot will be the "main" slot to issue the commands on.
+        slot_main = nic_list[0]
+        nic_list_param = ",".join(str(slot+1) for slot in nic_list)
+        boot_stage = "a35_uboot"
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return False
+        cmd = MFG_DIAG_CMDS.SALINA_BOOT_MODE_FMT.format(boot_stage, nic_list_param)
+        if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
+            self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
+            return nic_list[:]
+        if "Failed" in self.mtp_get_nic_cmd_buf(slot_main):
+            match = re.search("Failed slots: \[*([0-9,]+)\]", self.mtp_get_nic_cmd_buf(slot_main))
+            if match:
+                for slot in libmfg_utils.expand_range_of_numbers(match.group(1), range_min=1, range_max=self._slots, dev=self._id):
+                    slot = slot-1
+                    self.cli_log_slot_err(slot, "Para Init NIC MGMT failed")
+                    self.mtp_set_nic_status_fail(slot)
+                    fail_nic_list.append(slot)
+        return fail_nic_list
+
+
     def mtp_init_nic_type(self, stage=None, scanned_fru=None, scanned_dpn=None, scanned_sku=None):
         self._nic_type_list = [None] * self._slots      # reset nic types
         cmd = MFG_DIAG_CMDS.NIC_PRESENT_DISP_FMT
@@ -5378,8 +5899,9 @@ class mtp_ctrl():
             NIC_Type.GINESTRA_D4:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D4,
             NIC_Type.GINESTRA_D5:     MFG_DIAG_RE.MFG_NIC_TYPE_GINESTRA_D5,
             NIC_Type.LENI:            MFG_DIAG_RE.MFG_NIC_TYPE_LENI,
-            NIC_Type.LENI48G:           MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
+            NIC_Type.LENI48G:         MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
             NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
+            NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
         }
 
         for nic_type in list(regex_dict.keys()):
@@ -5417,6 +5939,13 @@ class mtp_ctrl():
                     continue
                 if scanned_dpn or scanned_sku:
                     self.mtp_populate_dpn_sku_to_scans(slot, scanned_dpn, scanned_sku)
+                nic_type = self.mtp_get_nic_type(slot)
+                if nic_type in CTO_MODEL_TYPE_LIST and stage in (FF_Stage.FF_P2C, FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_SWI):
+                    if not self.mtp_nic_dpn_init(slot, fru_fpo):
+                        self.mtp_get_nic_err_msg(slot)
+                        self.mtp_dump_nic_err_msg(slot)
+                        self.mtp_set_nic_status_fail(slot)
+                        continue
             else:
                 # In ScanDL, use scanned SN, PN as ground truth
                 mtp_id = self._id
@@ -5518,11 +6047,13 @@ class mtp_ctrl():
             And assign slot # in the order it appears in lspci
         """
         self.cli_log_inf("Init NIC Presence, Type")
+        cmd = "lspci -d 1dd8:1002" if self._fst_ver == 0x6 else "lspci -d 1dd8:1004"
 
-        cmd = "lspci -d 1dd8:1004"
         self.mtp_mgmt_exec_cmd(cmd)
         result = self.mtp_get_cmd_buf()
         bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
+
+        bus_list_match = list(set(bus_list_match))
 
         # extra info dump
         cmd = "lspci -d 1dd8: -vvv"
@@ -5598,6 +6129,10 @@ class mtp_ctrl():
                         self._nic_ctrl_list[slot]._asic_type = "capri"
                     if nic_type in ELBA_NIC_TYPE_LIST:
                         self._nic_ctrl_list[slot]._asic_type = "elba"
+                    if nic_type in GIGLIO_NIC_TYPE_LIST:
+                        self._nic_ctrl_list[slot]._asic_type = "giglio"
+                    if nic_type in SALINA_NIC_TYPE_LIST:
+                        self._nic_ctrl_list[slot]._asic_type = "salina"
 
                 if not sn_match:
                     self.cli_log_slot_inf(slot, "Could not read SN from PCIe properties...will resort to penctl")
@@ -6422,7 +6957,7 @@ class mtp_ctrl():
             return False
 
         # find the die id
-        die_id_match = re.findall(r"(ASIC_DIE_ID: +0x[0-9a-fA-F]+)", buf)
+        die_id_match = re.findall(r"(ASIC_DIE_ID: +0x[0-9a-fA-F]+|Salina.*DI.*ID\s+:\s+0x[0-9a-fA-F]+)", buf)
         if die_id_match:
             self.cli_log_slot_inf(slot, die_id_match[0], level=1)
         osc_count_id_match = re.findall(r"(osc_count_id: +[0-9]+)", buf)
@@ -6521,6 +7056,9 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_S4:
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
+        elif nic_type in (NIC_Type.POLLARA, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA):
+            # salina avs set command will set both vdd and arm
+            vdd_avs_cmd = MFG_DIAG_CMDS.SALINA_AVS_SET_FMT.format(slot+1)
         else:
             self.cli_log_slot_err_lock(slot, "Unknown NIC Type")
             return False
@@ -6566,7 +7104,7 @@ class mtp_ctrl():
         reg_addr = 0x50
         write_data = 0
         if self._mtp_type == MTP_TYPE.MATERA:
-            cmd = ""
+            cmd = MFG_DIAG_CMDS.NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
         else:
             cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
         cmd += MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
@@ -6604,6 +7142,12 @@ class mtp_ctrl():
                 self.cli_log_slot_err_lock(slot, "{:s} failed".format(MFG_DIAG_CMDS.ORTANO2_VRM_FIX_FMT))
                 self.mtp_dump_nic_err_msg(slot)
                 return False
+        elif nic_type in SALINA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_salina_fix_vrm():
+                self.cli_log_slot_err_lock(slot, "nic_test_v2.py fix_sal_vrm failed")
+                self.mtp_get_nic_err_msg(slot)
+                return False
+
         return True
 
     @parallelize.parallel_nic_using_console
@@ -6679,35 +7223,60 @@ class mtp_ctrl():
                     self.mtp_dump_nic_err_msg(slot)
                     continue
 
-    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C):
+    def mtp_run_asic_l1_bash(self, slot=None, sn=None, mode=None, vmarg=Voltage_Margin.normal, stage=FF_Stage.FF_P2C, joo='1', loopback='0', offload='0', esecure='0', simplified='0', ite='1', ddr="1"):
         """
         cd ~diag/scripts/asic/
         ./run_l1.test -sn <sn> -slot <slot> -m <mode> -v <vmarg>
+        ./run_l1.sh -sn <> -slot <> -joo <> -m <> -i <> -v <> -o <> -e <> -s <> -hc <> -ddr <> -ite <>
+        sn:   SN
+        slot: Slot number
+        joo:  J2C or OW; J2C; 1: OW: 0; default: 0
+        m:    Mode hod/hod_1100/nod/nod_525
+        i:    0: external loopback; 1 internal loopback; default: 0
+        v:    Voltage margin: normal/low/high; default: normal
+        o:    0: offload diabled; 1: offload PCIe/ETH PRBS, TCAM, efuse tests to ARM; default: 1
+        e:    0: esecure test disabled; 1: esecure test enabled; default: 1
+        s:    0: simplified test disabled; 1: simlified test enabled; default: 0
+        hc:   0: Soft training; 1: hardcoded DDR training; default: 0
+        ddr:  0: DDR test skipped; 1: DDR test enabled
+        ite:  Number of iterations
         """
         rs = False
 
         nic_type = self.mtp_get_nic_type(slot)
-
-        # 0 = skip l1_ddr_bist; 1 = default
-        skip_ddr_bist = "1" if stage != FF_Stage.FF_SRN else "0"
 
         if nic_type in DDR_HARCODED_TRAINING_NIC_LIST:
             ddr_hc_training = "1"
         else:
             ddr_hc_training = "0"
 
+        skip_ddr_bist = ddr
+        if stage == FF_Stage.FF_SRN:
+            skip_ddr_bist = "0"
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_mgmt_exec_cmd_para(slot, cmd):
             self.cli_log_slot_err(slot, "Command {:s} failed")
             rs = False
 
+        # do not run esecure with one wire interface
+        if stage == FF_Stage.FF_SRN or joo == '0': esecure = "0"
+
         if self._mtp_type != MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS.NIC_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
         else:
-            cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training)
-        if stage == FF_Stage.FF_SRN: cmd += " -e /0"
+            # "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s} -joo {:s} -i {:s} -o {:s} -e {:s} -s {:s} -ite {:s}"
+            cmd = MFG_DIAG_CMDS.NIC_MATERA_RUN_ASIC_L1_FMT.format(sn, slot+1, mode, vmarg, skip_ddr_bist, ddr_hc_training, joo, loopback, offload, esecure, simplified, ite)
 
-        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT):
+        self.cli_log_slot_inf(slot, cmd)
+
+        l1_cmd_tout = MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT
+        if nic_type == NIC_Type.POLLARA:
+            l1_cmd_tout = MTP_Const.MTP_PARA_POLLARA_ASIC_L1_TEST_TIMEOUT
+        if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
+
+        if not self.mtp_mgmt_exec_cmd_para(slot, cmd, timeout=l1_cmd_tout):
             rs = False
             # kill the process in case it's hung/timed out
             # ctrl-c doesnt work
@@ -6945,19 +7514,67 @@ class mtp_ctrl():
 
         return True
 
-    def mtp_get_nic_sts(self, slot, skip_vrm_check=True):
+    def mtp_get_nic_sts(self, slot, skip_vrm_check=True, testname=None):
         """
          Read board and die temp via j2c
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp(skip_reboot=skip_vrm_check):
             self.cli_log_slot_err(slot, "Unable to dump NIC sts")
             self.mtp_dump_nic_err_msg(slot)
             self.mtp_nic_stop_tclsh(slot)
-            return False
+        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        sub_error = ""
+        lines = cmd_buf.splitlines()
+        for line in lines:
+            if "GET_NIC_STS_DBG_INFO:" not  in line:
+                continue
+            if "ECC happaned" in line:
+                sub_error += " :ECC_ERROR"
+        self.cli_log_slot_err(slot, testname + sub_error)
+
+        self.mtp_nic_stop_tclsh(slot)
+
+        return True
+
+    def mtp_clear_nic_uart(self, slot):
+        """
+         close previous uart
+        """
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].clear_nic_uart():
+            self.cli_log_slot_err(slot, "Unable to kill NIC uart")
+            self.mtp_dump_nic_err_msg(slot)
+
+        return True
+
+    def mtp_sal_check_j2c(self, slot, testname=None):
+        """
+         example command, tclsh /home/diag/diag/scripts/asic/sal_check_j2c.tcl -slot <> -ite 1
+         ERROR :: ASIC PLL failure has happened
+        """
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            return True
+        if not self._nic_ctrl_list[slot].sal_check_j2c():
+            self.cli_log_slot_err(slot, "Unable to run sal_check_j2c.tcl")
+            self.mtp_dump_nic_err_msg(slot)
+            self.mtp_nic_stop_tclsh(slot)
+        cmd_buf = self._nic_ctrl_list[slot].nic_get_cmd_buf()
+        sub_error = ""
+        lines = cmd_buf.splitlines()
+        for line in lines:
+            if "ERROR :: ASIC PLL failure has happened" not  in line:
+                continue
+            if "ASIC PLL" in line:
+                sub_error += " :ASIC_PLL_FAILURE"
+        self.cli_log_slot_err(slot, testname + sub_error)
 
         self.mtp_nic_stop_tclsh(slot)
 
@@ -7441,6 +8058,20 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_nic_read_salina_transceiver_sn(self, slot, port):
+        if not self._nic_ctrl_list[slot].nic_read_salina_transceiver_sn(port):
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        if port in list(self._nic_ctrl_list[slot]._loopback_sn.keys()):
+            self.cli_log_slot_inf(slot, "Detected port {:s} loopback transceiver {:s}".format(port, self._nic_ctrl_list[slot]._loopback_sn[port]))
+        else:
+            self.cli_log_slot_inf(slot, "Missing port {:s} loopback info".format(port))
+            return False
+
+        return True
+
     def fst_setup_penctrl_ssh(self, slot, ip):
         cmd = "ls ~/.ssh/id_rsa"
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -7538,6 +8169,8 @@ class mtp_ctrl():
             expected_speed = "16"
         elif nic_type in GIGLIO_NIC_TYPE_LIST:
             expected_speed = "16"
+        elif nic_type in SALINA_NIC_TYPE_LIST:
+            expected_speed = "32"
         else:
             expected_speed = "8"
 
@@ -7546,6 +8179,8 @@ class mtp_ctrl():
                         NIC_Type.NAPLES100):
             expected_width = "16"
         elif nic_type in GIGLIO_NIC_TYPE_LIST:
+            expected_width = "16"
+        elif nic_type in SALINA_NIC_TYPE_LIST:
             expected_width = "16"
         else:
             expected_width = "8"
@@ -7613,6 +8248,100 @@ class mtp_ctrl():
         #     if local_temp: self.cli_log_slot_inf(slot, "localtemperature: {:d}".format(local_temp_val))
 
         return True
+
+    def fst_fetch_salina_info(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        bus = self._nic_ctrl_list[slot]._fst_pcie_bus
+        sn = self.mtp_get_nic_sn(slot)
+
+        if not self.mtp_mgmt_exec_cmd_para(slot, "cd {:s}".format("/home/diag")):
+            self.cli_log_err("Unable to execute change directory command")
+            return False
+
+        if not self.mtp_mgmt_exec_cmd_para(slot, "./nicctl show card -d"):
+            self.cli_log_err("Unable to retrieve card info")
+            return False
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        # parse card info
+        nic_info = self.fst_parse_salina_nic_info(cmd_buf, slot)
+        if not nic_info:
+            self.cli_log_err("Unable to parse nic info")
+            return False
+
+        if not self.mtp_mgmt_exec_cmd_para(slot, "./nicctl show firmware -d"):
+            self.cli_log_err("Unable to retrieve firmware info")
+            return False
+        cmd_buf = self.mtp_get_nic_cmd_buf(slot)
+        # parse firmware info
+        nic_firmware = self.fst_parse_salina_firmware_info(cmd_buf, slot, nic_info[sn]["Id"])
+        if not nic_firmware:
+            self.cli_log_err("Unable to parse firmware info")
+            return False
+
+        if not self.fst_get_salina_nic_fw_info(slot, nic_firmware):
+            self.cli_log_err("Unable to parse correct firmware info format")
+            return False
+
+        self.cli_log_slot_inf(slot, "FETCH Salina nic card info")
+        return True
+
+    def fst_parse_salina_nic_info(self, data, slot):
+        sn = self.mtp_get_nic_sn(slot)
+        entries = data.strip().split('-------------------------------------------------------------------------------------')
+        ipc_to_id = {}
+        for entry in entries:
+            lines = entry.strip().split('\n')
+            entry_data = {}
+            for line in lines:
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    entry_data[key.strip()] = value.strip()
+            if 'IPC BDF' in entry_data and 'Id' in entry_data and 'Serial number' in entry_data and entry_data['Serial number'] == sn:
+                ipc_to_id[sn] = entry_data
+                break
+        return ipc_to_id
+
+    def fst_parse_salina_firmware_info(self, data, slot, id):
+        sn = self.mtp_get_nic_sn(slot)
+        json_data = libmfg_utils.extract_json(data)
+        fw_to_json = json.loads(json_data)
+        nic_list = fw_to_json.get('nic', [])
+        for nic in nic_list:
+            if nic.get('id') == id:
+                return nic
+        return None
+
+    def fst_get_salina_nic_fw_info(self, slot, fwlist):
+        nic_type = self.mtp_get_nic_type(slot)
+        sn = self.mtp_get_nic_sn(slot)
+        self.cli_log_slot_inf(slot, "Retrieve FW info")
+
+        if "boot0" in fwlist["firmware"]:
+            if "boot0" in fwlist["firmware"]["boot0"] and "software_version" in fwlist["firmware"]["boot0"]["boot0"]:
+                self.cli_log_slot_inf(slot, "boot0:     {:s}   {:s} rev{:s}".format(fwlist["firmware"]["boot0"]["boot0"]["software_version"],
+                                  fwlist["firmware"]["boot0"]["boot0"]["build_date"], str(fwlist["firmware"]["boot0"]["boot0"]["image_version"])))
+
+        for partition in ["mainfwa", "mainfwb", "goldfw"]:
+            try:
+                if partition == "mainfwa":
+                    self.cli_log_slot_inf(slot, "{:s}(fw-a):   {:s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw-a"]["software_version"], fwlist["firmware"][partition]["fw-a"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(uboot-a):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot-a"]["software_version"], fwlist["firmware"][partition]["uboot-a"]["build_date"]))
+                elif partition == "mainfwb":
+                    self.cli_log_slot_inf(slot, "{:s}(fw-b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["fw-b"]["software_version"], fwlist["firmware"][partition]["fw-b"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(uboot-b):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["uboot-b"]["software_version"], fwlist["firmware"][partition]["uboot-b"]["build_date"]))
+                else:
+                    self.cli_log_slot_inf(slot, "{:s}(a35-goldfip):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["a35-goldfip"]["software_version"], fwlist["firmware"][partition]["a35-goldfip"]["build_date"]))
+                    self.cli_log_slot_inf(slot, "{:s}(a35-golduboot):   {:15s}   {:s} ".format(partition, fwlist["firmware"][partition]["a35-golduboot"]["software_version"], fwlist["firmware"][partition]["a35-golduboot"]["build_date"]))
+            except KeyError as e:
+                self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
+                err_msg = traceback.format_exc()
+                self._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+                self.mtp_get_nic_err_msg(slot)
+                return False
+        self.cli_log_slot_inf(slot, "")
+
+        return True
+
 
     def fst_get_nic_fru_info(self, slot, scanned_fru=None):
         cmd = "cat /tmp/fru.json"

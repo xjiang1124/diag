@@ -26,6 +26,7 @@ from libmfg_cfg import FLEX_SHOP_FLOOR_CONTROL
 from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
 from libmfg_cfg import FST_SCAN_ENABLE
 from libmfg_cfg import FLEX_ERR_CODE_MAP
+from libmfg_cfg import SALINA_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils
@@ -253,6 +254,8 @@ def main():
             testlist = ["SETUP_SSH", "FETCH_SN", "PCIE_LINK", "SSH_DISABLE"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 testlist = ["SETUP_SSH", "FETCH_SN", "SET_BOARD_CONFIG", "PCIE_LINK", "SSH_DISABLE"]
+            if nic_type in SALINA_NIC_TYPE_LIST:
+                testlist = ["PCIE_LINK", "FETCH_FRU_INFO"]
 
             if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
                 s4_family = True
@@ -268,6 +271,8 @@ def main():
                     ret = mtp_mgmt_ctrl.fst_fetch_nic_info(slot, scanned_fru=scanned_fru_cfg)
                 elif test == "PCIE_LINK":
                     ret = mtp_mgmt_ctrl.fst_check_nic_pcie(slot)
+                elif test == "FETCH_FRU_INFO":
+                    ret = mtp_mgmt_ctrl.fst_fetch_salina_info(slot)
                 elif test == "SET_BOARD_CONFIG":
                     ret = mtp_mgmt_ctrl.fst_board_config(slot)
                 elif test == "SETUP_SSH":
@@ -286,7 +291,7 @@ def main():
                         pass_nic_list.remove(slot)
                     if slot not in fail_nic_list:
                         fail_nic_list.append(slot)
-                    if test != "SSH_DISABLE":
+                    if test != "SSH_DISABLE" and nic_type not in SALINA_NIC_TYPE_LIST:
                         mtp_mgmt_ctrl.fst_disable_eth_mnic(slot)
                     break
                 else:
