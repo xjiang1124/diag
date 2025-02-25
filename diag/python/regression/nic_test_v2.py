@@ -1473,7 +1473,7 @@ class nic_test_v2:
     def google_stress_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA" or card_type == "LINGUA"::
+        if card_type == "POLLARA" or card_type == "LINGUA":
             print("===== FAILED: This test not applicable to Pollara or Lingua")
             return -1
 
@@ -1809,7 +1809,7 @@ class nic_test_v2:
     def sal_emmc_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA" || card_type == "LINGUA":
+        if card_type == "POLLARA" or card_type == "LINGUA":
             print("===== FAILED: This test is not applicable to Pollara or Lingua")
             return -1
 
