@@ -114,7 +114,6 @@ func ReadDeviceID(devName string) (devID uint64, err int) {
     }
     devID = uint64(readData[0]) << 40 | uint64(readData[1]) << 32 | uint64(readData[2]) << 24 |
             uint64(readData[3]) << 16 | uint64(readData[4]) << 8 | uint64(readData[5])
-    fmt.Printf(" DEBUG: devID=%x\n", devID)
     return devID, err
 }
 
@@ -203,7 +202,6 @@ func ReadVin(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: VIN READ_VIN=%x\n", VIN)
 
     integer, dec, err =  pmbus.Linear11(VIN)
 
@@ -323,13 +321,11 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: VBOOT VOUT_MODE=%x\n", dacStepRegVal)
 
     voutcmd, err = pmbus.ReadWord(devName, VOUT_COMMAND)
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: VBOOT VOUT_COMMAND=%x\n", voutcmd)
 
     if (dacStepRegVal == DAC_STEP_5MV) {
         integer, dec, err =  pmbus.Convert_vr13_5mvVID(voutcmd)
@@ -398,7 +394,6 @@ func ReadIin(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: IIN READ_IIN=%x\n", IIN)
 
     integer, dec, err =  pmbus.Linear11(IIN)
 
@@ -433,7 +428,6 @@ func ReadIout(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: IOUT READ_IOUT=%x\n", IOUT)
 
     integer, dec, err =  pmbus.Linear11(IOUT)
 
@@ -468,7 +462,6 @@ func ReadPin(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: PIN READ_PIN=%x\n", PIN)
 
     integer, dec, err =  pmbus.Linear11(PIN)
 
@@ -503,7 +496,6 @@ func ReadPout(devName string) (integer uint64, dec uint64, err int) {
     if err != errType.SUCCESS {
         return
     }
-    fmt.Printf(" DEBUG: POUT READ_POUT=%x\n", POUT)
 
     integer, dec, err =  pmbus.Linear11(POUT)
 
