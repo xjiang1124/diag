@@ -1855,7 +1855,7 @@ class nic_test_v2:
 
             self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"SDHCI REGISTER DUMP\" > test.txt;", 12)
             self.nic_con.uart_session_cmd(uart_session, "cat test.txt", 12)
-            if 'error' in uart_session.before:
+            if 'REGISTER' in uart_session.before:
                 print("EMMC Test Failed with demsg I/O Error!!")
                 return False
             self.nic_con.uart_session_cmd(uart_session, "dmesg | grep -i \"O error\" > test.txt;", 12)
