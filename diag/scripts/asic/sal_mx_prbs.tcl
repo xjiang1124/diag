@@ -72,7 +72,7 @@ if {$err_cnt != 0} {
     exit -2
 }
 
-if {$card_type == "POLLARA" || card_type == "LINGUA"} {
+if {$card_type == "POLLARA" || $card_type == "LINGUA"} {
     # Pollara 4 lanes
     set ln_mask 0xf
 } else {
