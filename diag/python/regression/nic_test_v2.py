@@ -448,7 +448,7 @@ class nic_test_v2:
             cmd += " {}".format(args.vmarg)
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl"
             cmd += " {}".format(args.slot)
             cmd += " {}".format("LENI")
