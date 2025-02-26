@@ -368,8 +368,8 @@ var LeniSensorTbl = []I2cSensorInfo {
 var LinguaMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
-    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x53,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
-    I2cInfo {"DPU_FRU",        "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //LINGUA HAS NO HOST SIDE PHYSICAL EEPROM.  0x50 IS THE DATA IN UFM2
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},  
     //READ/WRITE TO CPLD UMF2 FLASH. 
     I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
