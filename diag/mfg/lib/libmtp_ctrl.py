@@ -5579,13 +5579,26 @@ class mtp_ctrl():
         return failed_slot_list
 
     @parallelize.parallel_nic_using_ssh
-    def mtp_nic_salina_console_google_stress(self, slot, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+    def mtp_nic_salina_console_google_stress_mem(self, slot, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
         '''
-        run google stress test from nic console before mgmt port ready
+        run google stress mem test by nic_test_v2.py subcommand
         '''
 
         if not self._nic_ctrl_list[slot].nic_google_stress_test(vmarg, mem_copy_thread, seconds2run, slot_asic_dir_path):
-            self.cli_log_slot_err(slot, "NIC CONSOLE GOOGLE STRESS TEST FAILED")
+            self.cli_log_slot_err(slot, "NIC CONSOLE GOOGLE STRESS MEM TEST FAILED")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_salina_console_google_stress_emmc(self, slot, vmarg='normal',  iterations=1, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        run google stress emmc test by nic_test_v2.py subcommand
+        '''
+
+        if not self._nic_ctrl_list[slot].nic_emmc_stress_test(vmarg, iterations, seconds2run, slot_asic_dir_path):
+            self.cli_log_slot_err(slot, "NIC CONSOLE GOOGLE STRESS EMMC TEST FAILED")
             self.mtp_get_nic_err_msg(slot)
             return False
 
