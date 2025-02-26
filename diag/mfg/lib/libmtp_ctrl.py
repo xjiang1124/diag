@@ -7464,7 +7464,7 @@ class mtp_ctrl():
          WARNING: this does an ARM reset, so need a powercycle to bring NIC back to fresh slate
         """
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             return True
         if not self._nic_ctrl_list[slot].read_nic_temp():
             self.cli_log_slot_err(slot, "Unable to read NIC temperature")
@@ -7474,43 +7474,53 @@ class mtp_ctrl():
 
         cmd_buf = self.mtp_get_nic_cmd_buf(slot)
 
-        # [21-08-03 19:00:29] MSG :: ASIC           core_temp(C)   core_volt(V)   brd_temp(C)    r_die_temp(C)  VDD_VOUT(V)    ARM_VOUT(V)    PIN(W)
-        # [21-08-03 19:00:29] MSG ::                71.80          0.73           45             83             0.730          0.860          60.0
-        found_column_heading = False
-        board_temp = "0"
-        die_temp = "0"
-        for line in cmd_buf.split("\r\n"):
-            match = re.search(r"MSG ::.*core_temp.*brd_temp.*die_temp", line)
-            if match:
-                found_column_heading = True
-                continue
-            if found_column_heading:
-                match = re.search(r"MSG :: +(-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+)", line)
+        if nic_type in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST:
+            # [21-08-03 19:00:29] MSG :: ASIC           core_temp(C)   core_volt(V)   brd_temp(C)    r_die_temp(C)  VDD_VOUT(V)    ARM_VOUT(V)    PIN(W)
+            # [21-08-03 19:00:29] MSG ::                71.80          0.73           45             83             0.730          0.860          60.0
+            found_column_heading = False
+            board_temp = "0"
+            die_temp = "0"
+            for line in cmd_buf.split("\r\n"):
+                match = re.search(r"MSG ::.*core_temp.*brd_temp.*die_temp", line)
                 if match:
-                    board_temp = match.group(3)
-                    die_temp = match.group(4)
+                    found_column_heading = True
+                    continue
+                if found_column_heading:
+                    match = re.search(r"MSG :: +(-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+) + (-?\d+\.?\d+)", line)
+                    if match:
+                        board_temp = match.group(3)
+                        die_temp = match.group(4)
+                    else:
+                        self.cli_log_slot_err(slot, "Missing readings for NIC temperature")
+                        self.mtp_dump_nic_err_msg(slot)
+                    break
+
+            self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
+            self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
+            self.mtp_nic_stop_tclsh(slot)
+
+            # Use this dump to check ECC errors as well
+            ecc_regs = re.findall(r"Reg 0x(.*); value: 0x(.*)", cmd_buf)
+            if ecc_regs:
+                errors_found = False
+                for reg, val in ecc_regs:
+                    if int(val.strip(), 16) != 0:
+                        self.cli_log_slot_err(slot, "Reg 0x{:s}; value: 0x{:s}".format(reg, val))
+                        errors_found = True
+
+                if not errors_found:
+                    self.cli_log_slot_inf(slot, "No ECC errors found")
                 else:
-                    self.cli_log_slot_err(slot, "Missing readings for NIC temperature")
-                    self.mtp_dump_nic_err_msg(slot)
-                break
-
-        self.cli_log_slot_inf(slot, "NIC board temperature = {:s}C".format(board_temp))
-        self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
-        self.mtp_nic_stop_tclsh(slot)
-
-        # Use this dump to check ECC errors as well
-        ecc_regs = re.findall(r"Reg 0x(.*); value: 0x(.*)", cmd_buf)
-        if ecc_regs:
-            errors_found = False
-            for reg, val in ecc_regs:
-                if int(val.strip(), 16) != 0:
-                    self.cli_log_slot_err(slot, "Reg 0x{:s}; value: 0x{:s}".format(reg, val))
-                    errors_found = True
-
-            if not errors_found:
-                self.cli_log_slot_inf(slot, "No ECC errors found")
-            else:
-                self.cli_log_slot_err(slot, "ECC errors found")
+                    self.cli_log_slot_err(slot, "ECC errors found")
+        elif nic_type in SALINA_NIC_TYPE_LIST:
+            die_temp = "0"
+            for line in cmd_buf.split("\r\n"):
+                match = re.search(r"CARD_DETAILS::.+TEMP:(.+)\(VRM\)\/(.+)\(FRONT\)", line)
+                if match:
+                    die_temp = match.group(1)
+                    self.cli_log_slot_inf(slot, "NIC die temperature   = {:s}C".format(die_temp))
+                    break
+            self.mtp_nic_stop_tclsh(slot)
 
         return True
 
