@@ -14,6 +14,7 @@ set usage {
     {logEn.arg                  "yes"                   "Save to logfile"}
     {tcl_path.arg               ""                      "ASIC lib location"}
     {si_json_file.arg           "serdes_malfa.json"     "Serdes settings file (no-LT)"}
+    {mx2mx.arg                  "no"                    "Cable test card-to-card. Cards can be in different MTP. Open different sessions for each slot."}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -64,6 +65,32 @@ sleep 0.1
 
 set ::SAL_FORCE_ASIC_SI_SRDS_PARAMS "${::env(ASIC_SRC)}/ip/cosim/salina/$si_json_file"
 
+proc sal_mx_srds_prbs_init {
+        { int_lpbk 1 }
+        { speed 100 }
+        { lt 0 }
+        { cable_len 200 }
+        { prbs prbs31 }
+        { ln_bit_vector 0xff }
+        { time_sec 3 }
+        { media_type CU }
+        { brd_rev 0 }
+    } {
+    set chip_id [ sal_get_cur_chip_id ]
+    set si_json_file [ sal_get_srds_json_file ]
+    set cfg 2x400g
+    if { [ regexp -nocase 100 $speed a ] } { set cfg 2x400g }
+    if { [ regexp -nocase 50 $speed a ] } { set cfg 8x50g }
+    if { [ regexp -nocase 25 $speed a ] } { set cfg 8x25g }
+    if { [ sal_load_port_speed_cfg $cfg ] } {
+        plog_err "sal_mx_srds_prbs: sal_load_port_speed_cfg failed for cfg:$cfg"
+        return 1
+    }
+    set active_srds [ sal_get_active_srds ]
+    set ln_bit_vector [ format "0x%x" [expr $ln_bit_vector & $active_srds] ]
+    sal_aw_srds_bringup $int_lpbk $prbs $media_type $lt $cable_len $si_json_file $brd_rev $ln_bit_vector
+}
+
 plog_msg "Opening j2c"
 set err_cnt_init [ plog_get_err_count ]
 exec jtag_accpcie_salina clr $slot
@@ -88,9 +115,33 @@ if {$card_type == "POLLARA" || $card_type == "LINGUA"} {
 }
 
 set dwell_time 30
-sal_aw_srds_powerup_init
-sal_mx_srds_prbs $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type 0
 
+if {$mx2mx == "no"} {
+    sal_aw_srds_powerup_init
+    sal_mx_srds_prbs $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type 0
+} else {
+    ###############################################################
+    # This option is to test card-to-card MX
+    # Cards can be in different MTP.
+    # Open two sessions for each slot
+    # Start this script on the first session,
+    # then between 0-5 seconds start it on the second session.
+    ###############################################################
+    sal_aw_srds_powerup_init
+    sal_mx_srds_prbs_init $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type
+    after 500
+    # wait here for other card
+    plog_msg "Waiting for other card to finish prbs_init within 45 seconds"; sleep 5
+    set ln_bit_vector [format "0x%x" [expr $ln_mask & [sal_get_active_srds]]]
+    set time_sec 30
+    set allowed_ber 6
+    set my_err [plog_get_err_count]
+    sal_aw_prbs_chk $ln_bit_vector $time_sec $allowed_ber
+    set err [plog_get_err_count]
+    # if { $err > $my_err } {
+        sal_aw_port_status
+    # }
+}
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
