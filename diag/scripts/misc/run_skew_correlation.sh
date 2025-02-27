@@ -86,10 +86,10 @@ runsnaketest() {
     coreV=$4
     armV=$5
 
-    if [[ ${card_type} == "POLLARA" ]]; then lpmode=1; else lpmode=0; fi
-    if [[ ${card_type} == "POLLARA" ]]; then arm_freq="1500"; else arm_freq="default"; fi
-    if [[ ${card_type} == "POLLARA" ]]; then snake_type=esam_pktgen_pollara_max_power_pcie_arm; else snake_type=esam_pktgen_max_power_pcie_sor; fi
-    if [[ ${card_type} == "POLLARA" ]]; then devmgr_v2 fanctrl --pct 40; else devmgr_v2 fanctrl --pct 60; fi
+    if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then lpmode=1; else lpmode=0; fi
+    if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then arm_freq="1500"; else arm_freq="default"; fi
+    if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then snake_type=esam_pktgen_pollara_max_power_pcie_arm; else snake_type=esam_pktgen_max_power_pcie_sor; fi
+    if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then devmgr_v2 fanctrl --pct 40; else devmgr_v2 fanctrl --pct 60; fi
 
     cd ~/diag/python/regression
     devmgr_v2 status | tee $LOGFILE
@@ -160,7 +160,7 @@ for card in "${skew_selection[@]}"; do
 
     if [[ ${slotsn} != $sn ]]; then continue; fi #find the correct settings for this card
 
-    if [[ ${card_type} == "POLLARA" ]]; then
+    if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then
         shmoo_core="${pollara_core_shmoo[@]}"
         shmoo_arm="${pollara_arm_shmoo[@]}"
     elif [[ ${card_type} == "LENI48G" ]]; then
@@ -180,7 +180,7 @@ for card in "${skew_selection[@]}"; do
     ## SECOND LOOP: fix arm to fused, shmoo over core
     #skip pollara
     for coreV in ${shmoo_core[*]}; do
-        if [[ ${card_type} == "POLLARA" ]]; then break; fi
+        if [[ ${card_type} == "POLLARA" || ${card_type} == "LINGUA" ]]; then break; fi
         armV=${arm_fused}
         LOGFILE=/home/diag/nabeel/skewc/${testname}_${card_type}_${sn}_slot${slot}_${skew}_CORE${coreV}_ARM${armV}.log
         runMBIST $LOGFILE $slot $card_type $coreV $armV

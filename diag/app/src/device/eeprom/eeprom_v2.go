@@ -87,6 +87,7 @@ const (
     PN_POLLARA       string = "102-P11100"
     PN_LENI          string = "102-P10800"
     PN_LENI48G       string = "102-P10801"
+    PN_LINGUA        string = "102-P11500"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -106,6 +107,7 @@ const (
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
     PROD_NAME_POLLARA       string = "POLLARA 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
+    PROD_NAME_LINGUA        string = "LINGUA 1x400G QSFP112"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -132,6 +134,7 @@ const (
     SKU_POLLARA         string = "POLLARA-1Q400P"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
+    SKU_LINGUA          string = "LINGUA-1Q400P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -152,6 +155,7 @@ const (
     FRU_ID_MALFA         string = "06/25/24"
     FRU_ID_POLLARA       string = "07/18/24"
     FRU_ID_LENI          string = "07/18/24"
+    FRU_ID_LINGUA        string = "02/04/25"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -1038,6 +1042,72 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_LINGUA: updateInfo {
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
+        PROD_NAME_LINGUA,
+        SKU_LINGUA,
+        FRU_ID_LINGUA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
+    SKU_LINGUA: updateInfo {
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
+        PROD_NAME_LINGUA,
+        SKU_LINGUA,
+        FRU_ID_LINGUA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     //PEN_PN: updateInfo{OrtanoPensandoTbl, []progInfo{progInfo{FIELD_TYPE_NUM, 
     //                                                    AREA_TYPE_BOARD_INFO, 
     //                                                    FIELD_NUM_SN_3, 
@@ -1074,6 +1144,8 @@ var CardTypes = []card{
     card{"LENI_SKU",                SKU_LENI},
     card{"LENI48G",                 PN_LENI48G},
     card{"LENI48G_SKU",             SKU_LENI48G},
+    card{"LINGUA",                  PN_LINGUA},
+    card{"LINGUA_SKU",              SKU_LINGUA},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},

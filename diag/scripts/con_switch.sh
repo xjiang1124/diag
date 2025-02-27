@@ -47,6 +47,7 @@ validate_card_type() {
     MALFA=0x62
     LENI=0x64
     POLLARA=0x65
+    LINGUA=0x67
 
     reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x80)
     if [[ "$reg1" -lt "$MALFA" ]]; then

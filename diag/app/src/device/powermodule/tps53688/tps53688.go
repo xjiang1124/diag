@@ -317,7 +317,6 @@ func ReadVboot(devName string) (integer uint64, dec uint64, err int) {
     if i2cinfo.CardType != "LIPARI" {
         pmbus.WriteByte(devName, PHASE, 0xFF)
     }
-
     dacStepRegVal, err = pmbus.ReadByte(devName, VOUT_MODE);
     if err != errType.SUCCESS {
         return

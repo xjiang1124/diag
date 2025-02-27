@@ -90,6 +90,7 @@ if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_CAPRI") || ($MTP_TYPE == "MT
             source .tclrc.diag.gig
         } elseif { ($card_type == "MALFA")   ||
                    ($card_type == "POLLARA") ||
+                   ($card_type == "LINGUA") ||
                    ($card_type == "LENI") ||
                    ($card_type == "LENI48G") } {
             set l1_cmd "sal_l1_screen_diag $sn $port $slot $mode 0 $use_zmq 127.0.0.1 0 1 0 0 1 $arm_freq 6400 $int_lpbk $vmarg $offload $esecEn $logEn $run_ddr_test"

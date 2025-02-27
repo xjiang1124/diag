@@ -365,6 +365,33 @@ var LeniSensorTbl = []I2cSensorInfo {
     I2cSensorInfo {"VDD_DDR",       I2cSensorCoeff{ 0.001 }},
 }
 
+var LinguaMtpTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
+    I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
+    //LINGUA HAS NO HOST SIDE PHYSICAL EEPROM.  0x50 IS THE DATA IN UFM2
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"CPLD_MCTP",      "CPLD",      0x0,   0x61,    0x0,    "HUB_NONE",  0,    0},  
+    //READ/WRITE TO CPLD UMF2 FLASH. 
+    I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    //READ FROM THE I2C INTERFACE FOR the CPLD UMF2 EEPROM
+    I2cInfo {"CPLD_FRU_I2C",   "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+}
+
+var LinguaTbl = []I2cInfo {
+    //       name             comp         Bus    devAddr  page    HubName  HubPort  Flag 
+    I2cInfo {"QSFP",          "QSFP",      0x0,   0x50,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"DPU_FRU",       "AT24C02C",  0x2,   0x52,    0x0,    "HUB_NONE", 0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"TSENSOR",       "TMP451",    0x2,   0x4C,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"RTC",           "PCF85263A", 0x2,   0x51,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"CORE",          "TPS53688",  0x2,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ARM",           "TPS53688",  0x2,   0x60,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"VDD_DDR",       "TPS549A20", 0x2,   0x1C,    0x0,    "HUB_NONE",  0,    0},    
+    I2cInfo {"PCIE_CLK_BUF",  "RC19008",   0x2,   0x6C,    0x0,    "HUB_NONE", 0,    0}, // 100MHz clk
+    I2cInfo {"MX_CLK_BUF",    "RC19004",   0x2,   0x6F,    0x0,    "HUB_NONE", 0,    0}, // 156MHz clk
+    
+    
+}
+
 var OrtanoMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
@@ -448,6 +475,11 @@ var MtFujiElbaTbl = []I2cInfo {
     I2cInfo {"ELB0_ARM",       "LTC3882",   0x0,   0x66,    0x1,    "HUB_NONE",  0,    0},
 }
 
+var CapaciElbaTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"ELB0_CORE",      "TPS53689",  0x0,   0x4B,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ELB0_ARM",       "TPS53689",  0x0,   0x4B,    0x1,    "HUB_NONE", 0,    0},
+}
 
 var LaconaMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
@@ -931,6 +963,8 @@ func init() {
         SensorTbl = MalfaSensorTbl
     } else if CardType == "POLLARA" {
         I2cTbl = PollaraTbl
+    } else if CardType == "LINGUA" {
+        I2cTbl = LinguaTbl
     } else if CardType == "LENI" || CardType == "LENI48G"{
         I2cTbl = LeniTbl
         SensorTbl = LeniSensorTbl
@@ -952,6 +986,8 @@ func init() {
         I2cTbl = LipariElbaTbl
     } else if CardType == "MTFUJI" {
         I2cTbl = MtFujiElbaTbl
+    } else if CardType == "CAPACI" {
+        I2cTbl = CapaciElbaTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
@@ -1127,6 +1163,8 @@ func SwitchI2cTbl(uutName string) (err int) {
         CurSensorTbl = MalfaSensorTbl
     } else if uutType == "POLLARA" {
         CurI2cTbl = PollaraMtpTbl
+    } else if uutType == "LINGUA" {
+        CurI2cTbl = LinguaMtpTbl
     } else if uutType == "LENI" || uutType == "LENI48G" {
         CurI2cTbl = LeniMtpTbl
         CurSensorTbl = LeniSensorTbl

@@ -448,7 +448,7 @@ class nic_test_v2:
             cmd += " {}".format(args.vmarg)
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl"
             cmd += " {}".format(args.slot)
             cmd += " {}".format("LENI")
@@ -1473,7 +1473,7 @@ class nic_test_v2:
     def google_stress_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA" or card_type == "LINGUA"::
+        if card_type == "POLLARA" or card_type == "LINGUA":
             print("===== FAILED: This test not applicable to Pollara or Lingua")
             return -1
 
@@ -1809,7 +1809,7 @@ class nic_test_v2:
     def sal_emmc_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
-        if card_type == "POLLARA" || card_type == "LINGUA":
+        if card_type == "POLLARA" or card_type == "LINGUA":
             print("===== FAILED: This test is not applicable to Pollara or Lingua")
             return -1
 

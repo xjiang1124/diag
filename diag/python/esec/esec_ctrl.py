@@ -429,6 +429,7 @@ PRIVEK <ek.sk>"""
             asic_type = "GIGLIO"
         if card_type == "MALFA"       or \
            card_type == "POLLARA"     or \
+           card_type == "LINGUA"      or \
            card_type == "LENI"        or \
            card_type == "LENI48G":
             asic_type = "SALINA"

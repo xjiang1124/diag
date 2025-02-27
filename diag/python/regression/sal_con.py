@@ -90,7 +90,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
-    if con_ctrl.get_card_type(slot) in ["POLLARA"]:
+    if con_ctrl.get_card_type(slot) in ["POLLARA","LUNGUA"]:
         new_ainic_layout = kwargs.get('new_ainic_layout', False)
         if new_ainic_layout:
             cmd = "bootm 0x78300000"
@@ -113,7 +113,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
 
     # For non-ainic, keep pressing any key to stop N1 autoboot
     for i in range(kwargs.get('n1_autoboot_delay', 10)): #10 = 2 keypresses per sec
-        if con_ctrl.get_card_type(slot) in ["POLLARA"]:
+        if con_ctrl.get_card_type(slot) in ["POLLARA","LINGUA"]:
             break
         session.timeout = 0.5
         try:

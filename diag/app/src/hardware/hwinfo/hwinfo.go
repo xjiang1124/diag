@@ -95,6 +95,7 @@ var GinestraEepList = []string {"FRU", "PCIE_FRU"}
 var MalfaEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
 var PollaraEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
 var LeniEepList   = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
+var LinguaEepList  = []string {"FRU", "DPU_FRU", "CPLD_FRU"}
 var lipariEepList = []string {"FRU", "FRU_CPUBRD", "FRU_SWITCH"}
 var materaEepList = []string {"FRU", "IOBL", "IOBR", "FPIC"}
 
@@ -188,6 +189,7 @@ var ginestraD5DispStaList map[string]DispStaFunc
 var malfaDispStaList map[string]DispStaFunc
 var pollaraDispStaList map[string]DispStaFunc
 var leniDispStaList map[string]DispStaFunc
+var linguaDispStaList map[string]DispStaFunc
 
 //===============================
 // MTP
@@ -224,6 +226,9 @@ var lipariElbaDispStaList map[string]DispStaFunc
 
 // mtfuji (Cisco)
 var mtfujiElbaDispStaList map[string]DispStaFunc
+
+// capaci (HPE)
+var capaciElbaDispStaList map[string]DispStaFunc
 
 // I2C hub map -- not used on Taormina and Lipari
 var taorI2cHubMap map[string] I2cHubInfo
@@ -545,6 +550,12 @@ func init() {
     leniDispStaList["MX_CLK_BUF"]   = rc19013.DispStatus
     leniDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
 
+    //Lingua
+    linguaDispStaList = make(map[string]DispStaFunc)
+    linguaDispStaList["P12V"]         = tps53688.DispStatusVsense
+    linguaDispStaList["CORE"]         = tps53688.DispStatusSalina
+    linguaDispStaList["TSENSOR"]      = tmp451.DispStatusWithRemote
+
     // Dummy I2C hub map
     naples100I2cHubMap = make(map[string]I2cHubInfo)
 
@@ -647,6 +658,11 @@ func init() {
     mtfujiElbaDispStaList["ELB0_CORE2"] = ltc3882.DispStatus
     mtfujiElbaDispStaList["ELB0_ARM"]   = ltc3882.DispStatus
 
+    // Capaci ELBA
+    capaciElbaDispStaList = make(map[string]DispStaFunc)
+    capaciElbaDispStaList["ELB0_CORE"] = tps53688.DispStatus
+    capaciElbaDispStaList["ELB0_ARM"]  = tps53688.DispStatus
+
     //Just decalred.. not used on Lipari
     lipariElbaI2cHubMap = make(map[string]I2cHubInfo)
 
@@ -740,6 +756,7 @@ func init() {
     dispMap["POLLARA"]      = pollaraDispStaList
     dispMap["LENI"]         = leniDispStaList
     dispMap["LENI48G"]      = leniDispStaList
+    dispMap["LINGUA"]       = linguaDispStaList
     //===============================
     dispMap["MTP"]         = mtpDispStaList
     dispMap["MTPS"]        = mtpsDispStaList
@@ -755,6 +772,9 @@ func init() {
 
     // MtFuji (Cisco)
     dispMap["MTFUJI"]  = mtfujiElbaDispStaList
+
+    // Capaci (HPE)
+    dispMap["CAPACI"]  = capaciElbaDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
@@ -807,6 +827,7 @@ func init() {
     eepromMap["POLLARA"]           = PollaraEepList
     eepromMap["LENI"]              = LeniEepList
     eepromMap["LENI48G"]           = LeniEepList
+    eepromMap["LINGUA"]            = LinguaEepList
 
     // I2C hub map
     i2cHubMap = make(map[string]map[string]I2cHubInfo)
@@ -854,6 +875,7 @@ func init() {
     i2cHubMap["POLLARA"]        = materaI2cHubMap
     i2cHubMap["LENI"]           = materaI2cHubMap
     i2cHubMap["LENI48G"]        = materaI2cHubMap
+    i2cHubMap["LINGUA"]         = materaI2cHubMap
 
     //===============================
     // Taormina

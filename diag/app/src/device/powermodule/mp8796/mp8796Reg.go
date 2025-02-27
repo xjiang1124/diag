@@ -3,6 +3,9 @@ package mp8796
 // Register/Command offset
 const (
     OPERATION                 = 0x01
+      MARGIN_NONE_CMD         = 0x80
+      MARGIN_HIGH_CMD         = 0xA4
+      MARGIN_LOW_CMD          = 0x94
     ON_OFF_CONFIG             = 0x02
     CLEAR_FAULTS              = 0x03
     WRITE_PROTECT             = 0x10

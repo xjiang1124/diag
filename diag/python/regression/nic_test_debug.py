@@ -67,7 +67,7 @@ class nic_test_debug:
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 ret = -1
                 return ret
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 ret = -1
@@ -84,7 +84,7 @@ class nic_test_debug:
         # TCL command
         if args.card_type == "LENI" or args.card_type == "LENI48G":
             cmd = "tclsh ~/diag/scripts/asic/sal_port_up.leni.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.inf)
-        elif args.card_type == "POLLARA":
+        elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_port_up.pollara.tcl {} {} {} {}".format(args.slot, args.card_type, args.vmarg, args.inf)
         else:
             print(args.card_type, "not supported!")
@@ -120,7 +120,7 @@ class nic_test_debug:
         cmd = "fpgautil spimode {} off".format(args.slot)
         common.session_cmd(session, cmd)
 
-        if args.card_type == "POLLARA":
+        if args.card_type == "POLLARA" or args.card_type == "LINGUA":
             if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
                 print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
                 ret = -1
@@ -234,7 +234,7 @@ class nic_test_debug:
                 cmd += " " + str(new_vmarg)
                 cmd += " " + str(args.int_lpbk)
                 cmd += " " + str(args.mtp_clk)
-            elif args.card_type == "POLLARA":
+            elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
                 cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
                 cmd += " " + str(args.slot)
                 cmd += " " + str(args.snake_type)
@@ -265,7 +265,7 @@ class nic_test_debug:
                     print("===== FAILED: slot {} A35 console is not responsive".format(args.slot))
                     return -1
                 self.nic_con.uart_session_stop(uart_session)
-                if args.card_type != "POLLARA":
+                if args.card_type != "POLLARA" or args.card_type != "LINGUA":
                     uart_session = common.session_start()
                     self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
                     if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:

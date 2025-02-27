@@ -937,6 +937,7 @@ class nic_con:
         elif card_type == "MALFA" or \
              card_type == "LENI" or \
              card_type == "LENI48G" or \
+             card_type == "LINGUA" or \
              card_type == "POLLARA":
             asic_type = "SALINA"
         else:

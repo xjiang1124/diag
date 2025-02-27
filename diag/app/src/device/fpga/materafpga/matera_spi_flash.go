@@ -147,7 +147,7 @@ func init () {
 func UpdateFlashSize(slot uint32) () {
     uut := fmt.Sprintf("UUT_%d", slot+1)
     uutType, _ := i2cinfo.FindUutTypeMtp(uut) 
-    if uutType == "POLLARA" {
+    if uutType == "POLLARA" || uutType == "LINGUA" {
         elba_flash_info.region_size = uint32(0x2000000)  //32MB 
         elba_flash_info.number_of_sectors = elba_flash_info.region_size / elba_flash_info.sector_size
     }
@@ -552,7 +552,7 @@ func Spi_salina_flash_get_partition_info(spiNumber uint32, partition string) (fl
         flash_size = 0x3C00000
         start_addr = 0x00400000 
     } else if partition == "allflash" {
-        //Check if the card is Pollara which has a 32MB flash
+        //Check if the card is has a smaller 32MB flash vs default 256
         UpdateFlashSize(spiNumber)
         flash_size = int(elba_flash_info.region_size )
         start_addr = 0
@@ -808,7 +808,7 @@ func Spi_salina_flash_WriteImage(spiNumber uint32, qspiNumber uint32, partition 
 func Spi_salina_flash_erase_all_sectors(spiNumber uint32, qspiNumber uint32) (err error) {
     var i uint32 = 0
 
-    //Check if the card is Pollara which has a 32MB flash
+    //Check if the card is has a smaller 32MB flash vs default 256
     UpdateFlashSize(spiNumber)
 
     fmt.Printf("SPI BUS=%d QSPI=%d\n", spiNumber, qspiNumber)
@@ -875,7 +875,7 @@ func Spi_salina_flash_erase_sector(spiNumber uint32, qspiNumber uint32,  addr ui
 func Spi_salina_flash_Write_N_Bytes_w_spiBus_enable(spiNumber uint32, qspiNumber uint32, data []byte, addr uint32, spiBusEnable bool) (err error) {
     wr_data := []byte{}
 
-    //Check if the card is Pollara which has a 32MB flash
+    //Check if the card is has a smaller 32MB flash vs default 256
     UpdateFlashSize(spiNumber)
     
     if addr > elba_flash_info.region_size {
@@ -994,7 +994,7 @@ func Spi_salina_flash_WriteFile(spiNumber uint32, qspiNumber uint32, start_addr 
     var write_page bool = false
     var skipped_pages int = 0
 
-    //Check if the card is Pollara which has a 32MB flash
+    //Check if the card is has a smaller 32MB flash vs default 256
     UpdateFlashSize(spiNumber)
     flash_size = uint32(elba_flash_info.region_size)
 
@@ -1106,7 +1106,7 @@ func Spi_salina_flash_VerifyFile(spiNumber uint32, qspiNumber uint32, start_addr
     var read_size = uint32(elba_flash_info.sector_size)
     var i uint32 = 0
 
-    //Check if the card is Pollara which has a 32MB flash
+    //Check if the card is has a smaller 32MB flash vs default 256
     UpdateFlashSize(spiNumber)
     flash_size = uint32(elba_flash_info.region_size)
 
@@ -1205,7 +1205,7 @@ func Spi_salina_flash_GenerateFile(spiNumber uint32, qspiNumber uint32, start_ad
     var i uint32 = 0
     flash_data := []byte{}
 
-    //Check if the card is Pollara which has a 32MB flash
+    //Check if the card is has a smaller 32MB flash vs default 256
     UpdateFlashSize(spiNumber)
     flash_size = uint32(elba_flash_info.region_size)
 

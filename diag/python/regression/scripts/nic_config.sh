@@ -207,6 +207,11 @@ then
     type="LENI48G"
     asic_type="SALINA"
     echo "Salina CPLD"
+elif [[ $cpld_id == "0x67" ]]
+then
+    type="LINGUA"
+    asic_type="SALINA"
+    echo "Salina CPLD"
 elif [[ $cpld_id == "0x81" ]]
 then
     type="LIPARI"
