@@ -3,12 +3,17 @@ source /home/diag/diag/scripts/asic/cmdline.tcl
 source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 set usage {
-    {sn.arg         ""                      "Serial number"}
-    {slot.arg       ""                      "Slot number"}
-    {vmarg.arg      "none"                  "Voltage margin"}
-    {int_lpbk.arg   "no"                    "Internal loopback"}
-    {logEn.arg      "yes"                   "Save to logfile"}
-    {tcl_path.arg   ""                      "ASIC lib location"}
+    {sn.arg                     ""                      "Serial number"}
+    {slot.arg                   ""                      "Slot number"}
+    {vmarg.arg                  "none"                  "Voltage margin"}
+    {int_lpbk.arg               "no"                    "Internal loopback"}
+    {cable_len.arg              "0"                     "Cable length: 0/50(0.5m)/100(1m)/200(2m)"}
+    {media_type.arg             "CU"                    "Cable type: CU/Fiber"}
+    {speed.arg                  "100"                   "Transceiver speed: 25/50/100"}
+    {lt.arg                     "1"                     "Link training: 1=yes / 0=no"}
+    {logEn.arg                  "yes"                   "Save to logfile"}
+    {tcl_path.arg               ""                      "ASIC lib location"}
+    {si_json_file.arg           "serdes_malfa.json"     "Serdes settings file (no-LT)"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -55,6 +60,9 @@ if {$int_lpbk == "no" || $int_lpbk == 0} {
     plog_msg "Starting MX PRBS with internal loopback"
     set int_lpbk 1
 }
+sleep 0.1
+
+set ::SAL_FORCE_ASIC_SI_SRDS_PARAMS "${::env(ASIC_SRC)}/ip/cosim/salina/$si_json_file"
 
 plog_msg "Opening j2c"
 set err_cnt_init [ plog_get_err_count ]
@@ -79,8 +87,9 @@ if {$card_type == "POLLARA" || $card_type == "LINGUA"} {
     set ln_mask 0xff
 }
 
+set dwell_time 30
 sal_aw_srds_powerup_init
-sal_mx_srds_prbs $int_lpbk 100 1 0 "prbs31" $ln_mask 3 "CU" 0
+sal_mx_srds_prbs $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type 0
 
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
