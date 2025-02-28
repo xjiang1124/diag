@@ -142,8 +142,6 @@ jobs:
     labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-4C"]
   test-asic/SWI:
     labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-SWI"]
-  test-asic/SRN:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-SRN"]
 ### END ASIC JOB LABELS ###
 
 dependencies:
