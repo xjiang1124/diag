@@ -28,7 +28,7 @@ import sys, os
 
 DEFAULT = ["FST"]
 DIAG_CHANGES = ["P2C"]
-SCRIPT_CHANGES = ["P2C", "SWI", "FST", "SRN"]
+SCRIPT_CHANGES = ["P2C", "SWI", "FST"]
 RELEASE_MODELING = ["ScanDL", "DL", "P2C", "4C", "ORT", "RDT", "SWI", "FST", "SRN"]
 
 cwd = os.path.basename(os.getcwd())

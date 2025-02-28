@@ -180,8 +180,6 @@ dependencies:
       exclude_dirs: ["scripts"]
     - reference: test/SWI
       exclude_dirs: ["scripts"]
-    - reference: test/SRN
-      exclude_dirs: ["scripts"]
 ### END TEST SCRIPT CHANGES ###
   diag/mfg/scripts:
     - reference: test/FST
