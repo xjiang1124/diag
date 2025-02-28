@@ -19,6 +19,28 @@ declare -a slotI2Cmap=(
 )
 
 
+#For cards in the MTP that use an adapter to operate in the MTP test chassis.
+#OCP cards for example need an adapter card.
+#The adapter card controls the power on/off for the nic plugged into it.
+card_adapter_enable_power() {
+    slot=$1
+    ocpAdapterID="0x1a"
+    cpld_id=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x80 2> /dev/null)
+    if [ $? -eq 0 ] && [[ $cpld_id -eq $ocpAdapterID ]] 
+    then
+        echo "Powering up Adapter"
+        #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
+        reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x40)
+        reg1=$(( $reg1 | 0x1 ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $reg1
+        #sleep 0.5
+        reg1=$(( $reg1 | 0x3 ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $reg1
+    fi
+
+}
+
+
 # Enable Elba card JTAG
 elba_enable_jtag() {
     slot=$1
@@ -110,6 +132,10 @@ control_slot_matera() {
         done
         fpgautil w32 $matera_P12V_addr $(( $v12 | $wValue ))
         fpgautil w32 $matera_perst_addr  $(( $perst | $wValue ))
+        for slot in $slot_list
+        do
+            card_adapter_enable_power $slot
+        done
     fi
     sleep 0.2
     fpgautil r32 $matera_P12V_addr
@@ -133,6 +159,10 @@ control_all() {
         sleep 0.2
         fpgautil w32 $matera_perst_addr 0x3ff
         sleep 0.2
+        for i in {1..10}
+        do
+            card_adapter_enable_power $i
+        done
 
 
 

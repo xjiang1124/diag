@@ -1043,8 +1043,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     PN_LINGUA: updateInfo {
-        //PenStandardV2NewTbl,
-        PenStandardV2ProdInfoTbl,
+        PenStandardV2ocpProdInfoTbl,
         PROD_NAME_LINGUA,
         SKU_LINGUA,
         FRU_ID_LINGUA,
@@ -1076,8 +1075,7 @@ var CardDataInfo = map[string]updateInfo {
     },
 
     SKU_LINGUA: updateInfo {
-        //PenStandardV2NewTbl,
-        PenStandardV2ProdInfoTbl,
+        PenStandardV2ocpProdInfoTbl,
         PROD_NAME_LINGUA,
         SKU_LINGUA,
         FRU_ID_LINGUA,
@@ -1319,21 +1317,13 @@ func chkSum(start int, length int) (chkSum byte) {
 }
 
 
-func mraChkSum(start int, mraOff int) (recordChkSum [][2]uint, mraHdrChkSum [][2]uint) {
+func mraChkSum(start int, mraOff int) {
     //Checks and returns multi-record area check sum with associated offsets
-    var recordLen, recordStrt, recordChkSumOff, rHdrChkSumOff int 
-    for i:=start+mraOff;i<len(Data);i++ {
-        recordLen = int(Data[start+mraOff + 2])
-        recordChkSumOff = start+mraOff + 3
-        rHdrChkSumOff = start+mraOff + 4
-        recordStrt = start+mraOff + 5
-        recordChkSum=append(recordChkSum, [2]uint{uint(recordChkSumOff), uint(chkSum(recordStrt, recordLen))})
-        mraHdrChkSum=append(mraHdrChkSum, [2]uint{uint(rHdrChkSumOff), uint(chkSum(start+mraOff, MRA_HDR_LEN))})
-        mraOff += (recordLen + MRA_HDR_LEN)
-        if Data[start+mraOff + 1] == 0x82 {
-            break
-        }
-    }
+    var recordLen, recordStrt int 
+    recordLen = int(Data[start+mraOff + 2])
+    recordStrt = start+mraOff + 5
+    Data[start+mraOff + 3] = chkSum(recordStrt, recordLen)
+    Data[start+mraOff + 4] = chkSum(mraOff, (MRA_HDR_LEN - 1))
     return
 }
 
@@ -1360,13 +1350,7 @@ func updateChkSum() {
     }
     //If the multi record area is present, finds and updates multi record area checksums here
     if multiRecordAreaOff != 0 {
-        recordChkSum, mraHdrChkSum := mraChkSum(cHdrStrt, cHdrStrt + multiRecordAreaOff)
-        for _, pair := range(recordChkSum) {
-            Data[int(pair[0])] = byte(pair[1])
-        }
-        for _, pair := range(mraHdrChkSum) {
-            Data[int(pair[0])] = byte(pair[1])
-        }
+        mraChkSum(cHdrStrt, cHdrStrt + multiRecordAreaOff)
     }
 }
 
