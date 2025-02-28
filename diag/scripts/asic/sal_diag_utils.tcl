@@ -52,9 +52,9 @@ proc verify_nxc_frequency {{nxc_freq 750}} {
 
 proc verify_frequencies {} {
     set card_type [sal_get_card_type]
-    if { $card_type != "POLLARA" && $card_type != "LINGUA" } {
+    if { $card_type != "POLLARA" } {
         # not supported
-        plog_msg "set_pollara_frequency :: not pollara or lingua, skipping verify_arm_frequency"
+        plog_msg "set_pollara_frequency :: not pollara, skipping verify_arm_frequency"
         return 0
     }
     verify_arm_frequency
