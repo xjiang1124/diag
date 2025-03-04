@@ -40,7 +40,7 @@ import testlog
 import image_control
 from mtp_dl_test import dl_salina_qspi_program
 
-def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename="emmc_validation.csv.log"):
+def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename="/home/diag/diag/log/emmc_validation.csv.log"):
     """
     covert the nic test data which is a dict to two two dimensional table as raw data, 
     calcluate the min, max and avg value as test results, then store them in the specified csv file 

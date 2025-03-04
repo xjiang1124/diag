@@ -671,7 +671,7 @@ class nic_ctrl():
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["$"], timeout=10)
 
         cmd = MFG_DIAG_CMDS.NIC_CON_ATTACH_FMT.format(self._slot+1)
-        if uart_selecttor:
+        if uart_selecttor is not None:
             cmd += ' ' + str(uart_selecttor)
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect(self._nic_handle, ["Terminal ready", "buffer cleared"], timeout=MTP_Const.NIC_CON_INIT_DELAY)
@@ -861,10 +861,8 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd):
             return False
 
-        test_name = "max_pwr" if snake_type=="esam_pktgen_max_power_sor" else "ddr_burst"
-
         cmd = MFG_DIAG_CMDS.MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
-        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
+        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, snake_type, str(self._sn), str(self._slot + 1))
         print(cmd)
         if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
             return False
@@ -1656,6 +1654,28 @@ class nic_ctrl():
         else:
             return False
 
+    def nic_emmc_stress_test(self, vmarg='normal', iterations=1, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
+        '''
+        ./nic_test_v2.py emmc_test -slot <slot> -vmarg VMARG -dura DURA
+        '''
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.MATERA_NIC_EMMC_TEST_MTP_FMT.format(str(self._slot + 1), str(seconds2run), str(iterations))
+        nic_test_v2_sub_cmd = "emmc_test"
+        cmd += " | tee {:s}/nic_test_v2_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, nic_test_v2_sub_cmd, str(self._sn), str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd, timeout=int(seconds2run) * int(iterations) + 300):
+            return False
+
+        test_result = True
+        for iteration in range(iterations):
+            if MFG_DIAG_SIG.MATERA_NIC_EMMC_TEST_MTP_SIG.format(iteration) not in self.nic_get_cmd_buf():
+                self.nic_set_err_msg("{:s} failed at {:d} ite of {:d}".format(cmd, iteration, iterations))
+                test_result = False
+        return test_result
+
     def nic_test_v2_py_edma(self, vmarg='normal', seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
         '''
         ./nic_test_v2.py edma_test -slot <slot> -vmarg VMARG -dura DURA -tcl_path TCL_PATH
@@ -2258,7 +2278,7 @@ class nic_ctrl():
             return False
 
         nic_cmd_list.append("dmesg")
-        if not self.nic_exec_cmds(nic_cmd_list, timeout=10):
+        if not self.nic_exec_cmds(nic_cmd_list, timeout=60):
             return False
 
         nic_cmd = MFG_DIAG_CMDS.NIC_SETTING_PARTITION_FMT
