@@ -162,7 +162,7 @@ class LaunchApp(object):
             'ALIAS': f"{self.__testsuite.config.testbed.lower()}{testbed_id}",
             'SLOTS': 10,
             'SKIP_SLOTS': "",
-            'CAPABILITY': "0x3",
+            'CAPABILITY': "0x7",
         }
 
         # add in APC info
