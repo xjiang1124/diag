@@ -155,14 +155,6 @@ dependencies:
     - reference: asset-build
   asset-build:
     - reference: asset-build
-  diag/scripts/asic:
-    - reference: diag/scripts/asic
-  diag/python/regression:
-    - reference: diag/python/regression
-  diag/python/esec:
-    - reference: diag/python/esec
-  diag/python/esec/scripts:
-    - reference: diag/python/esec
 
   diag:
 ### TEST DIAG CHANGES ###
