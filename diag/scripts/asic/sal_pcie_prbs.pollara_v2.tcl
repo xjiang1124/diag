@@ -19,6 +19,9 @@ set ASIC_SRC $::env(ASIC_SRC)
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
+exec fpgautil spimode $slot off
+exec jtag_accpcie_salina clr $slot
+
 set ::FAN_SPD 80
 set ::DEVMGR devmgr_v2
 
