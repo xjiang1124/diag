@@ -7,12 +7,22 @@ set usage {
     {vmarg.arg          "normal"            "Voltage margin"}
     {dura.arg           60                  "Test duration"}
     {mtp_clk.arg        0                   "MTP PCIe reference clock"}
-    {aw_txfir_ow.arg    ""                  "Awave TXFIR overwrite"}
+    {aw_txfir_ow.arg    ""                  "Awave TXFIR overwrite: preset 1-9"}
+    {macro_mask.arg     0xf                 "Macro mask"}
+    {lane_mask.arg      0xf                 "Lane mask"}
+    {tail.arg           ""                  "tail msg"}
+    {ite.arg            1                   "Iteration"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
 foreach argname [array names arg] { set $argname $arg($argname) }
 if { $slot == "" } { puts "Missing required --slot arg" ; exit -1 }
+
+puts "Turn off slot $slot"
+exec turn_on_slot.sh off $slot
+after 10000
+puts "Turn on slot $slot"
+exec turn_on_slot.sh on $slot
 
 set ASIC_SRC $::env(ASIC_SRC)
 
@@ -84,9 +94,44 @@ plog_msg "card_type = $card_type"
 sal_print_die_id
 sal_set_vmarg $vmarg 
 
-pcie_mtp_prbs_test 1100 $card_type 4 $dura 6
+pcie_mtp_prbs_test 1100 $card_type 4 $dura 6 $macro_mask $lane_mask
 
 plog_msg "PRBS TEST DONE"
+
+#==============================================
+plog_msg "Collecting FFE data"
+
+for {set i 0} {$i < $ite} {incr i} {
+    set tail1 "${tail}_${i}"
+    set log_path "ffe_mmask${macro_mask}_lmask${lane_mask}_${tail}"
+    try {
+        exec mkdir -p "/home/diag/xin/log/$log_path"
+    #    exec rm /home/diag/xin/log/$log_path/*
+    } on error {errMsg} {
+        plog_msg "Never mind"
+    }
+
+
+    for {set macro 0} {$macro < 4} {incr macro} {
+        set macro_en [ expr {(1<<$macro) & $macro_mask} ]
+        if { $macro_en == 0 } {
+            continue
+        }
+    
+        for {set ln 0} {$ln < 4} {incr ln} {
+            set lane_en [ expr {(1<<$ln) & $lane_mask} ]
+            if { $lane_en == 0 } {
+                continue
+            }
+            set fn "/home/diag/xin/log/${log_path}/sal_ffe_data_mmask${macro_mask}_lmask${lane_mask}_${tail1}_slot${slot}_macro${macro}_ln${ln}.log"
+            sal_aw_pma_dump_ffe_data $macro $ln 1000 $fn
+        }
+    }
+    after 60000
+}
+
+exec cp /home/diag/diag/asic/asic_src/ip/cosim/tclsh/$fn /home/diag/xin/log/${log_path}
+
 
 set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
 if {$err_cnt != 0} {

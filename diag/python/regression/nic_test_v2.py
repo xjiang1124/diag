@@ -1407,6 +1407,30 @@ class nic_test_v2:
 
         return 0
 
+    def sal_misc_a35_cmds(self, args):
+        ret = 0
+        session = common.session_start()
+
+        #ret = self.nic_con.uart_session_start(session, args.slot)
+        ret = self.nic_con.uart_session_connect(session, args.slot, uart_id=0)
+        if ret != 0:
+            return ret
+
+        session.send(chr(3))
+        session.expect("uart:~\$")
+        try:
+            cmd_list = args.all_cmds.split("#")
+            for cmd in cmd_list:
+                self.nic_con.uart_session_cmd(session, cmd, ending="uart:~\$")
+
+        except pexpect.TIMEOUT:
+            print ("Failed to run A35 commands")
+            ret = -1
+
+        self.nic_con.uart_session_stop(session)
+        common.session_stop(session)
+        return 0
+
     def sal_misc_pcieawd_env_ctrl(self, args):
         ret = 0
         session = common.session_start()
@@ -1921,9 +1945,10 @@ class nic_test_v2:
 
             common.session_cmd(session, "inventory -sts -slot {}".format(args.slot))
             common.session_cmd(session, "i2cdump -y {} 0x4a".format(args.slot+2))
+            common.session_cmd(session, "i2cset -y {} 0x4a 0x1 0".format(args.slot+2))
 
-            if ret != 1:
-                print("PC_TEST_J2C has failed!", ite)
+            if ret != 0:
+                print("PC_TEST_J2C has failed!", ite, ret)
                 if args.stop_on_error:
                     print("Stoping scripti")
                     break
@@ -2230,6 +2255,11 @@ if __name__ == "__main__":
     group_eqbk.add_argument("-enable", '--enable', action='store_true', help='Enabled')
     group_eqbk.add_argument("-disable", '--disable', action='store_true', help='Disabled')
     parser_eqbk.set_defaults(func=test.sal_misc_eqbk_ctrl)
+
+    parser_misc_a35_cmds = sal_misc_subp.add_parser('a35_cmds', help='A35 commands', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_misc_a35_cmds.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")
+    parser_misc_a35_cmds.add_argument("-all_cmds", '--all_cmds', help='all parameters in one; format: cmd1#cmd2', type=str, default=None)
+    parser_misc_a35_cmds.set_defaults(func=test.sal_misc_a35_cmds)
 
     parser_pcieawd_env = sal_misc_subp.add_parser('pcieawd_env', help='pcieawd setenv', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser_pcieawd_env.add_argument("-slot", "--slot", help="NIC slot", type=int, default="")

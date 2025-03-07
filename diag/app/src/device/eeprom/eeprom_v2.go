@@ -88,6 +88,7 @@ const (
     PN_LENI          string = "102-P10800"
     PN_LENI48G       string = "102-P10801"
     PN_LINGUA        string = "102-P11500"
+    PN_OCP_ADPT      string = "102-P11600"
     PN_MTP_MATERA_FRU  string = "102-P10300-00"
     PN_MTP_MATERA_MB   string = "102-P10300-00"
     PN_MTP_MATERA_IOB  string = "102-P10400-00"
@@ -108,6 +109,7 @@ const (
     PROD_NAME_POLLARA       string = "POLLARA 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
     PROD_NAME_LINGUA        string = "LINGUA 1x400G QSFP112"
+    PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
 
     // SKU 
     SKU_IBM             string = "DSC2-2Q200-32R32F64P-B"
@@ -135,6 +137,7 @@ const (
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
     SKU_LINGUA          string = "LINGUA-1Q400P"
+    SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
 
     // FRU ID
     FRU_ID_IBM           string = "06/28/22"
@@ -156,6 +159,7 @@ const (
     FRU_ID_POLLARA       string = "07/18/24"
     FRU_ID_LENI          string = "07/18/24"
     FRU_ID_LINGUA        string = "02/04/25"
+    FRU_ID_OCP_ADPT      string = "02/24/25"
 
     // Byte offset
     BYTE_OFFSET_SN_ORACLE      int = 5
@@ -910,6 +914,27 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    PN_OCP_ADPT: updateInfo {
+        PenStandardV2Tbl,
+        PROD_NAME_OCP_ADPT,
+        SKU_OCP_ADPT,
+        FRU_ID_OCP_ADPT,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+        },
+        nil,
+    },
+
     PN_LENI: updateInfo {
         //PenStandardV2NewTbl,
         PenStandardV2ProdInfoTbl,
@@ -1144,6 +1169,7 @@ var CardTypes = []card{
     card{"LENI48G_SKU",             SKU_LENI48G},
     card{"LINGUA",                  PN_LINGUA},
     card{"LINGUA_SKU",              SKU_LINGUA},
+    card{"OCP_ADPT",                PN_OCP_ADPT},
     //SKU type cards: used in SKU mode
     //card{"GIN_D4_ORACLE",           SKU_GIN_D4_ORACLE},
     //card{"GIN_D5_ORACLE",           SKU_GIN_D5_ORACLE},
