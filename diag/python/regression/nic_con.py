@@ -822,13 +822,13 @@ class nic_con:
         #self.uart_session.cmd(session, "ifconfig oob_mnic0 "+ip+" netmask 255.255.255.0")
         #self.uart_session_stop(session)
 
-    def conn_uboot(self, session, slot):
+    def conn_uboot(self, session, slot, uart_id=1):
         #exprStr = "Capri# "
         expstr = ["Capri# ", "DSC# "]
         session.timeout = 15
         ret = 0
         try:
-            cmd = self.get_connect_cmd(slot)
+            cmd = self.get_connect_cmd(slot, uart_id=uart_id)
             session.sendline(cmd)
             session.expect(["Terminal ready", "buffer cleared"])
             session.sendline("\r")
