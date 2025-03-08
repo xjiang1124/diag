@@ -480,10 +480,10 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
             ret = libmfg_utils.mtp_avt_tool_installation(mtp_mgmt_ctrl)
 
         elif test == "DIAG_START":
-            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False)
+            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=False, stage=stage)
 
         elif test == "DSP_START":
-            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=True)
+            ret = mtp_mgmt_ctrl.mtp_diag_pre_init(start_dsp=True, stage=stage)
 
         elif test == "DIAG_POST":
             ret = mtp_mgmt_ctrl.mtp_diag_post_init()

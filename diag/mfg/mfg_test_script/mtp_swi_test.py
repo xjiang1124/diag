@@ -162,6 +162,10 @@ def swi_salina_qspi_program(mtp_mgmt_ctrl, slot):
     image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
     return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
 
+@parallelize.parallel_nic_using_ssh
+def swi_salina_dump_boot(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.matera_mtp_dump_nic_boot(slot)
+
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
@@ -368,6 +372,10 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_cleanup_shutdown(nic_list)
             elif test == "SW_SHUTDOWN":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_sw_shutdown(nic_list)
+            elif test == "CLEAR_PRE_UBOOT_SECTION":
+                rlist = mtp_mgmt_ctrl.mtp_nic_clear_pre_uboot_section(nic_list)
+            elif test == "DUMP_BOOT_BIN":
+                rlist = swi_salina_dump_boot(mtp_mgmt_ctrl, nic_list)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -404,6 +412,7 @@ def main():
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
 
+            run_swi_test(pass_nic_list, "CLEAR_PRE_UBOOT_SECTION")
             # run_swi_test(pass_nic_list, "CONSOLE_BOOT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
 
@@ -432,6 +441,10 @@ def main():
             run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_BOOT")
 
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
+            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+
             # fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
             # run_swi_test(fpga_type_list, "FPGA_PROG")
             # run_swi_test(fpga_type_list, "FPGA_PROG_VERIFY")
@@ -446,12 +459,12 @@ def main():
             # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
             # # Powercycle and also fix diag.exe as needed for elba's efuse script
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-            # efuse_type_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
-            # run_swi_test(efuse_type_list, "NIC_INIT")
-            # run_swi_test(efuse_type_list, "EFUSE_PROG")
-            run_swi_test(pass_nic_list, "SEC_KEY_PROG")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
-            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+            efuse_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            run_swi_test(efuse_type_list, "NIC_INIT")
+            run_swi_test(efuse_type_list, "EFUSE_PROG")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
+            # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
+            # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
             # run_swi_test(pass_nic_list, "NIC_INIT")
             # sec_cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2, NIC_Type.ORTANO2ADIMSFT])
@@ -495,9 +508,9 @@ def main():
             # run_swi_test(pass_nic_list, "SW_CLEANUP")
             # run_swi_test(pass_nic_list, "NIC_PWRCYC")
             # libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
-            run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
+            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
+            # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2])
             run_swi_test(cpld_type_list, "CPLD_PROG")

@@ -2034,7 +2034,7 @@ class mtp_ctrl():
 
         return rc
 
-    def mtp_diag_pre_init(self, start_dsp=True):
+    def mtp_diag_pre_init(self, start_dsp=True, stage=FF_Stage.FF_DL):
         # start the mtp diag
         self.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
@@ -2085,6 +2085,16 @@ class mtp_ctrl():
                 cmd = "fstrim -v /home/diag/"
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Command {:s} failed".format(cmd), level=0)
+                    return False
+            if stage == FF_Stage.FF_SWI:
+                # python package version
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_SWI_CHECK_FMT
+                if not self.mtp_mgmt_exec_cmd(cmd):
+                    self.cli_log_err("Failed to send command to check python package version", level = 0)
+                    return False
+                match = re.findall(r"MTP is read for SWI", self.mtp_get_cmd_buf())
+                if not match:
+                    self.cli_log_err("MTP do not have correct python package version", level = 0)
                     return False
 
         if start_dsp:
@@ -3412,17 +3422,9 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU dpn={:s}".format(dpn))
         if sku:
             self.cli_log_slot_inf_lock(slot, "Program NIC FRU SKU={:s}".format(sku))
-        # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to True to program smbus FRU
-        smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
-        if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
-            self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
-            self.mtp_get_nic_err_msg(slot)
-            self.mtp_dump_nic_err_msg(slot)
-            return False
 
-        # for Salina cards need program cpld_fru
-        if smb_fru:
-            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, dev="cpld_fru"):
+        if nic_type == NIC_Type.LINGUA:
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=True, dev="cpld_fru"):
                 self.cli_log_slot_err_lock(slot, "Program ASIC NIC CPLD FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
@@ -3437,31 +3439,62 @@ class mtp_ctrl():
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
-            # for Salina cpld_fru_i2c address will need to match with cpld rev
-            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="cpld_fru_i2c"):
-                self.cli_log_slot_err_lock(slot, "Display SMB NIC CPLD I2C FRU failed")
-                self.mtp_get_nic_err_msg(slot)
-                self.mtp_dump_nic_err_msg(slot)
-                return False
-
-        if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
-            # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to False to program DPU FRU
-            smb_fru = False if nic_type in SALINA_NIC_TYPE_LIST else True
-            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
-                self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
-                self.mtp_get_nic_err_msg(slot)
-                self.mtp_dump_nic_err_msg(slot)
-                return False
-            if nic_type in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_power_cycle():
-                self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
-                self.mtp_get_nic_err_msg(slot)
-                self.mtp_dump_nic_err_msg(slot)
-                return False
-            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+            if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="fru"):
                 self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
                 self.mtp_get_nic_err_msg(slot)
                 self.mtp_dump_nic_err_msg(slot)
                 return False
+        else:
+            # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to True to program smbus FRU
+            smb_fru = True if nic_type in SALINA_NIC_TYPE_LIST else False
+            if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
+                self.cli_log_slot_err_lock(slot, "Program ASIC NIC FRU failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+
+            # for Salina cards need program cpld_fru
+            if smb_fru:
+                if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru, dev="cpld_fru"):
+                    self.cli_log_slot_err_lock(slot, "Program ASIC NIC CPLD FRU failed")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if not self._nic_ctrl_list[slot].nic_power_cycle():
+                    self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="cpld_fru"):
+                    self.cli_log_slot_err_lock(slot, "Display SMB NIC CPLD FRU failed")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                # for Salina cpld_fru_i2c address will need to match with cpld rev
+                if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="cpld_fru_i2c"):
+                    self.cli_log_slot_err_lock(slot, "Display SMB NIC CPLD I2C FRU failed")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+
+            if self._nic_ctrl_list[slot].nic_2nd_fru_exist(pn):
+                # for Salina cards need program SMBus FRU first, then DPU_FRU/2nd PCIe FRU, put smb_fru to False to program DPU FRU
+                smb_fru = False if nic_type in SALINA_NIC_TYPE_LIST else True
+                if not self._nic_ctrl_list[slot].nic_write_fru(date, sn, mac, pn, nic_type, dpn, sku, smb_fru=smb_fru):
+                    self.cli_log_slot_err_lock(slot, "Program SMB NIC FRU failed")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if nic_type in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_power_cycle():
+                    self.cli_log_slot_err_lock(slot, "Failed to Power cycle after FRU program")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+                if not self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True):
+                    self.cli_log_slot_err_lock(slot, "Display SMB NIC FRU failed")
+                    self.mtp_get_nic_err_msg(slot)
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
 
         if nic_type not in SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_read_fru():
             self.cli_log_slot_err_lock(slot, "Display NIC FRU failed")
@@ -4213,7 +4246,7 @@ class mtp_ctrl():
     @parallelize.parallel_nic_using_console
     def mtp_program_nic_efuse(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             return False
 
         if not self._nic_ctrl_list[slot].nic_program_efuse():
@@ -4247,12 +4280,33 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key(self._id):
             self.cli_log_slot_err(slot, "Program NIC Secure Key failed")
-            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+            if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_program_dice_sec_key():
+                self.cli_log_slot_err(slot, "Program NIC Dice Program failed")
+                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+                return False
+
+            if not self._nic_ctrl_list[slot].nic_program_dice_img_sec_key():
+                self.cli_log_slot_err(slot, "Program NIC Dice Image Program failed")
+                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+                return False
+
+            if not self._nic_ctrl_list[slot].nic_check_uboot_sec_key():
+                self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
+                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+                return False
+
+            if nic_type != NIC_Type.LINGUA and not self._nic_ctrl_list[slot].nic_check_uds_cert():
+                self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
+                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+                return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
             self.cli_log_slot_err(slot, "Post cleanup key programming failed")
-            self._nic_ctrl_list[slot].nic_program_sec_key_dump()
+            if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
         # if nic_type in SALINA_NIC_TYPE_LIST:
@@ -4332,6 +4386,13 @@ class mtp_ctrl():
             return False
         return True
 
+    def matera_mtp_dump_nic_boot(self, slot):
+        if not self._nic_ctrl_list[slot].salina_nic_dump_boot():
+            self.cli_log_slot_err_lock(slot, "Dumo NIC boot failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
     def matera_mtp_erase_nic_boot0(self, slot, image_path):
         if not self._nic_ctrl_list[slot].salina_nic_erase_boot0(image_path):
             self.cli_log_slot_inf_lock(slot, "Erase NIC Boot0 failed")
@@ -4344,6 +4405,15 @@ class mtp_ctrl():
             self.cli_log_slot_inf_lock(slot, "Program NIC Boot0 failed")
             self.mtp_dump_nic_err_msg(slot)
             return False
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_nic_clear_pre_uboot_section(self, slot):
+        if not self._nic_ctrl_list[slot].nic_clear_pre_uboot_section():
+            self.cli_log_slot_err(slot, "erase pre-uboot section test failed")
+            self.mtp_get_nic_err_msg(slot)
+            return False
+
         return True
 
     def mtp_copy_nic_cert(self, slot, cert_img, directory="/data/"):
@@ -5525,6 +5595,7 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Execute command {:s} failed".format(cmd))
                 return False
         bus_num = slot + 1 + 2 if self._mtp_type == MTP_TYPE.MATERA else 0
+        nic_type = self.mtp_get_nic_type(slot)
 
         for reg_addr, exp_val in reg_addr2exp_val.items():
             cmd = "i2cget -y {:d} {:s} {:s}".format(bus_num, chip_addr, reg_addr)
@@ -5536,22 +5607,14 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Failed to get command {:s} return value".format(cmd))
                 return False
             if int(match[0], 16) != int(exp_val, 16):
-                self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
-                return False
+                if nic_type in NIC_Type.LINGUA:
+                    if match[0] == "0x32" and int(exp_val, 16) != 8:
+                        self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
+                        return False
+                else:
+                    self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
+                    return False
         return True
-
-    # def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal"):
-
-    #     failed_slot_list = []
-    #     slots_list = slot
-    #     for slot in slots_list:
-    #         if not self._nic_ctrl_list[slot].nic_salina_jtag_mbist(vmarg):
-    #             self.cli_log_slot_err(slot, "NIC JTAG MBIST FAILED")
-    #             self.mtp_get_nic_err_msg(slot)
-    #             failed_slot_list.append(slot)
-    #             continue
-    #         self.cli_log_slot_inf(slot, "NIC JTAG MBIST PASS")
-    #     return failed_slot_list
 
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_salina_jtag_mbist(self, slot, vmarg="normal"):
@@ -5915,6 +5978,7 @@ class mtp_ctrl():
             NIC_Type.LENI48G:         MFG_DIAG_RE.MFG_NIC_TYPE_LENI48G,
             NIC_Type.MALFA:           MFG_DIAG_RE.MFG_NIC_TYPE_MALFA,
             NIC_Type.POLLARA:         MFG_DIAG_RE.MFG_NIC_TYPE_POLLARA,
+            NIC_Type.LINGUA:          MFG_DIAG_RE.MFG_NIC_TYPE_LINGUA,
         }
 
         for nic_type in list(regex_dict.keys()):
@@ -7069,7 +7133,7 @@ class mtp_ctrl():
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
         elif nic_type == NIC_Type.GINESTRA_S4:
             vdd_avs_cmd = MFG_DIAG_CMDS.GINESTRA_AVS_SET_FMT.format(sn, slot+1)
-        elif nic_type in (NIC_Type.POLLARA, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA):
+        elif nic_type in SALINA_NIC_TYPE_LIST:
             # salina avs set command will set both vdd and arm
             vdd_avs_cmd = MFG_DIAG_CMDS.SALINA_AVS_SET_FMT.format(slot+1)
         else:
@@ -7118,6 +7182,7 @@ class mtp_ctrl():
         write_data = 0
         if self._mtp_type == MTP_TYPE.MATERA:
             cmd = MFG_DIAG_CMDS.NIC_I2C_DUMP_POST_FMT.format(slot+3) + " ;"
+            cmd += MFG_DIAG_CMDS.NIC_I2C_DUMP_4B_POST_FMT.format(slot+3) + " ;"
         else:
             cmd = MFG_DIAG_CMDS.MTP_SMB_SEL_FMT.format(slot+1) + " ;"
         cmd += MFG_DIAG_CMDS.MTP_SMB_WR_CPLD_FMT.format(reg_addr, write_data, slot+1)
@@ -7284,8 +7349,8 @@ class mtp_ctrl():
         self.cli_log_slot_inf(slot, cmd)
 
         l1_cmd_tout = MTP_Const.MTP_PARA_ASIC_L1_TEST_TIMEOUT
-        if nic_type == NIC_Type.POLLARA:
-            l1_cmd_tout = MTP_Const.MTP_PARA_POLLARA_ASIC_L1_TEST_TIMEOUT
+        if nic_type in SALINA_AI_NIC_TYPE_LIST:
+            l1_cmd_tout = MTP_Const.SALINA_AI_ASIC_L1_TEST_TIMEOUT
         if nic_type in SALINA_DPU_NIC_TYPE_LIST:
             l1_cmd_tout = MTP_Const.SALINA_DPU_ASIC_L1_TEST_TIMEOUT
 

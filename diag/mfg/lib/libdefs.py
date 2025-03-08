@@ -36,6 +36,7 @@ class NIC_Type:
     LENI48G = "LENI48G"
     MALFA = "MALFA"
     POLLARA = "POLLARA"
+    LINGUA = "LINGUA"
     UNKNOWN = "Unknown"
 
 class PRODUCT_SKU(Enum):
@@ -209,7 +210,7 @@ class MTP_Const:
     MTP_PARA_TEST_TIMEOUT = 30*60
     # para/asic l1 test, 30 min
     MTP_PARA_ASIC_L1_TEST_TIMEOUT = 30*60
-    MTP_PARA_POLLARA_ASIC_L1_TEST_TIMEOUT = 60*15
+    SALINA_AI_ASIC_L1_TEST_TIMEOUT = 60*15
     SALINA_DPU_ASIC_L1_TEST_TIMEOUT = 60*60
     MTP_L1_HEALTH_CHECK_TIMEOUT = 10*60
 
@@ -281,6 +282,7 @@ class MTP_DIAG_Logfile:
     MATERA_ONBOARD_ASIC_LOG_FILES = "find /home/diag/diag/asic/asic_src/ip/cosim/tclsh -maxdepth 1 -type f -regex '.*.log' -not -name 'snake_slot*log' -not -name 'pcie_prbs*log' -exec mv {{}} {:s} \\; "
     ONBOARD_ASIC_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*log"
     ONBOARD_CSP_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*txt"
+    ONBOARD_BIN_LOG_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*_esec_backup.bin"
     ONBOARD_ASIC_DUMP_FILES = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/*tar"
     ONBOARD_NIC_LOG_FILES = "/home/diag/diag/nic_log/*"
     ONBOARD_ASIC_LOG_DIR = "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/"
@@ -446,6 +448,8 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_PRE_FMT         = "python2 ./esec_ctrl.py -slot {:d} -img_prog"
     NIC_ESEC_PROG_POST_FMT        = "python2 ./esec_ctrl.py -cleanup"
     NIC_ESEC_CPLD_CHECK_FMT       = "python2 ./esec_ctrl.py -check_uboot -slot {:d} -post_check"
+    NIC_ESEC_SALINA_CPLD_CHECK_FMT= "./esec_ctrl.py -check_uboot -slot {:d}"
+    NIC_ESEC_SALINA_UDS_CERT_FMT  = "./esec_ctrl.py -check_uds_cert -slot {:d}"
     NIC_EFUSE_PROG_ELBA_MODEL_FMT = "python2 ./esec_ctrl.py -efuse_prog -d -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
     NIC_EFUSE_PROG_ELBA_FMT       = "python2 ./esec_ctrl.py -efuse_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
     NIC_ESEC_PROG_FMT             = "python2 ./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"
@@ -453,6 +457,8 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_DUMP_FMT        = "python2 ./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
     NIC_ESEC_PROG_QSPI_DUMP_FMT   = "tclsh qspi_esec_data_dump.tcl -slot {:d} -mode {:s}"
     NIC_ESEC_HW_LOCK_FMT          = "sal_esecure_lockbits.sh {:d} 0x30 0xAB"
+    NIC_ESEC_PROG_DICE_SALINA_FMT = "./esec_ctrl.py -dice_prog -slot {:d} -sn {:s}"
+    NIC_ESEC_PROG_DICE_IMG_SALINA_FMT = "./esec_ctrl.py -dice_img_prog -slot {:d}"
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
@@ -465,6 +471,7 @@ class MFG_DIAG_CMDS:
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
     SALINA_NIC_VMARG_SET_FMT = "tclsh /home/diag/diag/scripts/asic/leni_vmarg.tcl {} {} {}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
+    MTP_MATERA_SWI_CHECK_FMT = "/home/diag/diag/scripts/check_python.sh"
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
     SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
@@ -480,8 +487,10 @@ class MFG_DIAG_CMDS:
     NIC_GET_EMMC_PARTITION_FMT = "sgdisk -p /dev/mmcblk0"
     NIC_ERASE_EMMC_PARTITION_FMT = "dd if=/dev/zero of=/dev/mmcblk0p{:d} bs=512 count=16"
     NIC_ERASE_QSPI_FMT = "fpgautil flash {:s} 1 sectorerase all"
+    NIC_DUMP_BOOT_FMT = "fpgautil flash {:s} 1 generatefile 0 0x100000 {:s}/{:s}_esec_backup.bin"
     SALINA_NIC_ERASE_BOOT0_FMT = "./qspi_erase_boot0.sh {:s}"
     SALINA_NIC_PROGRAM_BOOT0_FMT = "./qspi_prog_boot0.sh {:s}"
+    SALINA_ESEC_QSPI_ERASE_FMT = "./esec_qspi_erase.sh {:s}"
 
     # Naples100: core_freq=833 arm_freq=1600
     NAPLES100_VDD_AVS_SET_FMT = "tclsh8.6 set_avs.tcl -sn {:s} -slot {:d} -arm_vdd vdd -core_freq 833 -arm_freq 1600"
@@ -541,6 +550,7 @@ class MFG_DIAG_CMDS:
     NIC_PRESENT_DISP_FMT = "inventory -present"
     NIC_AVS_POST_FMT = "inventory -sts -slot {:d}"
     NIC_I2C_DUMP_POST_FMT = "i2cdump -y {:d} 0x4a"
+    NIC_I2C_DUMP_4B_POST_FMT = "i2cdump -y {:d} 0x4b"
 
     NIC_ENA_ESEC_WRITE_PROT_FMT = "nic_test.py -ena_esec_wp -slot_list='{:s}'"
     NIC_DIS_ESEC_WRITE_PROT_FMT = "nic_test.py -dis_esec_wp -slot_list='{:s}'"
@@ -722,6 +732,9 @@ class MFG_DIAG_SIG:
     NIC_ESEC_PROG_PRE_SIG = "IMG PROG PASSED"
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
     NIC_ESEC_CPLD_VERIFY_SIG = "EK validated"
+    NIC_SALINA_ESEC_CPLD_VERIFY_SIG = "EK VALIDATION PASSED"
+    NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
+    NIC_ESEC_DICE_PROG_SIG = "ESEC PROG PASSED"
     NIC_FWUPDATE_FAIL_SIG = "FATAL"
     NIC_UBOOT_PCIE_ENA_SIG = "setenv pcie_poll_disable"
     NIC_UBOOT_PCIE_DIS_SIG = "setenv pcie_poll_disable 1"
@@ -785,3 +798,4 @@ class MFG_DIAG_RE:
     MFG_NIC_TYPE_LENI = r"\bUUT_(\d+) +LENI\b"
     MFG_NIC_TYPE_LENI48G = r"\bUUT_(\d+) +LENI48G\b"
     MFG_NIC_TYPE_POLLARA = r"\bUUT_(\d+) +POLLARA\b"
+    MFG_NIC_TYPE_LINGUA = r"\bUUT_(\d+) +LINGUA\b"

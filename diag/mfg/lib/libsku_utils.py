@@ -93,7 +93,8 @@ class PART_NUMBERS_MATCH:
     GINESTRA_S4_PN_FMT = r"68-0076-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0076-01 01    GINESTRA_S4
     LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                      #102-P10800-00B 01  LENI
     LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                   #102-P10801-00B 01  LENI48G
-    POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                 #102-P11100-00B 01  OLLARA
+    POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                 #102-P11100-00B 01  POLLARA
+    LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                  #102-P11500-00B 01  LINGUA
     MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{2})?"                                        #102-P10600-00 01   MALFA
 
 SN_FORMAT_TABLE = {
@@ -138,6 +139,7 @@ SN_FORMAT_TABLE = {
         PART_NUMBERS_MATCH.LENI48G_PN_FMT:                  "FPK" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.MALFA_PN_FMT:                    "PFP" + FLX_SN_SUFFIX_FMT + "|" + "FPF" + FLX_SN_SUFFIX_FMT,
         PART_NUMBERS_MATCH.POLLARA_PN_FMT:                  "FPL" + FLX_SN_SUFFIX_FMT,
+        PART_NUMBERS_MATCH.LINGUA_PN_FMT:                   "FPM" + FLX_SN_SUFFIX_FMT,
         "DEFAULT":                                          "FPF" + FLX_SN_SUFFIX_FMT
     },
     Factory.FSP: {
@@ -297,6 +299,9 @@ PN_FORMAT_TABLE = {
     NIC_Type.POLLARA: [
         PART_NUMBERS_MATCH.POLLARA_PN_FMT                       #102-P11100-00    POLLARA
         ],
+    NIC_Type.LINGUA: [
+        PART_NUMBERS_MATCH.LINGUA_PN_FMT                        #102-P11500-00    LINGUA
+        ],
     NIC_Type.MALFA: [
         PART_NUMBERS_MATCH.MALFA_PN_FMT                         #102-P10600-0 01    MALFA
         ]
@@ -405,6 +410,8 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.POLLARA
     elif "AI-NIC400-1Q400-P" in pn:
         product_name = NIC_Type.POLLARA
+    elif "LINGUA-1Q400P" in pn:
+        product_name = NIC_Type.LINGUA
     elif "DSC3-2Q400-48R64E64P" in pn:
         product_name = NIC_Type.LENI48G
     else:

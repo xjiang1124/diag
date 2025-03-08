@@ -599,7 +599,9 @@ def main():
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
             run_dl_test(ecpld_list, "NIC_PWRCYC")
-            run_dl_test(ecpld_list, "CPLD_RUNNING_VER_CHK_FROM_MTP")
+            chk_ver_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            if len(chk_ver_list) > 0:
+                run_dl_test(chk_ver_list, "CPLD_RUNNING_VER_CHK_FROM_MTP")
 
             # program the qspi, before initializing emmc
             ## 1. setup mgmt

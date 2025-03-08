@@ -467,7 +467,7 @@ def run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, stage, force_sequent
             if nic_type in (NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.LENI):
                 # assuming running ASIC L1 rom j2c first then run from one wire,  run only ONCE from both J2C  and one wire
                 number_of_l1_tests = 9 if joo == '1' else 4
-            if nic_type in (NIC_Type.POLLARA):
+            if nic_type in (NIC_Type.POLLARA, NIC_Type.LINGUA):
                 number_of_l1_tests = 8 if joo == '1' else 4
             err_msg_list = list()
             if pass_count != number_of_l1_tests:

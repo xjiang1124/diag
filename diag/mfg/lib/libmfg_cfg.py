@@ -856,6 +856,71 @@ class NIC_IMAGES:
     firmware_config_dtb["POLLARA-1Q400P"] = "salina/pollara/ainic_1.105.0-a-51/mainfw/salina/firmware_config_POLLARA-1Q400P.dtb"
     qspi_prog_sh_img["POLLARA-1Q400P"] = "salina/pollara/ainic_1.105.0-a-51/qspi_prog.sh"
 
+    # Lingua is AINIC, No N1 firmware image
+    cpld_img["LINGUA"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    cpld_ver["LINGUA"] = "0x1"
+    cpld_dat["LINGUA"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    sec_cpld_img["LINGUA"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    sec_cpld_ver["LINGUA"] = "0x1"
+    sec_cpld_dat["LINGUA"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    fail_cpld_img["LINGUA"] = "salina_cfg1-rev0_12_0304-1532_ocpFruSlotID.bin"
+    fail_cpld_ver["LINGUA"] = "0x1"
+    fail_cpld_dat["LINGUA"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    fea_cpld_img["LINGUA"] = ""
+    ufm1_img["LINGUA"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/boot0.img"
+    arm_a_uboota_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_ubootb_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_ubootg_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_zephyr_a_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_b_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_gold_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/firmware_config_hw_board_id_0x04670001.dtb"
+    qspi_prog_sh_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/qspi_prog.sh"
+    qspi_snake_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup.tar.gz"
+    mbist_boot0_img["LINGUA"] = "salina/lingua/ainic_boot0.tar.gz"
+
+    cpld_img["58-0005-01"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    cpld_ver["58-0005-01"] = "0x1"
+    cpld_dat["58-0005-01"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0005-01"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    sec_cpld_ver["58-0005-01"] = "0x1"
+    sec_cpld_dat["58-0005-01"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0005-01"] = "salina_cfg1-rev0_12_0304-1532_ocpFruSlotID.bin"
+    fail_cpld_ver["58-0005-01"] = "0x1"
+    fail_cpld_dat["58-0005-01"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    ufm1_img["58-0005-01"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/boot0.img"
+    arm_a_uboota_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_ubootb_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_ubootg_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/uboota.img"
+    arm_a_zephyr_a_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_b_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_gold_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/firmware_config_hw_board_id_0x04670001.dtb"
+    qspi_prog_sh_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup/qspi_prog.sh"
+    qspi_snake_img["58-0005-01"] = "salina/lingua/ainic_lingua_bringup.tar.gz"
+
+    cpld_img["LINGUA-1Q400P"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    cpld_ver["LINGUA-1Q400P"] = "0x1"
+    cpld_dat["LINGUA-1Q400P"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    sec_cpld_img["LINGUA-1Q400P"] = "salina_cfg0-rev0_12_0304-1532_ocpFruSlotID.bin"
+    sec_cpld_ver["LINGUA-1Q400P"] = "0x1"
+    sec_cpld_dat["LINGUA-1Q400P"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    fail_cpld_img["LINGUA-1Q400P"] = "salina_cfg1-rev0_12_0304-1532_ocpFruSlotID.bin"
+    fail_cpld_ver["LINGUA-1Q400P"] = "0x1"
+    fail_cpld_dat["LINGUA-1Q400P"] = "03-04-25_15:32" #mm-dd-YY_HH:MM
+    ufm1_img["LINGUA-1Q400P"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/boot0.img"
+    arm_a_uboota_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/uboota.img"
+    arm_a_ubootb_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/ubootb.img"
+    arm_a_ubootg_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/goldfw/salina/ubootg.img"
+    arm_a_zephyr_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/zephyr.img"
+    arm_a_zephyr_a_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/zephyr.img"
+    arm_a_zephyr_b_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/zephyr.img"
+    arm_a_zephyr_gold_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/goldfw/salina/zephyr.img"
+    device_config_dtb["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/device_config.dtb"
+    firmware_config_dtb["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/mainfw/salina/firmware_config_POLLARA-1Q400P.dtb"
+    qspi_prog_sh_img["LINGUA-1Q400P"] = "salina/lingua/ainic_1.109.0-18/qspi_prog.sh"
+
 class MTP_IMAGES:
     amd64_img = dict()
     arm64_img = dict()
@@ -1166,7 +1231,7 @@ MFG_VALID_NIC_TYPE_LIST = [
     NIC_Type.NAPLES100, NIC_Type.NAPLES25, NIC_Type.VOMERO2, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25OCP, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.NAPLES25SWMDELL,
     NIC_Type.NAPLES25SWM833, NIC_Type.ORTANO2, NIC_Type.POMONTEDELL, NIC_Type.LACONA32DELL, NIC_Type.LACONA32, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4,
-    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
     ]
 MFG_PROTO_NIC_TYPE_LIST = [NIC_Type.FORIO, NIC_Type.VOMERO, NIC_Type.ORTANO]
 
@@ -1183,7 +1248,7 @@ MTP_REV04_CAPABLE_NIC_TYPE_LIST = [
     ]
 
 MTP_MATERA_CAPABLE_NIC_TYPE_LIST = [
-    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA
+    NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
     ]
 
 CAPRI_NIC_TYPE_LIST = [NIC_Type.NAPLES100, NIC_Type.NAPLES100IBM, NIC_Type.NAPLES100HPE, NIC_Type.NAPLES100DELL, NIC_Type.VOMERO2, NIC_Type.NAPLES25, NIC_Type.NAPLES25SWM, NIC_Type.NAPLES25SWMDELL, NIC_Type.NAPLES25SWM833, NIC_Type.NAPLES25OCP]
@@ -1199,7 +1264,7 @@ SALINA_DPU_NIC_TYPE_LIST = [
     NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA
     ]
 SALINA_AI_NIC_TYPE_LIST = [
-    NIC_Type.POLLARA
+    NIC_Type.POLLARA, NIC_Type.LINGUA
     ]
 
 SALINA_NIC_TYPE_LIST = SALINA_DPU_NIC_TYPE_LIST + SALINA_AI_NIC_TYPE_LIST
@@ -1214,7 +1279,7 @@ FAILSAFE_CPLD_TYPE_LIST = [
     NIC_Type.ORTANO2, NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2INTERP,
     NIC_Type.ORTANO2SOLO, NIC_Type.ORTANO2SOLOORCTHS, NIC_Type.ORTANO2SOLOMSFT, NIC_Type.ORTANO2SOLOS4,
     NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4,
-    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA
+    NIC_Type.GINESTRA_D4, NIC_Type.GINESTRA_D5, NIC_Type.GINESTRA_S4, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA, NIC_Type.LINGUA
     ]
 ADI_VRM_TYPE_LIST = [
     NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4
