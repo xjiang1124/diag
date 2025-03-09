@@ -8,12 +8,14 @@ import shlex
 import sys
 import time
 import subprocess
+import hashlib
 from collections import OrderedDict
 
 sys.path.append("../lib")
 sys.path.append("../regression")
 import common
 from nic_con import nic_con
+import sal_con
 
 def parse_args_diag():
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -44,13 +46,21 @@ def parse_args_diag():
         action='store_true',
         help="OTP init")
     group.add_argument(
+        "-dice_prog", "--dice_prog", 
+        action='store_true',
+        help="DICE UDS program")
+    group.add_argument(
         "-cleanup", "--cleanup", 
         action='store_true',
         help="Clean up")
     group.add_argument(
         "-check_uboot", "--check_uboot", 
         action='store_true',
-        help="Clean up")
+        help="Check chip certificate CRC32")
+    group.add_argument(
+        "-check_uds_cert", "--check_uds_cert", 
+        action='store_true',
+        help="Check UDS certificate checksum")
     group.add_argument(
         "-ek_crc", "--ek_crc", 
         action='store_true',
@@ -64,6 +74,10 @@ def parse_args_diag():
         action='store_true',
         help="Program QSPI images")
     group.add_argument(
+        "-dice_img_prog", "--dice_img_prog", 
+        action='store_true',
+        help="Program DICE QSPI images")
+    group.add_argument(
         "-key_prog_all", "--key_prog_all", 
         action='store_true',
         help="Quick path to program secure key")
@@ -76,9 +90,17 @@ def parse_args_diag():
         action='store_true',
         help="Show ESEC related info")
     group.add_argument(
+        "-dice_entropy_prog", "--dice_entropy_prog", 
+        action='store_true',
+        help="Program entropy for DICE")
+    group.add_argument(
         "-efuse_prog", "--efuse_prog", 
         action='store_true',
         help="Program pac to efuse")
+    group.add_argument(
+        "-hmac_fuse_prog", "--hmac_fuse_prog", 
+        action='store_true',
+        help="Program hmac fuse")
     group.add_argument(
         "-efuse_test", "--efuse_test", 
         action='store_true',
@@ -137,6 +159,10 @@ def parse_args_diag():
         "--brd_name",
         #required=True,
         help="Product name")
+    parser.add_argument(
+        "-hmac_file",
+        "--hmac_file",
+        help="HMAC file name which contains 512 bits hex value")
     parser.add_argument(
         "-mtp",
         "--mtp",
@@ -587,12 +613,6 @@ PRIVEK <ek.sk>"""
                 # Move forward
                 break
 
-        file1 = open("/home/diag/diag/tools/pki/crc32_ek.bin", "r+")
-        crc32_ek = file1.read()
-        crc32_ek = crc32_ek[:-1]
-        print("crc32_ek:", crc32_ek)
-        file1.close()
-
         if ret != 0:
             print("=== ESEC PROG FAILED ===")
             return ret
@@ -602,8 +622,14 @@ PRIVEK <ek.sk>"""
         print ("slot:", slot)
         asic_type = self.get_asic_type(card_type)
         if asic_type == "SALINA":
-            print("Skip uboot check")
+            print("Skip check uboot in this process")
         else:
+            file1 = open("/home/diag/diag/tools/pki/crc32_ek.bin", "r+")
+            crc32_ek = file1.read()
+            crc32_ek = crc32_ek[:-1]
+            print("crc32_ek:", crc32_ek)
+            file1.close()
+
             [ret, crc32_ek_uboot] = self.check_uboot_esec(int(slot))
             if ret != 0:
                 print("=== Failed to check ESEC in uboot ===")
@@ -637,6 +663,85 @@ PRIVEK <ek.sk>"""
             print("=== ESEC PROG/VALICATION PASSED ===")
         else:
             print("=== ESEC PROG FAILED ===")
+
+        return ret
+
+    def check_dice_esec(self, slot):
+        expstr = ["uart:"]
+        ret = 0
+        md5sum_cert = ""
+        md5sum_uboot= ""
+        session = common.session_start()
+        #cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
+        cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0xbd 0xbd".format(slot)
+        common.session_cmd(session, cmd)
+        time.sleep(5)
+        ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True, v12_reset="v12_reset")
+        if ret != 0:
+            print("Failed to boot to zephyr prompt")
+            cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
+            common.session_cmd(session, cmd)
+            common.session_stop(session)
+            return ret
+
+        # Find md5sum
+        ret = self.nic_con.uart_session_start(session, slot, uart_id=0)
+        if ret != 0:
+            print("Failed to enter zephyr prompt")
+            self.nic_con.uart_session_stop(session_uart)
+            cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
+            common.session_cmd(session, cmd)
+            common.session_stop(session)
+            return ret
+
+        self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
+        src_str = session.before
+        index = src_str.find("MD5 Checksum (Hex) :", 1)
+        if index == -1 or index == len(src_str) - len("MD5 Checksum (Hex) :"):
+            print("=== Failed to get md5sum from zephyr ===")
+            print("=== DICE VALIDATION FAILED ===")
+            ret = -1
+        else:
+            result = src_str[index + len("MD5 Checksum (Hex) :"):]
+            result = result.split()
+            md5sum_uboot = result[0]
+            print("got md5sum", md5sum_uboot)
+
+        self.nic_con.uart_session_stop(session)
+        cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
+        common.session_cmd(session, cmd)
+        common.session_stop(session)
+
+        file = open("/home/diag/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.crt", "r+")
+        md5sum_cert = file.read()
+        file.close()
+        md5sum_cert = hashlib.md5(md5sum_cert).hexdigest()
+        print("md5sum cert:", md5sum_cert, "md5sum uboot", md5sum_uboot)
+
+        if md5sum_cert == md5sum_uboot:
+            print("=== DICE VALIDATION PASSED ===")
+        else:
+            print("md5sum check failed; Caculated:", md5sum_cert, "Uboot:", md5sum_uboot)
+            print("=== DICE VALIDATION FAILED ===")
+
+        return [ret, md5sum_uboot]
+
+    def dice_prog(self, client_key, client_cert, trust_roots, backend_url, slot, sn):
+        os.chdir("/home/diag/diag/scripts/asic/")
+        common.bash_prompt = '\$ '
+        cmd = "tclsh /home/diag/diag/scripts/asic/esec_prog_salina.tcl -stage esec_dice_all\
+               -slot {} -sn {} -client_key \"{}\" -client_cert \"{}\" -trust_roots \"{}\" -backend_url \"{}\"".\
+               format(slot, sn, client_key, client_cert, trust_roots, backend_url)
+        print(cmd)
+        pass_sign = "ESEC PROG PASSED"
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+        common.session_stop(session)
+
+        if ret == 0:
+            print("=== DICE PROG PASSED ===")
+        else:
+            print("=== DICE PROG FAILED ===")
 
         return ret
 
@@ -729,15 +834,29 @@ PRIVEK <ek.sk>"""
         return ret
 
     def check_uboot_esec(self, slot, post_check=False):
+        card_type = os.environ['UUT_{}'.format(slot)]
+        asic_type = self.get_asic_type(card_type)
+
         expstr = ["Capri# ", "DSC# "]
         ret = 0
         crc32_ek = ""
         session = common.session_start()
-        ret = self.nic_con.enter_uboot_esec(session, slot)
+        if asic_type == "SALINA":
+            file1 = open("/home/diag/diag/tools/pki/crc32_ek.bin", "r+")
+            crc32_ek_file = file1.read()
+            crc32_ek_file = crc32_ek_file[:-1]
+            print("crc32_ek:", crc32_ek_file)
+            file1.close()
+
+            cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
+            common.session_cmd(session, cmd)
+            ret = self.nic_con.enter_uboot_salina(session, slot, uart_id=0, v12_reset="v12_reset")
+        else:
+            ret = self.nic_con.enter_uboot_esec(session, slot)
         if ret != 0:
             print("Failed to enter uboot")
             return ret
-        ret = self.nic_con.conn_uboot(session, slot)
+        ret = self.nic_con.conn_uboot(session, slot, 0)
         if ret != 0:
             print("Failed to connect uboot")
             return ret
@@ -757,8 +876,15 @@ PRIVEK <ek.sk>"""
             print("CRC32 not found")
             ret = -1
         else:
-            print("EK validated")
             crc32_ek = result.group(1)
+            if asic_type == "SALINA":
+                if crc32_ek != crc32_ek_file:
+                    print("EK VALIDATION FAILED")
+                    ret = -1
+                else:    
+                    print("EK VALIDATION PASSED")
+            else:
+                print("EK validated")
             ret = 0
 
         time.sleep(2)
@@ -780,6 +906,66 @@ PRIVEK <ek.sk>"""
             print("IMG PROG PASSED")
         else:
             print("IMG PROG FAILED")
+
+        return ret
+
+    def dice_img_prog(self, slot):
+        cmd = "/home/diag/diag/python/esec/scripts/esec_prog.sh -dice_img_prog -slot {}".format(slot)
+        ret = 0
+        pass_sign = "ESEC PROG PASSED"
+
+        session = common.session_start()
+        ret = common.session_cmd_pass(session, cmd, pass_sign, 240)
+        common.session_stop(session)
+
+        if ret == 0:
+            print("DICE IMG PROG PASSED")
+        else:
+            print("DICE IMG PROG FAILED")
+
+        return ret
+
+    def dice_entropy_prog(self, sn, slot, dry_run):
+        ret = 0
+        dr = 0
+        if dry_run == True:
+            dr = 1
+
+        os.chdir("/home/diag/diag/tools/pki")
+        cmd_fmt = "python2.7 ./client_dice.py -k dice_certs/client.key.pem -c dice_certs/client.crt.pem -t dice_certs/rootca.crt -b '10.11.18.71:13366' -sn {} -n 32 -hsm_rn"
+        cmd = cmd_fmt.format(sn)
+        cmd_list = shlex.split(cmd)
+        output = subprocess.check_output(cmd_list)
+        print(output)
+
+        ma = re.compile(r".*Fetched 32 random bytes:*")
+        src_str = "".join(output.splitlines())
+        result = ma.match(src_str)
+        if result == None:
+            print("HSM RN not found")
+            return -1
+        else:
+            hsm_rn = result.group(1)
+            hsm_rn = hsm_rn.upper()
+            print("HSM RN:", hsm_rn)
+            print("HSM RN Generated from HSB successful")
+
+    def hmac_fuse_prog(self, slot, card_type, hamc_file, dry_run):
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "SALINA":
+            cmd = "tclsh /home/diag/diag/scripts/asic/sal_hmac_prog.tcl {} {} {}".format(slot, hsm_file, dr) 
+            print(cmd)
+            pass_sign = "EFUSE PROG PASSED"
+            session = common.session_start()
+            ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+            common.session_stop(session)
+        else:
+            print("feature is not supported for ASICs other than SALINA")
+
+        if ret == 0:
+            print("EFUSE PROG PASSED")
+        else:
+            print("EFUSE PROG FAILED")
 
         return ret
 
@@ -807,27 +993,36 @@ PRIVEK <ek.sk>"""
             hsm_rn = hsm_rn.upper()
             print("HSM RN:", hsm_rn)
 
-        nic_con1 = nic_con()
-        nic_con1.switch_console(int(slot))
-        session = common.session_start()
-        session.timeout = 60
-
-        nic_con1.uart_session_start(session, slot)
-        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x2a")
-        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
-        nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
-
-        if card_type == "GINESTRA_D4" or card_type == "GINESTRA_D5":
-            cmd = "./diag.exe gig_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+        asic_type = self.get_asic_type(card_type)
+        if asic_type == "SALINA":
+            cmd = "tclsh /home/diag/diag/scripts/asic/sal_efuse_prog.tcl {} {} {}".format(slot, hsm_rn, dr) 
+            print(cmd)
+            pass_sign = "EFUSE PROG PASSED"
+            session = common.session_start()
+            ret = common.session_cmd_pass(session, cmd, pass_sign, 300)
+            common.session_stop(session)
         else:
-            cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
-        ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
+            nic_con1 = nic_con()
+            nic_con1.switch_console(int(slot))
+            session = common.session_start()
+            session.timeout = 60
 
-        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")
-        nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+            nic_con1.uart_session_start(session, slot)
+            nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0x2a")
+            nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+            nic_con1.uart_session_cmd(session, "cd /data/nic_arm/nic/asic_src/ip/cosim/tclsh")
 
-        nic_con1.uart_session_stop(session)
-        common.session_stop(session)
+            if card_type == "GINESTRA_D4" or card_type == "GINESTRA_D5":
+                cmd = "./diag.exe gig_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+            else:
+                cmd = "./diag.exe elb_efuse_prog.tcl {} {}".format(hsm_rn, dr)
+            ret = nic_con1.uart_session_cmd_sig(session, cmd, timeout=120, sig=["EFUSE PROG PASSED", "EFUSE PROG FAILED"])
+
+            nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -w 1 0xa")
+            nic_con1.uart_session_cmd(session, "/data/nic_util/xo3dcpld -r 1")
+
+            nic_con1.uart_session_stop(session)
+            common.session_stop(session)
 
         if ret == 0:
             print("EFUSE PROG PASSED")
@@ -908,8 +1103,17 @@ if __name__ == "__main__":
                 args.sn, args.slot, args.pn, args.mac, card_type, args.mtp, args.sku, args.fast_path)
         sys.exit(ret)
 
+    if args.dice_prog == True:
+        esec_ctrl.dice_prog(args.client_key, args.client_cert, args.trust_roots, args.backend_url,\
+                args.slot, args.sn)
+        sys.exit()
+
     if args.check_uboot == True:
         esec_ctrl.check_uboot_esec(int(args.slot), args.post_check)
+        sys.exit()
+
+    if args.check_uds_cert == True:
+        esec_ctrl.check_dice_esec(int(args.slot))
         sys.exit()
 
     if args.ek_crc == True:
@@ -929,9 +1133,21 @@ if __name__ == "__main__":
         ret = esec_ctrl.img_prog(int(args.slot))
         sys.exit(ret)
 
+    if args.dice_img_prog == True:
+        esec_ctrl.dice_img_prog(int(args.slot))
+        sys.exit()
+
+    if args.dice_entropy_prog == True:
+        esec_ctrl.dice_entropy_prog(args.sn, int(args.slot), args.dry_run)
+        sys.exit()
+
     if args.efuse_prog == True:
         esec_ctrl.efuse_prog(args.sn, int(args.slot), args.pn, args.mac, card_type, args.mtp, args.client_key,\
                 args.client_cert, args.trust_roots, args.backend_url, args.dry_run)
+        sys.exit()
+
+    if args.hmac_fuse_prog == True:
+        esec_ctrl.hmac_fuse_prog(int(args.slot), card_type, args.hmac_file, args.dry_run)
         sys.exit()
 
     if args.boot_test == True:

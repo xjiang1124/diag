@@ -189,8 +189,9 @@ img_prog () {
     elba_ibm_host_img="images/elba_ibm_boot_nonsec_packed.hex"
     giglio_esec_img="images/giglio_firmware_cortex_m0_20181121_packed.hex"
     giglio_host_img="images/giglio_boot_nonsec_packed.hex"
-    salina_esec_img="images/salina_softrom_cortex_m0.mif"
-    salina_host_img="images/salina_boot_nonsec_packed.hex"
+    salina_esec_img="images/sal_softrom_cortex_m0.hex"
+    salina_host_img="images/sal_pentrust_cortex_m0.hex"
+    salina_nonsec_img="images/sal_boot_nonsec.hex"
 
     uut="UUT_$SLOT"
     card_type="${!uut}"
@@ -204,38 +205,71 @@ img_prog () {
         tcl_file="./esec_prog_elba.tcl"
         if [[ $PN == *"68-0028"* ]];then
             esec_img=$elba_ibm_esec_img
-            host_img=$elba_ibm_host_img
+            host_img1=$elba_ibm_host_img
         else 
             esec_img=$elba_esec_img
-            host_img=$elba_host_img
+            host_img1=$elba_host_img
         fi
+        host_img2=$elba_ibm_host_img
     elif [[ $asic_type == "GIGLIO" ]]
     then
         echo "GIGLIO"
         tcl_file="./esec_prog_giglio.tcl"
         esec_img=$giglio_esec_img
-        host_img=$giglio_host_img
+        host_img1=$giglio_host_img
+        host_img2=$giglio_host_img
     elif [[ $asic_type == "SALINA" ]]
     then
         echo "SALINA"
         tcl_file="./esec_prog_salina.tcl"
+        fw_ptr_img="images/esecure_fw_ptr.hex"
         esec_img=$salina_esec_img
-        host_img=$salina_host_img
+        host_img1=$salina_host_img
+        host_img2=$salina_nonsec_img
     else
         echo "CAPRI"
         tcl_file="./esec_prog.tcl"
         if [[ $card_type = "VOMERO2" ]]
         then
             esec_img=$orcl_esec_img
-            host_img=$orcl_host_img
+            host_img1=$orcl_host_img
+            host_img2=$orcl_host_img
         else
             esec_img=$generic_esec_img
-            host_img=$generic_host_img
+            host_img1=$generic_host_img
+            host_img2=$generic_host_img
         fi
     fi
-    echo "slot: $SLOT; esec_img: $esec_img; host_img: $host_img; card_type: $card_type"
+    echo "slot: $SLOT; esec_img: $esec_img; host_img1: $host_img1; host_img2: $host_img2; card_type: $card_type"
 
-    tclsh $tcl_file -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img -host_2 $host_img
+    tclsh $tcl_file -stage IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -esec_1 $esec_img -esec_2 $esec_img -host_1 $host_img1 -host_2 $host_img2
+}
+
+dice_img_prog () {
+    cd $DIAG_HOME/diag/scripts/asic/
+    fw_ptr_img="images/esecure_fw_ptr.hex"
+    pentrust="images/sal_pentrust_cortex_m0.hex"
+    nonesec="images/sal_boot_nonsec.hex"
+
+    uut="UUT_$SLOT"
+    card_type="${!uut}"
+
+    asic_type=$(get_asic_type $card_type)
+    echo "asic_type: $asic_type"
+
+    if [[ $asic_type == "SALINA" ]]
+    then
+        echo "SALINA"
+        tcl_file="./esec_prog_salina.tcl"
+        pentrust_img=$pentrust
+        non_esec_img=$nonesec
+    else
+        echo "Not valid call for non-SALINA cards"
+        exit 0
+    fi
+
+    echo "slot: $SLOT; pentrust_img  $pentrust; non_esec_img $nonesec; card_type: $card_type" 
+    tclsh $tcl_file -stage DICE_IMG_PROG -slot $SLOT -fw_ptr $fw_ptr_img -pentrust_1 $pentrust -pentrust_2 $pentrust -non_esec_1 $non_esec_img -non_esec_2 $non_esec_img
 }
 
 efuse_prog () {
@@ -322,6 +356,9 @@ cleanup () {
     rm $DIAG_HOME/diag/tools/barco/otp_files/*pk
     rm $DIAG_HOME/diag/tools/barco/otp_files/chipcert.der
     rm $ASIC_SRC/ip/cosim/tclsh/images/OTP*hex
+    rm $ASIC_SRC/ip/cosim/tclsh/images/entropy*.txt
+    rm $ASIC_SRC/ip/cosim/tclsh/images/uds_csr_der.crt*
+    rm $ASIC_SRC/ip/cosim/tclsh/images/uds_csr_der.crt.tmp*
 
     echo "Clean up done"
 }
@@ -434,6 +471,11 @@ case $key in
     shift # past argument
     ;;
     #-------------
+    -dice_img_prog|--dice_img_prog)
+    DICE_IMG_PROG=TRUE
+    shift # past argument
+    ;;
+    #-------------
     -efuse_prog|--efuse_prog)
     EFUSE_PROG=TRUE
     shift # past argument
@@ -523,6 +565,11 @@ fi
 if [[ $IMG_PROG == TRUE ]]
 then
     img_prog
+fi
+
+if [[ $DICE_IMG_PROG == TRUE ]]
+then
+    dice_img_prog
 fi
 
 if [[ $EFUSE_PROG == TRUE ]]

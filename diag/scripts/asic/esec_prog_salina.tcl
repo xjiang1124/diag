@@ -22,6 +22,10 @@ set parameters {
     {esec_2.arg      ""              "Esecure image 2"}
     {host_1.arg      ""              "Host image 1"}
     {host_2.arg      ""              "Host image 2"}
+    {pentrust_1.arg  ""              "Pentrust image 1"}
+    {pentrust_2.arg  ""              "Pentrust image 2"}
+    {non_esec_1.arg  ""              "non esec image 1"}
+    {non_esec_2.arg  ""              "non esec image 2"}
     {pn.arg          ""              "Part Number"}
     {mac.arg         ""              "MAC address"}
     {mtp.arg         ""              "MTP name"}
@@ -51,6 +55,10 @@ set esec_1      $options(esec_1)
 set esec_2      $options(esec_2)
 set host_1      $options(host_1)
 set host_2      $options(host_2)
+set pentrust_1  $options(pentrust_1)
+set pentrust_2  $options(pentrust_2)
+set non_esec_1  $options(non_esec_1)
+set non_esec_2  $options(non_esec_2)
 set pn          $options(pn)
 set mac         $options(mac)
 
@@ -223,37 +231,110 @@ proc img_prog {slot fw_ptr esec_1 esec_2 host_1 host_2} {
     puts $rtn
 
     #sal_arm_reset
-    reset_to_proto_mode no_proto
+    reset_to_proto_mode cold 
 
     sal_print_voltage_temp_from_j2c
 
-    set ret [sal_prog_qspi $fw_ptr 0x78010000]
-    if {$ret != 0} {
-        plog_msg "Failed to program fw_ptr"
-        return $ret
-    }
+    plog_msg "erase fw_ptr"
+    qspi_erase_range 0x78010000 0x10000
+    #set ret [sal_prog_qspi $fw_ptr 0x78010000]
+    #if {$ret != 0} {
+    #    plog_msg "Failed to program fw_ptr"
+    #    diag_close_j2c_if $port $slot
+    #    return $ret
+    #}
     plog_msg $esec_1
     set ret [sal_prog_qspi $esec_1 0x78020000]
     if {$ret != 0} {
         plog_msg "Failed to program esec_1"
+        diag_close_j2c_if $port $slot
         return $ret
     }
     plog_msg $esec_2
     set ret [sal_prog_qspi $esec_2 0x78030000]
     if {$ret != 0} {
         plog_msg "Failed to program esec_2"
+        diag_close_j2c_if $port $slot
         return $ret
     }
-    plog_msg $host_1
-    set ret [sal_prog_qspi $host_1 0x78040000]
+    plog_msg "erase pentrust_1"
+    qspi_erase_range 0x78040000 0x20000
+
+    plog_msg "erase pentrust_2"
+    qspi_erase_range 0x78060000 0x20000
+
+    plog_msg "erase non_esec_1"
+    qspi_erase_range 0x78080000 0x20000
+
+    plog_msg "erase non_esec_2"
+    qspi_erase_range 0x780A0000 0x20000
+
+    plog_stop
+    diag_close_j2c_if $port $slot
+    return $ret
+}
+
+proc dice_img_prog {slot fw_ptr pentrust_1 pentrust_2 non_esec_1 non_esec_2} {
+    plog_start puf_enroll_slot${slot}.log
+
+    set port $slot
+
+    exec fpgautil spimode $slot off
+    diag_close_j2c_if $port $slot
+    diag_open_j2c_if $port $slot
+    diag_close_j2c_if $port $slot
+
+    after 1000
+    diag_close_ow_if $port $slot
+    after 1000
+    diag_open_ow_if $port $slot
+    after 1000
+    sal_ow_axi
+
+    csr_write sal0.ms.ms.cfg_ow 3
+    after 500
+    rd sal0.ms.ms.cfg_ow
+
+    _msrd
+
+    diag_open_j2c_if $port $slot
+    puts "_msrd"
+    set rtn [eval _msrd]
+    puts $rtn
+
+    #sal_arm_reset
+    reset_to_proto_mode cold
+    sal_print_voltage_temp_from_j2c
+
+    plog_msg $fw_ptr
+    set ret [sal_prog_qspi $fw_ptr 0x78010000]
     if {$ret != 0} {
-        plog_msg "Failed to program host_1"
+        plog_msg "Failed to program fw_ptr"
+        diag_close_j2c_if $port $slot
         return $ret
     }
-    plog_msg $host_2
-    set ret [sal_prog_qspi $host_2 0x78060000]
+    plog_msg $pentrust_1
+    set ret [sal_prog_qspi $pentrust_1 0x78040000]
     if {$ret != 0} {
-        plog_msg "Failed to program host_2"
+        plog_msg "Failed to program pentrust_1"
+        return $ret
+    }
+    plog_msg $pentrust_2
+    set ret [sal_prog_qspi $pentrust_2 0x78060000]
+    if {$ret != 0} {
+        plog_msg "Failed to program pentrust_2"
+        return $ret
+    }
+    plog_msg $non_esec_1
+    set ret [sal_prog_qspi $non_esec_1 0x78080000]
+    if {$ret != 0} {
+        plog_msg "Failed to program non_esec_1"
+        return $ret
+    }
+    plog_msg $non_esec_2
+    set ret [sal_prog_qspi $non_esec_2 0x780A0000]
+    if {$ret != 0} {
+        plog_msg "Failed to program non_esec_2"
         return $ret
     }
 
@@ -476,6 +557,252 @@ proc esec_prog_optimal_pac {sn usb_port slot PN MAC MTP
     return 0
 }
 
+proc get_entropy_from_hsm {sn
+        {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
+        {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
+        {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
+        {BACKEND_URL "192.168.67.214:11111"} } {
+
+    if { [catch {exec /home/diag/diag/tools/pki/client_dice.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $sn -n 64 -hsm_rn} msg ]} {
+        puts "failed to get entropy from hsm $msg"
+        return -1
+    }
+
+    set rand_file "/home/diag/diag/asic/asic_src/ip/cosim/tclsh/entropy_$sn.txt"
+    set fp [open $rand_file r]
+    set input [read $fp]
+ 
+    set str_start 0
+    set str_end 7
+    set len [string length $input]
+
+    for { set i 0 } { $str_start < $len } { incr i } {
+        lappend list_result [ string range $input $str_start $str_end ]
+        incr str_start 8
+        incr str_end 8
+    }
+    return $list_result
+}
+
+proc esec_set_uds_entropy {sn 
+        {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
+        {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
+        {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
+        {BACKEND_URL "192.168.67.214:11111"} } {
+
+    # Check if efuse[23:22] is already set
+    set bit50 [sal_fuse_get_bit 0 50 0]
+    set bit51 [sal_fuse_get_bit 0 51 0]
+    if { $bit50 != 0 || $bit51 != 0 } {
+        plog_msg "UDS entropy already been programmed, exit here"
+        plog_msg "SET UDS ENTROPY SUCCESSFUL"
+        sal_fuse_dump
+        return 0
+    } else {
+        set entropy_sum 0
+        for {set i 0} {$i < 16} {incr i} {
+            set idx [expr $i + 32]
+            set fuse_val [sal_fuse_get_line 0 $idx 0]
+            set entropy($i) [expr $fuse_val]
+            set entropy_sum [expr {$fuse_val | $entropy_sum}]
+        }
+        if { $entropy_sum != 0 } {
+            plog_msg "SET UDS ENTROPY SUCCESSFUL"
+            sal_fuse_dump
+            return 0
+        }
+    }
+
+    plog_msg "fuse entropy is not programmed"
+    set entropy_list [get_entropy_from_hsm $sn]
+    if { $entropy_list == -1 } {
+        return -1
+    }
+    set i 0
+    foreach n $entropy_list {
+        set entropy($i) "0x$n"
+        incr i 1
+    }
+
+    sal_fuse_vddq_enable
+    set idx 32
+    for {set i 0} {$i < 16} {incr i} {
+        plog_msg "set fuse line $idx with value $entropy($i)"
+        sal_fuse_set_line 0 $idx $entropy($i)
+        incr idx 1
+    }
+    sal_fuse_set_bit 0 50 0
+    sal_fuse_set_bit 0 51 0
+    sal_fuse_vddq_disable
+
+    set ret_code 0
+    for {set i 0} {$i < 16} {incr i} {
+        set idx [expr $i + 32]
+        set fuse_val [sal_fuse_get_line 0 $idx 0]
+        if { "$entropy($i)" != "$fuse_val" } {
+            plog_msg "ERROR: ENTROPY VALUE INCORRECT Line: $idx expected: $entropy($i) read: $fuse_val"
+            set ret_code [expr $ret_code + 1]
+        }
+    }
+
+    set ret_code 0
+    set bit50 [sal_fuse_get_bit 0 50 0]
+    set bit51 [sal_fuse_get_bit 0 51 0]
+    if { $bit50 == 0 || $bit51 == 0 } {
+        plog_msg "set UDS entropy Auto-Clear FAILED"
+        set ret_code [expr $ret_code + 1]
+    }
+
+    sal_fuse_dump
+
+    if { $ret_code == 0 } {
+        plog_msg "SET UDS ENTROPY SUCCESSFUL"
+    } else {
+        plog_msg "SET UDS ENTROPY FAILED. error code $ret_code"
+    }
+    return $ret_code
+}
+
+proc esec_get_uds_csr { } {
+    sal_chlng_wr 0 0 8
+    sal_chlng_wr 0 0 0xFF060000
+
+    set val [sal_chlng_rd 0 0]
+    set len [expr $val & 0xFFFF]
+    set len [expr $len - 4]
+    set ret_code [expr $val  >> 16]
+    set ret_code [expr $ret_code  & 0x0000FFFF]
+    if { $ret_code == 0 } {
+       plog_msg "\nUDS csr (of length $len bytes) retreival successful"
+    } else {
+       puts "\nUDS csr retreival failed. error code $ret_code"
+       exit
+    }
+
+    set extra [expr $len % 4]
+    set s ""
+    for {set i 0} {$i < $len/4} {incr i} {
+        set val [sal_chlng_rd 0 0]
+        set a [expr $val & 0xFF]
+        append  s  [format %02x $a]
+        set  a  [format %2x $a]
+        set b [expr {$val >> 8} & 0xFF]
+        append  s  [format %02x $b]
+        set c [expr {$val >> 16} & 0xFF]
+        append  s  [format %02x $c]
+        set d [expr {$val >> 24} & 0xFF]
+        append  s  [format %02x $d]
+    }
+
+    if {$extra == 1} {
+        set val [sal_chlng_rd 0 0]
+        set a [expr $val & 0xFF]
+        append  s  [format %02x $a]
+    } elseif {$extra == 2} {
+        set val [sal_chlng_rd 0 0]
+        set a [expr $val & 0xFF]
+        append  s  [format %02x $a]
+        set b [expr {$val >> 8} & 0xFF]
+        append  s  [format %02x $b]
+    } elseif {$extra == 3} {
+        set val [sal_chlng_rd 0 0]
+        set a [expr $val & 0xFF]
+        append  s  [format %02x $a]
+        set b [expr {$val >> 8} & 0xFF]
+        append  s  [format %02x $b]
+        set c [expr {$val >> 16} & 0xFF]
+        append  s  [format %02x $c]
+    }
+    set fpb_tn "./uds_csr_hex.csr"
+    set fpb    "./uds_csr_der.csr"
+    set fpb_t [open $fpb_tn w]
+    puts -nonewline $fpb_t $s
+    close $fpb_t
+    exec xxd -r -p $fpb_tn $fpb
+    #exec rm $fpb_tn
+
+    set DIAG_HOME $::env(DIAG_HOME)
+
+    puts "\nDER Hex dump:"
+    puts $s
+    puts "\nUDS csr file created : $fpb\n"
+    puts [exec  openssl req -inform DER -in $DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/$fpb -noout -text]
+
+    return 0
+}
+
+proc esec_set_uds_cert {sn
+    {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
+    {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
+    {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
+    {BACKEND_URL "192.168.67.214:11111"} } {
+
+    set DIAG_HOME $::env(DIAG_HOME)
+ 
+    if { [catch {exec /home/diag/diag/tools/pki/client_dice.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $sn -s "$DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/"} msg ]} {
+        puts "failed to get entropy from hsm $msg"
+        return -1
+    }
+
+    set fn "$DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.crt" 
+    #set fn "$DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.csr" 
+    set fs [file size $fn]
+
+    set tempfn "$DIAG_HOME/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.crt.tmp"
+    puts "Reading UDS certificate DER data (length $fs bytes) from $fn"
+    exec xxd -c 4 -p $fn $tempfn
+    set fp [open $tempfn "r"]
+
+    sal_chlng_wr 0 0 12
+    sal_chlng_wr 0 0 0xFF070000
+    sal_chlng_wr 0 0 $fs
+
+    while { [gets $fp data] >= 0 } {
+        set val [scan $data %x]
+        if { $fs >=4 } {
+            set a [expr $val & 0xFF]
+            set  s  [format %02x $a]
+            set b [expr {$val >> 8} & 0xFF]
+            append  s  [format %02x $b]
+            set c [expr {$val >> 16} & 0xFF]
+            append  s  [format %02x $c]
+            set d [expr {$val >> 24} & 0xFF]
+            append  s  [format %02x $d]
+        } elseif { $fs >=3 } {
+            set a [expr $val & 0xFF]
+            set  s  [format %02x $a]
+            set b [expr {$val >> 8} & 0xFF]
+            append  s  [format %02x $b]
+            set c [expr {$val >> 16} & 0xFF]
+            append  s  [format %02x $c]
+        } elseif { $fs >=2 } {
+            set a [expr $val & 0xFF]
+            set  s  [format %02x $a]
+            set b [expr {$val >> 8} & 0xFF]
+            append  s  [format %02x $b]
+        } elseif { $fs >=1 } {
+            set a [expr $val & 0xFF]
+            set  s  [format %02x $a]
+        }
+        set f_hex "0x"
+        append f_hex $s
+        sal_chlng_wr 0 0 $f_hex
+        set fs [expr $fs - 4]
+    }
+    close $fp
+    #exec rm $tempfn
+
+    set ret [sal_chlng_rd 0 0]
+    set ret_code [expr $ret  >> 16]
+    set ret_code [expr $ret_code  & 0x0000FFFF]
+    if { $ret_code == 0 } {
+        puts "UDS certificate provisioning successful"
+    } else {
+        puts "UDS certificate provisioning failed. error code $ret_code"
+    }
+    return 0
+}
+
 proc esec_all_pac {sn usb_port slot PN MAC MTP
         {CLIENT_KEY "certs/client.key.pem"} 
         {CLIENT_CERT "certs/client-bundle.cert.pem"}
@@ -582,8 +909,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     puts $rtn
 
     #sal_arm_reset
-    reset_to_proto_mode no_proto
-
+    reset_to_proto_mode cold
     sal_print_voltage_temp_from_j2c
 
     set card_type [sal_get_card_type]
@@ -713,6 +1039,86 @@ proc esec_all {sn usb_port slot PN MAC MTP
     return 0
 }
 
+proc esec_dice_all {slot sn 
+        {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
+        {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
+        {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
+        {BACKEND_URL "192.168.67.214:11111"} } {
+
+    set port $slot
+
+    plog_msg "slot: $slot"
+    plog_start esec_dice_all_slot${slot}.log
+
+    exec fpgautil spimode $slot off
+    diag_close_j2c_if $port $slot
+    diag_open_j2c_if $port $slot
+    diag_close_j2c_if $port $slot
+
+    after 1000
+    diag_close_ow_if $port $slot
+    after 1000
+    diag_open_ow_if $port $slot
+    after 1000
+    sal_ow_axi
+
+    csr_write sal0.ms.ms.cfg_ow 3
+    after 500
+    rd sal0.ms.ms.cfg_ow
+
+    _msrd
+
+    diag_open_j2c_if $port $slot
+    puts "_msrd"
+    set rtn [eval _msrd]
+    puts $rtn
+
+    #sal_arm_reset
+    reset_to_proto_mode cold 
+    sal_print_voltage_temp_from_j2c
+
+    ssi_cpld_write 0x20 0x7
+    after 1000
+    sal_pc
+    after 1000
+ 
+    sal_chlng_get_status_str
+
+    set ret [esec_set_uds_entropy $sn $CLIENT_KEY $CLIENT_CERT $TRUST_ROOTS $BACKEND_URL] 
+    if { $ret == 0 } {
+        plog_msg "set entropy passed"
+    } else {
+        plog_msg "set entropy failed"
+        diag_close_j2c_if $port $slot
+        plog_stop
+        return -1
+    }
+
+    set ret [esec_get_uds_csr] 
+    if { $ret == 0 } {
+        plog_msg "GET UDS csr successful"
+    } else {
+        plog_msg "GET UDS csr failed"
+        diag_close_j2c_if $port $slot
+        plog_stop
+        return -1
+    }
+
+    set ret [esec_set_uds_cert $sn] 
+    if { $ret == 0 } {
+        plog_msg "SET UDS CERTIFICATE successful"
+    } else {
+        plog_msg "SET UDS CERTIFICATE failed"
+        diag_close_j2c_if $port $slot
+        plog_stop
+        return -1
+    }
+
+    diag_close_j2c_if $port $slot
+    plog_stop
+    return 0
+}
+
 set stage [string toupper $stage]
 plog_msg "stage: $stage"
 switch $stage {
@@ -727,6 +1133,9 @@ switch $stage {
     }
     "IMG_PROG" {
         set ret [img_prog $slot $fw_ptr $esec_1 $esec_2 $host_1 $host_2]
+    }
+    "DICE_IMG_PROG" {
+        set ret [dice_img_prog $slot $fw_ptr $pentrust_1 $pentrust_2 $non_esec_1 $non_esec_2]
     }
     "EFUSE_TEST" {
         set ret [efuse_test $slot]
@@ -745,6 +1154,9 @@ switch $stage {
     }
     "EFUSE_PROG" {
         set ret [efuse_prot $slot $sn]
+    }
+    "ESEC_DICE_ALL" {
+        set ret [esec_dice_all $slot $sn $client_key $client_cert $trust_roots $backend_url]
     }
     default {
         plog_msg "Invalide stage: $stage"
