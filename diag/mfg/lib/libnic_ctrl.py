@@ -2457,7 +2457,7 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if self.nic_type not in SALINA_NIC_TYPE_LIST:
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
             cmd = MFG_DIAG_CMDS.NIC_ESEC_CPLD_CHECK_FMT.format(self._slot+1)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
                 self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
