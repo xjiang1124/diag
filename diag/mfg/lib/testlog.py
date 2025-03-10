@@ -499,7 +499,7 @@ def gather_asic_logs(mtp_mgmt_ctrl, logs_local):
 
     return ret
 
-def gather_csp_logs(mtp_mgmt_ctrl):
+def gather_csp_n_bin_logs(mtp_mgmt_ctrl):
     ret = True
     tlf = get_mtp_test_log_folder(mtp_mgmt_ctrl)
     asic_sub_dir = tlf +  "asic_logs/"
@@ -507,6 +507,9 @@ def gather_csp_logs(mtp_mgmt_ctrl):
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES, asic_sub_dir)
+    if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
+        ret = False
+    cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_BIN_LOG_FILES, asic_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     return ret
@@ -527,7 +530,7 @@ def gather_final_logs(mtp_mgmt_ctrl, stage, logs_local):
             ret = False
 
     if stage == FF_Stage.FF_SWI:
-        if not gather_csp_logs(mtp_mgmt_ctrl):
+        if not gather_csp_n_bin_logs(mtp_mgmt_ctrl):
             ret = False
 
     return ret

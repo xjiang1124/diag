@@ -1696,6 +1696,21 @@ class nic_ctrl():
         else:
             return False
 
+    def nic_clear_pre_uboot_section(self):
+        '''
+        ./esec_qspi_erase.sh slot <slot>
+        '''
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        cmd = MFG_DIAG_CMDS.SALINA_ESEC_QSPI_ERASE_FMT.format(str(self._slot + 1))
+        if not self.mtp_exec_cmd(cmd):
+            return False
+
+        return True
+
     def nic_boot_info_init(self, smode=False):
         # save boot image info into self._boot_image and self._kernel_timestamp
         previous_card_status = self.nic_check_status()
@@ -2442,23 +2457,37 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_CPLD_CHECK_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            cmd = MFG_DIAG_CMDS.NIC_ESEC_CPLD_CHECK_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
-        # save result buffer
-        cmd_buf = self.nic_get_cmd_buf()
+            # save result buffer
+            cmd_buf = self.nic_get_cmd_buf()
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_ERR_CHECK_FMT.format(self._slot+1)
-        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+            cmd = MFG_DIAG_CMDS.NIC_ESEC_ERR_CHECK_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
-        # check signature
-        if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-            return False
+            # check signature
+            if MFG_DIAG_SIG.NIC_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+        else:
+            cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
+            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
+
+            # save result buffer
+            cmd_buf = self.nic_get_cmd_buf()
+
+            # check signature
+            if MFG_DIAG_SIG.NIC_SALINA_ESEC_CPLD_VERIFY_SIG not in cmd_buf:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+                return False
 
         return True
 
@@ -2561,13 +2590,96 @@ class nic_ctrl():
 
         return True
 
-    def nic_program_efuse(self):
+    def nic_program_dice_sec_key(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        if self._nic_type not in ELBA_NIC_TYPE_LIST and self._nic_type not in GIGLIO_NIC_TYPE_LIST:
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DICE_SALINA_FMT.format(self._slot+1, self._sn)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_ESEC_DICE_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_program_dice_img_sec_key(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_PROG_DICE_IMG_SALINA_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_ESEC_DICE_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_check_uboot_sec_key(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_CPLD_CHECK_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_SALINA_ESEC_CPLD_VERIFY_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_check_uds_cert(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_UDS_CERT_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        # if MFG_DIAG_SIG.NIC_SALINA_ESEC_CPLD_VERIFY_SIG not in self.nic_get_cmd_buf():
+        #     self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+        #     return False
+
+        return True
+
+    def nic_program_efuse(self):
+        if self._nic_type in SALINA_NIC_TYPE_LIST and not self.nic_salina_clear_j2c():
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if self._nic_type not in ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             return False
 
         cmd = MFG_DIAG_CMDS.NIC_EFUSE_PROG_ELBA_FMT.format(self._slot+1,
@@ -2686,6 +2798,18 @@ class nic_ctrl():
         if "Erasing QSPI of slot" in cmd_buf:
             self.nic_set_err_msg(cmd_buf)
             return False
+        return True
+
+    def salina_nic_dump_boot(self):
+        cmd = MFG_DIAG_CMDS.NIC_DUMP_BOOT_FMT.format(str(self._slot + 1), MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, str(self._sn))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ERASE_QSPI_IMG_DELAY):
+            return False
+
+        cmd_buf = self.nic_get_cmd_buf()
+        if not cmd_buf:
+            self.nic_set_err_msg("Buffer empty")
+            return False
+
         return True
 
     def salina_nic_erase_boot0(self, image_path=""):
@@ -3788,6 +3912,9 @@ class nic_ctrl():
                 ],
             NIC_Type.POLLARA: [
                 (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.POLLARA_PN_FMT)                       #102-P11100-0 XX    POLLARA
+                ],
+            NIC_Type.LINGUA: [
+                (ASSY_NUM_FIELD, PART_NUMBERS_MATCH.LINGUA_PN_FMT)                        #102-P11500-0 XX    LINGUA
                 ],
 
         }

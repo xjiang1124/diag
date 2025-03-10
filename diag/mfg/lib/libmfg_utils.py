@@ -2527,7 +2527,7 @@ def get_mode_param(mtp_mgmt_ctrl, slot, test):
         mode = "hod_1100"
     elif test == "SNAKE_ELBA":
         mode = "nod"
-    elif nic_type in (NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA, NIC_Type.POLLARA):
+    elif nic_type in SALINA_NIC_TYPE_LIST:
         mode = "hod"
     else:
         mode = ""

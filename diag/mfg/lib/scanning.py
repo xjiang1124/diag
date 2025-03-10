@@ -132,19 +132,19 @@ def inner_mtp_barcode_scan(mtp_mgmt_ctrl, stage, skip_scan_list=[], swmtestmode=
             if scan_item == DPN:
                 if stage != FF_Stage.FF_DL:
                     continue
-                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]):
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
                     continue
 
             if scan_item == SKU:
                 if stage not in (FF_Stage.FF_SWI, FF_Stage.FF_FST):
                     continue
-                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]):
+                if not re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
                     continue
 
             if scan_item == SWPN:
                 if stage != FF_Stage.FF_SWI:
                     continue
-                if re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]):
+                if re.match(PART_NUMBERS_MATCH.GINESTRA_S4_PN_FMT, mtp_scan_rslt[slot][PN]) and not mtp_scan_rslt[slot][PN].startswith("102-"):
                     continue
 
             if scan_item == ROT_SN:

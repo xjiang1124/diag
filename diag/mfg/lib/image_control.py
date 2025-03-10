@@ -368,7 +368,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
         images_needed.append(sec_cpld)
-        if nic_type != NIC_Type.POLLARA:
+        if nic_type not in SALINA_AI_NIC_TYPE_LIST:
             images_needed.append(goldfw)
 
         if nic_type in FPGA_TYPE_LIST:
