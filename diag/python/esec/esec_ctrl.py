@@ -676,7 +676,7 @@ PRIVEK <ek.sk>"""
         cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0xbd 0xbd".format(slot)
         common.session_cmd(session, cmd)
         time.sleep(5)
-        ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True, v12_reset="v12_reset")
+        ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True)
         if ret != 0:
             print("Failed to boot to zephyr prompt")
             cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
