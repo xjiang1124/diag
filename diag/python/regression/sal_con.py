@@ -90,7 +90,7 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
-    if con_ctrl.get_card_type(slot) in ["POLLARA","LUNGUA"]:
+    if con_ctrl.get_card_type(slot) in ["POLLARA","LINGUA"]:
         new_ainic_layout = kwargs.get('new_ainic_layout', False)
         if new_ainic_layout:
             cmd = "bootm 0x78300000"
