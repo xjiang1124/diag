@@ -18,9 +18,10 @@ mkdir -p ${dest_folder}
 
 
 ## COPY NIC IMAGES
-image_files=$(grep "_img" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
+image_files=$(grep -e "_img" -e "_dtb" ${mfg_script_dir}/lib/libmfg_cfg.py | grep \".*\" | grep -v "#" | grep -v "image_a" | cut -d"=" -f2 | cut -d'"' -f2 | sort | uniq)
+cd /vol/hw/diag/mfg_release/prog/
 for f in $image_files; do
-    rsync -aPtv /vol/hw/diag/mfg_release/prog/$f ${dest_folder}
+    rsync -aPtv --relative $f ${dest_folder}
 done
 
 ## TAR THE FW IMAGES

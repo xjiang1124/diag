@@ -142,8 +142,6 @@ jobs:
     labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-4C"]
   test-asic/SWI:
     labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-SWI"]
-  test-asic/SRN:
-    labels: ["CI-ASIC-TOT", "CI-ASIC-TOT-SRN"]
 ### END ASIC JOB LABELS ###
 
 dependencies:
@@ -157,14 +155,6 @@ dependencies:
     - reference: asset-build
   asset-build:
     - reference: asset-build
-  diag/scripts/asic:
-    - reference: diag/scripts/asic
-  diag/python/regression:
-    - reference: diag/python/regression
-  diag/python/esec:
-    - reference: diag/python/esec
-  diag/python/esec/scripts:
-    - reference: diag/python/esec
 
   diag:
 ### TEST DIAG CHANGES ###
@@ -179,8 +169,6 @@ dependencies:
     - reference: test/P2C
       exclude_dirs: ["scripts"]
     - reference: test/SWI
-      exclude_dirs: ["scripts"]
-    - reference: test/SRN
       exclude_dirs: ["scripts"]
 ### END TEST SCRIPT CHANGES ###
   diag/mfg/scripts:

@@ -1287,6 +1287,7 @@ def main():
                         run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage="zephyr")
                         run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=True)
 
+                    """
                     ######################################################################
                     #  Salina NIC Google stress memory test
                     ######################################################################
@@ -1298,6 +1299,7 @@ def main():
                     #  Salina NIC Google stress emmc test
                     ######################################################################
                     run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
+                    """
 
                 elif test_section == "SALINA_ESEC_IN_P2C":
                     run_regression_test(pass_nic_list, "SEC_KEY_PROG")

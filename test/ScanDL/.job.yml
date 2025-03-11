@@ -448,3 +448,61 @@ e2e-targets:
       vars:
         BmOs: linux
 
+  pollara:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type pollara --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+     - build-arm64-salina
+     - package-salina-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: pollara
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
+  leni48:
+    commands: ["sh", "-c", "/psdiag/test/run_mfg_job.sh --nic-type leni48 --testbed /warmd.json --test-type precheckin --asic salina --testsuite /psdiag/test/spec/testsuites/ScanDL.testsuite"]
+    owners: ["email:nabeel@pensando.io"]
+    area:
+    sub-area:
+    feature:
+    build-dependencies:
+     - build-amd64-salina
+     - build-arm64-salina
+     - package-salina-mfg-script
+     - package-fw-assets
+    deployment:
+      skip-pxe-install: true
+    resources:
+     - generic:
+       - type: MTP
+         vendor: Pensando
+         count: 1
+         props:
+         - name: mtp-nic-processor
+           value: matera
+         - name: leni48
+           value: yes
+    provision:
+      username: diag
+      password: lab123
+      vars:
+        BmOs: linux
+
