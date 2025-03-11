@@ -4286,22 +4286,18 @@ class mtp_ctrl():
         if nic_type in SALINA_NIC_TYPE_LIST:
             if not self._nic_ctrl_list[slot].nic_program_dice_sec_key():
                 self.cli_log_slot_err(slot, "Program NIC Dice Program failed")
-                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
                 return False
 
             if not self._nic_ctrl_list[slot].nic_program_dice_img_sec_key():
                 self.cli_log_slot_err(slot, "Program NIC Dice Image Program failed")
-                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
                 return False
 
             if not self._nic_ctrl_list[slot].nic_check_uboot_sec_key():
                 self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
-                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
                 return False
 
-            if nic_type != NIC_Type.LINGUA and not self._nic_ctrl_list[slot].nic_check_uds_cert():
+            if not self._nic_ctrl_list[slot].nic_check_uds_cert():
                 self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
-                if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
                 return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
