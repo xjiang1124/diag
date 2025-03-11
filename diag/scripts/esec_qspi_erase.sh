@@ -34,3 +34,4 @@ do
     fi 
 done    
 
+/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh $1 0 0
