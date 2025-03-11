@@ -20,6 +20,9 @@ stage = (
     "diag",
     "nondiag",
 )
+zephyr_offset_256mb    = {"a": "0x08000000", "b": "0x9e000000", "g": "0x78140000"}
+zephyr_offset_32mb_old = {"a": "0x79000000", "b": "0x79600000", "g": "0x78140000"}
+zephyr_offset_32mb     = {"a": "0x79000000", "b": "0x79600000", "g": "0x78300000"}
 
 def _boot_to_step(parsed_args):
     """
@@ -90,16 +93,12 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
-    if con_ctrl.get_card_type(slot) in ["POLLARA","LUNGUA"]:
-        new_ainic_layout = kwargs.get('new_ainic_layout', False)
-        if new_ainic_layout:
-            cmd = "bootm 0x78300000"
-        else:
-            cmd = "bootm 0x78140000"
+    if con_ctrl.get_card_type(slot) in ["POLLARA","LINGUA"]:
+        cmd = "bootm {}".format(zephyr_offset_32mb["a"])
     elif kwargs.get("raw_zephyr_binary", False):
-        cmd = "bootm 0x7E500000"
+        cmd = "bootm 0x7E500000" #zephyr.bin
     else:
-        cmd = "boot" #"bootm 0x8000000"
+        cmd = "bootm {}".format(zephyr_offset_256mb["a"])
 
     # For ainic, the "uart:~$" prompt may be truncated
     if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
@@ -278,7 +277,7 @@ if __name__ == "__main__":
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
-    parser.add_argument("--new_ainic_layout", "-na", help="following new Pollara flash layout after Oct25", action='store_true', default=False)
+    parser.add_argument("--new_ainic_layout", "-na", help="No effect. Keeping for backward compatability.", action='store_true', default=False)
     parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
 
     try:
