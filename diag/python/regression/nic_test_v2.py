@@ -1744,6 +1744,12 @@ class nic_test_v2:
         common.session_cmd(session, cmd)
         return ret
 
+    def sal_vmarg_func(self, args):
+        session = common.session_start()
+        ret = self.sal_boot_to_vmarg(session, args)
+        common.session_stop(session)
+        return ret
+
 if __name__ == "__main__":
 
     test = nic_test_v2()
@@ -2110,6 +2116,17 @@ if __name__ == "__main__":
     parser_sal_pcie_prbs.add_argument("-timeout",       "--timeout",    help="nic session cmd time out seconds", type=int, default=300)
     parser_sal_pcie_prbs.add_argument("-v12_reset",     '--v12_reset',  help='Power cycle 12v', action='store_true' )
     parser_sal_pcie_prbs.set_defaults(func=test.sal_pcie_prbs_v2)
+
+    # Voltage margin only
+    parser_sal_vmarg = sal_misc_subp.add_parser('vmarg', help='vmarg', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_vmarg.add_argument("-slot",          "--slot",       help="NIC slot", type=str, default="")
+    parser_sal_vmarg.add_argument("-tcl_path",      "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_vmarg.add_argument("-vmarg",         "--vmarg",      help="vmarg", type=str, default='normal')
+    group_sal_vmarg = parser_sal_vmarg.add_mutually_exclusive_group(required=False)
+    group_sal_vmarg.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
+    group_sal_vmarg.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_vmarg.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
+    parser_sal_vmarg.set_defaults(func=test.sal_vmarg_func)
 
     try:
         args = parser.parse_args()
