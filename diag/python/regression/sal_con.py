@@ -20,9 +20,9 @@ stage = (
     "diag",
     "nondiag",
 )
-zephyr_offset_256mb    = {"a": "0x08000000", "b": "0x9e000000", "g": "0x78140000"}
-zephyr_offset_32mb_old = {"a": "0x79000000", "b": "0x79600000", "g": "0x78140000"}
-zephyr_offset_32mb     = {"a": "0x79000000", "b": "0x79600000", "g": "0x78300000"}
+zephyr_offset_256mB    = {"a": "0x08000000", "b": "0x09e00000", "g": "0x78140000"}
+zephyr_offset_32mB_old = {"a": "0x79000000", "b": "0x79600000", "g": "0x78140000"}
+zephyr_offset_32mB     = {"a": "0x79000000", "b": "0x79600000", "g": "0x78300000"}
 
 def _boot_to_step(parsed_args):
     """
