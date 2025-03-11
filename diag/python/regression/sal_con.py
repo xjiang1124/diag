@@ -97,11 +97,11 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     if con_ctrl.get_card_type(slot) in ["POLLARA","LINGUA"]:
-        cmd = "bootm {}".format(zephyr_offset_32mb["a"])
+        cmd = "bootm {}".format(zephyr_offset_32mB["a"])
     elif kwargs.get("raw_zephyr_binary", False):
         cmd = "bootm 0x7E500000" #zephyr.bin
     else:
-        cmd = "bootm {}".format(zephyr_offset_256mb["a"])
+        cmd = "bootm {}".format(zephyr_offset_256mB["a"])
 
     # For ainic, the "uart:~$" prompt may be truncated
     if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
