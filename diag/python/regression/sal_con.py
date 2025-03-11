@@ -20,9 +20,9 @@ stage = (
     "diag",
     "nondiag",
 )
-zephyr_offset_256mb    = {"a": "0x08000000", "b": "0x9e000000", "g": "0x78140000"}
-zephyr_offset_32mb_old = {"a": "0x79000000", "b": "0x79600000", "g": "0x78140000"}
-zephyr_offset_32mb     = {"a": "0x79000000", "b": "0x79600000", "g": "0x78300000"}
+zephyr_offset_256mB    = {"a": "0x08000000", "b": "0x09e00000", "g": "0x78140000"}
+zephyr_offset_32mB_old = {"a": "0x79000000", "b": "0x79600000", "g": "0x78140000"}
+zephyr_offset_32mB     = {"a": "0x79000000", "b": "0x79600000", "g": "0x78300000"}
 
 def _boot_to_step(parsed_args):
     """
@@ -72,6 +72,9 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
     common.session_cmd(session, "con_cleanup.sh {}".format(slot), ending=["Killed uart","\$ "])
     session.sendline("") # to get out of "Terminated message" and prevent it confusing the prompt
     session.sendline("")
+
+    if kwargs.get('skip_a35_uboot', False):
+        return 0
 
     con_ctrl = nic_con()
     if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
@@ -276,6 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--slot", "-slot", "-s", help="NIC slot", type=int, required=True)
     parser.add_argument("--warm_reset", "-w", help="Warm reset instead of powercycle", action='store_true', default=False)
     parser.add_argument("--v12_reset", "-v12", help="v12 reset instead of powercycle", action='store_true', default=False)
+    parser.add_argument("--skip_a35_uboot", action='store_true', default=False)
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="No effect. Keeping for backward compatability.", action='store_true', default=False)
     parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)

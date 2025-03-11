@@ -15,21 +15,7 @@ set ::port $port
 
 exec jtag_accpcie_salina clr $slot
 exec fpgautil spimode $slot off
-
-diag_close_j2c_if $port $slot
-diag_open_j2c_if $port $slot
-diag_close_j2c_if $port $slot
-
-after 500
-diag_close_ow_if $port $slot
-after 500
-diag_open_ow_if $port $slot
-after 500
-sal_ow_axi
-
-csr_write sal0.ms.ms.cfg_ow 3
-after 500
-rd sal0.ms.ms.cfg_ow
+sal_j2c; _msrd
 
 plog_msg "set vmarg: $vmarg"
 sal_set_vmarg $vmarg

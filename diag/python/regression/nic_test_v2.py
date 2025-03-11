@@ -407,36 +407,12 @@ class nic_test_v2:
         print("tcl_path:", args.tcl_path)
 
         session = common.session_start()
-        # set spimode to be off
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
-
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
+        self.nic_con.tcl_env_setup(session, args.slot, args.tcl_path)
 
         time.sleep(3)
-        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
+        if self.sal_boot_to_vmarg(session, args):
+            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+            return -1
         print("Done with Zephyr boot up, now start tcl")
 
         # TCL command
@@ -445,14 +421,14 @@ class nic_test_v2:
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.leni.tcl"
             cmd += " {}".format(args.slot)
             cmd += " {}".format("LENI")
-            cmd += " {}".format(args.vmarg)
+            cmd += " {}".format("none")
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
         elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_pcie_prbs.pollara.tcl"
             cmd += " {}".format(args.slot)
             cmd += " {}".format("LENI")
-            cmd += " {}".format(args.vmarg)
+            cmd += " {}".format("none")
             cmd += " {}".format(args.dura)
             cmd += " {}".format(args.mtp_clk)
         else:
@@ -486,39 +462,11 @@ class nic_test_v2:
         return 0
 
     def sal_pcie_prbs_v2(self, args):
-        print("tcl_path:", args.tcl_path)
-
         session = common.session_start()
-        # set spimode to be off
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
-
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-
         time.sleep(3)
-        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
-            ret = -1
-            return ret
+        if self.sal_boot_to_vmarg(session, args):
+            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+            return -1
         print("Done with Zephyr boot up, now start tcl")
 
         # TCL command
@@ -559,84 +507,27 @@ class nic_test_v2:
 
     def nic_snake_mtp(self, args):
         ret = 0
-        print("tcl_path:", args.tcl_path)
 
         session = common.session_start()
-        # set spimode to be off
-        #cmd = "fpgautil spimode {} off".format(args.slot)
-        #common.session_cmd(session, cmd)
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-
         time.sleep(3)
-
         if args.card_type == "POLLARA" or args.card_type == "LINGUA":
-            if args.arm_freq == "default":
-                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
-                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                    ret = -1
-                    return ret
-
-            else:
-                # Change the freq (includes warm reset), then boot to zephyr cleanly
-                if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
-                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                    ret = -1
-                    return ret
-
-                cmd = "tclsh ~/diag/scripts/asic/sal_arm_freq.tcl -slot {} -arm_freq {}".format(args.slot, args.arm_freq)
-                common.session_cmd(session, cmd, timeout=60)
-
-                if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=True):
-                    print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-                    ret = -1
-                    return ret
-#            if sal_con.enter_a35_zephyr(int(args.slot), session, v12_reset=args.v12_reset):
-#                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-#                ret = -1
-#                return ret
+            if self.sal_boot_to_vmarg(session, args):
+                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                return -1
         else:
             if args.snake_type == "esam_pktgen_llc_sor" or \
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
                args.snake_type == "esam_pktgen_ddr_burst":
                 print("ARM not booted")
             else:
-                if sal_con.enter_n1_linux(int(args.slot), session, warm_reset=False, new_memory_layout=args.new_memory_layout):
+                if self.sal_boot_to_vmarg(session, args):
                     print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                     ret = -1
                     return ret
 
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-
-        # Disable WDT
-        cmd = "i2cset -y {} 0x4f 0x1 0".format(int(args.slot)+2)
-        common.session_cmd(session, cmd)
+        # Check WDT
         cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
         common.session_cmd(session, cmd)
-
-        print("Start Vmarge")
-        if args.card_type == "LENI" or args.card_type == "LENI48G":
-            cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, args.card_type, args.vmarg)
-            common.session_cmd(session, cmd, 360, False, "vmarg set")
 
         # Start CPU Burn on N1
         if args.snake_type == "esam_pktgen_max_power_pcie_sor" or args.snake_type == "esam_pktgen_max_power_sor":
@@ -680,7 +571,7 @@ class nic_test_v2:
             cmd += " " + str(args.snake_type)
             cmd += " " + str(args.dura)
             cmd += " " + str(args.card_type)
-            cmd += " " + str(args.vmarg)
+            cmd += " " + str("none")
             cmd += " " + str(args.int_lpbk)
             cmd += " " + str(args.ite)
             cmd += " " + str(args.mtp_clk)
@@ -1502,44 +1393,7 @@ class nic_test_v2:
             return -1
 
         session = common.session_start()
-        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-            return -1
-        # set vmarg before booting N1, otherwise the card reboots with reason "DPU internal reset GPIO8"
-        print("Start Vmarge")
-        print("tcl_path:", args.tcl_path)
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        time.sleep(3)
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-        print("\nDisable WDT since vmarg will occupy i2c bus")
-        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
-        common.session_cmd(session, cmd)
-        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
-        common.session_cmd(session, cmd, 360, False, "vmarg set")
-
-        if sal_con.enter_n1_linux(int(args.slot), session, new_memory_layout=args.new_memory_layout, warm_reset=True):
+        if self.sal_boot_to_vmarg(session, args):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             return -1
 
@@ -1622,44 +1476,7 @@ class nic_test_v2:
             return -1
 
         session = common.session_start()
-        if sal_con.enter_a35_uboot(int(args.slot), session, warm_reset=False):
-            print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-            return -1
-        # set vmarg before booting N1, otherwise the card reboots with reason "DPU internal reset GPIO8"
-        print("Start Vmarge")
-        print("tcl_path:", args.tcl_path)
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        time.sleep(3)
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-        print("\nDisable WDT since vmarg will occupy i2c bus")
-        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
-        common.session_cmd(session, cmd)
-        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
-        common.session_cmd(session, cmd, 360, False, "vmarg set")
-
-        if sal_con.enter_n1_linux(int(args.slot), session, new_memory_layout=args.new_memory_layout):
+        if self.sal_boot_to_vmarg(session, args):
             print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
             return -1
 
@@ -1736,43 +1553,9 @@ class nic_test_v2:
     def read_qsfp_from_arm(self, args):
         ret = 0
         session = common.session_start()
-        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+        if self.sal_boot_to_vmarg(session, args):
             print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
-            ret = -1
-            return ret
-
-        print("Start Vmarge")
-        print("tcl_path:", args.tcl_path)
-        print("=== TCL ENV setup ===")
-        tcl_path = args.tcl_path
-        common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-        common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-        common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-        common.session_cmd(session, "source source_env_path")
-        common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-        common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        #common.session_cmd(session, "rm -f *")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-        time.sleep(3)
-        cmd = "fpgautil spimode {} off".format(args.slot)
-        common.session_cmd(session, cmd)
-        cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-        common.session_cmd(session, cmd)
-        print("\nDisable WDT since vmarg will occupy i2c bus")
-        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
-        common.session_cmd(session, cmd)
-        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} x {}".format(args.slot, args.vmarg)
-        common.session_cmd(session, cmd, 360, False, "vmarg set")
+            return -1
 
         print("Start test on Zephyr")
         card_type = self.nic_con.get_card_type(args.slot)
@@ -1907,32 +1690,7 @@ class nic_test_v2:
             session = common.session_start()
             common.session_cmd(session, "mbist_power_on.sh "+str(args.slot), timeout=90)
 
-            print("tcl_path:", args.tcl_path)
-            print("=== TCL ENV setup ===")
-            tcl_path = args.tcl_path
-            common.session_cmd(session, "export ASIC_LIB_BUNDLE="+tcl_path)
-            common.session_cmd(session, "export ASIC_SRC=$ASIC_LIB_BUNDLE/asic_src")
-            common.session_cmd(session, "export ASIC_LIB=$ASIC_LIB_BUNDLE/asic_lib")
-            common.session_cmd(session, "export ASIC_GEN=$ASIC_SRC")
-            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/asic_lib")
-            common.session_cmd(session, "source source_env_path")
-            common.session_cmd(session, "export LD_LIBRARY_PATH=$ASIC_LIB_BUNDLE/depend_libs/mtp_hack:$LD_LIBRARY_PATH")
-            common.session_cmd(session, "cd $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            #common.session_cmd(session, "rm -f *")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libJudy.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libtcl8.5.so $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libgmpxx.so.4 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libcrypto.so.10 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpcap.so.1 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpython2.7.so.1.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libzmq.so.5 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libsodium.so.23 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            common.session_cmd(session, "ln -s $ASIC_LIB_BUNDLE/depend_libs/lib64/libpgm-5.2.so.0 $ASIC_LIB_BUNDLE/depend_libs/mtp_hack")
-            time.sleep(3)
-            cmd = "fpgautil spimode {} off".format(args.slot)
-            common.session_cmd(session, cmd)
-            cmd = "jtag_accpcie_salina clr {}".format(args.slot)
-            common.session_cmd(session, cmd)
+            self.nic_con.tcl_env_setup(session, args.slot, args.tcl_path)
 
             use_j2c = 1         if args.j2c             else 0
             use_gpio3 = 1       if args.gpio3           else 0
@@ -1956,6 +1714,40 @@ class nic_test_v2:
                 print("PC_TEST_J2C has passed!", ite)
 
             common.session_stop(session)
+        return ret
+
+    def sal_boot_to_vmarg(self, session, args):
+        ret = 0
+        card_type = self.nic_con.get_card_type(args.slot)
+        if sal_con.enter_a35_uboot(int(args.slot), session):
+            print("===== FAILED: slot {} couldn't boot a35 uboot".format(args.slot))
+            return -1
+        # set vmarg before booting zephyr
+        print("Start Vmarge")
+        self.nic_con.tcl_env_setup(session, args.slot, args.tcl_path)
+        cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
+        common.session_cmd(session, cmd, 360, False, "vmarg set")
+
+        if card_type == "LENI48G":
+            if sal_con.enter_n1_linux(int(args.slot), session, skip_a35_uboot=True):
+                print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
+                return -1
+        else:
+            if sal_con.enter_a35_zephyr(int(args.slot), session, skip_a35_uboot=True):
+                print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
+                return -1
+
+        print("\nDisable WDT")
+        cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(args.slot) + 2)
+        common.session_cmd(session, cmd)
+        cmd = "i2cget -y {} 0x4f 0x1".format(int(args.slot)+2)
+        common.session_cmd(session, cmd)
+        return ret
+
+    def sal_vmarg_func(self, args):
+        session = common.session_start()
+        ret = self.sal_boot_to_vmarg(session, args)
+        common.session_stop(session)
         return ret
 
 if __name__ == "__main__":
@@ -2324,6 +2116,17 @@ if __name__ == "__main__":
     parser_sal_pcie_prbs.add_argument("-timeout",       "--timeout",    help="nic session cmd time out seconds", type=int, default=300)
     parser_sal_pcie_prbs.add_argument("-v12_reset",     '--v12_reset',  help='Power cycle 12v', action='store_true' )
     parser_sal_pcie_prbs.set_defaults(func=test.sal_pcie_prbs_v2)
+
+    # Voltage margin only
+    parser_sal_vmarg = sal_misc_subp.add_parser('vmarg', help='vmarg', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_sal_vmarg.add_argument("-slot",          "--slot",       help="NIC slot", type=str, default="")
+    parser_sal_vmarg.add_argument("-tcl_path",      "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_sal_vmarg.add_argument("-vmarg",         "--vmarg",      help="vmarg", type=str, default='normal')
+    group_sal_vmarg = parser_sal_vmarg.add_mutually_exclusive_group(required=False)
+    group_sal_vmarg.add_argument("-v12", '--v12', action='store_true', help='12V power cycle')
+    group_sal_vmarg.add_argument("-warm", '--warm', action='store_true', help='Warm reset')
+    parser_sal_vmarg.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
+    parser_sal_vmarg.set_defaults(func=test.sal_vmarg_func)
 
     try:
         args = parser.parse_args()
