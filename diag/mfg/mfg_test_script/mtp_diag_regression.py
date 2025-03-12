@@ -1214,12 +1214,13 @@ def main():
                     run_regression_test(prepare_boot0_list, "SALINA_NIC_MBIST_BOOT0_MTP_PREPARE")
 
                     erase_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    prog_boot0_list = erase_boot0_list[:]
                     run_regression_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
 
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
 
-                    prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
