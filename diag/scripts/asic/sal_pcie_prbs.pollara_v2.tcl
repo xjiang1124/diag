@@ -29,6 +29,8 @@ set port $slot
 set slot $slot
 set ::slot  $slot
 set ::port  $port
+exec jtag_accpcie_salina clr $slot
+exec fpgautil spimode $slot off
 diag_close_j2c_if $port $slot
 diag_open_j2c_if $port $slot
 diag_close_j2c_if $port $slot

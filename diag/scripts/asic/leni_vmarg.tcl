@@ -19,7 +19,7 @@ sal_j2c; _msrd
 
 plog_msg "set vmarg: $vmarg"
 sal_set_vmarg $vmarg
-diag_close_ow_if $port $slot
+diag_close_j2c_if $port $slot
 plog_msg "vmarg set"
 exit 0
 
