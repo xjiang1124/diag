@@ -469,7 +469,7 @@ class MFG_DIAG_CMDS:
     NIC_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
-    SALINA_NIC_VMARG_SET_FMT = "tclsh /home/diag/diag/scripts/asic/leni_vmarg.tcl {} {} {}"
+    SALINA_NIC_VMARG_SET_FMT = "./nic_test_v2.py salina vmarg -slot {} -vmarg {}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
     MTP_MATERA_SWI_CHECK_FMT = "/home/diag/diag/scripts/check_python.sh"
 
@@ -479,6 +479,9 @@ class MFG_DIAG_CMDS:
     READ_BOARD_ID_FMT = "board_config -b"
     ERASE_BOARD_CONFIG_FMT = "board_config -e"
     SET_IBM_BOARD_CONFIG_FMT = "board_config -C {:s}{:s}"
+    ZEPHYR_BOARD_CONFIG_WRITE_FMT =  "board_config write {:s}"
+    ZEPHYR_BOARD_CONFIG_DUMP_FMT =  "board_config dump"
+    ZEPHYR_BOARD_CONFIG_ERASE_FMT =  "board_config erase"
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
     NIC_CFG_CHECKSUM_FMT = "md5sum cfg{:s}"
     NIC_CHK_SECBOOT_FMT = "/data/nic_util/elba-chk-secboot-rdy.sh"

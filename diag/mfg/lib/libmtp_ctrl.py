@@ -3218,6 +3218,13 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
+    def mtp_execute_nic_cmd_from_console(self, slot, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        if not self._nic_ctrl_list[slot].nic_exec_cmd_from_console(cmd, timeout):
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
     def mtp_nic_sw_profile(self, slot, profile):
         if not self._nic_ctrl_list[slot].nic_sw_profile(profile):
             self.mtp_dump_nic_err_msg(slot)
@@ -4119,7 +4126,7 @@ class mtp_ctrl():
 
     def mtp_program_nic_cpld_feature_row(self, slot, cpld_img):
         nic_type = self.mtp_get_nic_type(slot)
-        if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST and nic_type not in GIGLIO_NIC_TYPE_LIST:
+        if nic_type not in ELBA_NIC_TYPE_LIST + FPGA_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
             self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
             return False
         if nic_type in self._proto_type_list:
@@ -5304,7 +5311,11 @@ class mtp_ctrl():
 
     @parallelize.parallel_nic_using_ssh
     def mtp_nic_diag_init_cpld_diag(self, slot, emmc_format):
-        if not self.mtp_nic_cpld_init(slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        smb = False
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            smb = True
+        if not self.mtp_nic_cpld_init(slot, smb):
             return False
         if not emmc_format:
             if not self.mtp_check_nic_cpld_partition(slot):
@@ -5388,11 +5399,26 @@ class mtp_ctrl():
         test_list.append("CPLD_DIAG")
         if fru_valid:
             test_list.append("NIC_FRU_INIT")
-        test_list.append("NIC_VMARG")
+        # For Salina Cards, set vmarg before booting A35, otherwise i2c is occupied & zephyr may reboot the card with reason "DPU internal reset GPIO8
+        # so put set vmarg as first list element
+        for slot in nic_list:
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_NIC_TYPE_LIST:
+                test_list.insert(0, "NIC_VMARG")
+                break
+        else:
+            test_list.append("NIC_VMARG")
+
         if fru_valid and sn_tag:
             test_list.append("SCANS_VALIDATE")
         if not skip_info_dump:
             test_list.append("INFO_DUMP")
+
+        ### hack for salina DPU, need remove later -->
+        for slot in nic_list:
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_NIC_TYPE_LIST:
+                test_list = ["NIC_BOOT_INIT", "MAC_VALIDATE", "START_DIAG", "CPLD_DIAG"]
+                break 
+        ### hack for salina DPU, need remove later <--
 
         for test in test_list:
             if test in skip_test_list:
@@ -7016,6 +7042,31 @@ class mtp_ctrl():
 
         if not self._nic_ctrl_list[slot].nic_assign_board_id(boardId):
             self.cli_log_slot_err_lock(slot, "Assign Board ID Failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_nic_zephyr_boardid_pcisubsystemid_write(self, slot):
+        """
+        Write board id from Zephyr console interface
+        """
+
+        partNumber = self.get_scanned_pn(slot)
+        if partNumber is None:
+            self.cli_log_slot_err_lock(slot, "Part Number Not set to MTP ctrl instance")
+            return False
+        partNumberIn6Digits = "-".join(partNumber.split('-')[0:2]) if "-" in partNumber[0:6] else partNumber[0:6]
+
+        nic_cpld_info = self._nic_ctrl_list[slot].nic_get_cpld()
+        if not nic_cpld_info:
+            self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
+            return False
+        cpldId = nic_cpld_info[2]
+        (boardId, pciSubSysId) = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((partNumberIn6Digits, cpldId), (None, None))
+        if not self._nic_ctrl_list[slot].zephyr_assign_board_id_and_pci_subsystemid(boardId, pciSubSysId):
+            self.cli_log_slot_err_lock(slot, "Zephyr Assign Board ID Failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
