@@ -2664,9 +2664,9 @@ class nic_ctrl():
             return False
 
         # check signature
-        # if MFG_DIAG_SIG.NIC_SALINA_ESEC_CPLD_VERIFY_SIG not in self.nic_get_cmd_buf():
-        #     self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
-        #     return False
+        if MFG_DIAG_SIG.NIC_ESEC_DICE_CERT_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
 
         return True
 
