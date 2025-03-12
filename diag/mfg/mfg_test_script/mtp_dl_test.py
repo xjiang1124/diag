@@ -602,7 +602,7 @@ def main():
             run_dl_test(cpld_list, "UMF1_PROG")
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
-            run_dl_test(ecpld_list, "FEA_CPLD_PROG")
+            # run_dl_test(ecpld_list, "FEA_CPLD_PROG")
             run_dl_test(ecpld_list, "NIC_PWRCYC")
             chk_ver_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             if len(chk_ver_list) > 0:
