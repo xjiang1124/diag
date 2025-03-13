@@ -7034,8 +7034,8 @@ class mtp_ctrl():
             self.cli_log_slot_err_lock(slot, "Failed to retrieve CPLD ID info")
             return False
         cpldId = nic_cpld_info[2]
-        partNumberIn6Digits = partNumber[0:7] if "-" in partNumber[0:6] else partNumber[0:6]
-        boardId = PN_AND_CPLD_TO_BOARDID.get((partNumberIn6Digits, cpldId), None)
+        partNumberIn6Digits = "-".join(partNumber.split('-')[0:2]) if "-" in partNumber[0:6] else partNumber[0:6]
+        (boardId, pciSubSysId) = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((partNumberIn6Digits, cpldId), (None, None))
         if not boardId:
             self.cli_log_slot_err_lock(slot, "Failed find board ID for PN {:s} and CPLD {:s}".format(partNumber, cpldId))
             return False
