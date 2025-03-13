@@ -58,7 +58,7 @@ adapter_card_check_nic_power_good() {
     bit3=$(( $regTemp & 0x08 ))
     if [ $bit3 -eq 0 ] 
     then
-        echo "ERROR: Slot-$slot Adapater CPLD is not showing NIC_POWER_GOOD (BIT3) after AUX power enable.  Reg 0x40=$regTemp"
+        echo "ERROR: Slot-$slot Adapater CPLD is not showing NIC_POWER_GOOD (BIT3) after power enable.  Reg 0x40=$regTemp"
     fi
 }
 
