@@ -375,6 +375,8 @@ var LinguaMtpTbl = []I2cInfo {
     I2cInfo {"CPLD_FRU",       "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
     //READ FROM THE I2C INTERFACE FOR the CPLD UMF2 EEPROM
     I2cInfo {"CPLD_FRU_I2C",   "MACHXO3",   0x0,   0x50,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
+    I2cInfo {"CPLD_ADAP",      "CPLD",      0x0,   0x4B,    0x0,    "HUB_NONE",  0,    0},
+    I2cInfo {"FRU_ADAP",       "M24C32",    0x0,   0x57,    0x0,    "HUB_NONE",  0,    FLAG_16BIT_EEPROM},
 }
 
 var LinguaTbl = []I2cInfo {
