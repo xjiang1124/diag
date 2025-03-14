@@ -57,8 +57,10 @@ proc verify_frequencies {} {
         plog_msg "set_pollara_frequency :: not pollara, skipping verify_arm_frequency"
         return 0
     }
-    verify_arm_frequency
     verify_nxc_frequency
+    verify_arm_frequency
+    # Salina bug: checking ARM frequency must be the very last step. any read after that has possibility to fail.
+    # functional commands may be unreliable too, such as any post-fail checking.
 }
 
 proc set_pollara_frequency {{arm_freq "none"}} {
