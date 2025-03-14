@@ -28,16 +28,38 @@ card_adapter_enable_power() {
     cpld_id=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x80 2> /dev/null)
     if [ $? -eq 0 ] && [[ $cpld_id -eq $ocpAdapterID ]] 
     then
-        echo "Powering up Adapter"
         #power it up via CPLD reg 0x40 (BIT0=AUX_PWR_EN  BIT1=MAIN_PWR_EN)
-        reg1=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x40)
-        reg1=$(( $reg1 | 0x1 ))
-        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $reg1
-        #sleep 0.5
-        reg1=$(( $reg1 | 0x3 ))
-        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $reg1
+        register40=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x40)
+        register40=$(( $register40 | 0x1 ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
+        sleep 0.5
+        adapter_card_check_nic_power_good $slot
+        register40=$(( $register40 | 0x2 ))
+        i2cset -y ${slotI2Cmap[$slot]} 0x4b 0x40 $register40
+        sleep 0.5
+        adapter_card_check_nic_power_good $slot
+
+        #cpldreg00=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x00)
+        ##apply this to CPLD Rev 2.0 or higher
+        #if [[ $cpldreg00 -gt 1 ]]
+        #then
+        #    cpldreg01=$(i2cget -y ${slotI2Cmap[$slot]} 0x4a 0x01)
+        #    cpldreg01=$(( $cpldreg01 & 0xE7 ))
+        #    cpldreg01=$(( $cpldreg01 | 0x08 ))
+        #    i2cset -y ${slotI2Cmap[$slot]} 0x4a 0x01 $cpldreg01
+        #fi
     fi
 
+}
+
+adapter_card_check_nic_power_good() {
+    slot=$1
+    regTemp=$(i2cget -y ${slotI2Cmap[$slot]} 0x4b 0x40)
+    bit3=$(( $regTemp & 0x08 ))
+    if [ $bit3 -eq 0 ] 
+    then
+        echo "ERROR: Slot-$slot Adapater CPLD is not showing NIC_POWER_GOOD (BIT3) after power enable.  Reg 0x40=$regTemp"
+    fi
 }
 
 
