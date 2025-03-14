@@ -1288,14 +1288,14 @@ def main():
                         run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NIC_BOOT_STAGE", bootstage="zephyr")
                         run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=True)
 
-                    """
                     ######################################################################
                     #  Salina NIC Google stress memory test
                     ######################################################################
                     google_stress_list = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-                    run_test(google_stress_list, "NIC_DIAG_INIT", nic_util=True)
+                    # run_test(google_stress_list, "NIC_DIAG_INIT", nic_util=True)
                     run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_MEM", vmarg=vmarg, mem_copy_thread=16, seconds2run=60)
 
+                    """
                     ######################################################################
                     #  Salina NIC Google stress emmc test
                     ######################################################################

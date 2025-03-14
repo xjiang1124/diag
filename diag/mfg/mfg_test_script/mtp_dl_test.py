@@ -461,6 +461,8 @@ def main():
 
             elif test == "ASSIGN_BOARD_ID":
                 rlist = dl_assign_board_id(mtp_mgmt_ctrl, nic_list)
+            elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
             elif test == "CON_ERASE_BOARD_CONFIG":
                 rlist = mtp_mgmt_ctrl.mtp_nic_erase_board_config(nic_list)
             elif test == "ERASE_BOARD_CONFIG":
@@ -470,6 +472,8 @@ def main():
 
             elif test == "CPLD_PROG":
                 rlist = dl_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
             elif test == "FSAFE_CPLD_PROG":
                 rlist = dl_fail_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "FEA_CPLD_PROG":
@@ -598,6 +602,7 @@ def main():
             run_dl_test(cpld_list, "UMF1_PROG")
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
+            # run_dl_test(ecpld_list, "FEA_CPLD_PROG")
             run_dl_test(ecpld_list, "NIC_PWRCYC")
             chk_ver_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             if len(chk_ver_list) > 0:
@@ -631,7 +636,7 @@ def main():
             # ## 2b. set emmc settings for elba
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST), "NIC_PARA_MGMT_FPO_INIT")
-            # run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST), "NIC_BOOT_INIT")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST), "NIC_BOOT_INIT")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "SET_PSLC")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "EMMC_HWRESET_SET")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "EMMC_BKOPS_EN")
@@ -647,8 +652,9 @@ def main():
             run_dl_test(get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST), "FRU_PROG")
             # erase_brdcfg_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST)
             # run_dl_test(erase_brdcfg_list, "ERASE_BOARD_CONFIG")
-            # assign_boardid_list = get_slots_of_type(GIGLIO_NIC_TYPE_LIST + [NIC_Type.ORTANO2ADICRS4])
-            # run_dl_test(assign_boardid_list, "ASSIGN_BOARD_ID")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
             # brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(brd_config_list, "BOARD_CONFIG")
 

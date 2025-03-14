@@ -32,6 +32,7 @@ class nic_ctrl():
         self._nic_status = NIC_Status.NIC_STA_POWEROFF
         self._nic_missed_fa = False
         self._nic_con_prompt = "# "
+        self._nic_con_zephyr_prompt = "uart:~$ "
 
         self._diag_ver = None
         self._diag_util_ver = None
@@ -687,10 +688,10 @@ class nic_ctrl():
         if self._nic_type == NIC_Type.FORIO or self._nic_type == NIC_Type.VOMERO:
             self._nic_handle.sendline("")
 
-        exp_list = [self._nic_con_prompt, "login:", "assword:"]
+        exp_list = [self._nic_con_prompt, "login:", "assword:", self._nic_con_zephyr_prompt]
         while True:
             idx = libmfg_utils.mfg_expect(self._nic_handle, exp_list, timeout=MTP_Const.NIC_CON_INIT_DELAY)
-            if idx == 0:
+            if idx == 0 or idx== 3:
                 break
             elif idx == 1:
                 self._nic_handle.sendline(NIC_MGMT_USERNAME)
@@ -703,13 +704,14 @@ class nic_ctrl():
                 self.nic_set_err_msg("Timeout connecting to UART console")
                 self.nic_console_detach()
                 return False
-
-        if not self.nic_sync_mtp_timestamp():
-            self.nic_console_detach()
-            return False
-        if not self.nic_prompt_cfg():
-            self.nic_console_detach()
-            return False
+        # # if zephyr, skip time sync
+        if uart_selecttor is None:
+            if not self.nic_sync_mtp_timestamp():
+                self.nic_console_detach()
+                return False
+            if not self.nic_prompt_cfg():
+                self.nic_console_detach()
+                return False
 
         return True
 
@@ -1501,6 +1503,42 @@ class nic_ctrl():
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
+        return True
+
+    @nic_console_test()
+    def nic_exec_cmd_from_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=timeout)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
+        return True
+
+    @nic_console_test('0')
+    def nic_exec_cmd_from_zephyr_console(self, cmd, timeout=MTP_Const.OS_CMD_DELAY):
+        self._nic_handle.sendline()
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        self._nic_handle.sendline(cmd)
+        idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=timeout)
+        if idx < 0:
+            self.nic_set_cmd_buf(cmd_buf)
+            return False
+
+        cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
+        self.nic_set_cmd_buf(cmd_buf)
         return True
 
     @nic_fast_console_test_section
@@ -3440,14 +3478,13 @@ class nic_ctrl():
                 normal_percentage = 0
 
             target_percentage = normal_percentage if abs(normal_percentage) > abs(percentage) else percentage
-
-            cmd = "i2cset -y {} 0x4A 0x1 0x0".format(int(self._slot) + 3)
+            cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
+            if not self.mtp_exec_cmd(cmd):
+                return False
+            cmd = MFG_DIAG_CMDS.SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), target_percentage)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
                 return False
-            cmd = MFG_DIAG_CMDS.SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), self._nic_type, target_percentage)
-            if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
-                return False
-            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf():
+            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf() and re.findall(r'Slot.?\d+.*PASSED', self.nic_get_cmd_buf()):
                 return True
             else:
                 return False
@@ -5362,6 +5399,101 @@ class nic_ctrl():
             return False
         if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Read Back and Compare Board ID Failed")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        return True
+
+    def zephyr_assign_board_id_and_pci_subsystemid(self, boardId=None, pciSubsystemId=None):
+        """
+        assign passed in Board ID String and pci subsystem ID to this board by zephyr utility board_config and write subcommand
+        uart:~$ board_config        
+        board_config - Board config 
+            Subcommands:                
+            dump       :              
+            erase      :              
+            list_freq  :              
+            list_pcie  :              
+            write      :              
+            board_id   :
+        uart:~$ board_config write                                  
+        usage: board_config write [opts]                            
+                -w NUM   - Write board config                       
+                -m NUM   - Write manufacturing default              
+                -d       - Set to manufacturing default             
+                -c [0|1] - Console to 3-pin header                  
+                -k [0|1] - Enforce signature check                  
+                -K name  - Public Key name                          
+                -G [0|1] - Boot to goldfw on STOP                   
+                -F [0|1] - No host visible interface in goldfw      
+                -O [0|1] - Enable OOB in goldfw                     
+                -B ID    - Board ID assigned to this board          
+                -v VENID - PCI Vendor ID assigned to this board     
+                -s ID    - PCI Subvendor ID assigned to this board  
+                -S ID    - PCI Subsystem ID assigned to this board  
+                -p       - PCI port cfg preset 16gt value           
+                -T [0|1] - PCI port delay linkup on boot            
+                -t [0|1] - PCI port delay linkup on internal boot   
+                -P NUM   - Select PCIe config, 0 to disable         
+                -M [0|1] - Diag mode with goldfw, 0 to disable      
+                -x [0|1] - Enable secure mode                       
+                -a [0|1] - Enable CPLD access                       
+                -i [0|1] - Enable AINIC mode                        
+                [0|1] - 0:disabled(default)  1:enable                           
+        # example:
+        # write, board_config write -B 0x04640002
+        #        board_config write -S 0x5201
+        # read and verify, board_config dump
+        """
+
+        if boardId is None:
+            self.nic_set_err_msg("Please Provide Board ID")
+            return False
+        if not isinstance(boardId, str):
+            self.nic_set_err_msg("Please Specify Board ID with String Format")
+            return False
+        if pciSubsystemId and not isinstance(pciSubsystemId, str):
+            self.nic_set_err_msg("Please Specify PCI Subsystem ID with String Format")
+            return False
+
+        opts = '-B {:s}'.format(boardId)
+        cmd = MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        # test string "Config successfully set" in command return buffer
+        if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+            self.nic_set_err_msg("Zephyr Write Board ID NOT Success")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        if pciSubsystemId:
+            opts = '-S {:s}'.format(pciSubsystemId)
+            cmd = MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            # test string "Config successfully set" in command return buffer
+            if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
+                self.nic_set_err_msg("Zephyr Write Board PCI Subsystem ID NOT Success")
+                self.nic_set_err_msg(cmd_buf)
+                return False
+
+        # reboot
+        cmd = "kernel reboot cold"
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
+
+        # Dump Board ID back and compare
+        if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_DUMP_FMT):
+            self.nic_set_err_msg("Zephyr Borad Config Dump Command '{:s}' Failed".format(MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_DUMP_FMT))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        if boardId.lower() not in cmd_buf.lower():
+            self.nic_set_err_msg("Zephr Read Back and Compare Board ID Failed")
             self.nic_set_err_msg(cmd_buf)
             return False
 

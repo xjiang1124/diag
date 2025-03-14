@@ -310,6 +310,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(arm_a_zephyr_gold)
             images_needed.append(qspi_prog_sh_img)
             images_needed.append(fail_cpld)
+            images_needed.append(fea_cpld)
             images_needed.append(ufm1)
             images_needed.append(qspi_snake_img)
             if nic_type in SALINA_DPU_NIC_TYPE_LIST:

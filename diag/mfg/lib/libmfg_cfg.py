@@ -640,7 +640,7 @@ class NIC_IMAGES:
     fail_cpld_img["LENI"] = "salina_cfg1-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
     fail_cpld_ver["LENI"] = "0x1"
     fail_cpld_dat["LENI"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fea_cpld_img["LENI"] = ""
+    fea_cpld_img["LENI"] = "salina.fea"
     ufm1_img["LENI"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
     goldfw_img["LENI"] = "salina/leni/kernel.img"
     goldfw_dat["LENI"] = "12-13-2023"
@@ -664,80 +664,80 @@ class NIC_IMAGES:
     mbist_boot0_img["LENI"] = "salina/leni/dpu_boot0.tar.gz"
 
     # LENI48G different card type which is Leni with 48G DDR
-    cpld_img["LENI48G"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    cpld_ver["LENI48G"] = "0x1"
-    cpld_dat["LENI48G"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    sec_cpld_img["LENI48G"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    sec_cpld_ver["LENI48G"] = "0x1"
-    sec_cpld_dat["LENI48G"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fail_cpld_img["LENI48G"] = "salina_cfg1-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    fail_cpld_ver["LENI48G"] = "0x1"
-    fail_cpld_dat["LENI48G"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fea_cpld_img["LENI48G"] = ""
-    ufm1_img["LENI48G"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
+    cpld_img["LENI48G"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    cpld_ver["LENI48G"] = "0x02"
+    cpld_dat["LENI48G"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    sec_cpld_img["LENI48G"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    sec_cpld_ver["LENI48G"] = "0x02"
+    sec_cpld_dat["LENI48G"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fail_cpld_img["LENI48G"] = "salina_cfg1-rev2_0_0228-1726_jtag.bin"
+    fail_cpld_ver["LENI48G"] = "0x02"
+    fail_cpld_dat["LENI48G"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fea_cpld_img["LENI48G"] = "salina.fea"
+    ufm1_img["LENI48G"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["LENI48G"] = "salina/leni48/zephyr_dpu.fit"
     goldfw_dat["LENI48G"] = "12-13-2023"
     mainfw_img["LENI48G"] = ""
     mainfw_dat["LENI48G"] = ""
-    arm_a_boot0_img["LENI48G"] = "salina/leni48/a35_boot0.img"
-    arm_a_uboota_img["LENI48G"] = "salina/leni48/a35_uboota.img"
-    arm_a_ubootb_img["LENI48G"] = "salina/leni48/a35_ubootb.img"
-    arm_a_ubootg_img["LENI48G"] = "salina/leni48/a35_ubootg.img"
-    arm_a_zephyr_a_img["LENI48G"] = "salina/leni48/zephyr_dpu.fit"
-    arm_a_zephyr_b_img["LENI48G"] = "salina/leni48/zephyr.img"
-    arm_a_zephyr_gold_img["LENI48G"] = "salina/leni48/zephyr.img"
-    arm_n_boot0_img["LENI48G"] = "salina/leni48/n1_boot0.img"
-    arm_n_uboota_img["LENI48G"] = "salina/leni48/n1_uboot.img"
-    arm_n_ubootb_img["LENI48G"] = "salina/leni48/n1_uboot.img"
-    arm_n_ubootg_img["LENI48G"] = "salina/leni48/n1_uboot.img"
-    arm_n_kernel_goldfw_img["LENI48G"] = "salina/leni48/kernel.img"
-    device_config_dtb["LENI48G"] = "salina/leni48/device_config.dtb"
-    qspi_prog_sh_img["LENI48G"] = "salina/leni48/qspi_prog.sh"
+    arm_a_boot0_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/boot0.img"
+    arm_a_uboota_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/boot0.img"
+    arm_n_uboota_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/kernel.img"
+    device_config_dtb["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/qspi_prog.sh"
     qspi_snake_img["LENI48G"] = "salina/leni48/leni_snake.tar.gz"
     mbist_boot0_img["LENI48G"] = "salina/leni48/dpu_boot0.tar.gz"
     # LENI48G DPN
-    cpld_img["58-0003-01"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    cpld_ver["58-0003-01"] = "0x1"
-    cpld_dat["58-0003-01"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    sec_cpld_ver["58-0003-01"] = "0x1"
-    sec_cpld_dat["58-0003-01"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    fail_cpld_ver["58-0003-01"] = "0x1"
-    fail_cpld_dat["58-0003-01"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fea_cpld_img["58-0003-01"] = ""
-    ufm1_img["58-0003-01"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
+    cpld_img["58-0003-01"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    cpld_ver["58-0003-01"] = "0x02"
+    cpld_dat["58-0003-01"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    sec_cpld_ver["58-0003-01"] = "0x02"
+    sec_cpld_dat["58-0003-01"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev2_0_0228-1726_jtag.bin"
+    fail_cpld_ver["58-0003-01"] = "0x02"
+    fail_cpld_dat["58-0003-01"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0003-01"] = "salina.fea"
+    ufm1_img["58-0003-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["58-0003-01"] = "salina/leni48/zephyr_dpu.fit"
     goldfw_dat["58-0003-01"] = "12-13-2023"
     mainfw_img["58-0003-01"] = ""
     mainfw_dat["58-0003-01"] = ""
-    arm_a_boot0_img["58-0003-01"] = "salina/leni48/a35_boot0.img"
-    arm_a_uboota_img["58-0003-01"] = "salina/leni48/a35_uboota.img"
-    arm_a_ubootb_img["58-0003-01"] = "salina/leni48/a35_ubootb.img"
-    arm_a_ubootg_img["58-0003-01"] = "salina/leni48/a35_ubootg.img"
-    arm_a_zephyr_a_img["58-0003-01"] = "salina/leni48/zephyr_dpu.fit"
-    arm_a_zephyr_b_img["58-0003-01"] = "salina/leni48/zephyr.img"
-    arm_a_zephyr_gold_img["58-0003-01"] = "salina/leni48/zephyr.img"
-    arm_n_boot0_img["58-0003-01"] = "salina/leni48/n1_boot0.img"
-    arm_n_uboota_img["58-0003-01"] = "salina/leni48/n1_uboot.img"
-    arm_n_ubootb_img["58-0003-01"] = "salina/leni48/n1_uboot.img"
-    arm_n_ubootg_img["58-0003-01"] = "salina/leni48/n1_uboot.img"
-    arm_n_kernel_goldfw_img["58-0003-01"] = "salina/leni48/kernel.img"
-    device_config_dtb["58-0003-01"] = "salina/leni48/device_config.dtb"
-    qspi_prog_sh_img["58-0003-01"] = "salina/leni48/qspi_prog.sh"
+    arm_a_boot0_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/boot0.img"
+    arm_a_uboota_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/boot0.img"
+    arm_n_uboota_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/kernel.img"
+    device_config_dtb["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["58-0003-01"] = "salina/leni48/leni_1.108.0-C-9_oob/qspi_prog.sh"
     qspi_snake_img["58-0003-01"] = "salina/leni48/leni_snake.tar.gz"
 
-    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    cpld_ver["DSC3-2Q400-48R64E64P"] = "0x1"
-    cpld_dat["DSC3-2Q400-48R64E64P"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    sec_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x1"
-    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
-    fail_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x1"
-    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fea_cpld_img["DSC3-2Q400-48R64E64P"] = ""
-    ufm1_img["DSC3-2Q400-48R64E64P"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
+    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    cpld_ver["DSC3-2Q400-48R64E64P"] = "0x02"
+    cpld_dat["DSC3-2Q400-48R64E64P"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev2_0_0228-1726_jtag.bin"
+    sec_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x02"
+    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev2_0_0228-1726_jtag.bin"
+    fail_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x02"
+    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "02-28-25_17:26" #mm-dd-YY_HH:MM
+    fea_cpld_img["DSC3-2Q400-48R64E64P"] = "salina.fea"
+    ufm1_img["DSC3-2Q400-48R64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni48/leni_1.106.0-18/n1_gold/kernel.img"
     goldfw_dat["DSC3-2Q400-48R64E64P"] = "12-13-2023"
     mainfw_img["DSC3-2Q400-48R64E64P"] = ""
@@ -768,7 +768,7 @@ class NIC_IMAGES:
     fail_cpld_img["MALFA"] = "salina_cfg1-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
     fail_cpld_ver["MALFA"] = "0x1"
     fail_cpld_dat["MALFA"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
-    fea_cpld_img["MALFA"] = ""
+    fea_cpld_img["MALFA"] = "salina.fea"
     ufm1_img["MALFA"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
     goldfw_img["MALFA"] = "salina/malfa/zephyr_dpu.fit"
     goldfw_dat["MALFA"] = "12-13-2023"
@@ -1330,39 +1330,43 @@ ROT_CABLE_REQUIRED_FOR_FST_PN_LIST = [
     PART_NUMBERS_MATCH.GINESTRA_D5_PN_FMT,                  #68-0075-01 01    GINESTRA_D5
     ]
 
-# Board Part Numebr and CPLD ID To Board IP Mapping Table
-PN_AND_CPLD_TO_BOARDID = {
-    ("P26968", "0x17")     : "0x01170001",
-    ("68-0014", "0x20")    : "0x01200002",
-    ("P37689", "0x19")     : "0x01170001",
-    ("68-0010", "0x19")    : "0x01190003",
-    ("68-0003", "0x12")    : "0x01120002",
-    ("68-0013", "0x1C")    : "0x011C0001",
-    ("P47930", "0x4A")     : "0x024A0001",
-    ("P47927", "0x46")     : "0x02460001",
-    ("68-0020", "0x45")    : "0x02450001",
-    ("0X322F", "0x49")     : "0x02490001",
-    ("0W5WGK", "0x49")     : "0x02490002",
-    ("P47933", "0x48")     : "0x02480001",
-    ("0PCFPC", "0x47")     : "0x02470001",
-    ("68-0026", "0x4B")    : "0x024B0001",
-    ("68-0015", "0x44")    : "0x02440003",
-    ("68-0028", "0x4B")    : "0x024B0003",
-    ("68-0021", "0x44")    : "0x02440001",
-    ("68-0029", "0x4C")    : "0x024C0001",
-    ("68-0077", "0x4E")    : "0x024E0001",
-    ("68-0089", "x")       : "0x024E0003",
-    ("68-0049", "0x50")    : "0x02500001",
-    ("68-0034", "0x4B")    : "0x024B0002",
-    ("68-0090", "0x4E")    : "0x024E0002",
-    ("68-0091", "0x50")    : "0x02500002",
-    ("68-0074", "0x60")    : "0x03600001",
-    ("68-0075", "0x61")    : "0x03610001",
-    ("68-0076", "0x61")    : "0x03610001",
-    ("68-0086", "0x60")    : "",
-    ("68-0087", "0x61")    : "",
-    ("68-0092", "0x4E")    : "0x024E0002",
-    ("68-0092", "0x50")    : "0x02500002",
+# Board Part Numebr and CPLD ID To Board Id and PCI subsys ID Mapping Table
+#  ("Part Numebr", "CPLD ID") : ("Board Id", "PCI subsys ID")
+PN_CPLD2BOARDID_PCI_SUBSYS_ID = {
+    ("P26968", "0x17")        : ("0x01170001", "0x4008"),
+    ("68-0014", "0x20")       : ("0x01200002", "0x400C"),
+    ("P37689", "0x19")        : ("0x01170001", "0x4007"),
+    ("68-0010", "0x19")       : ("0x01190003", "0x400F"),
+    ("68-0003", "0x12")       : ("0x01120002", "0x4001"),
+    ("68-0013", "0x1C")       : ("0x011C0001", "0x400A"),
+    ("P47930", "0x4A")        : ("0x024A0001", "0x5008"),
+    ("P47927", "0x46")        : ("0x02460001", "0x5005"),
+    ("68-0020", "0x45")       : ("0x02450001", "0x5004"),
+    ("0X322F", "0x49")        : ("0x02490001", "0x5009"),
+    ("0W5WGK", "0x49")        : ("0x02490002", "0x5009"),
+    ("P47933", "0x48")        : ("0x02480001", "0x5006"),
+    ("0PCFPC", "0x47")        : ("0x02470001", "0x5007"),
+    ("68-0026", "0x4B")       : ("0x024B0001", "0x500a"),
+    ("68-0015", "0x44")       : ("0x02440003", "0x5001"),
+    ("68-0028", "0x4B")       : ("0x024B0003", "0x500b"),
+    ("68-0021", "0x44")       : ("0x02440001", "0x5003"),
+    ("68-0029", "0x4C")       : ("0x024C0001", "0x500c"),
+    ("68-0077", "0x4E")       : ("0x024E0001", "0x500d"),
+    ("68-0089", "x")          : ("0x024E0003", "0x500f"),
+    ("68-0049", "0x50")       : ("0x02500001", "0x500e"),
+    ("68-0034", "0x4B")       : ("0x024B0002", "0x5003"),
+    ("68-0090", "0x4E")       : ("0x024E0002", "0x5003"),
+    ("68-0091", "0x50")       : ("0x02500002", "0x5003"),
+    ("68-0074", "0x60")       : ("0x03600001", "0x5100"),
+    ("68-0075", "0x61")       : ("0x03610001", "0x5101"),
+    ("68-0076", "0x61")       : ("0x03610001", "0x5003"),
+    ("68-0086", "0x60")       : ("0x03600001", "0x5100"),
+    ("68-0087", "0x61")       : ("0x03610001", "0x5101"),
+    ("68-0092", "0x4E")       : ("0x024E0002", ""),
+    ("68-0092", "0x50")       : ("0x02500002", "0x5003"),
+    ("102-P10801", "0x66")    : ("0x04640002", "0x5200"),
+    ("102-P11100", "0x65")    : ("0x04650001", "0x5201"),
+    ("102-P11500", "0x67")    : ("0x04670001", "0x5201"),
 }
 
 NIC_MGMT_USERNAME = "root"
