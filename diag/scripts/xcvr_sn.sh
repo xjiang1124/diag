@@ -2,7 +2,6 @@
 usage() {
     echo "$0 Usage:"
     echo "$0 -s X -p Y [returns serial number of QSFP/SFP transceiver EEPROM on port Y]"
-    echo "$0 -s X -d   [detects prescence of QSFP/SFP transceiver(s)]"
  }
 
 if [[ $# -eq 0 ]]
@@ -55,16 +54,7 @@ if [[ $prsnt == 0 ]]; then echo "SLOT-$SLOT PORT-$PORT XCVR not present/detected
 i2cset -y $((SLOT+2)) 0x4a 0x2 0x0
 sleep 0.3 # wait for SPI
 fpgautil spibridge $SLOT i2creset $PORT  >> $LOGFILE
-
-fpgautil spibridge $SLOT i2ctransw $PORT 0x50 0xc4  >> $LOGFILE
-sn1=$(fpgautil spibridge $SLOT i2ctransr $PORT 0x50 8 | tail -n1)
-
-fpgautil spibridge $SLOT i2ctransw $PORT 0x50 0xcc  >> $LOGFILE
-sn2=$(fpgautil spibridge $SLOT i2ctransr $PORT 0x50 4 | tail -n1)
-
-fpgautil spibridge $SLOT i2ctransw $PORT 0x50 0xd0  >> $LOGFILE
-sn3=$(fpgautil spibridge $SLOT i2ctransr $PORT 0x50 4 | tail -n1)
-
-sn=$(echo $sn1 $sn2 $sn3 | xxd -r -p)
-
+fpgautil spibridge $SLOT qsfpdump $PORT | tee -a $LOGFILE
+sn=$(grep -a "Vendor SN" $LOGFILE | awk -F"'" '{print $(NF-1)}')
+echo
 echo "SLOT-$SLOT PORT-$PORT XCVR SN: $sn"

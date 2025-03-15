@@ -695,10 +695,18 @@ func QSFPdump(spiNumber uint32, bus uint8, i2cAddr uint8) (err error) {
         fmt.Printf("%.02x ", rdData[i]) 
     }
     fmt.Printf("\n")
-    fmt.Printf("Vendor   ='%s'\n", string(rdData[148:163]))
-    fmt.Printf("Vendor PN='%s'\n", string(rdData[168:183]))
-    fmt.Printf("Vendor SN='%s'\n", string(rdData[196:211]))
-
+    var identifier = rdData[128]
+    if (identifier == 0x11) {
+        // SFF-8636 format (e.g. Multilane loopback)
+        fmt.Printf("Vendor   ='%s'\n", string(rdData[148:163]))
+        fmt.Printf("Vendor PN='%s'\n", string(rdData[168:185]))
+        fmt.Printf("Vendor SN='%s'\n", string(rdData[196:211]))
+    } else if (identifier == 0x1e) {
+        // CMIS format (e.g. Infraeo loopback)
+        fmt.Printf("Vendor   ='%s'\n", string(rdData[129:144]))
+        fmt.Printf("Vendor PN='%s'\n", string(rdData[148:165]))
+        fmt.Printf("Vendor SN='%s'\n", string(rdData[166:181]))
+    }
     return
 }
 
