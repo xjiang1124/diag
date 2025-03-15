@@ -718,7 +718,8 @@ proc esec_get_uds_csr { } {
     set fpb_t [open $fpb_tn w]
     puts -nonewline $fpb_t $s
     close $fpb_t
-    exec xxd -r -p $fpb_tn $fpb
+    #exec xxd -r -p $fpb_tn $fpb
+    hex2bin $fpb_tn $fpb
     #exec rm $fpb_tn
 
     set DIAG_HOME $::env(DIAG_HOME)
