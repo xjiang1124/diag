@@ -1014,7 +1014,7 @@ class nic_con:
                 self.uart_session_cmd(session, cmd_pre)
                 print("wait 30 s for mgmt port to be ready")
                 time.sleep(30)
-                self.uart_session_cmd(session, "dpctl debug update pipeline pin-lif --lif 65 --uplink 8", 30)
+                #self.uart_session_cmd(session, "dpctl debug update pipeline pin-lif --lif 65 --uplink 8", 30)
             session.sendline("ifconfig -a")
             session.expect("\#")
             temp = session.after
