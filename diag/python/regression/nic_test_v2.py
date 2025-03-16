@@ -519,6 +519,7 @@ class nic_test_v2:
                args.snake_type == "esam_pktgen_ddr_burst_400G_no_mac" or \
                args.snake_type == "esam_pktgen_ddr_burst":
                 print("ARM not booted")
+                self.nic_con.tcl_env_setup(session, args.slot, args.tcl_path)
             else:
                 if self.sal_boot_to_vmarg(session, args):
                     print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
