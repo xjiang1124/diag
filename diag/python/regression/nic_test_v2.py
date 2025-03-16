@@ -606,7 +606,6 @@ class nic_test_v2:
                 return -1
             self.nic_con.uart_session_stop(uart_session)
             if args.card_type != "POLLARA" and args.card_type != "LINGUA":
-                uart_session = common.session_start()
                 self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
                 if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
                     print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
