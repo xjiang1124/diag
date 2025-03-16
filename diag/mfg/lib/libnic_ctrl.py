@@ -1638,10 +1638,23 @@ class nic_ctrl():
         match = re.findall(r"SMP(?: PREEMPT)? (.* 20\d{2})", buf)
         if match:
             kernel_ver = match[0]
+            # The %Z specifier in strptime() matches the full name of a timezone (e.g., Pacific Standard Time) or an abbreviation (e.g., PST).
+            # However, Python relies on the underlying C library to parse timezone names and abbreviations, and many implementations do not include abbreviations
+            # like PST, EST, etc., because they are ambiguous.
+            # For example:PST could mean "Pacific Standard Time" or another timezone with the same abbreviation in different contexts.
+            if 'PST' in kernel_ver:
+                kernel_ver = kernel_ver.replace("PST", "-0800")
+                timestamp_format_string =  "%a %b %d %X %z %Y"
+            elif 'PDT' in kernel_ver:
+                kernel_ver = kernel_ver.replace("PDT", "-0800")
+                timestamp_format_string =  "%a %b %d %X %z %Y"
+            else:
+                timestamp_format_string = "%a %b %d %X %Z %Y"
             # check if timestamp is valid
             try:
-                dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
+                dt = datetime.strptime(kernel_ver, timestamp_format_string)
                 self._kernel_timestamp = dt.strftime("%m-%d-%Y")
+                print(self._kernel_timestamp)
                 return True
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
