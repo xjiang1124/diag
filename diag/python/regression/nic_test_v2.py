@@ -606,13 +606,23 @@ class nic_test_v2:
                 return -1
             self.nic_con.uart_session_stop(uart_session)
             if args.card_type != "POLLARA" and args.card_type != "LINGUA":
-                uart_session = common.session_start()
                 self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=1)
                 if 0 != sal_con.exp_cmd(uart_session, "", pass_sig_list=["\#"], timeout=5)[0]:
                     print("===== FAILED: slot {} N1 console is not responsive".format(args.slot))
                     return -1
+
                 self.nic_con.uart_session_stop(uart_session)
-                common.session_stop(uart_session)
+
+            # Get AW logs
+            self.nic_con.uart_session_connect(uart_session, args.slot, uart_id=0)
+
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showparams", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd showlog", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd collect_linkeval 0xf", ending="uart:~\$")
+            self.nic_con.uart_session_cmd(uart_session, "pcieawd dump_linkeval", ending="uart:~\$")
+
+            self.nic_con.uart_session_stop(uart_session)
+            common.session_stop(uart_session)
         return ret
 
     def nic_snake(self, slot, ite, mode, dura, vmarg, int_lpbk, verbose, snake_num, timeout):
