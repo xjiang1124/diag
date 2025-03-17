@@ -442,4 +442,5 @@ if {$err_cnt != 0} {
 }
 plog_msg "SNAKE TEST DONE"
 diag_close_ow_if $port $slot
+diag_close_j2c_if $port $slot
 exit $ret

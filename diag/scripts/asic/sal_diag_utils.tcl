@@ -182,7 +182,7 @@ proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk
         set val [csr_read  "sal0.pp.pxc\[${host_px_port}\].dhs_c_mac_apb.entry\[36\]"]
 
         set host_link_speed_hex [format "%x" $host_link_speed]
-        plog_msg "itr: $itr, host_link_speed_hex: $host_link_speed_hex"
+        plog_msg "rc $rc_l_port; host $host_l_port; host_link_speed_hex: $host_link_speed_hex"
         if {(($val >> 16) & 0xff) != $host_link_speed } {
             plog_err "rc $rc_l_port; host $host_l_port; Link should be up with 0xXX${host_link_speed_hex}XXXX, it is $val"
             # grep rx_detect after running this proc
@@ -192,9 +192,9 @@ proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk
         }
     }
     # dump mac status
-    rds sal0.pp.pxc\[0\].sta_c_port_mac
-    rds sal0.pp.pxc\[1\].sta_c_port_mac
-    rds sal0.pp.pxc\[2\].sta_c_port_mac
-    rds sal0.pp.pxc\[3\].sta_c_port_mac
+    for { set port 0 } { $port < 4 } { incr port }  {
+        plog_msg "Port $port mac status:"
+        rds sal0.pp.pxc\[$port\].sta_c_port_mac
+    }
     return $ret
 }
