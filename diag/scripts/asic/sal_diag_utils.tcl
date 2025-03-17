@@ -182,7 +182,7 @@ proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk
         set val [csr_read  "sal0.pp.pxc\[${host_px_port}\].dhs_c_mac_apb.entry\[36\]"]
 
         set host_link_speed_hex [format "%x" $host_link_speed]
-        puts "itr: $itr, host_link_speed_hex: $host_link_speed_hex"
+        plog_msg "itr: $itr, host_link_speed_hex: $host_link_speed_hex"
         if {(($val >> 16) & 0xff) != $host_link_speed } {
             plog_err "rc $rc_l_port; host $host_l_port; Link should be up with 0xXX${host_link_speed_hex}XXXX, it is $val"
             # grep rx_detect after running this proc

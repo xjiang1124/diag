@@ -431,7 +431,6 @@ if {$err_cnt != 0} {
 
 plog_stop
 set err_cnt_fnl [ plog_get_err_count ]
-diag_close_ow_if $port $slot
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
 if {$err_cnt != 0} {
     sal_aw_port_status
@@ -442,4 +441,5 @@ if {$err_cnt != 0} {
     set ret 0
 }
 plog_msg "SNAKE TEST DONE"
+diag_close_ow_if $port $slot
 exit $ret
