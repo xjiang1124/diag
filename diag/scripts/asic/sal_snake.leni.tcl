@@ -107,6 +107,9 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
 
+        plog_msg "pcie width and mac status:"
+        pcie_check_link_width_and_mac_status 1100 LENI 4 0
+
         sal_print_voltage_temp_from_j2c
         sal_mc_irq_show -1 -1 1
         sal_mc_check_ecc -1 -1 1 0x61 1
@@ -162,6 +165,7 @@ set ASIC_SRC $::env(ASIC_SRC)
 
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
+source /home/diag/diag/scripts/asic/sal_diag_utils.tcl
 
 plog_msg "test_type: $test_type"
 
@@ -215,8 +219,11 @@ set err_cnt_init [ plog_get_err_count ]
 if { $test_type == "esam_pktgen_llc_sor" ||
      $test_type == "esam_pktgen_ddr_burst_400G_no_mac" ||
      $test_type == "esam_pktgen_ddr_burst" } {
-    sal_pcc
-    sal_arm_reset
+    #sal_pcc
+    #sal_arm_reset
+    plog_msg "calling reset_to_proto_mode no_proto"
+    reset_to_proto_mode no_proto
+    # disable WDT
     set i2c_bus [expr $slot + 2]
     exec i2cset -y $i2c_bus 0x4f 1 0
     set reg1 [exec i2cget -y $i2c_bus 0x4f 0x1]
@@ -427,6 +434,7 @@ set err_cnt_fnl [ plog_get_err_count ]
 diag_close_ow_if $port $slot
 set err_cnt  [ expr ( $err_cnt_fnl - $err_cnt_init ) ]
 if {$err_cnt != 0} {
+    sal_aw_port_status
     plog_err "SNAKE TEST FAILED"
     set ret -1
 } else {

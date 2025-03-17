@@ -158,3 +158,43 @@ proc set_pollara_low_power_mode {} {
         plog_msg [exec inventory -sts -slot $::slot]
     }
 }
+
+proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk_setup } {
+    set rc_l_port 1
+    set host_l_port 0
+    set rc_px_port 0
+    set host_px_port 0
+    set host_link_speed 0
+    set ret 0
+
+    set max_itr [pcie_mtp_get_no_of_hosts $core_freq $card_type $mtp_rev]
+
+    set int_core_freq [expr int($core_freq)]
+
+    for { set itr 0 } { $itr < $max_itr } { incr itr }  {
+        pcie_mtp_4x4_get_rc_host_info $card_type $mtp_rev $itr $int_core_freq rc_l_port host_l_port rc_px_port host_px_port host_link_speed
+
+        set rc_pp_inst [expr $rc_px_port >> 2]
+        set host_pp_inst [expr $host_px_port >> 2]
+        set rc_phy_port [expr $rc_px_port & 0x3]
+        set host_phy_port [expr $host_px_port & 0x3]
+
+        set val [csr_read  "sal0.pp.pxc\[${host_px_port}\].dhs_c_mac_apb.entry\[36\]"]
+
+        set host_link_speed_hex [format "%x" $host_link_speed]
+        puts "itr: $itr, host_link_speed_hex: $host_link_speed_hex"
+        if {(($val >> 16) & 0xff) != $host_link_speed } {
+            plog_err "rc $rc_l_port; host $host_l_port; Link should be up with 0xXX${host_link_speed_hex}XXXX, it is $val"
+            # grep rx_detect after running this proc
+            sal_pcie_health_check_app
+            #mtp_debug_info
+            set ret -1
+        }
+    }
+    # dump mac status
+    rds sal0.pp.pxc\[0\].sta_c_port_mac
+    rds sal0.pp.pxc\[1\].sta_c_port_mac
+    rds sal0.pp.pxc\[2\].sta_c_port_mac
+    rds sal0.pp.pxc\[3\].sta_c_port_mac
+    return $ret
+}
