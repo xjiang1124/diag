@@ -509,7 +509,6 @@ class nic_test_v2:
         ret = 0
 
         session = common.session_start()
-        time.sleep(3)
         if args.card_type == "POLLARA" or args.card_type == "LINGUA":
             if self.sal_boot_to_vmarg(session, args):
                 print("===== FAILED: slot {} couldn't boot Zephyr".format(args.slot))
