@@ -5846,15 +5846,14 @@ class mtp_ctrl():
                 return slot_list
         return []
 
-    def mtp_untar_snake_qspi_img(self, slot_list=[]):
+    def mtp_untar_snake_qspi_img(self, slot_list=[], stage=FF_Stage.FF_P2C):
         """
         untar special qspi image for salina snake test
         """
         if len(slot_list) == 0:
             return []
 
-        dsp = FF_Stage.FF_P2C
-        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_snake_img(self, slot_list[0], dsp)["filename"]
+        image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_snake_img(self, slot_list[0], stage)["filename"]
 
         cmd = f"tar -xzf {image_path} -C " + os.path.dirname(image_path)
         if not self.mtp_mgmt_exec_cmd(cmd):
@@ -7070,6 +7069,16 @@ class mtp_ctrl():
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
             return False
+        return True
+
+    @parallelize.parallel_nic_using_console
+    def mtp_program_nic_emmc_salina(self, slot, stage=FF_Stage.FF_SWI):
+        emmc_mainfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(self, slot, stage)["filename"]
+        if not self._nic_ctrl_list[slot].nic_program_emmc_salina(emmc_mainfw_img_file):
+            self.cli_log_slot_err_lock(slot, "Program NIC EMMC failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
         return True
 
     def mtp_mgmt_dump_avs_info(self, slot, buf):

@@ -406,6 +406,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootb)
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
+                images_needed.append(mainfw)
+                images_needed.append(qspi_snake_img)
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)

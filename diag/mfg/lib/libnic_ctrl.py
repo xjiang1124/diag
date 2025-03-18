@@ -3180,6 +3180,35 @@ class nic_ctrl():
 
         return True
 
+    def nic_program_emmc_salina(self, emmc_img):
+
+        img_name = os.path.basename(emmc_img)
+
+        cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        if not self.nic_exec_cmd_from_console(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_SALINA_FMT.format(img_name)
+        if not self.nic_exec_cmd_from_console(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        emmc_mainfw_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        cmd_buf = self.nic_get_cmd_buf()
+        if emmc_mainfw_fail_sig in cmd_buf:
+            self.nic_set_err_msg("Salina mainfw emmc program failed")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        emmc_mainfw_pass_sig = MFG_DIAG_SIG.NIC_SYSUPDATE_MAINFW_PASS_SIG
+        if emmc_mainfw_pass_sig not in cmd_buf:
+            self.nic_set_err_msg("Salina mainfw emmc program not complete")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        self.nic_boot_info_reset()
+
+        return True
+
 
     def nic_setup_diag_img(self, nic_diag_image, nic_asic_image="", emmc_utils=False):
         # if emmc_utils: arm64 diag image on NIC will be updated
