@@ -845,6 +845,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
         images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage)
         if images_for_nic_type is None:
             return None
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         image_list += list(images_for_nic_type.values())
         if nic_type == NIC_Type.POLLARA:
             pollara_family = True
