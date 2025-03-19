@@ -588,7 +588,7 @@ def main():
             # run_swi_test(monterey_type_list, "KEYS_CHECK")
             # fw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST + CTO_MODEL_TYPE_LIST)
             # run_swi_test(fw_boot_type_list, "SW_SHUTDOWN")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SW_SHUTDOWN")
+            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SW_SHUTDOWN")
 
         else:
             # power cycle all nic

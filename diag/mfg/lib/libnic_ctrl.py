@@ -2093,6 +2093,26 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
+        ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        nic_cmd = "{} \" sync;sleep5;sync;sync \"".format(ssh_pipe_cmd)
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx == 1:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
         return True
     def nic_copy_image_IBM(self, img_name, directory="/update"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
