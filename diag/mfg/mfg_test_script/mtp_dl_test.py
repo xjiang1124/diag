@@ -137,6 +137,18 @@ def dl_salina_qspi_program(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
 
 @parallelize.parallel_nic_using_ssh
+def dl_salina_swi_qspi_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+    if nic_type == NIC_Type.POLLARA:
+        image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P"])
+    elif nic_type == NIC_Type.LINGUA:
+        image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + NIC_IMAGES.qspi_prog_sh_img["LINGUA-1Q400P"])
+    else:
+        image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"])
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
+
+@parallelize.parallel_nic_using_ssh
 def dl_goldfw_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     qspi_gold_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_goldfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -439,6 +451,8 @@ def main():
                 rlist = dl_diagfw_program(mtp_mgmt_ctrl, nic_list)
             elif test == "QSPI_GOLD_PROG":
                 rlist = dl_goldfw_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "SALINA_SWI_QSPI_PROG":
+                rlist = dl_salina_swi_qspi_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UBOOT_PROG":
                 rlist = dl_uboot_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UBOOTA_PROG":
@@ -625,9 +639,10 @@ def main():
             # qspi_gold_nic_list = get_slots_of_type([NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4])
             # run_dl_test(qspi_gold_nic_list, "QSPI_GOLD_PROG")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_ERASE")
-            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_SWI_QSPI_PROG")
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
-            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
+            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
 
             # ## 2a. Prog FRU before enableOOB for Salina
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FIX_VRM")
@@ -658,6 +673,9 @@ def main():
             # brd_config_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(brd_config_list, "BOARD_CONFIG")
 
+            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_ERASE")
+            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
+            run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             ## 4. program cpld
             ################## Done########################################
             # fpga_list = get_slots_of_type(FPGA_TYPE_LIST)

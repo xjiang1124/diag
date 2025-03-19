@@ -463,6 +463,7 @@ def main():
             # run_swi_test(efuse_type_list, "NIC_INIT")
             # run_swi_test(efuse_type_list, "EFUSE_PROG")
             # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
+            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "DUMP_BOOT_BIN")
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")

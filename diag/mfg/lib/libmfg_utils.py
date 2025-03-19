@@ -837,15 +837,48 @@ def mtpid_list_poweroff(mtp_mgmt_ctrl_list, safely=True):
 def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
     image_list = list()
     nic_prsnt_list = mtp_mgmt_ctrl.mtp_get_nic_prsnt_list()
+    pollara_family = False
+    lingua_family = False
     for slot in range(MTP_Const.MTP_SLOT_NUM):
         if not nic_prsnt_list[slot]:
             continue
         images_for_nic_type = image_control.get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage)
         if images_for_nic_type is None:
             return None
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
         image_list += list(images_for_nic_type.values())
+        if nic_type == NIC_Type.POLLARA:
+            pollara_family = True
+        if nic_type == NIC_Type.LINGUA:
+            lingua_family = True
 
     image_list.append(NIC_IMAGES.uboot_img["INSTALLER"])
+    if stage == FF_Stage.FF_DL:
+        if pollara_family:
+            image_list.append(NIC_IMAGES.arm_a_boot0_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_uboota_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_ubootb_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_ubootg_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P"])
+        if lingua_family:
+            image_list.append(NIC_IMAGES.arm_a_boot0_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_uboota_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_ubootb_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_ubootg_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.device_config_dtb["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.firmware_config_dtb["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.qspi_prog_sh_img["LINGUA-1Q400P"])
+
     return image_list
 
 def rgx_extract_commit_date(buf):
