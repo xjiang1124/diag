@@ -106,8 +106,10 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         #set ret [sal_port_sync]
         #plog_msg "sal_port_sync: $ret"
 
-        plog_msg "pcie width and mac status:"
-        pcie_check_link_width_and_mac_status 1100 LENI 4 0
+        if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
+            plog_msg "pcie width and mac status:"
+            pcie_check_link_width_and_mac_status 1100 LENI 4 0
+        }
 
         sal_print_voltage_temp_from_j2c
 
