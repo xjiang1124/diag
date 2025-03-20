@@ -958,10 +958,13 @@ PRIVEK <ek.sk>"""
             print("HSM RN:", hsm_rn)
             print("HSM RN Generated from HSB successful")
 
-    def hmac_fuse_prog(self, slot, card_type, hamc_file, dry_run):
+    def hmac_fuse_prog(self, slot, card_type, hmac_file, dry_run):
+        dr = 0
+        if dry_run == True:
+            dr = 1
         asic_type = self.get_asic_type(card_type)
         if asic_type == "SALINA":
-            cmd = "tclsh /home/diag/diag/scripts/asic/sal_hmac_prog.tcl {} {} {}".format(slot, hsm_file, dr) 
+            cmd = "tclsh /home/diag/diag/scripts/asic/sal_hmac_prog.tcl {} {} {}".format(slot, hmac_file, dr) 
             print(cmd)
             pass_sign = "EFUSE PROG PASSED"
             session = common.session_start()
