@@ -644,7 +644,7 @@ class NIC_IMAGES:
     ufm1_img["LENI"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
     goldfw_img["LENI"] = "salina/leni/kernel.img"
     goldfw_dat["LENI"] = "12-13-2023"
-    mainfw_img["LENI"] = ""
+    mainfw_img["LENI"] = "salina/leni48/leni_1.108.0-C-9/main_bundle/dpu_fw_salina.tar"
     mainfw_dat["LENI"] = ""
     arm_a_boot0_img["LENI"] = "salina/leni/a35_boot0.img"
     arm_a_uboota_img["LENI"] = "salina/leni/a35_uboota.img"

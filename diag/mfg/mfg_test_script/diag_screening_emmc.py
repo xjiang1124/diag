@@ -1705,7 +1705,7 @@ def main():
                     run_test(pass_nic_list, "NIC_DIAG_INIT", dis_hal=True)
                 elif test_section == "P2C_IMG_PROG":
                     ######################################################################
-                    # Replace DL image for Leni only so far
+                    # Replace DL image for Leni only so far 
                     ######################################################################
                     salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
                     #prog special image

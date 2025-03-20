@@ -2224,10 +2224,11 @@ class nic_ctrl():
 
         if self._mtp_type == "MATERA":
             # put the card into proto mode before program QSPI
-            if not self.nic_power_off():
-                return False
-            if not self.nic_power_on(proto_mode='0'):
-                return False
+            if partition != "ufm1":
+                if not self.nic_power_off():
+                    return False
+                if not self.nic_power_on(proto_mode='0'):
+                    return False
             # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm1/fea> <filename>
             # program
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)

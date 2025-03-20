@@ -405,6 +405,10 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_clear_pre_uboot_section(nic_list)
             elif test == "DUMP_BOOT_BIN":
                 rlist = swi_salina_dump_boot(mtp_mgmt_ctrl, nic_list)
+            elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
+            elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -517,6 +521,10 @@ def main():
             # run_swi_test(non_capri_type_list, "ENABLE_ESEC_WP")
 
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
+
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
 
             # run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")

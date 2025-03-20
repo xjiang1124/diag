@@ -611,10 +611,10 @@ def main():
 
             ## 0. program cpld in first place for Salina Cards Only, not affect rest of program sequence
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_dl_test(cpld_list, "CPLD_PROG")
-            cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "UMF1_PROG")
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            run_dl_test(cpld_list, "CPLD_PROG")
+            cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
             # run_dl_test(ecpld_list, "FEA_CPLD_PROG")
             run_dl_test(ecpld_list, "NIC_PWRCYC")
@@ -681,9 +681,9 @@ def main():
             # fpga_list = get_slots_of_type(FPGA_TYPE_LIST)
             # run_dl_test(fpga_list, "FPGA_PROG")
             cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST+SALINA_NIC_TYPE_LIST)
-            run_dl_test(cpld_list, "CPLD_PROG")
-            cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST+SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "UMF1_PROG")
+            cpld_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST+SALINA_NIC_TYPE_LIST)
+            run_dl_test(cpld_list, "CPLD_PROG")
             ecpld_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST, except_type=SALINA_NIC_TYPE_LIST)
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
 
