@@ -153,6 +153,52 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
+    # write Uboot image address, OS image address, CPLD ID, CPLD rev/sub-rev for Zephyr
+    # built from Collab branch
+    devmem_cmd = "devmem 0x80021010 32"
+    ret, output = exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)
+    if ret != 0:
+        print("===== FAILED: slot {} devmem command failed".format(slot))
+        return -1
+    if "Read value 0x0" in output:
+        # write Uboot image address
+        devmem_cmd = "devmem 0x80021008 32 0x80100000"
+        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+        # write OS image address
+        devmem_cmd = "devmem 0x80021010 32 0x80500000"
+        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+        # write CPLD ID
+        cpld_id = [0]
+        if 0 != con_ctrl.read_cpld_reg(0x80, cpld_id, slot):
+            print("===== FAILED: read cpld_id from slot {} failed".format(slot))
+            return -1
+        devmem_cmd = "devmem 0x80021020 32 {}".format(cpld_id[0])
+        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+        # write CPLD rev
+        cpld_rev = [0]
+        if 0 != con_ctrl.read_cpld_reg(0x0, cpld_rev, slot):
+            print("===== FAILED: read cpld_rev from slot {} failed".format(slot))
+            return -1
+        devmem_cmd = "devmem 0x80021024 32 {}".format(cpld_rev[0])
+        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+        # write CPLD sub-rev
+        cpld_sub_rev = [0]
+        if 0 != con_ctrl.read_cpld_reg(0x1e, cpld_sub_rev, slot):
+            print("===== FAILED: read cpld_sub_rev from slot {} failed".format(slot))
+            return -1
+        devmem_cmd = "devmem 0x80021028 32 {}".format(cpld_sub_rev[0])
+        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+
     ret, help_output = exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1)
     if ret != 0:
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))

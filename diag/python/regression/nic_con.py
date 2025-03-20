@@ -1713,6 +1713,23 @@ class nic_con:
             cmd = "jtag_accpcie_salina clr {}".format(slot)
             common.session_cmd(session, cmd)
 
+    def read_cpld_reg(self, reg_addr, read_data, slot=1):
+        ret = 0
+        if int(slot) > 10:
+            print("Invalide slot {}!".format(slot))
+            return -1
+
+        session = common.session_start()
+        cmd = "i2cget -y {} 0x4f {}".format(int(slot)+2, int(reg_addr))
+        common.session_cmd(session, cmd)
+        match = re.findall(r"(0x[0-9a-fA-F]+)", session.before)
+        if len(match) > 1:
+            read_data[0] = match[1]
+        else:
+            print("Failed to read cpld reg {}".format(int(reg_addr)))
+            ret = -1
+        common.session_stop(session)
+        return ret
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
