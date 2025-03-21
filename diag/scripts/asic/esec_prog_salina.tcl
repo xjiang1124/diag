@@ -590,7 +590,7 @@ proc esec_set_uds_entropy {sn
         {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
         {BACKEND_URL "192.168.67.214:12266"} } {
 
-    # Check if efuse[23:22] is already set
+    # Check if efuse[51:50] is already set
     set bit50 [sal_fuse_get_bit 0 50 0]
     set bit51 [sal_fuse_get_bit 0 51 0]
     if { $bit50 != 0 || $bit51 != 0 } {
@@ -633,6 +633,8 @@ proc esec_set_uds_entropy {sn
     }
     sal_fuse_set_bit 0 50 0
     sal_fuse_set_bit 0 51 0
+    sal_fuse_set_bit 0 48 0
+    sal_fuse_set_bit 0 49 0
     sal_fuse_vddq_disable
 
     set ret_code 0
@@ -652,7 +654,12 @@ proc esec_set_uds_entropy {sn
         plog_msg "set UDS entropy Auto-Clear FAILED"
         set ret_code [expr $ret_code + 1]
     }
-
+    set bit48 [sal_fuse_get_bit 0 48 0]
+    set bit49 [sal_fuse_get_bit 0 49 0]
+    if { $bit48 == 0 || $bit49 == 0 } {
+        plog_msg "set UDS entropy read disable FAILED"
+        set ret_code [expr $ret_code + 1]
+    }
     sal_fuse_dump
 
     if { $ret_code == 0 } {
