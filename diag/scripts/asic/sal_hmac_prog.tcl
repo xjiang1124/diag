@@ -149,7 +149,7 @@ if { $bit_lock == 0 } {
         sal_fuse_vddq_disable
 
         set bit46 [sal_fuse_get_bit 0 46 0]
-        set bit47 [sal_fuse_get_bit 0 43 0]
+        set bit47 [sal_fuse_get_bit 0 47 0]
         if { $bit46 == 0 || $bit47 == 0 } {
             plog_msg "failed to set hmac lock bits $bit46 $bit47"
             sal_fuse_dump
