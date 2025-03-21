@@ -77,7 +77,7 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
         return 0
 
     con_ctrl = nic_con()
-    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
+    if con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["Autoboot "], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)) != 0:
         print("==== FAILED: slot {} couldn't enter a35 uboot".format(slot))
         return -1
 
@@ -86,27 +86,10 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
 
 
 def enter_a35_zephyr(slot, session, *args, **kwargs):
-    if 0 != enter_a35_uboot(slot, session, *args, **kwargs):
-        return -1
-
     con_ctrl = nic_con()
+    if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
+        return -1
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
-
-    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
-        print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
-        return -1
-
-    if con_ctrl.get_card_type(slot) in ["POLLARA","LINGUA"]:
-        cmd = "bootm {}".format(zephyr_offset_32mB["a"])
-    elif kwargs.get("raw_zephyr_binary", False):
-        cmd = "bootm 0x7E500000" #zephyr.bin
-    else:
-        cmd = "bootm {}".format(zephyr_offset_256mB["a"])
-
-    # For ainic, the "uart:~$" prompt may be truncated
-    if 0 != exp_cmd(session, cmd, pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
-        print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
-        return -1
 
     time.sleep(3)
     show_param=kwargs.get('awd_showparms', True)
@@ -146,73 +129,77 @@ def enter_a35_zephyr(slot, session, *args, **kwargs):
     return 0
 
 
-def enter_n1_uboot(slot, session, *args, **kwargs):
+def boot_n1(slot, session, *args, **kwargs):
     if 0 != enter_a35_zephyr(slot, session, *args, **kwargs):
         return -1
 
     con_ctrl = nic_con()
     con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
-    # write Uboot image address, OS image address, CPLD ID, CPLD rev/sub-rev for Zephyr
-    # built from Collab branch
-    devmem_cmd = "devmem 0x80021010 32"
-    ret, output = exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)
-    if ret != 0:
-        print("===== FAILED: slot {} devmem command failed".format(slot))
-        return -1
-    if "Read value 0x0" in output:
-        # write Uboot image address
-        devmem_cmd = "devmem 0x80021008 32 0x80100000"
-        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
-            print("===== FAILED: slot {} devmem command failed".format(slot))
-            return -1
-        # write OS image address
-        devmem_cmd = "devmem 0x80021010 32 0x80500000"
-        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
-            print("===== FAILED: slot {} devmem command failed".format(slot))
-            return -1
-        # write CPLD ID
-        cpld_id = [0]
-        if 0 != con_ctrl.read_cpld_reg(0x80, cpld_id, slot):
-            print("===== FAILED: read cpld_id from slot {} failed".format(slot))
-            return -1
-        devmem_cmd = "devmem 0x80021020 32 {}".format(cpld_id[0])
-        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
-            print("===== FAILED: slot {} devmem command failed".format(slot))
-            return -1
-        # write CPLD rev
-        cpld_rev = [0]
-        if 0 != con_ctrl.read_cpld_reg(0x0, cpld_rev, slot):
-            print("===== FAILED: read cpld_rev from slot {} failed".format(slot))
-            return -1
-        devmem_cmd = "devmem 0x80021024 32 {}".format(cpld_rev[0])
-        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
-            print("===== FAILED: slot {} devmem command failed".format(slot))
-            return -1
-        # write CPLD sub-rev
-        cpld_sub_rev = [0]
-        if 0 != con_ctrl.read_cpld_reg(0x1e, cpld_sub_rev, slot):
-            print("===== FAILED: read cpld_sub_rev from slot {} failed".format(slot))
-            return -1
-        devmem_cmd = "devmem 0x80021028 32 {}".format(cpld_sub_rev[0])
-        if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
-            print("===== FAILED: slot {} devmem command failed".format(slot))
-            return -1
-
     ret, help_output = exp_cmd(session, "help", pass_sig_list=["uart:~\$"], timeout=1)
     if ret != 0:
         print("===== FAILED: slot {} couldn't enter zephyr".format(slot))
         return -1
 
+    old_zephyr = False
     if "system   :System commands" in help_output:
         fwsel_cmd = "system fwsel dpu goldfw"
         boot_cmd = "system boot-dpu"
+        old_zephyr = True
     elif re.search("system.*system commands", help_output, re.IGNORECASE):
         fwsel_cmd = "system fwsel pipeline-fw goldfw"
         boot_cmd = "system boot-dpu"
     else:
         fwsel_cmd = "n1 fwsel goldfw"
         boot_cmd = "n1 boot"
+
+    new_memory_layout = kwargs.get('new_memory_layout', False)
+    if old_zephyr and new_memory_layout:
+        # write Uboot image address, OS image address, CPLD ID, CPLD rev/sub-rev for Zephyr
+        # built from Collab branch
+        devmem_cmd = "devmem 0x80021010 32"
+        ret, output = exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)
+        if ret != 0:
+            print("===== FAILED: slot {} devmem command failed".format(slot))
+            return -1
+        if "Read value 0x0" in output:
+            # write Uboot image address
+            devmem_cmd = "devmem 0x80021008 32 0x80100000"
+            if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} devmem command failed".format(slot))
+                return -1
+            # write OS image address
+            devmem_cmd = "devmem 0x80021010 32 0x80500000"
+            if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} devmem command failed".format(slot))
+                return -1
+            # write CPLD ID
+            cpld_id = [0]
+            if 0 != con_ctrl.read_cpld_reg(0x80, cpld_id, slot):
+                print("===== FAILED: read cpld_id from slot {} failed".format(slot))
+                return -1
+            devmem_cmd = "devmem 0x80021020 32 {}".format(cpld_id[0])
+            if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} devmem command failed".format(slot))
+                return -1
+            # write CPLD rev
+            cpld_rev = [0]
+            if 0 != con_ctrl.read_cpld_reg(0x0, cpld_rev, slot):
+                print("===== FAILED: read cpld_rev from slot {} failed".format(slot))
+                return -1
+            devmem_cmd = "devmem 0x80021024 32 {}".format(cpld_rev[0])
+            if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} devmem command failed".format(slot))
+                return -1
+            # write CPLD sub-rev
+            cpld_sub_rev = [0]
+            if 0 != con_ctrl.read_cpld_reg(0x1e, cpld_sub_rev, slot):
+                print("===== FAILED: read cpld_sub_rev from slot {} failed".format(slot))
+                return -1
+            devmem_cmd = "devmem 0x80021028 32 {}".format(cpld_sub_rev[0])
+            if 0 != exp_cmd(session, devmem_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
+                print("===== FAILED: slot {} devmem command failed".format(slot))
+                return -1
 
     if 0 != exp_cmd(session, fwsel_cmd, pass_sig_list=["uart:~\$"], timeout=5)[0]:
         print("===== FAILED: slot {} fwsel command failed".format(slot))
@@ -226,9 +213,14 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
 
     if con_ctrl.uart_session_stop(session) != 0:
         return -1
+    return 0
 
+def enter_n1_uboot(slot, session, *args, **kwargs):
+    if 0 != boot_n1(slot, session, *args, **kwargs):
+        return -1
+    con_ctrl = nic_con()
     # A higher timeout may be required for a larger fw.
-    if con_ctrl.enter_uboot_salina(session, slot, timeout=120, uart_id=1, pc=0) != 0:
+    if 0 != con_ctrl.enter_uboot_salina(session, slot, timeout=120, uart_id=1, expect_sig=["Autoboot "], pc=0):
         print("==== FAILED: slot {} couldn't reach n1 uboot".format(slot))
         return -1
 
@@ -238,36 +230,10 @@ def enter_n1_uboot(slot, session, *args, **kwargs):
 
 
 def enter_n1_linux(slot, session, *args, **kwargs):
-    if 0 != enter_n1_uboot(slot, session, *args, **kwargs):
+    if 0 != boot_n1(slot, session, *args, **kwargs):
         return -1
 
     con_ctrl = nic_con()
-    con_ctrl.uart_session_connect(session, slot, uart_id=1)
-
-    if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
-        print("===== FAILED: slot {} couldn't enter n1 uboot".format(slot))
-        return -1
-
-    new_memory_layout = kwargs.get('new_memory_layout', False)
-    if not new_memory_layout:
-        # goldfw at fixed address
-        cmd = "bootm 0x80500000"
-    else:
-        # goldfw at dynamic address pointer located at fixed address
-        ret, output = exp_cmd(session, "md 0x80021010 1", pass_sig_list=["DSC#"], timeout=1)
-        if ret != 0:
-            return ret
-        m = re.search("80021010: ([0-9a-f]*)", output)
-        if not m:
-            print("===== FAILED: failed to find goldfw address pointer")
-            return -1
-        cmd = "bootm 0x{}".format(m.group(1))
-    if 0 != exp_cmd(session, cmd, pass_sig_list=["## Loading"], timeout=1)[0]:
-        print("===== FAILED: failed to load goldfw")
-        return -1
-
-    if con_ctrl.uart_session_stop(session) != 0:
-        return -1
 
     if con_ctrl.uart_session_start_login(session, slot) != 0:
         print("Couldnt get N1 login prompt")
