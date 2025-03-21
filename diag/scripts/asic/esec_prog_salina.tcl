@@ -561,7 +561,7 @@ proc get_entropy_from_hsm {sn
         {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
         {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
         {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
-        {BACKEND_URL "192.168.67.214:11111"} } {
+        {BACKEND_URL "192.168.67.214:12266"} } {
 
     if { [catch {exec /home/diag/diag/tools/pki/client_dice.py -k $CLIENT_KEY -c $CLIENT_CERT -t $TRUST_ROOTS -b $BACKEND_URL -sn $sn -n 64 -hsm_rn} msg ]} {
         puts "failed to get entropy from hsm $msg"
@@ -588,7 +588,7 @@ proc esec_set_uds_entropy {sn
         {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
         {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
         {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
-        {BACKEND_URL "192.168.67.214:11111"} } {
+        {BACKEND_URL "192.168.67.214:12266"} } {
 
     # Check if efuse[23:22] is already set
     set bit50 [sal_fuse_get_bit 0 50 0]
@@ -736,7 +736,7 @@ proc esec_set_uds_cert {sn
     {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
     {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
     {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
-    {BACKEND_URL "192.168.67.214:11111"} } {
+    {BACKEND_URL "192.168.67.214:12266"} } {
 
     set DIAG_HOME $::env(DIAG_HOME)
  
@@ -1044,7 +1044,7 @@ proc esec_dice_all {slot sn
         {CLIENT_KEY "/home/diag/diag/tools/pki/dice_certs/client.key.pem"}
         {CLIENT_CERT "/home/diag/diag/tools/pki/dice_certs/client.crt.pem"}
         {TRUST_ROOTS "/home/diag/diag/tools/pki/dice_certs/rootca.crt"}
-        {BACKEND_URL "192.168.67.214:11111"} } {
+        {BACKEND_URL "192.168.67.214:12266"} } {
 
     set port $slot
 
