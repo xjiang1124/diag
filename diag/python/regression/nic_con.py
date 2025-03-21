@@ -522,7 +522,7 @@ class nic_con:
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
-    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, expect_sig=[], warm_reset=False, pc=True, v12_reset=False):
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, expect_sig=["Autoboot "], warm_reset=False, pc=True, v12_reset=False):
         expstr = ["DSC# "]
         ret = 0
         if slot == 0 or slot > 10:
@@ -551,7 +551,7 @@ class nic_con:
             self.uart_session_stop(uart_session)
             common.session_stop(uart_session)
             return -1
-        if expect_sig == "Autoboot ":
+        if expect_sig == ["Autoboot "]:
             for i in range(uboot_delay):
                 uart_session.timeout = 0.5
                 try:
