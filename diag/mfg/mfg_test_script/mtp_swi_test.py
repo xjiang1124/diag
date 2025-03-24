@@ -157,6 +157,20 @@ def swi_mainfw_install(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_emmc(slot, emmc_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def salina_snake_qspi_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    image_file = image_control.get_qspi_snake_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file) + os.sep + os.path.basename(image_file)[:-len(".tar.gz")]
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_qspi(slot, image_path)
+
+@parallelize.parallel_nic_using_ssh
+def swi_mainfw_store(mtp_mgmt_ctrl, slot):
+    # since the SWI QSPI image OOB may not enable, so we save the mainfw binary file to emmc with an OOB QSPI image before SWI official test
+    dsp = FF_Stage.FF_SWI
+    emmc_mainfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_copy_nic_copy_file(slot, emmc_mainfw_img_file)
+
+@parallelize.parallel_nic_using_ssh
 def swi_salina_qspi_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     image_path = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_qspi_prog_sh_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -345,15 +359,30 @@ def main():
                 rlist = swi_cert_copy(mtp_mgmt_ctrl, nic_list)
             elif test == "SW_INSTALL":
                 rlist = swi_mainfw_install(mtp_mgmt_ctrl, nic_list)
+            elif test == "SALINA_MAINFWA_INSTALL" or test == "SALINA_MAINFWB_INSTALL":
+                rlist = mtp_mgmt_ctrl.mtp_program_nic_emmc_salina(nic_list, stage=test_kwargs["stage"])
             elif test == "GOLDFW_PROG":
                 rlist = swi_goldfw_program(mtp_mgmt_ctrl, nic_list)
             elif test == "SALINA_QSPI_PROG":
                 rlist = swi_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE":
+                rlist = mtp_mgmt_ctrl.mtp_untar_snake_qspi_img(nic_list, stage=test_kwargs["stage"])
+            elif test == "SALINA_DL_QSPI_IMG_PROG":
+                rlist = salina_snake_qspi_program(mtp_mgmt_ctrl, nic_list)
             elif test == "SALINA_QSPI_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_layout=False)
             elif test == "SALINA_NEW_QSPI_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_layout=True)
-
+            elif test == "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY":
+                rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], new_mem_layout=True)
+            elif test == "NIC_PARA_MGMT_FPO_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_mgmt_para_init_fpo(nic_list)
+            elif test == "NIC_BOOT_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_boot_info_init(nic_list)
+            elif test == "NIC_DIAG_INIT":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, **test_kwargs)
+            elif test == "MAINFW_STORE":
+                rlist = swi_mainfw_store(mtp_mgmt_ctrl, nic_list)
             elif test == "BOARD_CONFIG_CERT":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_set_board_config_cert(nic_list, test_kwargs["cert_img_file"], directory="/data/")
             elif test == "SW_PROFILE":
@@ -376,6 +405,10 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_clear_pre_uboot_section(nic_list)
             elif test == "DUMP_BOOT_BIN":
                 rlist = swi_salina_dump_boot(mtp_mgmt_ctrl, nic_list)
+            elif test == "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE":
+                rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
+            elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -436,13 +469,23 @@ def main():
             for slot in pass_nic_list:
                 swi_display_program_matrix(mtp_mgmt_ctrl, slot)
 
+            # Temperary steps, Salina DPU only, will remove in the futrue -->
+            # This step is to program OOB enbaled QSPI image, then copy mainfw image to emmc partition as prepare to install mainfw
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_DL_QSPI_IMG_PROG")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_FPO_INIT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "MAINFW_STORE")
+            # Temperary steps, Salina DPU only, will remove in the futrue <--
+
             # run_swi_test(pass_nic_list, "NIC_POWER")
             run_swi_test(pass_nic_list, "NIC_PRSNT")
             run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_BOOT")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             # fpga_type_list = get_slots_of_type(FPGA_TYPE_LIST)
@@ -459,11 +502,11 @@ def main():
             # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
             # # Powercycle and also fix diag.exe as needed for elba's efuse script
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-            # efuse_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            # run_swi_test(efuse_type_list, "NIC_INIT")
-            # run_swi_test(efuse_type_list, "EFUSE_PROG")
-            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
-            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "DUMP_BOOT_BIN")
+            efuse_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            run_swi_test(efuse_type_list, "NIC_INIT")
+            run_swi_test(efuse_type_list, "EFUSE_PROG")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "DUMP_BOOT_BIN")
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
@@ -479,6 +522,10 @@ def main():
 
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
 
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
+
             # run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")
             # run_swi_test(pass_nic_list, "COPY_GOLD")
@@ -487,6 +534,15 @@ def main():
             # # program sw image onto EMMC
             # mainfw_type_list = get_slots_of_type(MAINFW_TYPE_LIST)
             # run_swi_test(mainfw_type_list, "SW_INSTALL")
+            ###################################################################################################################
+            # If installing mainfw using sysupdate from goldfw it will always only flash mainfwa by default
+            # boot from mainfwa, then re-run sysupdate, it will program mainfwb
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWA_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_MAINFWB_INSTALL", stage=FF_Stage.FF_SWI)
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SET_MAINFW")
             # cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             # run_swi_test(cpld_type_list, "COMPARE_CPLD")
             # run_swi_test(cpld_type_list, "COMPARE_FAILSAFE_CPLD")
@@ -507,6 +563,7 @@ def main():
             # mainfw_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4])
             # run_swi_test(mainfw_type_list, "SET_MAINFW")
             # run_swi_test(pass_nic_list, "SW_CLEANUP")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_CLEANUP")
             # run_swi_test(pass_nic_list, "NIC_PWRCYC")
             # libmfg_utils.count_down(MTP_Const.NIC_SW_BOOTUP_DELAY)
             # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
@@ -517,7 +574,8 @@ def main():
             run_swi_test(cpld_type_list, "CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
-            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="linux")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SW_BOOT")
             run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_ERASE_PCIEAWD_ENV")
@@ -538,6 +596,7 @@ def main():
             # run_swi_test(monterey_type_list, "KEYS_CHECK")
             # fw_boot_type_list = get_slots_of_type(MAINFW_TYPE_LIST + CTO_MODEL_TYPE_LIST)
             # run_swi_test(fw_boot_type_list, "SW_SHUTDOWN")
+            # run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SW_SHUTDOWN")
 
         else:
             # power cycle all nic

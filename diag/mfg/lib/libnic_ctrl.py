@@ -1638,10 +1638,23 @@ class nic_ctrl():
         match = re.findall(r"SMP(?: PREEMPT)? (.* 20\d{2})", buf)
         if match:
             kernel_ver = match[0]
+            # The %Z specifier in strptime() matches the full name of a timezone (e.g., Pacific Standard Time) or an abbreviation (e.g., PST).
+            # However, Python relies on the underlying C library to parse timezone names and abbreviations, and many implementations do not include abbreviations
+            # like PST, EST, etc., because they are ambiguous.
+            # For example:PST could mean "Pacific Standard Time" or another timezone with the same abbreviation in different contexts.
+            if 'PST' in kernel_ver:
+                kernel_ver = kernel_ver.replace("PST", "-0800")
+                timestamp_format_string =  "%a %b %d %X %z %Y"
+            elif 'PDT' in kernel_ver:
+                kernel_ver = kernel_ver.replace("PDT", "-0800")
+                timestamp_format_string =  "%a %b %d %X %z %Y"
+            else:
+                timestamp_format_string = "%a %b %d %X %Z %Y"
             # check if timestamp is valid
             try:
-                dt = datetime.strptime(kernel_ver, "%a %b %d %X %Z %Y")
+                dt = datetime.strptime(kernel_ver, timestamp_format_string)
                 self._kernel_timestamp = dt.strftime("%m-%d-%Y")
+                print(self._kernel_timestamp)
                 return True
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
@@ -2080,6 +2093,26 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
+        ssh_pipe_cmd = "ssh {:s} {:s}@{:s}".format(libmfg_utils.get_ssh_option(), NIC_MGMT_USERNAME, ipaddr)
+        nic_cmd = "{} \" sync;sleep5;sync;sync \"".format(ssh_pipe_cmd)
+        self._nic_handle.sendline(nic_cmd)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, ["assword:"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
+        self._nic_handle.sendline(NIC_MGMT_PASSWORD)
+        idx = libmfg_utils.mfg_expect(self._nic_handle, [self._nic_prompt, "No such file"], timeout=MTP_Const.OS_CMD_DELAY)
+        if idx < 0:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+        elif idx == 1:
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_cmd_buf(self._nic_handle.before)
+            return False
+
         return True
     def nic_copy_image_IBM(self, img_name, directory="/update"):
         ipaddr = libmfg_utils.get_nic_ip_addr(self._slot)
@@ -2191,10 +2224,11 @@ class nic_ctrl():
 
         if self._mtp_type == "MATERA":
             # put the card into proto mode before program QSPI
-            if not self.nic_power_off():
-                return False
-            if not self.nic_power_on(proto_mode='0'):
-                return False
+            if partition != "ufm1":
+                if not self.nic_power_off():
+                    return False
+                if not self.nic_power_on(proto_mode='0'):
+                    return False
             # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm1/fea> <filename>
             # program
             cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
@@ -3161,6 +3195,35 @@ class nic_ctrl():
         emmc_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
         if not self.nic_exec_cmds(nic_cmd_list, timeout=MTP_Const.OS_CMD_DELAY, fail_sig=emmc_fail_sig):
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
+            return False
+
+        self.nic_boot_info_reset()
+
+        return True
+
+    def nic_program_emmc_salina(self, emmc_img):
+
+        img_name = os.path.basename(emmc_img)
+
+        cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+        if not self.nic_exec_cmd_from_console(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_EMMC_PROG_SALINA_FMT.format(img_name)
+        if not self.nic_exec_cmd_from_console(cmd):
+            self.nic_set_err_msg("Command '{:s}' Failed".format(cmd))
+            return False
+        emmc_mainfw_fail_sig = MFG_DIAG_SIG.NIC_FWUPDATE_FAIL_SIG
+        cmd_buf = self.nic_get_cmd_buf()
+        if emmc_mainfw_fail_sig in cmd_buf:
+            self.nic_set_err_msg("Salina mainfw emmc program failed")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        emmc_mainfw_pass_sig = MFG_DIAG_SIG.NIC_SYSUPDATE_MAINFW_PASS_SIG
+        if emmc_mainfw_pass_sig not in cmd_buf:
+            self.nic_set_err_msg("Salina mainfw emmc program not complete")
+            self.nic_set_err_msg(cmd_buf)
             return False
 
         self.nic_boot_info_reset()
