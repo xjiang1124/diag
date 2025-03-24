@@ -65,11 +65,20 @@ if { $bit46 != 0 || $bit47 != 0 } {
     plog_msg "Efuse HMAC protection bits already been programmed"
     set bit_lock 1
     sal_fuse_dump
+    plog_msg "HMAC HAS BEEN PROGRAMMED"
     plog_msg "EFUSE PROG PASSED"
     diag_close_j2c_if $port $slot
     plog_stop
     return 0
 } 
+
+if { [expr $hmac_file] == 0 } {
+    plog_msg "HMAC HAS NOT BEEN PROGRAMMED"
+    plog_msg "EFUSE PROG PASSED"
+    diag_close_j2c_if $port $slot
+    plog_stop
+    return 0
+}
 
 set hmac_sum 0
 for {set i 0} {$i < 16} {incr i} {
