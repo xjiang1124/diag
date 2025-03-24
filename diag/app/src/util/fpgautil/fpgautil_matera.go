@@ -33,7 +33,7 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil flash <slot#> <qspi#> writefile/verifyfile <addr> <filename>\n" +
         "fpgautil flash <slot#> <qspi#> generatefile <addr> <length> <filename>\n" +
         "\n" +
-        "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/refresh \n" +
+        "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/disable/refresh \n" +
         "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>\n" +
         "\n" +
         "fpgautil mdiord <inst#> <phy> <addr>\n" +
@@ -464,7 +464,7 @@ func matera_fpga_cli() {
             fmt.Printf(" Slot-%d Salina CPLD  Refresh performed\n", slot+1)
         } else if os.Args[3] == "featurebits" {   
             featurebits, _ := materafpga.Spi_cpldXO3_read_feature_bits(slot) 
-            fmt.Printf(" Slot-%d Salina CPLD  Feature BITS =0x%.04x\n", slot+1, featurebits)
+            fmt.Printf(" Slot-%d Salina CPLD  Feature BITS =0x%.08x\n", slot+1, featurebits)
         } else if os.Args[3] == "featurerow" { 
             data := []byte{}  
             data, _ = materafpga.Spi_cpldXO3_read_feature_row(slot) 
@@ -473,6 +473,18 @@ func matera_fpga_cli() {
                 fmt.Printf(" %.02x", data[i])
             }
             fmt.Printf("\n")
+        } else if os.Args[3] == "disable" {   
+            fmt.Printf(" Slot-%d Salina CPLD Disabling config interface\n", slot+1)
+            fmt.Printf(" Executing disable config interface\n")
+            err = materafpga.Spi_cpldXO3_disable_config_interface(slot)
+            if err != nil {
+                return
+            }
+            fmt.Printf(" Executing no op cmd\n")
+            err = materafpga.Spi_cpldXO3_no_op_cmd(slot)
+            if err != nil {
+                return
+            }
         } else if os.Args[3] == "statusreg" {   
             statusreg, _ := materafpga.Spi_cpldXO3_read_status_reg(slot) 
             fmt.Printf(" Slot-%d Salina CPLD  statusreg =0x%.04x\n", slot+1, statusreg)

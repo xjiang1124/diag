@@ -72,7 +72,8 @@ var CPLDXO3_NO_OP_RDLNG                uint32 = 0
 
 var CPLDXO3_RESET_CONFIG0_FLASH_OP     = []byte{0x46, 0x00, 0x01, 0x00}   //reset page pointer in flash
 var CPLDXO3_RESET_CONFIG1_FLASH_OP     = []byte{0x46, 0x00, 0x02, 0x00}   //reset page pointer in flash
-var CPLDXO3_RESET_FEATURE_ROW_OP       = []byte{0x46, 0x00, 0x04, 0x00}   //reset page pointer in flash
+//var CPLDXO3_RESET_FEATURE_ROW_OP       = []byte{0x46, 0x00, 0x04, 0x00}   //reset page pointer in flash
+var CPLDXO3_RESET_FEATURE_ROW_OP       = []byte{0x46, 0x04, 0x00, 0x00}   //reset page pointer in flash
 var CPLDXO3_RESET_PUBKEY_OP            = []byte{0x46, 0x00, 0x08, 0x00}
 var CPLDXO3_RESET_AESKEY_OP            = []byte{0x46, 0x00, 0x10, 0x00}
 var CPLDXO3_RESET_CSEC_OP              = []byte{0x46, 0x00, 0x20, 0x00}
@@ -121,8 +122,8 @@ var CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG uint32 = 0
 var CPLDXO3_RD_FLASH_OP                = []byte{0x73, 0x00, 0x00, 0x01}
 var CPLDXO3_RD_FLASH_OP_RDLNG          uint32 = 16
 
-var CPLDXO3_RD_FEA_BITS_OP             = []byte{0xFB, 0x00, 0x00}         
-var CPLDXO3_RD_FEA_BITS_OP_RDLNG       uint32 = 2
+var CPLDXO3_RD_FEA_BITS_OP             = []byte{0xFB, 0x00, 0x00, 0x00}         
+var CPLDXO3_RD_FEA_BITS_OP_RDLNG       uint32 = 4
 
 
 func Spi_cpldXO3_spi_read_reg(spiNumber uint32, reg uint8) (rd_data uint8, err error) {
@@ -211,6 +212,14 @@ func Spi_cpldXO3_no_op_cmd(spiNumber uint32) (err error) {
     return
 }
 
+/************************************************************************************* 
+NOTE: RETURNS 4 BYTES.  BUT ONLU USE BITS[16:0].  i.e. 4 BYTES HAVE A MASK
+ 
+READ FEATURE BITS 
+00 00 86 20 
+MASK 
+00 01 FF FF 
+**************************************************************************************/ 
 func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err error) {
     var i, j int = 0, 0;
     data := []byte{}
@@ -782,6 +791,23 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         cli.Printf("e", "%v", err)
         return;
     } 
+
+    if (config == FEATUREROW) {
+        //The feature row read mask is 4 bytes dont care, 12 bytes of data
+        //In order to get the converted .fea file to match, we need to pre-append 4 bytes of 0x00 since the first 4 bytes of the feature row read are not in the mask
+        tempSlice := []byte{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
+        copy(tempSlice[4:16], fileData[0:12])
+        fileData = tempSlice
+        fmt.Printf("\n FILE  -> ")
+        for i:=0; i<len(fileData); i++ {
+            fmt.Printf("%.02x ", fileData[i])
+        }
+        fmt.Printf("\n FLASH -> ")
+        for i:=0; i<len(flashData); i++ {
+            fmt.Printf("%.02x ", flashData[i])
+        }
+        fmt.Printf("\n")
+    }
     for i:=0; i<len(fileData); i++ {
         if flashData[i] != fileData[i] {
             err = fmt.Errorf(" ERROR: Data Mismatch at address 0x%x. Flash=%.02x   Expect=0x%02x\n", i, flashData[i], fileData[i] ) 
@@ -1322,7 +1348,13 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
     }
 
     if config == FEATUREROW {
-        err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, fileData)
+        //The feature row read mask is 4 bytes dont care, 12 bytes of data
+        //In order to get the converted .fea file to match, we need to pre-append 4 bytes of 0x00 since the first 4 bytes of the feature row read are not in the mask
+        tempSlice := []byte{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
+        copy(tempSlice[4:16], fileData[0:12])
+        fmt.Println(tempSlice)
+
+        err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, tempSlice)
         if err != nil {
             return
         }
@@ -1469,14 +1501,22 @@ func Spi_cpldXO3_convert_jed_file(filename string) (err error) {
 
 
 
-/****************************************************************************************
-DESIGN NAME:    malfa_impl1.ncd
-DEVICE NAME:    LCMXO3D-9400HC
-CREATED BY: Lattice Semiconductor
-CREATION DATE:  Fri Aug 30 16:34:13
-DATA:
-010001010000000001000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000001000011000100000
+/**************************************************************************************** 
+AFTER DATA, FIRST 12 BYTES ARE THE FEATURE ROW. 
+Then there is a perdiod. 
+Data after the period is feature bits (ignore first 2 bytes, use last 2 byteS). 
+
+00000070  67 20 33 30 20 31 36 3a  33 34 3a 31 33 20 0a 44  |g 30 16:34:13 .D|
+00000080  41 54 41 3a 0a 30 31 30  30 30 31 30 31 30 30 30  |ATA:.01000101000|
+00000090  30 30 30 30 30 30 31 30  30 30 30 30 30 30 30 30  |0000001000000000|
+000000a0  30 30 30 30 30 30 30 30  30 30 30 30 30 30 30 30  |0000000000000000|
+000000b0  30 30 30 30 30 30 30 30  30 30 30 30 30 30 30 30  |0000000000000000|
+000000c0  30 30 30 30 30 30 30 30  30 30 30 30 30 30 30 30  |0000000000000000|
+000000d0  30 30 30 30 30 30 30 30  30 30 30 30 30 30 30 30  |0000000000000000|
+000000e0  30 30 30 30 30 0a 30 30  30 30 30 30 30 30 30 30  |00000.0000000000|
+000000f0  30 30 30 30 30 30 31 30  30 30 30 31 31 30 30 30  |0000001000011000|
+00000100  31 30 30 30 30 30                                 |100000|
+
 
 **** DIAG PROGRAMMING FEATURE ROW *************
 [2024-09-04_11:55:14] diag@MTP:$ hexdump -C slot3_feature_row.bin
@@ -1487,12 +1527,22 @@ DATA:
 **** DONGLE PROGRAMMING FEATURE ROW *************
 [2024-09-04_11:55:10] diag@MTP:$ hexdump -C fea.bin
 00000000  00 00 00 00 45 00 40 00  00 00 00 00 00 00 00 00  |....E.@.........|
-00000010
+00000010 
+ 
+ 
+READ FEATURE ROW 
+00 00 00 00 45 00 40 00 00 00 00 00 00 00 00 00 
+MASK 
+00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF 
+ 
+READ FEATURE BITS 
+00 00 86 20 
+MASK 
+00 00 FF FF 
 ****************************************************************************************/
 func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
     WRdata := []byte{}
-    var max_row int = 12541
-    var lines_converted int = 0
+    //var lines_converted int = 0
     var start_convert int = 0
     //var u64 uint64 = 0
 
@@ -1520,9 +1570,6 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
 
     scanner := bufio.NewScanner(inF)
     for scanner.Scan() {
-        if(lines_converted == max_row) {
-            break
-        }
         lines := scanner.Text()
         bytes := []uint8(lines)
         if strings.Contains(lines, "DATA:")==true {
@@ -1531,16 +1578,11 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
         }
 
         if start_convert > 0 {
-            WRdata = append(WRdata, 0x00)
-            WRdata = append(WRdata, 0x00)
-            WRdata = append(WRdata, 0x00)
-            WRdata = append(WRdata, 0x00)
             var u64 uint64 = 0
             for i:=0; i<len(bytes); i=i+8 {
                 u64, _ = strconv.ParseUint(string(bytes[i:(i+8)]), 2, 8)
                 WRdata = append(WRdata, uint8(u64))
             }
-            start_convert=0
         }
     } 
     
