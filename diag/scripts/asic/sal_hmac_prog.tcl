@@ -72,7 +72,7 @@ if { $bit46 != 0 || $bit47 != 0 } {
     return 0
 } 
 
-if { [expr $hmac_file] == 0 } {
+if { $hmac_file == "check_only" } {
     plog_msg "HMAC HAS NOT BEEN PROGRAMMED"
     plog_msg "EFUSE PROG PASSED"
     diag_close_j2c_if $port $slot
