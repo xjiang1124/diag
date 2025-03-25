@@ -119,13 +119,13 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         sal_mc_check_ecc -1 -1 1 0x61 1
         check_ecc_intr
 
-	    #===============================
-	    # Debug info dump
+        #===============================
+        # Debug info dump
 
+        plog_msg "=== Debug info dump ==="
         sal_eos_intr_chk  none none
         sal_eos_intr_clr  none none
 
-	    plog_msg "=== Debug info dump ==="
         sal_top_get_cntr 0
         if { $test_type != "esam_pktgen_llc_sor" &&
              $test_type != "esam_pktgen_ddr_burst_400G_no_mac" &&

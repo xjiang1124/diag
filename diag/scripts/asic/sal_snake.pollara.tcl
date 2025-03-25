@@ -115,9 +115,6 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
 
         #===============================
         # Debug info dump
-        sal_eos_intr_chk  none none
-        sal_eos_intr_clr  none none
-
         plog_msg "=== Debug info dump ==="
         sal_eos_intr_chk  none none
         sal_eos_intr_clr  none none
