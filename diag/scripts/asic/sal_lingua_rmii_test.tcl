@@ -18,9 +18,6 @@ set ASIC_SRC $::env(ASIC_SRC)
 cd $ASIC_SRC/ip/cosim/tclsh
 source .tclrc.diag.sal
 
-set ::FAN_SPD 80
-set ::DEVMGR devmgr_v2
-
 set port $slot
 set slot $slot
 set ::slot  $slot
