@@ -1752,7 +1752,7 @@ class nic_ctrl():
         ./esec_qspi_erase.sh slot <slot>
         '''
 
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH)
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_SCRIPT_PATH)
         if not self.mtp_exec_cmd(cmd):
             return False
 
@@ -4393,6 +4393,34 @@ class nic_ctrl():
             return False
 
         return True
+
+    def nic_ocp_rmii_linkup(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+            return False
+        cmd = MFG_DIAG_CMDS.NIC_OCP_RMII_CHECK_FMT.format(str(self._slot+1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_OCP_RMII_DELAY):
+            self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+            return False
+        if MFG_DIAG_SIG.NIC_OCP_RMII_OK_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
+
+    def nic_ocp_connect(self):
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_DIAG_SCRIPT_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+            return False
+        cmd = MFG_DIAG_CMDS.NIC_OCP_CON_CHECK_FMT.format(str(self._slot+1))
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_OCP_CON_DELAY):
+            self.nic_set_err_msg("Execute command {:s} failed".format(cmd))
+            return False
+        if MFG_DIAG_SIG.NIC_OCP_CON_OK_SIG in self.nic_get_cmd_buf():
+            return True
+        else:
+            return False
 
     def nic_cpld_init(self, smb=False):
         read_data = [0]

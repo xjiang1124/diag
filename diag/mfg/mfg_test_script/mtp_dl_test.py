@@ -296,6 +296,21 @@ def dl_fru_verify(mtp_mgmt_ctrl, slot, swmtestmode):
     return ret
 
 @parallelize.parallel_nic_using_ssh
+def dl_parse_ocp_sn(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_parse_nic_ocp_fru(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_connect(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
 def dl_assign_board_id(mtp_mgmt_ctrl, slot):
     pn = mtp_mgmt_ctrl.get_scanned_pn(slot)
     return mtp_mgmt_ctrl.mtp_nic_assign_board_id(slot, pn)
@@ -472,6 +487,12 @@ def main():
                 rlist = dl_fru_verify(mtp_mgmt_ctrl, nic_list, swmtestmode)
             elif test == "REWORK_VERIFY":
                 rlist = mtp_mgmt_ctrl.mtp_nic_hpe_rework_verify(nic_list)
+            elif test == "OCP_FRU_SN":
+                rlist = dl_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
+            elif test == "OCP_RMII":
+                rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
+            elif test == "OCP_CONN":
+                rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
 
             elif test == "ASSIGN_BOARD_ID":
                 rlist = dl_assign_board_id(mtp_mgmt_ctrl, nic_list)
@@ -609,6 +630,11 @@ def main():
             run_dl_test(pass_nic_list, "NIC_INIT")
             # run_dl_test(pass_nic_list, "NIC_BOOT_VERIFY")    # Not ready for Leni/Leni48G/Malfa
 
+            # record ocp adapter fru
+            run_dl_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_FRU_SN")
+            run_dl_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_RMII")
+            run_dl_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_CONN")
+
             ## 0. program cpld in first place for Salina Cards Only, not affect rest of program sequence
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "UMF1_PROG")
@@ -628,6 +654,8 @@ def main():
             run_dl_test(smart_nic_list, "NIC_PARA_MGMT_FPO_INIT")
             run_dl_test(smart_nic_list, "NIC_BOOT_INIT")
 
+            avs_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=ADI_VRM_TYPE_LIST)
+            run_dl_test(avs_list, "AVS_SET")
             ## 2. program fw
             # non_cap_nic_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CAPRI_NIC_TYPE_LIST)
             # run_dl_test(non_cap_nic_list, "ERASE_MAINFW")
@@ -645,8 +673,8 @@ def main():
             run_dl_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
 
             # ## 2a. Prog FRU before enableOOB for Salina
-            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FIX_VRM")
             run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FRU_PROG")
+            run_dl_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "FIX_VRM")
 
             # ## 2b. set emmc settings for elba
             run_dl_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
@@ -714,8 +742,6 @@ def main():
             # run_dl_test(fpga_list, "FPGA_PROG_VERIFY")
             # esec_list = get_slots_of_type(ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST)
             # run_dl_test(esec_list, "L1_ESEC_PROG")
-            avs_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=ADI_VRM_TYPE_LIST)
-            run_dl_test(avs_list, "AVS_SET")
 
         else:
             # power cycle all nic

@@ -2092,7 +2092,7 @@ class mtp_ctrl():
                 if not self.mtp_mgmt_exec_cmd(cmd):
                     self.cli_log_err("Failed to send command to check python package version", level = 0)
                     return False
-                match = re.findall(r"MTP is read for SWI", self.mtp_get_cmd_buf())
+                match = re.findall(r"MTP is ready for SWI", self.mtp_get_cmd_buf())
                 if not match:
                     self.cli_log_err("MTP do not have correct python package version", level = 0)
                     return False
@@ -3420,6 +3420,52 @@ class mtp_ctrl():
         if not self._nic_ctrl_list[slot].nic_fst_exec_cmd(cmd, timeout):
             self.mtp_dump_nic_err_msg(slot)
             return False
+        return True
+
+    def mtp_ocp_rmii_linkup(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.LINGUA:
+            return True
+        if not self._nic_ctrl_list[slot].nic_ocp_rmii_linkup():
+            self.cli_log_slot_err_lock(slot, "RMII Linkup test failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_ocp_connect(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.LINGUA:
+            return True
+        if not self._nic_ctrl_list[slot].nic_ocp_connect():
+            self.cli_log_slot_err_lock(slot, "OCP Connect test failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    def mtp_parse_nic_ocp_fru(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type != NIC_Type.LINGUA:
+            return True
+
+        fru_buf = self._nic_ctrl_list[slot].nic_read_fru(smb_fru=True, dev="fru_adap")
+        if not fru_buf:
+            self.cli_log_slot_err_lock(slot, "Display SMB OCP FRU failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        else:
+            # [INFO]    [2022-04-22-14:36:41.01 ] Serial Number                                FPN21370231
+            match = re.search(r"Serial\sNumber\s+([A-Za-z0-9]{8,})", fru_buf)
+            if match:
+                sn = match.group(1)
+                self.cli_log_slot_inf_lock(slot, "Parse OCP SN={:s}".format(sn))
+            else:
+                self.cli_log_slot_err_lock(slot, "Parse OCP SN failed")
+                self.mtp_get_nic_err_msg(slot)
+                self.mtp_dump_nic_err_msg(slot)
+                return False
         return True
 
     def mtp_program_nic_fru(self, slot, date, sn, mac, pn, dpn=None, sku=None):
@@ -5629,13 +5675,8 @@ class mtp_ctrl():
                 self.cli_log_slot_err(slot, "Failed to get command {:s} return value".format(cmd))
                 return False
             if int(match[0], 16) != int(exp_val, 16):
-                if nic_type in NIC_Type.LINGUA:
-                    if match[0] == "0x32" and int(exp_val, 16) != 8:
-                        self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
-                        return False
-                else:
-                    self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
-                    return False
+                self.cli_log_slot_err(slot, "Register {:s} read value {:s} NOT match expect value {:s}".format(reg_addr, match[0], exp_val))
+                return False
         return True
 
     @parallelize.parallel_nic_using_ssh

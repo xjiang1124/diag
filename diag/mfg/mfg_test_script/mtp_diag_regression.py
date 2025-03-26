@@ -308,6 +308,21 @@ def salina_snake_qspi_program(mtp_mgmt_ctrl, slot):
 def salina_erase_qspi(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.matera_mtp_erase_nic_qspi(slot)
 
+@parallelize.parallel_nic_using_ssh
+def salina_parse_ocp_sn(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_parse_nic_ocp_fru(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_connect(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
+    return ret
+
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
@@ -720,6 +735,12 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_i2c_qsfp_salina(nic_list, vmarg=test_kwargs["vmarg"])
                 elif test == "SALINA_I2C_RTC":
                     rlist = mtp_mgmt_ctrl.mtp_i2c_rtc_salina(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "OCP_FRU_SN":
+                    rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
+                elif test == "OCP_RMII":
+                    rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
+                elif test == "OCP_CONN":
+                    rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
 
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"], ddr=test_kwargs["ddr"])
@@ -960,8 +981,10 @@ def main():
                 test_section_list.insert(0, "NC-SI")
 
             ### SALINA TEST ORDER
-            if get_slots_of_type(SALINA_NIC_TYPE_LIST):
+            if get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=[NIC_Type.LINGUA]):
                 test_section_list = ["P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+            if get_slots_of_type(NIC_Type.LINGUA):
+                test_section_list = ["OCP_PRE_CHECK", "P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
@@ -1270,6 +1293,15 @@ def main():
                     #
                     ######################################################################
                     run_test(pass_nic_list, "NIC_DIAG_INIT", dis_hal=True)
+                elif test_section == "OCP_PRE_CHECK":
+                    ######################################################################
+                    #
+                    #  ocp sn parse
+                    #
+                    ######################################################################
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_FRU_SN")
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_RMII")
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_CONN")
                 elif test_section == "P2C_IMG_PROG":
                     ######################################################################
                     # Replace DL image for Leni only so far
