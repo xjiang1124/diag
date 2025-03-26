@@ -2460,6 +2460,25 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_DIAG_FAIL)
             return False
 
+    def nic_fwupdate_init_emmc(self, mount=True):
+
+        nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_INIT_FMT
+        cmd_buf = self.nic_get_info(nic_cmd)
+        if not cmd_buf:
+            return False
+        if (MFG_DIAG_SIG.NIC_FWUPDATE_INIT_EMMC_PASS_SIG.lower() not in cmd_buf.lower()) or ("Done".lower() not in cmd_buf.lower()):
+            return False
+
+        if mount:
+            nic_cmd_list = list()
+            nic_cmd = MFG_DIAG_CMDS.NIC_MOUNT_EMMC_FMT
+            nic_cmd_list.append(nic_cmd)
+            if not self.nic_exec_cmds(nic_cmd_list):
+                self.nic_set_err_msg("Command {:s} failed".format(nic_cmd))
+                return False
+
+        return True
+
     def nic_read_emmc_id(self):
         nic_cmd = MFG_DIAG_CMDS.NIC_EMMC_READ_ID_FMT
         cmd_buf = self.nic_get_info(nic_cmd)
@@ -2717,6 +2736,62 @@ class nic_ctrl():
 
         # check signature
         if MFG_DIAG_SIG.NIC_SALINA_ESEC_CPLD_VERIFY_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_hmac_fuse_prog(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_hmac_program_status_check(self, expect_status=MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG):
+        """
+        Run HMAC program status check command, ./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file check_only.
+        Compare with expected programming status,
+        if expect "HMAC HAS NOT BEEN PROGRAMMED", then when this string show up in command buffer, return True otherwise return False
+        if expect "NIC_HMAC_BEEN_PROG_SIG", then when this string show up in command buffer, return True otherwise return False
+        """
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature for tcl script finished
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        # check expect hmac programming status
+        if expect_status not in (MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG, MFG_DIAG_SIG.NIC_HMAC_BEEN_PROG_SIG):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            self.nic_set_err_msg("PASSED IN INVALID HMAC PROGRMMED STATUS FOR COMPARE")
+            return False
+
+        if expect_status not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 

@@ -406,6 +406,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_boot_info_init(nic_list)
             elif test == "NIC_DIAG_INIT":
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, **test_kwargs)
+            elif test == "NIC_FWUPDATE_INIT_EMMC":
+                rlist = mtp_mgmt_ctrl.mtp_nic_fwupdate_init_emmc(nic_list)
             elif test == "MAINFW_STORE":
                 rlist = swi_mainfw_store(mtp_mgmt_ctrl, nic_list)
             elif test == "BOARD_CONFIG_CERT":
@@ -469,8 +471,8 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
-
-            run_swi_test(pass_nic_list, "CLEAR_PRE_UBOOT_SECTION")
+            hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list)
+            run_swi_test(list(set(pass_nic_list) & set(hmac_no_prog_slots)), "CLEAR_PRE_UBOOT_SECTION")
             # run_swi_test(pass_nic_list, "CONSOLE_BOOT")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT", nic_util=True)
 
@@ -506,6 +508,7 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="linux")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PARA_MGMT_FPO_INIT")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_BOOT_INIT")
+            run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_FWUPDATE_INIT_EMMC")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "MAINFW_STORE")
             # Temperary steps, Salina DPU only, will remove in the futrue <--
 
@@ -532,12 +535,10 @@ def main():
             # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
             # # Powercycle and also fix diag.exe as needed for elba's efuse script
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_INIT")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "EFUSE_PROG")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "DUMP_BOOT_BIN")
-
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "NIC_INIT")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "EFUSE_PROG")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "SEC_KEY_PROG")
+            run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_no_prog_slots)), "DUMP_BOOT_BIN")
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")

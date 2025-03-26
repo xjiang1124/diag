@@ -31,6 +31,7 @@ from libdefs import NIC_Status
 from libdefs import FLEX_TWO_WAY_COMM
 from libdefs import Voltage_Margin
 from libdefs import MTP_TYPE
+from libdefs import MFG_DIAG_SIG
 from libmfg_cfg import *
 from libsku_utils import *
 import image_control
@@ -2685,3 +2686,13 @@ def extract_json(content):
 
     json_str = content[start:end]
     return json_str
+
+def get_hmac_been_programmed_slots(mtp_mgmt_ctrl, nic_list):
+
+    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_BEEN_PROG_SIG)
+    return list(set(nic_list) - set(failed_slots))
+
+def get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, nic_list):
+
+    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
+    return list(set(nic_list) - set(failed_slots))

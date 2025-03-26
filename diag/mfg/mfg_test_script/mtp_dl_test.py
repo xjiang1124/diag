@@ -454,6 +454,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_emmc_hwreset_set(nic_list)
             elif test == "EMMC_BKOPS_EN":
                 rlist = mtp_mgmt_ctrl.mtp_nic_emmc_bkops_en(nic_list)
+            elif test == "NIC_FWUPDATE_INIT_EMMC":
+                rlist = mtp_mgmt_ctrl.mtp_nic_fwupdate_init_emmc(nic_list)
             elif test == "SALINA_QSPI_ERASE":
                 rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
             elif test == "SALINA_QSPI_PROG":
@@ -683,6 +685,7 @@ def main():
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "SET_PSLC")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "EMMC_HWRESET_SET")
             run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "EMMC_BKOPS_EN")
+            run_dl_test(get_slots_of_type(PSLC_MODE_TYPE_LIST), "NIC_FWUPDATE_INIT_EMMC")
 
             # run_dl_test(pass_nic_list, "NIC_DIAG_INIT", emmc_format=True, emmc_check=True, fru_fpo=True, fru_valid=True if not args.scandl else False)
 
