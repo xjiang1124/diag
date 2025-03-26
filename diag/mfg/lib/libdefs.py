@@ -194,6 +194,8 @@ class MTP_Const:
     NIC_ERASE_QSPI_IMG_DELAY = 900
     NIC_ERASE_BOOT0_IMG_DELAY = 300
     NIC_PROG_BOOT0_IMG_DELAY = 300
+    NIC_OCP_RMII_DELAY = 60
+    NIC_OCP_CON_DELAY = 60
 
     MTP_DIAGMGR_DELAY = 10
     MTP_MGMT_IP_SET_DELAY = 10
@@ -294,6 +296,7 @@ class MTP_DIAG_Logfile:
 
 class MTP_DIAG_Path:
     ONBOARD_MTP_DIAG_PATH = "/home/diag/"
+    ONBOARD_MTP_DIAG_SCRIPT_PATH = "/home/diag/diag/scripts"
     ONBOARD_MTP_NIC_CON_PATH = "/home/diag/diag/python/regression/"
     ONBOARD_MTP_DSHELL_PATH = "/home/diag/diag/python/infra/dshell/"
     ONBOARD_MTP_ESEC_PATH = "/home/diag/diag/python/esec/"
@@ -473,6 +476,8 @@ class MFG_DIAG_CMDS:
     SALINA_NIC_VMARG_SET_FMT = "./nic_test_v2.py salina vmarg -slot {} -vmarg {} --new_memory_layout"
     NIC_DISP_VOLT_FMT = "devmgr -status"
     MTP_MATERA_SWI_CHECK_FMT = "/home/diag/diag/scripts/check_python.sh"
+    NIC_OCP_RMII_CHECK_FMT = "tclsh sal_lingua_rmii_test.tcl {:s}"
+    NIC_OCP_CON_CHECK_FMT = "./run_lingua_adapter_test.sh {:s}"
 
     GET_BOARD_CONFIG_FMT = "board_config -r"
     SET_BOARD_CONFIG_FMT = "board_config -w {:s}"
@@ -775,6 +780,8 @@ class MFG_DIAG_SIG:
     SALINA_NIC_ERASE_BOOT0_OK_SIG = "QSPI ERASE PASSED"
     SALINA_NIC_PROG_BOOT0_OK_SIG = "QSPI PROG PASSED"
     SALINA_NIC_VMARG_SET = "vmarg set"
+    NIC_OCP_RMII_OK_SIG = "RMII test PASSED"
+    NIC_OCP_CON_OK_SIG = "Adapter Test PASSED"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

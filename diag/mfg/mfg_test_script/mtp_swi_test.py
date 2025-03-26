@@ -180,6 +180,25 @@ def swi_salina_qspi_program(mtp_mgmt_ctrl, slot):
 def swi_salina_dump_boot(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.matera_mtp_dump_nic_boot(slot)
 
+@parallelize.parallel_nic_using_ssh
+def salina_erase_qspi(mtp_mgmt_ctrl, slot):
+    return mtp_mgmt_ctrl.matera_mtp_erase_nic_qspi(slot)
+
+@parallelize.parallel_nic_using_ssh
+def salina_parse_ocp_sn(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_parse_nic_ocp_fru(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_connect(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
+    return ret
+
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
 
@@ -352,6 +371,12 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_verify_nic_sec_cpld(nic_list)
             elif test == "SALINA_ERASE_PCIEAWD_ENV":
                 rlist = mtp_mgmt_ctrl.mtp_erase_piceawd_env_salina(nic_list)
+            elif test == "OCP_FRU_SN":
+                rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
+            elif test == "OCP_RMII":
+                rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
+            elif test == "OCP_CONN":
+                rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
 
             elif test == "COPY_GOLD":
                 rlist = swi_goldfw_copy(mtp_mgmt_ctrl, nic_list)
@@ -459,6 +484,11 @@ def main():
                 # run_swi_test(fru_reprogram_list, "FRU_PROG")
                 # run_swi_test(fru_reprogram_list, "NIC_FRU_INIT")
 
+            # record ocp adapter fru
+            run_swi_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_FRU_SN")
+            run_swi_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_RMII")
+            run_swi_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_CONN")
+
             # Reprogram FRU with final SKU
             sku_fru_prog_list = get_slots_of_type(CTO_MODEL_TYPE_LIST)
             # Before programming, check that scanned SKU is valid for this card
@@ -502,11 +532,12 @@ def main():
             # run_swi_test(non_capri_type_list, "DISABLE_ESEC_WP")
             # # Powercycle and also fix diag.exe as needed for elba's efuse script
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
-            efuse_type_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_swi_test(efuse_type_list, "NIC_INIT")
-            run_swi_test(efuse_type_list, "EFUSE_PROG")
+
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_INIT")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "EFUSE_PROG")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SEC_KEY_PROG")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "DUMP_BOOT_BIN")
+
             # run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="linux")
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr")
             # run_swi_test(pass_nic_list, "NIC_DIAG_INIT")
