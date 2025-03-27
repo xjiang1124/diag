@@ -12,6 +12,7 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
+from libdefs import MFG_DIAG_SIG
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
@@ -495,7 +496,8 @@ def main():
                 rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
             elif test == "OCP_CONN":
                 rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
-
+            elif test == "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED":
+                rlist = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
             elif test == "ASSIGN_BOARD_ID":
                 rlist = dl_assign_board_id(mtp_mgmt_ctrl, nic_list)
             elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
@@ -597,6 +599,7 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
 
             if not args.scandl:
                 if "SCAN_VERIFY" in args.skip_test:

@@ -25,6 +25,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import Voltage_Margin
+from libdefs import MFG_DIAG_SIG
 from libdiag_db import diag_db
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
@@ -548,7 +549,8 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix_console(nic_list)
                 elif test == "CLEAR_PRE_UBOOT_SECTION":
                     rlist = mtp_mgmt_ctrl.mtp_nic_clear_pre_uboot_section(nic_list)
-
+                elif test == "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
                 elif test == "TEST_FPGA_PROG":
                     rlist = ncsi_test_fpga_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "PROD_FPGA_PROG":
@@ -957,6 +959,7 @@ def main():
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
                 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                    run_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
                     run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)   # NIC_DIAG_INIT not ready yet
                 else:
                     run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "CLEAR_PRE_UBOOT_SECTION")
