@@ -789,7 +789,7 @@ func main() {
                     return
                 } else {
                     if *skuModePtr == true {
-                        cli.Println("e", "The SKU '", sku,"' is not supported For Programming a Ginestra Card")
+                        cli.Println("e", "The SKU '", sku,"' is not supported for this card type")
                         return
                     }
                 }

@@ -134,6 +134,7 @@ const (
     SKU_GIN_D5_SSDK_CISCO  string = "DSC2A-2Q200-32S32F64P-S4-C"
     SKU_MALFA           string = "DSC3-2Q400-128S64E256P"
     SKU_POLLARA         string = "POLLARA-1Q400P"
+    SKU_POLLARA_ORACLE  string = "POLLARA-1Q400P-O"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
     SKU_LINGUA          string = "LINGUA-1Q400P"
@@ -914,6 +915,39 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_POLLARA_ORACLE: updateInfo {
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
+        PROD_NAME_POLLARA,
+        SKU_POLLARA_ORACLE,
+        FRU_ID_POLLARA,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     PN_OCP_ADPT: updateInfo {
         PenStandardV2Tbl,
         PROD_NAME_OCP_ADPT,
@@ -1163,6 +1197,7 @@ var CardTypes = []card{
     card{"MALFA_SKU",               SKU_MALFA},
     card{"POLLARA",                 PN_POLLARA},
     card{"POLLARA_SKU",             SKU_POLLARA},
+    card{"POLLARA_ORACLE",          SKU_POLLARA_ORACLE},
     card{"LENI",                    PN_LENI},
     card{"LENI_SKU",                SKU_LENI},
     card{"LENI48G",                 PN_LENI48G},
