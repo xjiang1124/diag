@@ -3936,6 +3936,17 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
+    def mtp_nic_fwupdate_init_emmc(self, slot, mount=True):
+
+        if not self._nic_ctrl_list[slot].nic_fwupdate_init_emmc(mount):
+            self.mtp_clear_nic_err_msg(slot)
+            if not self._nic_ctrl_list[slot].nic_emmc_bkops_en():
+                self.cli_log_slot_err_lock(slot, "Fwupdate failed to init eMMC")
+                self.mtp_dump_nic_err_msg(slot)
+                return False
+        return True
+
+    @parallelize.parallel_nic_using_console
     def mtp_nic_emmc_hwreset_set(self, slot):
         if not self._nic_ctrl_list[slot].nic_emmc_hwreset_verify():
             self.mtp_clear_nic_err_msg(slot)  # clear out the error message
@@ -4348,6 +4359,10 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].nic_check_uboot_sec_key():
                 self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
                 return False
+            if SALINA_HMAC_PROGRAM_ENABLE:
+                if not self._nic_ctrl_list[slot].nic_hmac_fuse_prog():
+                    self.cli_log_slot_err(slot, "Program HMAC fuse failed")
+                    return False
 
             if not self._nic_ctrl_list[slot].nic_check_uds_cert():
                 self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
@@ -4362,6 +4377,18 @@ class mtp_ctrl():
         #     if not self._nic_ctrl_list[slot].nic_esecure_hw_lock():
         #         self.cli_log_slot_err(slot, "Esecure hw lock failed")
         #         return False
+
+        return True
+
+    @parallelize.sequential_nic_test
+    def mtp_nic_hmac_programmed_status_check(self, slot, expect_status):
+        """
+        call ./esec_ctrl.py -hmac_fuse_prog -slot $slo -hmac_file check_only
+        'HMAC HAS BEEN PROGRAMMED' or 'HMAC HAS NOT BEEN PROGRAMMED'
+        """
+        if not self._nic_ctrl_list[slot].nic_hmac_program_status_check(expect_status):
+            self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status: {:s} NOT Found".format(expect_status))
+            return False
 
         return True
 
