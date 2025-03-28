@@ -4301,12 +4301,12 @@ class mtp_ctrl():
         fea_mtp_hex = self.mtp_get_nic_cmd_buf(slot)
         fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
 
-        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot +1), "generate", "fea", "/home/diag/cplddump" + str(slot +1) + ".bin")
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot +1), "generate", "fea", "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin")
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False
 
-        cmd = "hexdump -C " + "/home/diag/cplddump" + str(slot +1) + ".bin"
+        cmd = "hexdump -C " + "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin"
         if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
             self.cli_log_err("Failed to execute command {:s}".format(cmd))
             return False

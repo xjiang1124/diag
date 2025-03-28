@@ -959,9 +959,9 @@ def main():
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
                 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
-                    run_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
                     run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)   # NIC_DIAG_INIT not ready yet
                 else:
+                    run_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
                     run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "CLEAR_PRE_UBOOT_SECTION")
             else:
                 if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
