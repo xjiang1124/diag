@@ -12,6 +12,7 @@ from libdefs import NIC_Type
 from libdefs import MTP_Const
 from libdefs import MTP_DIAG_Report
 from libdefs import MTP_DIAG_Path
+from libdefs import MFG_DIAG_SIG
 from libmfg_cfg import GLB_CFG_MFG_TEST_MODE
 from libmfg_cfg import NIC_IMAGES
 from libmfg_cfg import PSLC_MODE_TYPE_LIST
@@ -197,6 +198,17 @@ def dl_fea_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
     return mtp_mgmt_ctrl.mtp_program_nic_cpld_feature_row(slot, fea_cpld_img_file)
+
+def dl_cpld_fea_dump_by_fpgautil_verify(mtp_mgmt_ctrl, slot):
+
+    if not slot:
+        return slot
+    dsp = FF_Stage.FF_DL
+    fea_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_fea_cpld(mtp_mgmt_ctrl, slot[0], dsp)["filename"]
+    binary_fea_file = mtp_mgmt_ctrl.matera_mtp_fpgauti_cpld_fea_jed2bin(fea_cpld_img_file)
+    if not binary_fea_file:
+        return slot
+    return mtp_mgmt_ctrl.mtp_verify_nic_cpld_fea_salina(slot, binary_fea_file)
 
 def cpld_running_ver_chk_from_mtp(mtp_mgmt_ctrl, slot):
     # cpld_ver["DSC3-2Q400-48R64E64P"] = "0x1"
@@ -495,7 +507,8 @@ def main():
                 rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
             elif test == "OCP_CONN":
                 rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
-
+            elif test == "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED":
+                rlist = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
             elif test == "ASSIGN_BOARD_ID":
                 rlist = dl_assign_board_id(mtp_mgmt_ctrl, nic_list)
             elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
@@ -513,6 +526,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
             elif test == "FSAFE_CPLD_PROG":
                 rlist = dl_fail_cpld_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "FEA_CPLD_DUMP_VERIFY":
+                rlist = dl_cpld_fea_dump_by_fpgautil_verify(mtp_mgmt_ctrl, nic_list)
             elif test == "FEA_CPLD_PROG":
                 rlist = dl_fea_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UMF1_PROG":
@@ -597,6 +612,7 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(swmtestmode)
             run_dl_test(pass_nic_list, "NIC_PWRCYC")
+            run_dl_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
 
             if not args.scandl:
                 if "SCAN_VERIFY" in args.skip_test:
@@ -638,6 +654,8 @@ def main():
             run_dl_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_CONN")
 
             ## 0. program cpld in first place for Salina Cards Only, not affect rest of program sequence
+            cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            run_dl_test(cpld_list, "FEA_CPLD_DUMP_VERIFY")
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "UMF1_PROG")
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)

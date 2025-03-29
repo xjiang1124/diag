@@ -4281,6 +4281,79 @@ class mtp_ctrl():
         self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
         return False
 
+    @parallelize.parallel_nic_using_ssh
+    def mtp_verify_nic_cpld_fea_salina(self, slot, binary_fea_file):
+        """
+        For Salina CPLD Feature row verify only.
+        """
+
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in ELBA_NIC_TYPE_LIST  + FPGA_TYPE_LIST + GIGLIO_NIC_TYPE_LIST + SALINA_NIC_TYPE_LIST:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no feature row for {:s}".format(nic_type))
+            return False
+
+        fea_regex = r"00000000  (.*)  \|.*\|"  # first 16 bytes
+
+        cmd = "hexdump -C " + binary_fea_file
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        fea_mtp_hex = self.mtp_get_nic_cmd_buf(slot)
+        fea_mtp_match = re.search(fea_regex, fea_mtp_hex)
+
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot +1), "generate", "fea", "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin")
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+
+        cmd = "hexdump -C " + "/home/diag/cpld_fea_dump_slot" + str(slot +1) + ".bin"
+        if not self._nic_ctrl_list[slot].mtp_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        fea_nic_hex = self.mtp_get_nic_cmd_buf(slot)
+        if not fea_nic_hex:
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        fea_nic_match = re.search(fea_regex, fea_nic_hex)
+
+        if fea_mtp_match and fea_nic_match:
+            if fea_mtp_match.group(1) == fea_nic_match.group(1):
+                if not self.mtp_power_on_nic(slot):
+                    return False
+                return True
+            self.cli_log_slot_err_lock(slot, "Feature row programmed incorrectly. Dump doesn't match original file.")
+            return False
+        self.cli_log_slot_err_lock(slot, "Unable to dump feature row.")
+
+        return False
+
+    def matera_mtp_fpgauti_cpld_fea_jed2bin(self, cpld_fea_jed_file):
+        """
+        single mtp session run only once command
+        Since the released salina CPLD feature row file salina.fea is jed file, we need call fpgauti to covert it to a binary file
+        Then compare with dumped running feature row file.
+        """
+
+        # before Andrew's update of fpgautil ready, we need fake a slot id
+        # Turn off slots to avoid program fea, we just using program function to covert jed file to binary file
+        # pick last slot as fake one to run this command
+        slot = [9]
+        if not self.mtp_power_off_nic(slot):
+            return False
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(slot[0]+1), "program", "fea", cpld_fea_jed_file)
+        if not self.mtp_mgmt_exec_cmd(cmd):
+            self.cli_log_err("Failed to execute command {:s}".format(cmd))
+            return False
+        output = self.mtp_get_cmd_buf()
+        match_obj = re.search(r'BIN FILENAME\s* =\s*(.*\.bin)', output)
+        if not match_obj:
+            self.cli_log_err("Failed to parse salina jed to bin file")
+            return False
+        binary_fea_file =  match_obj.group(1)
+        if not self.mtp_power_on_nic(slot):
+            return False
+        return binary_fea_file
+
     def mtp_check_nic_cpld_partition(self, slot, console=False):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
@@ -4387,7 +4460,7 @@ class mtp_ctrl():
         'HMAC HAS BEEN PROGRAMMED' or 'HMAC HAS NOT BEEN PROGRAMMED'
         """
         if not self._nic_ctrl_list[slot].nic_hmac_program_status_check(expect_status):
-            self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status: {:s} NOT Found".format(expect_status))
+            self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status String: '{:s}' NOT Found".format(expect_status))
             return False
 
         return True
