@@ -300,7 +300,7 @@ proc validate_pmro {} {
         default     { set pmro_min 2400; set pmro_max 4000; }
     }
 
-    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
+    if { $pmro < $pmro_min || $pmro_max < $pmro } {
         plog_err "PMRO of $pmro does not fall within correct CORE range $pmro_min-$pmro_max"
     } else {
         plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"
@@ -317,7 +317,7 @@ proc validate_pmro {} {
         default     { set pmro_min 2400; set pmro_max 4000; }
     }
 
-    if { $pmro <= $pmro_min || $pmro_max < $pmro } {
+    if { $pmro < $pmro_min || $pmro_max < $pmro } {
         plog_err "PMRO of $pmro does not fall within correct ARM range $pmro_min-$pmro_max"
     } else {
         plog_msg "PMRO of $pmro falls within ARM range $pmro_min-$pmro_max"
