@@ -91,11 +91,11 @@ class PART_NUMBERS_MATCH:
     GINESTRA_D4_PN_FMT = r"68-0074-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0074-01 01    GINESTRA_D4
     GINESTRA_D5_PN_FMT = r"68-0075-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0075-01 01    GINESTRA_D5
     GINESTRA_S4_PN_FMT = r"68-0076-0[1-9]{1} [A-Z0-9]{2}"                                           #68-0076-01 01    GINESTRA_S4
-    LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                      #102-P10800-00B 01  LENI
-    LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{2})?"                                   #102-P10801-00B 01  LENI48G
-    POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                 #102-P11100-00B 01  POLLARA
-    LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{2})?"                                  #102-P11500-00B 01  LINGUA
-    MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{2})?"                                        #102-P10600-00 01   MALFA
+    LENI_PN_FMT = r"102-P10800-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                    #102-P10800-00B 01  LENI
+    LENI48G_PN_FMT = r"102-P10801-0[A-Z0-9]{2}(?:\s[A-Z0-9]{1,2})?"                                 #102-P10801-00B 01  LENI48G
+    POLLARA_PN_FMT = r"102-P11100-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                               #102-P11100-00B 01  POLLARA
+    LINGUA_PN_FMT = r"102-P11500-0[A-Z0-9]{1,2}(?:\s[A-Z0-9]{1,2})?"                                #102-P11500-00B 01  LINGUA
+    MALFA_PN_FMT = r"102-P10600-0[0-9]{1}(?:\s[A-Z0-9]{1,2})?"                                      #102-P10600-00 01   MALFA
 
 SN_FORMAT_TABLE = {
     Factory.P1: {

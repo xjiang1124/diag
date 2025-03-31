@@ -586,6 +586,9 @@ def nic_common_setup_test_picker(mtp_mgmt_ctrl, stage, pass_nic_list, test_list,
                 fail_nic_list.append(slot)
             if slot in pass_nic_list:
                 pass_nic_list.remove(slot) # dont proceed that slot
+            # dump cpld when fail
+            if mtp_mgmt_ctrl._mtp_type == MTP_TYPE.MATERA and test == "QSFP_SANITY_CHECK":
+                mtp_mgmt_ctrl.mtp_mgmt_set_nic_avs_post(slot)
 
         duration = mtp_mgmt_ctrl.log_test_stop(test, start_ts)
         test_fail_nic_log_message(mtp_mgmt_ctrl, test_fail_nic_list, stage, test, start_ts)
