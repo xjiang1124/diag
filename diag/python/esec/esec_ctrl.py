@@ -805,7 +805,7 @@ PRIVEK <ek.sk>"""
             print("=== DICE VALIDATION FAILED ===")
             ret = -1
 
-        return (ret, md5sum_ubootj
+        return [ret, md5sum_uboot]
 
     def val_dice_esec(self, slot):
         ret, md5sum = self.verify_dice_cert(slot, "validate")
