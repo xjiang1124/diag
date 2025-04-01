@@ -60,7 +60,11 @@ def parse_args_diag():
     group.add_argument(
         "-check_uds_cert", "--check_uds_cert", 
         action='store_true',
-        help="Check UDS certificate checksum")
+        help="Check and validate UDS certificate checksum")
+    group.add_argument(
+        "-val_uds_cert", "--val_uds_cert", 
+        action='store_true',
+        help="validate UDS certificate stored")
     group.add_argument(
         "-ek_crc", "--ek_crc", 
         action='store_true',
@@ -205,6 +209,20 @@ def parse_args_diag():
 class esec_ctrl:
     def __init__(self):
         self.nic_con = nic_con()
+
+    def get_lines_to_file_after_substring(self, text, substring, file_name, num_lines):
+        lines = text.splitlines()
+        try:
+            index = lines.index(substring)
+            data_str = lines[index + 1:index + 1 + num_lines] 
+            result = "".join(line.strip() for line in lines)
+        except ValueError:
+            return -1
+
+        out_file = open(file_name, "w")
+        out_file.write(result)
+        out_file.close()
+        return 0
 
     def create_otp_cm_fmt(self, sn, slot):
         tgt_sn_len = 16
@@ -666,7 +684,7 @@ PRIVEK <ek.sk>"""
 
         return ret
 
-    def check_dice_esec(self, slot):
+    def verify_dice_cert(self, slot, action):
         expstr = ["uart:"]
         ret = 0
         md5sum_cert = ""
@@ -704,35 +722,98 @@ PRIVEK <ek.sk>"""
         self.nic_con.uart_session_cmd(session, "", 30, expstr)
         self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
         src_str = session.before
-        index = src_str.find("MD5 Checksum (Hex) :", 1)
-        if index == -1 or index == len(src_str) - len("MD5 Checksum (Hex) :"):
-            print("=== Failed to get md5sum from zephyr ===")
-            print("=== DICE VALIDATION FAILED ===")
-            ret = -1
-        else:
-            result = src_str[index + len("MD5 Checksum (Hex) :"):]
-            result = result.split()
-            md5sum_uboot = result[0]
-            print("got md5sum", md5sum_uboot)
-
         self.nic_con.uart_session_stop(session)
+        cmd = "env | grep COLOR"
+        common.session_cmd(session, cmd)
         cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
         common.session_cmd(session, cmd)
+
+        if action == "all":
+            index = src_str.find("MD5 Checksum (Hex) :", 1)
+            if index == -1 or index == len(src_str) - len("MD5 Checksum (Hex) :"):
+                print("=== Failed to get md5sum from zephyr ===")
+                print("=== DICE VALIDATION FAILED ===")
+                common.session_stop(session)
+                ret = -1
+            else:
+                result = src_str[index + len("MD5 Checksum (Hex) :"):]
+                result = result.split()
+                md5sum_uboot = result[0]
+                print("got md5sum", md5sum_uboot)
+            file = open("/home/diag/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.crt", "r+")
+            md5sum_cert = file.read()
+            file.close()
+            md5sum_cert = hashlib.md5(md5sum_cert).hexdigest()
+            print("md5sum cert:", md5sum_cert, "md5sum uboot", md5sum_uboot)
+            if md5sum_cert == md5sum_uboot:
+                print("=== uds md5sum check passed ===")
+            else:
+                print("md5sum check failed; Caculated:", md5sum_cert, "Uboot:", md5sum_uboot)
+                print("=== DICE VALIDATION FAILED ===")
+                common.session_stop(session)
+                return -1
+
+        index = src_str.find("Raw Cert data (Hex):", 1)
+        if index == -1 or index == len(src_str) - len("Raw Cert data (Hex):"):
+            print("=== failed to get dice certificate 0 data ===")
+            print("=== DICE VALIDATION FAILED ===")
+            common.session_stop(session)
+            ret = -1
+        else:
+            result = src_str[index:]
+            ret = self.get_lines_to_file_after_substring(result, "Raw Cert data (Hex):", "uds_cert.txt", 72)
+
+        index = result.find("Raw Cert data (Hex):", 1)
+        if index == -1 or index == len(result) - len("Raw Cert data (Hex):"):
+            print("=== failed to get dice certificate 1 data ===")
+            print("=== DICE VALIDATION FAILED ===")
+            common.session_stop(session)
+            ret = -1
+        else:
+            result = src_str[index:]
+            ret |= self.get_lines_to_file_after_substring(result, "Raw Cert data (Hex):", "cdi_cert.txt", 106)
+
+        if ret != 0:
+            print("=== DICE VALIDATION FAILED ===")
+            return (ret, md5sum_uboot)
+
+        cmd ="xxd -r -p uds_cert.txt uds_cert.der"
+        common.session_cmd(session, cmd)
+        cmd ="xxd -r -p cdi_cert.txt cdi_cert.der"
+        common.session_cmd(session, cmd)
+        cmd = "openssl x509 -inform der -in uds_cert.der -out uds_cert.pem"
+        common.session_cmd(session, cmd)
+        cmd = "openssl x509 -inform der -in cdi_cert.der -out cdi_cert.pem"
+        common.session_cmd(session, cmd)
+        cmd = "openssl x509 -in uds_cert.pem -noout -text"
+        common.session_cmd(session, cmd)
+        cmd = "openssl x509 -in cdi_cert.pem -noout -text"
+        common.session_cmd(session, cmd)
+        #cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/RootCA.pem -untrusted uds_cert.pem cdi_cert.pem"
+        cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/AMD-Root-CA-E3.pem\
+                                        -untrusted /home/diag/diag/tools/pki/dice_certs/AMD-Identity-CA-E3.pem\
+                                        -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pen -untrusted uds_cert.pem cdi_cert.pem"
+        common.session_cmd(session, cmd)
+        cmd = ""
+        common.session_cmd(session, cmd)
+        result = session.before
         common.session_stop(session)
 
-        file = open("/home/diag/diag/asic/asic_src/ip/cosim/tclsh/uds_csr_der.crt", "r+")
-        md5sum_cert = file.read()
-        file.close()
-        md5sum_cert = hashlib.md5(md5sum_cert).hexdigest()
-        print("md5sum cert:", md5sum_cert, "md5sum uboot", md5sum_uboot)
-
-        if md5sum_cert == md5sum_uboot:
+        if "cdi_cert.pem: OK" in result:
             print("=== DICE VALIDATION PASSED ===")
         else:
-            print("md5sum check failed; Caculated:", md5sum_cert, "Uboot:", md5sum_uboot)
             print("=== DICE VALIDATION FAILED ===")
+            ret = -1
 
-        return [ret, md5sum_uboot]
+        return (ret, md5sum_ubootj
+
+    def val_dice_esec(self, slot):
+        ret, md5sum = self.verify_dice_cert(slot, "validate")
+        return [ret, md5sum]
+
+    def check_dice_esec(self, slot):
+        ret, md5sum  = self.verify_dice_cert(slot, "all")
+        return [ret, md5sum]
 
     def dice_prog(self, client_key, client_cert, trust_roots, backend_url, slot, sn):
         os.chdir("/home/diag/diag/scripts/asic/")
@@ -1125,6 +1206,10 @@ if __name__ == "__main__":
 
     if args.check_uds_cert == True:
         esec_ctrl.check_dice_esec(int(args.slot))
+        sys.exit()
+
+    if args.val_uds_cert == True:
+        esec_ctrl.val_dice_esec(int(args.slot))
         sys.exit()
 
     if args.ek_crc == True:
