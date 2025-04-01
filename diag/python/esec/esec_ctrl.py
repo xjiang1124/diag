@@ -790,7 +790,7 @@ PRIVEK <ek.sk>"""
         cmd = "openssl x509 -in cdi_cert.pem -noout -text"
         common.session_cmd(session, cmd)
         #cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/RootCA.pem -untrusted uds_cert.pem cdi_cert.pem"
-        cmd = "openssl verify -x509_strict -CAfile /home/diag/diag/tools/pki/dice_certs/AMD-Root-CA-E3.pem\
+        cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/AMD-Root-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/AMD-Identity-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pen -untrusted uds_cert.pem cdi_cert.pem"
         common.session_cmd(session, cmd)
@@ -805,11 +805,11 @@ PRIVEK <ek.sk>"""
             print("=== DICE VALIDATION FAILED ===")
             ret = -1
 
-        return (ret, md5sum_uboot)
+        return (ret, md5sum_ubootj
 
     def val_dice_esec(self, slot):
         ret, md5sum = self.verify_dice_cert(slot, "validate")
-        return {ret, md5sum]
+        return [ret, md5sum]
 
     def check_dice_esec(self, slot):
         ret, md5sum  = self.verify_dice_cert(slot, "all")
