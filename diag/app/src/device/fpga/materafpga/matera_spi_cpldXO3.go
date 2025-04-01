@@ -2,7 +2,6 @@
 package materafpga
 
 import (
-    //"errors"
     "common/cli"
     "fmt"
     "os"
@@ -10,7 +9,6 @@ import (
     "strings"
     "strconv"
     "time"
-    //"io"
 )
 
 
@@ -21,7 +19,9 @@ const MACHXO3_9400_CFG1_FLASH_SIZE       uint32 = (12541 * 16)    //12541 pages 
 const MACHXO3_9400_UFM0_FLASH_SIZE       uint32 = (3582 * 16)     //3582 pages * 128 bits each = 57312 bytes
 const MACHXO3_9400_UFM1_FLASH_SIZE       uint32 = (3582 * 16)     //3582 pages * 128 bits each = 57312 bytes
 const MACHXO3_9400_UFM2_FLASH_SIZE       uint32 = (1150 * 16)     //18400 bytes
-const MACHXO3_9400_UFM3_FLASH_SIZE       uint32 = (191 * 16)    
+const MACHXO3_9400_UFM3_FLASH_SIZE       uint32 = (191 * 16)
+const MACHXO3_9400_FEAROW_FLASH_SIZE     uint32 = 16              //16 bytes with MASK 0x00000000FFFFFFFFFFFFFFFFFFFFFFFF
+const MACHXO3_9400_FEABIT_FLASH_SIZE     uint32 = 4               //4 bytes with MASK 0x0000FFFF
 
 
 const MACHXO3_ERASE_CFG0    uint32 = 0x0100
@@ -43,6 +43,7 @@ const UFM0                  uint32 = 0x4
 const UFM1                  uint32 = 0x5
 const UFM2                  uint32 = 0x6
 const UFM3                  uint32 = 0x7
+const FEATUREBITS           uint32 = 0x8
 
 const CPLD_STS_REG_BUSY_BIT         uint32 = 0x1000
 const CPLD_STS_REG_FAIL_BIT         uint32 = 0x2000
@@ -117,6 +118,7 @@ var CPLDXO3_ERASE_CONFIG_FLASH_RDLNG   uint32 = 0
 var CPLDXO3_FEATURE_ROW_PROGRAM_OP      = []byte{0xE4, 0x00, 0x00, 0x00}
 var CPLDXO3_FLASH_PROGRAM_PAGE_OP       = []byte{0x70, 0x00, 0x00, 0x01}
 var CPLDXO3_FLASH_PROGRAM_UFM_PAGE_OP   = []byte{0xC9, 0x00, 0x00, 0x01}
+var CPLDXO3_FEATURE_BIT_PROGRAM_OP      = []byte{0xF8, 0x00, 0x00, 0x00}
 var CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG uint32 = 0
 
 var CPLDXO3_RD_FLASH_OP                = []byte{0x73, 0x00, 0x00, 0x01}
@@ -220,10 +222,7 @@ READ FEATURE BITS
 MASK 
 00 01 FF FF 
 **************************************************************************************/ 
-func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err error) {
-    var i, j int = 0, 0;
-    data := []byte{}
-
+func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (data []byte, err error) {
     err = Spi_cpldXO3_enable_config_interface(spiNumber)
     if err != nil {
         return
@@ -232,10 +231,6 @@ func Spi_cpldXO3_read_feature_bits(spiNumber uint32) (FeatureBits uint32, err er
     data, err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RD_FEA_BITS_OP, CPLDXO3_RD_FEA_BITS_OP_RDLNG) 
     if err != nil {
         return
-    }
-    for i=(int(CPLDXO3_RD_FEA_BITS_OP_RDLNG-1) * 8); i>=0; i=i-8 {
-        FeatureBits = FeatureBits | (uint32(data[j])<<uint32(i))
-        j++
     }
 
     err = Spi_cpldXO3_disable_config_interface(spiNumber)
@@ -328,6 +323,8 @@ func Spi_cpldX03_return_flash_space_from_cli_arg(image string) (config uint32, e
         config = UFM3
     } else if image == "fea" {
         config = FEATUREROW
+    } else if image == "feabit" {
+        config = FEATUREBITS
     } else {
         err = fmt.Errorf("ERROR: FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%s'\n", image)
         cli.Printf("e","%v", err)
@@ -344,7 +341,9 @@ func Spi_cpldX03_get_flash_size(config uint32) (size uint32, err error) {
     } else if config == CONFIG1 {
         size = MACHXO3_9400_CFG1_FLASH_SIZE
     } else if config == FEATUREROW {
-        size = FEATUREROW
+        size = MACHXO3_9400_FEAROW_FLASH_SIZE
+    } else if config == FEATUREBITS {
+        size = MACHXO3_9400_FEABIT_FLASH_SIZE
     } else if config == UFM0 {
         size = MACHXO3_9400_UFM0_FLASH_SIZE
     } else if config == UFM1 {
@@ -354,7 +353,7 @@ func Spi_cpldX03_get_flash_size(config uint32) (size uint32, err error) {
     } else if config == UFM3 {
         size = MACHXO3_9400_UFM3_FLASH_SIZE
     } else {
-        err = fmt.Errorf("ERROR: Spi_cpldX03_return_flash_space_from_cli_arg FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%d'\n", config)
+        err = fmt.Errorf("ERROR: Spi_cpldX03_get_flash_size FLASH PARTITION SPACE ENTERED IS NOT VALID.  YOU ENTERED '%d'\n", config)
         cli.Printf("e","%v", err)
         return
     }
@@ -374,7 +373,7 @@ func Spi_cpldXO3_reset_config_flash(spiNumber uint32, image string) (err error) 
     if space == CONFIG1 {
         _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_CONFIG1_FLASH_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
-    if space == FEATUREROW {
+    if space == FEATUREROW || space == FEATUREBITS {
         _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, CPLDXO3_RESET_FEATURE_ROW_OP, CPLDXO3_RESET_CONFIG_FLASH_OP_RDLNG) 
     }
     if space == UFM0 {
@@ -530,6 +529,58 @@ func Spi_cpldXO3_program_feature_row_cmd(spiNumber uint32, data []byte) (err err
 }
 
 
+func Spi_cpldXO3_program_featurebits_cmd(spiNumber uint32, data []byte) (err error) {
+    var sleep, max_try int = 1, 100
+    var data32 uint32
+    spi_cmd := []byte{}
+
+    spi_cmd = append(spi_cmd, CPLDXO3_FEATURE_BIT_PROGRAM_OP...) 
+    spi_cmd = append(spi_cmd, data...) 
+
+    _ , err = matera_spi_generic_transaction(spiNumber, SPI_TRGT_DEVICE_CPLD_FLASH, spi_cmd, CPLDXO3_FLASH_PROGRAM_PAGE_OP_RDLNG) 
+    if err != nil {
+        return
+    }
+
+    for i:=0; i<max_try; i++ {
+        data32, err = Spi_cpldXO3_read_busy_flag(spiNumber)
+        if err != nil {
+            return
+        }
+        //Wait for flash to not be busy erasing
+        if data32 & CPLD_BUSYFLAG_BUSY_BIT != CPLD_BUSYFLAG_BUSY_BIT {   
+            break
+        }
+
+        time.Sleep(time.Duration(sleep) * time.Millisecond)
+
+        if i == (max_try -1) {
+            err = fmt.Errorf("ERROR: Slot-%d: FLASH PROGRAM FEATURE BIT STUCK WAITING FOR BUSY FLAG TO CLEAR.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
+            return
+        }
+
+
+        data32, err = Spi_cpldXO3_read_status_reg(spiNumber)
+        if err != nil {
+            return
+        }
+        if data32 & CPLD_STS_REG_BUSY_BIT == CPLD_STS_REG_BUSY_BIT {
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH BUSY FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
+            return
+        }
+        if data32 & CPLD_STS_REG_FAIL_BIT == CPLD_STS_REG_FAIL_BIT {
+            err = fmt.Errorf("ERROR: Slot-%d: CPLD STS REG: FLASH FAIL FLAG IS SET.  REG=0x%x\n", spiNumber+1, data32)
+            cli.Printf("e","%v", err)
+            return
+        }
+    }
+    
+    return
+}
+
+
 func Spi_cpldXO3_program_page_flash_cmd(spiNumber uint32, config uint32, data []byte) (err error) {
     var sleep, max_try int = 1, 100
     var data32 uint32
@@ -658,18 +709,22 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
     }
 
     if strings.Contains(filename, "fea")==true {
-        if config == FEATUREROW {
+        if config == FEATUREROW || config == FEATUREBITS {
             err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
             if err != nil {
                 fmt.Printf("ERROR: Failed to convert filename=%s.  Exiting Programming CPLD\n", filename)
                 return
             }
         } else {
-            err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
+            err = fmt.Errorf("[ERROR]  Spi_cpldXO3_verify_flash_contents. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
             cli.Printf("e","%v", err)
             return
         }
         filename = strings.Replace(filename, "fea", "bin", 1)
+        if config == FEATUREBITS {
+            i := strings.Index(filename, ".")
+            filename = filename[:i] + "featurebit" + filename[i:]
+        }
     }
     if strings.Contains(filename, "jed")==true {
         fmt.Printf(" Jed file detected..Converting to a BIN file\n")
@@ -737,6 +792,8 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
 
     if config == FEATUREROW {
         flashData, _ = Spi_cpldXO3_read_feature_row(spiNumber) 
+    } else if config == FEATUREBITS {
+        flashData, _ = Spi_cpldXO3_read_feature_bits(spiNumber) 
     } else {
         if (config == UFM0 || config == UFM1 || config == UFM2 || config == UFM3) {
             size = uint32(len(fileData))
@@ -774,7 +831,6 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
             }
         }
     }
-    fmt.Printf("\n")
 
     err = Spi_cpldXO3_disable_config_interface(spiNumber)
     if err != nil {
@@ -785,20 +841,8 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         return
     }
 
-    //f.WriteString(string(flashData[:]))
-    if (config == CONFIG0 || config == CONFIG1) && (len(flashData) != len(fileData)) {
-        err = fmt.Errorf(" ERROR: File and Flash data size do not match.   Flash Data Size = %d.   File Data Size = %d\n", len(flashData), len(fileData) ) 
-        cli.Printf("e", "%v", err)
-        return;
-    } 
-
-    if (config == FEATUREROW) {
-        //The feature row read mask is 4 bytes dont care, 12 bytes of data
-        //In order to get the converted .fea file to match, we need to pre-append 4 bytes of 0x00 since the first 4 bytes of the feature row read are not in the mask
-        tempSlice := []byte{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-        copy(tempSlice[4:16], fileData[0:12])
-        fileData = tempSlice
-        fmt.Printf("\n FILE  -> ")
+    if (config == FEATUREROW) || (config == FEATUREBITS) {
+        fmt.Printf(" FILE  -> ")
         for i:=0; i<len(fileData); i++ {
             fmt.Printf("%.02x ", fileData[i])
         }
@@ -806,8 +850,14 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
         for i:=0; i<len(flashData); i++ {
             fmt.Printf("%.02x ", flashData[i])
         }
-        fmt.Printf("\n")
     }
+    fmt.Printf("\n")
+
+    if (config == CONFIG0 || config == CONFIG1) && (len(flashData) != len(fileData)) {
+        err = fmt.Errorf(" ERROR: File and Flash data size do not match.   Flash Data Size = %d.   File Data Size = %d\n", len(flashData), len(fileData) ) 
+        cli.Printf("e", "%v", err)
+        return;
+    } 
     for i:=0; i<len(fileData); i++ {
         if flashData[i] != fileData[i] {
             err = fmt.Errorf(" ERROR: Data Mismatch at address 0x%x. Flash=%.02x   Expect=0x%02x\n", i, flashData[i], fileData[i] ) 
@@ -886,6 +936,8 @@ func Spi_cpldX03_generate_image_from_flash(spiNumber uint32, image string, filen
 
     if config == FEATUREROW {
         flashData, _ = Spi_cpldXO3_read_feature_row(spiNumber)
+    } else if config == FEATUREBITS {
+        flashData, _ = Spi_cpldXO3_read_feature_bits(spiNumber)
     } else {
         size, _ := Spi_cpldX03_get_flash_size(config)
 
@@ -1232,7 +1284,6 @@ func Spi_cpldXO3_program_usercode(spiNumber uint32, image string, usercode uint3
 // PROGRAM A FILE INTO CFG FLASH
 //  
 //////////////////////////////////////////////////////
-
 func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, filename string, dataSlice []byte) (err error) {
 
     var data32 uint32 = 0
@@ -1256,7 +1307,7 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
 
     if tofile == true {
         if strings.Contains(filename, "fea")==true {
-            if config == FEATUREROW {
+            if config == FEATUREROW || config == FEATUREBITS {
                 err = Spi_cpldXO3_convert_featurerow_jed_file(filename)
             } else {
                 err = fmt.Errorf("[ERROR]  Spi_cpldXO3_program_flash. FEA FILE PASSED for programming cfg0 or cgf1.  File needs to be jed or bin\n")
@@ -1264,6 +1315,10 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
                 return
             }
             filename = strings.Replace(filename, "fea", "bin", 1)
+            if config == FEATUREBITS {
+                i := strings.Index(filename, ".")
+                filename = filename[:i] + "featurebit" + filename[i:]
+            }
         }
         if strings.Contains(filename, "jed")==true {
             fmt.Printf(" Jed file detected..Converting to a BIN file\n")
@@ -1348,33 +1403,17 @@ func Spi_cpldXO3_program_flash(spiNumber uint32, image string, tofile bool, file
     }
 
     if config == FEATUREROW {
-        //The feature row read mask is 4 bytes dont care, 12 bytes of data
-        //In order to get the converted .fea file to match, we need to pre-append 4 bytes of 0x00 since the first 4 bytes of the feature row read are not in the mask
-        tempSlice := []byte{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
-        copy(tempSlice[4:16], fileData[0:12])
-        fmt.Println(tempSlice)
-
-        err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, tempSlice)
+        err = Spi_cpldXO3_program_feature_row_cmd(spiNumber, fileData)
+        if err != nil {
+            return
+        }
+    } else if config == FEATUREBITS {
+        err = Spi_cpldXO3_program_featurebits_cmd(spiNumber, fileData)
         if err != nil {
             return
         }
     } else {
         err = Spi_cpldXO3_program_page_flash_cmd(spiNumber, config, fileData)
-        if err != nil {
-            return
-        }
-    }
-
-    if config == CONFIG0 {
-        fmt.Printf("Writing usercode row 0x10060000\n")
-        err = Spi_cpldXO3_write_usercode(spiNumber, 0x10060000)
-        if err != nil {
-            return
-        }
-    }
-    if config == CONFIG1 {
-        fmt.Printf("Writing usercode row 0x10060001\n")
-        err = Spi_cpldXO3_write_usercode(spiNumber, 0x10060001)
         if err != nil {
             return
         }
@@ -1516,19 +1555,6 @@ Data after the period is feature bits (ignore first 2 bytes, use last 2 byteS).
 000000e0  30 30 30 30 30 0a 30 30  30 30 30 30 30 30 30 30  |00000.0000000000|
 000000f0  30 30 30 30 30 30 31 30  30 30 30 31 31 30 30 30  |0000001000011000|
 00000100  31 30 30 30 30 30                                 |100000|
-
-
-**** DIAG PROGRAMMING FEATURE ROW *************
-[2024-09-04_11:55:14] diag@MTP:$ hexdump -C slot3_feature_row.bin
-00000000  45 00 40 00 00 00 00 00  00 00 00 00 00 00 86 20  |E.@............ |
-00000010
-
-
-**** DONGLE PROGRAMMING FEATURE ROW *************
-[2024-09-04_11:55:10] diag@MTP:$ hexdump -C fea.bin
-00000000  00 00 00 00 45 00 40 00  00 00 00 00 00 00 00 00  |....E.@.........|
-00000010 
- 
  
 READ FEATURE ROW 
 00 00 00 00 45 00 40 00 00 00 00 00 00 00 00 00 
@@ -1541,10 +1567,10 @@ MASK
 00 00 FF FF 
 ****************************************************************************************/
 func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
-    WRdata := []byte{}
-    //var lines_converted int = 0
+    JedReadData := []byte{}
     var start_convert int = 0
-    //var u64 uint64 = 0
+    FeatureRowData := []byte{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }
+    FeatureBitData := []byte{ 0x00, 0x00, 0x00, 0x00 }
 
     if strings.Contains(filename, ".fea")==true {
         fmt.Printf(" Jed file detected\n")
@@ -1560,7 +1586,7 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
         return
     }
     filename = strings.Replace(filename, ".fea", ".bin", 1)
-    fmt.Printf(" BIN FILENAME = %s\n", filename)
+    fmt.Printf(" FEATURE ROW BIN FILENAME = %s\n", filename)
     outF, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
     if err != nil {
         fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
@@ -1581,21 +1607,37 @@ func Spi_cpldXO3_convert_featurerow_jed_file(filename string) (err error) {
             var u64 uint64 = 0
             for i:=0; i<len(bytes); i=i+8 {
                 u64, _ = strconv.ParseUint(string(bytes[i:(i+8)]), 2, 8)
-                WRdata = append(WRdata, uint8(u64))
+                JedReadData = append(JedReadData, uint8(u64))
             }
         }
     } 
+    inF.Close()
     
+    //The feature row mask is 4 bytes dont care, 12 bytes of data
+    //In order to get the converted .fea file to match, we need to pre-append 4 bytes of 0x00 since the first 4 bytes of the feature row read are not in the mask
+    copy(FeatureRowData[4:16], JedReadData[0:12])
     if err = scanner.Err(); err != nil {
         fmt.Println(err)
         inF.Close() 
         outF.Close()
         return
     }
+    outF.WriteString(string(FeatureRowData[:]))
+    outF.Close()
 
-    outF.WriteString(string(WRdata[:]))
+    //WRITE FEATURE BITS TO A FILE
+    copy(FeatureBitData[0:4], JedReadData[12:16])
+    i := strings.Index(filename, ".")
+    filename = filename[:i] + "featurebit" + filename[i:]
 
-    inF.Close()
+    fmt.Printf(" FEATURE BIT BIN FILENAME = %s\n", filename)
+    outF, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+    if err != nil {
+        fmt.Printf("ERROR: Failed to open filename=%s.   ERR=%s\n", filename, err)
+        inF.Close()
+        return
+    }
+    outF.WriteString(string(FeatureBitData[:]))
     outF.Close()
 
     return

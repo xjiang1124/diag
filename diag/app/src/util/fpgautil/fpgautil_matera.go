@@ -34,7 +34,7 @@ const errhelpMatera = "\nfpgautil:\n" +
         "fpgautil flash <slot#> <qspi#> generatefile <addr> <length> <filename>\n" +
         "\n" +
         "fpgautil cpld <slot#> uc/devid/featurebits/featurerow/statusreg/disable/refresh \n" +
-        "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm2/fea> <filename>\n" +
+        "fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm0/ufm1/ufm2/ufm3/fea/feabit> <filename>\n" +
         "\n" +
         "fpgautil mdiord <inst#> <phy> <addr>\n" +
         "fpgautil mdiowr <inst#> <phy> <addr> <data>\n" +
@@ -463,11 +463,15 @@ func matera_fpga_cli() {
             materafpga.Spi_cpldXO3_refresh(slot) 
             fmt.Printf(" Slot-%d Salina CPLD  Refresh performed\n", slot+1)
         } else if os.Args[3] == "featurebits" {   
-            featurebits, _ := materafpga.Spi_cpldXO3_read_feature_bits(slot) 
-            fmt.Printf(" Slot-%d Salina CPLD  Feature BITS =0x%.08x\n", slot+1, featurebits)
+            data, _ := materafpga.Spi_cpldXO3_read_feature_bits(slot) 
+            fmt.Printf("\n")
+            for i:=0; i < len(data); i++ {
+                fmt.Printf(" %.02x", data[i])
+            }
+            fmt.Printf("\n")
         } else if os.Args[3] == "featurerow" { 
-            data := []byte{}  
-            data, _ = materafpga.Spi_cpldXO3_read_feature_row(slot) 
+            //data := []byte{}  
+            data, _ := materafpga.Spi_cpldXO3_read_feature_row(slot) 
             fmt.Printf("\n")
             for i:=0; i < len(data); i++ {
                 fmt.Printf(" %.02x", data[i])
@@ -519,9 +523,22 @@ func matera_fpga_cli() {
                 if err != nil {
                     os.Exit(-1)
                 }
+                //If feature row is programmed, need to do the feature bits as well
+                if os.Args[4] == "fea" {
+                    err = materafpga.Spi_cpldXO3_program_flash(slot, "feabit", true, os.Args[5], nil)
+                    if err != nil {
+                        os.Exit(-1)
+                    }
+                }
                 err = materafpga.Spi_cpldXO3_verify_flash_contents(slot, os.Args[4], os.Args[5])
                 if err != nil {
                     os.Exit(-1)
+                }
+                if os.Args[4] == "fea" {
+                    err = materafpga.Spi_cpldXO3_verify_flash_contents(slot, "feabit", os.Args[5])
+                    if err != nil {
+                        os.Exit(-1)
+                    }
                 }
             }
             t2 := time.Now()
