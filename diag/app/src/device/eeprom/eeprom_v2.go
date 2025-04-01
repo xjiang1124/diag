@@ -136,7 +136,7 @@ const (
     SKU_POLLARA         string = "POLLARA-1Q400P"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
-    SKU_LINGUA          string = "LINGUA-1Q400P-OCP"
+    SKU_LINGUA          string = "POLLARA-1Q400P-OCP"
     SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
 
     // FRU ID
