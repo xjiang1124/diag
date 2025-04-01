@@ -215,7 +215,7 @@ class esec_ctrl:
         try:
             index = lines.index(substring)
             data_str = lines[index + 1:index + 1 + num_lines] 
-            result = "".join(line.strip() for line in lines)
+            result = "".join(line.strip() for line in data_str)
         except ValueError:
             return -1
 
@@ -770,7 +770,7 @@ PRIVEK <ek.sk>"""
             common.session_stop(session)
             ret = -1
         else:
-            result = src_str[index:]
+            result = result[index:]
             ret |= self.get_lines_to_file_after_substring(result, "Raw Cert data (Hex):", "cdi_cert.txt", 106)
 
         if ret != 0:
@@ -792,7 +792,7 @@ PRIVEK <ek.sk>"""
         #cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/RootCA.pem -untrusted uds_cert.pem cdi_cert.pem"
         cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/AMD-Root-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/AMD-Identity-CA-E3.pem\
-                                        -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pen -untrusted uds_cert.pem cdi_cert.pem"
+                                        -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pem -untrusted uds_cert.pem cdi_cert.pem"
         common.session_cmd(session, cmd)
         cmd = ""
         common.session_cmd(session, cmd)
