@@ -853,7 +853,6 @@ func Spi_cpldXO3_verify_flash_contents(spiNumber uint32, image string, filename 
     }
     fmt.Printf("\n")
 
-    //f.WriteString(string(flashData[:]))
     if (config == CONFIG0 || config == CONFIG1) && (len(flashData) != len(fileData)) {
         err = fmt.Errorf(" ERROR: File and Flash data size do not match.   Flash Data Size = %d.   File Data Size = %d\n", len(flashData), len(fileData) ) 
         cli.Printf("e", "%v", err)
