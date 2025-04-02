@@ -51,15 +51,21 @@ declare -a bifValue=(0x01 0x02 0x04)
 for i in ${!bifValue[*]}
 do
     turn_on_slot.sh off $slot
+    matera_P12V_addr="0x174"
     matera_P3V3_addr="0x178"
-    v3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
+    p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
+    p12v=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
     bitPos=$(( 1 << $(( $slot - 1 )) ))
-    printf "Setting BitPos=0x%.04x   v3v3=0x%.08x   final write=0x%.08x\n" $bitPos $v3v3 $(( $v3v3 | $bitPos ))
-    printf "Testing BIF Value 0x%.02x\n"  ${bifValue[$i]}
-    fpgautil w32 $matera_P3V3_addr $(( $v3v3 | $bitPos ))
+    printf "Setting 3.3V and 12V enable\n"
+    fpgautil w32 $matera_P3V3_addr $(( $p3v3 | $bitPos ))
+    fpgautil w32 $matera_P12V_addr $(( $p12v | $bitPos ))
     sleep 1
+    printf "Testing BIF Value 0x%.02x\n"  ${bifValue[$i]}
     i2cset -y $(($slot+2)) 0x4b 0x41 ${bifValue[$i]}
     i2cset -y $(($slot+2)) 0x4b 0x40 0x1
+    sleep 0.2
+    i2cset -y $(($slot+2)) 0x4b 0x40 0x3
+    sleep 2
     bif=$(( $(i2cget -y $(($slot+2)) 0x4a 0xc1) & 0x70 ))
     bif=$(( $bif>>4 ))
     if [[ ${bifValue[$i]} -ne $bif ]]
