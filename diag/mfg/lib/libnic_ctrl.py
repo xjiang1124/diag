@@ -173,8 +173,8 @@ class nic_ctrl():
             self.nic_set_cmd_buf(self._nic_handle.before)
             com_buffer_lines = self._nic_handle.before.splitlines()
             self.nic_set_err_msg("Encountered script timeout with command buffer:")
-            if len(com_buffer_lines) > 100:
-                com_buffer_lines = com_buffer_lines[-100:]
+            if len(com_buffer_lines) > 50:
+                com_buffer_lines = com_buffer_lines[-50:]
             for line in com_buffer_lines:
                 self.nic_set_err_msg(str(repr(line)))
             return False
@@ -1670,31 +1670,6 @@ class nic_ctrl():
             except ValueError:
                 self.nic_set_err_msg("Invalid NIC FW kernel version")
                 return False
-
-    def nic_snake_mtp_salina(self, snake_type='esam_pktgen_max_power_sor', vmarg="normal", dura=120, timeout=3600, slot_asic_dir_path=None, ite='1', int_lpbk='0'):
-        '''
-            run salina snake from mtp without mgmt
-        '''
-
-        if not slot_asic_dir_path:
-            return False
-
-        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
-        if not self.mtp_exec_cmd(cmd):
-            return False
-
-        test_name = "max_pwr" if snake_type=="esam_pktgen_max_power_sor" else "ddr_burst"
-
-        cmd = MFG_DIAG_CMDS.MATERA_NIC_SNAKE_MTP_FMT.format(str(self._slot + 1), timeout, dura, snake_type, vmarg, self._nic_type, slot_asic_dir_path, ite, int_lpbk)
-        cmd += " | tee {:s}/snake_{:s}_{:s}_slot{:s}.log".format(MTP_DIAG_Logfile.ONBOARD_ASIC_LOG_DIR, test_name, str(self._sn), str(self._slot + 1))
-        print(cmd)
-        if not self.mtp_exec_cmd(cmd, timeout=timeout+30):
-            return False
-
-        if MFG_DIAG_SIG.MATERA_NIC_SNAKE_MTP_SIG in self.nic_get_cmd_buf():
-            return True
-        else:
-            return False
 
     def nic_google_stress_test(self, vmarg='normal',  mem_copy_thread=16, seconds2run=60, slot_asic_dir_path="/home/diag/diag/asic/"):
         '''
