@@ -686,6 +686,7 @@ PRIVEK <ek.sk>"""
 
     def verify_dice_cert(self, slot, action):
         expstr = ["uart:"]
+        expstr1 = ["rt:"]
         ret = 0
         md5sum_cert = ""
         md5sum_uboot= ""
@@ -719,7 +720,7 @@ PRIVEK <ek.sk>"""
             common.session_stop(session)
             return ret
 
-        self.nic_con.uart_session_cmd(session, "", 30, expstr)
+        self.nic_con.uart_session_cmd(session, "", 30, expstr1)
         self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
         src_str = session.before
         self.nic_con.uart_session_stop(session)
