@@ -1102,6 +1102,9 @@ proc esec_dice_all {slot sn
         return -1
     }
 
+    sal_pc
+    after 1000
+
     set ret [esec_get_uds_csr] 
     if { $ret == 0 } {
         plog_msg "GET UDS csr successful"
