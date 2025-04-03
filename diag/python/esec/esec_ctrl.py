@@ -720,7 +720,12 @@ PRIVEK <ek.sk>"""
             common.session_stop(session)
             return ret
 
-        self.nic_con.uart_session_cmd(session, "", 30, expstr1)
+        try:
+            session.expect(["uart:"], 1)
+        except pexpect.TIMEOUT:
+                print("Synced")
+
+        #self.nic_con.uart_session_cmd(session, "", 30, expstr1)
         self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
         src_str = session.before
         self.nic_con.uart_session_stop(session)
@@ -795,8 +800,8 @@ PRIVEK <ek.sk>"""
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/AMD-Identity-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pem -untrusted uds_cert.pem cdi_cert.pem"
         common.session_cmd(session, cmd)
-        cmd = ""
-        common.session_cmd(session, cmd)
+        #cmd = ""
+        #common.session_cmd(session, cmd)
         result = session.before
         common.session_stop(session)
 
