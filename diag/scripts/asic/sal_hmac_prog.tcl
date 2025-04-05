@@ -51,6 +51,14 @@ puts "_msrd"
 set rtn [eval _msrd]
 puts $rtn
 
+if ( $rtn != 1 ) {
+    plog_msg "HMAC CHECK WITH J2C ERROR"
+    plog_msg "EFUSE PROG FAILED"
+    diag_close_j2c_if $port $slot
+    plog_stop
+    return -1
+}
+
 #sal_arm_reset
 reset_to_proto_mode cold
 sal_print_voltage_temp_from_j2c
