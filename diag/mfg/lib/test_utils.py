@@ -399,7 +399,7 @@ def mtp_common_setup2(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=None, scanned_sku=None):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_dpn=scanned_dpn, scanned_sku=scanned_sku):
         return False
     return True
@@ -407,10 +407,10 @@ def mtp_common_setup_fpo(mtp_mgmt_ctrl, stage, skip_test_list=[], scanned_dpn=No
 def mtp_common_setup_srn(mtp_mgmt_ctrl, stage, skip_test_list=[], mtp_type=MTP_TYPE.MATERA):
     mtp_mgmt_ctrl._mtp_type = mtp_type
     if mtp_type == MTP_TYPE.TURBO_ELBA:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "I210_PRSNT_CHECK", "I210_IMAGE_CHECK", "MTP_POWERCYCLE",
                      "MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "PYTHON_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     else:
-        test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "MTP_USB_SANITY_CHECK", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE",
+        test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "MTP_USB_SANITY_CHECK", "DIAG_UPDATE", "AMD_AVT_TOOL_INSTALL", "PYTHON_UPDATE",
                      "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT"]
 
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, mtp_type=mtp_type):
@@ -424,13 +424,13 @@ def mtp_common_setup_fst(mtp_mgmt_ctrl, stage, skip_test_list=[]):
     return True
 
 def mtp_common_setup_fpo_scandl(mtp_mgmt_ctrl, stage, scanned_fru_cfg, skip_test_list=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "SCAN_NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list, scanned_fru_cfg=scanned_fru_cfg):
         return False
     return True
 
 def mtp_common_setup_fpo_cpld_validation(mtp_mgmt_ctrl, stage=FF_Stage.FF_DL, skip_test_list=[], new_cpld_files=[]):
-    test_list = ["MTP_FPO_CONNECT", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
+    test_list = ["MTP_FPO_CONNECT", "MTP_TIMEZONE_SET", "MTP_TIME_SET", "DIAG_UPDATE", "DIAG_START", "DIAG_POST", "MTP_SANITY_CHECK", "MTP_ID", "NIC_INIT", "NIC_FW_UPDATE"]
     if not mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list):
         return False
     # copy new version of CPLD binary files, which will be use as upgrade target
@@ -459,6 +459,9 @@ def mtp_common_setup_test_picker(mtp_mgmt_ctrl, stage, test_list, skip_test_list
 
         elif test == "FST_CONNECT":
             ret = mtp_mgmt_ctrl.mtp_mgmt_connect(prompt_cfg=True, max_retry=10)
+
+        elif test == "MTP_TIMEZONE_SET":
+            ret = mtp_mgmt_ctrl.mtp_mgmt_set_time_zone(stage)
 
         elif test == "MTP_TIME_SET":
             ret = mtp_mgmt_ctrl.mtp_mgmt_set_date(stage)
