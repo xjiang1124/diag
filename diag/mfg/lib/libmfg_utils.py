@@ -864,21 +864,22 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
             image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["POLLARA-1Q400P"])
+            image_list.append(NIC_IMAGES.fwsel_img["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P"])
             image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P"])
         if lingua_family:
-            image_list.append(NIC_IMAGES.arm_a_boot0_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_uboota_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_ubootb_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_ubootg_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_zephyr_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.device_config_dtb["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.firmware_config_dtb["LINGUA-1Q400P"])
-            image_list.append(NIC_IMAGES.qspi_prog_sh_img["LINGUA-1Q400P"])
+            image_list.append(NIC_IMAGES.arm_a_boot0_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_uboota_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_ubootb_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_ubootg_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P-OCP"])
 
     return image_list
 
@@ -1255,8 +1256,9 @@ def post_fail_steps(mtp_mgmt_ctrl, slot, testname=""):
     else:
         
         mtp_mgmt_ctrl.mtp_nic_console_lock()
-        mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
-        mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
+        if mtp_mgmt_ctrl.mtp_get_nic_type(slot) not in SALINA_AI_NIC_TYPE_LIST:
+            mtp_mgmt_ctrl.mtp_nic_boot_info_init(slot)
+            mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_check_rebooted()
         mtp_mgmt_ctrl.mtp_nic_port_counters(slot) # if mtp_mgmt_ctrl._nic_ctrl_list[slot]._nic_status == NIC_Status.NIC_STA_MGMT_FAIL
         mtp_mgmt_ctrl.mtp_nic_console_unlock()
         mtp_mgmt_ctrl.mtp_sal_check_j2c(slot, testname)
@@ -2687,12 +2689,12 @@ def extract_json(content):
     json_str = content[start:end]
     return json_str
 
-def get_hmac_been_programmed_slots(mtp_mgmt_ctrl, nic_list):
+def get_hmac_been_programmed_slots(mtp_mgmt_ctrl, nic_list, stage=FF_Stage.FF_DL):
 
-    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_BEEN_PROG_SIG)
+    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_BEEN_PROG_SIG, stage)
     return list(set(nic_list) - set(failed_slots))
 
-def get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, nic_list):
+def get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, nic_list, stage=FF_Stage.FF_DL):
 
-    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
+    failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG, stage)
     return list(set(nic_list) - set(failed_slots))

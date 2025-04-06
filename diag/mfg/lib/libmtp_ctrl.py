@@ -1298,8 +1298,17 @@ class mtp_ctrl():
             self.cli_log_err("Unable to set MTP date")
             return False
         if not self.mtp_mgmt_exec_sudo_cmd(cmd1):
-            self.cli_log_err("Unable  to write hwclock")
+            self.cli_log_err("Unable to write hwclock")
             return False
+
+        return True
+
+    def mtp_mgmt_set_time_zone(self, stage=None):
+        cmd = "timedatectl set-timezone America/Los_Angeles"
+        if stage != FF_Stage.FF_FST:
+            if not self.mtp_mgmt_exec_sudo_cmd(cmd):
+                self.cli_log_err("Unable to set MTP timezone")
+                return False
 
         return True
 
@@ -3106,8 +3115,9 @@ class mtp_ctrl():
             # no need to do this
             self.cli_log_slot_inf(slot, "NIC boot info already present")
             return True
+        nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
+        if nic_type != SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -4367,6 +4377,19 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_verify_cpld_feature_row(self, slot, fea_cpld_img_file):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            self.cli_log_slot_err_lock(slot, "Should not be here: this only support salina fea image, not {:s}".format(nic_type))
+            return False
+
+        if not self._nic_ctrl_list[slot].nic_verify_cpld_feature_row(fea_cpld_img_file):
+            self.cli_log_slot_err_lock(slot, "Verify NIC CPLD FEA image failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
     def mtp_recover_nic_console(self, slot):
         nic_type = self.mtp_get_nic_type(slot)
         if nic_type not in ELBA_NIC_TYPE_LIST and nic_type not in FPGA_TYPE_LIST:
@@ -4432,13 +4455,18 @@ class mtp_ctrl():
             if not self._nic_ctrl_list[slot].nic_check_uboot_sec_key():
                 self.cli_log_slot_err(slot, "Program NIC check Uboot failed")
                 return False
+
+            if not self._nic_ctrl_list[slot].nic_check_uds_cert():
+                self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
+                return False
+
             if SALINA_HMAC_PROGRAM_ENABLE:
                 if not self._nic_ctrl_list[slot].nic_hmac_fuse_prog():
                     self.cli_log_slot_err(slot, "Program HMAC fuse failed")
                     return False
 
-            if not self._nic_ctrl_list[slot].nic_check_uds_cert():
-                self.cli_log_slot_err(slot, "Program NIC check UDS cert failed")
+            if not self._nic_ctrl_list[slot].nic_val_uds_cert():
+                self.cli_log_slot_err(slot, "Program NIC validate UDS cert failed")
                 return False
 
         if not self._nic_ctrl_list[slot].nic_program_sec_key_post():
@@ -4454,13 +4482,25 @@ class mtp_ctrl():
         return True
 
     @parallelize.sequential_nic_test
-    def mtp_nic_hmac_programmed_status_check(self, slot, expect_status):
+    def mtp_nic_hmac_programmed_status_check(self, slot, expect_status, stage=FF_Stage.FF_DL):
         """
         call ./esec_ctrl.py -hmac_fuse_prog -slot $slo -hmac_file check_only
         'HMAC HAS BEEN PROGRAMMED' or 'HMAC HAS NOT BEEN PROGRAMMED'
         """
-        if not self._nic_ctrl_list[slot].nic_hmac_program_status_check(expect_status):
+        if not self._nic_ctrl_list[slot].nic_hmac_program_status_check(expect_status, stage):
             self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status String: '{:s}' NOT Found".format(expect_status))
+            return False
+
+        return True
+
+    @parallelize.sequential_nic_test
+    def mtp_nic_val_uds_cert(self, slot):
+        """
+        call ./esec_ctrl.py -val_uds_cert -slot -slot $slot
+        'DICE VALIDATION PASSED'
+        """
+        if not self._nic_ctrl_list[slot].nic_val_uds_cert():
+            self.cli_log_slot_err(slot, "NIC validate UDS cert failed")
             return False
 
         return True
@@ -6727,6 +6767,13 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
+        return True
+
+    @parallelize.parallel_nic_using_ssh
+    def mtp_mgmt_nic_i2c_dump(self, slot):
+        if not self._nic_ctrl_list[slot].nic_i2c_dump():
+            self.cli_log_slot_err(slot, "Dump i2c value failed")
+            return False
         return True
 
     def mtp_mgmt_set_elba_uboot_env(self, slot):
