@@ -32,6 +32,7 @@ arm_a_zephyr = "arm_a_zephyr"
 arm_a_zephyr_gold = "arm_a_zephyr_gold"
 arm_a_zephyr_a = "arm_a_zephyr_a"
 arm_a_zephyr_b = "arm_a_zephyr_b"
+fwsel = "fwsel"
 device_config_dtb = "device_config_dtb"
 firmware_config_dtb = "firmware_config_dtb"
 mbist_boot0_img = "mbist_boot0_img"
@@ -194,6 +195,12 @@ def get_arm_a_zephyr_b_img(mtp_mgmt_ctrl, slot, stage):
     "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.arm_a_zephyr_b_img, nic_type)
     }
 
+def get_fwsel_img(mtp_mgmt_ctrl, slot, stage):
+    nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, fwsel)
+    return {
+    "filename":  get_dict_entry(mtp_mgmt_ctrl, NIC_IMAGES.fwsel_img, nic_type)
+    }
+
 def get_device_config_dtb_img(mtp_mgmt_ctrl, slot, stage):
     nic_type = pick_dictionary_key(mtp_mgmt_ctrl, slot, stage, device_config_dtb)
     return {
@@ -281,6 +288,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
         arm_a_zephyr_gold: get_arm_a_zephyr_gold_img,
         arm_a_zephyr_a: get_arm_a_zephyr_a_img,
         arm_a_zephyr_b: get_arm_a_zephyr_b_img,
+        fwsel: get_fwsel_img,
         device_config_dtb: get_device_config_dtb_img,
         firmware_config_dtb: get_firmware_config_dtb_img,
         arm_n_boot0: get_arm_n_boot0_img,
@@ -411,6 +419,8 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)
+                if nic_type in NIC_Type.POLLARA:
+                    images_needed.append(fwsel)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
