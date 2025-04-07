@@ -27,6 +27,9 @@ plog_start $LOG_FN
 plog_msg "HMAC file: $hmac_file"
 
 exec fpgautil spimode $slot off
+
+set in_err [plog_get_err_count]
+
 diag_close_j2c_if $port $slot
 diag_open_j2c_if $port $slot
 diag_close_j2c_if $port $slot
@@ -51,7 +54,8 @@ puts "_msrd"
 set rtn [eval _msrd]
 puts $rtn
 
-if ( $rtn != 1 ) {
+set out_err [plog_get_err_count]
+if { $in_err != $out_err || $rtn != 1 } {
     plog_msg "HMAC CHECK WITH J2C ERROR"
     plog_msg "EFUSE PROG FAILED"
     diag_close_j2c_if $port $slot
@@ -59,6 +63,7 @@ if ( $rtn != 1 ) {
     return -1
 }
 
+set in_err [plog_get_err_count]
 #sal_arm_reset
 reset_to_proto_mode cold
 sal_print_voltage_temp_from_j2c
