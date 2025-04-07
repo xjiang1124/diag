@@ -925,6 +925,7 @@ proc esec_all {sn usb_port slot PN MAC MTP
     sal_set_esec_enable_pin
     sal_power_cycle_chk 25 $port $slot
     
+    sal_chlng_get_status_str
     set timestamp_pre [clock seconds]
     #============================
     # PUF enroll
@@ -1059,6 +1060,9 @@ proc esec_dice_all {slot sn
     plog_start esec_dice_all_slot${slot}.log
 
     exec fpgautil spimode $slot off
+
+    set in_err [plog_get_err_count]
+
     diag_close_j2c_if $port $slot
     diag_open_j2c_if $port $slot
     diag_close_j2c_if $port $slot
@@ -1080,6 +1084,15 @@ proc esec_dice_all {slot sn
     puts "_msrd"
     set rtn [eval _msrd]
     puts $rtn
+
+    set out_err [plog_get_err_count]
+    if { $in_err != $out_err || $rtn != 1 } {
+        plog_msg "UDS FUSE  CHECK WITH J2C ERROR"
+        plog_msg "SET UDS CERTIFICATE failed"
+        diag_close_j2c_if $port $slot
+        plog_stop
+        return -1
+    }
 
     #sal_arm_reset
     reset_to_proto_mode cold 
