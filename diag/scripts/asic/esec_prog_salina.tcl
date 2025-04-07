@@ -1087,7 +1087,7 @@ proc esec_dice_all {slot sn
 
     set out_err [plog_get_err_count]
     if { $in_err != $out_err || $rtn != 1 } {
-        plog_msg "UDS FUSE  CHECK WITH J2C ERROR"
+        plog_msg "UDS FUSE CHECK WITH J2C ERROR"
         plog_msg "SET UDS CERTIFICATE failed"
         diag_close_j2c_if $port $slot
         plog_stop
