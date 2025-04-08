@@ -1738,7 +1738,7 @@ class nic_test_v2:
         cmd = "tclsh ~/diag/scripts/asic/leni_vmarg.tcl {} {} {}".format(args.slot, card_type, args.vmarg)
         common.session_cmd(session, cmd, 360, False, "vmarg set")
 
-        if card_type == "LENI48G":
+        if card_type == "LENI48G" or card_type == "LENI":
             if sal_con.enter_n1_linux(int(args.slot), session, skip_a35_uboot=True):
                 print("===== FAILED: slot {} couldn't boot Linux".format(args.slot))
                 return -1
