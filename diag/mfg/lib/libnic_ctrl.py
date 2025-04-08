@@ -19,6 +19,7 @@ from libdefs import NIC_Port_Mask
 from libdefs import MFG_DIAG_CMDS
 from libdefs import MFG_DIAG_SIG
 from libdefs import Swm_Test_Mode
+from libdefs import FF_Stage
 
 from libmfg_cfg import *
 from libsku_utils import *
@@ -1004,6 +1005,16 @@ class nic_ctrl():
             return True
         else:
             return False
+
+    def nic_i2c_dump(self, timeout=10):
+        '''
+            dump i2c value
+        '''
+        cmd = MFG_DIAG_CMDS.NIC_I2C_DUMP_POST_FMT.format(self._slot + 3)
+        if not self.mtp_exec_cmd(cmd, timeout=timeout):
+            return False
+
+        return True
 
     @nic_console_test()
     def nic_mgmt_config(self):
@@ -2216,6 +2227,17 @@ class nic_ctrl():
             return False
         return True
 
+    def nic_verify_cpld_feature_row(self, cpld_fea_img, partition="fea"):
+        """
+          Verify Fea CPLD
+        """
+
+        cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_fea_img)
+        if not self.mtp_exec_cmd(cmd):
+            return False
+        if 'Verification passed'.lower() in self.nic_get_cmd_buf().lower():
+            return True
+        return False
 
     def nic_program_cpld(self, cpld_img, partition="cfg0"):
         """
@@ -2739,6 +2761,11 @@ class nic_ctrl():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
+        # check signature
+        if "SoftROM version: 0.4.3" not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         return True
 
     def nic_hmac_fuse_prog(self):
@@ -2761,7 +2788,7 @@ class nic_ctrl():
 
         return True
 
-    def nic_hmac_program_status_check(self, expect_status=MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG):
+    def nic_hmac_program_status_check(self, expect_status=MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG, stage=FF_Stage.FF_DL):
         """
         Run HMAC program status check command, ./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file check_only.
         Compare with expected programming status,
@@ -2792,7 +2819,8 @@ class nic_ctrl():
             return False
 
         if expect_status not in self.nic_get_cmd_buf():
-            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            if stage != FF_Stage.FF_SWI:
+                self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
         return True
@@ -2807,6 +2835,26 @@ class nic_ctrl():
             return False
 
         cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_UDS_CERT_FMT.format(self._slot+1)
+        if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            return False
+
+        # check signature
+        if MFG_DIAG_SIG.NIC_ESEC_DICE_CERT_SIG not in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        return True
+
+    def nic_val_uds_cert(self):
+        if self._nic_type not in SALINA_NIC_TYPE_LIST:
+            return False
+
+        cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ESEC_PATH)
+        if not self.mtp_exec_cmd(cmd):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_SALINA_VAL_UDS_CERT_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
@@ -5663,6 +5711,11 @@ class nic_ctrl():
             self.nic_set_err_msg(cmd_buf)
             return False
 
+        # show fru dump
+        cmd = "show frudump parse"
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
         return True
 
     @nic_console_test()

@@ -454,6 +454,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_CPLD_CHECK_FMT       = "python2 ./esec_ctrl.py -check_uboot -slot {:d} -post_check"
     NIC_ESEC_SALINA_CPLD_CHECK_FMT= "./esec_ctrl.py -check_uboot -slot {:d}"
     NIC_ESEC_SALINA_UDS_CERT_FMT  = "./esec_ctrl.py -check_uds_cert -slot {:d}"
+    NIC_ESEC_SALINA_VAL_UDS_CERT_FMT  = "./esec_ctrl.py -val_uds_cert -slot {:d}"
     NIC_EFUSE_PROG_ELBA_MODEL_FMT = "python2 ./esec_ctrl.py -efuse_prog -d -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
     NIC_EFUSE_PROG_ELBA_FMT       = "python2 ./esec_ctrl.py -efuse_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s}"
     NIC_ESEC_PROG_FMT             = "python2 ./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s}"

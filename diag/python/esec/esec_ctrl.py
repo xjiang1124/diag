@@ -686,20 +686,20 @@ PRIVEK <ek.sk>"""
 
     def verify_dice_cert(self, slot, action):
         expstr = ["uart:"]
+        expstr1 = ["rt:"]
         ret = 0
         md5sum_cert = ""
         md5sum_uboot= ""
         session = common.session_start()
         #cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x20 -data=0x7".format(slot)
         cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0xbd 0xbd".format(slot)
-        common.session_cmd(session, cmd)
-        time.sleep(5)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "turn_on_slot.sh off {}".format(slot)
-        common.session_cmd(session, cmd)
-        time.sleep(5)
+        common.session_cmd(session, cmd, ending="MTP:\$")
+        time.sleep(10)
         cmd = "turn_on_slot.sh on {}".format(slot)
-        common.session_cmd(session, cmd)
-        time.sleep(60)
+        common.session_cmd(session, cmd, ending="MTP:\$")
+        time.sleep(15)
         #ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True, n1_autoboot_delay=30)
         ret = 0
         if ret != 0:
@@ -719,14 +719,27 @@ PRIVEK <ek.sk>"""
             common.session_stop(session)
             return ret
 
-        self.nic_con.uart_session_cmd(session, "", 30, expstr)
+        try:
+            session.expect(["uart:", "MTP:\$"], 1)
+            session.expect(["uart:", "MTP:\$"], 1)
+        except pexpect.TIMEOUT:
+            print("--- Synced ---")
+
         self.nic_con.uart_session_cmd(session, "dice_dump_cert", 30, expstr)
         src_str = session.before
+
         self.nic_con.uart_session_stop(session)
+
+        try:
+            session.expect(["uart:", "MTP:\$"], 1)
+            session.expect(["uart:", "MTP:\$"], 1)
+        except pexpect.TIMEOUT:
+            print("--- Synced ---")
+
         cmd = "env | grep COLOR"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
 
         if action == "all":
             index = src_str.find("MD5 Checksum (Hex) :", 1)
@@ -778,24 +791,24 @@ PRIVEK <ek.sk>"""
             return (ret, md5sum_uboot)
 
         cmd ="xxd -r -p uds_cert.txt uds_cert.der"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd ="xxd -r -p cdi_cert.txt cdi_cert.der"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "openssl x509 -inform der -in uds_cert.der -out uds_cert.pem"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "openssl x509 -inform der -in cdi_cert.der -out cdi_cert.pem"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "openssl x509 -in uds_cert.pem -noout -text"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         cmd = "openssl x509 -in cdi_cert.pem -noout -text"
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
         #cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/RootCA.pem -untrusted uds_cert.pem cdi_cert.pem"
         cmd = "openssl verify -ignore_critical -CAfile /home/diag/diag/tools/pki/dice_certs/AMD-Root-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/AMD-Identity-CA-E3.pem\
                                         -untrusted /home/diag/diag/tools/pki/dice_certs/manufacturing_dice_ca_v2.pem -untrusted uds_cert.pem cdi_cert.pem"
-        common.session_cmd(session, cmd)
-        cmd = ""
-        common.session_cmd(session, cmd)
+        common.session_cmd(session, cmd, ending="MTP:\$")
+        #cmd = ""
+        #common.session_cmd(session, cmd)
         result = session.before
         common.session_stop(session)
 

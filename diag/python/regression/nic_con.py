@@ -503,22 +503,7 @@ class nic_con:
             print("=== Failed to enter uboot ===")
         return ret
 
-    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, warm_reset=False, pc=True, v12_reset=False):
-        expstr = ["DSC# "]
-        ret = 0
-        if slot == 0 or slot > 10:
-            print("Invalid slot number:", slot)
-            sys.exit(0)
-
-        session.timeout = timeout
- 
-        uart_session = common.session_start()
-        uart_session.timeout = timeout
-        # Start console first
-        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
-        uart_session.sendline(cmd)
-        uart_session.expect(["Terminal ready", "buffer cleared"])
-
+    def salina_power_cycle(self, session, slot=0, warm_reset=False, pc=True, v12_reset=False):
         if pc:
             if warm_reset:
                 self.nic_warm_reset(session, slot)
@@ -537,31 +522,49 @@ class nic_con:
                 cmd = "turn_on_slot.sh on {}".format(slot)
                 common.session_cmd(session, cmd)
 
+    def enter_uboot_salina(self, session, slot=0, timeout=30, uboot_delay=60, uart_id=1, expect_sig=["Autoboot "], warm_reset=False, pc=True, v12_reset=False):
+        expstr = ["DSC# "]
+        ret = 0
+        if slot == 0 or slot > 10:
+            print("Invalid slot number:", slot)
+            sys.exit(0)
+
+        session.timeout = timeout
+
+        uart_session = common.session_start()
+        uart_session.timeout = timeout
+        # Start console first
+        cmd = self.get_connect_cmd(slot, uart_id=uart_id)
+        uart_session.sendline(cmd)
+        uart_session.expect(["Terminal ready", "buffer cleared"])
+
+        self.salina_power_cycle(session, slot, warm_reset, pc, v12_reset)
+
         self.set_cpld_uart_bits(session, slot, uart_id=uart_id)
         #time.sleep(1) # extra time to ctrl-c doesn't get captured by fpga_uart
         #session.sendline("") # extra <enter> needed so that the next ctrl-c doesn't kill con_connect.sh if its too fast
 
         try:
-            uart_session.expect("Autoboot ")
+            uart_session.expect(expect_sig)
         except pexpect.TIMEOUT:
             print("==== Failed: did not reach uboot shell")
             self.uart_session_stop(uart_session)
             common.session_stop(uart_session)
             return -1
-
-        for i in range(uboot_delay):
-            uart_session.timeout = 0.5
-            try:
-                print("C+C")
-                uart_session.send(chr(3))
-                idx = uart_session.expect(expstr)
-                #time.sleep(1)
-                ret = 0
-                if idx == 0:
-                    break
-            except pexpect.TIMEOUT:
-                print("timeout:", i)
-                ret = -1
+        if expect_sig == ["Autoboot "]:
+            for i in range(uboot_delay):
+                uart_session.timeout = 0.5
+                try:
+                    print("C+C")
+                    uart_session.send(chr(3))
+                    idx = uart_session.expect(expstr)
+                    #time.sleep(1)
+                    ret = 0
+                    if idx == 0:
+                        break
+                except pexpect.TIMEOUT:
+                    print("timeout:", i)
+                    ret = -1
 
         self.uart_session_stop(uart_session)
         common.session_stop(uart_session)
@@ -1713,6 +1716,23 @@ class nic_con:
             cmd = "jtag_accpcie_salina clr {}".format(slot)
             common.session_cmd(session, cmd)
 
+    def read_cpld_reg(self, reg_addr, read_data, slot=1):
+        ret = 0
+        if int(slot) > 10:
+            print("Invalide slot {}!".format(slot))
+            return -1
+
+        session = common.session_start()
+        cmd = "i2cget -y {} 0x4f {}".format(int(slot)+2, int(reg_addr))
+        common.session_cmd(session, cmd)
+        match = re.findall(r"(0x[0-9a-fA-F]+)", session.before)
+        if len(match) > 1:
+            read_data[0] = match[1]
+        else:
+            print("Failed to read cpld reg {}".format(int(reg_addr)))
+            ret = -1
+        common.session_stop(session)
+        return ret
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Diagnostic inteface", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
