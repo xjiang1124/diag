@@ -51,6 +51,7 @@ declare -a bifValue=(0x01 0x02 0x04)
 for i in ${!bifValue[*]}
 do
     turn_on_slot.sh off $slot
+    sleep 1
     matera_P12V_addr="0x174"
     matera_P3V3_addr="0x178"
     p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
@@ -59,7 +60,7 @@ do
     printf "Setting 3.3V and 12V enable\n"
     fpgautil w32 $matera_P3V3_addr $(( $p3v3 | $bitPos ))
     fpgautil w32 $matera_P12V_addr $(( $p12v | $bitPos ))
-    sleep 1
+    sleep 2
     printf "Testing BIF Value 0x%.02x\n"  ${bifValue[$i]}
     i2cset -y $(($slot+2)) 0x4b 0x41 ${bifValue[$i]}
     i2cset -y $(($slot+2)) 0x4b 0x40 0x1
