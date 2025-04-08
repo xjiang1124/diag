@@ -130,7 +130,7 @@ control_slot_matera() {
     printf "Setting power control to $on_off with 0x%x\n" $wValue
 
     v12=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P12V_addr | awk '{print $4}')
-    v3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $gatera_P3V3_addr | awk '{print $4}')
+    v3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
     perst=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_perst_addr | awk '{print $4}')
 
     if [[ $on_off == "off" ]]
