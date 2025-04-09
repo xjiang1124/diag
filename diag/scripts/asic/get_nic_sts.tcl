@@ -273,13 +273,6 @@ if { $val != 0x00000001 } {
     exit 0
 }
 
-if {$ASIC_TYPE == "SALINA"} {
-    plog_msg "\n\n\n"
-    plog_msg "===================="
-    plog_msg "SRAM ECC interrupts"
-    plog_msg "===================="
-    sal_ecc_dump
-}
 if {$ASIC_TYPE == "GIGLIO"} {
     set pmic_gsi [exec inventory -pw -slot=$slot_num | grep gilo_ddr_pmic_gsi | rev | cut -d " " -f 1]
     if { $pmic_gsi == 1 } {
