@@ -1344,8 +1344,6 @@ def main():
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
 
                 elif test_section == "SALINA_SNAKE":
-                    salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-
                     # make copies of asic directory
                     salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
                     run_regression_test(salina_dpu_snake, "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE")
