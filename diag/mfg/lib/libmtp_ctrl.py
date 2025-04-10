@@ -4474,10 +4474,23 @@ class mtp_ctrl():
             if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
-        # if nic_type in SALINA_NIC_TYPE_LIST:
-        #     if not self._nic_ctrl_list[slot].nic_esecure_hw_lock():
-        #         self.cli_log_slot_err(slot, "Esecure hw lock failed")
-        #         return False
+        return True
+
+    @parallelize.sequential_nic_test
+    def mtp_nic_esecure_hw_unlock(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Secure Key program for Proto NIC")
+            return True
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+                self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+                return False
+
+            if not self._nic_ctrl_list[slot].nic_esecure_hw_unlock():
+                self.cli_log_slot_err(slot, "Esecure hw unlock failed")
+                return False
 
         return True
 
