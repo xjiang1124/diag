@@ -2214,31 +2214,47 @@ class nic_ctrl():
             return True
         return False
 
-    def nic_program_cpld(self, cpld_img, partition="cfg0"):
+    def nic_program_cpld(self, cpld_img, partition="cfg0", combo_partition2_img={}):
         """
-          Program CPLD or Secure CPLD
+        Program CPLD or Secure CPLD
+        combo_partition2_img parameter only for Salina, there will no power cycle between combo partition program
         """
 
         if self._mtp_type == "MATERA":
+            program_sequence =[]
+            combo_partition2_img[partition] = cpld_img
+            if "ufm1" in combo_partition2_img or "cfg0" in combo_partition2_img:
+                if not ("ufm1" in combo_partition2_img  and "cfg0" in combo_partition2_img):
+                    self.nic_set_err_msg("For Salina, ufm1 and cfg0 have to program in combo, and no power cycle in between")
+                    return False
             # put the card into proto mode before program QSPI
-            if partition != "ufm1":
-                if not self.nic_power_off():
-                    return False
-                if not self.nic_power_on(proto_mode='0'):
-                    return False
+            if not self.nic_power_off():
+                return False
+            if not self.nic_power_on(proto_mode='0'):
+                return False
             # fpgautil cpld <slot#> generate/verify/erase/program <cfg0/cfg1/ufm1/fea> <filename>
             # program
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
-            if not self.mtp_exec_cmd(cmd):
-                return False
-            if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
-                return False
-            # verify
-            cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_img)
-            if not self.mtp_exec_cmd(cmd):
-                return False
-            if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
-                return False
+            if "ufm1" in combo_partition2_img or "cfg0" in combo_partition2_img:
+                program_sequence.append(("ufm1", combo_partition2_img["ufm1"]))
+                del combo_partition2_img["ufm1"]
+                program_sequence.append(("cfg0", combo_partition2_img["cfg0"]))
+                del combo_partition2_img["cfg0"]
+
+            for part, img in combo_partition2_img.items():
+                program_sequence.append((part, img))
+
+            for part, img in program_sequence:
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
+                if not self.mtp_exec_cmd(cmd):
+                    return False
+                if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
+                    return False
+                # verify
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_img)
+                if not self.mtp_exec_cmd(cmd):
+                    return False
+                if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
+                    return False
         else:
             if not self.nic_copy_image(cpld_img):
                 return False

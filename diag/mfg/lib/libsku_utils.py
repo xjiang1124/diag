@@ -414,6 +414,10 @@ def get_product_name_from_pn_and_sn(pn, sn=""):
         product_name = NIC_Type.POLLARA
     elif "DSC3-2Q400-48R64E64P" in pn:
         product_name = NIC_Type.LENI48G
+    elif "DSC3-2Q400-64S64E64P" in pn:
+        product_name = NIC_Type.LENI
+    elif "DSC3-2Q400-64S64E64P-O" in pn:
+        product_name = NIC_Type.LENI
     else:
         product_name = NIC_Type.UNKNOWN
 

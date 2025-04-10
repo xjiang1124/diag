@@ -127,6 +127,13 @@ def swi_ufm1_program(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_ufm1(slot, ufm1_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def dl_ufm1_cfg0_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    ufm1_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ufm1(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cfg0_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_ufm1_cfg0(slot, ufm1_img_file, cfg0_img_file)
+
+@parallelize.parallel_nic_using_ssh
 def swi_cpld_compare(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -352,6 +359,8 @@ def main():
                 rlist = swi_secure_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UMF1_PROG":
                 rlist = swi_ufm1_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "UMF1_CFG0_CPLD_PROG":
+                rlist = dl_ufm1_cfg0_program(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_REF":
                 rlist = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(nic_list)
             elif test == "SEC_CPLD_REF":
@@ -617,9 +626,7 @@ def main():
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_swi_test(cpld_list, "UMF1_PROG")
-            cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2])
-            run_swi_test(cpld_type_list, "CPLD_PROG")
+            run_swi_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")

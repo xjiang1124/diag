@@ -238,6 +238,13 @@ def dl_ufm1_program(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_ufm1(slot, ufm1_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def dl_ufm1_cfg0_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_DL
+    ufm1_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ufm1(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cfg0_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_ufm1_cfg0(slot, ufm1_img_file, cfg0_img_file)
+
+@parallelize.parallel_nic_using_ssh
 def dl_ibm_cpld_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_DL
     cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -527,6 +534,8 @@ def main():
                 rlist = dl_fea_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UMF1_PROG":
                 rlist = dl_ufm1_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "UMF1_CFG0_CPLD_PROG":
+                rlist = dl_ufm1_cfg0_program(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_REF":
                 rlist = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(nic_list)
             elif test == "CHECK_CPLD_UPDATE_REQ":
@@ -652,10 +661,9 @@ def main():
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
             run_dl_test(cpld_list, "FEA_CPLD_VERIFY")
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_dl_test(cpld_list, "UMF1_PROG")
+            run_dl_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             ecpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_dl_test(cpld_list, "CPLD_PROG")
-            cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+            # run_dl_test(cpld_list, "CPLD_PROG")
             run_dl_test(ecpld_list, "FSAFE_CPLD_PROG")
             # run_dl_test(ecpld_list, "FEA_CPLD_PROG")
             run_dl_test(ecpld_list, "NIC_PWRCYC")

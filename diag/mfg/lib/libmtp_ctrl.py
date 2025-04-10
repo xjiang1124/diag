@@ -4089,6 +4089,21 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_program_nic_ufm1_cfg0(self, slot, ufm1_img, cfg0_img_file):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no ufm1 image for {:s}".format(nic_type))
+            return False
+
+        combin_with = dict()
+        combin_with["cfg0"] = cfg0_img_file
+        if not self._nic_ctrl_list[slot].nic_program_cpld(ufm1_img, "ufm1", combin_with):
+            self.cli_log_slot_err_lock(slot, "Program NIC UFM1_CFG0 failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
     @parallelize.parallel_nic_using_ssh
     def mtp_program_nic_fpga(self, slot, partition_list=None, alternate_image_list=None):
         """
