@@ -4487,6 +4487,11 @@ class mtp_ctrl():
         call ./esec_ctrl.py -hmac_fuse_prog -slot $slo -hmac_file check_only
         'HMAC HAS BEEN PROGRAMMED' or 'HMAC HAS NOT BEEN PROGRAMMED'
         """
+
+        if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+            self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+            return False
+
         if not self._nic_ctrl_list[slot].nic_hmac_program_status_check(expect_status, stage):
             self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status String: '{:s}' NOT Found".format(expect_status))
             return False
@@ -5897,11 +5902,8 @@ class mtp_ctrl():
         slot_asic_dir_path = asic_dir_path[slot]
 
         if not self._nic_ctrl_list[slot].nic_snake_mtp_salina(snake_type, vmarg, dura, timeout, slot_asic_dir_path, ite, int_lpbk):
-            if snake_type == 'esam_pktgen_max_power_sor':
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN MAX POWER SOR SNAKE TEST FAILED")
-            elif snake_type == 'esam_pktgen_ddr_burst_400G_no_mac':
-                self.cli_log_slot_err(slot, "NIC ESAM PKTGEN DDR BURST 400G SNAKE TEST FAILED")
-            self.mtp_get_nic_err_msg(slot)
+            self.cli_log_slot_err_lock(slot, "nic_test_v2 nic_snake_mtp {:s} TEST FAILED".format(snake_type))
+            # self.mtp_get_nic_err_msg(slot) # this line print out error message on the screeen ehich includes diag MTP promtp, cause expect sendt script exit
             return False
 
         return True
