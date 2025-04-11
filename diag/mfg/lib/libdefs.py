@@ -461,7 +461,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_PROG_ELBA_FMT        = "python2 ./esec_ctrl.py -esec_prog -slot {:d} -sn {:s} -pn '{:s}' -mac {:s} -brd_name {:s} -mtp {:s} -fast"
     NIC_ESEC_PROG_DUMP_FMT        = "python2 ./esec_ctrl.py -show_sts -sn {:s} -slot {:d} -brd_name {:s}"
     NIC_ESEC_PROG_QSPI_DUMP_FMT   = "tclsh qspi_esec_data_dump.tcl -slot {:d} -mode {:s}"
-    NIC_ESEC_HW_LOCK_FMT          = "sal_esecure_lockbits.sh {:d} 0x30 0xAB"
+    NIC_ESEC_HW_UNLOCK_FMT          = "sal_esecure_lockbits.sh {:d} 0 0"
     NIC_ESEC_PROG_DICE_SALINA_FMT = "./esec_ctrl.py -dice_prog -slot {:d} -sn {:s}"
     NIC_ESEC_PROG_DICE_IMG_SALINA_FMT = "./esec_ctrl.py -dice_img_prog -slot {:d}"
     NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT = "./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file /home/diag/diag/scripts/asic/hmac_value.hex"
@@ -751,6 +751,7 @@ class MFG_DIAG_SIG:
     NIC_ESEC_PROG_SIG = "ESEC PROG/VALICATION PASSED"
     NIC_ESEC_DICE_PROG_SIG = "ESEC PROG PASSED"
     NIC_ESEC_DICE_CERT_SIG = "DICE VALIDATION PASSED"
+    NIC_ESEC_J2C_FAIL_SIG = "CHECK WITH J2C ERROR"
     NIC_FWUPDATE_FAIL_SIG = "FATAL"
     NIC_SYSUPDATE_MAINFW_PASS_SIG = "Setting startup firmware to mainfw"
     NIC_UBOOT_PCIE_ENA_SIG = "setenv pcie_poll_disable"
@@ -788,6 +789,7 @@ class MFG_DIAG_SIG:
     SALINA_NIC_VMARG_SET = "vmarg set"
     NIC_OCP_RMII_OK_SIG = "RMII test PASSED"
     NIC_OCP_CON_OK_SIG = "Adapter Test PASSED"
+    NIC_ESEC_HW_UNLOCK_OK_SIG = "Verification passed"
 
 class MFG_DIAG_RE:
     MFG_NIC_TYPE_NAPLES100 = r"\bUUT_(\d+) +NAPLES100\b"

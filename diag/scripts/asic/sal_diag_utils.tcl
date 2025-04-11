@@ -192,9 +192,15 @@ proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk
         }
     }
     # dump mac status
+    pcie_get_mac_sts
+    return $ret
+}
+
+proc pcie_get_mac_sts {} {
     for { set port 0 } { $port < 4 } { incr port }  {
         plog_msg "Port $port mac status:"
         rds sal0.pp.pxc\[$port\].sta_c_port_mac
+        rds sal0.pp.pxc\[$port\].port_p.sta_p_port_mac
     }
-    return $ret
+
 }

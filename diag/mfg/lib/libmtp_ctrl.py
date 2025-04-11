@@ -4089,6 +4089,21 @@ class mtp_ctrl():
 
         return True
 
+    def mtp_program_nic_ufm1_cfg0(self, slot, ufm1_img, cfg0_img_file):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            self.cli_log_slot_err_lock(slot, "Should not be here: there is no ufm1 image for {:s}".format(nic_type))
+            return False
+
+        combin_with = dict()
+        combin_with["cfg0"] = cfg0_img_file
+        if not self._nic_ctrl_list[slot].nic_program_cpld(ufm1_img, "ufm1", combin_with):
+            self.cli_log_slot_err_lock(slot, "Program NIC UFM1_CFG0 failed")
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+
+        return True
+
     @parallelize.parallel_nic_using_ssh
     def mtp_program_nic_fpga(self, slot, partition_list=None, alternate_image_list=None):
         """
@@ -4474,10 +4489,23 @@ class mtp_ctrl():
             if nic_type not in SALINA_NIC_TYPE_LIST: self._nic_ctrl_list[slot].nic_program_sec_key_dump()
             return False
 
-        # if nic_type in SALINA_NIC_TYPE_LIST:
-        #     if not self._nic_ctrl_list[slot].nic_esecure_hw_lock():
-        #         self.cli_log_slot_err(slot, "Esecure hw lock failed")
-        #         return False
+        return True
+
+    @parallelize.sequential_nic_test
+    def mtp_nic_esecure_hw_unlock(self, slot):
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type in self._proto_type_list:
+            self.cli_log_slot_inf_lock(slot, "Skip Secure Key program for Proto NIC")
+            return True
+
+        if nic_type in SALINA_NIC_TYPE_LIST:
+            if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+                self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+                return False
+
+            if not self._nic_ctrl_list[slot].nic_esecure_hw_unlock():
+                self.cli_log_slot_err(slot, "Esecure hw unlock failed")
+                return False
 
         return True
 

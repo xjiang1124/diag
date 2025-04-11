@@ -127,6 +127,13 @@ def swi_ufm1_program(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.mtp_program_nic_ufm1(slot, ufm1_img_file)
 
 @parallelize.parallel_nic_using_ssh
+def dl_ufm1_cfg0_program(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_SWI
+    ufm1_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_ufm1(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    cfg0_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    return mtp_mgmt_ctrl.mtp_program_nic_ufm1_cfg0(slot, ufm1_img_file, cfg0_img_file)
+
+@parallelize.parallel_nic_using_ssh
 def swi_cpld_compare(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_SWI
     sec_cpld_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_sec_cpld(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -289,7 +296,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list)
 
             elif test == "SCAN_VERIFY":
-                rlist = mtp_mgmt_ctrl.mtp_scan_verify(nic_list, ignore_pn_rev=True)
+                rlist = mtp_mgmt_ctrl.mtp_scan_verify(nic_list)
             elif test == "FAKE_SCAN_VERIFY":
                 rlist = mtp_mgmt_ctrl.fake_scan_verify(nic_list, scanned_sku=args.sku)
 
@@ -352,6 +359,8 @@ def main():
                 rlist = swi_secure_cpld_program(mtp_mgmt_ctrl, nic_list)
             elif test == "UMF1_PROG":
                 rlist = swi_ufm1_program(mtp_mgmt_ctrl, nic_list)
+            elif test == "UMF1_CFG0_CPLD_PROG":
+                rlist = dl_ufm1_cfg0_program(mtp_mgmt_ctrl, nic_list)
             elif test == "CPLD_REF":
                 rlist = mtp_mgmt_ctrl.mtp_refresh_nic_cpld(nic_list)
             elif test == "SEC_CPLD_REF":
@@ -448,6 +457,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
             elif test == "I2C_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_i2c_dump(nic_list)
+            elif test == "ESEC_UNLOCK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_esecure_hw_unlock(nic_list)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -483,6 +494,7 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
             hmac_prog_slots = libmfg_utils.get_hmac_been_programmed_slots(mtp_mgmt_ctrl, list(set(pass_nic_list) - set(hmac_no_prog_slots)), dsp)
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")
@@ -617,9 +629,7 @@ def main():
             # run_swi_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_NEW_QSPI_VERIFY", bootstage="zephyr")
 
             cpld_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-            run_swi_test(cpld_list, "UMF1_PROG")
-            cpld_type_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=FPGA_TYPE_LIST + [NIC_Type.ORTANO2])
-            run_swi_test(cpld_type_list, "CPLD_PROG")
+            run_swi_test(cpld_list, "UMF1_CFG0_CPLD_PROG")
             fsafe_cpld_type_list = get_slots_of_type(FAILSAFE_CPLD_TYPE_LIST)
             run_swi_test(fsafe_cpld_type_list, "FSAFE_CPLD_PROG")
             run_swi_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "NIC_PWRCYC")
