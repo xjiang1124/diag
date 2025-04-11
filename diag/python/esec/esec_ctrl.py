@@ -699,7 +699,7 @@ PRIVEK <ek.sk>"""
         time.sleep(10)
         cmd = "turn_on_slot.sh on {}".format(slot)
         common.session_cmd(session, cmd, ending="MTP:\$")
-        time.sleep(15)
+        time.sleep(60)
         #ret = sal_con.enter_a35_zephyr(slot, session, uart_id=0, new_ainic_layout=True, n1_autoboot_delay=30)
         ret = 0
         if ret != 0:
@@ -713,7 +713,7 @@ PRIVEK <ek.sk>"""
         ret = self.nic_con.uart_session_start(session, slot, uart_id=0)
         if ret != 0:
             print("Failed to enter zephyr prompt")
-            self.nic_con.uart_session_stop(session_uart)
+            self.nic_con.uart_session_stop(session)
             cmd = "/home/diag/diag/scripts/asic/sal_esecure_lockbits.sh {} 0x00 0x00".format(slot)
             common.session_cmd(session, cmd)
             common.session_stop(session)
