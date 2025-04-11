@@ -1069,19 +1069,30 @@ class nic_con:
             session = session_uart
 
         session.timeout = 30
+        asic_type = self.get_asic_type(slot)
 
         try:
-            session.sendline("ifconfig -a")
-            session.expect("\#")
-            temp = session.after
-            if 'oob_mnic0' in session.before:
-                asic_type = self.get_asic_type(slot)
-                # only works for Elba FPGA cards with PS48
-                if asic_type == "ELBA_FPGA":
-                    self.run_mes_mtp_reset_commands(session)
-                elif asic_type == "SALINA":
-                    pass
-                else:
+            if asic_type == "SALINA":
+                self.uart_session_cmd(session, "mac_debug stmac0 mes")
+                self.uart_session_cmd(session, """cat /tmp/fru.json | grep '"mac-address"'""")
+                output = session.before
+                mac_addr = matches=re.findall(r'"([^"]*)"', output)
+                mac1 = mac_addr[2][0:15]
+                mac2 = mac_addr[2][15:17]
+                mac2 = int(mac2) + 8
+                eth0_mac = mac1 + str(mac2)
+                print(eth0_mac)
+                self.uart_session_cmd(session, "ifconfig eth0 hw ether {}".format(eth0_mac))
+                self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
+                print('eth0 enabled')
+            else:
+                session.sendline("ifconfig -a")
+                session.expect("\#")
+                temp = session.after
+                if 'oob_mnic0' in session.before:
+                    # only works for Elba FPGA cards with PS48
+                    if asic_type == "ELBA_FPGA":
+                        self.run_mes_mtp_reset_commands(session)
                     self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
                     time.sleep(0.5)
                     print('oob_mnic0 enabled')
@@ -1089,11 +1100,11 @@ class nic_con:
                     self.uart_session_cmd(session, "halctl debug port --port Eth1/3 --admin-state up")
                     if dis_net_port == True:
                         self.uart_session_cmd(session, "/data/nic_util/xo3dcpld -smiwr 0 0x3 0x1940")
-                self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
-                self.uart_session_cmd(session, "ifconfig")
-            else:
-                print('oob_mnic0 NOT enabled!')
-                ret = 1
+                        self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
+                        self.uart_session_cmd(session, "ifconfig")
+                else:
+                    print('oob_mnic0 NOT enabled!')
+                    ret = 1
 
         except pexpect.TIMEOUT:
             if session_uart == None:
