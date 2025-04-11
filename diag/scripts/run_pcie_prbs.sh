@@ -6,8 +6,6 @@ num_ite=$3
 stop_on_err=$4
 mtp_clk=$5
 
-nic_log=nic_port_up_slot${slot}.log
-
 if [[ $stop_on_err == "1" ]]
 then
     echo "Stop on error enabled"
@@ -21,14 +19,19 @@ card_type_v="UUT_${slot}"
 card_type=${!card_type_v}
 echo "card_type $card_type"
 
+sn=$(inventory -present | grep "UUT_${slot} " | sed 's/\s*]/]/g' | awk -F " " '{print $6}')
+echo "sn: $sn"
+
+nic_log=/home/diag/xin/pcie_prbs_slot${slot}_${sn}_${vmarg}.log
+
+echo "pcie_prbs_slot${slot}_${sn}_${vmarg}"  | tee $nic_log
+
 for ite in $(seq 1 $num_ite)
 do
 
-    echo "===== Ite: $ite ====="
-    python3 ./nic_test_v2.py pcie_prbs -slot $slot -tcl_path "/home/diag/xin/nic${slot}/" -card_type $card_type -dura 60 -vmarg $vmarg -mtp_clk $mtp_clk | tee $nic_log
-    sync
-
-    inventory -sts -slot $slot
+    echo "===== Ite: $ite =====" | tee -a $nic_log
+    tclsh /home/diag/xin/sal_pcie_aw_ber_collect.pollara.tcl -slot $slot -card_type $card_type -dura 600 -aw_txfir_ow 9 -cap_ffe 0| tee -a $nic_log
+    inventory -sts -slot $slot | tee -a $nic_log
 
     if [[ $stop_on_err == "1" ]]
     then

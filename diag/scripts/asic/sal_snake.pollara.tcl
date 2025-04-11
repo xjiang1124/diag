@@ -223,8 +223,7 @@ if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
     plog_msg "pcie_mtp_bringup_ports 1100 LENI 4\n"
     pcie_mtp_bringup_ports 1100 LENI 4
 
-    plog_msg "rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac\n"
-    rds sal0.pp.pxc\[0\].port_p.sta_p_port_mac
+    pcie_get_mac_sts
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_err "pcie linkup failed"
