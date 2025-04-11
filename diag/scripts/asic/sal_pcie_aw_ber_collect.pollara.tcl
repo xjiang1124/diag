@@ -12,6 +12,8 @@ set usage {
     {lane_mask.arg      0xf                 "Lane mask"}
     {tail.arg           ""                  "tail msg"}
     {ite.arg            1                   "Iteration"}
+    {cap_ffe.arg        1                   "Capture FFE data: 1 yes; 0 No"}
+    {prbs_pat.arg       6                   "PRBS Pattern: 6 PRBS31; 5 PRBS23; 4 PRBS15; 3 PRBS13"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -94,9 +96,22 @@ plog_msg "card_type = $card_type"
 sal_print_die_id
 sal_set_vmarg $vmarg 
 
-pcie_mtp_prbs_test 1100 $card_type 4 $dura 6 $macro_mask $lane_mask
+pcie_mtp_prbs_test 1100 $card_type 4 $dura $prbs_pat $macro_mask $lane_mask
 
 plog_msg "PRBS TEST DONE"
+
+if { $cap_ffe == 0 } {
+    set err_cnt  [ expr ( [plog_get_err_count] - $err_cnt_init ) ]
+    if {$err_cnt != 0} {
+        plog_err "PRBS test FAILED"
+        exit -1
+    } else {
+        plog_msg "PRBS test PASSED"
+        exit 0
+    }
+}
+
+plog_stop
 
 #==============================================
 plog_msg "Collecting FFE data"
@@ -124,7 +139,7 @@ for {set i 0} {$i < $ite} {incr i} {
                 continue
             }
             set fn "/home/diag/xin/log/${log_path}/sal_ffe_data_mmask${macro_mask}_lmask${lane_mask}_${tail1}_slot${slot}_macro${macro}_ln${ln}.log"
-            sal_aw_pma_dump_ffe_data $macro $ln 1000 $fn
+            sal_aw_pma_dump_ffe_data $macro $ln 500 $fn
         }
     }
     after 60000
