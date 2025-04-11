@@ -887,7 +887,7 @@ class NIC_IMAGES:
 
     # Lingua is AINIC, No N1 firmware image
     cpld_img["LINGUA"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
-    cpld_ver["LINGUA"] = "0x1"
+    cpld_ver["LINGUA"] = "0x2"
     cpld_dat["LINGUA"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
     sec_cpld_img["LINGUA"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
     sec_cpld_ver["LINGUA"] = "0x2"

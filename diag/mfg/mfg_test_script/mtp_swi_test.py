@@ -289,7 +289,7 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_power_cycle_nic(nic_list)
 
             elif test == "SCAN_VERIFY":
-                rlist = mtp_mgmt_ctrl.mtp_scan_verify(nic_list, ignore_pn_rev=True)
+                rlist = mtp_mgmt_ctrl.mtp_scan_verify(nic_list)
             elif test == "FAKE_SCAN_VERIFY":
                 rlist = mtp_mgmt_ctrl.fake_scan_verify(nic_list, scanned_sku=args.sku)
 
@@ -448,6 +448,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
             elif test == "I2C_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_i2c_dump(nic_list)
+            elif test == "ESEC_UNLOCK":
+                rlist = mtp_mgmt_ctrl.mtp_nic_esecure_hw_unlock(nic_list)
 
             else:
                 mtp_mgmt_ctrl.cli_log_err("Unknown test '{:s}'".format(test))
@@ -483,6 +485,7 @@ def main():
             # power cycle all nic
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
             hmac_prog_slots = libmfg_utils.get_hmac_been_programmed_slots(mtp_mgmt_ctrl, list(set(pass_nic_list) - set(hmac_no_prog_slots)), dsp)
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")

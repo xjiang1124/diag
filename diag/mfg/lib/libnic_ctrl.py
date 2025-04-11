@@ -2587,14 +2587,18 @@ class nic_ctrl():
 
         return True
 
-    def nic_esecure_hw_lock(self):
+    def nic_esecure_hw_unlock(self):
         cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_ASIC_PATH)
         if not self.mtp_exec_cmd(cmd):
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
-        cmd = MFG_DIAG_CMDS.NIC_ESEC_HW_LOCK_FMT.format(self._slot+1)
+        cmd = MFG_DIAG_CMDS.NIC_ESEC_HW_UNLOCK_FMT.format(self._slot+1)
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        if MFG_DIAG_SIG.NIC_ESEC_HW_UNLOCK_OK_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
 
@@ -2756,7 +2760,12 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
-        # check signature
+        # check fail signature
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_FAIL_SIG in self.nic_get_cmd_buf() or MFG_DIAG_SIG.NIC_ESEC_J2C_FAIL_SIG in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
+        # check pass signature
         if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2782,7 +2791,11 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_ESEC_PROG_DELAY):
             return False
 
-        # check signature for tcl script finished
+        # check fail signature
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_FAIL_SIG in self.nic_get_cmd_buf() or MFG_DIAG_SIG.NIC_ESEC_J2C_FAIL_SIG in self.nic_get_cmd_buf():
+            self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
+            return False
+
         if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
@@ -2866,10 +2879,11 @@ class nic_ctrl():
         if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_EFUSE_PROG_DELAY):
             return False
 
-        # check signature
-        if MFG_DIAG_SIG.NIC_EFUSE_PROG_FAIL_SIG in self.nic_get_cmd_buf():
+        # check fail signature
+        if MFG_DIAG_SIG.NIC_EFUSE_PROG_FAIL_SIG in self.nic_get_cmd_buf() or MFG_DIAG_SIG.NIC_ESEC_J2C_FAIL_SIG in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
+        # check pass signature
         if MFG_DIAG_SIG.NIC_EFUSE_PROG_SIG not in self.nic_get_cmd_buf():
             self.nic_set_status(NIC_Status.NIC_STA_MGMT_FAIL)
             return False
