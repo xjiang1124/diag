@@ -1076,10 +1076,12 @@ class nic_con:
                 self.uart_session_cmd(session, "mac_debug stmac0 mes")
                 self.uart_session_cmd(session, """cat /tmp/fru.json | grep '"mac-address"'""")
                 output = session.before
+                print(output)
                 mac_addr = matches=re.findall(r'"([^"]*)"', output)
                 mac1 = mac_addr[2][0:15]
                 mac2 = mac_addr[2][15:17]
-                mac2 = int(mac2) + 8
+                print(mac1, mac2)
+                mac2 = hex(int(mac2, 16) + 8)[2:]
                 eth0_mac = mac1 + str(mac2)
                 print(eth0_mac)
                 self.uart_session_cmd(session, "ifconfig eth0 hw ether {}".format(eth0_mac))
