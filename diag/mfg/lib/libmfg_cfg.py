@@ -759,7 +759,7 @@ class NIC_IMAGES:
     arm_n_kernel_goldfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
     device_config_dtb["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
     qspi_prog_sh_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
-    qspi_snake_img["DSC3-2Q400-64S64E64P"] = "salina/leni48/leni_1.114.0-6.tar.gz"
+    qspi_snake_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6.tar.gz"
 
     # Leni48G SKU
     cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
@@ -791,7 +791,7 @@ class NIC_IMAGES:
     arm_n_kernel_goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
     device_config_dtb["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
     qspi_prog_sh_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
-    qspi_snake_img["DSC3-2Q400-48R64E64P"] = "salina/leni48/leni_1.114.0-6.tar.gz"
+    qspi_snake_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6.tar.gz"
 
     # MALFA is the Salina refernce board
     cpld_img["MALFA"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
