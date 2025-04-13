@@ -2244,13 +2244,13 @@ class nic_ctrl():
                 program_sequence.append((part, img))
 
             for part, img in program_sequence:
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", partition, cpld_img)
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "program", part, img)
                 if not self.mtp_exec_cmd(cmd):
                     return False
                 if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
                     return False
                 # verify
-                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", partition, cpld_img)
+                cmd = MFG_DIAG_CMDS.MTP_MATERA_FPGAUTIL_CPLD_CMD_FMT.format(str(self._slot + 1), "verify", part, img)
                 if not self.mtp_exec_cmd(cmd):
                     return False
                 if 'Verification failed'.lower() in self.nic_get_cmd_buf().lower() or 'error' in self.nic_get_cmd_buf().lower():
