@@ -42,11 +42,14 @@ class nic_con:
             cmd = "smbutil -uut=uut_{} -dev=cpld -wr -addr=0x21 -data=0x35".format(slot)
         common.session_cmd(session, cmd)
 
-    def uart_session_start_login(self, session, slot, timeout=15):
+    def uart_session_start_login(self, session, slot, timeout=15, sleep=0):
         ret = 0
         cmd = self.get_connect_cmd(slot)
         expstr = ["Login incorrect", "$\# ", "capri login:", "-gold login", "elba-haps login:", "salina-gold login:", "Press g to continue", "elba login:", "resetting ..."]
         session.sendline(cmd)
+        if sleep:
+            print("\nWaiting for {:d} seconds before attempting login".format(sleep))
+            time.sleep(sleep)
         if self.get_asic_type(slot) == "SALINA":
             timeout=30
         for ite in range(3):
