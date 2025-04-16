@@ -235,7 +235,7 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 
     con_ctrl = nic_con()
 
-    if con_ctrl.uart_session_start_login(session, slot) != 0:
+    if con_ctrl.uart_session_start_login(session, slot, sleep=30) != 0:
         print("Couldnt get N1 login prompt")
         return -1
 
