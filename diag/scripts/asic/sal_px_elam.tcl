@@ -59,7 +59,7 @@ proc elam_out_px { {port 0} {sel 1} } {
         sal_top_elam_read_buffer                \
             0 0 "px" 0 "                        \
             0,256,'upper256\[511:256\]';        \
-            g,2,'rxl0s_n\[257:256\]';           \
+            0,2,'rxl0s_n\[257:256\]';           \
             2,2,'txl0s_n\[259:258\]';           \
             4,2,'equ_curr_phase\[261:260\]';    \
             6,1,'lane_reversed\[262\]';         \
@@ -122,7 +122,7 @@ proc elam_out_px { {port 0} {sel 1} } {
    
 }
 
-proc collect_elam_256{ {port 0} {sel 0} } {
+proc collect_elam_256 { {port 0} {sel 0} } {
     elam_cfg_px $port $sel
     elam_arm_px
     #Then check if it trigger
