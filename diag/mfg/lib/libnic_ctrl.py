@@ -5723,6 +5723,51 @@ class nic_ctrl():
             return False
         return True
 
+    def zephyr_config_pipeline_fwselection(self, bootfw='mainfwa'):
+        """
+        set zephyr bootfw by zephyr shell command 'system fwsel pipeline-fw'
+        the command usage:
+            uart:~$ system fwsel
+            fwsel - Firmware Select Command
+            Subcommands:
+            pipeline-fw  :display or configure pipeline boot firmware selection
+        # example:
+            uart:~$ system fwsel pipeline-fw
+            boot firmware selection for pipeline-fw is mainfwb
+            uart:~$ system fwsel pipeline-fw mainfwa
+            firmware select success for pipeline-fw
+            uart:~$ system fwsel pipeline-fw
+            boot firmware selection for pipeline-fw is mainfwa
+        """
+
+        # set fwselection
+        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format(bootfw)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+            return False
+        # display
+        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format("")
+        if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS.ZEPHYR_BOARD_CONFIG_DUMP_FMT):
+            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        if bootfw not in cmd_buf.lower():
+            self.nic_set_err_msg("Zephr config fwselection to {:s}Failed".format(bootfw))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        # verify
+        cmd = "kernel reboot cold"
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        if "## Booting {:s} image".format(bootfw) not in cmd_buf.lower():
+            self.nic_set_err_msg("Zephr did not boot to specified selection")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
+        return True
+
     @nic_console_test()
     def nic_mvl_acc_test(self):
         if self._nic_type not in (ELBA_NIC_TYPE_LIST + GIGLIO_NIC_TYPE_LIST) or self._nic_type in FPGA_TYPE_LIST:

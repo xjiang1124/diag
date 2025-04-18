@@ -7290,6 +7290,23 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
+    def mtp_nic_zephyr_pipeline_fwselection(self, slot, bootfw='mainfwa'):
+        """
+        set zephyr next boot fw by zephyr shell command "system fwsel pipeline-fw"
+        """
+
+        if bootfw not in ('mainfwa', 'mainfwa', 'goldfw'):
+            self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwa' or 'goldfw'")
+            return False
+
+        if not self._nic_ctrl_list[slot].zephyr_config_pipeline_fwselection(bootfw):
+            self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
+            self.mtp_get_nic_err_msg(slot)
+            self.mtp_dump_nic_err_msg(slot)
+            return False
+        return True
+
+    @parallelize.parallel_nic_using_console
     def mtp_program_nic_emmc_salina(self, slot, stage=FF_Stage.FF_SWI):
         emmc_mainfw_img_file = MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_control.get_mainfw(self, slot, stage)["filename"]
         if not self._nic_ctrl_list[slot].nic_program_emmc_salina(emmc_mainfw_img_file):
