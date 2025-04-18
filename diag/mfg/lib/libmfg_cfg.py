@@ -633,15 +633,15 @@ class NIC_IMAGES:
     goldfw_md5["DSC2A-2Q200-32S32F64P-S4"] = "03eddbf464d4f65a5fb1dbfb8f66c910"
 
     # LENI mean default Leni 64G DDR
-    cpld_img["LENI"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["LENI"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["LENI"] = "0x03"
-    cpld_dat["LENI"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["LENI"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["LENI"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["LENI"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["LENI"] = "0x03"
-    sec_cpld_dat["LENI"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["LENI"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["LENI"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["LENI"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["LENI"] = "0x03"
-    fail_cpld_dat["LENI"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["LENI"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["LENI"] = "salina.fea"
     ufm1_img["LENI"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
@@ -665,15 +665,15 @@ class NIC_IMAGES:
     qspi_snake_img["LENI"] = "salina/leni/leni_snake.tar.gz"
     mbist_boot0_img["LENI"] = "salina/leni/dpu_boot0.tar.gz"
     # LENI DPN
-    cpld_img["58-0007-01"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["58-0007-01"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["58-0007-01"] = "0x03"
-    cpld_dat["58-0007-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0007-01"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["58-0007-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0007-01"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["58-0007-01"] = "0x03"
-    sec_cpld_dat["58-0007-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0007-01"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["58-0007-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0007-01"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["58-0007-01"] = "0x03"
-    fail_cpld_dat["58-0007-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0007-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0007-01"] = "salina.fea"
     ufm1_img["58-0007-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
@@ -696,15 +696,15 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
     qspi_snake_img["58-0007-01"] = "salina/leni/leni_snake.tar.gz"
     # Leni SKU
-    cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    cpld_dat["DSC3-2Q400-64S64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["DSC3-2Q400-64S64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    sec_cpld_dat["DSC3-2Q400-64S64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["DSC3-2Q400-64S64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
-    fail_cpld_dat["DSC3-2Q400-64S64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["DSC3-2Q400-64S64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-64S64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-64S64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
@@ -728,15 +728,15 @@ class NIC_IMAGES:
     qspi_snake_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6.tar.gz"
 
     # LENI48G different card type which is Leni with 48G DDR
-    cpld_img["LENI48G"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["LENI48G"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["LENI48G"] = "0x03"
-    cpld_dat["LENI48G"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["LENI48G"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["LENI48G"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["LENI48G"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["LENI48G"] = "0x03"
-    sec_cpld_dat["LENI48G"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["LENI48G"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["LENI48G"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["LENI48G"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["LENI48G"] = "0x03"
-    fail_cpld_dat["LENI48G"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["LENI48G"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["LENI48G"] = "salina.fea"
     ufm1_img["LENI48G"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["LENI48G"] = "salina/leni48/zephyr_dpu.fit"
@@ -760,15 +760,15 @@ class NIC_IMAGES:
     qspi_snake_img["LENI48G"] = "salina/leni48/leni_snake.tar.gz"
     mbist_boot0_img["LENI48G"] = "salina/leni48/dpu_boot0.tar.gz"
     # LENI48G DPN
-    cpld_img["58-0003-01"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["58-0003-01"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["58-0003-01"] = "0x03"
-    cpld_dat["58-0003-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["58-0003-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0003-01"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["58-0003-01"] = "0x03"
-    sec_cpld_dat["58-0003-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["58-0003-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0003-01"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["58-0003-01"] = "0x03"
-    fail_cpld_dat["58-0003-01"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0003-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0003-01"] = "salina.fea"
     ufm1_img["58-0003-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
@@ -791,15 +791,15 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
     qspi_snake_img["58-0003-01"] = "salina/leni/leni_snake.tar.gz"
     # Leni48G SKU
-    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    cpld_dat["DSC3-2Q400-48R64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_2_0410-1346_tck_pause.bin"
+    cpld_dat["DSC3-2Q400-48R64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     sec_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
-    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev3_2_0410-1346_tck_pause.bin"
+    sec_cpld_dat["DSC3-2Q400-48R64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
     fail_cpld_ver["DSC3-2Q400-48R64E64P"] = "0x03"
-    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "04-10-25_13:46" #mm-dd-YY_HH:MM
+    fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-48R64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-48R64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
     goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
