@@ -584,8 +584,8 @@ def main():
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
+            time.sleep(60)
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
-            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
 
             # run_swi_test(pass_nic_list, "NIC_INIT")
