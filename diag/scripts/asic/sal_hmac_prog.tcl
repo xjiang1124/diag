@@ -25,7 +25,7 @@ set port $slot
 plog_start $LOG_FN
 
 plog_msg "HMAC file: $hmac_file"
-
+exec jtag_accpcie_salina clr $slot
 exec fpgautil spimode $slot off
 
 set in_err [plog_get_err_count]
