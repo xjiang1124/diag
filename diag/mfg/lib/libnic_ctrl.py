@@ -5740,31 +5740,55 @@ class nic_ctrl():
             boot firmware selection for pipeline-fw is mainfwa
         """
 
-        # set fwselection
-        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format(bootfw)
+        # # set fwselection
+        # cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format(bootfw)
+        # if not self.nic_exec_cmd_from_zephyr_console(cmd):
+        #     self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+        #     return False
+        # # display
+        # cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format("")
+        # if not self.nic_exec_cmd_from_zephyr_console(cmd):
+        #     self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+        #     return False
+        # cmd_buf = self.nic_get_cmd_buf()
+        # if bootfw not in cmd_buf.lower():
+        #     self.nic_set_err_msg("Zephr config fwselection to {:s} Failed".format(bootfw))
+        #     self.nic_set_err_msg(cmd_buf)
+        #     return False
+
+        # show version
+        cmd = MFG_DIAG_CMDS.ZEPHYR_SHOW_VERSION_FMT
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
-            return False
-        # display
-        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format("")
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+            self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
-        if bootfw not in cmd_buf.lower():
-            self.nic_set_err_msg("Zephr config fwselection to {:s} Failed".format(bootfw))
+        match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(bootfw), cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
             self.nic_set_err_msg(cmd_buf)
             return False
-        # verify
-        cmd = "kernel reboot cold"
-        if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
-            return False
-        cmd_buf = self.nic_get_cmd_buf()
-        if "## Booting {:s} image".lower().format(bootfw) not in cmd_buf.lower():
-            self.nic_set_err_msg("Zephr did not boot to specified selection")
-            self.nic_set_err_msg(cmd_buf)
-            return False
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # verify
+            cmd = "kernel reboot cold"
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            if "## Booting {:s} image".lower().format(bootfw) not in cmd_buf.lower():
+                self.nic_set_err_msg("Zephr did not boot to specified selection")
+                self.nic_set_err_msg(cmd_buf)
+                return False
+            # show version
+            cmd = MFG_DIAG_CMDS.ZEPHYR_SHOW_VERSION_FMT
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed".format(cmd))
+                return False
+            cmd_buf = self.nic_get_cmd_buf()
+            match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(bootfw), cmd_buf)
+            if not match:
+                self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
+                self.nic_set_err_msg(cmd_buf)
+                return False
 
         return True
 

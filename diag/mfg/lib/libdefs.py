@@ -492,6 +492,7 @@ class MFG_DIAG_CMDS:
     ZEPHYR_BOARD_CONFIG_DUMP_FMT =  "board_config dump"
     ZEPHYR_BOARD_CONFIG_ERASE_FMT =  "board_config erase"
     ZEPHYR_FW_SELECT_FMT =  "system fwsel pipeline-fw {:s}"
+    ZEPHYR_SHOW_VERSION_FMT =  "show version"
     NIC_CFG_DUMP_FMT = "dd if=/dev/mtd{:s} of=cfg{:s} bs=64k"
     NIC_CFG_CHECKSUM_FMT = "md5sum cfg{:s}"
     NIC_CHK_SECBOOT_FMT = "/data/nic_util/elba-chk-secboot-rdy.sh"
