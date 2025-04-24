@@ -202,5 +202,28 @@ proc pcie_get_mac_sts {} {
         rds sal0.pp.pxc\[$port\].sta_c_port_mac
         rds sal0.pp.pxc\[$port\].port_p.sta_p_port_mac
     }
+}
 
+proc convert_temp_str {val} {
+    set mapping {"<75C" "75-80C" "80-85C" "85-90C" "90-95C" "95-100C" ">100C" "Invalid"}
+    set temp_val [expr ($val & 0x7)]
+    return [lindex $mapping $temp_val]
+}
+
+proc read_temp_for_ddr_slices {} {
+    for { set inst_id 0 } {$inst_id < 2} {incr inst_id} {
+        for { set core_id 0 } {$core_id < 2} {incr core_id} {
+            set intr [mc_dhs_read INT_STATUS_MISC $inst_id $core_id]
+            set timeout [mc_dhs_read INT_STATUS_TIMEOUT $inst_id $core_id]
+            plog_msg [format "MC${inst_id}_${core_id}::INT_STATUS_MISC:: 0x%x TIMEOUT: 0x%x" $intr $timeout]
+            set temp_val [mc_dhs_addr_read $inst_id $core_id 197]
+            plog_msg [format "MC${inst_id}_${core_id}::AUTO_TEMPCHK_VAL_0_PART_0:: 0x%x" $temp_val]
+            set temp_slice_0   [convert_temp_str [expr ($temp_val & 0xF)]]
+            set temp_slice_1   [convert_temp_str [expr (($temp_val >> 4) & 0xF)]]
+            set temp_slice_2   [convert_temp_str [expr (($temp_val >> 8) & 0xF)]]
+            set temp_slice_3   [convert_temp_str [expr (($temp_val >> 12) & 0xF)]]
+            set temp_slice_ecc [convert_temp_str [expr (($temp_val >> 16) & 0xF)]]
+            plog_msg "DDR_${inst_id}_${core_id} slice0: $temp_slice_0, slice1: $temp_slice_1, slice2: $temp_slice_2, slice3: $temp_slice_3, slice_ecc: $temp_slice_ecc"
+        }
+    }
 }

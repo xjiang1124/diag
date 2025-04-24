@@ -115,6 +115,12 @@ proc mtp_sts_pull { {asic_src} {cpld_id} {test_type} {duration 60} {intv 30} {vm
         }
 
         sal_print_voltage_temp_from_j2c
+        read_temp_for_ddr_slices
+        if {[catch {set output [exec fpgautil show fan]}]} {
+            plog_err "Fail to control fan speed!"
+        } else {
+            plog_msg "\n$output"
+        }
         sal_mc_irq_show -1 -1 1
         sal_mc_check_ecc -1 -1 1 0x61 1
         check_ecc_intr
