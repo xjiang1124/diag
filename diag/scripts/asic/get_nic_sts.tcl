@@ -41,6 +41,37 @@ proc print_pmic_events {} {
     plog_msg "\tVBIAS_UNDER_VOLTAGE_LOCKOUT_STATUS     : $vbias_under_volt_stat"
 }
 
+proc sal_get_ddr_read_write_eye {} {
+    for {set eye_mc 0} {$eye_mc < 4} {incr eye_mc} {
+        set eye_inst_id [expr {$eye_mc / 2}]
+        set eye_core_id [expr {$eye_mc % 2}]
+        set eye_err_ce [mc_dhs_read ECC_C_SYND $eye_inst_id $eye_core_id]
+
+        # Ignore if this MC doesn't get any CE
+        if { $eye_err_ce == 0 } {
+            continue
+        }
+
+        # Otherwise, check CE on which slice (not care per bit this time). Note: CPLD_ID is not matter here
+        set eye_ori_dq [tcl_sal_mc_interpret_ecc_syndrome $eye_err_ce]
+        set eye_soc_dq [tcl_sal_mc_decode_dq $eye_core_id $eye_ori_dq 0x64)]
+        set eye_slice [expr {$eye_soc_dq / 8}]
+
+        # Run write eye
+        set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 2
+        puts [format "Write eye of Slice%d" $eye_slice]
+        set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
+        pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x40 0x40 0x4 -0x40 0x40 $eye_dlystep
+
+        # Run read eye
+        set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 5
+        puts [format "Read eye of Slice%d" $eye_slice]
+        set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
+        pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x60 0x60 0x8 -0x40 0x40 $eye_dlystep
+        break
+    }
+}
+
 set sn      [lindex $argv 0]
 set slot    [lindex $argv 1]
 if {[llength $argv] >= 3} {
@@ -76,6 +107,7 @@ if { $BOARD_TYPE == "GINESTRA_D5" } {
 }
 puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; check_ecc_only: $check_ecc_only; board_type: $BOARD_TYPE"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
+source $::env(ASIC_SRC)/ip/cosim/salina/ddr/salina_ddr_eye.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
 if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE == "MTP_MATERA")} {
@@ -202,6 +234,8 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
         cd ..
         set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
         exec tar cf ${sn}_dump_${cur_time}.tar ${sn}_dump/
+        plog_msg "GET_NIC_STS_DBG_INFO: ECC happened. Do read/write eye"
+        sal_get_ddr_read_write_eye
     } else {
         plog_msg "ECC is clean"
     }
