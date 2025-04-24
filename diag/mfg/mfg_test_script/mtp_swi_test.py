@@ -498,6 +498,7 @@ def main():
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
             hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
             hmac_prog_slots = libmfg_utils.get_hmac_been_programmed_slots(mtp_mgmt_ctrl, list(set(pass_nic_list) - set(hmac_no_prog_slots)), dsp)
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")

@@ -6105,8 +6105,13 @@ class nic_ctrl():
 
             if skip_reboot:
                 cmd += " 0" #skips VRM
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # if ddr ecc happen, get_nic_sts.tcl will run eye margin for ddr. So it take 60-80 mins to complete.
+            t_out = 3600 + 180
+        else:
+            t_out = 180
 
-        if not self.mtp_exec_cmd(cmd, timeout=180):
+        if not self.mtp_exec_cmd(cmd, timeout=t_out):
             self.nic_stop_test()
             return False
         self.nic_stop_test()
