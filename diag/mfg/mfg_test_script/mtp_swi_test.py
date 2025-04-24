@@ -457,7 +457,7 @@ def main():
             elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
             elif test == "SET_ZEPHYR_MAINFWA":
-                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_pipeline_fwselection(nic_list, bootfw='mainfwa')
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa')
             elif test == "I2C_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_i2c_dump(nic_list)
             elif test == "ESEC_UNLOCK":
@@ -585,7 +585,6 @@ def main():
 
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
-            time.sleep(60)
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
 

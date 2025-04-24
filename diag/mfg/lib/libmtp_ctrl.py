@@ -7290,16 +7290,25 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_nic_zephyr_pipeline_fwselection(self, slot, bootfw='mainfwa'):
+    def mtp_nic_zephyr_debug_update_firmware(self, slot, bootfw='mainfwa'):
         """
-        set zephyr next boot fw by zephyr shell command "system fwsel pipeline-fw"
+            update - Update commands
+            Subcommands:
+            firmware     :Configure system boot firmware selection
+                            Usage:
+                            debug update firmware --next-boot-image <mainfwa|mainfwb|goldfw>
+            secure-boot  :Configure CPLD secure boot
+                            Usage:
+                                debug update secure-boot <enable|disable>
+            secure       :secure debug commands to set boot alternate partition or ar
+                          counter for bl1 and pentrust
         """
 
         if bootfw not in ('mainfwa', 'mainfwa', 'goldfw'):
             self.cli_log_slot_err_lock(slot, "Please provide correct Zephyr FW 'mainfwa' 'mainfwa' or 'goldfw'")
             return False
 
-        if not self._nic_ctrl_list[slot].zephyr_config_pipeline_fwselection(bootfw):
+        if not self._nic_ctrl_list[slot].zephyr_debug_update_firmware(bootfw):
             self.cli_log_slot_err_lock(slot, "Zephyr Set zephyr bootfw failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
