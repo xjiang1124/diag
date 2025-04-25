@@ -42,6 +42,17 @@ proc print_pmic_events {} {
 }
 
 proc sal_get_ddr_read_write_eye {} {
+    # Dump DRAM mode register by MRR command
+    plog_msg "MC0: DRAM mode register dump"
+    for {set i 0} {$i < 255} {incr i} {
+        ddr_mrr 0 0 $i
+    }
+    plog_msg "MC1: DRAM mode register dump"
+    for {set i 0} {$i < 255} {incr i} {
+        ddr_mrr 1 0 $i
+    }
+
+    # Check any MC got CE, do read/write eye for only first CE
     for {set eye_mc 0} {$eye_mc < 4} {incr eye_mc} {
         set eye_inst_id [expr {$eye_mc / 2}]
         set eye_core_id [expr {$eye_mc % 2}]
@@ -63,13 +74,13 @@ proc sal_get_ddr_read_write_eye {} {
 
         # Run write eye
         set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 4
-        puts [format "Write eye of Slice%d" $eye_slice]
+        plog_msg [format "Write eye of Slice%d" $eye_slice]
         set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
         pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x30 0x30 0x4 -0x40 0x40 $eye_dlystep
 
         # Run read eye
         set eye_channel 0; set eye_rank 0; set eye_run 5; set eye_dlystep 4
-        puts [format "Read eye of Slice%d" $eye_slice]
+        plog_msg [format "Read eye of Slice%d" $eye_slice]
         set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
         pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x60 0x60 0x8 -0x40 0x40 $eye_dlystep
         break
