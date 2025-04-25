@@ -57,14 +57,18 @@ proc sal_get_ddr_read_write_eye {} {
         set eye_soc_dq [tcl_sal_mc_decode_dq $eye_core_id $eye_ori_dq 0x64)]
         set eye_slice [expr {$eye_soc_dq / 8}]
 
+        # Reduce test size to run faster, along with dlystep = 4
+        set ::pi_bist_default_end_bank 2
+        set ::pi_bist_default_end_row 0xFF
+
         # Run write eye
-        set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 2
+        set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 4
         puts [format "Write eye of Slice%d" $eye_slice]
         set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
-        pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x40 0x40 0x4 -0x40 0x40 $eye_dlystep
+        pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x30 0x30 0x4 -0x40 0x40 $eye_dlystep
 
         # Run read eye
-        set eye_channel 0; set eye_rank 0; set eye_run 0; set eye_dlystep 5
+        set eye_channel 0; set eye_rank 0; set eye_run 5; set eye_dlystep 4
         puts [format "Read eye of Slice%d" $eye_slice]
         set pi_bist_default_slice_dis_mask [expr {~(1 << $eye_slice)}]
         pi_bist_find_eye $eye_channel $eye_rank $eye_run -0x60 0x60 0x8 -0x40 0x40 $eye_dlystep
