@@ -1330,12 +1330,10 @@ def main():
                     # run_test(google_stress_list, "NIC_DIAG_INIT", nic_util=True)
                     run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_MEM", vmarg=vmarg, mem_copy_thread=16, seconds2run=60)
 
-                    """
                     ######################################################################
                     #  Salina NIC Google stress emmc test
                     ######################################################################
                     run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
-                    """
 
                 elif test_section == "SALINA_ESEC_IN_P2C":
                     run_regression_test(pass_nic_list, "SEC_KEY_PROG")
