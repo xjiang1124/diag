@@ -1466,12 +1466,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1497,12 +1499,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1521,12 +1525,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=timeout)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1539,12 +1545,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=timeout)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
