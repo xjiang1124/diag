@@ -87,9 +87,22 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
 
 def enter_a35_zephyr(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
-    if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
-        return -1
-    con_ctrl.uart_session_connect(session, slot, uart_id=0)
+
+    if kwargs.get('skip_a35_uboot', False):
+        con_ctrl.uart_session_connect(session, slot, uart_id=0)
+
+        if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
+            print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
+            return -1
+
+        if 0 != exp_cmd(session, "boot", pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            return -1
+    else:
+        if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
+            return -1
+
+        con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
     time.sleep(3)
     show_param=kwargs.get('awd_showparms', True)
