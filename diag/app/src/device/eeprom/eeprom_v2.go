@@ -136,6 +136,7 @@ const (
     SKU_POLLARA         string = "POLLARA-1Q400P"
     SKU_POLLARA_ORACLE  string = "POLLARA-1Q400P-O"
     SKU_LENI            string = "DSC3-2Q400-64S64E64P"
+    SKU_LENI_ORACLE     string = "DSC3-2Q400-64S64E64P-O"
     SKU_LENI48G         string = "DSC3-2Q400-48R64E64P"
     SKU_LINGUA          string = "POLLARA-1Q400P-OCP"
     SKU_OCP_ADPT        string = "DSC3-2Q400-48R64E64P"
@@ -1035,6 +1036,39 @@ var CardDataInfo = map[string]updateInfo {
         nil,
     },
 
+    SKU_LENI_ORACLE: updateInfo {
+        //PenStandardV2NewTbl,
+        PenStandardV2ProdInfoTbl,
+        PROD_NAME_LENI,
+        SKU_LENI_ORACLE,
+        FRU_ID_LENI,
+        []progInfo {
+            progInfo {
+                FIELD_TYPE_NUM,
+                AREA_TYPE_BOARD_INFO,
+                FIELD_NUM_SN_3,
+                FIELD_NUM_PN_10,
+                FIELD_NUM_MAC_9,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_4,
+                FIELD_NUM_FRU_ID_5,
+                FIELD_NUM_DPN_11,
+                },
+            progInfo {//product info
+                FIELD_TYPE_NUM,
+                AREA_TYPE_PRDT_INFO,
+                FIELD_NUM_SN_5,
+                FIELD_NUM_PN_8,//Pensando PN
+                FIELD_NUM_NONE,
+                FIELD_NUM_PROD_NAME_2,
+                FIELD_NUM_SKU_3,
+                FIELD_NUM_FRU_ID_7,
+                FIELD_NUM_NONE,
+                },
+        },
+        nil,
+    },
+
     PN_LENI48G: updateInfo {
         //PenStandardV2NewTbl,
         PenStandardV2ProdInfoTbl,
@@ -1200,6 +1234,7 @@ var CardTypes = []card{
     card{"POLLARA_ORACLE",          SKU_POLLARA_ORACLE},
     card{"LENI",                    PN_LENI},
     card{"LENI_SKU",                SKU_LENI},
+    card{"LENI_SKU_ORACEL",         SKU_LENI_ORACLE},
     card{"LENI48G",                 PN_LENI48G},
     card{"LENI48G_SKU",             SKU_LENI48G},
     card{"LINGUA",                  PN_LINGUA},
