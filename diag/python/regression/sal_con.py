@@ -87,9 +87,22 @@ def enter_a35_uboot(slot, session, *args, **kwargs):
 
 def enter_a35_zephyr(slot, session, *args, **kwargs):
     con_ctrl = nic_con()
-    if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
-        return -1
-    con_ctrl.uart_session_connect(session, slot, uart_id=0)
+
+    if kwargs.get('skip_a35_uboot', False):
+        con_ctrl.uart_session_connect(session, slot, uart_id=0)
+
+        if 0 != exp_cmd(session, "", pass_sig_list=["DSC#"], timeout=1)[0]:
+            print("===== FAILED: slot {} couldn't enter a35 uboot".format(slot))
+            return -1
+
+        if 0 != exp_cmd(session, "boot", pass_sig_list=["rt:~\$", "any key to stop"], timeout=10)[0]:
+            print("===== FAILED: slot {} couldn't boot zephyr".format(slot))
+            return -1
+    else:
+        if 0 != con_ctrl.enter_uboot_salina(session, slot, uart_id=0, expect_sig=["rt:~\$", "any key to stop"], timeout=60, warm_reset=kwargs.get('warm_reset', False), v12_reset=kwargs.get('v12_reset', False)):
+            return -1
+
+        con_ctrl.uart_session_connect(session, slot, uart_id=0)
 
     time.sleep(3)
     show_param=kwargs.get('awd_showparms', True)
@@ -235,7 +248,8 @@ def enter_n1_linux(slot, session, *args, **kwargs):
 
     con_ctrl = nic_con()
 
-    if con_ctrl.uart_session_start_login(session, slot, sleep=30) != 0:
+    login_delay = kwargs.get('login_delay', 90)
+    if con_ctrl.uart_session_start_login(session, slot, sleep=login_delay) != 0:
         print("Couldnt get N1 login prompt")
         return -1
 
@@ -295,6 +309,7 @@ if __name__ == "__main__":
     parser.add_argument("--raw_zephyr_binary", "-f", help="zephyr.bin is loaded instead of zephyr.fit", action='store_true')
     parser.add_argument("--new_ainic_layout", "-na", help="No effect. Keeping for backward compatability.", action='store_true', default=False)
     parser.add_argument("--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
+    parser.add_argument("--login_delay", "-ld", help="Wait for X seconds before attempting login to avoid bootup error messages conflicting pexpect", type=int, default=90)
 
     try:
         parsed_args = parser.parse_args()

@@ -1466,12 +1466,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_DEVICE_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1497,12 +1499,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(MFG_DIAG_CMDS.NIC_SW_SYSTEM_CHK_FMT)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.OS_CMD_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1521,12 +1525,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_prompt], self._nic_con_prompt, timeout=timeout)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -1539,12 +1545,14 @@ class nic_ctrl():
         self._nic_handle.sendline()
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=MTP_Const.NIC_SYSRESET_DELAY)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
         self._nic_handle.sendline(cmd)
         idx = libmfg_utils.mfg_expect_console_fuzzywuzzy(self._nic_handle, [self._nic_con_zephyr_prompt], self._nic_con_zephyr_prompt, timeout=timeout)
         if idx < 0:
+            cmd_buf = libmfg_utils.special_char_removal(self._nic_handle.before)
             self.nic_set_cmd_buf(cmd_buf)
             return False
 
@@ -5681,6 +5689,9 @@ class nic_ctrl():
             self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
             return False
         cmd_buf = self.nic_get_cmd_buf()
+        cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
+        cmd_buf = re.sub(r'\r', '', cmd_buf)
+        cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
         # test string "Config successfully set" in command return buffer
         if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
             self.nic_set_err_msg("Zephyr Write Board ID NOT Success")
@@ -5694,6 +5705,9 @@ class nic_ctrl():
                 self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
                 return False
             cmd_buf = self.nic_get_cmd_buf()
+            cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
+            cmd_buf = re.sub(r'\r', '', cmd_buf)
+            cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
             # test string "Config successfully set" in command return buffer
             if "configsuccessfullyset" not in cmd_buf.replace(" ", "").lower():
                 self.nic_set_err_msg("Zephyr Write Board PCI Subsystem ID NOT Success")
@@ -5721,6 +5735,65 @@ class nic_ctrl():
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
             self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
             return False
+        return True
+
+    def zephyr_debug_update_firmware(self, bootfw='mainfwa'):
+        """
+        set zephyr bootfw by zephyr shell command 'debug update firmware --next-boot mainfwa'
+        the command usage:
+                debug update firmware --next-boot-image <mainfwa|mainfwb|goldfw>
+        # example:
+            uart:~$ debug update firmware --next-boot mainfwa
+            Next boot firmware set to mainfwa"
+            uart:~$  debug update firmware --next-boot goldfw
+            Next boot firmware set to goldfw
+            uart:~$  debug update firmware --next-boot mainfwb
+            Next boot firmware set to mainfwb"
+        """
+        set2booting_map = {
+            'mainfwa': ('extosa', 'mainfwa'),
+            'mainfwb': ('extosb', 'mainfwb'),
+            'goldfw': ('goldfw', 'gold'),
+        }
+
+        # set fwselection
+        cmd = MFG_DIAG_CMDS.ZEPHYR_FW_SELECT_FMT.format(bootfw)
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
+        cmd_buf = re.sub(r'\r', '', cmd_buf)
+        cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
+        if bootfw not in cmd_buf.lower():
+            self.nic_set_err_msg("debug update firmware next-boot {:s} Failed".format(bootfw))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        # verify
+        cmd = "kernel reboot cold"
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        if "## Booting {:s} image".lower().format(set2booting_map[bootfw][0]) not in cmd_buf.lower():
+            self.nic_set_err_msg("Zephr did not boot to specified selection")
+            self.nic_set_err_msg(cmd_buf)
+            return False
+        # show version
+        cmd = MFG_DIAG_CMDS.ZEPHYR_SHOW_VERSION_FMT
+        if not self.nic_exec_cmd_from_zephyr_console(cmd):
+            self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed".format(cmd))
+            return False
+        cmd_buf = self.nic_get_cmd_buf()
+        cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
+        cmd_buf = re.sub(r'\r', '', cmd_buf)
+        cmd_buf = re.sub(r'\[\d{2}:\d{2}:\d{2}\.\d{3},\d{3}\].*\n+', '', cmd_buf)
+        match = re.findall(r"Current\sfirmware\s+:\s({:s})".format(set2booting_map[bootfw][1]), cmd_buf)
+        if not match:
+            self.nic_set_err_msg("Zephr did not boot to {:s}".format(bootfw))
+            self.nic_set_err_msg(cmd_buf)
+            return False
+
         return True
 
     @nic_console_test()
@@ -6040,8 +6113,13 @@ class nic_ctrl():
 
             if skip_reboot:
                 cmd += " 0" #skips VRM
+        if self._nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            # if ddr ecc happen, get_nic_sts.tcl will run eye margin for ddr. So it take 60-80 mins to complete.
+            t_out = 3600 + 180
+        else:
+            t_out = 180
 
-        if not self.mtp_exec_cmd(cmd, timeout=180):
+        if not self.mtp_exec_cmd(cmd, timeout=t_out):
             self.nic_stop_test()
             return False
         self.nic_stop_test()

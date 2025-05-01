@@ -5,6 +5,7 @@ import os
 import argparse
 import re
 import ntpath
+import time
 import traceback
 
 sys.path.append(os.path.relpath("lib"))
@@ -455,6 +456,8 @@ def main():
                 rlist = mtp_mgmt_ctrl.mtp_nic_diag_init_cpld_diag(nic_list, emmc_format=False)
             elif test == "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR":
                 rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_boardid_pcisubsystemid_write(nic_list)
+            elif test == "SET_ZEPHYR_MAINFWA":
+                rlist = mtp_mgmt_ctrl.mtp_nic_zephyr_debug_update_firmware(nic_list, bootfw='mainfwa')
             elif test == "I2C_DUMP":
                 rlist = mtp_mgmt_ctrl.mtp_mgmt_nic_i2c_dump(nic_list)
             elif test == "ESEC_UNLOCK":
@@ -495,6 +498,7 @@ def main():
             mtp_mgmt_ctrl.mtp_set_swmtestmode(Swm_Test_Mode.SW_DETECT)
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
+            run_swi_test(pass_nic_list, "NIC_PWRCYC")
             hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
             hmac_prog_slots = libmfg_utils.get_hmac_been_programmed_slots(mtp_mgmt_ctrl, list(set(pass_nic_list) - set(hmac_no_prog_slots)), dsp)
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")
@@ -583,6 +587,7 @@ def main():
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "NIC_CTRL_INSTANCE_CPLD_PROPERTY_UPDATE")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SALINA_NEW_MEM_LAYOUT_QSPI_VERIFY", bootstage="zephyr")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ASSIGN_BOARDID_PCISUBSYSTEMID_FROM_ZEPHYR")
+            run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "SET_ZEPHYR_MAINFWA")
 
             # run_swi_test(pass_nic_list, "NIC_INIT")
             # run_swi_test(pass_nic_list, "SEC_CPLD_VERIFY")
