@@ -644,24 +644,22 @@ class NIC_IMAGES:
     fail_cpld_dat["LENI"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["LENI"] = "salina.fea"
     ufm1_img["LENI"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    goldfw_dat["LENI"] = "12-13-2023"
-    mainfw_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/main_bundle/dpu_fw_salina.tar"
-    mainfw_dat["LENI"] = ""
-    arm_a_boot0_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/boot0.img"
-    arm_a_uboota_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/a35_uboota_master_2025Apr04_091700.img"
-    arm_a_ubootb_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/boot0.img"
-    arm_n_uboota_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
-    device_config_dtb["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["LENI"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
+    mainfw_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["LENI"] = "04-25-2025"
+    arm_a_boot0_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["LENI"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["LENI"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["LENI"] = "salina/leni/leni_snake.tar.gz"
     mbist_boot0_img["LENI"] = "salina/leni/dpu_boot0.tar.gz"
     # LENI DPN
@@ -676,26 +674,24 @@ class NIC_IMAGES:
     fail_cpld_dat["58-0007-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0007-01"] = "salina.fea"
     ufm1_img["58-0007-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    goldfw_dat["58-0007-01"] = "12-13-2023"
-    mainfw_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/main_bundle/dpu_fw_salina.tar"
-    mainfw_dat["58-0007-01"] = ""
-    arm_a_boot0_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/boot0.img"
-    arm_a_uboota_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/a35_uboota_master_2025Apr04_091700.img"
-    arm_a_ubootb_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/boot0.img"
-    arm_n_uboota_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
-    device_config_dtb["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["58-0007-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
+    mainfw_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["58-0007-01"] = "04-25-2025"
+    arm_a_boot0_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["58-0007-01"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["58-0007-01"] = "salina/leni/leni_snake.tar.gz"
-    # Leni SKU
+    # Leni Standard SKU
     cpld_img["DSC3-2Q400-64S64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["DSC3-2Q400-64S64E64P"] = "0x03"
     cpld_dat["DSC3-2Q400-64S64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
@@ -707,25 +703,50 @@ class NIC_IMAGES:
     fail_cpld_dat["DSC3-2Q400-64S64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-64S64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-64S64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    goldfw_dat["DSC3-2Q400-64S64E64P"] = "12-13-2023"
-    mainfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/main_bundle/dpu_fw_salina.tar"
-    mainfw_dat["DSC3-2Q400-64S64E64P"] = "03-05-2025"
-    arm_a_boot0_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/boot0.img"
-    arm_a_uboota_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/a35_uboota_master_2025Apr04_091700.img"
-    arm_a_ubootb_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/boot0.img"
-    arm_n_uboota_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
-    device_config_dtb["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
-    qspi_snake_img["DSC3-2Q400-64S64E64P"] = "salina/leni/leni_1.114.0-6.tar.gz"
+    mainfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["DSC3-2Q400-64S64E64P"] = "04-25-2025"
+    arm_a_boot0_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["DSC3-2Q400-64S64E64P"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
+    # Leni Oracle SKU
+    cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
+    cpld_dat["DSC3-2Q400-64R64E64P-O"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    sec_cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
+    sec_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    fail_cpld_ver["DSC3-2Q400-64R64E64P-O"] = "0x03"
+    fail_cpld_dat["DSC3-2Q400-64R64E64P-O"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fea_cpld_img["DSC3-2Q400-64R64E64P-O"] = "salina.fea"
+    ufm1_img["DSC3-2Q400-64R64E64P-O"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
+    mainfw_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["DSC3-2Q400-64R64E64P-O"] = "04-25-2025"
+    arm_a_boot0_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["DSC3-2Q400-64R64E64P-O"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
 
     # LENI48G different card type which is Leni with 48G DDR
     cpld_img["LENI48G"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
@@ -739,24 +760,22 @@ class NIC_IMAGES:
     fail_cpld_dat["LENI48G"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["LENI48G"] = "salina.fea"
     ufm1_img["LENI48G"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["LENI48G"] = "salina/leni48/zephyr_dpu.fit"
-    goldfw_dat["LENI48G"] = "12-13-2023"
-    mainfw_img["LENI48G"] = ""
-    mainfw_dat["LENI48G"] = ""
-    arm_a_boot0_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/boot0.img"
-    arm_a_uboota_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/uboota_a35_leni_c1k.img"
-    arm_a_ubootb_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/boot0.img"
-    arm_n_uboota_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_gold/salina/kernel.img"
-    device_config_dtb["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["LENI48G"] = "salina/leni48/leni_1.108.0-C-9_oob/qspi_prog.sh"
+    mainfw_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["LENI48G"] = "04-25-2025"
+    arm_a_boot0_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["LENI48G"] = "salina/leni48/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["LENI48G"] = "salina/leni48/leni_snake.tar.gz"
     mbist_boot0_img["LENI48G"] = "salina/leni48/dpu_boot0.tar.gz"
     # LENI48G DPN
@@ -771,24 +790,22 @@ class NIC_IMAGES:
     fail_cpld_dat["58-0003-01"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0003-01"] = "salina.fea"
     ufm1_img["58-0003-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    goldfw_dat["58-0003-01"] = "12-13-2023"
-    mainfw_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/main_bundle/dpu_fw_salina.tar"
-    mainfw_dat["58-0003-01"] = ""
-    arm_a_boot0_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/boot0.img"
-    arm_a_uboota_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/a35_uboota_master_2025Apr04_091700.img"
-    arm_a_ubootb_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/boot0.img"
-    arm_n_uboota_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
-    device_config_dtb["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["58-0003-01"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
+    mainfw_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["58-0003-01"] = "04-25-2025"
+    arm_a_boot0_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["58-0003-01"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
     qspi_snake_img["58-0003-01"] = "salina/leni/leni_snake.tar.gz"
     # Leni48G SKU
     cpld_img["DSC3-2Q400-48R64E64P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
@@ -802,25 +819,22 @@ class NIC_IMAGES:
     fail_cpld_dat["DSC3-2Q400-48R64E64P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
     fea_cpld_img["DSC3-2Q400-48R64E64P"] = "salina.fea"
     ufm1_img["DSC3-2Q400-48R64E64P"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    goldfw_dat["DSC3-2Q400-48R64E64P"] = "12-13-2023"
-    mainfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/main_bundle/dpu_fw_salina.tar"
-    mainfw_dat["DSC3-2Q400-48R64E64P"] = "04-08-2025"
-    arm_a_boot0_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/boot0.img"
-    arm_a_uboota_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/a35_uboota_master_2025Apr04_091700.img"
-    arm_a_ubootb_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/ubootb.img"
-    arm_a_ubootg_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/ubootg.img"
-    arm_a_zephyr_a_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_b_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_main/salina/zephyr.img"
-    arm_a_zephyr_gold_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/a35_gold/salina/zephyr.img"
-    arm_n_boot0_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/boot0.img"
-    arm_n_uboota_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/uboota.img"
-    arm_n_ubootb_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/ubootb.img"
-    arm_n_ubootg_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/ubootg.img"
-    arm_n_kernel_goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_gold/salina/kernel.img"
-    device_config_dtb["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/n1_main/salina/device_config.dtb"
-    qspi_prog_sh_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6_a35_ubooota_2025Apr04/qspi_prog.sh"
-    qspi_snake_img["DSC3-2Q400-48R64E64P"] = "salina/leni/leni_1.114.0-6.tar.gz"
+    mainfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
+    mainfw_dat["DSC3-2Q400-48R64E64P"] = "04-25-2025"
+    arm_a_boot0_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
+    arm_a_uboota_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
+    arm_a_ubootb_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/ubootb.img"
+    arm_a_ubootg_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/ubootg.img"
+    arm_a_zephyr_a_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_b_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_main/salina/zephyr.img"
+    arm_a_zephyr_gold_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/a35_gold/salina/zephyr.img"
+    arm_n_boot0_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/boot0.img"
+    arm_n_uboota_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/uboota.img"
+    arm_n_ubootb_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/ubootb.img"
+    arm_n_ubootg_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/ubootg.img"
+    arm_n_kernel_goldfw_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_gold/salina/kernel.img"
+    device_config_dtb["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/n1_main/salina/device_config.dtb"
+    qspi_prog_sh_img["DSC3-2Q400-48R64E64P"] = "salina/leni/dpu_1.108.0-C-18/qspi_prog.sh"
 
     # MALFA is the Salina refernce board
     cpld_img["MALFA"] = "salina_cfg0-rev1_12_0117-1441_PLLRSTdelay5ms.bin"
@@ -834,8 +848,6 @@ class NIC_IMAGES:
     fail_cpld_dat["MALFA"] = "01-17-25_14:41" #mm-dd-YY_HH:MM
     fea_cpld_img["MALFA"] = "salina.fea"
     ufm1_img["MALFA"] = "leni_ufm1_pll_lock_max_011625_nxc1600.txt.bin"
-    goldfw_img["MALFA"] = "salina/malfa/zephyr_dpu.fit"
-    goldfw_dat["MALFA"] = "12-13-2023"
     mainfw_img["MALFA"] = ""
     mainfw_dat["MALFA"] = ""
     arm_a_boot0_img["MALFA"] = "salina/malfa/a35_boot0.img"
@@ -1461,6 +1473,49 @@ PN_CPLD2BOARDID_PCI_SUBSYS_ID = {
     ("102-P10801", "0x66")    : ("0x04640002", "0x5200"),
     ("102-P11100", "0x65")    : ("0x04650001", "0x5201"),
     ("102-P11500", "0x67")    : ("0x04670001", "0x5201"),
+}
+
+# SKU To Board Id and PCI subsys ID Mapping Table, This is for SWI only
+# "SKU String" : ("Board Id", "PCI subsys ID")
+SKU2BOARDID_PCI_SUBSYS_ID = {
+    "DSC2-2S25-32R32H64P-HA":           ("0x024A0001", "0x5008"),
+    "DSC2-2S25-16R16H64P-HA":           ("0x02460001", "0x5005"),
+    "DSC2-2S25-16R16H64P-DBA":          ("0x02450001", "0x5004"),
+    "DSC2-2S25-16R16H64P-DA":           ("0x02450002", "0x5004"),
+    "DSC2-2S25-32R32H64P-DA":           ("0x02490001", "0x5009"),
+    "DSC2-2S25-32R32H64P-DBA":          ("0x02490002", "0x5009"),
+    "DSC2-2Q100-32R32F64P-HA":          ("0x02480001", "0x5006"),
+    "DSC2-2Q100-32R32F64P-DA":          ("0x02470001", "0x5007"),
+    "DSC2-2Q200-32R32F64P-R2":          ("0x024B0001", "0x500a"),
+    "DSC2-2Q200-32R32F64P-R":           ("0x02440003", "0x5001"),
+    "DSC2-2Q200-32R32F64P-B":           ("0x024B0003", "0x500b"),
+    "DSC2-2Q200-32R32F64P":             ("0x02440001", "0x5003"),
+    "DSC2-2Q200-32R32F64P-R3":          ("0x024C0001", "0x500c"),
+    "DSC2-2Q200-32R32F64P-R4":          ("0x024E0001", "0x500d"),
+    "DSC2-2Q200-32R32F64P-R4-T":        ("0x024E0003", "0x500f"),
+    "DSC2-2Q200-32R32F64P-R5":          ("0x02500001", "0x500e"),
+    "DSC2-2Q200-32R32F64P-M2":          ("0x024B0002", "0x5003"),
+    "DSC2-2Q200-32R32F64P-M4":          ("0x024E0002", "0x5003"),
+    "DSC2-2Q200-32R32F64P-M5":          ("0x02500002", "0x5003"),
+    "DSC2A-2Q200-32R32F64P-R":          ("0x03600001", "0x5100"),
+    "DSC2A-2Q200-32S32F64P-R":          ("0x03610001", "0x5101"),
+    "DSC2A-2Q200-32R32F64P-M":          ("0x03600001", "0x5100"),
+    "DSC2A-2Q200-32S32F64P-M":          ("0x03610001", "0x5101"),
+    "DSC2-2Q200-32R32F64P-S4":          ("0x02500002", "0x5003"),
+    "DSC2A-2Q200-32S32F64P-S4":         ("0x03600001", "0x5100"),
+    "DSC2A-2Q200-32S32F64P-S4-B3":      ("0x03610001", "0x5003"),
+    "DSC2A-2Q200-32S32F64P-S4-C":       ("0x03610001", "0x5003"),
+    "DSC2A-2Q200-32S32F64P-S4-C-B3":    ("0x03610001", "0x5003"),
+    "DSC3-2Q400-128S64E256P":           ("0x04620001", "0x5200"),
+    "DSC3-2Q400-64S64E64P":             ("0x04640001", "0x5200"),
+    "DSC3-2Q400-48R64E64P":             ("0x04640002", "0x5200"),
+    "DSC3-2Q400-64R64E64P-O":           ("0x04640001", "0x5200"),
+    "POLLARA-1Q400P":                   ("0x04650001", "0x5201"),
+    "POLLARA-1Q400P-O":                 ("0x04650001", "0x5201"),
+    "POLLARA-1Q400P-OCP":               ("0x04670001", "0x5201"),
+    "VULCANO-1Q800P":                   ("0x04650001", "0x5201"),
+    "VULCANO-1Q800P-O":                 ("0x04650001", "0x5201"),
+    "VULCANO-1Q800P-OCP":               ("0x04650001", "0x5201"),
 }
 
 NIC_MGMT_USERNAME = "root"
