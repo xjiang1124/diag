@@ -1396,9 +1396,6 @@ class nic_test_v2:
         return 0
 
     def sal_program_cpld_from_a35(self, args):
-
-
-
         ####Boot Zerphyr
         session = common.session_start()
         if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
