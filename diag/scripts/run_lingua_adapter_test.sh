@@ -1,5 +1,82 @@
 #!/bin/bash
 
+matera_P12V_addr="0x174"
+matera_P3V3_addr="0x178"
+matera_pcierst_addr="0x17c"
+
+adapter_card_check_nic_power_good() {
+    slot=$1
+    regTemp=$(i2cget -y $(($slot+2)) 0x4b 0x40)
+    bit3=$(( $regTemp & 0x08 ))
+    if [ $bit3 -eq 0 ] 
+    then
+        echo "ERROR: Slot-$slot Adapater CPLD is not showing NIC_POWER_GOOD (BIT3) after power enable.  Reg 0x40=$regTemp"
+    fi
+}
+
+###################################################
+# BIF TEST.  SEND BIF FROM ADAPTER TO OCP CARD
+###################################################
+bif_signal_test() {
+    slot=$1
+    echo "Performing BIF test"
+    declare -a bifValue=(0x01 0x02 0x04)
+    for i in ${!bifValue[*]}
+    do
+        p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
+        p12v=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P12V_addr | awk '{print $4}')
+        pcieRst=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_pcierst_addr | awk '{print $4}')
+        bitPos=$(( 1 << $(( $slot - 1 )) ))
+        Mask=$(( ~$bitPos ))
+        Mask=$(( Mask & 0x3ff ))
+        fpgautil w32 $matera_pcierst_addr $(( $pcieRst & $Mask ))
+        sleep 0.2
+        fpgautil w32 $matera_P12V_addr $(( $p12v & $Mask ))
+        sleep 0.2
+        fpgautil w32 $matera_P3V3_addr $(( $p3v3 & $Mask ))
+        sleep 0.2
+
+        p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
+        p12v=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P12V_addr | awk '{print $4}')
+        pcieRst=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_pcierst_addr | awk '{print $4}')
+        bitPos=$(( 1 << $(( $slot - 1 )) ))
+        printf "Setting 3.3V + 12V Enable and take PCI out of reset\n"
+        fpgautil w32 $matera_P3V3_addr $(( $p3v3 | $bitPos ))
+        sleep 2
+        fpgautil w32 $matera_P12V_addr $(( $p12v | $bitPos ))
+        fpgautil w32 $matera_pcierst_addr $(( $pcieRst | $bitPos ))
+        
+        printf "Testing BIF Value 0x%.02x\n"  ${bifValue[$i]}
+        #Set BIF Vaule on Lingua Adapter card CPLD.  BIF will get picked up by LINGUA on power on
+        i2cset -y $(($slot+2)) 0x4b 0x41 ${bifValue[$i]}
+        if [ $? -ne 0 ]
+        then
+            printf "i2cset failed Bus=%d I2Caddr 0x4b  Addr 0x41\n"  $(($slot+2))
+            return 1
+        fi
+
+        #Power on Lingua from Adapter CPLD
+        reg40=$(i2cget -y $(($slot+2)) 0x4b 0x40)
+        reg40=$(( $reg40 | 0x1 ))
+        i2cset -y $(($slot+2)) 0x4b 0x40 $reg40
+        sleep 0.5
+        adapter_card_check_nic_power_good $slot
+        reg40=$(( $reg40 | 0x2 ))
+        i2cset -y $(($slot+2)) 0x4b 0x40 $reg40
+        sleep 0.5
+        adapter_card_check_nic_power_good $slot
+        bif=$(( $(i2cget -y $(($slot+2)) 0x4a 0xc1) & 0x70 ))
+        bif=$(( $bif>>4 ))
+        if [[ ${bifValue[$i]} -ne $bif ]]
+        then
+            printf "ERROR: BIF VALUE:  bif sent=0x%.02x   bif read=0x%.02x\n" ${bifValue[$i]} $bif
+            return 1
+        fi    
+    done
+    return 0
+}
+
+
 rc=0
 usage="Usage: ${0##*/} <slot_num>"
 if [ $# -ne 1 ]
@@ -30,6 +107,9 @@ then
     exit
 fi
 
+#Power cycle the slot to start in a fresh state
+turn_on_slot.sh off $slot
+turn_on_slot.sh on $slot
 
 ##########################################################
 #CHECK PRESNTB[3:0]_L
@@ -80,7 +160,7 @@ i2cset -y $(($slot+2)) 0x4b 0x43 1
 ScanChain=$(i2cget -y $(($slot+2)) 0x4b 0x44)
 if [[ "$ScanChain" -ne 0x77 ]]
 then
-    printf "ERROR: Slot-$slot OCP Adapter scan chain.  Adapter reg 0x44.  Expect 0x77.  Read=0x%.02x\n" $ScanChain
+    printf "ERROR: Slot-$slot OCP Adapter scan chain.  Adapter reg 0x44.  Expect 0x77.  Read=0x%x\n" $ScanChain
     rc=1
 fi
 printf "Scan Chain value=%.02x\n" $ScanChain
@@ -89,35 +169,17 @@ printf "Scan Chain value=%.02x\n" $ScanChain
 ###################################################
 # BIF TEST.  SEND BIF FROM ADAPTER TO OCP CARD
 ###################################################
-echo "Performing BIF test"
-declare -a bifValue=(0x01 0x02 0x04)
-for i in ${!bifValue[*]}
-do
-    turn_on_slot.sh off $slot
-    sleep 1
-    matera_P12V_addr="0x174"
-    matera_P3V3_addr="0x178"
-    p3v3=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
-    p12v=$(sudo -SE <<< "lab123" /home/diag/diag/util/fpgautil r32 $matera_P3V3_addr | awk '{print $4}')
-    bitPos=$(( 1 << $(( $slot - 1 )) ))
-    printf "Setting 3.3V and 12V enable\n"
-    fpgautil w32 $matera_P3V3_addr $(( $p3v3 | $bitPos ))
-    fpgautil w32 $matera_P12V_addr $(( $p12v | $bitPos ))
-    sleep 2
-    printf "Testing BIF Value 0x%.02x\n"  ${bifValue[$i]}
-    i2cset -y $(($slot+2)) 0x4b 0x41 ${bifValue[$i]}
-    i2cset -y $(($slot+2)) 0x4b 0x40 0x1
-    sleep 0.2
-    i2cset -y $(($slot+2)) 0x4b 0x40 0x3
-    sleep 2
-    bif=$(( $(i2cget -y $(($slot+2)) 0x4a 0xc1) & 0x70 ))
-    bif=$(( $bif>>4 ))
-    if [[ ${bifValue[$i]} -ne $bif ]]
-    then
-        printf "ERROR: BIF VALUE:  bif sent=0x%.02x   bif read=0x%.02x\n" ${bifValue[$i]} $bif
-        rc=1
-    fi    
-done
+(flock -x -w 50 99 || { echo "ERROR: Slot-$slot Failed to acquire lock within 50 seconds"; exit 1;}; bif_signal_test $slot;
+) 99>/home/diag/turn_on_slot.lock
+
+####If BIF TEST FAILS, STOP ON ERROR FOR EASIER DEBUG
+if [ $? -ne 0 ]
+then
+    printf "ERROR: Slot-$slot BIF Signal Test Failed\n"
+    printf "Adapter Test FAILED\n"
+    exit 1
+fi
+
 turn_on_slot.sh off $slot
 turn_on_slot.sh on $slot
 
@@ -149,3 +211,4 @@ then
 else
     echo "Adapter Test FAILED"
 fi
+
