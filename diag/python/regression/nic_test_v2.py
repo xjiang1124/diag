@@ -1505,7 +1505,7 @@ class nic_test_v2:
             print("Command {} failed".format(cmd))
             return False
         if fail_sig in output:
-            cmd = "stat stressapptest_arm"
+            cmd = "stat /nic/bin/stressapptest_arm"
             cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
             if cmdret != 0:
                 print("Command {} failed".format(cmd))
@@ -1748,7 +1748,7 @@ class nic_test_v2:
                 print("Command {} failed".format(cmd))
                 return False
             if fail_sig in output:
-                cmd = "stat stressapptest_arm"
+                cmd = "stat /nic/bin/stressapptest_arm"
                 cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
                 if cmdret != 0:
                     print("Command {} failed".format(cmd))
