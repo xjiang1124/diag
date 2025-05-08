@@ -99,6 +99,7 @@ if {[llength $argv] >= 4} {
 } else {
     set check_ecc_only 0
 }
+set check_prp 1
 
 set port 10
 
@@ -355,6 +356,19 @@ if { $check_vrm != 0 } {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0
         elb_print_voltage_temp
+    }
+}
+
+if { $check_prp != 0 && \
+     $ASIC_TYPE == "SALINA" } {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg " PRP test "
+    plog_msg "=================="
+    if {[llength [info procs sal_ms_ring_full_test]] == 1} {
+        sal_ms_ring_full_test
+    } else {
+        sal_ms_ring_test
     }
 }
 plog_msg "Getting ASIC status - Done"
