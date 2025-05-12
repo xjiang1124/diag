@@ -122,7 +122,6 @@ if { $BOARD_TYPE == "GINESTRA_D5" } {
 }
 puts "Getting ASIC status - sn: $sn; slot: $slot; check_vrm: $check_vrm; check_ecc_only: $check_ecc_only; board_type: $BOARD_TYPE"
 source /home/diag/diag/scripts/asic/asic_tests.tcl
-source $::env(ASIC_SRC)/ip/cosim/salina/ddr/salina_ddr_eye.tcl
 
 cd $ASIC_SRC/ip/cosim/tclsh
 if {($MTP_TYPE == "MTP_ELBA") || ($MTP_TYPE == "MTP_TURBO_ELBA") || ($MTP_TYPE == "MTP_MATERA")} {
@@ -249,8 +248,11 @@ if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
         cd ..
         set cur_time [clock format [clock seconds] -format %m%d%y_%H%M%S]
         exec tar cf ${sn}_dump_${cur_time}.tar ${sn}_dump/
-        plog_msg "GET_NIC_STS_DBG_INFO: ECC happened. Do read/write eye"
-        sal_get_ddr_read_write_eye
+        if {$ASIC_TYPE == "SALINA"} {
+            source $::env(ASIC_SRC)/ip/cosim/salina/ddr/salina_ddr_eye.tcl
+            plog_msg "GET_NIC_STS_DBG_INFO: ECC happened. Do read/write eye"
+            sal_get_ddr_read_write_eye
+        }
     } else {
         plog_msg "ECC is clean"
     }
