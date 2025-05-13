@@ -72,9 +72,11 @@ proc mbist_with_diag {} {
     set east_err 0
     set west_err 0
 
-    set arm_err  [sal_jtag_arm_stp]
-    set east_err [sal_jtag_east_stp]
-    set west_err [sal_jtag_west_stp]
+    set hvt [sal_harvested_asic]
+
+    set arm_err  [sal_jtag_arm_stp $hvt]
+    set east_err [sal_jtag_east_stp $hvt]
+    set west_err [sal_jtag_west_stp $hvt]
 
     set err [ expr { $arm_err | $east_err | $west_err } ]
     if {$err == 0} {
@@ -105,9 +107,11 @@ proc mbist_only_diag {} {
     set east_err 0
     set west_err 0
 
-    set arm_err  [sal_jtag_arm_diag]
-    set east_err [sal_jtag_east_diag]
-    set west_err [sal_jtag_west_diag]
+    set hvt [sal_harvested_asic]
+
+    set arm_err  [sal_jtag_arm_diag $hvt]
+    set east_err [sal_jtag_east_diag $hvt]
+    set west_err [sal_jtag_west_diag $hvt]
 
     set err [ expr { $arm_err | $east_err | $west_err } ]
     if {$err == 0} {
