@@ -877,6 +877,7 @@ def mtp_get_sw_image_list(mtp_mgmt_ctrl, stage):
             image_list.append(NIC_IMAGES.arm_a_zephyr_a_img["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.arm_a_zephyr_b_img["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.arm_a_zephyr_gold_img["POLLARA-1Q400P-OCP"])
+            image_list.append(NIC_IMAGES.fwsel_img["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.device_config_dtb["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.firmware_config_dtb["POLLARA-1Q400P-OCP"])
             image_list.append(NIC_IMAGES.qspi_prog_sh_img["POLLARA-1Q400P-OCP"])

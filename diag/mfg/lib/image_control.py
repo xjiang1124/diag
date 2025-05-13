@@ -419,8 +419,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)
-                if nic_type in NIC_Type.POLLARA:
-                    images_needed.append(fwsel)
+                images_needed.append(fwsel)
 
     # return dict with {"Image display name": filepath}
     ret_dict = dict()
