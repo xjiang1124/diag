@@ -960,15 +960,15 @@ class NIC_IMAGES:
     qspi_prog_sh_img["POLLARA-1Q400P-O"] = "salina/pollara/ainic_1.110.1-a-1/qspi_prog.sh"
 
     # Lingua is AINIC, No N1 firmware image
-    cpld_img["LINGUA"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_img["LINGUA"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     cpld_ver["LINGUA"] = "0x2"
-    cpld_dat["LINGUA"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    sec_cpld_img["LINGUA"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_dat["LINGUA"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    sec_cpld_img["LINGUA"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     sec_cpld_ver["LINGUA"] = "0x2"
-    sec_cpld_dat["LINGUA"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    fail_cpld_img["LINGUA"] = "salina_cfg1-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    sec_cpld_dat["LINGUA"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    fail_cpld_img["LINGUA"] = "salina_cfg1-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     fail_cpld_ver["LINGUA"] = "0x2"
-    fail_cpld_dat["LINGUA"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
+    fail_cpld_dat["LINGUA"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
     fea_cpld_img["LINGUA"] = "salina.fea"
     ufm1_img["LINGUA"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
     arm_a_boot0_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup/boot0.img"
@@ -982,15 +982,15 @@ class NIC_IMAGES:
     qspi_snake_img["LINGUA"] = "salina/lingua/ainic_lingua_bringup.tar.gz"
     mbist_boot0_img["LINGUA"] = "salina/lingua/ainic_boot0.tar.gz"
 
-    cpld_img["58-0006-01"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_img["58-0006-01"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     cpld_ver["58-0006-01"] = "0x2"
-    cpld_dat["58-0006-01"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    sec_cpld_img["58-0006-01"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_dat["58-0006-01"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0006-01"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     sec_cpld_ver["58-0006-01"] = "0x2"
-    sec_cpld_dat["58-0006-01"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    fail_cpld_img["58-0006-01"] = "salina_cfg1-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    sec_cpld_dat["58-0006-01"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0006-01"] = "salina_cfg1-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     fail_cpld_ver["58-0006-01"] = "0x2"
-    fail_cpld_dat["58-0006-01"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
+    fail_cpld_dat["58-0006-01"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0006-01"] = "salina.fea"
     ufm1_img["58-0006-01"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
     arm_a_boot0_img["58-0006-01"] = "salina/lingua/ainic_lingua_bringup/boot0.img"
@@ -1003,28 +1003,29 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0006-01"] = "salina/lingua/ainic_lingua_bringup/qspi_prog.sh"
     qspi_snake_img["58-0006-01"] = "salina/lingua/ainic_lingua_bringup.tar.gz"
 
-    cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     cpld_ver["POLLARA-1Q400P-OCP"] = "0x2"
-    cpld_dat["POLLARA-1Q400P-OCP"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    sec_cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg0-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    cpld_dat["POLLARA-1Q400P-OCP"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    sec_cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg0-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     sec_cpld_ver["POLLARA-1Q400P-OCP"] = "0x2"
-    sec_cpld_dat["POLLARA-1Q400P-OCP"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
-    fail_cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg1-rev2_4_0327-1314_hitlessNICPwrGd.bin"
+    sec_cpld_dat["POLLARA-1Q400P-OCP"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
+    fail_cpld_img["POLLARA-1Q400P-OCP"] = "salina_cfg1-rev2_6_0425-1555_HiZ_Prsntb3_JtagSeq_Gpio7.bin"
     fail_cpld_ver["POLLARA-1Q400P-OCP"] = "0x2"
-    fail_cpld_dat["POLLARA-1Q400P-OCP"] = "03-27-25_13:14" #mm-dd-YY_HH:MM
+    fail_cpld_dat["POLLARA-1Q400P-OCP"] = "04-25-25_15:55" #mm-dd-YY_HH:MM
     fea_cpld_img["POLLARA-1Q400P-OCP"] = "salina.fea"
     ufm1_img["POLLARA-1Q400P-OCP"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
-    arm_a_boot0_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/boot0.img"
-    arm_a_uboota_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/uboota.img"
-    arm_a_ubootb_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/ubootb.img"
-    arm_a_ubootg_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/goldfw/salina/ubootg.img"
-    arm_a_zephyr_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/zephyr.img"
-    arm_a_zephyr_a_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/zephyr.img"
-    arm_a_zephyr_b_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/zephyr.img"
-    arm_a_zephyr_gold_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/goldfw/salina/zephyr.img"
-    device_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/device_config.dtb"
-    firmware_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/mainfw/salina/firmware_config_POLLARA-1Q400P.dtb"
-    qspi_prog_sh_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.110.0-21/qspi_prog.sh"
+    arm_a_boot0_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/boot0.img"
+    arm_a_uboota_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/uboota.img"
+    arm_a_ubootb_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/ubootb.img"
+    arm_a_ubootg_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/goldfw/salina/ubootg.img"
+    arm_a_zephyr_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/zephyr.img"
+    arm_a_zephyr_a_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/zephyr.img"
+    arm_a_zephyr_b_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/zephyr.img"
+    arm_a_zephyr_gold_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/goldfw/salina/zephyr.img"
+    fwsel_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/fwsel_extosa.bin"
+    device_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/device_config.dtb"
+    firmware_config_dtb["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/mainfw/salina/firmware_config_POLLARA-1Q400P.dtb"
+    qspi_prog_sh_img["POLLARA-1Q400P-OCP"] = "salina/lingua/ainic_1.115.0-a-4/qspi_prog.sh"
 
 class MTP_IMAGES:
     amd64_img = dict()
