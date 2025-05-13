@@ -338,7 +338,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
             images_needed.append(fail_cpld)
             images_needed.append(fea_cpld)
 
-        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4, NIC_Type.LENI, NIC_Type.LENI48G, NIC_Type.MALFA):
+        if nic_type in (NIC_Type.ORTANO2ADI, NIC_Type.ORTANO2ADIIBM, NIC_Type.ORTANO2ADIMSFT, NIC_Type.ORTANO2ADICR, NIC_Type.ORTANO2ADICRMSFT, NIC_Type.ORTANO2ADICRS4):
             images_needed.append(goldfw)
 
         if nic_type in NEED_UBOOT_IMG_CARD_TYPE_LIST:
@@ -377,7 +377,7 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
     elif stage == FF_Stage.FF_SWI:
         images_needed.append(cpld)
         images_needed.append(sec_cpld)
-        if nic_type not in SALINA_AI_NIC_TYPE_LIST:
+        if nic_type not in SALINA_NIC_TYPE_LIST:
             images_needed.append(goldfw)
 
         if nic_type in FPGA_TYPE_LIST:
@@ -415,7 +415,6 @@ def get_all_images_for_stage(mtp_mgmt_ctrl, slot, stage):
                 images_needed.append(arm_n_ubootg)
                 images_needed.append(arm_n_kernel_goldfw)
                 images_needed.append(mainfw)
-                images_needed.append(qspi_snake_img)
             if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 images_needed.append(firmware_config_dtb)
                 images_needed.append(arm_a_zephyr)

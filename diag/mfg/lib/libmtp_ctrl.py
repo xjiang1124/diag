@@ -6109,7 +6109,7 @@ class mtp_ctrl():
         slot_main = slot_list[0]
 
         if self._mtp_type == MTP_TYPE.MATERA and bootstage:
-            if bootstage not in ('a35_uboot', 'n1_uboot', 'zephyr', 'linux'):
+            if bootstage not in ('a35_uboot', 'n1_uboot', 'zephyr', 'linux', 'diag', 'nondiag'):
                 self.cli_log_slot_err(slot_main, f"Unsupported Salina boot stage {bootstage}")
                 return fail_nic_list
             cmd = "cd {:s}".format(MTP_DIAG_Path.ONBOARD_MTP_NIC_CON_PATH)
@@ -6124,6 +6124,7 @@ class mtp_ctrl():
                 cmd += " --new_ainic_layout"
             if new_mem_layout:
                 cmd += " --new_memory_layout"
+                cmd += " --login_delay 120"
             if not self.mtp_mgmt_exec_cmd_para(slot_main, cmd, timeout=MTP_Const.MTP_PARA_AAPL_INIT_DELAY):
                 self.cli_log_slot_err(slot_main, "Execute command {:s} failed".format(cmd))
                 return fail_nic_list
@@ -7265,9 +7266,11 @@ class mtp_ctrl():
         return True
 
     @parallelize.parallel_nic_using_console
-    def mtp_nic_zephyr_boardid_pcisubsystemid_write(self, slot):
+    def mtp_nic_zephyr_boardid_pcisubsystemid_write(self, slot, stage=None):
         """
         Write board id from Zephyr console interface
+        SWI will using SKU to board_id mapping
+        Default using (partnumber, cpldid) to board_id mapping
         """
 
         partNumber = self.get_scanned_pn(slot)
@@ -7282,6 +7285,9 @@ class mtp_ctrl():
             return False
         cpldId = nic_cpld_info[2]
         (boardId, pciSubSysId) = PN_CPLD2BOARDID_PCI_SUBSYS_ID.get((partNumberIn6Digits, cpldId), (None, None))
+        if stage == FF_Stage.FF_SWI:
+            sku = self.get_scanned_sku(slot)
+            (boardId, pciSubSysId) = SKU2BOARDID_PCI_SUBSYS_ID.get(sku, (None, None))
         if not self._nic_ctrl_list[slot].zephyr_assign_board_id_and_pci_subsystemid(boardId, pciSubSysId):
             self.cli_log_slot_err_lock(slot, "Zephyr Assign Board ID Failed")
             self.mtp_get_nic_err_msg(slot)
