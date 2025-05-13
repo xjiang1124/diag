@@ -99,6 +99,8 @@ if {[llength $argv] >= 4} {
 } else {
     set check_ecc_only 0
 }
+set check_freq 1
+set check_prp 1
 
 set port 10
 
@@ -349,13 +351,34 @@ if { $check_vrm != 0 } {
             plog_msg "VDD_CORE status registers:"; sal_tps53688_explain_status 2 0x60 0
             plog_msg "VDD_ARM  status registers:"; sal_tps53688_explain_status 2 0x60 1
         }
-        plog_msg "Measuring frequencies:"; sal_get_freq
-        plog_msg "Measuring ARM frequency:"; sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS
     } else {
         elb_assert_arm_rst 0 0xf
         ssi_cpld_write 0x20 0x0
         elb_print_voltage_temp
     }
+}
+
+if { $check_freq != 0 && \
+     $ASIC_TYPE == "SALINA" } {
+    plog_msg "Measuring frequencies:"; sal_get_freq
+}
+
+if { $check_prp != 0 && \
+     $ASIC_TYPE == "SALINA" } {
+    plog_msg "\n\n\n"
+    plog_msg "=================="
+    plog_msg " PRP test "
+    plog_msg "=================="
+    if {[llength [info procs sal_ms_ring_full_test]] == 1} {
+        sal_ms_ring_full_test
+    } else {
+        sal_ms_ring_test
+    }
+}
+if { $check_freq != 0 && \
+     $ASIC_TYPE == "SALINA" } {
+    plog_msg "Measuring ARM frequency:"; sal_PLL_SYSPLL_T_ARM_PLL_DFX_CLK_OBS
+    ## ARM freq check is going to put j2c in weird state; keep for the last item.
 }
 plog_msg "Getting ASIC status - Done"
 
