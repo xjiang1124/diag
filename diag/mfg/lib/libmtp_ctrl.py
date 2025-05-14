@@ -6357,7 +6357,15 @@ class mtp_ctrl():
             And assign slot # in the order it appears in lspci
         """
         self.cli_log_inf("Init NIC Presence, Type")
-        cmd = "lspci -d 1dd8:1002" if self._fst_ver == 0x6 else "lspci -d 1dd8:1004"
+        cmd = "lspci -d 1dd8:1004"
+        if self._fst_ver == 0x6:
+            # Try "lspci -d 1dd8:1004" first
+            self.mtp_mgmt_exec_cmd(cmd)
+            result = self.mtp_get_cmd_buf()
+            bus_list_match = re.findall(r"([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]+) ", result)
+            bus_list_match = list(set(bus_list_match))
+            if len(bus_list_match) == 0:
+                cmd = "lspci -d 1dd8:1002"
 
         self.mtp_mgmt_exec_cmd(cmd)
         result = self.mtp_get_cmd_buf()
@@ -8498,10 +8506,14 @@ class mtp_ctrl():
 
     def fst_get_eth_mnic(self, slot, bus):
         # FIND CORRESPONDING ETH INTF NAME
-        cmd = "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent | grep \"{:s}\" | cut -d'/' -f5".format(bus)
+        cmd = "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent | grep \"{:s}\"".format(bus)
         cmd_buf = self._nic_ctrl_list[slot].mtp_get_info(cmd)
-        eth = cmd_buf.splitlines()[-1].strip()
-        if not cmd_buf or "grep" in eth:
+        eth_pattern = r'/sys/class/net/(.*)/device/uevent:PCI_SLOT_NAME'
+        matched = re.findall(eth_pattern, cmd_buf)
+        eth = ""
+        if matched:
+            eth = matched[0]
+        if not cmd_buf or not eth:
             self.cli_log_slot_err(slot, "Unable to find ethernet interface for PCI device {:s}".format(bus))
             self.log_nic_file(slot, "#############= FA DUMP =#############")
             self.mtp_mgmt_exec_cmd_para(slot, "grep PCI_SLOT_NAME /sys/class/net/*/device/uevent")
@@ -8816,39 +8828,80 @@ class mtp_ctrl():
             self.cli_log_slot_err(slot, "failed to execute fwupdate -l")
             return False
         fwlist = json.loads(fw_json[0])
-        if "boot0" in fwlist:
-            self.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} rev{:d}".format(fwlist["boot0"]["image"]["software_version"],
-                                  fwlist["boot0"]["image"]["build_date"], fwlist["boot0"]["image"]["image_version"]))
-        else:
-            if nic_type == NIC_Type.NAPLES100:
-                if "uboot" in fwlist:
-                    self.cli_log_slot_inf(slot, "uboot:     {:15s}   {:s}".format(fwlist["uboot"]["image"]["software_version"], fwlist["uboot"]["image"]["build_date"]))
-                else:
-                    self.cli_log_slot_err(slot, "FWLIST missing uboot info")
-            elif nic_type != NIC_Type.ORTANO2ADIIBM:
-                self.cli_log_slot_err(slot, "FWLIST missing boot0 info")
-        for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw", "extdiag"]:
-            if nic_type in FPGA_TYPE_LIST and (partition == "mainfwa" or partition == "mainfwb"):
-                continue
-            if nic_type not in FPGA_TYPE_LIST and partition == "extdiag":
-                continue
+        if nic_type in SALINA_DPU_NIC_TYPE_LIST:
             try:
-                if nic_type == NIC_Type.ORTANO2ADIIBM and partition in ["mainfwa", "mainfwb"]:
-                    if "fip" in fwlist[partition]:
-                        self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fip"]["software_version"], fwlist[partition]["fip"]["build_date"]))
-                    else:
-                        self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
-                        return False
-                elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4) and partition in ["mainfwa", "mainfwb"]:
-                    self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
-                else:
-                    self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
+                # A35 boot0
+                partition = "a35-boot0"
+                self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-boot0"]["software_version"], fwlist[partition]["a35-boot0"]["build_date"]))
+                # A35 fwa and uboota 
+                partition = "extosa"
+                self.cli_log_slot_inf(slot, "A35 uboota {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot-a"]["software_version"], fwlist[partition]["uboot-a"]["build_date"]))
+                self.cli_log_slot_inf(slot, "A35 mainfwa {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw-a"]["software_version"], fwlist[partition]["fw-a"]["build_date"]))
+                # A35 fwb and ubootb 
+                partition = "extosb"
+                self.cli_log_slot_inf(slot, "A35 ubootb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["uboot-b"]["software_version"], fwlist[partition]["uboot-b"]["build_date"]))
+                self.cli_log_slot_inf(slot, "A35 mainfwb {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fw-b"]["software_version"], fwlist[partition]["fw-b"]["build_date"]))
+                # A35 goldfw and ubootg 
+                partition = "extosgoldfw"
+                self.cli_log_slot_inf(slot, "A35 ubootg {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-golduboot"]["software_version"], fwlist[partition]["a35-golduboot"]["build_date"]))
+                self.cli_log_slot_inf(slot, "A35 goldfw {:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["a35-goldfip"]["software_version"], fwlist[partition]["a35-goldfip"]["build_date"]))
+                # N1 boot0
+                partition = "n1-boot0"
+                self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-boot0"]["software_version"], fwlist[partition]["n1-boot0"]["build_date"]))
+                # N1 mainfwa and uboota 
+                partition = "mainfwa"
+                self.cli_log_slot_inf(slot, "N1 {:s} uboota:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-a"]["software_version"], fwlist[partition]["n1-uboot-a"]["build_date"]))
+                self.cli_log_slot_inf(slot, "N1 {:s} kernel_fit:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
+                self.cli_log_slot_inf(slot, "N1 {:s} system_image:   {:15s}   {:s} ".format(partition, fwlist[partition]["system_image"]["software_version"], fwlist[partition]["system_image"]["build_date"]))
+                # N1 mainfwb and ubootb
+                partition = "mainfwb"
+                self.cli_log_slot_inf(slot, "N1 {:s} ubootb:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-b"]["software_version"], fwlist[partition]["n1-uboot-b"]["build_date"]))
+                self.cli_log_slot_inf(slot, "N1 {:s} kernel_fit:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
+                self.cli_log_slot_inf(slot, "N1 {:s} system_image:   {:15s}   {:s} ".format(partition, fwlist[partition]["system_image"]["software_version"], fwlist[partition]["system_image"]["build_date"]))
+                # N1 goldfw and ubootg
+                partition = "n1-goldfw"
+                self.cli_log_slot_inf(slot, "N1 {:s} ubootg:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-uboot-g"]["software_version"], fwlist[partition]["n1-uboot-g"]["build_date"]))
+                self.cli_log_slot_inf(slot, "N1 {:s} kernel:   {:15s}   {:s} ".format(partition, fwlist[partition]["n1-kernel-g"]["software_version"], fwlist[partition]["n1-kernel-g"]["build_date"]))
             except KeyError as e:
                 self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
                 err_msg = traceback.format_exc()
                 self._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
                 self.mtp_get_nic_err_msg(slot)
                 return False
+        else:
+            if "boot0" in fwlist:
+                self.cli_log_slot_inf(slot, "boot0:     {:15s}   {:s} rev{:d}".format(fwlist["boot0"]["image"]["software_version"],
+                                    fwlist["boot0"]["image"]["build_date"], fwlist["boot0"]["image"]["image_version"]))
+            else:
+                if nic_type == NIC_Type.NAPLES100:
+                    if "uboot" in fwlist:
+                        self.cli_log_slot_inf(slot, "uboot:     {:15s}   {:s}".format(fwlist["uboot"]["image"]["software_version"], fwlist["uboot"]["image"]["build_date"]))
+                    else:
+                        self.cli_log_slot_err(slot, "FWLIST missing uboot info")
+                elif nic_type != NIC_Type.ORTANO2ADIIBM:
+                    self.cli_log_slot_err(slot, "FWLIST missing boot0 info")
+            for partition in ["mainfwa", "mainfwb", "goldfw", "diagfw", "extdiag"]:
+                if nic_type in FPGA_TYPE_LIST and (partition == "mainfwa" or partition == "mainfwb"):
+                    continue
+                if nic_type not in FPGA_TYPE_LIST and partition == "extdiag":
+                    continue
+                try:
+                    if nic_type == NIC_Type.ORTANO2ADIIBM and partition in ["mainfwa", "mainfwb"]:
+                        if "fip" in fwlist[partition]:
+                            self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["fip"]["software_version"], fwlist[partition]["fip"]["build_date"]))
+                        else:
+                            self.cli_log_slot_err(slot, "FWLIST missing fip info for ADI IBM")
+                            return False
+                    elif nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4, NIC_Type.GINESTRA_S4) and partition in ["mainfwa", "mainfwb"]:
+                        self.cli_log_slot_inf(slot, "NO {:s} needed for {:s}".format(partition, nic_type))
+                    else:
+                        self.cli_log_slot_inf(slot, "{:s}:   {:15s}   {:s} ".format(partition, fwlist[partition]["kernel_fit"]["software_version"], fwlist[partition]["kernel_fit"]["build_date"]))
+                except KeyError as e:
+                    self.cli_log_slot_err(slot, "FWLIST missing {:s} info".format(partition))
+                    err_msg = traceback.format_exc()
+                    self._nic_ctrl_list[slot].nic_set_err_msg(err_msg)
+                    self.mtp_get_nic_err_msg(slot)
+                    return False
         self.cli_log_slot_inf(slot, "")
 
         return True

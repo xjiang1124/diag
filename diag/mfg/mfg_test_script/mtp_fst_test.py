@@ -27,6 +27,7 @@ from libmfg_cfg import ROT_CABLE_REQUIRED_FOR_FST_TYPE_LIST
 from libmfg_cfg import FST_SCAN_ENABLE
 from libmfg_cfg import FLEX_ERR_CODE_MAP
 from libmfg_cfg import SALINA_NIC_TYPE_LIST
+from libmfg_cfg import SALINA_AI_NIC_TYPE_LIST
 from libmtp_db import mtp_db
 from libmtp_ctrl import mtp_ctrl
 import test_utils
@@ -47,6 +48,12 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
     if len(nic_list) == 0:
         mtp_mgmt_ctrl.cli_log_err("No NICs passed", level=0)
         return [], []
+    # not support run multiple cards with different card type in one batch
+    nic_types = [mtp_mgmt_ctrl.mtp_get_nic_type(slot) for slot in nic_list]
+    nic_types = list(set(nic_types))
+    if len(nic_types) > 1:
+        return [], []
+    nic_type = nic_types[0]
 
     pass_list, fail_list = [], []
     serial_ports = []
@@ -58,10 +65,13 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
 
     result = ""
     for port in serial_ports:
-        if not s4_family:
-            cmd = "mfg_test_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
-        else:
+        if s4_family:
             cmd = "mfg_test_script/rotctrl -b 115200 -d elba-gold -c ortano -p {:s}".format(port)
+        elif nic_type in SALINA_NIC_TYPE_LIST:
+            cmd = "mfg_test_script/rotctrl_salina -b 115200 -d salina -c {:s} -p {:s}".format(nic_type.lower(), port)
+        else:
+            cmd = "mfg_test_script/rotctrl -b 115200 -d elba -c ortano -p {:s}".format(port)
+
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, timeout=MTP_Const.MFG_FST_TEST_TIMEOUT):
             mtp_mgmt_ctrl.cli_log_err("Executing ROT test over usb port {:s} Failed".format(port), level=0)
         cmd_buf = mtp_mgmt_ctrl.mtp_get_cmd_buf()
@@ -86,11 +96,12 @@ def check_rot(mtp_mgmt_ctrl, nic_list, s4_family):
             fail_list.append(slot)
 
     # Save the logs
+    testlog_path = testlog.find_logfile_path(mtp_mgmt_ctrl, FF_Stage.FF_FST)
     for sn in pass_match_rot + fail_match_rot:
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mfg_test_script/rot_{:s}.log".format(sn, sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log {:s}/rot_{:s}.log".format(sn, testlog_path, sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(sn), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
     for port in serial_ports:
-        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log /home/diag/mfg_test_script/rot_{:s}.log".format(port, port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
+        mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("cp /home/diag/{:s}.log {:s}/rot_{:s}.log".format(port, testlog_path, port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
         mtp_mgmt_ctrl.mtp_mgmt_exec_cmd("rm /home/diag/{:s}.log".format(port), timeout=MTP_Const.MFG_FST_TEST_TIMEOUT)
 
     return pass_list, fail_list
@@ -254,7 +265,7 @@ def main():
             testlist = ["SETUP_SSH", "FETCH_SN", "PCIE_LINK", "SSH_DISABLE"]
             if nic_type == NIC_Type.ORTANO2ADIIBM:
                 testlist = ["SETUP_SSH", "FETCH_SN", "SET_BOARD_CONFIG", "PCIE_LINK", "SSH_DISABLE"]
-            if nic_type in SALINA_NIC_TYPE_LIST:
+            if nic_type in SALINA_AI_NIC_TYPE_LIST:
                 testlist = ["PCIE_LINK", "FETCH_FRU_INFO"]
 
             if nic_type in (NIC_Type.ORTANO2SOLOS4, NIC_Type.ORTANO2ADICRS4):
