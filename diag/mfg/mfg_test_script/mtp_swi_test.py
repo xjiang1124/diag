@@ -488,8 +488,14 @@ def main():
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
             run_swi_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "ESEC_UNLOCK")
             run_swi_test(pass_nic_list, "NIC_PWRCYC")
-            hmac_no_prog_slots = libmfg_utils.get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
-            hmac_prog_slots = libmfg_utils.get_hmac_been_programmed_slots(mtp_mgmt_ctrl, list(set(pass_nic_list) - set(hmac_no_prog_slots)), dsp)
+            fail_slot, hmac_no_prog_slots, hmac_prog_slots = libmfg_utils.get_hmac_category_slots(mtp_mgmt_ctrl, pass_nic_list, dsp)
+            for slot in fail_slot:
+                mtp_mgmt_ctrl.mtp_set_nic_status_fail(slot, testname="HMAC_PROG_CATEGORY")
+                if slot in pass_nic_list:
+                    pass_nic_list.remove(slot)
+                if slot not in fail_nic_list:
+                    fail_nic_list.append(slot)
+
             run_swi_test(list(set(get_slots_of_type(SALINA_NIC_TYPE_LIST)) & set(hmac_prog_slots)), "SEC_KEY_VAL_UDS")
             run_swi_test(list(set(pass_nic_list) & set(hmac_no_prog_slots)), "CLEAR_PRE_UBOOT_SECTION")
             # run_swi_test(pass_nic_list, "CONSOLE_BOOT")

@@ -4526,6 +4526,24 @@ class mtp_ctrl():
 
         return True
 
+    @parallelize.sequential_nic_test_category
+    def mtp_nic_hmac_programmed_category(self, slot, stage=FF_Stage.FF_DL):
+        """
+        call ./esec_ctrl.py -hmac_fuse_prog -slot $slo -hmac_file check_only
+        'HMAC HAS BEEN PROGRAMMED' or 'HMAC HAS NOT BEEN PROGRAMMED'
+        """
+
+        if not self._nic_ctrl_list[slot].nic_salina_clear_j2c():
+            self.cli_log_slot_err(slot, "Pre init clear j2c failed")
+            return -1
+
+        ret = self._nic_ctrl_list[slot].nic_hmac_program_category(stage)
+        if ret < 0:
+            self.cli_log_slot_err(slot, "HMAC PROGRAMMED STATUS Check Failed, Expected Status String List NOT Found")
+            return -1
+
+        return ret
+
     @parallelize.sequential_nic_test
     def mtp_nic_val_uds_cert(self, slot):
         """

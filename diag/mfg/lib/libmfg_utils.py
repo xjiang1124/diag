@@ -2699,3 +2699,8 @@ def get_hmac_not_been_programmed_slots(mtp_mgmt_ctrl, nic_list, stage=FF_Stage.F
 
     failed_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG, stage)
     return list(set(nic_list) - set(failed_slots))
+
+def get_hmac_category_slots(mtp_mgmt_ctrl, nic_list, stage=FF_Stage.FF_DL):
+
+    rs_category_slots = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_category(nic_list, stage)
+    return rs_category_slots[-1] if -1 in rs_category_slots else [] , rs_category_slots[0] if 0 in rs_category_slots else [] , rs_category_slots[1] if 1 in rs_category_slots else []
