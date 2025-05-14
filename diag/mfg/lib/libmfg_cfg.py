@@ -790,7 +790,7 @@ class NIC_IMAGES:
     fail_cpld_dat["58-0003-01"] = "05-10-25_01:13" #mm-dd-YY_HH:MM
     fea_cpld_img["58-0003-01"] = "salina.fea"
     ufm1_img["58-0003-01"] = "leni_ufm1-postdiv1_noStgOv-0214-2025.bin"
-    mainfw_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina_mfg.tar"
+    mainfw_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/main_bundle/dpu_fw_salina.tar"
     mainfw_dat["58-0003-01"] = "04-25-2025"
     arm_a_boot0_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/boot0.img"
     arm_a_uboota_img["58-0003-01"] = "salina/leni48/dpu_1.108.0-C-18/a35_main/salina/uboota.img"
