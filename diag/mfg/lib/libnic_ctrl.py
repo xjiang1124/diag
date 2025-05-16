@@ -106,6 +106,10 @@ class nic_ctrl():
             self._pn_format = pn_regex
 
     def nic_set_err_msg(self, err_msg):
+        if "$" in err_msg:
+            err_msg = err_msg.replace("$", "DOLLOR")
+        if "#" in err_msg:
+            err_msg = err_msg.replace("#", "HASH")
         if not self._err_msg:
             self._err_msg = ""
         self._err_msg += "\n" + err_msg
