@@ -9,6 +9,7 @@ set int_lpbk    [lindex $argv 5]
 set ite         [lindex $argv 6]
 set mtp_clk     [lindex $argv 7]
 set lpmode      [lindex $argv 8]
+set txfir_ow    [lindex $argv 9]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -221,9 +222,12 @@ if { $test_type == "esam_pktgen_pollara_max_power_pcie_arm" } {
     set in_err_ecc [plog_get_err_count]
     # temporarily use LENI before POLLARA ready
     plog_msg "pcie_mtp_bringup_ports 1100 LENI 4\n"
-    pcie_mtp_bringup_ports 1100 LENI 4
+    pcie_mtp_bringup_ports 1100 LENI 4 0 $txfir_ow
 
     pcie_get_mac_sts
+    set txfir [sal_awave_lane_read pcie 0 pcs 0 0xb0]
+    plog_msg "txfir_ow: $txfir_ow; TXFIR: $txfir"
+
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_err "pcie linkup failed"

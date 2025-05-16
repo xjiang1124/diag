@@ -565,6 +565,7 @@ class nic_test_v2:
             cmd += " " + str(new_vmarg)
             cmd += " " + str(args.int_lpbk)
             cmd += " " + str(args.mtp_clk)
+            cmd += " " + str(args.txfir_ow)
         elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
             cmd += " " + str(args.slot)
@@ -576,6 +577,7 @@ class nic_test_v2:
             cmd += " " + str(args.ite)
             cmd += " " + str(args.mtp_clk)
             cmd += " " + str(args.lpmode)
+            cmd += " " + str(args.txfir_ow)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -2091,6 +2093,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-txfir_ow", "--txfir_ow", help="Awave TXFIR overwrite", type=str, default='0')
     parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_snake_mtp.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
