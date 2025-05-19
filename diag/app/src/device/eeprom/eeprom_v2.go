@@ -108,7 +108,7 @@ const (
     PROD_NAME_MALFA         string = "Salina 2x400G QSFP112"
     PROD_NAME_POLLARA       string = "POLLARA 1x400G QSFP112"
     PROD_NAME_LENI          string = "Salina 2x400G QSFP112"
-    PROD_NAME_LINGUA        string = "LINGUA 1x400G QSFP112"
+    PROD_NAME_LINGUA        string = "POLLARA, single QSFP112, OCP 3.0"
     PROD_NAME_OCP_ADPT      string = "OCP ADAPTOR"
 
     // SKU 

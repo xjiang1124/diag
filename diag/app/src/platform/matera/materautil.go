@@ -13,7 +13,10 @@ import (
     "device/psu/dps2100" 
     "fmt"
     "math"
+    "os"
+    "sort"
     "strconv"
+    "time"
 )
 
 
@@ -271,6 +274,98 @@ func ShowFanInfo()  (err int)  {
     return
 }
 
+
+func TestPowercycleCPLDready(slot uint32, loopcount int) (err error) {
+    var data32 uint32
+    var ns int64
+    wrData := []byte{0x01}
+    TestTime := []int{}
+
+    for i:=0; i<loopcount; i++ {
+        fmt.Printf("Loop - %.04d", i)
+        //Power off slot 
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_RESET_CONTROL_REG)
+        data32 = data32 & (^(1<<slot))
+        materafpga.MateraWriteU32(materafpga.FPGA_RESET_CONTROL_REG, data32)
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_P12_CONTROL_REG)
+        data32 = data32 & (^(1<<slot))
+        materafpga.MateraWriteU32(materafpga.FPGA_P12_CONTROL_REG, data32)
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_P03_CONTROL_REG)
+        data32 = data32 & (^(1<<slot))
+        materafpga.MateraWriteU32(materafpga.FPGA_P03_CONTROL_REG, data32)
+
+        time.Sleep(time.Duration(1) * time.Second)
+
+
+        //Power on slot
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_P03_CONTROL_REG)
+        data32 = data32 | (1<<slot)
+        materafpga.MateraWriteU32(materafpga.FPGA_P03_CONTROL_REG, data32)
+        t1 := time.Now()
+
+        //time.Sleep(time.Duration(2) * time.Second)
+
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_P12_CONTROL_REG)
+        data32 = data32 | (1<<slot)
+        materafpga.MateraWriteU32(materafpga.FPGA_P12_CONTROL_REG, data32)
+        data32, _ = materafpga.MateraReadU32(materafpga.FPGA_RESET_CONTROL_REG)
+        data32 = data32 | (1<<slot)
+        materafpga.MateraWriteU32(materafpga.FPGA_RESET_CONTROL_REG, data32)
+        for j:=0;j<60;j++ {
+            //time.Sleep(time.Duration(50) * time.Millisecond)
+            //i2cset -y $(($slot+2)) 0x4b 0x41 ${bifValue[$i]}
+
+            // Open /dev/null
+            nullFile, errGo := os.Open(os.DevNull)
+            if errGo != nil {
+        	fmt.Println("Error:", errGo)
+        	return
+            }
+
+            // Store original stdout and stderr
+            originalStdout := os.Stdout
+            originalStderr := os.Stderr
+
+            // Redirect stdout and stderr to /dev/null
+            os.Stdout = nullFile
+            os.Stderr = nullFile
+
+            // Redirect log output to /dev/null
+            //log.SetOutput(nullFile)
+            _ , err := materafpga.I2c_access( slot, 0, 0x4B, uint32(len(wrData)), wrData, 0 )
+            fmt.Printf("err=%v\n", err)
+
+            // Restore original stdout and stderr
+            os.Stdout = originalStdout
+            os.Stderr = originalStderr
+            nullFile.Close()
+            if err == nil {
+                break;
+            }
+            
+
+        }
+
+        elapsed := time.Since(t1)
+        ns = int64(elapsed)
+
+        //fmt.Printf("Execution time: %d ns\n", ns)
+        ns = ns / 1000000
+        //fmt.Printf("Execution time: %d ms\n", ns)
+        TestTime = append(TestTime, int(ns))
+
+	//fmt.Printf("Execution time: %lld ms\n", elapsed.Milliseconds)
+    }
+
+    sort.Ints(TestTime)
+    for i:=0;i<len(TestTime);i++ {
+        fmt.Printf("%d ms\n", TestTime[i])
+    }
+
+    //data32, _ = materafpga.MateraReadU32(materafpga.FPGA_FAN_STAT_REG)
+    // MateraWriteU32(FPGA_MISC_CTRL_REG, data32)
+    return
+}
 
 
 
