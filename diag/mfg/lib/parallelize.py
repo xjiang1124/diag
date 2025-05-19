@@ -39,6 +39,16 @@ def map_rslt_to_slot(rslt_list):
             fail_nic_list.append(idx)
     return fail_nic_list
 
+def category_rslt_to_slot(rslt_list):
+    # rslt_list as e.g. [99, 0, 1, 0, 99, 99, 1, -1, 0, 99]
+    # return {-1:[7], 0:[2,3,8], 1:[2,6], 99:[0,4,5,9]}
+    rs_nic_dict = {}
+    for idx, slot_rslt in enumerate(rslt_list):
+        if slot_rslt not in rs_nic_dict:
+            rs_nic_dict[slot_rslt] = []
+        rs_nic_dict[slot_rslt].append(idx)
+    return rs_nic_dict
+
 def sequential_nic_test(func):
     def single_slot_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *args, **kwargs):
         try:
@@ -60,6 +70,27 @@ def sequential_nic_test(func):
         for slot in nic_list:
             single_slot_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *test_args, **test_kwargs)
         return map_rslt_to_slot(test_rslt_list)
+
+    return start_end
+
+def sequential_nic_test_category(func):
+    def single_slot_category_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *args, **kwargs):
+        try:
+            ###### RUN THE TEST #####
+            ret = func(mtp_mgmt_ctrl, slot, *args, **kwargs)
+            #########################
+            test_rslt_list[slot] = ret
+        except Exception:
+            test_rslt_list[slot] = -1
+            err_msg = traceback.format_exc()
+            mtp_mgmt_ctrl.cli_log_slot_err(slot, err_msg)
+
+    def start_end(mtp_mgmt_ctrl, nic_list, *test_args, **test_kwargs):
+        nic_list = sanitize_input(func, mtp_mgmt_ctrl, nic_list)
+        test_rslt_list = [99] * MTP_Const.MTP_SLOT_NUM
+        for slot in nic_list:
+            single_slot_category_func(func, mtp_mgmt_ctrl, slot, test_rslt_list, *test_args, **test_kwargs)
+        return category_rslt_to_slot(test_rslt_list)
 
     return start_end
 

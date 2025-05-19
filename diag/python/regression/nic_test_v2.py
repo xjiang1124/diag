@@ -1395,6 +1395,88 @@ class nic_test_v2:
         nc.uart_session_stop(session)
         return 0
 
+    def sal_program_cpld_from_a35(self, args):
+        ####Boot Zerphyr
+        session = common.session_start()
+        if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+            print("===== FAILED: slot {} couldn't boot zephyr".format(args.slot))
+            return -1
+
+        ####Program CPLD to QSPI from MTP host for Zerphyr Image to pick up for programming
+        session_bash = common.session_start()
+        session_bash.timeout = 30
+        cmd = "fpgautil flash {} 1 writefile 0xD40000 {}".format(args.slot, args.filename)
+        common.session_cmd(session_bash, cmd)
+        if not 'Verification passed' in session_bash.before:
+            print("[ERROR] FAILED to program the cpld image to qspi flash\n")
+            return -1
+        common.session_stop(session_bash)
+        common.session_stop(session)
+
+        for ite in range(args.iteration):
+            print("=== Ite:", ite, "===")
+
+            ####Need to reboot.   Host accessing QSPI can mess up Zephyr on arm side accessing QSPI
+            session = common.session_start()
+            if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+                print("===== FAILED: slot {} couldn't boot zephyr".format(args.slot))
+                return -1
+            time.sleep(3)
+
+            uart_session = common.session_start()
+            ret = self.nic_con.uart_session_start(uart_session, args.slot, uart_id=0)
+            if ret != 0:
+                print("=== FAILED to connect")
+                return ret
+
+            cmd = "flash read qspi@a0000 0xd40000 0x100"
+            cmd_timeout = 5
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout, ending="uart:~\$")
+
+            ####Program CPLD
+            cmd = "debug cpld firmware_program 200656"
+            cmd_timeout = 60
+            pass_sig = "programme completed successfully"
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout, ending="uart:~\$")
+            if cmdret != 0:
+                print("Command {} failed".format(cmd))
+                ret = -1
+            elif pass_sig not in output:
+                print("===== CPLD Programming FAILED: missing passing signature")
+                ret = -1
+            else:
+                time.sleep(1)
+                print("\n--> CPLD Programming PASSED\n")
+
+            ####Issue CPLD reload
+            if ret == 0:
+                ####Need to reboot.   Host accessing QSPI can mess up Zephyr on arm side accessing QSPI
+                #session = common.session_start()
+                #if sal_con.enter_a35_zephyr(int(args.slot), session, warm_reset=False):
+                #    print("===== FAILED: slot {} couldn't boot zephyr".format(args.slot))
+                #    return -1
+                #time.sleep(3)
+
+                cmd = "debug cpld reload"
+                cmd_timeout = 60
+                pass_sig = "Loading Kernel Image"
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout, ending="uart:~\$")
+                if cmdret != 0:
+                    print("Command {} failed".format(cmd))
+                    ret = -1
+                if pass_sig not in output:
+                    print("===== CPLD RELOAD FAILED: missing passing signature")
+                    ret = -1
+                self.nic_con.uart_session_stop(uart_session)
+                time.sleep(1)
+                if ret == 0:
+                    print("\n--> CPLD RELOAD PASSED\n")
+
+            if ret != 0:
+                return ret;
+
+        return ret
+
     def google_stress_test(self, args):
         ret = 0
         card_type = self.nic_con.get_card_type(args.slot)
@@ -1412,26 +1494,32 @@ class nic_test_v2:
         ret = self.nic_con.uart_session_start(uart_session, args.slot)
         if ret != 0:
             return ret
-        # # clear interrupts before test
-        # for i in range(10):
-        #     self.nic_con.uart_session_cmd(uart_session, "pdsctl clear interrupts", 1)
-        #     if "Interrupts cleared" in uart_session.before:
-        #         ret = 0
-        #         break
-        #     else:
-        #         ret = -1
-        #         time.sleep(1)
-        # if ret != 0:
-        #     return ret
-        # time.sleep(10)
-        # # ECC check before test
-        # if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
-        #     ret = -1
-        # if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-        #     print("===== FAILED: New interrupts before stress test")
-        #     ret = -1
+
+        # Mount /data and see if there is a stressapptest_arm in that folder.  
+        # If there is use that copy, otherwise use the firmwares included copy
+        self.nic_con.uart_session_cmd(uart_session, "mount /dev/mmcblk0p10 /data")
+        cmd = "stat /data/nic_util/stressapptest_arm"
+        fail_sig = "No such file"
+        cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
+        if cmdret != 0:
+            print("Command {} failed".format(cmd))
+            return False
+        if fail_sig in output:
+            cmd = "stat /nic/bin/stressapptest_arm"
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
+            if cmdret != 0:
+                print("Command {} failed".format(cmd))
+                return False
+            if fail_sig in output:
+                print("ERROR: Cannot find a valid stressapptest_arm on Salina ARM side to run")
+                return False
+            else:
+                stresapptestpath = "stressapptest_arm"
+        else:
+            stresapptestpath = "/data/nic_util/stressapptest_arm"
+
         self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
-        cmd = "stressapptest_arm -M $mem -m {} -s {}".format(args.threads, args.dura)
+        cmd = "{} -M $mem -m {} -s {}".format(stresapptestpath, args.threads, args.dura)
         cmd_timeout = 60 + args.dura # buffer of a minute for any error dumps
         pass_sig = "Status: PASS"
         cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
@@ -1442,12 +1530,6 @@ class nic_test_v2:
             print("===== FAILED: missing passing signature")
             ret = -1
             time.sleep(3)
-        # # ECC check after test
-        # if self.nic_con.uart_session_cmd(uart_session, "pdsctl show interrupts | grep -i mcc") != 0:
-        #     ret = -1
-        # if 'int_mcc_ecc' in uart_session.before or 'int_mcc_controller' in uart_session.before:
-        #     print("===== FAILED: Failed ECC check")
-        #     ret = -1
 
         self.nic_con.uart_session_stop(uart_session)
         common.session_stop(uart_session)
@@ -1655,10 +1737,32 @@ class nic_test_v2:
             if not 'mmc HS200' in uart_session.before:
                 print("EMMC Test Failed.  Expecting EMMC to be in HS200 mode")
                 return False
-            
+
+            # Mount /data and see if there is a stressapptest_arm in that folder.  
+            # If there is use that copy, otherwise use the firmwares included copy
             self.nic_con.uart_session_cmd(uart_session, "mount /dev/mmcblk0p10 /data;cd /data;pwd", 12)
+            cmd = "stat /data/nic_util/stressapptest_arm"
+            fail_sig = "No such file"
+            cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
+            if cmdret != 0:
+                print("Command {} failed".format(cmd))
+                return False
+            if fail_sig in output:
+                cmd = "stat /nic/bin/stressapptest_arm"
+                cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, 5)
+                if cmdret != 0:
+                    print("Command {} failed".format(cmd))
+                    return False
+                if fail_sig in output:
+                    print("ERROR: Cannot find a valid stressapptest_arm on Salina ARM side to run")
+                    return False
+                else:
+                    stresapptestpath = "stressapptest_arm"
+            else:
+                stresapptestpath = "/data/nic_util/stressapptest_arm"
+
             self.nic_con.uart_session_cmd(uart_session, "mem=$(cat /proc/meminfo | grep MemFree | awk \'{print $2}\');mem=$(expr $mem / 100000);mem=$(expr $mem \* 80);echo $mem")
-            cmd = "/data/nic_util/stressapptest_arm -M $mem -s {} -m 8 -f file.1 -f file.2".format(args.dura)
+            cmd = "{} -M $mem -s {} -m 8 -f file.1 -f file.2".format(stresapptestpath, args.dura)
             cmd_timeout = 60 + args.dura
             pass_sig = "Status: PASS"
             cmdret, output = self.nic_con.uart_session_cmd_w_ot(uart_session, cmd, cmd_timeout)
@@ -2115,7 +2219,6 @@ if __name__ == "__main__":
 
     # NIC PCIE PRBS test from mtp
     parser_sal_pcie_prbs = sal_misc_subp.add_parser('pcie_prbs', help='pcie_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
     parser_sal_pcie_prbs.add_argument("-slot",          "--slot",       help="NIC slot", type=str, default="")
     parser_sal_pcie_prbs.add_argument("-tcl_path",      "--tcl_path",   help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
     parser_sal_pcie_prbs.add_argument("-card_type",     "--card_type",  help="Card type", type=str, default='LENI')
@@ -2126,6 +2229,13 @@ if __name__ == "__main__":
     parser_sal_pcie_prbs.add_argument("-timeout",       "--timeout",    help="nic session cmd time out seconds", type=int, default=300)
     parser_sal_pcie_prbs.add_argument("-v12_reset",     '--v12_reset',  help='Power cycle 12v', action='store_true' )
     parser_sal_pcie_prbs.set_defaults(func=test.sal_pcie_prbs_v2)
+
+    # Program the CPLD from the A35 console (i.e. from the A35, not from the MTP X86 host)
+    parser_a35_program_cpld = sal_misc_subp.add_parser('a35_program_cpld', help='Program the A35 CPLD from the A35 side', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser_a35_program_cpld.add_argument("-slot", "--slot", help="NIC slot", type=str, default="")
+    parser_a35_program_cpld.add_argument("-ite", "--iteration", help="Number of iteration", type=int, default=1)
+    parser_a35_program_cpld.add_argument("-filename", "--filename", help="CPLD FILE NAME", type=str, default='cfg0.bin')
+    parser_a35_program_cpld.set_defaults(func=test.sal_program_cpld_from_a35)
 
     # Voltage margin only
     parser_sal_vmarg = sal_misc_subp.add_parser('vmarg', help='vmarg', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
