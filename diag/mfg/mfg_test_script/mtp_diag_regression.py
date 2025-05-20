@@ -985,9 +985,9 @@ def main():
 
             ### SALINA TEST ORDER
             if get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=[NIC_Type.LINGUA]):
-                test_section_list = ["P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
             if get_slots_of_type(NIC_Type.LINGUA):
-                test_section_list = ["OCP_PRE_CHECK", "P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+                test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
 
             if args.skip_test:
                 test_section_list = libmfg_utils.list_subtract(test_section_list, args.skip_test)
