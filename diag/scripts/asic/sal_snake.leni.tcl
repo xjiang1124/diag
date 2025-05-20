@@ -7,6 +7,7 @@ set card_type   [lindex $argv 3]
 set vmarg       [lindex $argv 4]
 set int_lpbk    [lindex $argv 5]
 set mtp_clk     [lindex $argv 6]
+set txfir_ow    [lindex $argv 7]
 
 proc die_temp_fan_control_1 { cur_temp {tgt_temp 105} } {
     set fan_max 100
@@ -266,9 +267,12 @@ if { $test_type == "esam_pktgen_ddr_arm_sor"        ||
     if { $card_type == "MALFA" } {
         pcie_mtp_bringup_ports 1100 MALFA 4
     } elseif { $card_type == "LENI" || $card_type == "LENI48G" } {
-        pcie_mtp_bringup_ports 1100 LENI 4
+        pcie_mtp_bringup_ports 1100 LENI 4 0 $txfir_ow
     }
     pcie_get_mac_sts
+    set txfir [sal_awave_lane_read pcie 0 pcs 0 0xb0]
+    plog_msg "txfir_ow: $txfir_ow; TXFIR: $txfir"
+
     set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
     if {$err_cnt != 0} {
         plog_err "pcie linkup failed"

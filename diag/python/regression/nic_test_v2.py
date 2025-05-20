@@ -505,6 +505,31 @@ class nic_test_v2:
 
         return 0
 
+    def mx2mx_prbs_single(self, slot, vmarg, cable_len, timeout):
+        ret = 0
+        print(args)
+        session = common.session_start()
+        # TCL command
+        cmd = "tclsh ~/diag/scripts/asic/sal_mx_prbs.tcl --slot {} --vmarg {} --cable_len {} --mx2mx yes".format(slot, vmarg, cable_len)
+        session.sendline(cmd)
+        idx = session.expect(["MX PRBS PASSED", "MX PRBS FAILED", pexpect.TIMEOUT, "j2c : read req error"], timeout)
+
+        if idx >= 1:
+            print("ERROR :: MX2MX PRBS test has failed!")
+            ret = -1
+        common.session_stop(session)
+        return ret
+
+    def mx2mx_prbs(self, args):
+        print(args)
+        # run prbs in parallel
+        slot_list = args.slot_list.split(',')
+        test_args = (args.vmarg, args.cable_len, args.timeout)
+        test_kwargs = {}
+        fail_nic_list = self.split_into_threads(self.mx2mx_prbs_single, slot_list, *test_args, **test_kwargs)
+        print ("Failed NIC list:", fail_nic_list)
+        return 0
+
     def nic_snake_mtp(self, args):
         ret = 0
 
@@ -565,6 +590,7 @@ class nic_test_v2:
             cmd += " " + str(new_vmarg)
             cmd += " " + str(args.int_lpbk)
             cmd += " " + str(args.mtp_clk)
+            cmd += " " + str(args.txfir_ow)
         elif args.card_type == "POLLARA" or args.card_type == "LINGUA":
             cmd = "tclsh ~/diag/scripts/asic/sal_snake.pollara.tcl"
             cmd += " " + str(args.slot)
@@ -576,6 +602,7 @@ class nic_test_v2:
             cmd += " " + str(args.ite)
             cmd += " " + str(args.mtp_clk)
             cmd += " " + str(args.lpmode)
+            cmd += " " + str(args.txfir_ow)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -836,7 +863,7 @@ class nic_test_v2:
             ret = self.setup_env_salina(args.slot, args.mgmt, args.first_pwr_on, not args.no_pwr_cycle, args.asic_type, args.uefi, args.dis_net_port, 1, "")
         else:
             ret = -1
-            printf("asic type is not supported")
+            print("asic type is not supported")
         return ret
 
     # setup_env for single slot elba
@@ -2091,6 +2118,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-txfir_ow", "--txfir_ow", help="Awave TXFIR overwrite", type=str, default='0')
     parser_nic_snake_mtp.add_argument("-arm_freq", "--arm_freq", help="Change ARM frequency (Pollara only)", type=str, default="default")
     parser_nic_snake_mtp.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_snake_mtp.add_argument("-new_memory_layout", "--new_memory_layout", "-nm", help="following new Leni memory layout after Jan 15", action='store_true', default=False)
@@ -2108,6 +2136,17 @@ if __name__ == "__main__":
     parser_nic_port_up.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
     parser_nic_port_up.add_argument("-v12_reset", '--v12_reset', action='store_true', help='Power cycle 12v')
     parser_nic_port_up.set_defaults(func=test.pcie_prbs)
+
+    # NIC board to board PRBS test from mtp
+    parser_nic_mx2mx_prbs = subparsers.add_parser('mx2mx_prbs', help='mx2mx_prbs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_nic_mx2mx_prbs.add_argument("-slot_list", "--slot_list", help="NIC slot list", type=str, default="")
+    parser_nic_mx2mx_prbs.add_argument("-tcl_path", "--tcl_path", help="TCL nic folder path", type=str, default='/home/diag/diag/asic/')
+    parser_nic_mx2mx_prbs.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
+    parser_nic_mx2mx_prbs.add_argument("-cable_len", "--cable_len", help="cable_len", type=str, default='0')
+    #parser_nic_mx2mx_prbs.add_argument("-dura", "--dura", help="Duration", type=str, default="30")
+    parser_nic_mx2mx_prbs.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=300)
+    parser_nic_mx2mx_prbs.set_defaults(func=test.mx2mx_prbs)
 
     # Program FRUs
     parser_prog_dpu_fru = subparsers.add_parser('prog_dpu_fru', help='Program Salina DPU FRU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
