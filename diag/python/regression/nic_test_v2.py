@@ -532,6 +532,7 @@ class nic_test_v2:
             print("MX2MX PRBS TEST PASS")
         else:
             print("MX2MX PRBS TEST FAIL")
+        print("MX2MX PRBS TEST COMPLETED")
         return 0
 
     def nic_snake_mtp(self, args):
