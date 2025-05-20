@@ -528,6 +528,10 @@ class nic_test_v2:
         test_kwargs = {}
         fail_nic_list = self.split_into_threads(self.mx2mx_prbs_single, slot_list, *test_args, **test_kwargs)
         print ("Failed NIC list:", fail_nic_list)
+        if len(fail_nic_list) == 0:
+            print("MX2MX PRBS TEST PASS")
+        else:
+            print("MX2MX PRBS TEST FAIL")
         return 0
 
     def nic_snake_mtp(self, args):
