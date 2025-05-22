@@ -1766,7 +1766,7 @@ class nic_test_v2:
                 return False
 
             self.nic_con.uart_session_cmd(uart_session, "cat /sys/kernel/debug/mmc0/ios", 12)
-            if not 'mmc HS200' in uart_session.before:
+            if not 'mmc HS400' in uart_session.before:
                 print("EMMC Test Failed.  Expecting EMMC to be in HS200 mode")
                 return False
 
