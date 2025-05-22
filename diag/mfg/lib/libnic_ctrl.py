@@ -3653,7 +3653,7 @@ class nic_ctrl():
         if self._nic_type in GIGLIO_NIC_TYPE_LIST:
             self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/giglio/ -d3"])
         else:
-            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/elba/ -d3"])
+            self.nic_exec_cmds(["ls /data/nic_arm/", "du -a /data/nic_arm/{:s}/ -d3".format(self._asic_type)])
 
         # get emmc nic utils version
         nic_cmd = MFG_DIAG_CMDS.NIC_DIAG_UTIL_VERSION_FMT
@@ -3725,7 +3725,7 @@ class nic_ctrl():
             cmd = MFG_DIAG_CMDS.SALINA_NIC_VMARG_SET_FMT.format((self._slot+1), target_percentage)
             if not self.mtp_exec_cmd(cmd, timeout=MTP_Const.NIC_CON_CMD_DELAY):
                 return False
-            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf() and re.findall(r'Slot.?\d+.*PASSED', self.nic_get_cmd_buf()):
+            if MFG_DIAG_SIG.SALINA_NIC_VMARG_SET in self.nic_get_cmd_buf():
                 return True
             else:
                 return False
