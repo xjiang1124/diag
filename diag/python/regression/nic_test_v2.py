@@ -505,12 +505,21 @@ class nic_test_v2:
 
         return 0
 
-    def mx2mx_prbs_single(self, slot, vmarg, cable_len, media_type, timeout):
+    def mx2mx_prbs_with_powerup_init(self, slot, vmarg, cable_len, media_type, timeout):
+        print(args)
+        session = common.session_start()
+        # TCL command
+        cmd = "tclsh ~/diag/scripts/asic/sal_mx_prbs.tcl --slot {} --vmarg {} --cable_len {} --media_type {} --mx2mx yes --skip_init no".format(slot, vmarg, cable_len, media_type)
+        session.sendline(cmd)
+        session.expect(["MX SRDS PRBS INIT DONE", pexpect.TIMEOUT, "j2c : read req error"], timeout)
+        common.session_stop(session)
+
+    def mx2mx_prbs_without_powerup_init(self, slot, vmarg, cable_len, media_type, timeout):
         ret = 0
         print(args)
         session = common.session_start()
         # TCL command
-        cmd = "tclsh ~/diag/scripts/asic/sal_mx_prbs.tcl --slot {} --vmarg {} --cable_len {} --media_type {} --mx2mx yes".format(slot, vmarg, cable_len, media_type)
+        cmd = "tclsh ~/diag/scripts/asic/sal_mx_prbs.tcl --slot {} --vmarg {} --cable_len {} --media_type {} --mx2mx yes --skip_init yes".format(slot, vmarg, cable_len, media_type)
         session.sendline(cmd)
         idx = session.expect(["MX PRBS PASSED", "MX PRBS FAILED", pexpect.TIMEOUT, "j2c : read req error"], timeout)
 
@@ -526,7 +535,9 @@ class nic_test_v2:
         slot_list = args.slot_list.split(',')
         test_args = (args.vmarg, args.cable_len, args.media_type, args.timeout)
         test_kwargs = {}
-        fail_nic_list = self.split_into_threads(self.mx2mx_prbs_single, slot_list, *test_args, **test_kwargs)
+        # ignore the result of first round serdes init
+        self.split_into_threads(self.mx2mx_prbs_with_powerup_init, slot_list, *test_args, **test_kwargs)
+        fail_nic_list = self.split_into_threads(self.mx2mx_prbs_without_powerup_init, slot_list, *test_args, **test_kwargs)
         print ("Failed NIC list:", fail_nic_list)
         if len(fail_nic_list) == 0:
             print("MX2MX PRBS TEST PASS")

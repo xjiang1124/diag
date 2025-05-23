@@ -15,6 +15,7 @@ set usage {
     {tcl_path.arg               ""                      "ASIC lib location"}
     {si_json_file.arg           "serdes_malfa.json"     "Serdes settings file (no-LT)"}
     {mx2mx.arg                  "no"                    "Cable test card-to-card. Cards can be in different MTP. Open different sessions for each slot."}
+    {skip_init.arg              "no"                    "Skip sal_aw_srds_powerup_init"}
 }
 # rename argv variables to call them more easily
 array set arg [cmdline::getoptions argv $usage]
@@ -98,8 +99,11 @@ exec fpgautil spimode $slot off
 sal_j2c
 plog_msg "_msrd"
 plog_msg [eval _msrd]
-reset_to_proto_mode
-sal_set_vmarg $vmarg
+
+if {$skip_init == "no"} {
+    reset_to_proto_mode
+    sal_set_vmarg $vmarg
+}
 set err_cnt_fnl [ plog_get_err_count ]
 set err_cnt [expr $err_cnt_fnl - $err_cnt_init]
 if {$err_cnt != 0} {
@@ -127,8 +131,14 @@ if {$mx2mx == "no"} {
     # Start this script on the first session,
     # then between 0-5 seconds start it on the second session.
     ###############################################################
-    sal_aw_srds_powerup_init
+    if {$skip_init == "no"} {
+        sal_aw_srds_powerup_init
+        sal_mx_srds_prbs_init $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type
+        plog_msg "MX SRDS PRBS INIT DONE"
+        return 0
+    }
     sal_mx_srds_prbs_init $int_lpbk $speed $lt $cable_len "prbs31" $ln_mask $dwell_time $media_type
+
     after 500
     # wait here for other card
     plog_msg "Waiting for other card to finish prbs_init within 45 seconds"; sleep 5
