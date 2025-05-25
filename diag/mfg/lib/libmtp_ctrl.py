@@ -3117,7 +3117,7 @@ class mtp_ctrl():
             return True
         nic_type = self.mtp_get_nic_type(slot)
         self.cli_log_slot_inf(slot, "Init NIC boot info")
-        if nic_type != SALINA_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
+        if nic_type != SALINA_AI_NIC_TYPE_LIST and not self._nic_ctrl_list[slot].nic_boot_info_init(smode=smode):
             self.cli_log_slot_err(slot, "Init NIC boot info failed")
             self.mtp_get_nic_err_msg(slot)
             self.mtp_dump_nic_err_msg(slot)
@@ -5588,8 +5588,10 @@ class mtp_ctrl():
 
         if not self.mtp_set_nic_vmarg(slot, vmargin, vmarg_percentage):
             return False
-        if not self.mtp_nic_display_voltage(slot):
-            return False
+        nic_type = self.mtp_get_nic_type(slot)
+        if nic_type not in SALINA_NIC_TYPE_LIST:
+            if not self.mtp_nic_display_voltage(slot):
+                return False
         return True
 
     def mtp_nic_diag_init(self, nic_list, emmc_format=False, emmc_check=False, fru_valid=True, sn_tag=False, fru_cfg=None, vmargin=Voltage_Margin.normal, aapl=False, swm_lp=False, nic_util=False, dis_hal=False, stop_on_err=False, skip_info_dump=False, fru_fpo=False, skip_test_list=[], dsp="DIAG_INIT"):
@@ -5651,9 +5653,10 @@ class mtp_ctrl():
             test_list.append("INFO_DUMP")
 
         ### hack for salina DPU, need remove later -->
+        # full test list is  ['NIC_VMARG', 'NIC_PARA_MGMT_INIT', 'NIC_BOOT_INIT', 'MAC_VALIDATE', 'START_DIAG', 'CPLD_DIAG', 'NIC_FRU_INIT', 'INFO_DUMP']
         for slot in nic_list:
-            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_NIC_TYPE_LIST:
-                test_list = ["NIC_BOOT_INIT", "MAC_VALIDATE", "START_DIAG", "CPLD_DIAG"]
+            if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_DPU_NIC_TYPE_LIST:
+                test_list = ['NIC_VMARG', 'NIC_PARA_MGMT_INIT', 'NIC_BOOT_INIT', 'MAC_VALIDATE', 'START_DIAG', 'CPLD_DIAG', 'INFO_DUMP']
                 break 
         ### hack for salina DPU, need remove later <--
 
