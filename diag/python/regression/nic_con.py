@@ -1091,7 +1091,7 @@ class nic_con:
                 #self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 self.uart_session_cmd(session, "ifconfig oob_mnic 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 #print('eth0 enabled')
-                print('eth0 enabled')
+                print('oob_mnic enabled')
             else:
                 session.sendline("ifconfig -a")
                 session.expect("\#")
