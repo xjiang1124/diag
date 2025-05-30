@@ -911,6 +911,27 @@ class NIC_IMAGES:
     qspi_prog_sh_img["58-0004-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
     qspi_snake_img["58-0004-01"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
 
+    cpld_img["58-0004-02"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    cpld_ver["58-0004-02"] = "0x3"
+    cpld_dat["58-0004-02"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    sec_cpld_img["58-0004-02"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    sec_cpld_ver["58-0004-02"] = "0x3"
+    sec_cpld_dat["58-0004-02"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fail_cpld_img["58-0004-02"] = "salina_cfg1-rev3_3_0414-1614_tck_squelch_fedge.bin"
+    fail_cpld_ver["58-0004-02"] = "0x3"
+    fail_cpld_dat["58-0004-02"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
+    fea_cpld_img["58-0004-02"] = "salina.fea"
+    ufm1_img["58-0004-02"] = "pollara_ufm1-arm1500_nxc750_postdiv1_noStgOv-0214-2025.bin"
+    arm_a_boot0_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_boot0.img"
+    arm_a_uboota_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_uboota.img"
+    arm_a_ubootb_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootb.img"
+    arm_a_ubootg_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/a35_ainic_ubootg.img"
+    arm_a_zephyr_a_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_b_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    arm_a_zephyr_gold_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/zephyr.fit-ainic_pcieawd_standalone-ctle-iters-7-20250218"
+    qspi_prog_sh_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218/qspi_prog.sh"
+    qspi_snake_img["58-0004-02"] = "salina/pollara/pollara_standalone_ctle-iters-7-20250218.tar.gz"
+
     cpld_img["POLLARA-1Q400P"] = "salina_cfg0-rev3_3_0414-1614_tck_squelch_fedge.bin"
     cpld_ver["POLLARA-1Q400P"] = "0x3"
     cpld_dat["POLLARA-1Q400P"] = "04-14-25_16:14" #mm-dd-YY_HH:MM
