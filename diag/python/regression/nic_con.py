@@ -1076,7 +1076,7 @@ class nic_con:
 
         try:
             if asic_type == "SALINA":
-                self.uart_session_cmd(session, "mac_debug stmac0 mes")
+                #self.uart_session_cmd(session, "mac_debug stmac0 mes")
                 self.uart_session_cmd(session, """cat /tmp/fru.json | grep '"mac-address"'""")
                 output = session.before
                 print(output)
