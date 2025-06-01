@@ -7,7 +7,7 @@ if [[ $cpld_id == "0x0" ]]
 then
     echo "Try Capri CPLD"
 	cpld_id="$(/data/nic_util/cpld -r 0x80)"
-elif [[ $cpld_id == "0x60" || $cpld_id == "0x61" ]]
+elif [[ $cpld_id == "0x60" || $cpld_id == "0x61" || $cpld_id == "0x84" ]]
 then
     echo "Giglio CPLD"
 else
@@ -16,7 +16,7 @@ fi
 cpld_id="$(($cpld_id))"
 echo "cpld id: $cpld_id"
 
-if [[ $cpld_id -eq 96 || $cpld_id -eq 97 ]]
+if [[ $cpld_id -eq 96 || $cpld_id -eq 97 || $cpld_id -eq 132 ]]
 then
     export ASIC_LIB_BUNDLE=/data/nic_arm/giglio
 elif [[ $cpld_id -ge 64 ]]

@@ -483,6 +483,13 @@ var CapaciElbaTbl = []I2cInfo {
     I2cInfo {"ELB0_ARM",       "TPS53689",  0x0,   0x4B,    0x1,    "HUB_NONE", 0,    0},
 }
 
+var DeschutesTbl = []I2cInfo {
+    //       name              comp         Bus    devAddr  page    HubName   HubPort  Flag
+    I2cInfo {"CORE",           "TPS53689",  0x0,   0x60,    0x0,    "HUB_NONE", 0,    0},
+    I2cInfo {"ARM",            "TPS53689",  0x0,   0x60,    0x1,    "HUB_NONE", 0,    0},
+    I2cInfo {"FRU",            "AT24C02C",  0x0,   0x52,    0x0,    "HUB_NONE", 0,    0},   //Cisco uses 8-bit FRU 
+}
+
 var LaconaMtpTbl = []I2cInfo {
     //       name              comp         Bus    devAddr  channel HubName   HubPort  Flag
     I2cInfo {"CPLD",           "CPLD",      0x0,   0x4A,    0x0,    "HUB_NONE",  0,    0},
@@ -990,6 +997,8 @@ func init() {
         I2cTbl = MtFujiElbaTbl
     } else if CardType == "CAPACI" {
         I2cTbl = CapaciElbaTbl
+    } else if CardType == "DESCHUTES" {
+        I2cTbl = DeschutesTbl
     } else {
         cli.Println("f", "Unsupported card:", CardType)
         return
