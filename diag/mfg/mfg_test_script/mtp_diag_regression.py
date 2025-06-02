@@ -975,7 +975,6 @@ def main():
                     # Program DL IMAGE Since NIC Diag init and EMMC stress not work on P2C IMAGE
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_PROG")
                     run_regression_test(get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage='linux', warm_reset=False)
-                    run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "CLEAR_PRE_UBOOT_SECTION")
                     nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
                     run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
 
