@@ -5652,13 +5652,11 @@ class mtp_ctrl():
         if not skip_info_dump:
             test_list.append("INFO_DUMP")
 
-        ### hack for salina DPU, need remove later -->
-        # full test list is  ['NIC_VMARG', 'NIC_PARA_MGMT_INIT', 'NIC_BOOT_INIT', 'MAC_VALIDATE', 'START_DIAG', 'CPLD_DIAG', 'NIC_FRU_INIT', 'INFO_DUMP']
+        ### Redefine nic diag init test suite for Salina
         for slot in nic_list:
             if self._nic_ctrl_list[slot] and self._nic_type_list[slot] in SALINA_DPU_NIC_TYPE_LIST:
                 test_list = ['NIC_VMARG', 'NIC_PARA_MGMT_INIT', 'NIC_BOOT_INIT', 'MAC_VALIDATE', 'START_DIAG', 'CPLD_DIAG', 'INFO_DUMP']
                 break 
-        ### hack for salina DPU, need remove later <--
 
         for test in test_list:
             if test in skip_test_list:
