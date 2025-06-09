@@ -313,8 +313,15 @@ func getPowerGoodSalina(uutName string) (powerGood bool) {
     } else {
         if stat1 == 0 {
             powerGood = true
-        } else {
+        } else if 0x1 <= stat1 && stat1 <= 0xa {
+            // power shutoff due to power rail failure
             powerGood = false
+        } else if stat1 == 0x16 || stat1 == 0x18 {
+            // power shutoff due to functional failure
+            powerGood = false
+        } else {
+            // resets are not power failure in diag test
+            powerGood = true
         }
     }
     return
