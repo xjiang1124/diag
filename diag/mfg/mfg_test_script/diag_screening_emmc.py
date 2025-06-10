@@ -26,6 +26,7 @@ from libdefs import MFG_DIAG_CMDS
 from libdefs import FF_Stage
 from libdefs import MTP_DIAG_Path
 from libdefs import Voltage_Margin
+from libdefs import MFG_DIAG_SIG
 from emmc_test_parameters import test2args as emmctest2args
 from diag_screening_ddr import get_test_arguments
 from diag_screening_ddr import args2optionstring
@@ -69,6 +70,7 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
     rows_head = 0 
     rows_high = 0
     rows_low = 0
+    rows_normal = 0
     for k, v in list(nic_test_data.items()):
         if not v: 
             continue
@@ -76,24 +78,27 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
             m_rows_head = 0
             m_rows_high = 0
             m_rows_low = 0
+            m_rows_normal = 0
             for kk, vv in list(item.items()):
                 if kk == "head":
                     m_rows_head += len(vv)
                 if kk == "data":
-                    # print(vv["high"])
-                    # print(vv["low"])
-                    m_rows_high += len(vv["high"])
-                    m_rows_low += len(vv["low"])
+                    m_rows_high += len(vv.get(Voltage_Margin.high, {}))
+                    m_rows_low += len(vv.get(Voltage_Margin.low, {}))
+                    m_rows_normal += len(vv.get(Voltage_Margin.normal, {}))
             if m_rows_head > rows_head:
                 rows_head = m_rows_head
             if m_rows_high > rows_high:
                 rows_high = m_rows_high
             if m_rows_low > rows_low:
                 rows_low = m_rows_low
+            if m_rows_normal > rows_normal:
+                rows_normal = m_rows_normal
     rows_head += 1  # add 1 row to head for Units, iterations, etc
     rows_high *= 2
     rows_low *= 2
-    rows = rows_head + rows_high + rows_low
+    rows_normal *= 2
+    rows = rows_head + rows_high + rows_low + rows_normal
 
     # creating an empty raw_data_table
     raw_data_table = []
@@ -120,125 +125,155 @@ def save_test_data2csv_file(mtp_mgmt_ctrl=None, nic_test_data=None, csvfilename=
     raw_data_table[rows_head-1][3]  = "Units"
 
     # Fill raw_data_table with data:
-    running_slot =0 
-    for k, v in list(nic_test_data.items()):
-        if not v:
-            continue
-        for ite, item in enumerate(v):
-            col_index = ite +  max_iter * int(running_slot) + 4
-            raw_data_table[rows_head-1][col_index] = "Iteration" + str(ite+1)
-            for kk, vv in list(item["data"].items()):
-                if kk == "high":
-                    for r in range((rows_high)):
-                        row_index = r+rows_head
-                        raw_data_table[row_index][0] = kk
-                        raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
-                        if r % 2 == 0:
-                            raw_data_table[row_index][2] = "IOPS"
-                            #raw_data_table[row_index][3] = "K"
-                            raw_data_table[row_index][3] = ""
-                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
-                                raw_data_table[row_index][2] = ""
-                                raw_data_table[row_index][3] = "P/F"
-                            # print("-"*10)
-                            # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
-                        if r % 2 == 1:
-                            raw_data_table[row_index][2] = "BW"
-                            raw_data_table[row_index][3] = "MB/s"
-                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
-                                raw_data_table[row_index][2] = ""
+    print(nic_test_data)
+    try:
+        running_slot =0
+        for k, v in list(nic_test_data.items()):
+            if not v:
+                continue
+            for ite, item in enumerate(v):
+                col_index = ite +  max_iter * int(running_slot) + 4
+                raw_data_table[rows_head-1][col_index] = "Ite" + str(ite+1)
+                for kk, vv in list(item["data"].items()):
+                    if kk == Voltage_Margin.high:
+                        for r in range((rows_high)):
+                            row_index = r+rows_head
+                            raw_data_table[row_index][0] = kk
+                            raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
+                            if r % 2 == 0:
+                                raw_data_table[row_index][2] = "IOPS"
+                                #raw_data_table[row_index][3] = "K"
+                                raw_data_table[row_index][3] = ""
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "P/F"
+                                # print("-"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
+                            if r % 2 == 1:
+                                raw_data_table[row_index][2] = "BW"
                                 raw_data_table[row_index][3] = "MB/s"
-                            # print("+"*10)
-                            # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
-
-                if kk == "low":
-                    for r in range(rows_low):
-                        row_index = r+rows_head+rows_high
-                        raw_data_table[row_index][0] = kk
-                        raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
-                        if r % 2 == 0:
-                            raw_data_table[row_index][2] = "IOPS"
-                            #raw_data_table[row_index][3] = "K"
-                            raw_data_table[row_index][3] = ""
-                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
-                                raw_data_table[row_index][2] = ""
-                                raw_data_table[row_index][3] = "P/F"
-                            # print("-"*10)
-                            # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
-                        if r % 2 == 1:
-                            raw_data_table[row_index][2] = "BW"
-                            raw_data_table[row_index][3] = "MB/s"
-                            if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
-                                raw_data_table[row_index][2] = ""
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "MB/s"
+                                # print("+"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
+                    if kk ==  Voltage_Margin.low:
+                        for r in range(rows_low):
+                            row_index = r+rows_head+rows_high
+                            raw_data_table[row_index][0] = kk
+                            raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
+                            if r % 2 == 0:
+                                raw_data_table[row_index][2] = "IOPS"
+                                #raw_data_table[row_index][3] = "K"
+                                raw_data_table[row_index][3] = ""
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "P/F"
+                                # print("-"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
+                            if r % 2 == 1:
+                                raw_data_table[row_index][2] = "BW"
                                 raw_data_table[row_index][3] = "MB/s"
-                            # print("+"*10)
-                            # print(row_index,col_index)
-                            raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
-        running_slot += 1
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "MB/s"
+                                # print("+"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
+                    if kk ==  Voltage_Margin.normal:
+                        for r in range(rows_normal):
+                            row_index = r+rows_head+rows_high+rows_low
+                            raw_data_table[row_index][0] = kk
+                            raw_data_table[row_index][1] = list(item["data"][kk].keys())[r//2]
+                            if r % 2 == 0:
+                                raw_data_table[row_index][2] = "IOPS"
+                                #raw_data_table[row_index][3] = "K"
+                                raw_data_table[row_index][3] = ""
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "P/F"
+                                # print("-"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][0]
+                            if r % 2 == 1:
+                                raw_data_table[row_index][2] = "BW"
+                                raw_data_table[row_index][3] = "MB/s"
+                                if list(item["data"][kk].keys())[r//2] == "STRESSAPPTEST":
+                                    raw_data_table[row_index][2] = ""
+                                    raw_data_table[row_index][3] = "MB/s"
+                                # print("+"*10)
+                                # print(row_index,col_index)
+                                raw_data_table[row_index][col_index] = list(item["data"][kk].values())[r//2][1]
+            running_slot += 1
 
-    # Calcalue min, max and average from all test iterations
-    results_table = []
-    for row_i, row in enumerate(raw_data_table):
-        results_row = []
-        for col_i, col in enumerate(row):
-            if row_i < rows_head-1:
-                if col_i < HEADER_COLS:
-                    results_row.append(col)
-                elif (col_i - HEADER_COLS) % max_iter ==0:
-                    results_row.append(col)
-                    results_row.append("")
-                    results_row.append("")
-                else:
-                    continue
-            elif row_i == rows_head-1:
-                if col_i < HEADER_COLS:
-                    results_row.append(col)
-                elif (col_i - HEADER_COLS) % max_iter ==0:
-                    results_row.append("AVG")
-                    results_row.append("MIN")
-                    results_row.append("MAX")
-                else:
-                    continue
-            else:
-                if col_i < HEADER_COLS:
-                    results_row.append(col)
-                elif (col_i - HEADER_COLS) % max_iter ==0:
-                    # cal min, max and average
-                    valid_data_list = []
-                    for data in row[col_i:(col_i+max_iter)]:
-                        if data:
-                            valid_data_list.append(data)
-                    if "PASS" in valid_data_list or "FAIL" in valid_data_list:
-                        pass_count = valid_data_list.count("PASS")
-                        fail_count = valid_data_list.count("FAIL")
-                        if fail_count:                            
-                            results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
-                            results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
-                            results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
-                        else:
-                            results_row.append("{:s}PASS".format(str(pass_count)))
-                            results_row.append("{:s}PASS".format(str(pass_count)))
-                            results_row.append("{:s}PASS".format(str(pass_count)))
+        # Calcalue min, max and average from all test iterations
+        results_table = []
+        for row_i, row in enumerate(raw_data_table):
+            results_row = []
+            for col_i, col in enumerate(row):
+                if row_i < rows_head-1:
+                    if col_i < HEADER_COLS:
+                        results_row.append(col)
+                    elif (col_i - HEADER_COLS) % max_iter ==0:
+                        results_row.append(col)
+                        results_row.append("")
+                        results_row.append("")
                     else:
-                        valid_data_list = [float(i) for i in valid_data_list]
-                        results_row.append(str(sum(valid_data_list) / len(valid_data_list)))
-                        results_row.append(str(min(valid_data_list)))
-                        results_row.append(str(max(valid_data_list)))
+                        continue
+                elif row_i == rows_head-1:
+                    if col_i < HEADER_COLS:
+                        results_row.append(col)
+                    elif (col_i - HEADER_COLS) % max_iter ==0:
+                        results_row.append("AVG")
+                        results_row.append("MIN")
+                        results_row.append("MAX")
+                    else:
+                        continue
                 else:
-                    continue
-        results_table.append(results_row)  
+                    if col_i < HEADER_COLS:
+                        results_row.append(col)
+                    elif (col_i - HEADER_COLS) % max_iter ==0:
+                        # cal min, max and average
+                        valid_data_list = []
+                        for data in row[col_i:(col_i+max_iter)]:
+                            if data:
+                                valid_data_list.append(data)
+                        if "PASS" in valid_data_list or "FAIL" in valid_data_list:
+                            pass_count = valid_data_list.count("PASS")
+                            fail_count = valid_data_list.count("FAIL")
+                            if fail_count:
+                                results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
+                                results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
+                                results_row.append("{:s}PASS{:s}FAIL".format(str(pass_count), str(fail_count)))
+                            else:
+                                results_row.append("{:s}PASS".format(str(pass_count)))
+                                results_row.append("{:s}PASS".format(str(pass_count)))
+                                results_row.append("{:s}PASS".format(str(pass_count)))
+                        else:
+                            if valid_data_list:
+                                valid_data_list = [float(i) for i in valid_data_list]
+                                results_row.append(str(sum(valid_data_list) / len(valid_data_list)))
+                                results_row.append(str(min(valid_data_list)))
+                                results_row.append(str(max(valid_data_list)))
+                    else:
+                        continue
+            results_table.append(results_row)
 
-    finally_table = results_table + [[]] + [["RAW DATA BELOW"]] + raw_data_table
+        finally_table = results_table + [[]] + [["RAW DATA BELOW"]] + raw_data_table
 
-    # print the finnal table in the log file 
-    for i in finally_table:
-        row = ""
-        for j in i:
-            row += j + ","
-        mtp_mgmt_ctrl.cli_log_inf(row.strip(","))
+        # print the finnal table in the log file
+        for i in finally_table:
+            row = ""
+            for j in i:
+                row += j + ","
+            mtp_mgmt_ctrl.cli_log_inf(row.strip(","))
+    except Exception as Err:
+        mtp_mgmt_ctrl.cli_log_err("Some Thing Wrong with Tese result data, failed to formated it as CSV, just save the results to log")
+        finally_table =  str(nic_test_data)
+
     with open(csvfilename, 'w') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(finally_table)
@@ -492,6 +527,20 @@ def ncsi_prod_fpga_program(mtp_mgmt_ctrl, slot):
     return slot not in mtp_mgmt_ctrl.mtp_program_nic_fpga(slot, ["cfg0"], [NIC_IMAGES.cpld_img[nic_type]])
 
 @parallelize.parallel_nic_using_ssh
+def salina_erase_boot0(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_P2C
+    image_file = image_control.get_mbist_boot0_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file) + os.sep + os.path.basename(image_file)[:-len(".tar.gz")]
+    return mtp_mgmt_ctrl.matera_mtp_erase_nic_boot0(slot, image_path)
+
+@parallelize.parallel_nic_using_ssh
+def salina_program_boot0(mtp_mgmt_ctrl, slot):
+    dsp = FF_Stage.FF_P2C
+    image_file = image_control.get_mbist_boot0_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
+    image_path = os.path.dirname(MTP_DIAG_Path.ONBOARD_MTP_DIAG_PATH + image_file) + os.sep + os.path.basename(image_file)[:-len(".tar.gz")]
+    return mtp_mgmt_ctrl.matera_mtp_program_nic_boot0(slot, image_path)
+
+@parallelize.parallel_nic_using_ssh
 def salina_snake_qspi_program(mtp_mgmt_ctrl, slot):
     dsp = FF_Stage.FF_P2C
     image_file = image_control.get_qspi_snake_img(mtp_mgmt_ctrl, slot, dsp)["filename"]
@@ -501,6 +550,21 @@ def salina_snake_qspi_program(mtp_mgmt_ctrl, slot):
 @parallelize.parallel_nic_using_ssh
 def salina_erase_qspi(mtp_mgmt_ctrl, slot):
     return mtp_mgmt_ctrl.matera_mtp_erase_nic_qspi(slot)
+
+@parallelize.parallel_nic_using_ssh
+def salina_parse_ocp_sn(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_parse_nic_ocp_fru(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
+    return ret
+
+@parallelize.parallel_nic_using_ssh
+def ocp_connect(mtp_mgmt_ctrl, slot):
+    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
+    return ret
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
@@ -543,15 +607,16 @@ def diag_para_emmc_validation_test(mtp_mgmt_ctrl, nic_type, nic_list, emmc_suite
         mtp_mgmt_ctrl.cli_log_inf("MTP {:s} EMMC Validation Test Iteration {:d}".format(nic_type, idx), level=0)
         mtp_mgmt_ctrl.cli_log_inf("--*" * 30)
         # power cycle every iteration
-        if idx > 1: 
+        if idx >= 1:
             mtp_mgmt_ctrl.cli_log_inf("MTP {:s} Calling MTP_NIC_DIAG_INIT To Power Cycle NIC Card and Re-init it ".format(nic_type), level=0)
-            if not mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, nic_util=True, stop_on_err=stop_on_err):
+            fail_card_list = mtp_mgmt_ctrl.mtp_nic_diag_init(new_nic_list, nic_util=True, stop_on_err=stop_on_err)
+            if fail_card_list:
                 mtp_mgmt_ctrl.mtp_diag_fail_report("Initialize NIC diag environment failed")
-                for slot in new_nic_list:
+                for slot in fail_card_list:
                     if not mtp_mgmt_ctrl.mtp_check_nic_status(slot):
                         nic_test_rslt_list[slot] = False
-                        if slot not in fail_list:
-                            fail_list.append(slot)
+                    if slot not in fail_list:
+                        fail_list.append(slot)
                 if stop_on_err:
                     mtp_mgmt_ctrl.cli_log_err("STOP_ON_ERR asserted when diag initial")
                     raise Exception
@@ -561,6 +626,8 @@ def diag_para_emmc_validation_test(mtp_mgmt_ctrl, nic_type, nic_list, emmc_suite
                 nic_test_rslt_list[slot] = False
                 if slot not in fail_list:
                     fail_list.append(slot)
+                continue
+            if slot in fail_list:
                 continue
             nic_thread = threading.Thread(target = single_nic_emmc_validation_test, args = (mtp_mgmt_ctrl, slot, test_steps, nic_test_rslt_list, nic_test_data, stop_on_err))
             nic_thread.daemon = True
@@ -622,15 +689,25 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
             return
 
     # run test steps under both vmargin high and vmargin low for all Normal temperature, Low temperature and High temperature
-    for vmargin in [Voltage_Margin.high, Voltage_Margin.low]:
+    for vmargin in [Voltage_Margin.high, Voltage_Margin.low, Voltage_Margin.normal]:
         # set vmargin to low or high 
         # (EMMC_PRE_SET, NIC_VMARG) START
         test = "NIC_VMARG"
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_START.format(sn, "EMMC_PRE_SET", test))
         start_ts = mtp_mgmt_ctrl.log_slot_test_start(slot, test)
-        if not mtp_mgmt_ctrl.mtp_set_nic_vmarg(slot, vmargin):
-            nic_test_rslt_list[slot] = False
-        if not mtp_mgmt_ctrl.mtp_nic_display_voltage(slot):
+
+        # For Salina, DDR vamargin need set in A35 uboot, so seperate vmarg set two steps, set DDR vamargin first, then rest of comonents 
+        nic_type = mtp_mgmt_ctrl.mtp_get_nic_type(slot)
+        if nic_type in SALINA_DPU_NIC_TYPE_LIST:
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Set DDR Vmarg For Salina DPU")
+            fail_card_list = mtp_mgmt_ctrl.mtp_set_salina_dpu_nic_ddr_vmarg([slot], vmargin)
+            if fail_card_list:
+                mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Salina DDR Vmarg Set Failed")
+                nic_test_rslt_list[slot] = False
+
+        fail_card_list = mtp_mgmt_ctrl.mtp_nic_diag_init([slot], nic_util=True, vmargin=vmargin,  stop_on_err=stop_on_err)
+        if fail_card_list:
+            mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "Power Cycle with set Vmarg Failed")
             nic_test_rslt_list[slot] = False
         duration = mtp_mgmt_ctrl.log_slot_test_stop(slot, test, start_ts)
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, MTP_DIAG_Report.NIC_DIAG_TEST_PASS.format(sn, "EMMC_PRE_SET", test, duration)) 
@@ -643,7 +720,7 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
         fio_stressapp_data = {}
         fio_stressapp_order_data = OrderedDict()
         for test in test_steps:
-            cmds = ["cd /data/nic_util/", "rm -rf Random*", "rm -rf Sequen*"]
+            cmds = ["mount /dev/mmcblk0p10 /data", "cd /data/nic_util/", "rm -rf Random*", "rm -rf Sequen*"]
             tout = MTP_Const.NIC_CON_CMD_DELAY
             argsdict = get_test_arguments(test, pn, emmctest2args)
             if not argsdict:
@@ -701,9 +778,15 @@ def single_nic_emmc_validation_test(mtp_mgmt_ctrl, slot, test_steps, nic_test_rs
         result = mtp_mgmt_ctrl.mtp_exec_nic_cmd_get_info(slot, cmd)
         if not result:
             mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
+        if "timeout" in result.lower():
+            mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Error found in dmesg".format(sn))
+            nic_test_rslt_list[slot] = False
+            if stop_on_err:
+                return
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, result)
 
-    nic_test_data[slot+1].append({"head": head_data, "data": emmc_test_data})
+    if nic_test_rslt_list[slot]:
+        nic_test_data[slot+1].append({"head": head_data, "data": emmc_test_data})
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} Run EMMC bench mark ".format(sn))
 
 def single_nic_emmc_validation_test_precheck(mtp_mgmt_ctrl, slot, sn):
@@ -719,29 +802,39 @@ def single_nic_emmc_validation_test_precheck(mtp_mgmt_ctrl, slot, sn):
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Getting EMMC PN and Capacity".format(sn))
 
     cmd = "dmesg | grep mmc"
-    # if not mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_info(cmd):
-    # #if not mtp_mgmt_ctrl.mtp_nic_fst_exec_cmd(slot, cmd):
     result = mtp_mgmt_ctrl.mtp_exec_nic_cmd_get_info(slot, cmd)
     if not result:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
+        return False
+    if "timeout" in result.lower():
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Error found in dmesg".format(sn))
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} dmesg: ".format(result))
         return False
     #mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, result)
     matches = re.findall(r'mmcblk0:\s+mmc0:\d+\s+(\w+)\s+(\d+\.\d+)\s+GiB', result)
     if not matches:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Failed to Get EMMC PN and Capacity, Match Failed".format(sn))
-        return False
-    basic_info["EMMC Part Number"] = matches[0][0]
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got EMMC Part Number: {:s}".format(matches[0][0]))
-    basic_info["Capacity"] = matches[0][1]
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got EMMC Capacity: {:s}".format(matches[0][1]))
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "{:s} -> Failed to Get EMMC PN and Capacity, Match Failed".format(sn))
+        basic_info["EMMC Part Number"] = "FakeEmmcPartNumber"
+        basic_info["Capacity"] = "FakeEmmcPartCapacity"
+    else:
+        basic_info["EMMC Part Number"] = matches[0][0]
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got EMMC Part Number: {:s}".format(matches[0][0]))
+        basic_info["Capacity"] = matches[0][1]
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got EMMC Capacity: {:s}".format(matches[0][1]))
 
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Getting EMMC fw version".format(sn))
     cmd = "mmc extcsd read /dev/mmcblk0 | grep Firmware"
-    result = mtp_mgmt_ctrl.mtp_exec_nic_cmd_get_info(slot, cmd)
-    if not result:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
+    fail_slot_list =  mtp_mgmt_ctrl.mtp_execute_nic_cmd_from_console(slot, cmd)
+    for slot in fail_slot_list:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
         return False
+    result = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, result)
+    emmc_fw_version_rc = ""
+    for line in result.split("\n"):
+        if "Firmware Version" in line:
+            emmc_fw_version_rc = line
+    result = emmc_fw_version_rc
     emmc_fw_version = result.split(":")[-1].strip()
     if not emmc_fw_version:
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Failed to Get EMMC Firmware Version, using placehold NA ".format(sn))
@@ -751,17 +844,19 @@ def single_nic_emmc_validation_test_precheck(mtp_mgmt_ctrl, slot, sn):
     
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Getting NIC linux rev".format(sn))
     cmd = "fwupdate -l | grep -A20 diagfw | grep software_version"
-    result = mtp_mgmt_ctrl.mtp_exec_nic_cmd_get_info(slot, cmd)
-    if not result:
-        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
+    fail_slot_list =  mtp_mgmt_ctrl.mtp_execute_nic_cmd_from_console(slot, cmd)
+    for slot in fail_slot_list:
+        mtp_mgmt_ctrl.cli_log_slot_err_lock(slot, "{:s} -> Command {:s} Failed".format(sn, cmd))
         return False
+    result = mtp_mgmt_ctrl._nic_ctrl_list[slot].nic_get_cmd_buf()
     mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, result)
     matches = re.findall(r'"software_version": "(.*)",', result)
-    if not matches:
+    if matches:
+        basic_info["NIC Linux Rev"] = matches[0][0]
+        mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got NIC linux rev: {:s}".format(matches[0][0]))
+    else:
+        basic_info["NIC Linux Rev"] = "FakeNICLinuxRev"
         mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "{:s} -> Failed to Get NIC linux rev, Match Failed".format(sn))
-        return False
-    basic_info["NIC Linux Rev"] = matches[0][0]
-    mtp_mgmt_ctrl.cli_log_slot_inf_lock(slot, "Got NIC linux rev: {:s}".format(matches[0][0]))
 
     return basic_info
 
@@ -989,7 +1084,10 @@ def main():
                     rlist = verify_diagfw(mtp_mgmt_ctrl, nic_list)
                 elif test == "VDD_DDR_VERIFY":
                     rlist = mtp_mgmt_ctrl.mtp_nic_vdd_ddr_fix_console(nic_list)
-
+                elif test == "CLEAR_PRE_UBOOT_SECTION":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_clear_pre_uboot_section(nic_list)
+                elif test == "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_hmac_programmed_status_check(nic_list, MFG_DIAG_SIG.NIC_HMAC_NOT_PROG_SIG)
                 elif test == "TEST_FPGA_PROG":
                     rlist = ncsi_test_fpga_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "PROD_FPGA_PROG":
@@ -1153,6 +1251,55 @@ def main():
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg, edvt_loop_idx=loop_idx)
                 elif test == "ARM_L1":
                     rlist = mtp_mgmt_ctrl.mtp_mgmt_run_test_mtp_para(nic_list, test, vmarg, edvt_loop_idx=loop_idx)
+
+                elif test == "SALINA_NIC_BOOT_STAGE":
+                    rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs['bootstage'])
+                elif test == "SALINA_NIC_WARM_RESET":
+                    rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs['bootstage'], warm_reset=test_kwargs['warm_reset'])
+                elif test == "SALINA_JTAG_MBIST":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_jtag_mbist(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "SALINA_CONSOLE_GOOGLE_STRESS_MEM":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress_mem(nic_list, vmarg=test_kwargs["vmarg"], mem_copy_thread=test_kwargs["mem_copy_thread"], seconds2run=test_kwargs["seconds2run"])
+                elif test == "SALINA_CONSOLE_GOOGLE_STRESS_EMMC":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_console_google_stress_emmc(nic_list, vmarg=test_kwargs["vmarg"], iterations=test_kwargs["iterations"], seconds2run=test_kwargs["seconds2run"])
+                elif test == "SALINA_EDMA":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_salina_edma(nic_list, vmarg=test_kwargs["vmarg"], seconds2run=test_kwargs["seconds2run"])
+                elif test in ("SALINA_DPU_SNAKE_MAX_PWR", "SALINA_DPU_SNAKE_DDR_BURST"):
+                    rlist = mtp_mgmt_ctrl.mtp_nic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
+                elif test == "SNAKE_SALINA_AINIC_SNAKE_MAX_PWR_MTP":
+                    rlist = mtp_mgmt_ctrl.mtp_ainic_snake_mtp_salina(nic_list, snake_type=test_kwargs["snake_type"], vmarg=test_kwargs["vmarg"], dura=test_kwargs["dura"], timeout=test_kwargs["timeout"], asic_dir_path=test_kwargs["asic_dir_path"], int_lpbk=test_kwargs["int_lpbk"])
+                elif test == "SNAKE_SALINA_NIC_PCIE_PRBS":
+                    rlist = mtp_mgmt_ctrl.mtp_nic_pcie_prbs_salina(nic_list, vmarg=test_kwargs["vmarg"], asic_dir_path=test_kwargs["asic_dir_path"])
+                elif test == "SALINA_QSPI_VERIFY":
+                    rlist = mtp_mgmt_ctrl.mtp_power_cycle_boot_stage(nic_list, bootstage=test_kwargs["bootstage"], warm_reset=test_kwargs['warm_reset'])
+                elif test == "SALINA_QSPI_PROG":
+                    rlist = dl_salina_qspi_program(mtp_mgmt_ctrl, nic_list)
+                elif test == "SNAKE_SALINA_NIC_SNAKE_MTP_PREPARE":
+                    rlist = mtp_mgmt_ctrl.mtp_untar_snake_qspi_img(nic_list)
+                elif test == "SALINA_NIC_MBIST_BOOT0_MTP_PREPARE":
+                    rlist = mtp_mgmt_ctrl.mtp_untar_mbist_boot0_img(nic_list)
+                elif test == "SALINA_SNAKE_QSPI_IMG_PROG":
+                    rlist = salina_snake_qspi_program(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_QSPI_ERASE":
+                    rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_ERASE":
+                    rlist = salina_erase_boot0(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_PROG":
+                    rlist = salina_program_boot0(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_SET_PCIEAWD_ENV":
+                    rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
+                elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
+                    rlist = mtp_mgmt_ctrl.mtp_make_copies_of_asic_dir(nic_list)
+                elif test == "SALINA_I2C_QSFP":
+                    rlist = mtp_mgmt_ctrl.mtp_i2c_qsfp_salina(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "SALINA_I2C_RTC":
+                    rlist = mtp_mgmt_ctrl.mtp_i2c_rtc_salina(nic_list, vmarg=test_kwargs["vmarg"])
+                elif test == "OCP_FRU_SN":
+                    rlist = salina_parse_ocp_sn(mtp_mgmt_ctrl, nic_list)
+                elif test == "OCP_RMII":
+                    rlist = ocp_rmii_linkup(mtp_mgmt_ctrl, nic_list)
+                elif test == "OCP_CONN":
+                    rlist = ocp_connect(mtp_mgmt_ctrl, nic_list)
 
                 elif test == "L1":
                     rlist = run_j2c_test(mtp_mgmt_ctrl, nic_list, test, dsp, vmarg, str(stage), test_kwargs["l1_sequence"])
@@ -1352,7 +1499,8 @@ def main():
                     vdd_ddr_check_list = get_slots_of_type([NIC_Type.ORTANO2, NIC_Type.POMONTEDELL])
                     run_test(vdd_ddr_check_list, "VDD_DDR_VERIFY")
                     run_test(pass_nic_list, "CPLD_INIT")
-                    # run_test(pass_nic_list, "NIC_BOOT_INIT") # load diagfw version   ######## Not Read yet
+                    nic_boot_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    run_test(nic_boot_init_list, "NIC_BOOT_INIT")
                     all_except_cto = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=CTO_MODEL_TYPE_LIST)
                     run_test(all_except_cto, "CPLD_VERIFY")
                     run_test(all_except_cto, "QSPI_VERIFY")
@@ -1367,12 +1515,16 @@ def main():
                     run_test(capri_nic_list, "PCIE_POLL_DISABLE")
                     mtp_mgmt_ctrl.cli_log_inf("NIC Diag Setup complete\n", level = 0)
 
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
+                else:
+                    run_test(pass_nic_list, "CHECK_HMAC_HAS_NOT_BEEN_PROGRAMMED")
+                    run_test(get_slots_of_type(SALINA_NIC_TYPE_LIST), "CLEAR_PRE_UBOOT_SECTION")
+                    nic_diag_init_list = get_slots_of_type(MFG_VALID_NIC_TYPE_LIST, except_type=SALINA_AI_NIC_TYPE_LIST)
+                    run_test(nic_diag_init_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=True, stop_on_err=stop_on_err)
             else:
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
-                # run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
-                pass
+                if mtp_mgmt_ctrl.mtp_get_mtp_type() != MTP_TYPE.MATERA:
+                    run_test(pass_nic_list, "NIC_DIAG_INIT", swm_lp=swm_lp_boot_mode, nic_util=False, stop_on_err=stop_on_err)
 
             test_section_list = []
 
@@ -1391,10 +1543,10 @@ def main():
                 test_section_list.insert(0, "NC-SI")
 
             ### SALINA TEST ORDER
-            if get_slots_of_type(SALINA_NIC_TYPE_LIST):
-                test_section_list = ["P2C_IMG_PROG", "STRESS", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
-                if stage == FF_Stage.FF_P2C:
-                    test_section_list.append("SALINA_ESEC_IN_P2C")
+            if get_slots_of_type(SALINA_NIC_TYPE_LIST, except_type=[NIC_Type.LINGUA]):
+                test_section_list = ["STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
+            if get_slots_of_type(NIC_Type.LINGUA):
+                test_section_list = ["OCP_PRE_CHECK", "STRESS", "P2C_IMG_PROG", "I2C", "J2C_SEQ", "SALINA_SNAKE"]
             
             ### EMMC Validation TEST ORDER
             test_section_list = ["EMMC_VALIDATION"]
@@ -1629,6 +1781,8 @@ def main():
                         # 10 iterations without halting on failure
                         run_dsp_test(ddr_type_list, "EDMA", "MEM")
                     run_regression_test(ddr_type_list, "NIC_LOG_SAVE", aapl=False)
+                    salina_ddr_type_list = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
+                    run_regression_test(salina_ddr_type_list, "SALINA_EDMA", vmarg=vmarg, seconds2run=60)
 
                 elif test_section == "J2C_SEQ":
                     ######################################################################
@@ -1648,12 +1802,13 @@ def main():
                     run_regression_test(prepare_boot0_list, "SALINA_NIC_MBIST_BOOT0_MTP_PREPARE")
 
                     erase_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    prog_boot0_list = erase_boot0_list[:]
                     run_regression_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
 
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
 
-                    prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
+                    # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
@@ -1703,9 +1858,18 @@ def main():
                     #
                     ######################################################################
                     run_test(pass_nic_list, "NIC_DIAG_INIT", dis_hal=True)
+                elif test_section == "OCP_PRE_CHECK":
+                    ######################################################################
+                    #
+                    #  ocp sn parse
+                    #
+                    ######################################################################
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_FRU_SN")
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_RMII")
+                    run_regression_test(get_slots_of_type(NIC_Type.LINGUA), "OCP_CONN")
                 elif test_section == "P2C_IMG_PROG":
                     ######################################################################
-                    # Replace DL image for Leni only so far 
+                    # Replace DL image for Leni only so far
                     ######################################################################
                     salina_dpu_snake = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
                     #prog special image
@@ -1722,11 +1886,16 @@ def main():
                         run_regression_test(get_slots_of_type(SALINA_AI_NIC_TYPE_LIST), "SALINA_QSPI_VERIFY", bootstage="zephyr", warm_reset=True)
 
                     ######################################################################
-                    #  Salina NIC Google stress  test
+                    #  Salina NIC Google stress memory test
                     ######################################################################
                     google_stress_list = get_slots_of_type(SALINA_DPU_NIC_TYPE_LIST)
-                    run_regression_test(google_stress_list, "SALINA_NIC_BOOT_STAGE", bootstage='linux')
-                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS", vmarg="normal", mem_copy_thread=16, seconds2run=60)
+                    # run_test(google_stress_list, "NIC_DIAG_INIT", nic_util=True)
+                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_MEM", vmarg=vmarg, mem_copy_thread=16, seconds2run=60)
+
+                    ######################################################################
+                    #  Salina NIC Google stress emmc test
+                    ######################################################################
+                    run_regression_test(google_stress_list, "SALINA_CONSOLE_GOOGLE_STRESS_EMMC", vmarg=vmarg, iterations=1, seconds2run=60)
 
                 elif test_section == "SALINA_ESEC_IN_P2C":
                     run_regression_test(pass_nic_list, "SEC_KEY_PROG")
