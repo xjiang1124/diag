@@ -477,6 +477,7 @@ class MFG_DIAG_CMDS:
     MTP_IMG_VER_DISP_FMT = "cat /proc/version | sed 's/.*SMP/SMP/'"
     NIC_VMARG_SET_FMT = "/home/diag/diag/scripts/vmarg.sh {:s} {:s}"
     SALINA_NIC_VMARG_SET_FMT = "./nic_test_v2.py salina vmarg -slot {} -vmarg {} --new_memory_layout"
+    SALINA_NIC_DDR_VMARG_SET_FMT = "./nic_test_v2.py salina pcieawd_env -slot {} -all_params ddr_vmarg:{}"
     NIC_DISP_VOLT_FMT = "devmgr -status"
     MTP_MATERA_SWI_CHECK_FMT = "/home/diag/diag/scripts/check_python.sh"
     NIC_OCP_RMII_CHECK_FMT = "tclsh sal_lingua_rmii_test.tcl {:s}"
@@ -698,6 +699,17 @@ class MFG_DIAG_CMDS:
     NIC_I2C_DETECT_FMT = "i2cdetect -y -r {:d}"
     MTP_DEVICE_MARGIN_SET_FMT = "devmgr_v2 margin -d {:s} -p {:d}"
     MTP_STOP_REDIS_FMT = "systemctl stop redis-server"
+
+    def __init__(self, cmdMapStr=None, cmdMapType='dpn'):
+        self.cmdMapStr = cmdMapStr
+        self.cmdMapType = cmdMapType
+        if self.cmdMapStr is not None:
+            if self.cmdMapType.lower() == 'dpn':
+                from libdefs_dpn_based_mfg_diag_cmd import  dpnMfgDiagCmd
+                if self.cmdMapStr in dpnMfgDiagCmd:
+                    for k, v in dpnMfgDiagCmd[self.cmdMapStr].__dict__.items():
+                        if not callable(v) and not k.startswith("__"):
+                            setattr(self, k, v)
 
 class MFG_DIAG_SIG:
     MTP_DIAG_OK_SIG = "Set up diag amd64 -- Done"
