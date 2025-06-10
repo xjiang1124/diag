@@ -35,11 +35,19 @@ proc sal_rtc_access_test {} {
 }
 
 proc sal_rc19008_access_test {} {
+    set cpld_id [ssi_cpld_read 0x80]
+    set pcb_rev [ssi_cpld_read 0x81]
     set val [sal_smbus_read_word 2 0x6c 6]
     set dev_id [expr ($val >> 8) & 0xFF]
     plog_msg "rc19008 devid read: [format "0x%x" $dev_id]"
-    if {$dev_id != 0x88} {
-        plog_err "RC19008 access test failed, exp: 0x88, act: [format "0x%x" $dev_id]"
+    if {($cpld_id == "0x67" && $pcb_rev == "0x01")} {
+        if {$dev_id != 0x84} {
+            plog_err "RC19008 access test failed, exp: 0x84, act: [format "0x%x" $dev_id]"
+        }
+    } else {
+        if {$dev_id != 0x88} {
+            plog_err "RC19008 access test failed, exp: 0x88, act: [format "0x%x" $dev_id]"
+        }
     }
 }
 
