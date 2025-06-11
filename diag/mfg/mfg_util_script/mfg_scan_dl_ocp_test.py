@@ -270,7 +270,7 @@ def main():
     log_dir = "log/"
     log_timestamp = libmfg_utils.get_timestamp()
     log_sub_dir = MTP_DIAG_Logfile.MFG_DL_LOG_DIR.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
+    os.system(MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(log_dir + log_sub_dir))
     test_log_file = log_dir + log_sub_dir + "mtp_test.log"
     log_file_list.append(test_log_file)
     test_log_filep = open(test_log_file, "w+", buffering=0)
@@ -560,7 +560,7 @@ def main():
 
     # pkg the logfile
     log_pkg_file = MTP_DIAG_Logfile.MFG_DL_LOG_PKG_FILE.format(mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
+    os.system(MFG_DIAG_CMDS().MFG_LOG_PKG_FMT.format(log_dir+log_pkg_file, log_dir, log_sub_dir))
 
     # move the logs to the log root dir
     log_hard_copy_flag = True
@@ -579,7 +579,7 @@ def main():
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, sn)
         else:
             mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, sn)
-        os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+        os.system(MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(mfg_log_dir))
         if log_hard_copy_flag:
             libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
@@ -588,7 +588,7 @@ def main():
         else:
             libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(sn, mfg_log_dir+os.path.basename(log_pkg_file)))
             chdir_cmd = "cd {:s}".format(mfg_log_dir)
-            ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
+            ln_cmd = MFG_DIAG_CMDS().MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
             cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
             os.system(cmd)
         if nic_type == NIC_Type.NAPLES25SWM and swmtestmode == Swm_Test_Mode.ALOM:
@@ -599,7 +599,7 @@ def main():
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
             else:
                 mfg_log_dir = MTP_DIAG_Logfile.DIAG_MFG_MODEL_DL_LOG_DIR_FMT.format(nic_type, alom_sn)
-            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir))
+            os.system(MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(mfg_log_dir))
             if log_hard_copy_flag:
                 libmfg_utils.cli_inf("[{:s}] Collecting log file {:s}".format(alom_sn, log_pkg_file))
                 os.system("cp {:s} {:s}".format(log_dir+log_pkg_file, mfg_log_dir+os.path.basename(log_pkg_file)))
@@ -608,7 +608,7 @@ def main():
             else:
                 libmfg_utils.cli_inf("[{:s}] Create link log file {:s}".format(alom_sn, log_relative_link))
                 chdir_cmd = "cd {:s}".format(mfg_log_dir)
-                ln_cmd = MFG_DIAG_CMDS.MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
+                ln_cmd = MFG_DIAG_CMDS().MFG_LOG_LINK_FMT.format(log_relative_link, os.path.basename(log_pkg_file))
                 cmd = "{:s} && {:s}".format(chdir_cmd, ln_cmd)
                 os.system(cmd)            
 

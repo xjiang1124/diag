@@ -61,7 +61,7 @@ def find_logfile_path(mtp_mgmt_ctrl, stage):
 def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
     if stage == FF_Stage.FF_P2C:
         stage = "NT"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_parent_dir)
+    cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(log_parent_dir)
     err = os.system(cmd) # make sure it exists
     if err:
         mtp_mgmt_ctrl.cli_log_err("Unable to create directory {:s} for the log".format(log_parent_dir), level=0)
@@ -69,7 +69,7 @@ def create_logfile_path(mtp_mgmt_ctrl, stage, log_parent_dir="log/"):
     log_timestamp = libmfg_utils.get_timestamp()
     mtp_id = mtp_mgmt_ctrl._id
     log_dir = STAGE_LOG_FOLDER.format(stage, mtp_id, log_timestamp)
-    os.system(MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(log_parent_dir + log_dir))
+    os.system(MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(log_parent_dir + log_dir))
     logfile_path = os.path.join(log_parent_dir, log_dir)
     return logfile_path
 
@@ -439,13 +439,13 @@ def gather_dsp_logs(mtp_mgmt_ctrl, vmarg):
         asic_sub_dir = "/asic_logs/"
     # create log dir
     ret = True
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + diag_sub_dir)
+    cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(tlf + diag_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + nic_sub_dir)
+    cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(tlf + nic_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(tlf + asic_sub_dir)
+    cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(tlf + asic_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     # save the asic/diag log files
@@ -472,7 +472,7 @@ def gather_asic_logs(mtp_mgmt_ctrl, logs_local):
     asic_sub_dir = tlf +  "asic_logs/"
 
     if not logs_local:
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
+        cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(asic_sub_dir)
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on MTP".format(cmd), level=0)
             ret = False
@@ -488,7 +488,7 @@ def gather_asic_logs(mtp_mgmt_ctrl, logs_local):
             ret = False
     else:
         # scan_dl
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
+        cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(asic_sub_dir)
         err_code = os.system(cmd)
         if err_code:
             mtp_mgmt_ctrl.cli_log_err("Unable to execute command {:s} on host".format(cmd), level=0)
@@ -503,7 +503,7 @@ def gather_csp_n_bin_logs(mtp_mgmt_ctrl):
     ret = True
     tlf = get_mtp_test_log_folder(mtp_mgmt_ctrl)
     asic_sub_dir = tlf +  "asic_logs/"
-    cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(asic_sub_dir)
+    cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(asic_sub_dir)
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
         ret = False
     cmd = "mv {:s} {:s}".format(MTP_DIAG_Logfile.ONBOARD_CSP_LOG_FILES, asic_sub_dir)
@@ -606,10 +606,10 @@ def upload_nic_logfile(mtp_mgmt_ctrl, stage, nic_type, sn, mirror_logdir, logs_l
     mtp_mgmt_ctrl.cli_log_inf("[{:s}] Collecting log file {:s}".format(sn, log_upload_path))
 
     if GLB_CFG_MFG_TEST_MODE:
-        cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
+        cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(mfg_log_dir)
         os.system(cmd)
     else:
-        err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+        err_code = os.system(MFG_DIAG_CMDS().MFG_MK_DIR_777_FMT.format(mfg_log_dir))
         if not err_code:
             # try to change permission of the stage if this is first time created
             # this will fail if someone else created them...ask them to chmod 777
@@ -620,7 +620,7 @@ def upload_nic_logfile(mtp_mgmt_ctrl, stage, nic_type, sn, mirror_logdir, logs_l
         else:
             # chdir from mfg_log/type/stage/sn --> mfg_log/MERGE/type/stage/sn
             mfg_log_dir = mfg_log_dir.replace(nic_type, "MERGE/"+nic_type)
-            os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+            os.system(MFG_DIAG_CMDS().MFG_MK_DIR_777_FMT.format(mfg_log_dir))
             os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
             if stage in (FF_Stage.FF_4C_H, FF_Stage.FF_4C_L, FF_Stage.FF_2C_H, FF_Stage.FF_2C_L):
                 os.system("chmod 777 {:s}".format(mfg_log_dir+"/../.."))
@@ -658,15 +658,15 @@ def upload_csp_logfile(mtp_mgmt_ctrl, nic_type, sn):
             listcspfiletoupload.append(cspfile)
     for cspfilepath in listcspfiletoupload:
         if GLB_CFG_MFG_TEST_MODE:
-            cmd = MFG_DIAG_CMDS.MFG_MK_DIR_FMT.format(mfg_log_dir)
+            cmd = MFG_DIAG_CMDS().MFG_MK_DIR_FMT.format(mfg_log_dir)
             os.system(cmd)
         else:
-            err_code = os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+            err_code = os.system(MFG_DIAG_CMDS().MFG_MK_DIR_777_FMT.format(mfg_log_dir))
             if not err_code:
                 os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
             else:
                 mfg_log_dir = mfg_log_dir.replace("CSP_REC", "MERGE/CSP_REC")
-                os.system(MFG_DIAG_CMDS.MFG_MK_DIR_777_FMT.format(mfg_log_dir))
+                os.system(MFG_DIAG_CMDS().MFG_MK_DIR_777_FMT.format(mfg_log_dir))
                 os.system("chmod 777 {:s}".format(mfg_log_dir+"/.."))
         log_upload_path = mfg_log_dir + os.path.basename(cspfilepath)
 

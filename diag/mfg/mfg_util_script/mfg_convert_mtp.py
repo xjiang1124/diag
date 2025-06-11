@@ -64,7 +64,7 @@ def mtp_diag_pre_init(mtp_mgmt_ctrl):
     # start the mtp diag
     mtp_mgmt_ctrl.cli_log_inf("Pre Diag SW Environment Init", level=0)
 
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_INIT_FMT
+    cmd = MFG_DIAG_CMDS().MTP_DIAG_INIT_FMT
     sig_list = [MFG_DIAG_SIG.MTP_DIAG_OK_SIG]
     if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd, sig_list, timeout=MTP_Const.OS_CMD_DELAY):
         mtp_mgmt_ctrl.cli_log_err("Failed to Init Diag SW Environment", level=0)
@@ -284,7 +284,7 @@ def main():
             mtp_mgmt_ctrl.cli_log_err("This upgrade is not allowed for MTP capability {:s}".format(mtp_capability), level=0)
 
         # MTP_REV
-        cmd = MFG_DIAG_CMDS.MTP_REV_FMT
+        cmd = MFG_DIAG_CMDS().MTP_REV_FMT
         if not mtp_mgmt_ctrl.mtp_mgmt_exec_cmd(cmd):
             mtp_mgmt_ctrl.cli_log_err("Failed to send command for getting MTP revision", level = 0)
             mtpid_list.remove(mtp_id)
