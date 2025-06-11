@@ -130,7 +130,7 @@ def diag_param_cmd(param_list):
 
 
 def diag_seq_run_cmd(card_name, dsp, test, param):
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_RUN_FMT.format(card_name)
+    cmd = MFG_DIAG_CMDS().MTP_DIAG_RUN_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     if test:
         cmd += " -t {:s}".format(test)
@@ -140,7 +140,7 @@ def diag_seq_run_cmd(card_name, dsp, test, param):
 
 
 def diag_para_run_cmd(card_name, dsp, test, param):
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_RUN_FMT.format(card_name)
+    cmd = MFG_DIAG_CMDS().MTP_DIAG_RUN_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     if test:
         cmd += " -t {:s}".format(test)
@@ -150,13 +150,13 @@ def diag_para_run_cmd(card_name, dsp, test, param):
 
 
 def diag_seq_errcode_cmd(card_name, dsp):
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_RSLT_FMT.format(card_name)
+    cmd = MFG_DIAG_CMDS().MTP_DIAG_RSLT_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd
 
 
 def diag_para_errcode_cmd(card_name, dsp):
-    cmd = MFG_DIAG_CMDS.MTP_DIAG_RSLT_FMT.format(card_name)
+    cmd = MFG_DIAG_CMDS().MTP_DIAG_RSLT_FMT.format(card_name)
     cmd += " -d {:s}".format(dsp)
     return cmd
 

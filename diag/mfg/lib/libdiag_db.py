@@ -117,7 +117,7 @@ class diag_db():
     def get_test_param_cmd_list(self):
         param_list = list()
         for param in self._test_param_list:
-            cmd = MFG_DIAG_CMDS.MTP_DSP_PARAM_FMT.format(param)
+            cmd = MFG_DIAG_CMDS().MTP_DSP_PARAM_FMT.format(param)
             param_list.append(cmd)
         return param_list
 
