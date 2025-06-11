@@ -1089,6 +1089,8 @@ class nic_con:
                 print(eth0_mac)
                 #self.uart_session_cmd(session, "ifconfig eth0 hw ether {}".format(eth0_mac))
                 #self.uart_session_cmd(session, "ifconfig eth0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
+                self.uart_session_cmd(session, "ifconfig oob_mnic0 down")
+                time.sleep(1)
                 self.uart_session_cmd(session, "ifconfig oob_mnic0 10.1.1.{} netmask 255.255.255.0 up".format(slot+100))
                 #print('eth0 enabled')
                 print('oob_mnic0 enabled')
