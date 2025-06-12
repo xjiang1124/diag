@@ -216,7 +216,10 @@ set in_err [plog_get_err_count]
 plog_msg "=================="
 plog_msg "MC intr"
 plog_msg "=================="
-if {$ASIC_TYPE == "GIGLIO"} {
+if {$BOARD_TYPE == "POLLARA" || \
+    $BOARD_TYPE == "LINGUA" } {
+    plog_msg "Skip MC intr check for $BOARD_TYPE board"
+} elseif {$ASIC_TYPE == "GIGLIO"} {
     #gig_platform 1
     gig_mc_irq_show -1 -1 $ddr5
 } elseif {$ASIC_TYPE == "SALINA"} {
@@ -234,7 +237,10 @@ plog_msg "\n\n\n"
 plog_msg "=================="
 plog_msg "ECC intr"
 plog_msg "=================="
-if {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
+if {$BOARD_TYPE == "POLLARA" || \
+    $BOARD_TYPE == "LINGUA" } {
+    plog_msg "Skip ECC intr check for $BOARD_TYPE board"
+} elseif {$ASIC_TYPE == "GIGLIO" || $ASIC_TYPE == "SALINA"} {
     if {$ASIC_TYPE == "GIGLIO"} {
         gig_mc_check_ecc -1 -1 $ddr5 $cpld_id
     } else {
