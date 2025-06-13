@@ -555,6 +555,10 @@ def main():
                     rlist = ncsi_test_fpga_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "PROD_FPGA_PROG":
                     rlist = ncsi_prod_fpga_program(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_ERASE":
+                    rlist = salina_erase_boot0(mtp_mgmt_ctrl, nic_list)
+                elif test == "SALINA_BOOT0_PROG":
+                    rlist = salina_program_boot0(mtp_mgmt_ctrl, nic_list)
 
                 elif test == "NIC_DIAG_INIT":
                     rlist = mtp_mgmt_ctrl.mtp_nic_diag_init(nic_list, skip_test_list=args.skip_test, vmargin=vmarg, **test_kwargs)
@@ -725,10 +729,6 @@ def main():
                     rlist = salina_snake_qspi_program(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_QSPI_ERASE":
                     rlist = salina_erase_qspi(mtp_mgmt_ctrl, nic_list)
-                elif test == "SALINA_BOOT0_ERASE":
-                    rlist = salina_erase_boot0(mtp_mgmt_ctrl, nic_list)
-                elif test == "SALINA_BOOT0_PROG":
-                    rlist = salina_program_boot0(mtp_mgmt_ctrl, nic_list)
                 elif test == "SALINA_SET_PCIEAWD_ENV":
                     rlist = mtp_mgmt_ctrl.mtp_set_piceawd_env_salina(nic_list)
                 elif test == "SNAKE_SALINA_ASIC_WORK_DIR_PREPARE":
@@ -1252,13 +1252,13 @@ def main():
 
                     erase_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     prog_boot0_list = erase_boot0_list[:]
-                    run_regression_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
+                    run_test(erase_boot0_list, "SALINA_BOOT0_ERASE")
 
                     jtag_mbist_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_regression_test(jtag_mbist_list, "SALINA_JTAG_MBIST", vmarg=vmarg)
 
                     # prog_boot0_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
-                    run_regression_test(prog_boot0_list, "SALINA_BOOT0_PROG")
+                    run_test(prog_boot0_list, "SALINA_BOOT0_PROG")
 
                     l1_setup_list = get_slots_of_type(SALINA_NIC_TYPE_LIST)
                     run_test(l1_setup_list, "L1_SETUP")

@@ -467,6 +467,7 @@ class MFG_DIAG_CMDS:
     NIC_ESEC_SALINA_HMAC_FUSE_PROG_FMT = "./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file /home/diag/diag/scripts/asic/hmac_value.hex"
     NIC_ESEC_SALINA_HMAC_FUSE_CHK_FMT = "./esec_ctrl.py -hmac_fuse_prog -slot {:d} -hmac_file check_only"
     NIC_I2C_SET_FMT = "i2cset -f -y 0 0x4c 0x19 0x7d"
+    NIC_I2C_GET_SPIMODE_FMT = "i2cget  -y {:s} 0x{:s} 0x{:s}"
     NIC_WRITE_CPLD_FMT  = "/data/nic_util/xo3dcpld -w 0x12 0x44"
     NIC_READ_CPLD_FMT  = "/data/nic_util/xo3dcpld -r 0x12"
     NIC_RUN_ASIC_L1_FMT = "./run_l1.sh -sn {:s} -slot {:d} -m {:s} -v {:s} -ddr {:s} -hc {:s}"
