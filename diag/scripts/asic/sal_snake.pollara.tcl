@@ -291,6 +291,20 @@ if { $lpmode == "1" } { set_pollara_low_power_mode }
 # before snake starts
 sal_top_eos 0
 
+set in_err_ecc [plog_get_err_count]
+plog_msg "Checking EOS intr before starting traffic"
+sal_eos_intr_chk  none none
+sal_eos_intr_clr  none none
+
+set err_cnt  [ expr ( [plog_get_err_count] - $in_err_ecc ) ]
+if {$err_cnt != 0} {
+    plog_err "Check failed before starting traffic"
+    after 1000
+    plog_err "SNAKE TEST FAILED"
+    plog_msg "SNAKE TEST DONE"
+    exit 0
+}
+
 if {$test_type == "esam_pktgen_pollara_sor"} {
     set stream_list_all "10,20"
 } elseif {$test_type == "esam_pktgen_max_power_ainic"            ||
