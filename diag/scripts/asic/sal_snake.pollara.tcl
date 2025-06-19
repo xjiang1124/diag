@@ -217,6 +217,19 @@ cd ../$test_type
 plog_msg "cd ../$test_type"
 plog_msg "pwd: [ pwd ]"
 
+# Figure out ainic test mode
+if {$test_type == "esam_pktgen_max_power_2p4net_ainic"} {
+    set ainic_mode ainic_net
+} else {
+    set ainic_mode ainic
+}
+if {$ainic_mode == "ainic_net" && [sal_harvested_asic] == 1} {
+    plog_err "Not allowed to run this test on harvest part"
+    plog_err "SNAKE TEST ABORTED"
+    plog_msg "SNAKE TEST DONE"
+    exit -1
+}
+
 #===========================
 # Disable PCIe for now
 plog_msg "pcie bring-up"
@@ -288,10 +301,11 @@ if {$ret != 0} {
 sal_mx_get_mac_chsts 0 0 0 1
 #sal_mx_get_mac_chsts 0 1 0 1
 # start test
+sknobs_set_value harvested [sal_harvested_asic]
 plog_msg "sal_asic_init 2 ..."
 sal_asic_init 2
 plog_msg "Done: sal_asic_init 2"
-if { $lpmode == "1" } { set_pollara_low_power_mode }
+if { $lpmode == "1" } { set_pollara_low_power_mode $ainic_mode }
 # before snake starts
 sal_top_eos 0
 
