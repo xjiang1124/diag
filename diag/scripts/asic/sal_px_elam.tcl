@@ -6,10 +6,15 @@
 
    # 0 select test_out[511:256]
    # 1 select test_out[255:0]
-proc elam_cfg_px {{p 0} {sel 1}} {
+proc elam_cfg_px {{p 0} {sel 1} {opcode "vec_ne_value"} {offset_size_value_str "96,5,0x10"} } {
    sal_top_elam_clear_cfg 0 0 "px"
    csr_write_field sal0.pxb.pxb.cfg_debug_port enable 1
    csr_write_field sal0.pxb.pxb.cfg_debug_port select 2
+
+   for {set i 0} {$i<4} {incr i} {
+     csr_write sal0.pp.pxc\[$i\].cfg_pxc_debug_port 0
+     csr_write sal0.pp.pxc\[$i\].port_p.cfg_p_debug_port 0
+   }
 
    # Turn on the elam chain on all PPs
    csr_write_field sal0.pp.pxc\[0\].cfg_pxc_debug_port daisy_mux_enable 1
@@ -30,7 +35,8 @@ proc elam_cfg_px {{p 0} {sel 1}} {
    # Keep it 1: 
    csr_write_field sal0.pp.pxc\[$p\].port_p.cfg_p_debug_port select 1
 
-   sal_top_elam_mvec_config 0 0 "px" 0 "vec_ne_value" "96,5,0x10"
+   #sal_top_elam_mvec_config 0 0 "px" 0 "vec_ne_value" "96,5,0x10"
+   sal_top_elam_mvec_config 0 0 "px" 0 $opcode $offset_size_value_str
    sal_top_elam_trigger 0 0 "px" 0 "vec_ne_0" 0x1 0x0 0x0 0x0
    sal_top_elam_capture_config 0 0 "px" 0 "vec_ne_0" 0x1 0x0 0x0 0x0 0x0 0x0
 }
@@ -67,7 +73,7 @@ proc elam_out_px { {port 0} {sel 1} } {
             8,1,'chgspeed_ing\[264\]';          \
             9,1,'recovery_direct\[265\]';       \
             10,1,'ltssm_chg\[266\]';            \
-            11,1,'ltssm_chg_r_or|equ_phase_chg\[267\]';\
+            11,1,'ltssm_chg_r_or-equ_phase_chg\[267\]';\
             12,1,'core_is_upstr\[268\]';        \
             13,1,'lksts_receiver_err\[269\]';   \
             14,1,'phystatus_err\[270\]';        \
@@ -75,7 +81,7 @@ proc elam_out_px { {port 0} {sel 1} } {
             16,8,'detected_lanes\[279:272\]';   \
             24,8,'active_lanes\[287:280\]';     \
             32,6,'polcpl_setnum\[294:288\]';    \
-            40,1,'recovery_recorded\[296\]';    \
+            40,1,'xin_rec_recorded\[296\]';    \
             41,6,'recovery_reason\[302:297\]';  \
             64,1,'deskew_err\[320\]';           \
             65,6,'framing_err\[326:321\]';      \
@@ -89,6 +95,9 @@ proc elam_out_px { {port 0} {sel 1} } {
             172,12,'tx_high_seq_num\[439:428\]';\
             184,14,'tx_sta\[453:440\]';          \
             " $log_name
+
+#            sal_top_elam_read_buffer 0 0 "px" 0 "96,160,'zero6\[159:0\]'; 72,24,'zero5\[23:0\]'; 71,1,'zero4'; 70,1,'eds_framing_err'; 69,1,'idl_err'; 68,1,'zero3'; 67,1,'stp_err'; 66,1,'stbus_rxlane_frame_err'; 65,1,'framing_err'; 64,1,'deskew_err'; 48,16,'zero2\[15:0\]'; 46,2,'zero1\[1:0\]'; 41,5,'recovery_reason\[4:0\]'; 40,1,'recovery_recorded'; 32,8,'polcpl_setnum\[7:0\]'; 24,8,'active_lanes\[7:0\]'; 16,8,'detected_lanes\[7:0\]'; 15,1,'l    ksts_link_up'; 14,1,'phystatus_err'; 13,1,'lksts_receiver_err'; 12,1,'core_is_upstr'; 11,1,'ltssm_chg_r_or|equ_phase_chg'; 10,1,'ltssm_chg'; 9,1,'recovery_direct'; 8,1,'chgspeed_done'; 7,1,'timeout'; 6,1,'lane_reversed'; 4,2,'equ_curr_phase\[1:0\]'; 2,2,'txl0s_n\[1:0\]'; 0,2,'rxl0s_n\[1:0\]'" "elam.log"
+#            sal_top_elam_read_buffer 0 0 "px" 0 "0,256,'upper256\[511:256\]'; 7,1,'timeout'; 6,1,'lane_reversed'; 4,2,'equ_curr_phase\[1:0\]'; 2,2,'txl0s_n\[1:0\]'; 0,2,'rxl0s_n\[1:0\]'" "elam.log"
     } else {
         set log_name "elam_port${port}_lower256_bits.log"
         # This is for lower 256 bits
@@ -123,7 +132,17 @@ proc elam_out_px { {port 0} {sel 1} } {
 }
 
 proc collect_elam_256 { {port 0} {sel 0} } {
-    elam_cfg_px $port $sel
+    if { $sel == 1 } {
+        # Lower 256 bits
+        set opcode "vec_ne_value"
+        set offset_size_value_str "96,5,0x10"
+    } else {
+        # Upper 256 bits
+        set opcode "vec_eq_value"
+        set offset_size_value_str "40,1,0x1"
+    }
+
+    elam_cfg_px $port $sel $opcode $offset_size_value_str
     elam_arm_px
     #Then check if it trigger
     elam_sta_px
@@ -136,7 +155,18 @@ proc collect_elam_all {} {
         for {set sel 0} {$sel < 2} {incr sel} {
             plog_msg "==================="
             plog_msg "port $port; sel: $sel"
-            elam_cfg_px $port $sel
+
+            if { $sel == 1 } {
+                # Lower 256 bits
+                set opcode "vec_ne_value"
+                set offset_size_value_str "96,5,0x10"
+            } else {
+                # Upper 256 bits
+                set opcode "vec_eq_value"
+                set offset_size_value_str "40,1,0x1"
+            }
+
+            elam_cfg_px $port $sel $opcode $offset_size_value_str
             elam_arm_px
             #Then check if it trigger
             elam_sta_px

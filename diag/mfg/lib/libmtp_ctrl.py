@@ -7552,6 +7552,17 @@ class mtp_ctrl():
             self.mtp_dump_nic_err_msg(slot)
             return False
 
+        if self._mtp_type == MTP_TYPE.MATERA:
+            cmd_list = list()
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","0"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("17","20","9"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("18","20","0"))
+            cmd_list.append(MFG_DIAG_CMDS().NIC_I2C_GET_SPIMODE_FMT.format("18","20","9"))
+            for single_cmd in cmd_list:
+                if not self._nic_ctrl_list[slot].mtp_exec_cmd(single_cmd):
+                    self.mtp_dump_nic_err_msg(slot)
+                    return False
+
         return True
 
     @parallelize.parallel_nic_using_ssh

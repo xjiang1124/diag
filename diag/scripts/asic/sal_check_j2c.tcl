@@ -98,9 +98,10 @@ for {set i 0} {$i < $ite} {incr i} {
     set val [regrd 0x0 0x30200000]
     plog_msg "regrd 0x0 0x30200000: $val"
 
+    _mswr 0x12345678
     set val [_msrd]
     set ow_axi_good 0
-    if { $val != 0x1 } {
+    if { $val != 0x12345678 } {
         plog_err "OW sanity test failed!"
         plog_err "PC_TEST_J2C FAILED"
         set ret 1

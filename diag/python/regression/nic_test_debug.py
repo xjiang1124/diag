@@ -441,6 +441,24 @@ class nic_test_debug:
             print("QSPI erase/write/read test PASSED")
         return ret
 
+    def pcie_elam(self, args):
+        tcl_ending = "tclsh]"
+
+        session = common.session_start()
+        common.session_cmd(session, "cd "+args.nic_path) 
+
+        for port in range(4):
+            for idx in range(2):
+                cmd = "./MTP -s {} -y -p".format(args.slot)
+                common.session_cmd(session, cmd, ending=tcl_ending) 
+
+                common.session_cmd(session, "source "+args.nic_path+"/sal_px_elam.tcl", ending=tcl_ending)
+                common.session_cmd(session, "collect_elam_256 {} {}".format(port, idx), ending=tcl_ending)
+
+                common.session_cmd(session, "exit") 
+
+        return 0
+
 if __name__ == "__main__":
 
     test = nic_test_debug()
@@ -503,6 +521,14 @@ if __name__ == "__main__":
     parser_srv_prbs.add_argument("-num_ite", "--num_ite", help="Number of iteration", type=int, default=1)
 
     parser_srv_prbs.set_defaults(func=test.srv_prbs)
+
+    # Collect elam data
+    parser_pcie_elam = subparsers.add_parser('pcie_elam', help='Run PRBS on server, between NIC and CPU', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser_pcie_elam.add_argument("-slot", "--slot", help="NIC slot", type=str, default="384")
+    parser_pcie_elam.add_argument("-nic_path", "--nic_path", help="nic folder path", type=str, default='/home/diag/xin')
+
+    parser_pcie_elam.set_defaults(func=test.pcie_elam)
 
     # QSPI erase/write/read test
     parser_qspi_erase_write_read = subparsers.add_parser('qspi_erase_write_read', help='QSPI erase/write/read test', formatter_class=argparse.ArgumentDefaultsHelpFormatter)

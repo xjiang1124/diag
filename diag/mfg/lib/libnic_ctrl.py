@@ -5774,8 +5774,10 @@ class nic_ctrl():
         opts = '-B {:s}'.format(boardId)
         cmd = MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed Even With Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5790,8 +5792,10 @@ class nic_ctrl():
             opts = '-S {:s}'.format(pciSubsystemId)
             cmd = MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_WRITE_FMT.format(opts)
             if not self.nic_exec_cmd_from_zephyr_console(cmd):
-                self.nic_set_err_msg("Zephyr Write Board ID Command '{:s}' Failed".format(cmd))
-                return False
+                time.sleep(27)
+                if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                    self.nic_set_err_msg("Zephyr Write PCI Subsystem ID Command '{:s}' Failed Even With Retry".format(cmd))
+                    return False
             cmd_buf = self.nic_get_cmd_buf()
             cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
             cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5807,11 +5811,14 @@ class nic_ctrl():
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
             self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
             return False
+        time.sleep(60)
 
         # Dump Board ID back and compare
         if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT):
-            self.nic_set_err_msg("Zephyr Borad Config Dump Command '{:s}' Failed".format(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT):
+                self.nic_set_err_msg("Zephyr Borad Config Dump Command '{:s}' Failed Even with Retry".format(MFG_DIAG_CMDS().ZEPHYR_BOARD_CONFIG_DUMP_FMT))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         if boardId.lower() not in cmd_buf.lower():
             self.nic_set_err_msg("Zephr Read Back and Compare Board ID Failed")
@@ -5821,8 +5828,10 @@ class nic_ctrl():
         # show fru dump
         cmd = "show frudump parse"
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         return True
 
     def zephyr_debug_update_firmware(self, bootfw='mainfwa'):
@@ -5847,8 +5856,10 @@ class nic_ctrl():
         # set fwselection
         cmd = MFG_DIAG_CMDS().ZEPHYR_FW_SELECT_FMT.format(bootfw)
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr fwselect Command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
@@ -5867,11 +5878,14 @@ class nic_ctrl():
             self.nic_set_err_msg("Zephr did not boot to specified selection")
             self.nic_set_err_msg(cmd_buf)
             return False
+        time.sleep(60)
         # show version
         cmd = MFG_DIAG_CMDS().ZEPHYR_SHOW_VERSION_FMT
         if not self.nic_exec_cmd_from_zephyr_console(cmd):
-            self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed".format(cmd))
-            return False
+            time.sleep(27)
+            if not self.nic_exec_cmd_from_zephyr_console(cmd):
+                self.nic_set_err_msg("Zephyr show version Command '{:s}' Failed Even with Retry".format(cmd))
+                return False
         cmd_buf = self.nic_get_cmd_buf()
         cmd_buf = re.sub(r'\r\n', '\n', cmd_buf)
         cmd_buf = re.sub(r'\r', '', cmd_buf)
