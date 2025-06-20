@@ -1034,7 +1034,7 @@ PRIVEK <ek.sk>"""
             dr = 1
 
         os.chdir("/home/diag/diag/tools/pki")
-        cmd_fmt = "python2.7 ./client_dice.py -k dice_certs/client.key.pem -c dice_certs/client.crt.pem -t dice_certs/rootca.crt -b '10.11.18.71:13366' -sn {} -n 32 -hsm_rn"
+        cmd_fmt = "python2.7 ./client_dice.py -k dice_certs/client.key.pem -c dice_certs/client.crt.pem -t dice_certs/rootca.crt -b '192.168.67.213:12266#192.168.67.214:12266' -sn {} -n 32 -hsm_rn"
         cmd = cmd_fmt.format(sn)
         cmd_list = shlex.split(cmd)
         output = subprocess.check_output(cmd_list)
