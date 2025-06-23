@@ -50,6 +50,7 @@ _msrd
 diag_close_ow_if $port $slot
 after 1000
 diag_open_j2c_if $port $slot
+after 1000
 puts "_msrd"
 set rtn [eval _msrd]
 puts $rtn
