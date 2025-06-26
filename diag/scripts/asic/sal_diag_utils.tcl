@@ -145,18 +145,26 @@ proc reset_to_proto_mode {{reset "cold"}} {
     plog_msg [exec inventory -sts -slot $::slot]
 }
 
-proc set_pollara_low_power_mode {} {
+proc set_pollara_low_power_mode {{ainic_mode ainic}} {
     set card_type [sal_get_card_type]
-    if { $card_type == "POLLARA" || $card_type == "LINGUA" } {
-        plog_msg "Setting clock gating for low power mode"
-        plog_msg "sal_ainic_low_pwr_mode"
-        sal_ainic_low_pwr_mode
-        plog_msg "sal_ainic_chk_clk_gate"
-        sal_ainic_chk_clk_gate
-        plog_msg "ARM resets: (0=reset)"
-        sal_arm_show_reset
-        plog_msg [exec inventory -sts -slot $::slot]
+    if { $card_type != "POLLARA" && $card_type != "LINGUA" } {
+        return
     }
+    plog_msg "Setting clock gating for low power mode"
+    if { $ainic_mode == "ainic" } {
+        plog_msg "sal_ainic_low_pwr_mode for $ainic_mode"
+        sal_ainic_low_pwr_mode 0 0
+        plog_msg "sal_ainic_chk_clk_gate"
+        sal_ainic_chk_clk_gate 0
+    } elseif { $ainic_mode == "ainic_net" } {
+        plog_msg "sal_ainic_low_pwr_mode for $ainic_mode"
+        sal_ainic_low_pwr_mode 0 1
+        plog_msg "sal_ainic_chk_clk_gate"
+        sal_ainic_chk_clk_gate 1
+    }
+    plog_msg "ARM resets: (0=reset)"
+    sal_arm_show_reset
+    plog_msg [exec inventory -sts -slot $::slot]
 }
 
 proc pcie_check_link_width_and_mac_status { core_freq card_type mtp_rev skip_blk_setup } {
