@@ -230,6 +230,9 @@ var mtfujiElbaDispStaList map[string]DispStaFunc
 // capaci (HPE)
 var capaciElbaDispStaList map[string]DispStaFunc
 
+// deschutes (Cisco)
+var deschutesDispStaList map[string]DispStaFunc
+
 // I2C hub map -- not used on Taormina and Lipari
 var taorI2cHubMap map[string] I2cHubInfo
 var lipariI2cHubMap map[string] I2cHubInfo
@@ -663,6 +666,11 @@ func init() {
     capaciElbaDispStaList["ELB0_CORE"] = tps53688.DispStatus
     capaciElbaDispStaList["ELB0_ARM"]  = tps53688.DispStatus
 
+    // Deschutes
+    deschutesDispStaList = make(map[string]DispStaFunc)
+    deschutesDispStaList["CORE"] = tps53688.DispStatus
+    deschutesDispStaList["ARM"]  = tps53688.DispStatus
+
     //Just decalred.. not used on Lipari
     lipariElbaI2cHubMap = make(map[string]I2cHubInfo)
 
@@ -775,6 +783,9 @@ func init() {
 
     // Capaci (HPE)
     dispMap["CAPACI"]  = capaciElbaDispStaList
+
+    // Deschutes (Cisco)
+    dispMap["DESCHUTES"]  = deschutesDispStaList
 
     // EEPROM list
     eepromMap = make(map[string][]string)
