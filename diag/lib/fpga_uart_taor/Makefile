@@ -7,7 +7,7 @@ all: fpga_uart
 
 
 fpga_uart: fpga_uart.c
-	$(CC) fpga_uart.c -I.. -L. -o fpga_uart $(CFLAGS)
-	
+    $(CC) fpga_uart.c -I.. -L. -o fpga_uart $(CFLAGS)
+    
 clean:
-	-rm -f *.o *.a; rm fpga_uart
+    -rm -f *.o *.a; rm fpga_uart

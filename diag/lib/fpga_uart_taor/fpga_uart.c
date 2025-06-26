@@ -76,7 +76,7 @@ int kbhit()
    
     if ( select(1, &fds, NULL, NULL, &tv) ) {
 
-	fflush(stdout);
+    fflush(stdout);
         return 0;
     }
     return -1;
@@ -126,8 +126,9 @@ ULONGLONG get_bar_from_proc(void)
                ptr[len - 1] = '0';
                address = strtoll(ptr, NULL, 16);
                break;
-           } else
+           } else {
                ptr = strtok(NULL, delim);
+           }
         }
         if ( address != 0 ) {
             if ( verbosity )
@@ -149,36 +150,36 @@ ULONGLONG show_bar(void)
 
 int init_mmap(int port)
 {    
-	off_t offset = bar_addr + UART_0_OFFSET + port * UART_INST_OFFSET;
+    off_t offset = bar_addr + UART_0_OFFSET + port * UART_INST_OFFSET;
     size_t pagesize = sysconf(_SC_PAGE_SIZE);
     off_t page_base = (offset / pagesize) * pagesize;
     off_t page_offset = offset - page_base; //f0 uart with port offset
-	if ( verbosity > 1 ) {
+    if ( verbosity > 1 ) {
         printf("page_size %lx; page_base %lx; offset %lx; page_offset %lx\n", pagesize, page_base, offset, page_offset);
-    }	
-	
-	fd = open("/dev/mem", O_RDWR | O_SYNC);
+    }    
+    
+    fd = open("/dev/mem", O_RDWR | O_SYNC);
     if ( fd < 0 ) {
         printf("read function, Can't open /dev/mem\n");
         return FT_ERROR_OPEN_MEM;
     }
-	mem = mmap(NULL, buffSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
+    mem = mmap(NULL, buffSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, page_base);
     if ( mem == NULL ) {
         printf("read function, failed to  map pcie memory\n");
         close(fd);
         return FT_ERROR_MAP_PCIE;
     }
-	f0_uart_addr = mem + page_offset; //f0 uart address with port offset
-	return 0;
+    f0_uart_addr = mem + page_offset; //f0 uart address with port offset
+    return 0;
 }
 
 int close_mmap()
 {
-	munmap((void *)mem, buffSize);
-	close(fd);
-	return 0;
+    munmap((void *)mem, buffSize);
+    close(fd);
+    return 0;
 }
-	
+    
 unsigned int read_reg(off_t reg) 
 {
     return *((uint32_t *) (f0_uart_addr+reg));
@@ -187,7 +188,7 @@ unsigned int read_reg(off_t reg)
 void write_reg(off_t reg, uint32_t data ) 
 {
 
-	*((uint32_t *) (f0_uart_addr+reg)) = data;
+    *((uint32_t *) (f0_uart_addr+reg)) = data;
 }
 
 
@@ -196,22 +197,24 @@ void *send_tx_input()
     int ch;
     int end_thread = 0;
     set_conio_terminal_mode();
-	
-    for ( ; ; ) {
-        if ( !kbhit() ) {
+    
+    for ( ; ; ) 
+    {
+        if ( !kbhit() ) 
+        {
             ch = getch_local();
-            while ( ch != EOF ) {
+            while ( ch != EOF ) 
+            {
                 if ( ch == 1 ) {
                     end_thread = 1;
-					ch = getch_local();	
-					continue;
-                } 
-				else if ( ch == 24 ) {
+                    ch = getch_local();    
+                    continue;
+                } else if ( ch == 24 ) {
                     if ( end_thread == 1 ) {
                         end_thread = 2;
                         exit_all = 1;
-						ch = EOF;
-						continue;
+                        ch = EOF;
+                        continue;
                     } else {
                         end_thread = 0;
                     }
@@ -221,15 +224,15 @@ void *send_tx_input()
                 if ( verbosity )
                     printf("sending character %c\n", ch);
 
-				write_reg(UART_0_TXFIFO_REG, (uint32_t)ch);
+                write_reg(UART_0_TXFIFO_REG, (uint32_t)ch);
                 usleep(500);
-				ch = getch_local();
-			}
-			if ( verbosity > 1 )
-				printf("input buffer is empty\n");
-		}
-		if ( end_thread == 2 )
-				break;
+                ch = getch_local();
+            }
+            if ( verbosity > 1 )
+                printf("input buffer is empty\n");
+        }
+        if ( end_thread == 2 )
+                break;
     }
     reset_terminal_mode();
     pthread_exit(NULL);
@@ -238,114 +241,97 @@ void *send_tx_input()
 void get_rx_buffer()
 {
     uint32_t data;
-	data=read_reg(UART_0_STAT_REG);
+    data=read_reg(UART_0_STAT_REG);
 
-	if ( (data & 0x00000001) == 0x00000000 )
-		return ;
+    if ( (data & 0x00000001) == 0x00000000 )
+        return ;
 
     while ( (data & 0x00000001) == 0x00000001) {
-		if ( verbosity )  {
+        if ( verbosity )  {
             printf(" uart status register = %x\n", data);
         }
-		data=read_reg(UART_0_RXFIFO_REG) & 0xFF;
+        data=read_reg(UART_0_RXFIFO_REG) & 0xFF;
         if ( verbosity ) { 
             printf(" uart received data = %c\n", data); 
         }
-		write (1, &data, 1);
-		data=read_reg(UART_0_STAT_REG);
+        write (1, &data, 1);
+        data=read_reg(UART_0_STAT_REG);
     }
-	
+    
     return ;
 }
 
 //New function for debug. Loopback the TX/RX FIFO on Taormina FPGA <> ECPLD
 void *send_loopback_tx_debug()
 {
-   int ptr_in;
-   uint32_t data;
-   char buff;
-	// Opening file in reading mode
+    int ptr_in;
+    uint32_t data;
+    char buff;
+    // Opening file in reading mode
     ptr_in = open("test_in",O_RDONLY); 
-	readbyte=read(ptr_in, &buff,1);
-	
-	while (readbyte != 0)
-    {	
-		data=read_reg(UART_0_STAT_REG);
-		while ((data & 0x00000008) == 0x00000008)
-		{	
-			if ((data & 0x00000020) == 0x00000020)
-			{
-				printf(" RX OVERRUN OCCURED, EXIT\n");	
-				exit_get=1;
-				break ;
-			}	
-			
-			
-			printf("TX FIFO FULL, WAIT\n");
-			data=read_reg(UART_0_STAT_REG);
-		}
-		if ((data & 0x00000020) == 0x00000020)
-			{
-				printf(" RX OVERRUN OCCURED, EXIT\n");	
-				exit_get=1;
-				break ;
-			}	
-		//printf("input char is %x\n", buff);
-		write_reg(UART_0_TXFIFO_REG, buff);
-		readbyte=read(ptr_in, &buff,1);		
-		//printf ("input char is %c\n", ch);
-		//printf("input binary in hex is  %0x\n", ch);
+    readbyte=read(ptr_in, &buff,1);
+    
+    while (readbyte != 0)
+    {    
+        data=read_reg(UART_0_STAT_REG);
+        while ((data & 0x00000008) == 0x00000008)
+        {    
+            if ((data & 0x00000020) == 0x00000020)
+            {
+                printf(" RX OVERRUN OCCURED, EXIT\n");    
+                exit_get=1;
+                break ;
+            }    
+            printf("TX FIFO FULL, WAIT\n");
+            data=read_reg(UART_0_STAT_REG);
+        }
+        if ((data & 0x00000020) == 0x00000020)
+        {
+            printf(" RX OVERRUN OCCURED, EXIT\n");    
+            exit_get=1;
+            break ;
+        }    
+        write_reg(UART_0_TXFIFO_REG, buff);
+        readbyte=read(ptr_in, &buff,1);        
     }
 
-	close(ptr_in);
-    //exit_send=1;
-    pthread_exit(NULL);  	
-}		
+    close(ptr_in);
+    pthread_exit(NULL);      
+}        
 
 void get_loopback_rx_buffer_debug(int ptr_out)
 {
-	
     uint32_t data;
     data=read_reg(UART_0_STAT_REG);
 
-	if (verbosity )  
-           printf(" uart status register = %x\n", data);	
+    if (verbosity )  
+        printf(" uart status register = %x\n", data);    
 
-	if (bytewrite==33554431) {
-	    exit_get=1;
-		return ;
-	}
-	
-
-	//if ((data & 0x00000020) == 0x00000020)
-		//{
-		//	printf(" RX OVERRUN OCCURED, EXIT");	
-		//	exit_get=1;
-		//	return ;
-		//}
+    if (bytewrite==33554431) {
+        exit_get=1;
+        return ;
+    }
+    
     while ( (data & 0x00000001) == 0x00000001) {
-		if ( verbosity )  
+        if ( verbosity )  
             printf(" uart status register = %x\n", data);
         data=read_reg(UART_0_RXFIFO_REG);
         if ( verbosity )  
             printf(" uart received data = %x\n", data);
         write(ptr_out,&data,1);
-		bytewrite=bytewrite+1;
-        data=read_reg(UART_0_STAT_REG);	
-		if ((data & 0x00000020) == 0x00000020)
-		{
-			printf(" RX OVERRUN OCCURED, EXIT\n");	
-			exit_get=1;
-			break ;
-		}	
-		//printf(" uart status register = %x\n", data);		
+        bytewrite=bytewrite+1;
+        data=read_reg(UART_0_STAT_REG);    
+        if ((data & 0x00000020) == 0x00000020)
+        {
+            printf(" RX OVERRUN OCCURED, EXIT\n");    
+            exit_get=1;
+            break ;
+        }    
     }
-
-
-	
+    
     return ;
-}		
-		
+}        
+        
 
 
 int main(int argc, char **argv)
@@ -354,7 +340,7 @@ int main(int argc, char **argv)
     pthread_t id;
     ULONGLONG pcie_bar;
     uint32_t data;
-	
+    
     if ( argc < 2 ) { 
         printf("Invalid address, please provide a port number (0 - based)\n");
         return 0;
@@ -364,73 +350,67 @@ int main(int argc, char **argv)
         bar_addr = pcie_bar;
     }
 
-	init_mmap(0);
-	data = UART_TXMUX_SET;
-	write_reg(UART_0_TX_MUX_REG, data);
-	data = UART_TXMUX_SET;
-	write_reg(UART_1_TX_MUX_REG, data);	
-	close_mmap();	
+    init_mmap(0);
+    data = UART_TXMUX_SET;
+    write_reg(UART_0_TX_MUX_REG, data);
+    data = UART_TXMUX_SET;
+    write_reg(UART_1_TX_MUX_REG, data);    
+    close_mmap();    
 
-	init_mmap(port);
+    init_mmap(port);
     
     printf("connecting to serial port %d at bar address 0x%llx\n", port, bar_addr);
-	
-	//uart 0 ctrl reg, clear rx/tx fifo
-	//data = UART_RESET_TXRXFIFO;
-	//write_reg(UART_0_CTRL_REG, data);
-	
+    
+    //uart 0 ctrl reg, clear rx/tx fifo
+    //data = UART_RESET_TXRXFIFO;
+    //write_reg(UART_0_CTRL_REG, data);
+    
 
 /*
 //Uncomment for loopback test, comment out the main uart loop
-	data = UART_TXMUX_SET;
-	write_reg(UART_0_CTRL_REG, data);
-	int ptr_out; 
-	printf("tx/rx buffer cleared\n");
-	printf("\ruart console Elba%d>", (int)port); 
-	printf("\r\n");
-	pthread_create(&id, NULL, send_loopback_tx_debug, (void *)&port);
-	remove("test_out");
-	ptr_out = open("test_out", O_WRONLY | O_CREAT);
-	for ( ; ; ) { 
-		get_loopback_rx_buffer_debug(ptr_out);
-		
-		if ( exit_get==1 ) {
-			close(ptr_out);
-		    printf ("loopback test is done\n");
-			//data = UART_TXMUX_UNSET;
-			//write_reg(UART_0_CTRL_REG, data);
-			close_mmap();
-			return 0;
-		}
-
-	//usleep(10);
-	
-	}
-*/
-//main uart loop	
-
-	//For Taormina
-	//set TX FIFO mux for new SW implementation
-
-	printf("tx/rx buffer cleared\n");
-	printf("\ruart console Elba%d>", (int)port); 
-	printf("\r\n");
-    pthread_create(&id, NULL, send_tx_input, (void *)&port);
-	
+    data = UART_TXMUX_SET;
+    write_reg(UART_0_CTRL_REG, data);
+    int ptr_out; 
+    printf("tx/rx buffer cleared\n");
+    printf("\ruart console Elba%d>", (int)port); 
+    printf("\r\n");
+    pthread_create(&id, NULL, send_loopback_tx_debug, (void *)&port);
+    remove("test_out");
+    ptr_out = open("test_out", O_WRONLY | O_CREAT);
     for ( ; ; ) { 
-    
-	get_rx_buffer();
-        if ( exit_all ) {
-			//unset the tx fifo mux
-			//data = UART_TXMUX_UNSET;
-			//write_reg(UART_0_TX_MUX_REG, data);
-			//write_reg(UART_1_TX_MUX_REG, data);
-			close_mmap();
+        get_loopback_rx_buffer_debug(ptr_out);
+        
+        if ( exit_get==1 ) {
+            close(ptr_out);
+            printf ("loopback test is done\n");
+            //data = UART_TXMUX_UNSET;
+            //write_reg(UART_0_CTRL_REG, data);
+            close_mmap();
             return 0;
         }
+
     //usleep(10);
+    
     }
-	
+*/
+//main uart loop    
+
+    //For Taormina
+    //set TX FIFO mux for new SW implementation
+
+    printf("tx/rx buffer cleared\n");
+    printf("\ruart console Elba%d>", (int)port); 
+    printf("\r\n");
+    pthread_create(&id, NULL, send_tx_input, (void *)&port);
+    
+    for ( ; ; ) { 
+        get_rx_buffer();
+        if ( exit_all ) {
+            close_mmap();
+            return 0;
+        }
+    }
+    
     return 0;
 }
     

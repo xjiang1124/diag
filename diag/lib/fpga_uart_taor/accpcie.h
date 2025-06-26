@@ -29,17 +29,17 @@ typedef ULONG       FT_STATUS;
 // Device status
 //
 enum {
-        FT_OK,
-        FT_ERROR_OPEN_MEM,
-        FT_ERROR_MAP_PCIE,
-        FT_NO_HANDLE,
-        FT_WRITE_FAILURE,
-        FT_READ_FAILURE,
-        FT_RESP_TIMEOUT,
-        FT_INVALID_RESP,
-        FT_PORT_TAKEN,
-        FT_ERROR_LOCKPORT,
-        FT_ERROR_ID,
+    FT_OK,
+    FT_ERROR_OPEN_MEM,
+    FT_ERROR_MAP_PCIE,
+    FT_NO_HANDLE,
+    FT_WRITE_FAILURE,
+    FT_READ_FAILURE,
+    FT_RESP_TIMEOUT,
+    FT_INVALID_RESP,
+    FT_PORT_TAKEN,
+    FT_ERROR_LOCKPORT,
+    FT_ERROR_ID,
 };
 
 #define J2C_NOP_COMMAND    0x0
