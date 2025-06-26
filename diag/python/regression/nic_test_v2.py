@@ -619,6 +619,7 @@ class nic_test_v2:
             cmd += " " + str(args.mtp_clk)
             cmd += " " + str(args.lpmode)
             cmd += " " + str(args.txfir_ow)
+            cmd += " " + str(args.lt)
         else:
             print(args.card_type, "not supported!")
             common.session_stop(session)
@@ -2131,6 +2132,7 @@ if __name__ == "__main__":
     parser_nic_snake_mtp.add_argument("-vmarg", "--vmarg", help="vmarg", type=str, default='normal')
     parser_nic_snake_mtp.add_argument("-timeout", "--timeout", help="nic session cmd time out seconds", type=int, default=1800)
     parser_nic_snake_mtp.add_argument("-int_lpbk", "--int_lpbk", help="Internal loopback (1 or 0)", type=int, default=0)
+    parser_nic_snake_mtp.add_argument("-lt", "--lt", help="Link training (0=off)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-ite", "--ite", help="Iteration of start and stop snake (Debug only)", type=int, default=1)
     parser_nic_snake_mtp.add_argument("-mtp_clk", "--mtp_clk", help="Whether to use MTP PCIe refclk; 0: Disable; 1: use MTP clk", type=int, default=0)
     parser_nic_snake_mtp.add_argument("-low_power_mode", "--lpmode", help="Turn off unused blocks (Pollara only)", type=int, default=0)
