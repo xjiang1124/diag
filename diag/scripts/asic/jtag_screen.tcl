@@ -19,11 +19,13 @@ parray arg
 
 proc define_test_list {{override_test_list ""}} {
     # borrowed from L1 test list format
+
+    plog_msg "Got override_test_list = $override_test_list"
     
     if { $override_test_list == "" } {
         set names_list [list ID MBIST]
     } else {
-        set names_list [list $override_test_list]
+        set names_list [split $override_test_list]
     }
 
     set test_list [dict create]
