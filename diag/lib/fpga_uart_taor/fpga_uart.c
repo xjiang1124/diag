@@ -195,10 +195,8 @@ void *send_tx_input()
 {
     int ch;
     int end_thread = 0;
-	//uint32_t data;
     set_conio_terminal_mode();
 	
-
     for ( ; ; ) {
         if ( !kbhit() ) {
             ch = getch_local();
@@ -214,20 +212,18 @@ void *send_tx_input()
                         exit_all = 1;
 						ch = EOF;
 						continue;
-                        
-                    } 
-					else
+                    } else {
                         end_thread = 0;
-                } 
-				else
+                    }
+                } else {
                     end_thread = 0;
+                }
                 if ( verbosity )
                     printf("sending character %c\n", ch);
 
 				write_reg(UART_0_TXFIFO_REG, (uint32_t)ch);
+                usleep(500);
 				ch = getch_local();
-				
-
 			}
 			if ( verbosity > 1 )
 				printf("input buffer is empty\n");
@@ -235,7 +231,6 @@ void *send_tx_input()
 		if ( end_thread == 2 )
 				break;
     }
-    /* endwin(); */
     reset_terminal_mode();
     pthread_exit(NULL);
 }
@@ -244,14 +239,18 @@ void get_rx_buffer()
 {
     uint32_t data;
 	data=read_reg(UART_0_STAT_REG);
+
 	if ( (data & 0x00000001) == 0x00000000 )
 		return ;
+
     while ( (data & 0x00000001) == 0x00000001) {
-		if ( verbosity )  
+		if ( verbosity )  {
             printf(" uart status register = %x\n", data);
-		data=read_reg(UART_0_RXFIFO_REG);
-        if ( verbosity )  
-            printf(" uart received data = %c\n", data);
+        }
+		data=read_reg(UART_0_RXFIFO_REG) & 0xFF;
+        if ( verbosity ) { 
+            printf(" uart received data = %c\n", data); 
+        }
 		write (1, &data, 1);
 		data=read_reg(UART_0_STAT_REG);
     }
