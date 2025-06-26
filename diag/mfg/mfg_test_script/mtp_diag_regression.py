@@ -319,10 +319,12 @@ def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
     ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
     return ret
 
-@parallelize.parallel_nic_using_ssh
 def ocp_connect(mtp_mgmt_ctrl, slot):
-    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
-    return ret
+    failed_slots = list()
+    for s in slot:
+        if not mtp_mgmt_ctrl.mtp_ocp_connect(s):
+            failed_slots.append(s)
+    return failed_slots
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
@@ -1495,10 +1497,10 @@ def main():
                 mtp_mgmt_ctrl.cli_log_err("{:s} {:s} {:s} {:s}".format(key, nic_type, alom_sn, MTP_DIAG_Report.NIC_DIAG_REGRESSION_FAIL), level=0)
 
     except Exception as e:
-        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         # err_msg = str(e)
         err_msg = traceback.format_exc()
         mtp_mgmt_ctrl.mtp_diag_fail_report(err_msg)
+        libmfg_utils.fail_all_slots(mtp_mgmt_ctrl)
         if MTP_HEALTH_MONITOR and 'thread_health' in locals():
             mtp_mgmt_ctrl.get_mtp_health_monitor().set_event_status()
             thread_health.join()
