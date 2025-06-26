@@ -36,6 +36,9 @@ proc define_test_list {{override_test_list ""}} {
             FREQ       { set cmd_list [list 0 ""                       sal_jtag_freq_test   sal_pcc ] }
             MBIST      { set cmd_list [list 0 set_pollara_frequency    mbist_with_diag      verify_frequencies ] }
             DIAG_MBIST { set cmd_list [list 0 set_pollara_frequency    mbist_only_diag      verify_frequencies ] }
+            MBIST_STP  { set cmd_list [list 0 set_pollara_frequency    mbist_stp            verify_frequencies ] }
+            MBIST_ORIG { set cmd_list [list 0 set_pollara_frequency    mbist_no_stp         verify_frequencies ] }
+            ALGO22     { set cmd_list [list 0 set_pollara_frequency    mbist_algo22         verify_frequencies ] }
 
             MBIST_ARM  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_stp     "" ] }
             MBIST_EAST { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_stp    "" ] }
@@ -44,6 +47,7 @@ proc define_test_list {{override_test_list ""}} {
             DIAG_ARM   { set cmd_list [list 0 set_pollara_frequency    sal_jtag_arm_diag    "" ] }
             DIAG_EAST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_east_diag   "" ] }
             DIAG_WEST  { set cmd_list [list 0 set_pollara_frequency    sal_jtag_west_diag   "" ] }
+
             default    { set cmd_list [list 0 "" "" ""] }
         }
         dict append test_list $test_name $cmd_list
@@ -121,6 +125,72 @@ proc mbist_only_diag {} {
         plog_msg "mbist_only_diag::Test PASSED"
     } else {
        plog_err "mbist_only_diag::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    check_vrd_fault
+}
+
+proc mbist_stp {} {
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set hvt [sal_harvested_asic]
+
+    set arm_err  [sal_jtag_arm_stp $hvt]
+    set east_err [sal_jtag_east_stp $hvt]
+    set west_err [sal_jtag_west_stp $hvt]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "mbist_stp::Test PASSED"
+    } else {
+       plog_err "mbist_stp::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    check_vrd_fault
+}
+
+proc mbist_no_stp {} {
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set hvt [sal_harvested_asic]
+
+    set arm_err  [sal_jtag_arm_stp $hvt]
+    set east_err [sal_jtag_east_mbist]
+    set west_err [sal_jtag_west_mbist]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "mbist_no_stp::Test PASSED"
+    } else {
+       plog_err "mbist_no_stp::Test FAILED"
+       plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
+    }
+
+    check_vrd_fault
+}
+
+proc mbist_algo22 {} {
+    set arm_err  0
+    set east_err 0
+    set west_err 0
+
+    set hvt [sal_harvested_asic]
+
+    set arm_err  [sal_jtag_algo22_mbist_arm]
+    set east_err [sal_jtag_algo22_mbist_east]
+    set west_err [sal_jtag_algo22_mbist_west]
+
+    set err [ expr { $arm_err | $east_err | $west_err } ]
+    if {$err == 0} {
+        plog_msg "mbist_algo22::Test PASSED"
+    } else {
+       plog_err "mbist_algo22::Test FAILED"
        plog_msg "Arm Error $arm_err East Error $east_err West Error $west_err"
     }
 
