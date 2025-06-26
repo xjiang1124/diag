@@ -182,6 +182,7 @@ then
 fi
 
 turn_on_slot.sh off $slot
+sleep 5
 turn_on_slot.sh on $slot
 
 
