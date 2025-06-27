@@ -4343,7 +4343,7 @@ class mtp_ctrl():
 
         if fea_mtp_match and fea_nic_match:
             if fea_mtp_match.group(1) == fea_nic_match.group(1):
-                if not self.mtp_power_on_nic(slot):
+                if not self.mtp_power_on_nic([slot]):
                     return False
                 return True
             self.cli_log_slot_err_lock(slot, "Feature row programmed incorrectly. Dump doesn't match original file.")
@@ -6679,7 +6679,10 @@ class mtp_ctrl():
         self._nic_sw_pn_list[slot] = sw_pn
 
     def mtp_get_nic_type(self, slot):
-        return self._nic_type_list[slot]
+        nic_type = self._nic_type_list[slot]
+        if not nic_type:
+            nic_type = "UNKNOWN_NIC_TYPE"
+        return nic_type
 
     def mtp_set_nic_type(self, slot, nic_type):
         """
@@ -6694,6 +6697,9 @@ class mtp_ctrl():
 
     def mtp_nic_type_valid(self, slot):
         nic_type = self._nic_type_list[slot]
+        if nic_type is None:
+            self.cli_log_slot_err(slot, "NIC Type was not initialized, still None")
+            return False
         if nic_type in self._valid_type_list:
             return True
         else:
@@ -6739,7 +6745,7 @@ class mtp_ctrl():
     def mtp_get_nic_sn(self, slot):
         sn = self._nic_sn_list[slot]
         if not sn:
-            sn = "UNKNOWN"
+            sn = "UNKNOWN_SN"
         return sn
 
     def mtp_set_nic_sn(self, slot, sn):

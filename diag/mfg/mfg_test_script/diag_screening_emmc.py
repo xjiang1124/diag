@@ -561,10 +561,12 @@ def ocp_rmii_linkup(mtp_mgmt_ctrl, slot):
     ret = mtp_mgmt_ctrl.mtp_ocp_rmii_linkup(slot)
     return ret
 
-@parallelize.parallel_nic_using_ssh
 def ocp_connect(mtp_mgmt_ctrl, slot):
-    ret = mtp_mgmt_ctrl.mtp_ocp_connect(slot)
-    return ret
+    failed_slots = list()
+    for s in slot:
+        if not mtp_mgmt_ctrl.mtp_ocp_connect(s):
+            failed_slots.append(s)
+    return failed_slots
 
 def health_status(mtp_health):
     mtp_health.monitr_mtp_health(timeout=MTP_Const.MTP_HEALTH_MONITOR_CYCLE)
